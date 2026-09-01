@@ -156,7 +156,7 @@ export const MCP_SERVERS = [
         id: "composio",
         name: "Composio",
         description:
-            "Connect agents to Gmail, Slack, GitHub, Drive, and hundreds of other apps.",
+            "Use Gmail, Slack, GitHub, Drive, and hundreds of other apps. Agents ask you to connect when needed.",
         binding: "COMPOSIO_MCP",
         billing: "usage_receipt",
         provider: "composio",

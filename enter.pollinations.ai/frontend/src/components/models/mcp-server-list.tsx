@@ -61,7 +61,14 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                     </Chip>
                                 </div>
                                 <p className="text-sm text-theme-text-muted">
-                                    {server.description}
+                                    {server.description}{" "}
+                                    {"accountPath" in server && (
+                                        <InlineLink
+                                            href={`${config.baseUrl}${server.accountPath}`}
+                                        >
+                                            Browse and connect apps
+                                        </InlineLink>
+                                    )}
                                 </p>
                                 <div className="pt-1">
                                     <p className="mb-1 text-xs font-medium text-theme-text-strong">

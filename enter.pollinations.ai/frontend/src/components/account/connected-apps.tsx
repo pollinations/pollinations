@@ -1,5 +1,18 @@
-import { Button, Section, Surface, Text } from "@pollinations/ui";
-import { type ReactNode, useCallback, useEffect, useState } from "react";
+import {
+    Button,
+    FieldStack,
+    Input,
+    Section,
+    Surface,
+    Text,
+} from "@pollinations/ui";
+import {
+    type FormEvent,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useState,
+} from "react";
 import { apiClient } from "../../api.ts";
 
 type Connection = {
@@ -63,6 +76,7 @@ function AppCard({ name, logo, details, action }: AppCardProps) {
 export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
+    const [search, setSearch] = useState("");
     const [pendingId, setPendingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -75,8 +89,10 @@ export function ConnectedApps() {
         );
     }, []);
 
-    const loadToolkits = useCallback(async () => {
-        const response = await apiClient.account.integrations.toolkits.$get();
+    const loadToolkits = useCallback(async (query = "") => {
+        const response = await apiClient.account.integrations.toolkits.$get({
+            query: query ? { search: query } : {},
+        });
         if (!response.ok) throw new Error("Could not load available apps.");
         setToolkits(((await response.json()) as { data: Toolkit[] }).data);
     }, []);
@@ -90,6 +106,19 @@ export function ConnectedApps() {
             )
             .finally(() => setLoading(false));
     }, [loadConnections, loadToolkits]);
+
+    async function handleSearch(event: FormEvent) {
+        event.preventDefault();
+        setError(null);
+        setLoading(true);
+        try {
+            await loadToolkits(search.trim());
+        } catch (searchError) {
+            setError(errorMessage(searchError, "Could not search apps."));
+        } finally {
+            setLoading(false);
+        }
+    }
 
     async function connect(toolkit: string) {
         setPendingId(toolkit);
@@ -141,9 +170,9 @@ export function ConnectedApps() {
     return (
         <Section title="Connected apps" framed>
             <Text size="sm" tone="muted">
-                Connect apps once, then let your agents use them on your behalf.
-                Credentials are handled by Composio and are never shown to the
-                agent.
+                Agents can show you a sign-in link when they need an app. You
+                can also connect one here first. Composio stores the
+                credentials; agents never see them.
             </Text>
 
             {connections.map((connection) => {
@@ -176,6 +205,24 @@ export function ConnectedApps() {
                     />
                 );
             })}
+
+            <form
+                onSubmit={(event) => void handleSearch(event)}
+                className="flex items-end gap-2"
+            >
+                <FieldStack label="Find an app" className="min-w-0 flex-1">
+                    <Input
+                        value={search}
+                        placeholder="Search Gmail, Slack, Notion…"
+                        onChange={(event) =>
+                            setSearch(event.currentTarget.value)
+                        }
+                    />
+                </FieldStack>
+                <Button type="submit" disabled={loading}>
+                    Search
+                </Button>
+            </form>
 
             {!loading &&
                 availableToolkits.map((toolkit) => (

@@ -25,7 +25,7 @@ test("manages connected apps through the authenticated account", async ({
     });
 
     const toolkitResponse = await SELF.fetch(
-        "http://localhost:3000/api/account/integrations/toolkits",
+        "http://localhost:3000/api/account/integrations/toolkits?search=git",
         { headers: sessionHeaders(sessionToken) },
     );
     expect(toolkitResponse.status).toBe(200);

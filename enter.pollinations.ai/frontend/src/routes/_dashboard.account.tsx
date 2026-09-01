@@ -260,7 +260,9 @@ function AccountPage() {
                 </Section>
             )}
 
-            <ConnectedApps />
+            <div id="connected-apps" className="scroll-mt-6">
+                <ConnectedApps />
+            </div>
 
             <Section title="Danger zone" framed>
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">

@@ -73,12 +73,13 @@ function connectionSummary(account) {
     };
 }
 
-async function listToolkits(env, fetchImpl) {
+async function listToolkits(search, env, fetchImpl) {
     const params = new URLSearchParams({
         managed_by: "composio",
         sort_by: "usage",
         limit: "20",
     });
+    if (search) params.set("search", search);
     const body = await callComposio(`/toolkits?${params}`, env, fetchImpl);
     const items = Array.isArray(body?.items) ? body.items : [];
     return items
@@ -302,7 +303,11 @@ async function handleManagement(request, userId, env, fetchImpl) {
     }
     if (request.method === "GET" && url.pathname === "/toolkits") {
         return Response.json({
-            data: await listToolkits(env, fetchImpl),
+            data: await listToolkits(
+                url.searchParams.get("search") || "",
+                env,
+                fetchImpl,
+            ),
         });
     }
     if (request.method === "POST" && url.pathname === "/connections") {

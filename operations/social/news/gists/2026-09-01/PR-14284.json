@@ -1,0 +1,33 @@
+{
+  "pr_number": 14284,
+  "title": "fix: tighten model monitor health thresholds",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14284",
+  "merged_at": "2026-09-01T14:14:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Marks models degraded at 5% 5xx and off at 20% 5xx.\n- Treats exactly 95% success as degraded and aligns success-rate colors with health status.\n- Keeps 4xx client errors excluded from model health.\n\nTest: `npm run build --prefix operations/model-monitor`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive checks its pulse",
+    "blurb": "The model monitor got a stricter little stethoscope. It now spots trouble sooner, while keeping client-side buzz out of the diagnosis.",
+    "summary": "Tightened model-monitor health thresholds so 5% 5xx errors marks a model degraded, 20% marks it off, exactly 95% success is degraded, and 4xx client errors remain excluded.",
+    "impact": "Users and operators get health colors that match model status more precisely, helping unreliable models be identified before they become fully unavailable.",
+    "keywords": [
+      "model-monitor",
+      "health",
+      "reliability",
+      "5xx-errors",
+      "status"
+    ],
+    "visual_concept": "Polli acts as a tiny garden caretaker using a stethoscope to inspect code-plants connected to a retro model-health monitor. The CRT robot displays a clear green healthy meter, a pastel amber degraded meter at 95%, and a calm off-status plant at 20% 5xx, while harmless 4xx leaves are sorted into a separate basket.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow-and-dark-brown striped bee with pink blush, light blue wings, and a tiny medic cap, listening to glowing code-plants with a stethoscope beside a chunky CRT health monitor; its screen shows green healthy, pastel amber degraded, and quiet off-status meters, with a separate basket of harmless 4xx leaves. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14284.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow-and-dark-brown striped bee with pink blush, light blue wings, and a tiny medic cap, listening to glowing code-plants with a stethoscope beside a chunky CRT health monitor; its screen shows green healthy, pastel amber degraded, and quiet off-status meters, with a separate basket of harmless 4xx leaves. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-09-01T14:15:12.824311+00:00"
+}

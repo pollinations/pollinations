@@ -5,34 +5,37 @@ import {
     readdirSync,
     readFileSync,
     rmSync,
+    statSync,
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { configureOpenCode, disableOpenCode, opencode } from "./opencode.js";
+import {
+    configureOpenCode,
+    disableOpenCode,
+    openCodeConfigDir,
+    opencode,
+} from "./opencode.js";
 import type { HarnessContext } from "./types.js";
 
-const settings = { apiKey: "sk_test_key", model: "openai" };
+const models = [
+    { id: "openai", contextWindow: 128000, input: ["text"] },
+    { id: "openai-vision", contextWindow: 128000, input: ["text", "image"] },
+];
+const settings = { apiKey: "sk_test_key", model: "openai", models };
 
 let home: string;
 let ctx: HarnessContext;
 
 beforeEach(() => {
-    home = mkdtempSync(join(tmpdir(), "polli-harness-"));
+    home = mkdtempSync(join(tmpdir(), "polli-opencode-"));
     ctx = { home, env: {} };
 });
 
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
-const configDir = () =>
-    process.platform === "win32"
-        ? join(home, "pollinations")
-        : process.platform === "darwin"
-          ? join(home, "Library", "Application Support", "pollinations")
-          : join(home, ".config", "pollinations");
-const opencodeFile = () => join(home, ".config", "opencode", "opencode.json");
-const pluginConfig = () => join(configDir(), "config.json");
+const ocConfig = () => join(home, ".config", "opencode", "opencode.json");
 const snapshotFiles = () => {
     const dir = join(home, ".pollinations", "harnesses");
     return existsSync(dir)
@@ -40,176 +43,191 @@ const snapshotFiles = () => {
         : [];
 };
 const read = (path: string) => readFileSync(path, "utf-8");
-const readJsonFile = (path: string) => JSON.parse(read(path));
+const readJson = (path: string) => JSON.parse(read(path));
 
 describe("opencode harness", () => {
-    it("writes the plugin entry, default model, and key from scratch", () => {
-        const result = configureOpenCode(ctx, settings);
-        expect(result).toMatchObject({
+    it("writes provider, plugin, and model from scratch", () => {
+        const r = configureOpenCode(ctx, settings);
+        expect(r).toMatchObject({
             harness: "opencode",
             configured: true,
             model: "openai",
+            mcp: true,
         });
 
-        const config = readJsonFile(opencodeFile());
-        expect(config.$schema).toBe("https://opencode.ai/config.json");
-        expect(config.plugin).toEqual(["opencode-pollinations-plugin"]);
-        expect(config.model).toBe("pollinations/enter/openai");
-        expect(readJsonFile(pluginConfig()).apiKey).toBe("sk_test_key");
+        const cfg = readJson(ocConfig());
+        expect(cfg.model).toBe("pollinations/openai");
+        expect(cfg.provider.pollinations).toMatchObject({
+            npm: "@ai-sdk/openai-compatible",
+            name: "Pollinations.ai",
+            options: {
+                baseURL: "https://gen.pollinations.ai/v1",
+                apiKey: "sk_test_key",
+            },
+        });
+        expect(cfg.provider.pollinations.models.openai).toMatchObject({
+            name: "openai",
+            limit: { context: 128000 },
+            tool_call: true,
+        });
+        expect(cfg.provider.pollinations.models["openai-vision"]).toMatchObject(
+            {
+                attachment: true,
+            },
+        );
+        expect(cfg.plugin).toContain("opencode-pollinations-plugin");
+        expect(statSync(ocConfig()).mode & 0o777).toBe(0o600);
         expect(opencode.status(ctx)).toMatchObject({
             configured: true,
             model: "openai",
         });
     });
 
-    it("keeps existing providers, plugins, and unrelated settings", () => {
+    it("preserves existing config keys and other providers", () => {
         mkdirSync(join(home, ".config", "opencode"), { recursive: true });
-        const original = {
-            $schema: "https://opencode.ai/config.json",
-            autoupdate: true,
-            plugin: ["opencode-gitlab-plugin"],
-            provider: {
-                anthropic: { options: { baseURL: "https://api.example" } },
-            },
-            small_model: "anthropic/claude-haiku",
-        };
-        writeFileSync(opencodeFile(), JSON.stringify(original, null, 2));
-        mkdirSync(configDir(), { recursive: true });
         writeFileSync(
-            pluginConfig(),
-            JSON.stringify({ mode: "quest", lang: "en" }),
+            ocConfig(),
+            JSON.stringify(
+                {
+                    $schema: "https://opencode.ai/config.json",
+                    theme: "dark",
+                    provider: { anthropic: { options: { timeout: 60000 } } },
+                    plugin: ["another-plugin"],
+                },
+                null,
+                2,
+            ),
         );
 
         configureOpenCode(ctx, settings);
 
-        const config = readJsonFile(opencodeFile());
-        expect(config.autoupdate).toBe(true);
-        expect(config.small_model).toBe("anthropic/claude-haiku");
-        expect(config.provider.anthropic.options.baseURL).toBe(
-            "https://api.example",
-        );
-        expect(config.plugin).toEqual([
-            "opencode-gitlab-plugin",
-            "opencode-pollinations-plugin",
-        ]);
-        expect(readJsonFile(pluginConfig())).toMatchObject({
-            mode: "quest",
-            lang: "en",
-            apiKey: "sk_test_key",
+        const cfg = readJson(ocConfig());
+        expect(cfg.$schema).toBe("https://opencode.ai/config.json");
+        expect(cfg.theme).toBe("dark");
+        expect(cfg.provider.anthropic).toMatchObject({
+            options: { timeout: 60000 },
         });
+        expect(cfg.provider.pollinations).toBeDefined();
+        expect(cfg.plugin).toContain("another-plugin");
+        expect(cfg.plugin).toContain("opencode-pollinations-plugin");
     });
 
-    it("uses an existing plugins array instead of plugin", () => {
+    it("restores the original file byte-for-byte on off", () => {
         mkdirSync(join(home, ".config", "opencode"), { recursive: true });
-        writeFileSync(
-            opencodeFile(),
-            JSON.stringify({ plugins: ["other-plugin"] }),
-        );
-
-        configureOpenCode(ctx, settings);
-
-        const config = readJsonFile(opencodeFile());
-        expect(config.plugins).toEqual([
-            "other-plugin",
-            "opencode-pollinations-plugin",
-        ]);
-        expect(config.plugin).toBeUndefined();
-    });
-
-    it("restores the original files byte-for-byte on off", () => {
-        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
-        const original = `${JSON.stringify({ model: "anthropic/claude-sonnet" }, null, 2)}\n`;
-        writeFileSync(opencodeFile(), original);
+        const original = `${JSON.stringify({ theme: "dark" }, null, 2)}\n`;
+        writeFileSync(ocConfig(), original);
 
         configureOpenCode(ctx, settings);
         expect(snapshotFiles()).toHaveLength(1);
-        const result = disableOpenCode(ctx);
+        const r = disableOpenCode(ctx);
 
-        expect(result.outcome).toBe("restored");
-        expect(read(opencodeFile())).toBe(original);
-        expect(existsSync(pluginConfig())).toBe(false);
+        expect(r.outcome).toBe("restored");
+        expect(read(ocConfig())).toBe(original);
         expect(snapshotFiles()).toHaveLength(0);
         expect(opencode.status(ctx).configured).toBe(false);
     });
 
-    it("only strips the Pollinations entries when the config changed since on", () => {
+    it("only strips Pollinations entries when the config changed since on", () => {
         configureOpenCode(ctx, settings);
-        const edited = readJsonFile(opencodeFile());
-        edited.autoupdate = false;
-        writeFileSync(opencodeFile(), JSON.stringify(edited, null, 2));
 
-        const result = disableOpenCode(ctx);
+        const cfg = readJson(ocConfig());
+        cfg["editor-theme"] = "monokai";
+        writeFileSync(ocConfig(), `${JSON.stringify(cfg, null, 2)}\n`);
 
-        expect(result.outcome).toBe("stripped");
-        const config = readJsonFile(opencodeFile());
-        expect(config.autoupdate).toBe(false);
-        expect(config.plugin).toBeUndefined();
-        expect(config.model).toBeUndefined();
-        expect(existsSync(pluginConfig())).toBe(false);
+        const r = disableOpenCode(ctx);
+
+        expect(r.outcome).toBe("stripped");
+        const after = readJson(ocConfig());
+        expect(after["editor-theme"]).toBe("monokai");
+        expect(after.provider?.pollinations).toBeUndefined();
+        expect(after.model).toBeUndefined();
+        expect(
+            (after.plugin ?? []).some((p: string) =>
+                p.includes("opencode-pollinations-plugin"),
+            ),
+        ).toBe(false);
         expect(snapshotFiles()).toHaveLength(0);
     });
 
-    it("reports unchanged when off runs on a harness that was never on", () => {
+    it("reports unchanged when off on a harness that was never on", () => {
         expect(disableOpenCode(ctx).outcome).toBe("unchanged");
     });
 
-    it("re-running on switches the model and keeps the pre-on backup", () => {
-        configureOpenCode(ctx, settings);
-        configureOpenCode(ctx, { ...settings, model: "kimi" });
-        expect(opencode.status(ctx).model).toBe("kimi");
+    it("can skip plugin with --no-mcp", () => {
+        const r = configureOpenCode(ctx, { ...settings, mcp: false });
 
-        disableOpenCode(ctx);
-        expect(existsSync(opencodeFile())).toBe(false);
+        expect(r).toMatchObject({ configured: true, mcp: false });
+        const cfg = readJson(ocConfig());
+        expect(
+            (cfg.plugin ?? []).some((p: string) =>
+                p.includes("opencode-pollinations-plugin"),
+            ),
+        ).toBe(false);
+        expect(cfg.provider.pollinations).toBeDefined();
     });
 
-    it("honors OPENCODE_CONFIG", () => {
-        const custom = join(home, "custom", "my-opencode.json");
-        configureOpenCode({ home, env: { OPENCODE_CONFIG: custom } }, settings);
-        expect(existsSync(custom)).toBe(true);
-        expect(existsSync(opencodeFile())).toBe(false);
-        expect(readJsonFile(custom).model).toBe("pollinations/enter/openai");
+    it("re-running on updates model and keeps the pre-on backup", () => {
+        configureOpenCode(ctx, settings);
+        configureOpenCode(ctx, { ...settings, model: "openai-vision" });
+        expect(opencode.status(ctx).model).toBe("openai-vision");
+
+        disableOpenCode(ctx);
+        expect(existsSync(ocConfig())).toBe(false);
     });
 
     it("honors OPENCODE_CONFIG_DIR", () => {
-        const customDir = join(home, "custom-dir");
+        const custom = join(home, "my-opencode");
         configureOpenCode(
-            { home, env: { OPENCODE_CONFIG_DIR: customDir } },
+            { home, env: { OPENCODE_CONFIG_DIR: custom } },
             settings,
         );
-        expect(existsSync(join(customDir, "opencode.json"))).toBe(true);
-        expect(existsSync(opencodeFile())).toBe(false);
+        expect(existsSync(join(custom, "opencode.json"))).toBe(true);
+        expect(existsSync(ocConfig())).toBe(false);
     });
 
-    it("reports unconfigured when the credential is missing", () => {
-        configureOpenCode(ctx, settings);
-        rmSync(pluginConfig());
+    it("treats an empty OPENCODE_CONFIG_DIR as unset", () => {
+        configureOpenCode(
+            { home, env: { OPENCODE_CONFIG_DIR: "  " } },
+            settings,
+        );
+        expect(existsSync(ocConfig())).toBe(true);
+    });
+
+    it("reports unconfigured when no config file exists", () => {
         expect(opencode.status(ctx).configured).toBe(false);
     });
 
-    it("recognizes an object-form plugin entry", () => {
-        mkdirSync(join(home, ".config", "opencode"), { recursive: true });
-        writeFileSync(
-            opencodeFile(),
-            JSON.stringify({
-                plugin: [{ package: "opencode-pollinations-plugin@6.5.1" }],
-                model: "pollinations/enter/openai",
-            }),
-        );
-        mkdirSync(configDir(), { recursive: true });
-        writeFileSync(
-            pluginConfig(),
-            JSON.stringify({ apiKey: "sk_test_key" }),
-        );
-
-        expect(opencode.status(ctx).configured).toBe(true);
+    it("does not add duplicate plugin entries on re-run", () => {
+        configureOpenCode(ctx, settings);
+        configureOpenCode(ctx, settings);
+        const cfg = readJson(ocConfig());
+        const count = (cfg.plugin as string[]).filter((p) =>
+            p.includes("opencode-pollinations-plugin"),
+        ).length;
+        expect(count).toBe(1);
     });
 
-    it("stops before configuration when OpenCode is unavailable", async () => {
-        await expect(opencode.on(ctx, {})).rejects.toThrow(
-            "OpenCode was not found",
+    it("openCodeConfigDir returns correct path from env", () => {
+        const custom = join(home, "custom");
+        expect(
+            openCodeConfigDir({ home, env: { OPENCODE_CONFIG_DIR: custom } }),
+        ).toBe(custom);
+    });
+
+    it("openCodeConfigDir defaults to ~/.config/opencode", () => {
+        expect(openCodeConfigDir({ home, env: {} })).toBe(
+            join(home, ".config", "opencode"),
         );
-        expect(existsSync(opencodeFile())).toBe(false);
-        expect(existsSync(pluginConfig())).toBe(false);
-        expect(snapshotFiles()).toHaveLength(0);
+    });
+
+    it("keeps one backup per config location", () => {
+        configureOpenCode(ctx, settings);
+        const moved = { home, env: { OPENCODE_CONFIG_DIR: join(home, "alt") } };
+        configureOpenCode(moved, settings);
+        expect(snapshotFiles()).toHaveLength(2);
+
+        disableOpenCode(moved);
+        expect(snapshotFiles()).toHaveLength(1);
+        expect(opencode.status(ctx).configured).toBe(true);
     });
 });

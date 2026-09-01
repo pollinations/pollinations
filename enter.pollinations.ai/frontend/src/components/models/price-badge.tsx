@@ -81,13 +81,11 @@ const formatAdjustmentUnit = ({
     if (kind === "cache_storage") {
         return `${quantityLabel} tokens`;
     }
-    if (quantity === 1 && kind === "compute" && unit === "second") {
-        return "sec";
+    if (quantity === 1) {
+        if (unit === "second") return "sec";
+        if (unit === "page") return "page";
+        if (unit === "generation") return "gen";
     }
-    if (quantity === 1 && kind === "page" && unit === "page") {
-        return "page";
-    }
-    if (quantity === 1 && unit === "generation") return "gen";
     return `${quantityLabel} ${unit}`;
 };
 

@@ -42,10 +42,10 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                     return (
                         <div
                             key={server.id}
-                            className="rounded-xl bg-surface-opaque shadow-sm transition-colors hover:bg-surface-opaque/90 @2xl:flex @2xl:items-center @2xl:shadow-well"
+                            className="rounded-xl bg-surface-opaque shadow-sm [--mcp-card-gap:0.625rem] [--mcp-icon-width:2rem] @2xl:flex @2xl:items-center @2xl:shadow-well"
                         >
-                            <div className="flex items-center gap-2.5 p-4 @2xl:min-w-0 @2xl:flex-1">
-                                <McpIcon className="h-8 w-8 shrink-0 text-ink-900 opacity-55" />
+                            <div className="flex items-center gap-[var(--mcp-card-gap)] p-4 @2xl:min-w-0 @2xl:flex-1">
+                                <McpIcon className="h-8 w-[var(--mcp-icon-width)] shrink-0 text-ink-900 opacity-55" />
                                 <span
                                     aria-hidden="true"
                                     className="h-10 w-px shrink-0 bg-divider"
@@ -92,14 +92,10 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                     </CopyButton>
                                 </div>
                             </div>
-                            <div className="flex gap-2.5 px-4 pb-4 pt-0 @2xl:w-[clamp(312px,calc(32%_-_8px),352px)] @2xl:shrink-0 @2xl:gap-0 @2xl:py-3 @2xl:pl-3 @2xl:pr-1">
+                            <div className="flex px-4 pb-4 pt-0 @2xl:w-[clamp(312px,calc(32%_-_8px),352px)] @2xl:shrink-0 @2xl:py-3 @2xl:pl-3 @2xl:pr-1">
                                 <span
                                     aria-hidden="true"
-                                    className="hidden w-8 shrink-0 min-[480px]:block @2xl:hidden"
-                                />
-                                <span
-                                    aria-hidden="true"
-                                    className="hidden w-px shrink-0 min-[480px]:block @2xl:hidden"
+                                    className="hidden w-[calc(var(--mcp-icon-width)+1px+var(--mcp-card-gap)+var(--mcp-card-gap))] shrink-0 min-[480px]:block @2xl:hidden"
                                 />
                                 <div className="min-w-0 flex-1">
                                     {pricing.rates.length > 0 && (

@@ -1,6 +1,7 @@
 import {
     Button,
     FieldStack,
+    InlineLink,
     Input,
     Section,
     Surface,
@@ -172,7 +173,11 @@ export function ConnectedApps() {
             <Text size="sm" tone="muted">
                 Agents can show you a sign-in link when they need an app. You
                 can also connect one here first. Composio stores the
-                credentials; agents never see them.
+                credentials; agents never see them.{" "}
+                <InlineLink href="https://composio.dev/toolkits">
+                    View all supported apps
+                </InlineLink>
+                .
             </Text>
 
             {connections.map((connection) => {

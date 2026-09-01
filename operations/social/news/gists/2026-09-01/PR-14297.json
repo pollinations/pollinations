@@ -1,0 +1,35 @@
+{
+  "pr_number": 14297,
+  "title": "feat: let models require prompt safety",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14297",
+  "merged_at": "2026-09-01T19:59:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Stores required safety once on the shared community model listing\\n- Applies the same policy to proxy models, prompt agents, and endpoint agents\\n- Lets providers configure it through the API, dashboard, or CLI\\n- Unions model and fallback requirements so callers cannot disable checks\\n- Keeps cache entries isolated by the effective safety policy\\n\\nSupersedes #14292 after its head ref stopped synchronizing.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Safety sticks to the model",
+    "blurb": "Community models can now carry their own prompt-safety requirements, wherever they travel in the hive. Proxy models, agents, fallbacks, caches: nobody accidentally leaves the guardrails in the garden shed.",
+    "summary": "Added provider-configurable required prompt-safety policies to shared community model listings, applying them consistently to proxy models, prompt and endpoint agents, fallbacks, and policy-isolated caches.",
+    "impact": "Providers can set a model's safety requirements through the API, dashboard, or Polli CLI, and callers receive the union of model and fallback policies without being able to disable those checks.",
+    "keywords": [
+      "prompt safety",
+      "community models",
+      "providers",
+      "agents",
+      "fallbacks",
+      "cache",
+      "polli cli"
+    ],
+    "visual_concept": "Depict model safety as a small garden gate or protective glass terrarium attached directly to labeled code-plants, rather than a removable checkpoint. Polli, wearing a tiny ranger hat, tends the plants while a CRT monitor robot carries policy cards between a community-model signpost, agent terminals, and a fallback path, showing that every route inherits the same protection.",
+    "image_prompt": "A cozy pixel-art community model garden where prompt-safety shields are permanently tied around lime green (#ecf874) code-plants, with safe paths leading to a proxy terminal, tiny agent workstations, and a fallback flower bed; Polli is a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded translucent light-blue wings, and a tiny ranger hat, warmly checking the shared safety gate beside an eager CRT-monitor robot holding policy cards. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font sign reading \"SAFETY STAYS\", nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14297.jpg",
+    "prompt": "A cozy pixel-art community model garden where prompt-safety shields are permanently tied around lime green (#ecf874) code-plants, with safe paths leading to a proxy terminal, tiny agent workstations, and a fallback flower bed; Polli is a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, rounded translucent light-blue wings, and a tiny ranger hat, warmly checking the shared safety gate beside an eager CRT-monitor robot holding policy cards. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font sign reading \"SAFETY STAYS\", nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-01T20:00:29.662054+00:00"
+}

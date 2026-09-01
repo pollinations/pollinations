@@ -1,3 +1,7 @@
+- **2026-08-31** – **🎨 Community video models** Community model publishers can now offer OpenAI-compatible video generation, with prompts, reference media, frame URLs, duration controls, and MP4 results.
+- **2026-08-31** – **🚀 FLUX.2 Pro and Flex** Paid users can generate with Azure-hosted `flux-2-pro` and `flux-2-flex`, including wide formats up to 4,096×1,024 and up to eight Pro reference images. [Try it](https://pollinations.ai/play)
+- **2026-08-31** – **🤖 Inkling joins the model roster** `thinkingmachines/inkling` is now available for paid API use with text, image, and audio inputs, tool calling, JSON, streaming, and reasoning. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-31** – **🔗 MCP servers get a catalog** Browse available MCP servers, connection endpoints, and Pollen rates in the official catalog or through `GET /mcp` before letting tools near your agent. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-30** – **🚀 Community Embeddings** Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open.
 - **2026-08-30** – **✨ Floret Media Tools** Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress.
 - **2026-08-30** – **🎨 AI Story & Image Studio** Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com) <!-- app -->

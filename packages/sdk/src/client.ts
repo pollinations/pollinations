@@ -11,6 +11,7 @@ import type {
     ChatOptions,
     ChatResponse,
     ChatStreamChunk,
+    ChatStreamEvent,
     CreatedKey,
     CreateKeyOptions,
     DailyUsageOptions,
@@ -28,6 +29,7 @@ import type {
     KeyUsageOptions,
     Message,
     ModelInfo,
+    PollinationsAgentEvent,
     PollinationsConfig,
     RequestOptions,
     TextGenerateOptions,
@@ -135,45 +137,168 @@ function stripKeyFromUrl(url: string): string {
     return urlObj.toString();
 }
 
-// SSE parsing result
-interface SSEParseResult<T> {
-    chunks: T[];
-    remainingBuffer: string;
+interface SSEMessage {
+    data: string;
+    comments: string[];
+    event?: string;
 }
 
-function chatStreamError(chunk: unknown): PollinationsError | null {
-    if (!chunk || typeof chunk !== "object" || !("error" in chunk)) return null;
+/** Incremental SSE decoder following event boundaries rather than network lines. */
+class SSEDecoder {
+    private buffer = "";
+    private data: string[] = [];
+    private comments: string[] = [];
+    private event: string | undefined;
 
-    const error = (chunk as { error: unknown }).error;
-    let message = "Streaming request failed";
-    if (typeof error === "string") message = error;
-    else if (error && typeof error === "object" && "message" in error) {
-        const errorMessage = (error as { message: unknown }).message;
-        if (typeof errorMessage === "string") message = errorMessage;
-    }
-    return new PollinationsError(message, "STREAM_ERROR", 502);
-}
+    push(chunk: string, flush = false): SSEMessage[] {
+        this.buffer += chunk;
+        const messages: SSEMessage[] = [];
 
-// Parse SSE lines from buffer and extract data
-function parseSSEBuffer<T>(
-    buffer: string,
-    parseChunk: (data: string) => T | null,
-): SSEParseResult<T> {
-    const lines = buffer.split("\n");
-    const remainingBuffer = lines.pop() || "";
-    const chunks: T[] = [];
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed === "data: [DONE]") continue;
-        if (trimmed.startsWith("data: ")) {
-            const parsed = parseChunk(trimmed.slice(6));
-            if (parsed !== null) {
-                chunks.push(parsed);
-            }
+        while (this.buffer.length > 0) {
+            const ending = this.nextLineEnding(flush);
+            if (!ending) break;
+            const line = this.buffer.slice(0, ending.index);
+            this.buffer = this.buffer.slice(ending.index + ending.length);
+            const message = this.processLine(line);
+            if (message) messages.push(message);
         }
+
+        if (flush) {
+            if (this.buffer.length > 0) {
+                const message = this.processLine(this.buffer);
+                this.buffer = "";
+                if (message) messages.push(message);
+            }
+            const pending = this.dispatch();
+            if (pending) messages.push(pending);
+        }
+
+        return messages;
     }
 
-    return { chunks, remainingBuffer };
+    private nextLineEnding(
+        flush: boolean,
+    ): { index: number; length: number } | null {
+        for (let index = 0; index < this.buffer.length; index += 1) {
+            const character = this.buffer[index];
+            if (character === "\n") return { index, length: 1 };
+            if (character !== "\r") continue;
+            if (index + 1 === this.buffer.length && !flush) return null;
+            return {
+                index,
+                length: this.buffer[index + 1] === "\n" ? 2 : 1,
+            };
+        }
+        return null;
+    }
+
+    private processLine(line: string): SSEMessage | null {
+        if (line === "") return this.dispatch();
+        if (line.startsWith(":")) {
+            this.comments.push(line.slice(1).replace(/^ /, ""));
+            return null;
+        }
+
+        const separator = line.indexOf(":");
+        const field = separator < 0 ? line : line.slice(0, separator);
+        const rawValue = separator < 0 ? "" : line.slice(separator + 1);
+        const value = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
+        if (field === "data") this.data.push(value);
+        if (field === "event") this.event = value;
+        return null;
+    }
+
+    private dispatch(): SSEMessage | null {
+        if (this.data.length === 0 && this.comments.length === 0 && !this.event)
+            return null;
+        const message = {
+            data: this.data.join("\n"),
+            comments: this.comments,
+            ...(this.event ? { event: this.event } : {}),
+        };
+        this.data = [];
+        this.comments = [];
+        this.event = undefined;
+        return message;
+    }
+}
+
+const AGENT_EVENT_COMMENT_PREFIX = "pollinations-agent-event/v1 ";
+
+function isAgentEvent(value: unknown): value is PollinationsAgentEvent {
+    if (!value || typeof value !== "object") return false;
+    const event = value as Record<string, unknown>;
+    if (
+        event.type === "tool.started" ||
+        event.type === "tool.completed" ||
+        event.type === "tool.failed"
+    ) {
+        return (
+            typeof event.call_id === "string" && typeof event.name === "string"
+        );
+    }
+    if (
+        event.type !== "resource.created" &&
+        event.type !== "resource.finalized"
+    )
+        return false;
+    return (
+        typeof event.call_id === "string" &&
+        typeof event.url === "string" &&
+        (event.kind === "image" ||
+            event.kind === "video" ||
+            event.kind === "audio") &&
+        (event.media_type === undefined ||
+            typeof event.media_type === "string") &&
+        (event.name === undefined || typeof event.name === "string")
+    );
+}
+
+function parseAgentComment(comment: string): PollinationsAgentEvent | null {
+    if (!comment.startsWith(AGENT_EVENT_COMMENT_PREFIX)) return null;
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(comment.slice(AGENT_EVENT_COMMENT_PREFIX.length));
+    } catch {
+        throw new PollinationsError(
+            "Managed-agent stream contained invalid event JSON",
+            "INVALID_STREAM",
+            502,
+        );
+    }
+    if (!isAgentEvent(parsed)) {
+        throw new PollinationsError(
+            "Managed-agent stream contained an invalid event",
+            "INVALID_STREAM",
+            502,
+        );
+    }
+    return parsed;
+}
+
+function parseChatStreamData(data: string): ChatStreamChunk {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(data);
+    } catch {
+        throw new PollinationsError(
+            "Chat stream contained invalid JSON",
+            "INVALID_STREAM",
+            502,
+        );
+    }
+    if (parsed && typeof parsed === "object" && "error" in parsed) {
+        const error = (parsed as { error?: unknown }).error;
+        const message =
+            error &&
+            typeof error === "object" &&
+            "message" in error &&
+            typeof error.message === "string"
+                ? error.message
+                : "Chat stream failed";
+        throw new PollinationsError(message, "STREAM_ERROR", 502);
+    }
+    return parsed as ChatStreamChunk;
 }
 
 /**
@@ -850,22 +975,13 @@ export class Pollinations {
     }
 
     /**
-     * Create a streaming chat completion.
-     *
-     * @example
-     * ```ts
-     * for await (const chunk of pollinations.chatStream([
-     *   { role: 'user', content: 'Write a poem' }
-     * ])) {
-     *   const content = chunk.choices[0]?.delta?.content;
-     *   if (content) process.stdout.write(content);
-     * }
-     * ```
+     * Create a streaming chat completion with optional managed-agent metadata.
+     * Standard OpenAI chunks and Pollinations events are distinct union members.
      */
-    async *chatStream(
+    async *chatEventStream(
         messages: Message[],
         options: Omit<ChatOptions, "stream"> = {},
-    ): AsyncGenerator<ChatStreamChunk> {
+    ): AsyncGenerator<ChatStreamEvent> {
         if (!messages || !Array.isArray(messages) || messages.length === 0) {
             throw new PollinationsError(
                 "Messages array is required and cannot be empty",
@@ -896,47 +1012,83 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
-        let buffer = "";
+        const sseDecoder = new SSEDecoder();
+        let finished = false;
+        const cancelReader = () => {
+            void reader.cancel().catch(() => undefined);
+        };
+        options.signal?.addEventListener("abort", cancelReader, { once: true });
+
+        const eventsFrom = function* (
+            messages: SSEMessage[],
+        ): Generator<ChatStreamEvent> {
+            for (const message of messages) {
+                for (const comment of message.comments) {
+                    const agentEvent = parseAgentComment(comment);
+                    if (agentEvent) yield { type: "agent", event: agentEvent };
+                }
+                if (!message.data || finished) continue;
+                if (message.data.trim() === "[DONE]") {
+                    finished = true;
+                    continue;
+                }
+                yield {
+                    type: "chunk",
+                    chunk: parseChatStreamData(message.data),
+                };
+            }
+        };
 
         try {
+            if (options.signal?.aborted) await reader.cancel();
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<unknown>(buffer, (data) => {
-                    try {
-                        return JSON.parse(data) as unknown;
-                    } catch {
-                        throw new PollinationsError(
-                            "Invalid JSON in chat completion stream",
-                            "MALFORMED_STREAM",
-                            502,
-                        );
-                    }
-                });
-
-                buffer = result.remainingBuffer;
-                for (const chunk of result.chunks) {
-                    const error = chatStreamError(chunk);
-                    if (error) throw error;
-                    if (
-                        !chunk ||
-                        typeof chunk !== "object" ||
-                        !("choices" in chunk) ||
-                        !Array.isArray((chunk as { choices: unknown }).choices)
-                    ) {
-                        throw new PollinationsError(
-                            "Invalid chat completion stream event",
-                            "MALFORMED_STREAM",
-                            502,
-                        );
-                    }
-                    yield chunk as ChatStreamChunk;
-                }
+                const text = decoder.decode(value, { stream: true });
+                yield* eventsFrom(sseDecoder.push(text));
             }
+            if (options.signal?.aborted) {
+                throw new PollinationsError(
+                    "Request was cancelled",
+                    "CANCELLED",
+                    499,
+                );
+            }
+            yield* eventsFrom(sseDecoder.push(decoder.decode(), true));
+        } catch (error) {
+            if (options.signal?.aborted) {
+                throw new PollinationsError(
+                    "Request was cancelled",
+                    "CANCELLED",
+                    499,
+                );
+            }
+            throw error;
         } finally {
+            options.signal?.removeEventListener("abort", cancelReader);
             reader.releaseLock();
+        }
+    }
+
+    /**
+     * Create a streaming chat completion.
+     *
+     * @example
+     * ```ts
+     * for await (const chunk of pollinations.chatStream([
+     *   { role: 'user', content: 'Write a poem' }
+     * ])) {
+     *   const content = chunk.choices[0]?.delta?.content;
+     *   if (content) process.stdout.write(content);
+     * }
+     * ```
+     */
+    async *chatStream(
+        messages: Message[],
+        options: Omit<ChatOptions, "stream"> = {},
+    ): AsyncGenerator<ChatStreamChunk> {
+        for await (const event of this.chatEventStream(messages, options)) {
+            if (event.type === "chunk") yield event.chunk;
         }
     }
 

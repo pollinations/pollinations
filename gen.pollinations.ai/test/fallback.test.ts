@@ -328,6 +328,7 @@ describe("isRetryableFallbackError", () => {
     it("fails over on a rate-limited or broken upstream", () => {
         expect(isRetryableFallbackError(textFailure(429))).toBe(true);
         expect(isRetryableFallbackError(textFailure(503))).toBe(true);
+        expect(isRetryableFallbackError(textFailure(524))).toBe(true);
         expect(isRetryableFallbackError(new HttpError("down", 500))).toBe(true);
         expect(isRetryableFallbackError(new HttpError("no quota", 402))).toBe(
             true,

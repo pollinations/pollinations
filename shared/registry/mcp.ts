@@ -16,7 +16,6 @@ export const MCP_USAGE_HEADERS = {
 // Gen overwrites this header before forwarding a user-scoped MCP request.
 // Private MCP Workers use it to select the caller's connected accounts.
 export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
-export const MCP_TOOLKIT_HEADER = "x-pollinations-mcp-toolkit";
 
 type McpServerDefinitionBase = {
     id: string;
@@ -25,7 +24,7 @@ type McpServerDefinitionBase = {
     binding: McpBindingName;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
-    toolkit?: string;
+    accountPath?: string;
 };
 
 type McpPricingDefinition = {
@@ -154,38 +153,15 @@ export const MCP_SERVERS = [
         },
     },
     {
-        id: "github",
-        name: "GitHub",
+        id: "composio",
+        name: "Composio",
         description:
-            "Read and manage repositories, files, issues, pull requests, and Actions.",
+            "Connect agents to Gmail, Slack, GitHub, Drive, and hundreds of other apps.",
         binding: "COMPOSIO_MCP",
         billing: "usage_receipt",
         provider: "composio",
         userScoped: true,
-        toolkit: "github",
-        pricing: COMPOSIO_MCP_PRICING,
-    },
-    {
-        id: "discord",
-        name: "Discord",
-        description:
-            "Read channels, send messages, and manage Discord communities.",
-        binding: "COMPOSIO_MCP",
-        billing: "usage_receipt",
-        provider: "composio",
-        userScoped: true,
-        toolkit: "discord",
-        pricing: COMPOSIO_MCP_PRICING,
-    },
-    {
-        id: "connected-apps",
-        name: "Connected Apps",
-        description:
-            "Find and use actions across the apps connected to your Pollinations account.",
-        binding: "COMPOSIO_MCP",
-        billing: "usage_receipt",
-        provider: "composio",
-        userScoped: true,
+        accountPath: "/account#connected-apps",
         pricing: COMPOSIO_MCP_PRICING,
     },
 ] as const satisfies readonly McpServerDefinition[];

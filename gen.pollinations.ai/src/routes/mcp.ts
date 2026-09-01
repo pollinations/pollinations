@@ -10,7 +10,6 @@ import {
     getMcpPricingInfo,
     getMcpServerDefinition,
     MCP_SERVERS,
-    MCP_TOOLKIT_HEADER,
     MCP_USAGE_HEADERS,
     MCP_USER_ID_HEADER,
     type McpServerDefinition,
@@ -39,10 +38,8 @@ function requestForMcp(
         headers.delete("authorization");
     }
     headers.delete("cookie");
-    headers.delete(MCP_TOOLKIT_HEADER);
     headers.delete(MCP_USER_ID_HEADER);
     if (server.userScoped) headers.set(MCP_USER_ID_HEADER, userId);
-    if (server.toolkit) headers.set(MCP_TOOLKIT_HEADER, server.toolkit);
     for (const header of Object.values(MCP_USAGE_HEADERS)) {
         headers.delete(header);
     }

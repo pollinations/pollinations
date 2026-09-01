@@ -279,9 +279,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                                     request.headers.has("cookie") ||
                                     !request.headers.has(
                                         "x-pollinations-user-id",
-                                    ) ||
-                                    !request.headers.has(
-                                        "x-pollinations-mcp-toolkit",
                                     )
                                 ) {
                                     return new Response(
@@ -296,9 +293,6 @@ export default defineWorkersConfig(async ({ mode }) => {
                                 const identity = request.headers.get(
                                     "x-pollinations-user-id",
                                 );
-                                const toolkit = request.headers.get(
-                                    "x-pollinations-mcp-toolkit",
-                                );
                                 return Response.json({
                                     jsonrpc: payload.jsonrpc,
                                     id: payload.id,
@@ -306,7 +300,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                                         content: [
                                             {
                                                 type: "text",
-                                                text: `${identity}:${toolkit}`,
+                                                text: identity,
                                             },
                                         ],
                                     },

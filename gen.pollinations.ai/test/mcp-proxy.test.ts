@@ -83,51 +83,11 @@ test("lists the MCP servers exposed through Gen", async () => {
                 },
             },
             {
-                id: "github",
-                name: "GitHub",
+                id: "composio",
+                name: "Composio",
                 description:
-                    "Read and manage repositories, files, issues, pull requests, and Actions.",
-                url: "https://gen.pollinations.ai/mcp/github",
-                pricing: {
-                    rates: [
-                        {
-                            name: "composio.tool_call.v1",
-                            label: "Tool call",
-                            kind: "tool_call",
-                            price: "0.0005",
-                            currency: "pollen",
-                            quantity: 1,
-                            unit: "call",
-                        },
-                    ],
-                },
-            },
-            {
-                id: "discord",
-                name: "Discord",
-                description:
-                    "Read channels, send messages, and manage Discord communities.",
-                url: "https://gen.pollinations.ai/mcp/discord",
-                pricing: {
-                    rates: [
-                        {
-                            name: "composio.tool_call.v1",
-                            label: "Tool call",
-                            kind: "tool_call",
-                            price: "0.0005",
-                            currency: "pollen",
-                            quantity: 1,
-                            unit: "call",
-                        },
-                    ],
-                },
-            },
-            {
-                id: "connected-apps",
-                name: "Connected Apps",
-                description:
-                    "Find and use actions across the apps connected to your Pollinations account.",
-                url: "https://gen.pollinations.ai/mcp/connected-apps",
+                    "Connect agents to Gmail, Slack, GitHub, Drive, and hundreds of other apps.",
+                url: "https://gen.pollinations.ai/mcp/composio",
                 pricing: {
                     rates: [
                         {
@@ -254,17 +214,16 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
     });
 });
 
-test("routes GitHub with its registry toolkit and authenticated user", async () => {
+test("routes Composio with the authenticated user", async () => {
     const { key, userId } = await createTestApiKey();
     const response = await SELF.fetch(
-        "https://gen.pollinations.ai/mcp/github",
+        "https://gen.pollinations.ai/mcp/composio",
         {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${key}`,
                 Cookie: "session=private",
                 "x-pollinations-user-id": "spoofed-user",
-                "x-pollinations-mcp-toolkit": "discord",
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(MCP_REQUEST),
@@ -275,7 +234,7 @@ test("routes GitHub with its registry toolkit and authenticated user", async () 
     expect(await response.json()).toEqual({
         jsonrpc: "2.0",
         id: 1,
-        result: { content: [{ type: "text", text: `${userId}:github` }] },
+        result: { content: [{ type: "text", text: userId }] },
     });
 });
 

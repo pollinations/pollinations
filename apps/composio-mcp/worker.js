@@ -1,20 +1,11 @@
-import { createMcpHandler, McpServer } from "@modelcontextprotocol/server";
-import { z } from "zod";
 import { withMcpUsageHeaders } from "../../shared/mcp-usage.ts";
 import {
     COMPOSIO_TOOL_CALL_PRICE,
-    MCP_SERVERS,
-    MCP_TOOLKIT_HEADER,
     MCP_USER_ID_HEADER,
 } from "../../shared/registry/mcp.ts";
 
 const COMPOSIO_API_URL = "https://backend.composio.dev/api/v3.1";
 const COMPOSIO_TOOL_CALL_RATE = "composio.tool_call.v1";
-const SPECIALIZED_TOOLKITS = new Set(
-    MCP_SERVERS.filter(({ binding }) => binding === "COMPOSIO_MCP")
-        .map(({ toolkit }) => toolkit)
-        .filter(Boolean),
-);
 
 class ComposioFailure extends Error {
     constructor(status, message, cost = 0) {
@@ -28,14 +19,6 @@ function requireUserId(request) {
     const userId = request.headers.get(MCP_USER_ID_HEADER);
     if (!userId) throw new ComposioFailure(401, "Missing Pollinations user");
     return userId;
-}
-
-function selectedToolkit(request) {
-    const toolkit = request.headers.get(MCP_TOOLKIT_HEADER);
-    if (toolkit && !SPECIALIZED_TOOLKITS.has(toolkit)) {
-        throw new ComposioFailure(404, "MCP server not found");
-    }
-    return toolkit;
 }
 
 async function callComposio(path, env, fetchImpl, init = {}) {
@@ -176,135 +159,6 @@ async function deleteConnection(userId, connectionId, env, fetchImpl) {
     );
 }
 
-async function findTools(toolkit, query, env, fetchImpl) {
-    const params = new URLSearchParams({
-        toolkit_slug: toolkit,
-        query,
-        limit: "10",
-    });
-    const body = await callComposio(`/tools?${params}`, env, fetchImpl);
-    const tools = Array.isArray(body?.items) ? body.items : [];
-    return tools.map((tool) => ({
-        tool: tool.slug,
-        description: tool.description || tool.human_description,
-        arguments: tool.input_parameters,
-    }));
-}
-
-async function executeTool(userId, toolkit, tool, args, env, fetchImpl) {
-    if (!tool.startsWith(`${toolkit.toUpperCase()}_`)) {
-        throw new ComposioFailure(400, `Unknown ${toolkit} tool`);
-    }
-    const body = await callComposio(
-        `/tools/execute/${encodeURIComponent(tool)}`,
-        env,
-        fetchImpl,
-        {
-            method: "POST",
-            body: JSON.stringify({
-                user_id: userId,
-                version: "latest",
-                arguments: args,
-            }),
-        },
-    );
-    if (body?.successful === false) {
-        throw new ComposioFailure(
-            422,
-            body.error || "Connected app tool failed",
-            COMPOSIO_TOOL_CALL_PRICE,
-        );
-    }
-    return body;
-}
-
-function textResult(value) {
-    return {
-        content: [
-            {
-                type: "text",
-                text: typeof value === "string" ? value : JSON.stringify(value),
-            },
-        ],
-    };
-}
-
-async function runBilled(reportUsage, tool, run) {
-    try {
-        const result = await run();
-        reportUsage({
-            cost: COMPOSIO_TOOL_CALL_PRICE,
-            tool,
-            status: 200,
-            adjustmentId: COMPOSIO_TOOL_CALL_RATE,
-            adjustmentUnits: 1,
-        });
-        return result;
-    } catch (error) {
-        const failure =
-            error instanceof ComposioFailure
-                ? error
-                : new ComposioFailure(502, "Connected app tool failed");
-        reportUsage({
-            cost: failure.cost,
-            tool,
-            status: failure.status,
-            adjustmentId: COMPOSIO_TOOL_CALL_RATE,
-            adjustmentUnits: failure.cost > 0 ? 1 : 0,
-            error: failure.message,
-        });
-        throw failure;
-    }
-}
-
-function buildSpecializedServer(userId, toolkit, env, fetchImpl, reportUsage) {
-    const toolNamespace = toolkit.replaceAll("-", "_");
-    const findToolName = `find_${toolNamespace}_tools`;
-    const runToolName = `run_${toolNamespace}_tool`;
-    const server = new McpServer(
-        { name: `pollinations-${toolkit}-mcp`, version: "0.1.0" },
-        {
-            instructions: `Use ${toolkit} on behalf of the current Pollinations user. Find the right action, inspect its arguments, then run it.`,
-            capabilities: { tools: {} },
-        },
-    );
-
-    server.registerTool(
-        findToolName,
-        {
-            description: `Find ${toolkit} actions for a task. Returns action names, descriptions, and arguments.`,
-            inputSchema: z.object({ query: z.string().min(1) }),
-        },
-        async ({ query }) =>
-            textResult(await findTools(toolkit, query, env, fetchImpl)),
-    );
-
-    server.registerTool(
-        runToolName,
-        {
-            description: `Run an action returned by ${findToolName} using the current user's connected ${toolkit} account.`,
-            inputSchema: z.object({
-                tool: z.string().min(1),
-                arguments: z.record(z.string(), z.unknown()).default({}),
-            }),
-        },
-        ({ tool, arguments: args }) =>
-            runBilled(reportUsage, tool, async () =>
-                textResult(
-                    await executeTool(
-                        userId,
-                        toolkit,
-                        tool,
-                        args,
-                        env,
-                        fetchImpl,
-                    ),
-                ),
-            ),
-    );
-    return server;
-}
-
 function encodeSession(sessionId, transportSessionId) {
     return btoa(JSON.stringify([sessionId, transportSessionId || null]))
         .replaceAll("+", "-")
@@ -392,7 +246,6 @@ async function proxyRouter(request, userId, payload, env, fetchImpl) {
 
     const headers = new Headers(request.headers);
     headers.set("x-api-key", env.COMPOSIO_API_KEY);
-    headers.delete(MCP_TOOLKIT_HEADER);
     headers.delete(MCP_USER_ID_HEADER);
     if (transportSessionId) {
         headers.set("mcp-session-id", transportSessionId);
@@ -490,38 +343,17 @@ export function createWorker({ fetchImpl }) {
                         fetchImpl,
                     );
                 }
-                const toolkit = selectedToolkit(request);
                 const payload = await request
                     .clone()
                     .json()
                     .catch(() => null);
-                if (!toolkit) {
-                    return await proxyRouter(
-                        request,
-                        userId,
-                        payload,
-                        env,
-                        fetchImpl,
-                    );
-                }
-
-                let usage;
-                const handler = createMcpHandler(
-                    () =>
-                        buildSpecializedServer(
-                            userId,
-                            toolkit,
-                            env,
-                            fetchImpl,
-                            (reportedUsage) => {
-                                usage = reportedUsage;
-                            },
-                        ),
-                    { onerror: (error) => console.error(error) },
+                return await proxyRouter(
+                    request,
+                    userId,
+                    payload,
+                    env,
+                    fetchImpl,
                 );
-                const response = await handler.fetch(request);
-                const body = await response.arrayBuffer();
-                return withMcpUsageHeaders(new Response(body, response), usage);
             } catch (error) {
                 return jsonError(error);
             }

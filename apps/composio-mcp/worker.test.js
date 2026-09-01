@@ -1,11 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
-    Client,
-    StreamableHTTPClientTransport,
-} from "@modelcontextprotocol/client";
-import {
-    MCP_TOOLKIT_HEADER,
     MCP_USAGE_HEADERS,
     MCP_USER_ID_HEADER,
 } from "../../shared/registry/mcp.ts";
@@ -21,18 +16,6 @@ function createHarness() {
                 new Headers(init.headers).get("x-api-key"),
                 "test-key",
             );
-
-            if (parsed.pathname.endsWith("/connected_accounts")) {
-                return Response.json({
-                    items: [
-                        {
-                            id: "ca_github",
-                            toolkit: { slug: "github" },
-                            status: "ACTIVE",
-                        },
-                    ],
-                });
-            }
             if (
                 parsed.pathname.endsWith("/tool_router/session") &&
                 init.method === "POST"
@@ -87,109 +70,11 @@ function createHarness() {
                     { headers },
                 );
             }
-
-            if (parsed.pathname.endsWith("/tools")) {
-                return Response.json({
-                    items: [
-                        {
-                            slug: "GITHUB_CREATE_AN_ISSUE",
-                            toolkit: { slug: "github" },
-                            description: "Create an issue",
-                            input_parameters: {
-                                owner: { type: "string", required: true },
-                            },
-                        },
-                    ],
-                });
-            }
-            if (parsed.pathname.includes("/tools/execute/")) {
-                return Response.json({ successful: true, data: { id: 42 } });
-            }
             return new Response("Not found", { status: 404 });
         },
     });
     return { calls, env: { COMPOSIO_API_KEY: "test-key" }, worker };
 }
-
-async function connect(worker, env, toolkit, responses = []) {
-    const client = new Client(
-        { name: "composio-mcp-test", version: "0.0.1" },
-        { capabilities: {} },
-    );
-    const transport = new StreamableHTTPClientTransport(
-        new URL("https://composio.internal"),
-        {
-            fetch: async (input, init) => {
-                const original =
-                    input instanceof Request ? input : new Request(input, init);
-                const headers = new Headers(original.headers);
-                headers.set(MCP_USER_ID_HEADER, "user-1");
-                headers.set(MCP_TOOLKIT_HEADER, toolkit);
-                const response = await worker.fetch(
-                    new Request(original, { headers }),
-                    env,
-                );
-                responses.push(response.clone());
-                return response;
-            },
-        },
-    );
-    await client.connect(transport);
-    return client;
-}
-
-test("exposes only GitHub-scoped discovery and execution tools", async () => {
-    const { calls, env, worker } = createHarness();
-    const client = await connect(worker, env, "github");
-    const { tools } = await client.listTools();
-    assert.deepEqual(
-        tools.map(({ name }) => name),
-        ["find_github_tools", "run_github_tool"],
-    );
-
-    const result = await client.callTool({
-        name: "find_github_tools",
-        arguments: { query: "create an issue" },
-    });
-    assert.match(result.content[0].text, /GITHUB_CREATE_AN_ISSUE/);
-    assert.equal(calls[0].url.searchParams.get("toolkit_slug"), "github");
-    await client.close();
-});
-
-test("executes only tools belonging to the selected toolkit and reports usage", async () => {
-    const { env, worker } = createHarness();
-    const responses = [];
-    const client = await connect(worker, env, "github", responses);
-    const result = await client.callTool({
-        name: "run_github_tool",
-        arguments: {
-            tool: "GITHUB_CREATE_AN_ISSUE",
-            arguments: { owner: "pollinations" },
-        },
-    });
-    assert.match(result.content[0].text, /"id":42/);
-    assert.equal(
-        responses.at(-1).headers.get(MCP_USAGE_HEADERS.cost),
-        "0.0005",
-    );
-    assert.equal(
-        responses.at(-1).headers.get(MCP_USAGE_HEADERS.adjustmentId),
-        "composio.tool_call.v1",
-    );
-    await client.close();
-});
-
-test("rejects a tool from another connected app", async () => {
-    const { env, worker } = createHarness();
-    const client = await connect(worker, env, "github");
-    const result = await client.callTool({
-        name: "run_github_tool",
-        arguments: { tool: "DISCORD_SEND_MESSAGE", arguments: {} },
-    });
-    assert.equal(result.isError, true);
-    assert.match(result.content[0].text, /Unknown github tool/);
-    await client.close();
-});
 
 test("thin-proxies the generic Composio router and reports executed actions", async () => {
     const { calls, env, worker } = createHarness();

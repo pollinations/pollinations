@@ -28,7 +28,7 @@ import { createMiddleware } from "hono/factory";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
-import { applySafety, withSafetyHeaders } from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { arrayBufferToBase64 } from "@/util.ts";
 
 // --- Helpers ---
@@ -237,7 +237,7 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
         const model = c.var.model.resolved;
 
         const resolved = resolveParams(body);
-        const safePrompt = await applySafety(
+        const safePrompt = await applySafetyToInput(
             c,
             body.prompt,
             body.safe as SafeValue,
@@ -337,7 +337,7 @@ export async function handleImageGeneration(c: Context<Env>) {
 export async function handleImageEdit(c: Context<Env>) {
     const { prompt, imageUrls, size, quality, seed, safe, extra } =
         await parseEditInput(c);
-    const safePrompt = await applySafety(c, prompt, safe);
+    const safePrompt = await applySafetyToInput(c, prompt, safe);
     const resolved = resolveParams({ size, quality, seed });
 
     const response = await generateImageOrVideoResponse(c, safePrompt, {

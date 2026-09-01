@@ -32,16 +32,39 @@ export type SafetyVariables = {
     safetyHeaders?: Record<string, string>;
 };
 
-export async function applySafety(
+type SafetyInput = string | string[] | ChatBody;
+
+type PreparedSafetyInput = {
+    texts: string[];
+    safe?: SafeValue;
+    rebuild: (safeTexts: string[]) => SafetyInput;
+};
+
+export function applySafetyToInput(
     c: SafetyContext,
-    text: string,
-    bodySafe?: SafeValue,
-): Promise<string> {
-    const [safeText] = await applySafetyToTexts(c, [text], bodySafe);
-    return safeText;
+    input: string,
+    safe?: SafeValue,
+): Promise<string>;
+export function applySafetyToInput(
+    c: SafetyContext,
+    input: string[],
+    safe?: SafeValue,
+): Promise<string[]>;
+export function applySafetyToInput(
+    c: SafetyContext,
+    input: ChatBody,
+): Promise<ChatBody>;
+export async function applySafetyToInput(
+    c: SafetyContext,
+    input: SafetyInput,
+    safe?: SafeValue,
+): Promise<SafetyInput> {
+    const prepared = prepareSafetyInput(input, safe);
+    const safeTexts = await checkSafetyTexts(c, prepared.texts, prepared.safe);
+    return prepared.rebuild(safeTexts);
 }
 
-export async function applySafetyToTexts(
+async function checkSafetyTexts(
     c: SafetyContext,
     texts: string[],
     bodySafe?: SafeValue,
@@ -187,18 +210,34 @@ function setSafetyHeader(c: SafetyContext, name: string, value: string): void {
     c.set(SAFETY_HEADERS_KEY, current);
 }
 
-export async function applySafetyToChatRequest(
-    c: SafetyContext,
-    body: ChatBody,
-): Promise<ChatBody> {
-    const safeValue = body.safe as SafeValue;
-    const targets = collectChatTextTargets(body);
-    const safeTexts = await applySafetyToTexts(
-        c,
-        targets.map((target) => target.text),
-        safeValue,
-    );
+function prepareSafetyInput(
+    input: SafetyInput,
+    safe?: SafeValue,
+): PreparedSafetyInput {
+    if (typeof input === "string") {
+        return {
+            texts: [input],
+            safe,
+            rebuild: ([safeText]) => safeText,
+        };
+    }
+    if (Array.isArray(input)) {
+        return { texts: input, safe, rebuild: (safeTexts) => safeTexts };
+    }
 
+    const targets = collectChatTextTargets(input);
+    return {
+        texts: targets.map((target) => target.text),
+        safe: input.safe as SafeValue,
+        rebuild: (safeTexts) => rebuildChatInput(input, targets, safeTexts),
+    };
+}
+
+function rebuildChatInput(
+    body: ChatBody,
+    targets: ChatTextTarget[],
+    safeTexts: string[],
+): ChatBody {
     let nextMessages = body.messages;
     let nextSystem = body.system;
     let changed = false;

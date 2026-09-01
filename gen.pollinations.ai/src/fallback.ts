@@ -43,7 +43,7 @@ export function attachFallbackTarget<T extends object>(
  * survive.
  */
 export const FALLBACK_ON_STATUS_CODES = [
-    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
+    401, 402, 403, 404, 408, 429, 500, 502, 503, 504, 524,
 ];
 
 /**

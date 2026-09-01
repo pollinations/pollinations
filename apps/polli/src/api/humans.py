@@ -26,6 +26,7 @@ _MAX_DISCORD_CONTENT = 1_900
 
 class HumanReply(Protocol):
     content: str
+    author: discord.abc.User
 
 
 class HumanGateway(Protocol):
@@ -181,6 +182,7 @@ class HumanService:
                 "completion_tokens": completion_tokens,
                 "total_tokens": prompt_tokens + completion_tokens,
             },
+            "_pollinations": {"responder": {"discordId": str(reply.author.id)}},
         }
 
     async def _thread_id_for_history(self, caller_id: str, messages: list[dict]) -> int | None:

@@ -912,4 +912,60 @@ describe("BYOP markup", () => {
         expect(communityModelReward).toBeNull();
         expect((await getUserBalance(db, ownerId)).tierBalance).toBe(2);
     });
+
+    it("charges a responder calling the model without rewarding themselves", async () => {
+        const responderId = await createBalanceUser("human-responder", {
+            tier: 2,
+            pack: 0,
+        });
+        const ownerId = await createBalanceUser("community-owner");
+
+        const { communityModelReward, billedPrice } =
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                totalPrice: 1,
+                userId: responderId,
+                communityModelReward: {
+                    userId: responderId,
+                    ownerUserId: ownerId,
+                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                    basePrice: 0.8,
+                },
+            });
+
+        expect(billedPrice).toBe(1);
+        expect(communityModelReward).toBeNull();
+        expect((await getUserBalance(db, responderId)).tierBalance).toBe(1);
+    });
+
+    it("credits a human responder 75% of output price only", async () => {
+        const payerId = await createBalanceUser("payer", {
+            tier: 2,
+            pack: 0,
+        });
+        const ownerId = await createBalanceUser("community-owner");
+        const responderId = await createBalanceUser("human-responder");
+
+        const { communityModelReward, billedPrice } =
+            await handleBalanceDeduction({
+                db,
+                isBilledUsage: true,
+                // Input (0.2) + output (0.8) is billed normally.
+                totalPrice: 1,
+                userId: payerId,
+                communityModelReward: {
+                    userId: responderId,
+                    ownerUserId: ownerId,
+                    rewardRate: COMMUNITY_MODEL_REWARD_RATE,
+                    basePrice: 0.8,
+                },
+            });
+
+        expect(billedPrice).toBe(1);
+        expect(communityModelReward?.credit).toBe(0.6);
+        expect((await getUserBalance(db, payerId)).tierBalance).toBe(1);
+        expect((await getUserBalance(db, ownerId)).tierBalance).toBe(0);
+        expect((await getUserBalance(db, responderId)).tierBalance).toBe(0.6);
+    });
 });

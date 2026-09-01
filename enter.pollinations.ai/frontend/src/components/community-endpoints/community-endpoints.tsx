@@ -463,7 +463,7 @@ export function CommunityEndpoints({
                                         className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
                                     >
                                         <GlobeIcon className="h-4 w-4" />
-                                        Connect Endpoint Agent
+                                        Connect External Agent
                                     </Button>
                                 }
                             />

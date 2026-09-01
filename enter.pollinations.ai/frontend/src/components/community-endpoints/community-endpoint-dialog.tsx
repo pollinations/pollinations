@@ -376,7 +376,7 @@ export function CommunityEndpointDialog({
                     {isEndpointAgent
                         ? isEdit
                             ? "Edit Endpoint Agent"
-                            : "Add Endpoint Agent"
+                            : "Connect External Agent"
                         : isEdit
                           ? "Edit Model"
                           : "Add Model"}

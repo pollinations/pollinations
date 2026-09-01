@@ -43,7 +43,7 @@ If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides t
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
 | Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
-| Connect a coding harness to Pollinations | `polli harness <dsh\|opencode\|pi> on` (available adapters: `polli harness --help`) |
+| Connect a coding harness to Pollinations | `polli harness <dsh\|opencode\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup

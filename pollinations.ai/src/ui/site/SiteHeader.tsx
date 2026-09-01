@@ -5,7 +5,6 @@ import {
     ColorModeToggle,
     DiscordIcon,
     Drawer,
-    Dropdown,
     DropdownItem,
     GitHubIcon,
     InstagramIcon,
@@ -31,6 +30,12 @@ const NAV = [
     { to: "/community", label: "Community" },
 ] as const;
 
+const LEGAL = [
+    { to: "/terms", label: "Terms" },
+    { to: "/privacy", label: "Privacy" },
+    { to: "/refunds", label: "Refunds" },
+] as const;
+
 const EXTERNAL = [
     // Not docs.pollinations.ai — that is the investor data room.
     { href: "https://gen.pollinations.ai/docs", label: "Docs" },
@@ -39,11 +44,6 @@ const EXTERNAL = [
         href: "https://discord.gg/pollinations-ai-885844321461485618",
         label: "Discord",
     },
-] as const;
-
-const DESKTOP_UTILITIES = [
-    { ...EXTERNAL[1], Icon: GitHubIcon },
-    { ...EXTERNAL[2], Icon: DiscordIcon },
 ] as const;
 
 const SOCIAL = [
@@ -82,10 +82,9 @@ const maskStyle = (
 };
 const MARK_STYLE = maskStyle(markUrl, 32, 32);
 const MOBILE_MENU_MARK_STYLE = maskStyle(markUrl, 26, 26);
-const DESKTOP_LOCKUP_STYLE = maskStyle(lockupUrl, 244, 30);
 const DRAWER_MENU_LOCKUP_STYLE = maskStyle(lockupUrl, 174, 22);
 const DESKTOP_ACTION_CLASS =
-    "hidden h-9 w-9 shrink-0 bg-surface-opaque p-0 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[700px]:inline-flex min-[800px]:w-auto min-[800px]:gap-1.5 min-[800px]:px-3 motion-reduce:hover:translate-y-0";
+    "hidden h-9 shrink-0 gap-1.5 bg-surface-opaque px-3 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[780px]:inline-flex motion-reduce:hover:translate-y-0";
 
 const isCurrent = (to: string, pathname: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -131,8 +130,7 @@ function MenuUtilities({
                     </Chip>
                 )}
             </DropdownItem>
-            <span className="mx-2 my-1 h-px bg-theme-border" />
-            <footer className="flex items-center justify-between gap-3 px-2 py-2">
+            <footer className="mt-1 flex items-center gap-3 px-2 py-2">
                 <div className="flex items-center gap-2">
                     {SOCIAL.map(({ href, label, Icon }) => (
                         <Button
@@ -151,7 +149,6 @@ function MenuUtilities({
                         </Button>
                     ))}
                 </div>
-                <ColorModeToggle />
             </footer>
         </>
     );
@@ -159,11 +156,10 @@ function MenuUtilities({
 
 export function SiteHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
     const { data: repoStars } = useRepoStars();
     const displayedRepoStars = compact(repoStars ?? REPO_STARS_FALLBACK);
     const { data: discordOnline } = useDiscordPresence({
-        enabled: mobileMenuOpen || menuOpen,
+        enabled: mobileMenuOpen,
         refreshMs: 30_000,
     });
     const scrolled = useScrolled();
@@ -173,17 +169,17 @@ export function SiteHeader() {
     });
 
     // The header must not slide away while its own menu is open.
-    const hidden = scrolledAway && !mobileMenuOpen && !menuOpen;
+    const hidden = scrolledAway && !mobileMenuOpen;
 
     return (
         <header
-            className={`pointer-events-none fixed inset-x-0 top-0 z-30 bg-transparent py-4 transition-transform duration-300 focus-within:translate-y-0 min-[700px]:pointer-events-auto min-[700px]:sticky sm:py-5 motion-reduce:transition-none ${
+            className={`pointer-events-none fixed inset-x-0 top-0 z-30 bg-transparent py-4 transition-transform duration-300 focus-within:translate-y-0 min-[780px]:pointer-events-auto min-[780px]:sticky sm:py-5 motion-reduce:transition-none ${
                 hidden ? "-translate-y-full" : "translate-y-0"
             }`}
         >
             <div
                 aria-hidden="true"
-                className={`site-header-dissolve pointer-events-none absolute inset-x-0 top-0 hidden h-40 transition-opacity duration-300 min-[700px]:block motion-reduce:transition-none ${
+                className={`site-header-dissolve pointer-events-none absolute inset-x-0 top-0 hidden h-40 transition-opacity duration-300 min-[780px]:block motion-reduce:transition-none ${
                     scrolled && !hidden ? "opacity-100" : "opacity-0"
                 }`}
             />
@@ -192,10 +188,10 @@ export function SiteHeader() {
                     <div className="site-home-nav-group flex min-w-0 items-center gap-6">
                         <Link
                             to="/"
-                            className="site-home-logo group relative hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[700px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                            className="site-home-logo group relative hidden items-center rounded-md text-theme-text-strong transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-3 focus-visible:ring-theme-border min-[780px]:flex motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                             aria-label="pollinations.ai — home"
                         >
-                            <span className="relative inline-flex min-[1080px]:hidden">
+                            <span className="relative inline-flex">
                                 <span
                                     aria-hidden="true"
                                     style={MARK_STYLE}
@@ -208,27 +204,11 @@ export function SiteHeader() {
                                 <span
                                     aria-hidden="true"
                                     style={MARK_STYLE}
-                                    className="relative z-10 block shrink-0"
-                                />
-                            </span>
-                            <span className="relative hidden min-[1080px]:inline-flex">
-                                <span
-                                    aria-hidden="true"
-                                    style={DESKTOP_LOCKUP_STYLE}
-                                    className={`site-home-logo-accent absolute translate-x-[3px] translate-y-[3px] text-theme-bg-active transition-opacity duration-200 motion-reduce:transition-none ${
-                                        pathname === "/"
-                                            ? "opacity-100"
-                                            : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
-                                    }`}
-                                />
-                                <span
-                                    aria-hidden="true"
-                                    style={DESKTOP_LOCKUP_STYLE}
                                     className="relative z-10 block shrink-0"
                                 />
                             </span>
                         </Link>
-                        <nav className="hidden gap-1.5 min-[700px]:flex">
+                        <nav className="hidden gap-1.5 min-[780px]:flex">
                             {NAV.map((item) => {
                                 const active = isCurrent(item.to, pathname);
                                 return (
@@ -260,36 +240,8 @@ export function SiteHeader() {
                             className={DESKTOP_ACTION_CLASS}
                         >
                             <BookIcon className="h-4 w-4" />
-                            <span className="hidden min-[800px]:inline">
-                                Docs
-                            </span>
+                            <span>Docs</span>
                         </Button>
-                        {DESKTOP_UTILITIES.map((item) => {
-                            const { href, label, Icon } = item;
-                            const showStars = label === "GitHub";
-                            return (
-                                <Button
-                                    key={href}
-                                    as="a"
-                                    href={href}
-                                    size="sm"
-                                    aria-label={label}
-                                    title={label}
-                                    className={`site-external-link hidden h-9 shrink-0 min-[900px]:inline-flex ${
-                                        showStars
-                                            ? "w-auto gap-1.5 px-2"
-                                            : "w-9 p-0"
-                                    }`}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                    {showStars && (
-                                        <span className="text-xs tabular-nums">
-                                            {displayedRepoStars}
-                                        </span>
-                                    )}
-                                </Button>
-                            );
-                        })}
                         <Button
                             as="a"
                             href="https://enter.pollinations.ai"
@@ -299,16 +251,17 @@ export function SiteHeader() {
                             className={DESKTOP_ACTION_CLASS}
                         >
                             <LogInIcon className="h-4 w-4" />
-                            <span className="hidden min-[800px]:inline">
-                                Login
-                            </span>
+                            <span>Login</span>
                         </Button>
+                        <div className="hidden h-9 items-center min-[780px]:flex">
+                            <ColorModeToggle />
+                        </div>
                         <Button
                             aria-label="Open menu"
                             aria-expanded={mobileMenuOpen}
                             aria-controls="mobile-site-menu"
                             onClick={() => setMobileMenuOpen(true)}
-                            className="mt-2 h-11 min-w-[5.5rem] gap-2 px-3 min-[700px]:hidden [&>svg]:size-6"
+                            className="mt-2 h-11 min-w-[5.5rem] gap-2 px-3 min-[780px]:hidden [&>svg]:size-6"
                         >
                             <span
                                 aria-hidden="true"
@@ -326,7 +279,7 @@ export function SiteHeader() {
                             contentClassName="w-[min(18rem,78vw)] bg-surface-opaque"
                         >
                             <div className="flex min-h-0 flex-1 flex-col">
-                                <div className="flex justify-end pb-4 pl-4 pr-8 pt-6">
+                                <div className="flex justify-end pb-2 pl-4 pr-8 pt-6">
                                     <Button
                                         aria-label="Close menu"
                                         onClick={() => setMobileMenuOpen(false)}
@@ -340,35 +293,35 @@ export function SiteHeader() {
                                         <XIcon />
                                     </Button>
                                 </div>
-                                <span className="mx-4 h-px bg-theme-border" />
                                 <nav
                                     id="mobile-site-menu"
                                     className="flex min-h-0 flex-1 flex-col gap-1 overflow-x-hidden overflow-y-auto p-2"
                                 >
-                                    {NAV.map((item) => {
-                                        const active = isCurrent(
-                                            item.to,
-                                            pathname,
-                                        );
-                                        return (
-                                            <TabButton
-                                                key={item.to}
-                                                as={Link}
-                                                to={item.to}
-                                                variant="ghost"
-                                                active={active}
-                                                size="lg"
-                                                onClick={() =>
-                                                    setMobileMenuOpen(false)
-                                                }
-                                                className="site-primary-nav-button w-full justify-start"
-                                            >
-                                                {item.label}
-                                            </TabButton>
-                                        );
-                                    })}
-                                    <span className="mx-2 my-1 h-px bg-theme-border" />
-                                    <div className="grid grid-cols-1 gap-2 px-1 py-1">
+                                    <div className="flex flex-col gap-1 pl-2 pr-6">
+                                        {NAV.map((item) => {
+                                            const active = isCurrent(
+                                                item.to,
+                                                pathname,
+                                            );
+                                            return (
+                                                <TabButton
+                                                    key={item.to}
+                                                    as={Link}
+                                                    to={item.to}
+                                                    variant="ghost"
+                                                    active={active}
+                                                    size="lg"
+                                                    onClick={() =>
+                                                        setMobileMenuOpen(false)
+                                                    }
+                                                    className="site-primary-nav-button w-full justify-start"
+                                                >
+                                                    {item.label}
+                                                </TabButton>
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="mt-3 flex flex-col gap-2 py-1 pl-2 pr-6">
                                         <Button
                                             as="a"
                                             href={EXTERNAL[0].href}
@@ -394,8 +347,7 @@ export function SiteHeader() {
                                             Login
                                         </Button>
                                     </div>
-                                    <div className="mt-auto flex flex-col gap-1 pt-4">
-                                        <span className="mx-2 my-1 h-px bg-theme-border" />
+                                    <div className="-mx-2 mt-auto flex flex-col gap-1 bg-theme-bg-subtle px-2 pb-2 pt-3">
                                         <MenuUtilities
                                             close={() =>
                                                 setMobileMenuOpen(false)
@@ -406,45 +358,26 @@ export function SiteHeader() {
                                             discordOnline={discordOnline}
                                         />
                                     </div>
+                                    <div className="-mx-2 -mb-2 flex items-center justify-between gap-3 bg-surface-opaque px-4 py-3 text-xs text-theme-text-muted">
+                                        <div className="flex items-center gap-2">
+                                            {LEGAL.map((item) => (
+                                                <Link
+                                                    key={item.to}
+                                                    to={item.to}
+                                                    onClick={() =>
+                                                        setMobileMenuOpen(false)
+                                                    }
+                                                    className="transition-colors hover:text-theme-text-strong"
+                                                >
+                                                    {item.label}
+                                                </Link>
+                                            ))}
+                                        </div>
+                                        <ColorModeToggle />
+                                    </div>
                                 </nav>
                             </div>
                         </Drawer>
-
-                        <div className="hidden min-[700px]:block min-[900px]:hidden">
-                            <Dropdown
-                                align="end"
-                                open={menuOpen}
-                                onOpenChange={setMenuOpen}
-                                className="w-64 bg-surface-opaque p-2 shadow-well"
-                                trigger={(open) => (
-                                    <Button
-                                        aria-label={
-                                            open ? "Close menu" : "Open menu"
-                                        }
-                                        aria-expanded={open}
-                                        aria-controls="site-menu"
-                                        className="h-11 w-11 min-w-11 p-0 [&>svg]:size-6"
-                                    >
-                                        {open ? <XIcon /> : <MenuIcon />}
-                                    </Button>
-                                )}
-                            >
-                                {(close) => (
-                                    <nav
-                                        id="site-menu"
-                                        className="flex max-h-[calc(100dvh-6rem)] flex-col gap-1 overflow-x-hidden overflow-y-auto"
-                                    >
-                                        <MenuUtilities
-                                            close={close}
-                                            displayedRepoStars={
-                                                displayedRepoStars
-                                            }
-                                            discordOnline={discordOnline}
-                                        />
-                                    </nav>
-                                )}
-                            </Dropdown>
-                        </div>
                     </div>
                 </div>
             </div>

@@ -4,9 +4,11 @@ import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import { CreateChatCompletionRequestSchema } from "@shared/schemas/openai.ts";
 import { test } from "@shared/test/fixtures/index.ts";
 import {
+    type PaymentResumeCandidate,
     WEFT_REQUEST_EXTENSION_KEY,
     WEFT_REQUEST_INFO_SCHEMA,
 } from "@weft-labs/sdk/facilitator/middleware";
+import type { PaymentPayload } from "@x402/core/types";
 import { Hono } from "hono";
 import { expect } from "vitest";
 import {
@@ -59,7 +61,7 @@ function paymentPayload(
     extensions: Record<string, unknown> = {},
     from = "0x0000000000000000000000000000000000000002",
     spender = "0x0000000000000000000000000000000000000003",
-) {
+): PaymentPayload {
     return {
         x402Version: 2,
         accepted: {
@@ -92,6 +94,13 @@ function paymentPayload(
         extensions,
     };
 }
+
+const paymentCandidate = (
+    paymentPayload: PaymentPayload,
+): PaymentResumeCandidate => ({
+    paymentPayload,
+    paymentRequirements: paymentPayload.accepted,
+});
 
 const paymentHeader = (payload: unknown, pretty = false) =>
     btoa(JSON.stringify(payload, null, pretty ? 2 : undefined));
@@ -129,7 +138,7 @@ function operationApp(
             operationEnv,
             c.req.header("idempotency-key") as string,
             c.req.valid("json" as never),
-            encoded,
+            paymentCandidate(JSON.parse(atob(encoded))),
         );
         if (!resumed) {
             counts.payment += 1;
@@ -628,11 +637,21 @@ test("generated replay skips consumed-nonce verification and settles again", asy
         omitFirstReceipt: true,
     });
     await expect(
-        resumeX402Operation(replayEnv, key, request(), payment),
+        resumeX402Operation(
+            replayEnv,
+            key,
+            request(),
+            paymentCandidate(payload),
+        ),
     ).resolves.toBeUndefined();
     const first = await firstApp.request(key, request(), payment);
     await expect(
-        resumeX402Operation(replayEnv, key, request(), payment),
+        resumeX402Operation(
+            replayEnv,
+            key,
+            request(),
+            paymentCandidate(payload),
+        ),
     ).resolves.toEqual({
         paymentPayload: payload,
         paymentRequirements: payload.accepted,

@@ -17,6 +17,7 @@ import {
     CreateChatCompletionRequestSchema,
 } from "@shared/schemas/openai.ts";
 import {
+    type PaymentResumeCandidate,
     WEFT_REQUEST_EXTENSION_KEY,
     WEFT_REQUEST_INFO_SCHEMA,
     weftPaymentMiddlewareHono,
@@ -253,7 +254,7 @@ const validateAnonymousShape = createMiddleware<Env>(async (c, next) => {
     await next();
 });
 
-function parsePaymentIdentity(value: string) {
+function paymentFromHeader(value: string): PaymentPayload {
     let payment: PaymentPayload;
     try {
         payment = decodePaymentSignatureHeader(value);
@@ -263,6 +264,10 @@ function parsePaymentIdentity(value: string) {
             message: "Malformed x402 Permit2 authorization identity",
         });
     }
+    return payment;
+}
+
+function parsePaymentIdentity(payment: PaymentPayload) {
     const payload = payment.payload;
     if (
         payment.x402Version !== 2 ||
@@ -300,7 +305,6 @@ function parsePaymentIdentity(value: string) {
         });
     }
     return {
-        payment,
         permit2Authorization: payload.permit2Authorization,
         canonicalNonce,
     };
@@ -317,13 +321,17 @@ async function sha256(value: string): Promise<string> {
 }
 
 async function paymentDetails(value: string) {
-    const { payment, permit2Authorization, canonicalNonce } =
-        parsePaymentIdentity(value);
+    const payment = paymentFromHeader(value);
+    return paymentDetailsFromPayload(payment);
+}
+
+async function paymentDetailsFromPayload(payment: PaymentPayload) {
+    const { permit2Authorization, canonicalNonce } =
+        parsePaymentIdentity(payment);
     const { network } = payment.accepted;
     const { from, spender } = permit2Authorization;
     const payer = `${network.toLowerCase()}|${from.toLowerCase()}`;
     return {
-        payment,
         payer,
         identity: `${payer}|${spender.toLowerCase()}|${canonicalNonce}`,
         proof: await sha256(stableStringify(payment)),
@@ -370,10 +378,10 @@ export async function resumeX402Operation(
     env: CloudflareBindings,
     key: string,
     body: unknown,
-    authorization: string,
+    candidate: PaymentResumeCandidate,
 ) {
     const validated = AnonymousX402RequestSchema.parse(body);
-    const payment = await paymentDetails(authorization);
+    const payment = await paymentDetailsFromPayload(candidate.paymentPayload);
     const { fingerprint, stub } = await operationContextFor(
         env,
         key,
@@ -387,8 +395,8 @@ export async function resumeX402Operation(
     );
     if (operation.status !== "generated") return undefined;
     return {
-        paymentPayload: payment.payment,
-        paymentRequirements: payment.payment.accepted,
+        paymentPayload: candidate.paymentPayload,
+        paymentRequirements: candidate.paymentRequirements,
         declaredExtensions: requestDeclaration(validated),
     };
 }
@@ -628,12 +636,12 @@ export function createAnonymousX402Routes(env: CloudflareBindings) {
                 type: "api",
                 tags: ["ai", "llm", "inference"],
                 schemes: [{ network, server: new UptoEvmScheme() }],
-                resumeVerifiedPayment: async (context) =>
+                resumeVerifiedPayment: async (context, candidate) =>
                     resumeX402Operation(
                         env,
                         context.adapter.getHeader("idempotency-key") ?? "",
                         await context.adapter.getBody?.(),
-                        context.paymentHeader as string,
+                        candidate,
                     ),
             },
         ),

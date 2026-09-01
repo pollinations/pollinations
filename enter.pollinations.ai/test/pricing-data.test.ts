@@ -518,6 +518,22 @@ test("Gemini Omni bills exact Vertex modality usage", () => {
     expect(calculatePrice(model, usage).totalPrice).toBe(cost.totalCost);
 });
 
+test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
+    const definition = getRegistryModelDefinition("claude-fable-5");
+
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(1);
+    expect(getCostDefinition("claude-fable-5")).toEqual({
+        promptTextTokens: 0.00001,
+        promptCachedTokens: 0.000001,
+        promptCacheWriteTokens: 0.0000125,
+        completionTextTokens: 0.00005,
+    });
+    expect(getPriceDefinition("claude-fable-5")).toEqual(
+        getCostDefinition("claude-fable-5"),
+    );
+});
+
 test("Claude Fable 5.1 is paid-only and billed at current standard rates", () => {
     const definition = getRegistryModelDefinition("anthropic/claude-fable-5.1");
 

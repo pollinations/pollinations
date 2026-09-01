@@ -910,7 +910,7 @@ describe("API Key Management", () => {
                     "flux",
                     "nanobanana2",
                     "gpt-realtime-2",
-                    "anthropic/claude-fable-5",
+                    "claude-fable-5.1",
                     "retired-model",
                 ],
             });

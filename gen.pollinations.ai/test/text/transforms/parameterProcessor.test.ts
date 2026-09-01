@@ -125,6 +125,7 @@ describe("processParameters", () => {
         "us.anthropic.claude-opus-4-7",
         "global.anthropic.claude-opus-4-8",
         "global.anthropic.claude-opus-5",
+        "global.anthropic.claude-fable-5",
         "global.anthropic.claude-fable-5-1",
     ])("strips temperature/top_p/top_k for %s", (model) => {
         const result = processParameters(messages, {

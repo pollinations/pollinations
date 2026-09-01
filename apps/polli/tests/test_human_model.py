@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from src.api.humans import (
     HumanService,
     conversation_identity,
+    conversation_thread_name,
     format_transcript,
     harden_content,
     stream_completion,
@@ -17,16 +18,22 @@ from src.api.humans import (
 class FakeGateway:
     def __init__(self):
         self.thread_count = 0
+        self.thread_names = []
         self.asks = []
+        self.cleanup_calls = []
         self.reply = SimpleNamespace(content="A human answer")
 
-    async def create_thread(self):
+    async def create_thread(self, name):
         self.thread_count += 1
+        self.thread_names.append(name)
         return self.thread_count
 
     async def ask(self, thread_id, messages, timeout):
         self.asks.append((thread_id, messages, timeout))
         return self.reply
+
+    async def delete_inactive_threads(self, inactive_for):
+        self.cleanup_calls.append(inactive_for)
 
 
 class HumanModelTests(unittest.IsolatedAsyncioTestCase):
@@ -58,6 +65,7 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(first["choices"][0]["message"]["content"], "A human answer")
         self.assertNotIn("_pollinations", first)
+        self.assertEqual(self.gateway.thread_names, ["Hello humans"])
 
         await self.service.complete(
             caller_id="caller-a",
@@ -110,6 +118,18 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
 
 
 class HumanRequestTests(unittest.TestCase):
+    def test_names_thread_from_latest_user_message(self):
+        self.assertEqual(
+            conversation_thread_name(
+                [
+                    {"role": "user", "content": "Earlier message"},
+                    {"role": "assistant", "content": "Earlier answer"},
+                    {"role": "user", "content": "  What should we build next?\n"},
+                ]
+            ),
+            "What should we build next?",
+        )
+
     def test_hardens_and_chunks_discord_prompt(self):
         self.assertEqual(
             harden_content("**hi** <@123> https://example.com"),

@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import hmac
 import json
+import logging
 import re
 import time
 from functools import cache
@@ -22,6 +23,11 @@ _URL = re.compile(r"https?://\S+", re.IGNORECASE)
 _MENTION = re.compile(r"<[@#][!&]?\d+>")
 _WEB_SEARCH_CONTEXT = re.compile(r"^\s*<details><summary>Web search:", re.IGNORECASE)
 _MAX_DISCORD_CONTENT = 1_900
+_MAX_THREAD_NAME = 100
+_THREAD_CLEANUP_INTERVAL = 60
+_THREAD_INACTIVE_SECONDS = 5 * 60
+
+logger = logging.getLogger(__name__)
 
 
 class HumanReply(Protocol):
@@ -29,9 +35,11 @@ class HumanReply(Protocol):
 
 
 class HumanGateway(Protocol):
-    async def create_thread(self) -> int: ...
+    async def create_thread(self, name: str) -> int: ...
 
     async def ask(self, thread_id: int, messages: list[dict], timeout: float) -> HumanReply: ...
+
+    async def delete_inactive_threads(self, inactive_for: float) -> None: ...
 
 
 class DiscordHumanGateway:
@@ -40,7 +48,7 @@ class DiscordHumanGateway:
         self.guild_id = guild_id
         self.channel_id = channel_id
 
-    async def create_thread(self) -> int:
+    async def create_thread(self, name: str) -> int:
         if not self.bot.is_ready():
             raise RuntimeError("Discord bot is not ready")
         guild = self.bot.get_guild(self.guild_id)
@@ -48,7 +56,7 @@ class DiscordHumanGateway:
         if not isinstance(channel, discord.TextChannel):
             raise RuntimeError("Human model channel is unavailable")
         thread = await channel.create_thread(
-            name=f"human-{uuid4_hex()[:12]}",
+            name=name,
             type=discord.ChannelType.public_thread,
             auto_archive_duration=60,
             reason="Human community model conversation",
@@ -90,6 +98,26 @@ class DiscordHumanGateway:
                 return message
         return await waiter
 
+    async def delete_inactive_threads(self, inactive_for: float) -> None:
+        if not self.bot.is_ready() or self.bot.user is None:
+            return
+        guild = self.bot.get_guild(self.guild_id)
+        channel = guild and guild.get_channel(self.channel_id)
+        if not isinstance(channel, discord.TextChannel):
+            return
+
+        now = discord.utils.utcnow()
+        for thread in channel.threads:
+            if thread.owner_id != self.bot.user.id:
+                continue
+            last_activity = discord.utils.snowflake_time(thread.last_message_id or thread.id)
+            if (now - last_activity).total_seconds() < inactive_for:
+                continue
+            try:
+                await thread.delete(reason="Human model thread inactive for five minutes")
+            except (discord.Forbidden, discord.HTTPException) as error:
+                logger.warning("Failed to delete inactive human thread %s: %s", thread.id, error)
+
 
 class HumanService:
     def __init__(self, api_token: str, database_path: Path, gateway: HumanGateway, response_timeout: float):
@@ -98,6 +126,7 @@ class HumanService:
         self.gateway = gateway
         self.response_timeout = response_timeout
         self.database: aiosqlite.Connection | None = None
+        self.cleanup_task: asyncio.Task | None = None
 
     async def start(self) -> None:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -116,11 +145,27 @@ class HumanService:
             """
         )
         await self.database.commit()
+        self.cleanup_task = asyncio.create_task(self._cleanup_inactive_threads())
 
     async def close(self) -> None:
+        if self.cleanup_task:
+            self.cleanup_task.cancel()
+            try:
+                await self.cleanup_task
+            except asyncio.CancelledError:
+                pass
+            self.cleanup_task = None
         if self.database:
             await self.database.close()
             self.database = None
+
+    async def _cleanup_inactive_threads(self) -> None:
+        while True:
+            await asyncio.sleep(_THREAD_CLEANUP_INTERVAL)
+            try:
+                await self.gateway.delete_inactive_threads(_THREAD_INACTIVE_SECONDS)
+            except Exception:
+                logger.exception("Failed to clean up inactive human model threads")
 
     def authorize(self, authorization: str) -> None:
         prefix = "Bearer "
@@ -142,7 +187,7 @@ class HumanService:
 
         match = await self._thread_for_messages(caller_id, messages)
         if match is None:
-            thread_id = await self.gateway.create_thread()
+            thread_id = await self.gateway.create_thread(conversation_thread_name(messages))
             prompt = messages
         else:
             thread_id, prompt_start = match
@@ -217,6 +262,16 @@ def harden_content(content: str) -> str:
     content = _URL.sub("[link removed]", content)
     content = _MENTION.sub("[mention]", content)
     return discord.utils.escape_markdown(content)
+
+
+def conversation_thread_name(messages: list[dict]) -> str:
+    for message in reversed(messages):
+        if message["role"] != "user" or _WEB_SEARCH_CONTEXT.match(message["content"]):
+            continue
+        name = " ".join(message["content"].split())
+        if name:
+            return name[:_MAX_THREAD_NAME]
+    return f"human-{uuid4_hex()[:12]}"
 
 
 def format_transcript(messages: list[dict]) -> list[str]:

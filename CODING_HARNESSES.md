@@ -3,6 +3,7 @@
 Use `polli harness` to connect a supported coding harness to Pollinations. It handles Polli login, a dedicated API key, model setup, and any Pollinations capabilities supported by that harness.
 
 > **Available now:** DeepSeek Harness, OpenCode, Pi, and Prime Agent are integrated `polli harness` profiles. OpenClaw is coming soon.
+> **Available now:** DeepSeek Harness, OpenCode, Pi, Prime Agent, and OpenClaw are integrated `polli harness` profiles.
 
 ## Use a harness
 
@@ -29,7 +30,7 @@ If a harness cannot be launched, `on` stops before login, key creation, or confi
 | [OpenCode](https://opencode.ai) | **Available now** — `polli harness opencode on` | Uses the existing [Pollinations OpenCode plugin](https://github.com/fkom13/opencode-pollinations-plugin) for models, media tools, usage, and quests. Defaults to `openai`. |
 | [Pi](https://github.com/earendil-works/pi) | **Available now** — `polli harness pi on` | Uses Pi's native provider support and the Polli skill. Pi intentionally has no built-in MCP support. Defaults to `deepseek`. |
 | [Prime Agent](https://github.com/PrimeIntellect-ai/prime-agent) | **Available now** — `polli harness prime on` | Uses native provider support and the Polli skill while preserving memories, sessions, and unrelated configuration. |
-| [OpenClaw](https://github.com/openclaw/openclaw) | Coming soon | Will bring the [existing Pollinations setup](./apps/openclaw/README.md) into the shared `polli harness` workflow. |
+| [OpenClaw](https://github.com/openclaw/openclaw) | **Available now** — `polli harness openclaw on` | Same provider block as the [existing setup script](./apps/openclaw/README.md), but the model list comes from the live catalog instead of a hardcoded table. Defaults to `kimi`. |
 
 ## DeepSeek Harness
 
@@ -70,3 +71,13 @@ polli harness prime off
 ```
 
 `on` requires Prime Agent to be installed with its official installer. It registers the current compatible Pollinations model catalog in `~/.prime/agent/models.json`, stores a dedicated key in `auth.json`, selects the startup model in `settings.json`, and installs the Polli skill under `skills/polli/`. Choose another default with `--model <id>`.
+
+## OpenClaw
+
+```bash
+npx @pollinations/cli harness openclaw on
+polli harness openclaw status
+polli harness openclaw off
+```
+
+`on` requires OpenClaw to be installed with its official script: `curl -fsSL https://openclaw.ai/install.sh | bash`. It writes the same `models.providers.pollinations` block as the [existing Pollinations setup script](./apps/openclaw/README.md), but fills the model list from the current Pollinations catalog rather than a second hardcoded table. The Polli skill goes under `skills/polli/`, so media tools and quest access come with it. An existing `agents.defaults.model.primary` is left alone and reported instead — set the default yourself with `openclaw models set pollinations/<id>` or start with `--model <id>` on a fresh setup. `off` removes only the Pollinations provider, the default model it wrote, and the skill, leaving other providers, channels, and gateway settings in place; run `openclaw gateway restart` to pick up the change.

@@ -29,6 +29,7 @@ import {
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
 } from "./price-table.tsx";
+import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type ActionState,
     type CommunityEndpointTestResponse,
@@ -717,6 +718,18 @@ export function CommunityEndpointDialog({
                                 </TabButton>
                             </ButtonGroup>
                         </FieldStack>
+                    )}
+                    {!isEndpointAgent && (
+                        <SafetyFeatureSelector
+                            value={form.requiredSafetyFeatures}
+                            disabled={isSubmitting}
+                            onChange={(requiredSafetyFeatures) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    requiredSafetyFeatures,
+                                }))
+                            }
+                        />
                     )}
                     {isShared && (
                         <FieldStack

@@ -9,16 +9,12 @@ import type { ModelDefinition } from "./registry";
  * asked for. `provider` is required because it is the one thing a route must
  * not inherit: it is what makes the route a route, and what the spend is
  * attributed to. The omitted fields are owned by the merge — a route is always
- * hidden, carries no aliases of its own, and never chains further.
+ * hidden and fallback-only, carries no aliases, and never chains further.
  */
 export type FallbackDefinition = Partial<
     Omit<
         ModelDefinition,
-        | "aliases"
-        | "fallbacks"
-        | "fallbackOnStatusCodes"
-        | "hidden"
-        | "provider"
+        "aliases" | "fallbacks" | "fallbackOnly" | "hidden" | "provider"
     >
 > & { provider: string };
 
@@ -69,7 +65,8 @@ export function mergeFallbacks<
         const {
             aliases: _aliases,
             fallbacks: _fallbacks,
-            fallbackOnStatusCodes: _statusCodes,
+            fallbackOnly: _fallbackOnly,
+            hidden: _hidden,
             ...inherited
         } = parent;
         for (const [routeId, overrides] of Object.entries(routes)) {
@@ -78,6 +75,7 @@ export function mergeFallbacks<
                 ...overrides,
                 aliases: [],
                 hidden: true,
+                fallbackOnly: true,
             };
         }
     }

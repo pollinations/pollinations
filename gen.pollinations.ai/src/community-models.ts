@@ -51,6 +51,8 @@ export async function getCommunityModelRegistryEntries(
             type: schema.communityEndpoint.type,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
+            requiredSafetyFeatures:
+                schema.communityEndpoint.requiredSafetyFeatures,
             payload: schema.communityEndpoint.payload,
             pendingPayload: schema.communityEndpoint.pendingPayload,
             pendingVisibility: schema.communityEndpoint.pendingVisibility,
@@ -109,6 +111,7 @@ export async function getCommunityModelRegistryEntries(
             providerUrl: row.providerUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
+            requiredSafetyFeatures: row.requiredSafetyFeatures,
             visibility: effectiveVisibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,

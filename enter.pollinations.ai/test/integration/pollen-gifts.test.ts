@@ -653,6 +653,103 @@ test("refund before checkout completion keeps the gift voided", async ({
     expect(gift).toEqual({ status: "voided", paymentIntentId });
 });
 
+test("dispute loss and reinstatement debit and restore a redeemed gift once", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const userBefore = await env.DB.prepare(
+        "SELECT id FROM user LIMIT 1",
+    ).first<{ id: string }>();
+    expect(userBefore).toBeTruthy();
+    if (!userBefore) throw new Error("Expected seeded test user");
+
+    const amount = 20;
+    const initialBalance = 100;
+    const paymentIntentId = "pi_disputed_gift";
+    await env.DB.batch([
+        env.DB.prepare("UPDATE user SET pack_balance = ? WHERE id = ?").bind(
+            initialBalance,
+            userBefore.id,
+        ),
+        env.DB.prepare(
+            `INSERT INTO pollen_gift_code (
+                    id, code_hash, pollen_amount, status,
+                    stripe_checkout_session_id, stripe_payment_intent_id,
+                    redeemer_user_id, redeemed_at
+                 ) VALUES (?, ?, ?, 'redeemed', ?, ?, ?, ?)`,
+        ).bind(
+            "gift_disputed",
+            "b".repeat(64),
+            amount,
+            "cs_disputed_gift",
+            paymentIntentId,
+            userBefore.id,
+            Date.now(),
+        ),
+        env.DB.prepare(
+            "UPDATE user SET pack_balance = pack_balance + ? WHERE id = ?",
+        ).bind(amount, userBefore.id),
+    ]);
+
+    const dispute = {
+        id: "dp_gift",
+        object: "dispute",
+        amount: 2_000,
+        currency: "usd",
+        payment_intent: paymentIntentId,
+        charge: "ch_disputed_gift",
+        status: "needs_response",
+        metadata: {},
+    };
+    for (const id of ["evt_dispute_created", "evt_dispute_created_retry"]) {
+        const response = await postSignedStripeWebhook({
+            id,
+            type: "charge.dispute.created",
+            created: Math.floor(Date.now() / 1000),
+            livemode: false,
+            data: { object: dispute },
+        });
+        expect(response.status).toBe(200);
+    }
+
+    const lostGift = await env.DB.prepare(
+        "SELECT status FROM pollen_gift_code WHERE id = 'gift_disputed'",
+    ).first<{ status: string }>();
+    expect(lostGift?.status).toBe("voided");
+    const balanceAfterLoss = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(userBefore.id)
+        .first<{ packBalance: number }>();
+    expect(balanceAfterLoss?.packBalance).toBe(initialBalance);
+
+    for (const [id, type] of [
+        ["evt_dispute_won", "charge.dispute.closed"],
+        ["evt_dispute_reinstated", "charge.dispute.funds_reinstated"],
+    ] as const) {
+        const response = await postSignedStripeWebhook({
+            id,
+            type,
+            created: Math.floor(Date.now() / 1000),
+            livemode: false,
+            data: { object: { ...dispute, status: "won" } },
+        });
+        expect(response.status).toBe(200);
+    }
+
+    const restoredGift = await env.DB.prepare(
+        "SELECT status FROM pollen_gift_code WHERE id = 'gift_disputed'",
+    ).first<{ status: string }>();
+    expect(restoredGift?.status).toBe("redeemed");
+    const balanceAfterReinstatement = await env.DB.prepare(
+        "SELECT pack_balance AS packBalance FROM user WHERE id = ?",
+    )
+        .bind(userBefore.id)
+        .first<{ packBalance: number }>();
+    expect(balanceAfterReinstatement?.packBalance).toBe(
+        initialBalance + amount,
+    );
+});
+
 test("expired Checkout Session voids a pending gift", async ({ mocks }) => {
     await mocks.enable("stripe", "tinybird");
 

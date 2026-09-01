@@ -10,6 +10,7 @@ import type { Env } from "../env.ts";
 import {
     fulfillPollenGiftCheckout,
     isPollenGiftCheckoutSession,
+    setPollenGiftPaymentLoss,
     voidPendingPollenGiftCheckout,
     voidRefundedPollenGift,
 } from "../services/pollen-gifts.ts";
@@ -17,7 +18,11 @@ import {
     POLLEN_GIFT_BUYER_KEY_METADATA,
     recordStripeGiftCardFingerprintAttempt,
 } from "../utils/pollen-gift-security.ts";
-import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import {
+    createStripeClient,
+    getStripeId,
+    verifyWebhookSignature,
+} from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
@@ -68,6 +73,28 @@ function hasPollenGiftPurpose(
     metadata: Stripe.Metadata | null | undefined,
 ): boolean {
     return metadata?.purpose === POLLEN_GIFT_PURPOSE;
+}
+
+async function getDisputePaymentIntentId(
+    stripe: Stripe,
+    dispute: Stripe.Dispute,
+): Promise<string | null> {
+    const directId = getStripeId(dispute.payment_intent);
+    if (directId) return directId;
+
+    const chargeId = getStripeId(dispute.charge);
+    if (!chargeId) return null;
+    const charge = await stripe.charges.retrieve(chargeId);
+    return getStripeId(charge.payment_intent);
+}
+
+function disputeKeepsPaymentLost(
+    eventType: Stripe.Event.Type,
+    status: Stripe.Dispute.Status,
+): boolean {
+    if (eventType === "charge.dispute.funds_reinstated") return false;
+    if (eventType !== "charge.dispute.closed") return true;
+    return !["won", "warning_closed", "prevented"].includes(status);
 }
 
 function stripePayloadForTinybird(
@@ -908,6 +935,29 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );
+                break;
+            }
+
+            case "charge.dispute.created":
+            case "charge.dispute.funds_withdrawn":
+            case "charge.dispute.funds_reinstated":
+            case "charge.dispute.closed": {
+                const dispute = event.data.object as Stripe.Dispute;
+                const paymentIntentId = await getDisputePaymentIntentId(
+                    stripe,
+                    dispute,
+                );
+                if (!paymentIntentId) {
+                    console.warn(
+                        `Could not resolve PaymentIntent for dispute ${dispute.id}`,
+                    );
+                    break;
+                }
+                await setPollenGiftPaymentLoss(c.env.DB, {
+                    paymentIntentId,
+                    kind: "dispute",
+                    active: disputeKeepsPaymentLost(event.type, dispute.status),
+                });
                 break;
             }
 

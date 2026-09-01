@@ -237,7 +237,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
     const inputModalities = getModelInputModalities(model);
-    const outputModalities = model.agent ? getModelOutputModalities(model) : [];
+    const outputModalities = model.agent
+        ? getModelOutputModalities(model).filter(
+              (modality) => !inputModalities.includes(modality),
+          )
+        : [];
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
@@ -407,14 +411,14 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 content={
                                                     <span>
                                                         <strong className="font-semibold text-theme-text-strong">
-                                                            Output:
+                                                            Additional output:
                                                         </strong>{" "}
                                                         {outputModalities.join(
                                                             ", ",
                                                         )}
                                                     </span>
                                                 }
-                                                ariaLabel={`Output: ${outputModalities.join(", ")}`}
+                                                ariaLabel={`Additional output: ${outputModalities.join(", ")}`}
                                                 tapEnabled
                                                 displayContents
                                             >

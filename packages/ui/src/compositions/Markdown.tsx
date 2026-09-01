@@ -1,11 +1,40 @@
+import { isValidElement, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "../lib/cn.ts";
+import { CodeBlock } from "./CodeBlock.tsx";
 
 export type MarkdownProps = {
     children: string;
     className?: string;
 };
+
+function textContent(value: ReactNode): string {
+    if (typeof value === "string" || typeof value === "number") {
+        return String(value);
+    }
+    if (Array.isArray(value)) return value.map(textContent).join("");
+    if (isValidElement<{ children?: ReactNode }>(value)) {
+        return textContent(value.props.children);
+    }
+    return "";
+}
+
+function MarkdownCodeBlock({ children }: { children?: ReactNode }) {
+    const child = isValidElement<{
+        children?: ReactNode;
+        className?: string;
+    }>(children)
+        ? children
+        : null;
+    const language = child?.props.className?.match(/language-([^\s]+)/)?.[1];
+    const code = textContent(child?.props.children ?? children).replace(
+        /\n$/,
+        "",
+    );
+
+    return <CodeBlock code={code} language={language} className="polli:my-3" />;
+}
 
 const components: Components = {
     ul: ({ node, ...props }) => (
@@ -35,6 +64,7 @@ const components: Components = {
             {...props}
         />
     ),
+    pre: ({ children }) => <MarkdownCodeBlock>{children}</MarkdownCodeBlock>,
     a: ({ node, href, ...props }) => {
         const external =
             typeof href === "string" &&

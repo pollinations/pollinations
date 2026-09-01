@@ -7,6 +7,8 @@ const TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
+const R2V_ENDPOINT =
+    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const STATUS_URL =
     "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test/status";
 const RESULT_URL = "https://queue.fal.run/alibaba/wan-3.0-prime/requests/test";
@@ -51,7 +53,11 @@ function mockFalFetch(
                       >)
                     : undefined,
             });
-            if (href === TEXT_ENDPOINT || href === IMAGE_ENDPOINT) {
+            if (
+                href === TEXT_ENDPOINT ||
+                href === IMAGE_ENDPOINT ||
+                href === R2V_ENDPOINT
+            ) {
                 return Response.json({
                     status_url: STATUS_URL,
                     response_url: RESULT_URL,
@@ -155,6 +161,93 @@ describe("Wan 3.0 Prime via Fal", () => {
             callWan3FalAPI("a sailboat crossing a calm bay", {
                 ...baseParams,
                 duration: 4,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("I2V forwards image[1] as end_image_url", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+        const START = "https://media.pollinations.ai/start.png";
+        const END = "https://media.pollinations.ai/end.png";
+
+        await callWan3FalAPI("smooth transition", {
+            ...baseParams,
+            image: [START, END],
+        });
+
+        expect(requests[0].url).toBe(IMAGE_ENDPOINT);
+        expect(requests[0].body?.start_image_url).toBe(START);
+        expect(requests[0].body?.end_image_url).toBe(END);
+        expect(requests[0].body?.aspect_ratio).toBe("adaptive");
+    });
+
+    it("R2V routes to reference-to-video and maps the Fal url fields", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        const result = await callWan3FalAPI("artistic style transfer", {
+            ...baseParams,
+            width: 720,
+            height: 1280,
+            resolution: "1080p",
+            audio: true,
+            reference_images: ["https://media.pollinations.ai/ref-style.png"],
+            reference_videos: ["https://media.pollinations.ai/ref-motion.mp4"],
+            reference_audios: ["https://media.pollinations.ai/ref-sound.mp3"],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body).toMatchObject({
+            prompt: "artistic style transfer",
+            resolution: "1080p",
+            aspect_ratio: "9:16",
+            duration: 5,
+            audio: true,
+            reference_image_urls: [
+                "https://media.pollinations.ai/ref-style.png",
+            ],
+            reference_video_urls: [
+                "https://media.pollinations.ai/ref-motion.mp4",
+            ],
+            reference_audio_urls: [
+                "https://media.pollinations.ai/ref-sound.mp3",
+            ],
+        });
+        expect(requests[0].body).not.toHaveProperty("start_image_url");
+        // Same per-second resolution rates as T2V/I2V: 5s tracked.
+        expect(result.trackingData).toEqual({
+            actualModel: "wan-3.0",
+            usage: { completionVideoSeconds: 5 },
+        });
+    });
+
+    it("R2V omits absent reference fields from the request body", async () => {
+        const requests: ProviderRequest[] = [];
+        mockFalFetch(requests);
+
+        await callWan3FalAPI("artistic style transfer", {
+            ...baseParams,
+            reference_images: ["https://media.pollinations.ai/ref-style.png"],
+        });
+
+        expect(requests[0].url).toBe(R2V_ENDPOINT);
+        expect(requests[0].body?.reference_image_urls).toEqual([
+            "https://media.pollinations.ai/ref-style.png",
+        ]);
+        expect(requests[0].body).not.toHaveProperty("reference_video_urls");
+        expect(requests[0].body).not.toHaveProperty("reference_audio_urls");
+    });
+
+    it("rejects frame + reference combinations with 400", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWan3FalAPI("conflicting inputs", {
+                ...baseParams,
+                image: ["https://media.pollinations.ai/start.png"],
+                reference_images: ["https://media.pollinations.ai/ref.png"],
             }),
         ).rejects.toMatchObject({ status: 400 });
         expect(fetchSpy).not.toHaveBeenCalled();

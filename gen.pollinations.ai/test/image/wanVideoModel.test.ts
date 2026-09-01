@@ -1,3 +1,5 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
@@ -12,6 +14,8 @@ const REPLICATE_PREDICTIONS =
 const VIDEO_URL = "https://video.example.com/wan-output.mp4";
 const INPUT_IMAGE_URL = "https://img.example.com/first-frame.png";
 const LAST_IMAGE_URL = "https://img.example.com/last-frame.png";
+const REF_IMAGE_URL = "https://img.example.com/ref-style.png";
+const REF_VIDEO_URL = "https://img.example.com/ref-motion.mp4";
 // PNG magic bytes so downloadUserImage's detectMimeType resolves to image/png.
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 const EXPECTED_DATA_URI = /^data:image\/png;base64,/;
@@ -253,5 +257,140 @@ describe("wanVideoModel image-to-video routing", () => {
         expect(calls[0].input.resolution).toBe("480p");
         expect(calls[0].input.image as string).toMatch(EXPECTED_DATA_URI);
         expect(calls[0].input.last_image as string).toMatch(EXPECTED_DATA_URI);
+    });
+});
+
+describe("wanVideoModel reference-to-video routing", () => {
+    it("wan-pro R2V routes to wan-2.7-r2v with reference_images", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 5);
+
+        const result = await callWanProAPI("cinematic style transfer", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL],
+        });
+
+        expect(calls).toHaveLength(1);
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.reference_images).toEqual([REF_IMAGE_URL]);
+        expect(calls[0].input.resolution).toBe("720p");
+        expect(calls[0].input.duration).toBe(5);
+        expect(calls[0].cancelAfter).toBe("15m");
+        // Reference URLs are forwarded, never downloaded.
+        expect(calls[0].input.first_frame).toBeUndefined();
+        expect(result.trackingData).toEqual({
+            actualModel: "wan-pro",
+            usage: { completionVideoSeconds: 5 },
+        });
+    });
+
+    it("wan-pro R2V forwards reference_videos alongside reference_images", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 7);
+
+        const result = await callWanProAPI("match this motion", {
+            ...baseParams,
+            resolution: "1080p",
+            reference_images: [REF_IMAGE_URL],
+            reference_videos: [REF_VIDEO_URL],
+            duration: 7,
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.reference_images).toEqual([REF_IMAGE_URL]);
+        expect(calls[0].input.reference_videos).toEqual([REF_VIDEO_URL]);
+        expect(calls[0].input.resolution).toBe("1080p");
+        expect(calls[0].input.duration).toBe(7);
+        expect(result.trackingData).toEqual({
+            actualModel: "wan-pro",
+            usage: { completionVideoSeconds: 7 },
+        });
+    });
+
+    it("wan-pro R2V clamps duration to the 10s R2V ceiling (T2V/I2V allow 15s)", async () => {
+        setReplicateEnv();
+        const calls: ReplicateCall[] = [];
+        mockReplicateFetch(calls, 10);
+
+        await callWanProAPI("cinematic style transfer", {
+            ...baseParams,
+            reference_images: [REF_IMAGE_URL],
+            duration: 15,
+        });
+
+        expect(calls[0].model).toBe("wan-video/wan-2.7-r2v");
+        expect(calls[0].input.duration).toBe(10);
+
+        calls.length = 0;
+        await callWanProAPI("no references here", {
+            ...baseParams,
+            duration: 15,
+        });
+        expect(calls[0].model).toBe("wan-video/wan-2.7-t2v");
+        expect(calls[0].input.duration).toBe(15);
+    });
+
+    it("wan-pro rejects frame + reference combinations with 400", async () => {
+        setReplicateEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWanProAPI("conflicting inputs", {
+                ...baseParams,
+                image: [INPUT_IMAGE_URL],
+                reference_videos: [REF_VIDEO_URL],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("wan and wan-fast reject reference media (no R2V route)", async () => {
+        setReplicateEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+
+        await expect(
+            callWanAPI("reference-driven clip", {
+                ...baseParams,
+                model: "wan",
+                reference_images: [REF_IMAGE_URL],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        await expect(
+            callWanFastAPI("reference-driven clip", {
+                ...baseParams,
+                model: "wan-fast",
+                reference_images: [REF_IMAGE_URL],
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it("bills Wan 2.7 R2V at the T2V rate ($0.10/s), never the I2V surcharge", () => {
+        const service = IMAGE_SERVICES["wan-pro"];
+        const usage = { completionVideoSeconds: 5 };
+        const bill = (resolution: string, hasImage: boolean) =>
+            calculateUsageBilling({
+                model: "wan-pro",
+                usage,
+                servedBy: service,
+                input: { resolution, hasImage },
+            });
+
+        // R2V requests carry no frame, so they land on the T2V rate sheet.
+        const r2v720p = bill("720p", false);
+        expect(r2v720p.priceDefinition.completionVideoSeconds).toBe(0.1);
+        expect(r2v720p.cost.totalCost).toBeCloseTo(0.5, 12);
+
+        const r2v1080p = bill("1080p", false);
+        expect(r2v1080p.costVariant).toBe("1080p");
+        expect(r2v1080p.priceDefinition.completionVideoSeconds).toBe(0.1);
+        expect(r2v1080p.cost.totalCost).toBeCloseTo(0.5, 12);
+
+        // I2V at 1080p keeps its surcharge.
+        const i2v1080p = bill("1080p", true);
+        expect(i2v1080p.costVariant).toBe("1080p_image");
+        expect(i2v1080p.cost.totalCost).toBeCloseTo(0.75, 12);
     });
 });

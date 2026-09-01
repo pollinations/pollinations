@@ -180,7 +180,7 @@ const IMAGE_BASE_SERVICES = {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
             promptTextTokens: perMillion(0.25), // per 1M tokens
             promptImageTokens: perMillion(0.25), // per 1M tokens
-            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
+            completionTextTokens: perMillion(1.5), // per 1M tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
         title: "Nano Banana 2 Lite",
@@ -737,11 +737,12 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.7. Audio is bundled into the per-second rate. T2V is
-        // $0.10/s at both resolutions; I2V is $0.10/s at 720p and $0.15/s at
-        // 1080p.
+        // Replicate wan-2.7. Audio is bundled into the per-second rate. T2V
+        // and R2V are $0.10/s at both resolutions; I2V is $0.10/s at 720p and
+        // $0.15/s at 1080p. R2V requests carry no input frame, so they never
+        // trip the I2V surcharge.
         cost: {
-            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio; also R2V)
         },
         ...defineCostVariants(
             {
@@ -772,10 +773,17 @@ const IMAGE_BASE_SERVICES = {
         ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
-        description: "Keyframe-controlled video with sound at 720p or 1080p",
-        inputModalities: ["text", "image"],
+        description:
+            "Keyframe-controlled video with sound at 720p or 1080p; also accepts reference images and videos",
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 2,
         maxDuration: 15,
@@ -820,11 +828,18 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
-        inputModalities: ["text", "image"],
+            "Five-second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
+        inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 5,
         maxDuration: 5,
         defaultDuration: 5,
@@ -884,8 +899,8 @@ const IMAGE_BASE_SERVICES = {
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
-        paidOnly: true,
         priceMultiplier: 1,
+        paidOnly: true,
         // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
         // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03).
         cost: {
@@ -920,8 +935,8 @@ const IMAGE_BASE_SERVICES = {
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
-        paidOnly: true,
         priceMultiplier: 1,
+        paidOnly: true,
         cost: {
             promptImageTokens: 0.003, // per reference image ingested by Fal
             completionImageTokens: 0.04, // per image up to 1536x1536
@@ -959,8 +974,8 @@ const IMAGE_BASE_SERVICES = {
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
-        priceMultiplier: 1,
         paidOnly: true,
+        priceMultiplier: 1,
         cost: {
             promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
@@ -1415,6 +1430,7 @@ const IMAGE_BASE_SERVICES = {
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
+        paidOnly: true,
         cost: {
             completionVideoSeconds: 0.08, // per sec
         },

@@ -285,14 +285,19 @@ async function handleConnect(interaction: ChatInputCommandInteraction) {
     // Poll in background
     const token = await pollForToken(flow.deviceCode);
     if (token) {
-        await setUserToken(interaction.user.id, interaction.user.username, token);
+        await setUserToken(
+            interaction.user.id,
+            interaction.user.username,
+            token,
+        );
         await interaction.followUp({
             content: "Connected! Use `/ask <question>` to talk to the agent.",
             ephemeral: true,
         });
     } else {
         await interaction.followUp({
-            content: "Authorization timed out or was denied. Try `/connect` again.",
+            content:
+                "Authorization timed out or was denied. Try `/connect` again.",
             ephemeral: true,
         });
     }
@@ -421,7 +426,9 @@ client.on(Events.MessageCreate, async (message) => {
                 : response;
         await message.reply(truncated);
     } catch (err: any) {
-        await message.reply(`Error: ${(err?.message || String(err)).slice(0, 500)}`);
+        await message.reply(
+            `Error: ${(err?.message || String(err)).slice(0, 500)}`,
+        );
     }
 });
 

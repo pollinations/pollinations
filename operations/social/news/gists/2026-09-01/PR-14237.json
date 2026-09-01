@@ -1,0 +1,34 @@
+{
+  "pr_number": 14237,
+  "title": "refactor: simplify OAuth client demo",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14237",
+  "merged_at": "2026-09-01T04:30:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Makes the canonical PKCE example fully browser-only with direct token exchange and generation.\n- Removes the original session/proxy server from the browser example.\n- Adds a separate optional account-linking example for apps with existing users and a database.\n- Binds single-use OAuth state to the app user and encrypts delegated keys at rest.\n- Links both examples from the Scalar BYOP guide.\n\nTests: Biome, Node syntax checks, Scalar source-link check, static-server smoke test, mock OAuth callback + encrypted persistence + server-side generation.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "OAuth sheds its proxy",
+    "blurb": "The PKCE demo now runs entirely in the browser: authorize, exchange a token, make a generation. For apps with their own users, a second little garden shows how to link accounts and tuck delegated keys away safely.",
+    "summary": "Simplified the canonical OAuth PKCE demo into a browser-only flow with direct token exchange and generation, while adding a separate account-linking demo that binds single-use state to app users and encrypts delegated keys at rest.",
+    "impact": "Developers can now copy a smaller browser-only OAuth integration or use the dedicated server-backed example for existing-user account linking with encrypted delegated-key storage.",
+    "keywords": [
+      "oauth",
+      "pkce",
+      "account-linking",
+      "examples",
+      "byop",
+      "delegated-keys"
+    ],
+    "visual_concept": "Depict two friendly OAuth paths growing from the same flowering code plant: a lightweight browser window sending a direct token to a generation canvas, and a small locked garden shed representing server-side account linking and encrypted key storage. Polli should act as a careful guide between the paths, with a tiny keyring accessory; a CRT robot can eagerly hold the browser flow diagram.",
+    "image_prompt": "A cozy pixel-art garden workshop with two flowering code-plants: a retro browser window directly exchanging a small golden token for a generated picture, beside a tiny warm garden shed with a lock and labeled pixel key box for account linking. Polli, the cute yellow-and-dark-brown striped bee with black antennae, oval black eyes, pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wears a tiny keyring belt while guiding a cheerful CRT-head robot between the two paths; lime green (#ecf874) glows prominently among mint, lavender, peach, and warm cream flowers, with subtle pixel text “PKCE”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14237.jpg",
+    "prompt": "A cozy pixel-art garden workshop with two flowering code-plants: a retro browser window directly exchanging a small golden token for a generated picture, beside a tiny warm garden shed with a lock and labeled pixel key box for account linking. Polli, the cute yellow-and-dark-brown striped bee with black antennae, oval black eyes, pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wears a tiny keyring belt while guiding a cheerful CRT-head robot between the two paths; lime green (#ecf874) glows prominently among mint, lavender, peach, and warm cream flowers, with subtle pixel text “PKCE”. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-01T04:31:29.196652+00:00"
+}

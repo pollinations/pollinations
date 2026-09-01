@@ -108,7 +108,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
             </div>
             <p className="text-xs text-theme-text-muted">
                 Connect with your Pollinations API key. See the{" "}
-                <InlineLink href={genDocsUrl("#tag/mcp-server")}>
+                <InlineLink href={genDocsUrl("#tag/mcp-servers")}>
                     MCP docs
                 </InlineLink>
                 .

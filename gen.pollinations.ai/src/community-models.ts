@@ -148,6 +148,8 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
+                    requiredSafetyFeatures:
+                        payload.requiredSafetyFeatures ?? [],
                 };
                 break;
             }

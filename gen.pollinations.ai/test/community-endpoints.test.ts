@@ -5690,6 +5690,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai-fast",
+        requiredSafetyFeatures: ["sexual"],
         mcpServers: ["pollinations"],
     };
     const createAgentResponse = await fetchEnterApi(
@@ -5884,6 +5885,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         promptTextTokens: 0,
         completionTextTokens: 0,
     });
+    expect(registryEntry.definition.requiredSafetyFeatures).toEqual(["sexual"]);
     const gatewayContext = await communityEndpointGatewayContext({
         endpoint: registryEntry.communityEndpoint,
         modelDefinition: registryEntry.definition,

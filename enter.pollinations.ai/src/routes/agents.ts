@@ -7,6 +7,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
@@ -69,6 +70,7 @@ const AgentResponseSchema = z.object({
     upstreamModel: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
+    requiredSafetyFeatures: z.array(z.enum(SAFETY_FEATURES)),
     mcpServers: z.array(BuiltinMcpServerIdSchema),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -93,6 +95,7 @@ function toResponse(row: AgentRow, baseUrl: string) {
         baseUrl,
         upstreamModel: row.upstreamModel,
         ...config,
+        requiredSafetyFeatures: config.requiredSafetyFeatures ?? [],
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };

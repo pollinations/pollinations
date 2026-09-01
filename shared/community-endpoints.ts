@@ -577,6 +577,10 @@ export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
+    requiredSafetyFeatures: z
+        .array(z.enum(SAFETY_FEATURES))
+        .max(SAFETY_FEATURES.length)
+        .optional(),
     mcpServers: z
         .array(BuiltinMcpServerIdSchema)
         .max(MCP_SERVER_IDS.length)
@@ -754,6 +758,7 @@ export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
 export type PromptAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "prompt_agent";
+        requiredSafetyFeatures?: SafetyFeature[];
     };
 
 /** An agent on the owner's own server, sent a run token instead of a key. */

@@ -34,6 +34,7 @@ export type ManagedAgent = {
     upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
+    requiredSafetyFeatures: SafetyFeature[];
     mcpServers: McpServerId[];
     createdAt: string;
     updatedAt: string;
@@ -41,7 +42,7 @@ export type ManagedAgent = {
 
 type AgentFields = Pick<
     ManagedAgent,
-    "systemPrompt" | "baseModel" | "mcpServers"
+    "systemPrompt" | "baseModel" | "requiredSafetyFeatures" | "mcpServers"
 >;
 
 export type AgentFormState = AgentFields;
@@ -257,6 +258,7 @@ export const emptyForm: EndpointFormState = {
 export const emptyAgentForm: AgentFormState = {
     systemPrompt: "",
     baseModel: "",
+    requiredSafetyFeatures: [],
     mcpServers: [],
 };
 
@@ -483,6 +485,7 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     return {
         systemPrompt,
         baseModel,
+        requiredSafetyFeatures: form.requiredSafetyFeatures,
         mcpServers: form.mcpServers,
     };
 }

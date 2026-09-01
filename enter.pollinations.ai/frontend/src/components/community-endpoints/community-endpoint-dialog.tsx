@@ -12,12 +12,10 @@ import {
     FieldStack,
     Input,
     ScrollArea,
-    Switch,
     TabButton,
 } from "@pollinations/ui";
 import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
 import type { ModelInputModality } from "@shared/registry/registry.ts";
-import { HARMFUL_CONTENT_SAFETY_FEATURES } from "@shared/schemas/safety.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -31,6 +29,7 @@ import {
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
 } from "./price-table.tsx";
+import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type ActionState,
     type CommunityEndpointTestResponse,
@@ -721,30 +720,16 @@ export function CommunityEndpointDialog({
                         </FieldStack>
                     )}
                     {!isEndpointAgent && (
-                        <FieldStack
-                            label="Prompt safety"
-                            helper={
-                                form.requiredSafetyFeatures.length > 0
-                                    ? "Sexual, violent, hateful, and insulting prompts are blocked before they reach your endpoint. Callers cannot turn this off."
-                                    : "Prompt safety remains optional for callers."
+                        <SafetyFeatureSelector
+                            value={form.requiredSafetyFeatures}
+                            disabled={isSubmitting}
+                            onChange={(requiredSafetyFeatures) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    requiredSafetyFeatures,
+                                }))
                             }
-                            alignLabelRow
-                        >
-                            <Switch
-                                checked={form.requiredSafetyFeatures.length > 0}
-                                ariaLabel="Require harmful-content prompt safety"
-                                onChange={(required) =>
-                                    setForm((current) => ({
-                                        ...current,
-                                        requiredSafetyFeatures: required
-                                            ? [
-                                                  ...HARMFUL_CONTENT_SAFETY_FEATURES,
-                                              ]
-                                            : [],
-                                    }))
-                                }
-                            />
-                        </FieldStack>
+                        />
                     )}
                     {isShared && (
                         <FieldStack

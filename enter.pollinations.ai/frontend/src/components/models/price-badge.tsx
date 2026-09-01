@@ -76,12 +76,13 @@ const formatAdjustmentUnit = ({
     const quantityLabel = compactNumber
         .format(quantity)
         .replace(/^1(?=[A-Z])/, "");
-    if (kind === "search_request") return `${quantityLabel} req`;
-    if (kind === "grounded_prompt") return `${quantityLabel} prompts`;
+    const detail = suffix ? ` · ${suffix}` : "";
+    if (kind === "search_request") return `${quantityLabel} req${detail}`;
+    if (kind === "grounded_prompt") return `${quantityLabel} prompts${detail}`;
     if (kind === "cache_storage") {
-        return `${quantityLabel} tokens`;
+        return `${quantityLabel} tokens${detail}`;
     }
-    return `${quantityLabel} ${unit}${suffix ? ` · ${suffix}` : ""}`;
+    return `${quantityLabel} ${unit}${detail}`;
 };
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
@@ -353,7 +354,7 @@ const RequestBasedAdjustmentKinds = new Set([
     "grounded_prompt",
 ]);
 
-const PricingAdjustmentRows: FC<{
+export const UsagePriceRows: FC<{
     adjustments: ModelPriceAdjustment[];
     align: "left" | "right";
 }> = ({ adjustments, align }) =>
@@ -374,7 +375,7 @@ const PricingAdjustmentRows: FC<{
                 <LedgerPriceValue
                     value={formatDisplayPrice(adjustment.price).value}
                 />
-                <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                <span className="text-xs font-normal text-theme-text-muted [overflow-wrap:anywhere] sm:whitespace-nowrap">
                     /{formatAdjustmentUnit(adjustment)}
                 </span>
             </div>
@@ -597,7 +598,7 @@ export const ModelPricingLedger: FC<{
                         {row.label}
                     </span>
                     <LedgerPriceValue value={row.value} />
-                    <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                    <span className="text-xs font-normal text-theme-text-muted [overflow-wrap:anywhere] sm:whitespace-nowrap">
                         {row.unit}
                     </span>
                 </div>
@@ -609,8 +610,8 @@ export const ModelPricingLedger: FC<{
             className={cn(
                 "grid w-full min-w-0 max-w-full gap-x-2",
                 align === "left"
-                    ? "grid-cols-[6.5rem_10ch_max-content]"
-                    : "grid-cols-[1fr_6.5rem_10ch_max-content]",
+                    ? "grid-cols-[6.5rem_10ch_minmax(0,max-content)]"
+                    : "grid-cols-[1fr_6.5rem_10ch_minmax(0,max-content)]",
                 className,
             )}
         >
@@ -642,7 +643,7 @@ export const ModelPricingLedger: FC<{
                 standaloneTokenAdjustments.length > 0) && (
                 <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(cacheRateRows)}
-                    <PricingAdjustmentRows
+                    <UsagePriceRows
                         adjustments={standaloneTokenAdjustments}
                         align={align}
                     />
@@ -662,7 +663,7 @@ export const ModelPricingLedger: FC<{
                             align === "right" ? "col-start-2" : "col-start-1",
                         )}
                     />
-                    <PricingAdjustmentRows
+                    <UsagePriceRows
                         adjustments={requestBasedAdjustments}
                         align={align}
                     />

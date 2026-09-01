@@ -238,12 +238,25 @@ async def _sse_events(
                 raise item
             if item["type"] == "tool_start":
                 yield _sse_frame(
-                    chunk_id, model, {"content": f"*→ {item['name']}…*\n\n"}
+                    chunk_id,
+                    model,
+                    {
+                        "tool_calls": [
+                            {
+                                "index": 0,
+                                "id": item["id"],
+                                "type": "function",
+                                "function": {
+                                    "name": item["name"],
+                                    "arguments": item["arguments"],
+                                },
+                            }
+                        ]
+                    },
                 )
             elif item["type"] == "nudge":
-                yield _sse_frame(
-                    chunk_id, model, {"content": f"*→ {item['reason']}…*\n\n"}
-                )
+                reason = str(item["reason"]).replace("\r", " ").replace("\n", " ")
+                yield f": progress {reason}\n\n"
             elif item["type"] == "final":
                 markdown, _ = await _build_content(item["text"], item["artifacts"])
                 yield _sse_frame(chunk_id, model, {"content": markdown})

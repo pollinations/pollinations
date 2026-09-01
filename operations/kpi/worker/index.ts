@@ -19,11 +19,11 @@ type Env = {
 
 // Helper to fetch from Tinybird with caching, retry, and error logging
 // Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
-const TINYBIRD_CACHE_TTL = 21600; // 6 hours — weekly data barely changes
+const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
 // not touch caches.default — bump this in the same commit as the pipe change.
-const TINYBIRD_CACHE_VERSION = "3";
+const TINYBIRD_CACHE_VERSION = "5";
 
 async function fetchTinybird(
     env: Env,
@@ -264,8 +264,10 @@ function getWeekStart(date: Date): string {
 // Tinybird: Fetch and aggregate daily Stripe revenue into weekly
 async function fetchStripeRevenue(
     env: Env,
+    weeksBack: number,
 ): Promise<Array<{ week: string; revenue: number; purchases: number }>> {
-    const daysBack = 90;
+    // Include the current partial week plus every requested full week.
+    const daysBack = (weeksBack + 1) * 7;
     const result = await fetchTinybird(env, "daily_stripe_revenue", {
         days_back: daysBack,
     });
@@ -296,10 +298,12 @@ async function fetchStripeRevenue(
 }
 
 app.get("/api/kpi/revenue", async (c) => {
-    const result = (await fetchStripeRevenue(c.env)).map((row) => ({
-        ...row,
-        revenue: Math.round(row.revenue * 100) / 100,
-    }));
+    const result = (await fetchStripeRevenue(c.env, parseWeeksBack(c))).map(
+        (row) => ({
+            ...row,
+            revenue: Math.round(row.revenue * 100) / 100,
+        }),
+    );
 
     return c.json({ data: result });
 });

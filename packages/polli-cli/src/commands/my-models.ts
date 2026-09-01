@@ -25,6 +25,7 @@ const PRICE_FLAGS = [
         "--completion-image-price <number>",
         "Generated-image price (per image when --image-pricing request; per token when --image-pricing tokens)",
     ],
+    ["--completion-video-price <number>", "Generated-video price per second"],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -37,30 +38,47 @@ const PRICE_OPTION_KEYS = [
     "completionReasoningPrice",
     "completionAudioPrice",
     "completionImagePrice",
+    "completionVideoPrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
 
-interface MyModel {
+interface MyModelBase {
     id: string;
     modelId: string;
     name: string;
     title: string;
     description: string | null;
-    modality: "text" | "image";
-    imagePricing: "request" | "tokens";
-    completionImagePrice: number;
-    // How a publisher confirms an image model registered as edit-capable:
-    // /account/my-models/test detects these from generation and edit probes.
-    inputModalities: string[];
     baseUrl: string;
     upstreamModel: string;
     visibility: "private" | "public";
-    fallbackModelIds: string[];
     createdAt: string;
     updatedAt: string;
     [key: string]: unknown;
 }
+
+interface ProxyMyModel extends MyModelBase {
+    type: "proxy";
+    paidOnly: boolean;
+    modality: "text" | "image" | "video" | "transcription" | "embedding";
+    imagePricing: "request" | "tokens";
+    completionImagePrice: number;
+    completionVideoPrice: number;
+    // /account/my-models/test detects edit support from endpoint probes.
+    inputModalities: string[];
+    fallbacks: string[];
+}
+
+interface PromptAgentMyModel extends MyModelBase {
+    type: "prompt_agent";
+}
+
+interface EndpointAgentMyModel extends MyModelBase {
+    type: "endpoint_agent";
+    perUserRpm: number | null;
+}
+
+type MyModel = ProxyMyModel | PromptAgentMyModel | EndpointAgentMyModel;
 
 function addPriceOptions(command: Command): Command {
     for (const [flag, description] of PRICE_FLAGS) {
@@ -88,17 +106,15 @@ export function modelBody(
     opts: Record<string, unknown>,
     includeRequired: boolean,
 ) {
-    const body: Record<string, unknown> = {
-        ...readPriceOptions(opts),
-    };
+    const body: Record<string, unknown> = readPriceOptions(opts);
     const fields = [
         ["name", "name"],
         ["title", "title"],
         ["description", "description"],
         ["baseUrl", "baseUrl"],
-        ["agentId", "agentId"],
         ["upstreamModel", "upstreamModel"],
         ["bearerToken", "bearerToken"],
+        ["paidOnly", "paidOnly"],
     ] as const;
 
     for (const [optionKey, bodyKey] of fields) {
@@ -115,8 +131,16 @@ export function modelBody(
     // Create only. UpdateEndpointSchema has no modality — a model's family
     // is fixed at registration, so update must not send this field.
     if (includeRequired && opts.modality !== undefined) {
-        if (opts.modality !== "text" && opts.modality !== "image") {
-            fail("--modality must be 'text' or 'image'");
+        if (
+            opts.modality !== "text" &&
+            opts.modality !== "image" &&
+            opts.modality !== "video" &&
+            opts.modality !== "transcription" &&
+            opts.modality !== "embedding"
+        ) {
+            fail(
+                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+            );
         }
         body.modality = opts.modality;
     }
@@ -130,8 +154,8 @@ export function modelBody(
 
     // An empty string clears the list, which is why this checks for the flag
     // being present rather than for a truthy value.
-    if (opts.fallbackModels !== undefined) {
-        body.fallbackModelIds = String(opts.fallbackModels)
+    if (opts.fallbacks !== undefined) {
+        body.fallbacks = String(opts.fallbacks)
             .split(",")
             .map((id) => id.trim())
             .filter((id) => id.length > 0);
@@ -152,15 +176,8 @@ export function modelBody(
                 );
             }
         }
-        const modeCount = [body.baseUrl, body.agentId].filter(
-            (value) => value !== undefined,
-        ).length;
-        if (modeCount !== 1) {
-            fail("Provide exactly one of --base-url or --agent-id");
-        }
-        if (body.baseUrl !== undefined && !body.bearerToken) {
-            fail("--bearer-token is required with --base-url");
-        }
+        if (!body.baseUrl) fail("--base-url is required");
+        if (!body.bearerToken) fail("--bearer-token is required");
     }
 
     return body;
@@ -176,26 +193,45 @@ function printModels(models: MyModel[]) {
             id: chalk.dim(model.id),
             model: chalk.hex("#a78bfa").bold(model.modelId),
             title: model.title,
-            modality: model.modality,
+            type: model.type,
+            modality: model.type === "proxy" ? model.modality : "text",
             // Price and billing mode read as one unit, so they share a cell
             // rather than widening an already wide table by two columns.
             image_price:
-                model.modality === "image"
+                model.type === "proxy" && model.modality === "image"
                     ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
                     : "-",
-            inputs: model.inputModalities?.join(", ") || "-",
-            visibility: model.visibility,
-            upstream: model.upstreamModel,
+            video_price:
+                model.type === "proxy" && model.modality === "video"
+                    ? `${model.completionVideoPrice}/sec`
+                    : "-",
+            inputs:
+                model.type === "proxy"
+                    ? model.inputModalities?.join(", ") || "-"
+                    : "-",
+            visibility:
+                model.type === "proxy" && model.paidOnly
+                    ? `${model.visibility} (paid only)`
+                    : model.visibility,
+            upstream:
+                model.type === "proxy" && model.modality === "video"
+                    ? "-"
+                    : model.upstreamModel,
             base_url: model.baseUrl,
-            fallbacks: model.fallbackModelIds?.join(", ") || "-",
+            fallbacks:
+                model.type === "proxy"
+                    ? model.fallbacks?.join(", ") || "-"
+                    : "-",
             description: model.description ?? "-",
         })),
         [
             "id",
             "model",
             "title",
+            "type",
             "modality",
             "image_price",
+            "video_price",
             "inputs",
             "visibility",
             "upstream",
@@ -222,20 +258,30 @@ const list = new Command("list")
 
 const create = addPriceOptions(
     new Command("create")
-        .description("Register an OpenAI-compatible model endpoint")
+        .description("Register a community model endpoint")
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--agent-id <id>", "Managed agent to register")
-        .option("--upstream-model <model>", "Upstream model id")
+        .option(
+            "--base-url <url>",
+            "OpenAI-compatible base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private (default) or public",
         )
         .option(
-            "--fallback-models <ids>",
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen (default)")
+        .option(
+            "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         )
         .option(
@@ -244,7 +290,7 @@ const create = addPriceOptions(
         )
         .option(
             "--modality <modality>",
-            "Model family: text (default) or image",
+            "Model family: text (default), image, video, transcription, or embedding",
         )
         .option(
             "--image-pricing <mode>",
@@ -275,15 +321,26 @@ const update = addPriceOptions(
         .option("--name <name>", "Model name")
         .option("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
+        .option(
+            "--base-url <url>",
+            "OpenAI-compatible base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
             "Model visibility: private or public",
         )
         .option(
-            "--fallback-models <ids>",
+            "--paid-only",
+            "Only accept Paid Pollen, for a pay-as-you-go upstream whose cost free Quest Pollen would not cover",
+        )
+        .option("--no-paid-only", "Accept Quest or Paid Pollen")
+        .option(
+            "--fallbacks <ids>",
             "Comma-separated community model ids tried in order when this model's upstream fails; empty string clears them",
         )
         .option(
@@ -369,18 +426,33 @@ const models = new Command("models")
 
 const test = new Command("test")
     .description("Test an endpoint/model before registering it")
-    .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+    .requiredOption(
+        "--base-url <url>",
+        "OpenAI-compatible base URL, or exact video endpoint URL",
+    )
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
-    .requiredOption("--model <model>", "Upstream model id")
-    .option("--modality <modality>", "Model family: text (default) or image")
+    .option("--model <model>", "Upstream model id (not used for video)")
+    .option(
+        "--modality <modality>",
+        "Model family: text (default), image, video, transcription, or embedding",
+    )
     .action(async (opts) => {
         const key = requireKey();
         if (
             opts.modality !== undefined &&
             opts.modality !== "text" &&
-            opts.modality !== "image"
+            opts.modality !== "image" &&
+            opts.modality !== "video" &&
+            opts.modality !== "transcription" &&
+            opts.modality !== "embedding"
         ) {
-            fail("--modality must be 'text' or 'image'");
+            fail(
+                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+            );
+        }
+        const modality = opts.modality ?? "text";
+        if (modality !== "video" && !opts.model) {
+            fail("--model is required unless --modality is video");
         }
         try {
             const res = await gen<Record<string, unknown>>(
@@ -391,10 +463,8 @@ const test = new Command("test")
                     body: {
                         baseUrl: opts.baseUrl,
                         bearerToken: opts.bearerToken,
-                        model: opts.model,
-                        ...(opts.modality !== undefined && {
-                            modality: opts.modality,
-                        }),
+                        ...(opts.model && { model: opts.model }),
+                        modality,
                     },
                 },
             );
@@ -405,7 +475,9 @@ const test = new Command("test")
     });
 
 export const myModelsCommand = new Command("my-models")
-    .description("Manage private and published community text and image models")
+    .description(
+        "Manage private and published community text, image, video, transcription, and embedding models",
+    )
     .addCommand(list)
     .addCommand(create)
     .addCommand(update)

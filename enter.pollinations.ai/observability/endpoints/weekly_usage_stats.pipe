@@ -21,7 +21,31 @@ SQL >
         sum(token_count_completion_text) AS completion_tokens,
         sum(token_count_prompt_text + token_count_completion_text) AS total_tokens,
         sum(total_price) AS revenue_usd,
-        sum(total_cost) AS cost_usd,
+        sumIf(
+            total_price,
+            is_billed_usage
+            AND response_status >= 200
+            AND response_status < 300
+            AND selected_meter_slug IN ('v1:meter:pack', 'local:pack')
+        ) AS paid_pollen,
+        sumIf(
+            total_price,
+            is_billed_usage
+            AND response_status >= 200
+            AND response_status < 300
+            AND selected_meter_slug IN ('v1:meter:tier', 'local:tier')
+        ) AS quest_pollen,
+        round(
+            paid_pollen * 100.0 / nullIf(paid_pollen + quest_pollen, 0),
+            2
+        ) AS paid_pollen_pct,
+        -- Community total_cost is its sale price, not an upstream bill. Its
+        -- owner reward is the corresponding COGS for this gross-margin view.
+        sum(if(
+            model_provider_used = 'community',
+            community_model_reward_amount,
+            total_cost
+        )) AS cost_usd,
         uniq(user_id) AS active_users,
         -- See weekly_active_users: 402 is an out-of-Pollen rejection, counted
         -- as a user and a request today but never served.

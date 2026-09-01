@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 import { sortModels } from "../frontend/src/components/models/model-sort.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
@@ -15,7 +16,11 @@ function model(name: string, overrides: Partial<ModelPrice> = {}): ModelPrice {
 describe("model sorting", () => {
     const models = [
         model("unknown"),
-        model("free", { free: true, addedDate: 10, realAvgCost: 99 }),
+        model("free-but-measured", {
+            free: true,
+            addedDate: 10,
+            realAvgCost: 99,
+        }),
         model("cheap", {
             realAvgCost: 0.1,
             addedDate: 30,
@@ -30,11 +35,11 @@ describe("model sorting", () => {
         expect(sortModels(models, "newest").map(({ name }) => name)).toEqual([
             "cheap",
             "expensive",
-            "free",
+            "free-but-measured",
             "unknown",
         ]);
         expect(sortModels(models, "oldest").map(({ name }) => name)).toEqual([
-            "free",
+            "free-but-measured",
             "expensive",
             "cheap",
             "unknown",
@@ -49,13 +54,25 @@ describe("model sorting", () => {
         ).toEqual(["first", "second"]);
     });
 
-    it("sorts free and observed average generation costs", () => {
+    it("sorts by rolling user count with missing values last", () => {
+        const popularModels = [
+            model("unknown"),
+            model("small", { users7d: 3 }),
+            model("large", { users7d: 20 }),
+        ];
+
+        expect(
+            sortModels(popularModels, "popular").map(({ name }) => name),
+        ).toEqual(["large", "small", "unknown"]);
+    });
+
+    it("sorts free and observed generation costs", () => {
         expect(sortModels(models, "price-low").map(({ name }) => name)).toEqual(
-            ["free", "cheap", "expensive", "unknown"],
+            ["cheap", "expensive", "free-but-measured", "unknown"],
         );
         expect(
             sortModels(models, "price-high").map(({ name }) => name),
-        ).toEqual(["expensive", "cheap", "free", "unknown"]);
+        ).toEqual(["free-but-measured", "expensive", "cheap", "unknown"]);
     });
 
     it("sorts by display title or groups by brand and then title", () => {
@@ -78,5 +95,13 @@ describe("model sorting", () => {
         expect(
             sortModels(namedModels, "brand-desc").map(({ name }) => name),
         ).toEqual(["alpha", "zeta", "beta", "orphan"]);
+    });
+});
+
+describe("model sort search parameter", () => {
+    it("uses popularity by default while preserving explicit sorts", () => {
+        expect(validateModelSearch({}).sort).toBeUndefined();
+        expect(validateModelSearch({ sort: "popular" }).sort).toBeUndefined();
+        expect(validateModelSearch({ sort: "newest" }).sort).toBe("newest");
     });
 });

@@ -1,573 +1,76 @@
+import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
-    COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES,
-    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
-    COMMUNITY_ENDPOINT_MODALITIES,
-    COMMUNITY_ENDPOINT_PRICE_FIELDS,
-    COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_VISIBILITIES,
-    COMMUNITY_PROVIDER_NAME_MAX_LENGTH,
-    COMMUNITY_PROVIDER_URL_MAX_LENGTH,
-    type CommunityEndpointImagePricing,
-    type CommunityEndpointModality,
-    type CommunityEndpointPriceKey,
-    type CommunityEndpointPrices,
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
-    communityEndpointPriceFieldsForModality,
-    communityEndpointPrices,
-    communityEndpointPricesForModality,
-    communityEndpointTitle,
     communityModelId,
+    type EndpointAgentListingPayload,
+    effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
-    isCommunityFallbackPricingAllowed,
-    MAX_COMMUNITY_PRICE_PER_IMAGE,
-    MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MAX_COMMUNITY_PRICE_PER_SECOND,
-    MAX_COMMUNITY_PRICE_PER_TOKEN,
-    MAX_FALLBACK_TARGETS,
-    MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
-    MIN_COMMUNITY_PRICE_PER_TOKEN,
-    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
-    normalizeCommunityEndpointImagePricing,
-    normalizeCommunityEndpointInputModalities,
-    normalizeCommunityEndpointModality,
     normalizeCommunityProviderUrl,
-    parseCommunityModelId,
+    type ProxyListingPayload,
+    parseListingPayload,
+    pendingCommunityEndpointChangeIsReady,
+    resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
-import {
-    MODEL_INPUT_MODALITIES,
-    type ModelInputModality,
-} from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { describeRoute, resolver } from "hono-openapi";
-import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
+    type CommunityEndpointTestResult,
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { agentRuntimeBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import {
+    type FallbackPrimary,
+    fallbackTargetRejection,
+    resolveFallbacks,
+} from "./community-endpoints/fallbacks.ts";
+import { toCommunityEndpointResponse } from "./community-endpoints/presenter.ts";
+import {
+    changesProxyPayload,
+    deriveCreateProxyPolicy,
+    deriveUpdatedProxyPolicy,
+    hasProxyPricingInput,
+    proxyPricingChanged,
+    withoutProxyPricingChanges,
+} from "./community-endpoints/proxy-policy.ts";
+import {
+    assertValidUpdate,
+    CommunityEndpointDeleteResponseSchema,
+    CommunityEndpointListResponseSchema,
+    CommunityEndpointModelsResponseSchema,
+    CommunityEndpointResponseSchema,
+    CommunityEndpointTestResponseSchema,
+    CommunityProviderProfileInputSchema,
+    CommunityProviderProfileResponseSchema,
+    CreateEndpointAgentSchema,
+    CreateEndpointSchema,
+    EndpointAgentResponseSchema,
+    FallbackCandidatesResponseSchema,
+    ModelListSchema,
+    TestEndpointSchema,
+    UpdateEndpointSchema,
+} from "./community-endpoints/schemas.ts";
 
-const ModalitySchema = z
-    .enum(COMMUNITY_ENDPOINT_MODALITIES)
-    .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
-    );
-const ImagePricingSchema = z
-    .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
-    .describe(
-        'Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test.',
-    );
-const InputModalitySchema = z.enum(MODEL_INPUT_MODALITIES);
-const InputModalitiesSchema = z
-    .array(InputModalitySchema)
-    .min(1)
-    .describe(
-        "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
-    );
-const PriceSchema = z
-    .number()
-    .finite()
-    .min(0)
-    .refine((price) => price === 0 || price >= MIN_COMMUNITY_PRICE_PER_TOKEN, {
-        message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
-    })
-    .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
-    );
-const UpdatePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
-        field.key,
-        PriceSchema.optional(),
-    ]),
-) as unknown as Record<
-    CommunityEndpointPriceKey,
-    z.ZodOptional<z.ZodType<number>>
->;
-
-function hasNonZeroPrice(
-    source: Partial<Record<CommunityEndpointPriceKey, number>>,
-): boolean {
-    return COMMUNITY_ENDPOINT_PRICE_FIELDS.some(
-        (field) => (source[field.key] ?? 0) !== 0,
-    );
-}
-
-function enforceCommunityEndpointPriceLimits(
-    source: Partial<Record<CommunityEndpointPriceKey, number>>,
-    modality: (typeof COMMUNITY_ENDPOINT_MODALITIES)[number],
-    imagePricing: (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number],
-): void {
-    for (const field of communityEndpointPriceFieldsForModality(
-        modality,
-        imagePricing,
-    )) {
-        const price = source[field.key];
-        const maxPrice =
-            field.priceUnit === "image"
-                ? MAX_COMMUNITY_PRICE_PER_IMAGE
-                : field.priceUnit === "second"
-                  ? MAX_COMMUNITY_PRICE_PER_SECOND
-                  : MAX_COMMUNITY_PRICE_PER_TOKEN;
-        if (price === undefined || price <= maxPrice) continue;
-
-        const limit =
-            field.priceUnit === "image"
-                ? `${MAX_COMMUNITY_PRICE_PER_IMAGE} Pollen per image`
-                : field.priceUnit === "second"
-                  ? `${MAX_COMMUNITY_PRICE_PER_SECOND} Pollen per second`
-                  : `${MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS} Pollen per 1M tokens`;
-        throw new HTTPException(400, {
-            message: `${field.label} price must not exceed ${limit}`,
-        });
-    }
-}
-
-function enforceCommunityEndpointInputModalities(
-    modality: CommunityEndpointModality,
-    inputModalities: readonly string[],
-): void {
-    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality];
-    const unsupported = inputModalities.find(
-        (input) => !(permitted as readonly string[]).includes(input),
-    );
-    if (!unsupported) return;
-    throw new HTTPException(400, {
-        message: `${unsupported} input is not supported for ${modality} models`,
-    });
-}
-
-// Community fallback targets are restricted to public community models or
-// private models owned by the same developer.
-// Pointing a community model at a Pollinations-operated model is deliberately
-// out of scope: static registry prices can be function-valued/dynamic, so the
-// "same or lower price" comparison is not well-defined against them.
-const FallbackModelIdsSchema = z
-    .array(z.string().trim().min(1))
-    .max(MAX_FALLBACK_TARGETS)
-    .describe(
-        'Community model ids ("<owner>/<name>") tried in order when this model\'s upstream fails, or an empty array to clear them. Each must be another active community model of the same modality, public or owned by you, and priced at or below this model on every price field.',
-    );
-
-const SELF_FALLBACK_MESSAGE = "Fallback target cannot be the model itself";
-
-type FallbackPrimary = {
-    modelId: string;
-    ownerUserId: string;
-    modality: CommunityEndpointModality;
-    imagePricing: CommunityEndpointImagePricing;
-    prices: CommunityEndpointPrices;
-    inputModalities?: readonly ModelInputModality[] | null;
-};
-
-function fallbackTargetMissingMessage(modelId: string): string {
-    return `Fallback target ${modelId} does not exist`;
-}
-
-/**
- * Private or deactivated rows owned by someone else must look identical to a
- * missing row. Distinct 400s were an existence oracle.
- */
-function shouldConcealFallbackTarget(
-    primary: FallbackPrimary,
-    target: CommunityEndpointRow,
-): boolean {
-    if (target.ownerUserId === primary.ownerUserId) return false;
-    return target.visibility === "private" || target.disabledAt !== null;
-}
-
-/**
- * Whether a stored row generates through something else — always for an agent,
- * and for an external endpoint that was granted delegation.
- */
-function rowDelegatesGeneration(row: {
-    agentId: string | null;
-    delegatesGeneration: boolean;
-}): boolean {
-    return row.agentId !== null || row.delegatesGeneration;
-}
-
-/**
- * Why `target` may not serve as a fallback for `primary`, or null when it may.
- *
- * The candidate list the dashboard offers and the validation the write path
- * applies must agree, so both go through this one function — a target the UI
- * shows can always be saved, and one it hides always explains itself.
- */
-function fallbackTargetRejection(
-    primary: FallbackPrimary,
-    modelId: string,
-    target: CommunityEndpointRow,
-): string | null {
-    // Reached from the candidates route, where the model itself is one of the
-    // public rows scanned. The write path checks this earlier, before any
-    // lookup, because a model being created has no row to find.
-    if (modelId === primary.modelId) return SELF_FALLBACK_MESSAGE;
-    if (shouldConcealFallbackTarget(primary, target)) {
-        return fallbackTargetMissingMessage(modelId);
-    }
-    if (target.disabledAt !== null) {
-        return `Fallback target ${modelId} must be active`;
-    }
-    if (rowDelegatesGeneration(target)) {
-        return `Fallback target ${modelId} cannot delegate generation`;
-    }
-    if (
-        target.visibility === "private" &&
-        target.ownerUserId !== primary.ownerUserId
-    ) {
-        return `Fallback target ${modelId} must be public or owned by you`;
-    }
-    const targetModality = normalizeCommunityEndpointModality(target.modality);
-    if (targetModality !== primary.modality) {
-        return `Fallback target ${modelId} is a ${targetModality} model, not ${primary.modality}`;
-    }
-    // The stored price columns mean different things in "request" and "tokens"
-    // mode, so comparing across modes is meaningless.
-    const targetImagePricing = normalizeCommunityEndpointImagePricing(
-        target.imagePricing,
-    );
-    if (
-        primary.modality === "image" &&
-        targetImagePricing !== primary.imagePricing
-    ) {
-        return `Fallback target ${modelId} bills images per ${targetImagePricing}, not per ${primary.imagePricing}`;
-    }
-    const primaryInputs = normalizeCommunityEndpointInputModalities(
-        primary.inputModalities,
-        primary.modality,
-    );
-    const targetInputs = normalizeCommunityEndpointInputModalities(
-        target.inputModalities,
-        targetModality,
-    );
-    if (
-        primary.modality === "image" &&
-        primaryInputs.includes("image") &&
-        !targetInputs.includes("image")
-    ) {
-        return `Fallback target ${modelId} does not support image edits`;
-    }
-    const targetPrices = communityEndpointPrices(target);
-    if (!isCommunityFallbackPricingAllowed(primary.prices, targetPrices)) {
-        const excesses = COMMUNITY_ENDPOINT_PRICE_FIELDS.filter(
-            (field) => targetPrices[field.key] > primary.prices[field.key],
-        ).map(
-            (field) =>
-                `${field.key} (${targetPrices[field.key]}) exceeds this model's (${primary.prices[field.key]})`,
-        );
-        return `Fallback target ${modelId} ${excesses.join(", ")}`;
-    }
-    return null;
-}
-
-// Resolves and validates one requested fallback target.
-async function resolveFallbackModelId(
-    db: Db,
-    requested: string,
-    primary: FallbackPrimary,
-): Promise<string> {
-    const parsed = parseCommunityModelId(requested);
-    if (!parsed) {
-        throw new HTTPException(400, {
-            message: `Fallback target ${requested} must be a community model id in the form <owner>/<name>`,
-        });
-    }
-    const fallbackModelId = communityModelId(
-        parsed.ownerGithubUsername,
-        parsed.modelName,
-    );
-    // Before the lookup: on create the model has no row yet, so a self-reference
-    // would otherwise surface as "does not exist".
-    if (fallbackModelId === primary.modelId) {
-        throw new HTTPException(400, { message: SELF_FALLBACK_MESSAGE });
-    }
-
-    const targetOwner = await db.query.user.findFirst({
-        columns: { id: true },
-        where: eq(schema.user.githubUsername, parsed.ownerGithubUsername),
-    });
-    const target = targetOwner
-        ? await db.query.communityEndpoint.findFirst({
-              where: and(
-                  eq(schema.communityEndpoint.ownerUserId, targetOwner.id),
-                  eq(schema.communityEndpoint.name, parsed.modelName),
-              ),
-          })
-        : undefined;
-    if (!target || shouldConcealFallbackTarget(primary, target)) {
-        throw new HTTPException(400, {
-            message: fallbackTargetMissingMessage(fallbackModelId),
-        });
-    }
-    const rejection = fallbackTargetRejection(primary, fallbackModelId, target);
-    if (rejection) throw new HTTPException(400, { message: rejection });
-    return fallbackModelId;
-}
-
-// Resolves the whole declared list.
-//
-// A target can later be deleted, deactivated, or repriced above the primary.
-// There is no reconciliation job: the generation registry re-checks these same
-// rules when it links entries, so this is a UX guard, not an invariant.
-async function resolveFallbackModelIds(
-    db: Db,
-    requested: string[],
-    primary: FallbackPrimary,
-): Promise<string[]> {
-    const resolved: string[] = [];
-    for (const id of requested) {
-        const modelId = await resolveFallbackModelId(db, id, primary);
-        if (resolved.includes(modelId)) {
-            throw new HTTPException(400, {
-                message: `Fallback target ${modelId} is listed more than once`,
-            });
-        }
-        resolved.push(modelId);
-    }
-    return resolved;
-}
-
-const VisibilitySchema = z
-    .enum(COMMUNITY_ENDPOINT_VISIBILITIES)
-    .describe(
-        '"private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account.',
-    );
-const PerUserRpmSchema = z
-    .number()
-    .finite()
-    .positive()
-    .nullable()
-    .describe(
-        "Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit.",
-    );
-const EndpointFieldsSchema = {
-    // This slug is used in `<owner>/<name>` model ids and by operational tools.
-    // Keep it safe to pass as data without accepting shell or SQL syntax.
-    name: z
-        .string()
-        .trim()
-        .min(1)
-        .max(120)
-        .regex(
-            /^[A-Za-z0-9._:-]+$/,
-            "Model name may only contain letters, numbers, periods, underscores, colons, and hyphens",
-        ),
-    title: z
-        .string()
-        .trim()
-        .min(1)
-        .max(COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH)
-        .describe("Display name shown in the model catalog."),
-    description: z
-        .string()
-        .trim()
-        .max(COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH)
-        .optional(),
-    baseUrl: z
-        .string()
-        .url()
-        .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
-        ),
-    upstreamModel: z.string().trim().min(1).max(253).optional(),
-    bearerToken: z.string().min(1),
-} as const;
-
-const CreateEndpointSchema = z
-    .object({
-        ...EndpointFieldsSchema,
-        baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-        agentId: z.string().uuid().optional(),
-        bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-        modality: ModalitySchema.optional().default("text"),
-        imagePricing: ImagePricingSchema.optional().default("request"),
-        // No blanket default: what an omitted set means depends on the
-        // modality, so it is resolved in the handler once modality is known.
-        inputModalities: InputModalitiesSchema.optional(),
-        visibility: VisibilitySchema.optional().default("private"),
-        perUserRpm: PerUserRpmSchema.optional(),
-        fallbackModelIds: FallbackModelIdsSchema.optional(),
-        ...UpdatePriceFieldsSchema,
-    })
-    // A registration is one of two shapes: a managed agent, which resolves its
-    // target and credentials from the agent row, or an external endpoint, which
-    // brings its own. Validating each shape once keeps the two sets of rules
-    // readable and stops them being restated per field.
-    .superRefine((input, context) => {
-        const isAgent = input.agentId !== undefined;
-        if (isAgent === (input.baseUrl !== undefined)) {
-            context.addIssue({
-                code: "custom",
-                message: "Provide exactly one of baseUrl or agentId",
-            });
-            return;
-        }
-        if (!isAgent) {
-            if (!input.bearerToken) {
-                context.addIssue({
-                    code: "custom",
-                    path: ["bearerToken"],
-                    message:
-                        "bearerToken is required when registering with baseUrl",
-                });
-            }
-            return;
-        }
-        const agentRejections = [
-            {
-                invalid: input.modality !== "text",
-                path: "modality",
-                message: "Managed agents must use text modality",
-            },
-            {
-                invalid: input.bearerToken !== undefined,
-                path: "bearerToken",
-                message:
-                    "Managed agent credentials are configured on the agent",
-            },
-            {
-                invalid: Boolean(input.fallbackModelIds?.length),
-                path: "fallbackModelIds",
-                message:
-                    "Managed agent listings do not support fallback models",
-            },
-            {
-                invalid: input.perUserRpm != null,
-                path: "perUserRpm",
-                message: "Managed agent listings do not support per-user RPM",
-            },
-        ];
-        for (const rejection of agentRejections) {
-            if (!rejection.invalid) continue;
-            context.addIssue({
-                code: "custom",
-                path: [rejection.path],
-                message: rejection.message,
-            });
-        }
-    });
-const UpdateEndpointSchema = z.object({
-    name: EndpointFieldsSchema.name.optional(),
-    title: EndpointFieldsSchema.title.optional(),
-    description: EndpointFieldsSchema.description,
-    baseUrl: EndpointFieldsSchema.baseUrl.optional(),
-    upstreamModel: EndpointFieldsSchema.upstreamModel,
-    bearerToken: EndpointFieldsSchema.bearerToken.optional(),
-    visibility: VisibilitySchema.optional(),
-    perUserRpm: PerUserRpmSchema.optional(),
-    imagePricing: ImagePricingSchema.optional(),
-    inputModalities: InputModalitiesSchema.optional(),
-    fallbackModelIds: FallbackModelIdsSchema.optional(),
-    active: z.boolean().optional(),
-    ...UpdatePriceFieldsSchema,
-});
-const FallbackCandidatesResponseSchema = z.object({
-    data: z.array(z.string()),
-});
-const ModelListSchema = z.object({
-    baseUrl: z.string().url(),
-    bearerToken: z.string().min(1),
-});
-const TestEndpointSchema = z.object({
-    baseUrl: z.string().url(),
-    bearerToken: z.string().min(1),
-    model: z.string().trim().min(1).max(253),
-    modality: ModalitySchema.optional().default("text"),
-});
-const ResponsePriceFieldsSchema = Object.fromEntries(
-    COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
-) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
-const CommunityEndpointResponseSchema = z.object({
-    id: z.string(),
-    modelId: z.string(),
-    name: z.string(),
-    title: z.string(),
-    description: z.string().nullable(),
-    modality: ModalitySchema,
-    imagePricing: ImagePricingSchema,
-    inputModalities: z.array(InputModalitySchema),
-    baseUrl: z.string(),
-    agentId: z.string().nullable(),
-    // Derived, not the stored column: true for every agent as well. Clients get
-    // the answer rather than the two columns it is computed from.
-    delegatesGeneration: z.boolean(),
-    upstreamModel: z.string(),
-    visibility: VisibilitySchema,
-    perUserRpm: PerUserRpmSchema,
-    fallbackModelIds: z.array(z.string()),
-    ...ResponsePriceFieldsSchema,
-    disabled: z.boolean(),
-    disabledReason: z.string().nullable(),
-    disabledAt: z.string().nullable(),
-    createdAt: z.string(),
-    updatedAt: z.string(),
-});
-const CommunityEndpointListResponseSchema = z.object({
-    data: z.array(CommunityEndpointResponseSchema),
-    provider: z.object({
-        name: z.string().nullable(),
-        url: z.string().url().nullable(),
-    }),
-});
-const CommunityProviderProfileInputSchema = z.object({
-    name: z.string().trim().max(COMMUNITY_PROVIDER_NAME_MAX_LENGTH),
-    url: z.string().trim().max(COMMUNITY_PROVIDER_URL_MAX_LENGTH),
-});
-const CommunityProviderProfileResponseSchema = z.object({
-    name: z.string().nullable(),
-    url: z.string().url().nullable(),
-});
-const CommunityEndpointModelsResponseSchema = z.object({
-    data: z.array(z.string()),
-});
-const CommunityEndpointTestResponseSchema = z
-    .object({
-        ok: z.boolean(),
-        message: z.string(),
-        usage: z
-            .record(z.string(), z.unknown())
-            .describe(
-                "Raw provider usage, or `{ images: 1 }` when an image provider returns no token usage.",
-            ),
-        billableUsage: z
-            .record(z.string(), z.number())
-            .describe(
-                "Normalized billable usage fields used to reveal applicable prices.",
-            ),
-        imagePricing: ImagePricingSchema.optional().describe(
-            "Image tests only: pricing mode detected from the provider response.",
-        ),
-        inputModalities: z
-            .array(InputModalitySchema)
-            .optional()
-            .describe(
-                "Image tests only: input types detected from generation and edit probes.",
-            ),
-    })
-    .passthrough();
-const CommunityEndpointDeleteResponseSchema = z.object({
-    id: z.string(),
-});
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
-
-function normalizeInputBaseUrl(value: string): string {
+function validateInputEndpointUrl(value: string): string {
     try {
-        return normalizeCommunityEndpointBaseUrl(value);
+        return validateCommunityEndpointUrl(value);
     } catch (error) {
         throw new HTTPException(400, {
             message:
@@ -634,46 +137,6 @@ async function requireOwnerGithubUsername(
     });
 }
 
-function toResponse(
-    row: CommunityEndpointRow,
-    ownerGithubUsername: string,
-    env: { AGENT_RUNTIME_BASE_URL: string },
-) {
-    const modality = normalizeCommunityEndpointModality(row.modality);
-    // Agent listings have no target of their own; they resolve to the runtime.
-    const baseUrl = row.baseUrl ?? agentRuntimeBaseUrl(env);
-    return {
-        id: row.id,
-        modelId: communityModelId(ownerGithubUsername, row.name),
-        name: row.name,
-        title: communityEndpointTitle({
-            modelId: communityModelId(ownerGithubUsername, row.name),
-            title: row.title,
-            description: row.description,
-        }),
-        description: row.description,
-        modality,
-        imagePricing: normalizeCommunityEndpointImagePricing(row.imagePricing),
-        inputModalities: normalizeCommunityEndpointInputModalities(
-            row.inputModalities,
-            modality,
-        ),
-        baseUrl,
-        agentId: row.agentId,
-        delegatesGeneration: rowDelegatesGeneration(row),
-        upstreamModel: row.upstreamModel,
-        visibility: row.visibility,
-        perUserRpm: row.perUserRpm,
-        fallbackModelIds: row.fallbackModelIds ?? [],
-        ...communityEndpointPrices(row),
-        disabled: row.disabledAt !== null,
-        disabledReason: row.disabledReason,
-        disabledAt: row.disabledAt,
-        createdAt: row.createdAt,
-        updatedAt: row.updatedAt,
-    };
-}
-
 async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
     const row = await db.query.communityEndpoint.findFirst({
         where: and(
@@ -687,32 +150,6 @@ async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
         });
     }
     return row;
-}
-
-async function requireUnregisteredOwnedAgent(
-    db: Db,
-    id: string,
-    ownerUserId: string,
-) {
-    const agent = await db.query.agent.findFirst({
-        where: and(
-            eq(schema.agent.id, id),
-            eq(schema.agent.ownerUserId, ownerUserId),
-        ),
-    });
-    if (!agent) {
-        throw new HTTPException(404, { message: "Agent not found" });
-    }
-    const registration = await db.query.communityEndpoint.findFirst({
-        columns: { id: true },
-        where: eq(schema.communityEndpoint.agentId, id),
-    });
-    if (registration) {
-        throw new HTTPException(400, {
-            message: "Agent is already registered as a community model",
-        });
-    }
-    return agent;
 }
 
 async function ensureModelNameAvailable(
@@ -788,7 +225,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .get(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List My Models",
             description:
                 "List private and public community models owned by the authenticated account. API keys require `account:keys`.",
@@ -827,21 +264,27 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 },
                 where: eq(schema.user.id, user.id),
             });
-            return c.json({
-                data: rows.map((endpoint) =>
-                    toResponse(endpoint, ownerGithubUsername, c.env),
-                ),
-                provider: {
-                    name: owner?.communityProviderName ?? null,
-                    url: owner?.communityProviderUrl ?? null,
-                },
-            });
+            return c.json(
+                CommunityEndpointListResponseSchema.parse({
+                    data: rows.map((endpoint) =>
+                        toCommunityEndpointResponse(
+                            endpoint,
+                            ownerGithubUsername,
+                            c.env.AGENT_RUNTIME_BASE_URL,
+                        ),
+                    ),
+                    provider: {
+                        name: owner?.communityProviderName ?? null,
+                        url: owner?.communityProviderUrl ?? null,
+                    },
+                }),
+            );
         },
     )
     .post(
         "/provider",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Update Community Provider Profile",
             description:
                 "Set the public provider name and HTTPS service link shared by all community models owned by the authenticated account. Send both fields empty to clear the profile. Publishing approval and `account:keys` are required.",
@@ -897,10 +340,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .get(
         "/:id/fallback-candidates",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List Fallback Candidates",
             description:
-                "Community models this model may declare as fallbacks: active, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
+                "Community models this model may declare as fallbacks: listed, public or owned by you, same modality, and priced at or below it on every price field. Computed with the same rule the update endpoint validates against, so every id listed here is accepted. Eligibility is re-checked when a request is routed, so a target repriced above this model afterwards stops serving without changing the stored list.",
             responses: {
                 200: {
                     description: "Eligible fallback model ids",
@@ -932,16 +375,32 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (!endpoint) {
                 throw new HTTPException(404, { message: "Model not found" });
             }
-            if (endpoint.agentId !== null) return c.json({ data: [] });
+            if (endpoint.type !== "proxy") return c.json({ data: [] });
+            const currentPayload = parseListingPayload(
+                "proxy",
+                endpoint.payload,
+            );
+            if (!currentPayload) {
+                throw new Error(`Invalid proxy payload for ${endpoint.id}`);
+            }
+            const endpointPayload = resolveEffectiveProxyListing({
+                visibility: endpoint.visibility,
+                payload: currentPayload,
+                pendingVisibility: endpoint.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    endpoint.pendingPayload,
+                ),
+                pendingAt: endpoint.pendingAt,
+            }).payload;
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
-                modality: normalizeCommunityEndpointModality(endpoint.modality),
-                imagePricing: normalizeCommunityEndpointImagePricing(
-                    endpoint.imagePricing,
-                ),
-                prices: communityEndpointPrices(endpoint),
-                inputModalities: endpoint.inputModalities,
+                modality: endpointPayload.modality,
+                imagePricing: endpointPayload.imagePricing,
+                paidOnly: endpointPayload.paidOnly,
+                prices: endpointPayload.prices,
+                inputModalities: endpointPayload.inputModalities,
             };
             const candidates = await db
                 .select({
@@ -952,12 +411,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 .innerJoin(
                     schema.user,
                     eq(schema.communityEndpoint.ownerUserId, schema.user.id),
-                )
-                .where(
-                    or(
-                        eq(schema.communityEndpoint.visibility, "public"),
-                        eq(schema.communityEndpoint.ownerUserId, user.id),
-                    ),
                 );
             const data = candidates
                 .flatMap(({ endpoint: row, ownerGithubUsername: owner }) => {
@@ -972,12 +425,79 @@ export const communityEndpointsRoutes = new Hono<Env>()
         },
     )
     .post(
+        "/endpoint-agents",
+        describeRoute({
+            tags: ["🤖 Community Agents"],
+            summary: "Create Endpoint Agent",
+            description:
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account and become public after 12 hours. API keys require `account:keys`.",
+            responses: {
+                200: {
+                    description: "Created endpoint agent",
+                    content: {
+                        "application/json": {
+                            schema: resolver(EndpointAgentResponseSchema),
+                        },
+                    },
+                },
+                400: { description: "Invalid endpoint agent configuration" },
+                401: { description: "Unauthorized" },
+                403: { description: "Permission denied" },
+            },
+        }),
+        validator("json", CreateEndpointAgentSchema),
+        async (c) => {
+            const user = c.var.auth.requireUser();
+            const input = c.req.valid("json");
+            const db = drizzle(c.env.DB, { schema });
+            requireAccountPermission(c.var.auth.apiKey, "keys");
+            const ownerGithubUsername = await requireOwnerGithubUsername(
+                db,
+                user.id,
+            );
+            await ensureModelNameAvailable(db, user.id, input.name);
+            await enforcePublishingAccess(db, user.id, input.visibility);
+            const queuesPublication = input.visibility === "public";
+            const payload: EndpointAgentListingPayload = {
+                perUserRpm: input.perUserRpm,
+            };
+            const [row] = await db
+                .insert(schema.communityEndpoint)
+                .values({
+                    id: crypto.randomUUID(),
+                    ownerUserId: user.id,
+                    name: input.name,
+                    title: input.title,
+                    description: input.description || null,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
+                    type: "endpoint_agent",
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
+                    upstreamModel: input.upstreamModel ?? input.name,
+                    payload: JSON.stringify(payload),
+                    createdAt: new Date(),
+                    updatedAt: new Date(),
+                })
+                .returning();
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
+        },
+    )
+    .post(
         "/",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text or image model. Private is the default. Public models require an allowlisted account and may be free or priced. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -1003,91 +523,70 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             await ensureModelNameAvailable(db, user.id, input.name);
-            const agent = input.agentId
-                ? await requireUnregisteredOwnedAgent(
-                      db,
-                      input.agentId,
-                      user.id,
-                  )
-                : null;
-            if (agent && hasNonZeroPrice(input)) {
-                throw new HTTPException(400, {
-                    message: "Managed agent listings must be free",
-                });
-            }
-            const modality = agent ? "text" : input.modality;
-            const imagePricing =
-                modality === "image" ? input.imagePricing : "request";
-            // An omitted set follows the modality — audio for transcription,
-            // text otherwise. An explicit set is validated rather than
-            // silently rewritten, so a wrong declaration still gets a 400.
-            const inputModalities =
-                input.inputModalities ??
-                normalizeCommunityEndpointInputModalities(undefined, modality);
-            enforceCommunityEndpointInputModalities(modality, inputModalities);
-            const prices =
-                agent || input.visibility !== "public"
-                    ? communityEndpointPrices({})
-                    : communityEndpointPricesForModality(
-                          input,
-                          modality,
-                          imagePricing,
-                      );
-            enforceCommunityEndpointPriceLimits(prices, modality, imagePricing);
-            const fallbackModelIds = input.fallbackModelIds
-                ? await resolveFallbackModelIds(db, input.fallbackModelIds, {
-                      modelId: communityModelId(
-                          ownerGithubUsername,
-                          input.name,
-                      ),
+            const targetPolicy = deriveCreateProxyPolicy(input);
+            const queuesPublication = input.visibility === "public";
+            const policy = queuesPublication
+                ? deriveCreateProxyPolicy({ ...input, visibility: "private" })
+                : targetPolicy;
+            const modelId = communityModelId(ownerGithubUsername, input.name);
+            const bearerTokenCiphertext = await encryptSecret(
+                normalizeInputBearerToken(input.bearerToken),
+                c.env.BETTER_AUTH_SECRET,
+            );
+            const fallbacks = input.fallbacks
+                ? await resolveFallbacks(db, input.fallbacks, {
+                      modelId,
                       ownerUserId: user.id,
-                      modality,
-                      imagePricing,
-                      prices,
-                      inputModalities: input.inputModalities,
+                      ...targetPolicy,
                   })
                 : [];
+            const payload: ProxyListingPayload = {
+                bearerTokenCiphertext,
+                ...policy,
+                fallbacks,
+            };
             await enforcePublishingAccess(db, user.id, input.visibility);
-            const id = crypto.randomUUID();
             const [row] = await db
                 .insert(schema.communityEndpoint)
                 .values({
-                    id,
+                    id: crypto.randomUUID(),
                     ownerUserId: user.id,
                     name: input.name,
                     title: input.title,
                     description: input.description || null,
-                    modality,
-                    imagePricing,
-                    inputModalities,
-                    baseUrl: agent
-                        ? null
-                        : normalizeInputBaseUrl(input.baseUrl ?? ""),
-                    agentId: agent?.id ?? null,
+                    visibility: queuesPublication
+                        ? "private"
+                        : input.visibility,
+                    type: "proxy",
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
-                    bearerTokenCiphertext: agent
-                        ? null
-                        : await encryptSecret(
-                              normalizeInputBearerToken(
-                                  input.bearerToken ?? "",
-                              ),
-                              c.env.BETTER_AUTH_SECRET,
-                          ),
-                    visibility: input.visibility,
-                    perUserRpm: agent ? null : (input.perUserRpm ?? null),
-                    fallbackModelIds,
-                    ...prices,
+                    payload: JSON.stringify(payload),
+                    pendingPayload: queuesPublication
+                        ? JSON.stringify({
+                              bearerTokenCiphertext,
+                              ...targetPolicy,
+                              fallbacks,
+                          } satisfies ProxyListingPayload)
+                        : null,
+                    pendingVisibility: queuesPublication ? "public" : null,
+                    pendingAt: queuesPublication ? new Date() : null,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername, c.env));
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
         },
     )
     .post(
         "/models",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "List Upstream Models",
             description:
                 "Fetch OpenAI-compatible upstream model IDs from a provider before registering a My Models endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
@@ -1130,10 +629,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/test",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -1163,12 +662,34 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result =
-                    input.modality === "image"
-                        ? await testCommunityImageEndpoint(input)
-                        : input.modality === "transcription"
-                          ? await testCommunityTranscriptionEndpoint(input)
-                          : await testCommunityEndpoint(input);
+                const endpointInput = {
+                    ...input,
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
+                };
+                let result: CommunityEndpointTestResult;
+                if (input.modality === "video") {
+                    result = await testCommunityVideoEndpoint(endpointInput);
+                } else {
+                    if (!input.model) {
+                        throw new HTTPException(400, {
+                            message:
+                                "model is required unless modality is video",
+                        });
+                    }
+                    const modelInput = { ...endpointInput, model: input.model };
+                    result =
+                        input.modality === "image"
+                            ? await testCommunityImageEndpoint(modelInput)
+                            : input.modality === "transcription"
+                              ? await testCommunityTranscriptionEndpoint(
+                                    modelInput,
+                                )
+                              : input.modality === "embedding"
+                                ? await testCommunityEmbeddingEndpoint(
+                                      modelInput,
+                                  )
+                                : await testCommunityEndpoint(modelInput);
+                }
                 return c.json({
                     ok: true,
                     message:
@@ -1176,9 +697,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : input.modality === "transcription"
-                              ? "Endpoint responded with transcription text"
-                              : "Endpoint responded with usage",
+                            : input.modality === "video"
+                              ? "Endpoint responded with playable video"
+                              : input.modality === "transcription"
+                                ? "Endpoint responded with transcription text"
+                                : input.modality === "embedding"
+                                  ? "Endpoint responded with embedding data"
+                                  : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -1189,10 +714,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
     .post(
         "/:id/update",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public publishes it and requires an allowlisted account; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 12 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -1220,45 +745,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 user.id,
             );
             const endpoint = await requireOwnedEndpoint(db, id, user.id);
-            const modality = normalizeCommunityEndpointModality(
-                endpoint.modality,
-            );
-            if (
-                endpoint.agentId !== null &&
-                (input.baseUrl !== undefined || input.bearerToken !== undefined)
-            ) {
-                throw new HTTPException(400, {
-                    message:
-                        "Update managed agent configuration through the agents API",
-                });
-            }
-            if (endpoint.agentId !== null && hasNonZeroPrice(input)) {
-                throw new HTTPException(400, {
-                    message: "Managed agent listings must be free",
-                });
-            }
-            if (endpoint.agentId !== null && input.fallbackModelIds?.length) {
-                throw new HTTPException(400, {
-                    message:
-                        "Managed agent listings do not support fallback models",
-                });
-            }
-            if (
-                endpoint.agentId !== null &&
-                input.perUserRpm !== undefined &&
-                input.perUserRpm !== null
-            ) {
-                throw new HTTPException(400, {
-                    message:
-                        "Managed agent listings do not support per-user RPM",
-                });
-            }
-            if (input.inputModalities !== undefined) {
-                enforceCommunityEndpointInputModalities(
-                    modality,
-                    input.inputModalities,
-                );
-            }
+            // The row already owns its immutable type. Validate the external
+            // body against that exact strict Zod schema instead of asking
+            // every client to echo a redundant discriminator.
+            assertValidUpdate(endpoint.type, input);
             await ensureModelNameAvailable(
                 db,
                 user.id,
@@ -1271,103 +761,171 @@ export const communityEndpointsRoutes = new Hono<Env>()
             > = {
                 updatedAt: new Date(),
             };
+            const pendingReady = pendingCommunityEndpointChangeIsReady(
+                endpoint.pendingAt,
+            );
+            const currentVisibility = effectiveCommunityEndpointVisibility(
+                endpoint.visibility,
+                endpoint.pendingVisibility,
+                endpoint.pendingAt,
+            );
+            let pendingPayload = pendingReady ? null : endpoint.pendingPayload;
+            let pendingVisibility = pendingReady
+                ? null
+                : endpoint.pendingVisibility;
+            let pendingAt = pendingReady ? null : endpoint.pendingAt;
             if (input.name !== undefined) update.name = input.name;
             if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }
-            if (input.baseUrl !== undefined) {
-                update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+            if (input.hidden !== undefined) {
+                if (
+                    !input.hidden &&
+                    (input.visibility ?? currentVisibility) === "public" &&
+                    endpoint.hiddenAt &&
+                    Date.now() <
+                        endpoint.hiddenAt.getTime() +
+                            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "Community models can be relisted 12 hours after they were hidden",
+                    });
+                }
+                update.hiddenAt = input.hidden ? new Date() : null;
+                update.hiddenReason = input.hidden ? "Hidden by owner" : null;
+                update.hiddenBy = input.hidden ? "owner" : null;
             }
-            if (input.upstreamModel !== undefined) {
-                update.upstreamModel = input.upstreamModel;
-            }
-            if (input.bearerToken !== undefined && endpoint.agentId === null) {
-                update.bearerTokenCiphertext = await encryptSecret(
-                    normalizeInputBearerToken(input.bearerToken),
-                    c.env.BETTER_AUTH_SECRET,
-                );
-            }
-            if (endpoint.agentId !== null) {
-                update.perUserRpm = null;
-            } else if (input.perUserRpm !== undefined) {
-                update.perUserRpm = input.perUserRpm;
-            }
-            if (input.inputModalities !== undefined) {
-                update.inputModalities = input.inputModalities;
-            }
-            if (input.active !== undefined) {
-                update.disabledAt = input.active ? null : new Date();
-                update.disabledReason = input.active
-                    ? null
-                    : "Deactivated by owner";
-                update.disabledBy = input.active ? null : "owner";
-            }
-            const storedImagePricing = normalizeCommunityEndpointImagePricing(
-                endpoint.imagePricing,
+            await enforcePublishingAccess(
+                db,
+                user.id,
+                input.visibility ?? currentVisibility,
             );
-            const effectiveImagePricing =
-                modality === "image" && input.imagePricing !== undefined
-                    ? input.imagePricing
-                    : storedImagePricing;
-            update.imagePricing = effectiveImagePricing;
-            for (const field of communityEndpointPriceFieldsForModality(
-                modality,
-                effectiveImagePricing,
-            )) {
-                if (input[field.key] !== undefined) {
-                    update[field.key] = input[field.key];
-                } else if (effectiveImagePricing !== storedImagePricing) {
-                    // Switching modes changes the unit of the shared price
-                    // columns (per image ↔ per token); stored values must not
-                    // be reinterpreted, so unsent prices reset to free.
-                    update[field.key] = 0;
+            let nextVisibility = currentVisibility;
+            if (input.visibility === "private") {
+                nextVisibility = "private";
+                pendingPayload = null;
+                pendingVisibility = null;
+                pendingAt = null;
+            } else if (
+                input.visibility === "public" &&
+                currentVisibility === "private"
+            ) {
+                pendingVisibility = "public";
+                pendingAt ??= new Date();
+            }
+            update.visibility = nextVisibility;
+            if (endpoint.type === "prompt_agent") {
+                // Prompt configuration is edited through /account/agents.
+                // This route only updates shared listing state such as hidden.
+            } else if (endpoint.type === "endpoint_agent") {
+                if (!parseListingPayload("endpoint_agent", endpoint.payload)) {
+                    throw new Error(
+                        `Invalid endpoint_agent payload for ${endpoint.id}`,
+                    );
+                }
+                if (input.baseUrl !== undefined) {
+                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
+                }
+                if (input.upstreamModel !== undefined) {
+                    update.upstreamModel = input.upstreamModel;
+                }
+                if (input.perUserRpm !== undefined) {
+                    update.payload = JSON.stringify({
+                        perUserRpm: input.perUserRpm,
+                    });
+                }
+            } else {
+                const current = parseListingPayload("proxy", endpoint.payload);
+                if (!current) {
+                    throw new Error(`Invalid proxy payload for ${endpoint.id}`);
+                }
+                const stored = resolveEffectiveProxyListing({
+                    visibility: endpoint.visibility,
+                    payload: current,
+                    pendingVisibility: endpoint.pendingVisibility,
+                    pendingPayload: parseListingPayload(
+                        "proxy",
+                        endpoint.pendingPayload,
+                    ),
+                    pendingAt: endpoint.pendingAt,
+                }).payload;
+                const queued = parseListingPayload("proxy", pendingPayload);
+                const targetBase = queued ?? stored;
+                const targetVisibility = pendingVisibility ?? nextVisibility;
+                const targetPolicy = deriveUpdatedProxyPolicy(
+                    targetBase,
+                    input,
+                    targetVisibility,
+                );
+                const delayPricing =
+                    targetVisibility === "public" &&
+                    (currentVisibility === "public" ||
+                        pendingVisibility === "public") &&
+                    hasProxyPricingInput(input);
+                const pricingChanged = proxyPricingChanged(
+                    targetBase,
+                    targetPolicy,
+                );
+                const immediateInput = delayPricing
+                    ? withoutProxyPricingChanges(input)
+                    : input;
+                const policy = deriveUpdatedProxyPolicy(
+                    stored,
+                    immediateInput,
+                    nextVisibility,
+                );
+                const fallbacks =
+                    input.fallbacks === undefined
+                        ? stored.fallbacks
+                        : await resolveFallbacks(db, input.fallbacks, {
+                              modelId: communityModelId(
+                                  ownerGithubUsername,
+                                  input.name ?? endpoint.name,
+                              ),
+                              ownerUserId: user.id,
+                              ...targetPolicy,
+                          });
+                const bearerTokenCiphertext =
+                    input.bearerToken === undefined
+                        ? stored.bearerTokenCiphertext
+                        : await encryptSecret(
+                              normalizeInputBearerToken(input.bearerToken),
+                              c.env.BETTER_AUTH_SECRET,
+                          );
+                if (input.baseUrl !== undefined) {
+                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
+                }
+                if (input.upstreamModel !== undefined) {
+                    update.upstreamModel = input.upstreamModel;
+                }
+                if (pendingReady || changesProxyPayload(input)) {
+                    const payload: ProxyListingPayload = {
+                        bearerTokenCiphertext,
+                        ...policy,
+                        fallbacks,
+                    };
+                    update.payload = JSON.stringify(payload);
+                }
+                const queuesPublication =
+                    input.visibility === "public" &&
+                    currentVisibility === "private";
+                if ((delayPricing && pricingChanged) || queuesPublication) {
+                    const targetPayload: ProxyListingPayload = {
+                        bearerTokenCiphertext,
+                        ...targetPolicy,
+                        fallbacks,
+                    };
+                    pendingPayload = JSON.stringify(targetPayload);
+                    if (pricingChanged) {
+                        pendingAt = new Date();
+                    }
                 }
             }
-            const effectiveVisibility = input.visibility ?? endpoint.visibility;
-            // A private model is owner-only, so owner-declared public pricing
-            // does not apply; making a published model private clears prices.
-            const effectivePrices =
-                endpoint.agentId !== null || effectiveVisibility === "private"
-                    ? communityEndpointPrices({})
-                    : communityEndpointPricesForModality(
-                          { ...endpoint, ...update },
-                          modality,
-                          effectiveImagePricing,
-                      );
-            enforceCommunityEndpointPriceLimits(
-                effectivePrices,
-                modality,
-                effectiveImagePricing,
-            );
-            // Validate against the prices this update actually persists, not
-            // the stored ones. An unsent field keeps the stored targets: if a
-            // later price change makes one too expensive, the generation
-            // registry stops linking it at read time.
-            if (input.fallbackModelIds) {
-                update.fallbackModelIds = await resolveFallbackModelIds(
-                    db,
-                    input.fallbackModelIds,
-                    {
-                        modelId: communityModelId(
-                            ownerGithubUsername,
-                            input.name ?? endpoint.name,
-                        ),
-                        ownerUserId: user.id,
-                        modality,
-                        imagePricing: effectiveImagePricing,
-                        prices: effectivePrices,
-                        inputModalities:
-                            input.inputModalities ?? endpoint.inputModalities,
-                    },
-                );
-            }
-            await enforcePublishingAccess(db, user.id, effectiveVisibility);
-            // Persist visibility together with the complete effective price
-            // set on every update, so concurrent partial updates cannot
-            // interleave into a public row with cleared prices.
-            update.visibility = effectiveVisibility;
-            Object.assign(update, effectivePrices);
+            update.pendingPayload = pendingPayload;
+            update.pendingVisibility = pendingVisibility;
+            update.pendingAt = pendingAt;
             const [row] = await db
                 .update(schema.communityEndpoint)
                 .set(update)
@@ -1378,13 +936,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, ownerGithubUsername, c.env));
+            return c.json(
+                toCommunityEndpointResponse(
+                    row,
+                    ownerGithubUsername,
+                    c.env.AGENT_RUNTIME_BASE_URL,
+                ),
+            );
         },
     )
     .delete(
         "/:id",
         describeRoute({
-            tags: ["👤 Account"],
+            tags: ["🧩 Community Models"],
             summary: "Delete My Model",
             description:
                 "Delete a community model owned by the authenticated account. API keys require `account:keys`.",

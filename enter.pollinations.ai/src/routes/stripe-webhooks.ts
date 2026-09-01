@@ -10,7 +10,7 @@ import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
-} from "../utils/stripe-billing.ts";
+} from "../utils/stripe-billing/index.ts";
 import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
 
 interface StripeEventData {
@@ -319,6 +319,34 @@ async function sendStripeEventToTinybird(
     }
 }
 
+function checkoutSessionEventData(
+    event: Stripe.Event,
+    session: Stripe.Checkout.Session,
+    paymentStatus: string,
+    paymentMethodsOffered?: string,
+    presentment?: {
+        currency: string;
+        amount: number;
+    },
+): StripeEventData {
+    return {
+        eventType: event.type,
+        eventId: event.id,
+        sessionId: session.id,
+        userId: session.metadata?.userId || "",
+        amountCents: session.amount_total || 0,
+        currency: session.currency || "usd",
+        paymentStatus,
+        paymentMethod: "unknown",
+        paymentMethodsOffered,
+        presentmentCurrency: presentment?.currency ?? "",
+        presentmentAmount: presentment?.amount ?? 0,
+        customerEmail: session.customer_email || "",
+        livemode: event.livemode,
+        payload: event,
+    };
+}
+
 /**
  * Emit a checkout-session success to Tinybird (shared by
  * checkout.session.completed and async_payment_succeeded). On a failed
@@ -336,25 +364,20 @@ function emitCheckoutSessionAnalytics(
     failureLabel: string,
 ): void {
     if (result.success && session.metadata) {
-        const methodsOffered = (session.payment_method_types ?? []).join(",");
-
         c.executionCtx.waitUntil(
-            sendStripeEventToTinybird(c.env, {
-                eventType: event.type,
-                eventId: event.id,
-                sessionId: session.id,
-                userId: session.metadata.userId || "",
-                amountCents: session.amount_total || 0,
-                currency: session.currency || "usd",
-                paymentStatus: session.payment_status || "unknown",
-                paymentMethod: "unknown",
-                paymentMethodsOffered: methodsOffered,
-                presentmentCurrency: result.presentmentCurrency ?? "",
-                presentmentAmount: result.presentmentAmount ?? 0,
-                customerEmail: session.customer_email || "",
-                livemode: event.livemode,
-                payload: event,
-            }).catch((err) =>
+            sendStripeEventToTinybird(
+                c.env,
+                checkoutSessionEventData(
+                    event,
+                    session,
+                    session.payment_status || "unknown",
+                    (session.payment_method_types ?? []).join(","),
+                    {
+                        currency: result.presentmentCurrency ?? "",
+                        amount: result.presentmentAmount ?? 0,
+                    },
+                ),
+            ).catch((err) =>
                 console.error("TinyBird Stripe send failed:", err),
             ),
         );
@@ -670,24 +693,16 @@ export const stripeWebhooksRoutes = new Hono<Env>()
             case "checkout.session.async_payment_failed": {
                 const session = event.data.object as Stripe.Checkout.Session;
                 console.log(`Async payment failed for session ${session.id}`);
-                const methodsOffered = (
-                    session.payment_method_types ?? []
-                ).join(",");
                 c.executionCtx.waitUntil(
-                    sendStripeEventToTinybird(c.env, {
-                        eventType: event.type,
-                        eventId: event.id,
-                        sessionId: session.id,
-                        userId: session.metadata?.userId || "",
-                        amountCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
-                        paymentStatus: session.payment_status || "unpaid",
-                        paymentMethod: "unknown",
-                        paymentMethodsOffered: methodsOffered,
-                        customerEmail: session.customer_email || "",
-                        livemode: event.livemode,
-                        payload: event,
-                    }).catch((err) =>
+                    sendStripeEventToTinybird(
+                        c.env,
+                        checkoutSessionEventData(
+                            event,
+                            session,
+                            session.payment_status || "unpaid",
+                            (session.payment_method_types ?? []).join(","),
+                        ),
+                    ).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );
@@ -698,19 +713,10 @@ export const stripeWebhooksRoutes = new Hono<Env>()
                 const session = event.data.object as Stripe.Checkout.Session;
                 console.log(`Checkout session expired: ${session.id}`);
                 c.executionCtx.waitUntil(
-                    sendStripeEventToTinybird(c.env, {
-                        eventType: event.type,
-                        eventId: event.id,
-                        sessionId: session.id,
-                        userId: session.metadata?.userId || "",
-                        amountCents: session.amount_total || 0,
-                        currency: session.currency || "usd",
-                        paymentStatus: "expired",
-                        paymentMethod: "unknown",
-                        customerEmail: session.customer_email || "",
-                        livemode: event.livemode,
-                        payload: event,
-                    }).catch((err) =>
+                    sendStripeEventToTinybird(
+                        c.env,
+                        checkoutSessionEventData(event, session, "expired"),
+                    ).catch((err) =>
                         console.error("TinyBird Stripe send failed:", err),
                     ),
                 );

@@ -12,7 +12,7 @@ EnvironmentFile=/home/ubuntu/monitor/.env
 ExecStartPre=-/home/ubuntu/monitor/update-from-repo.sh
 ExecStart=/home/ubuntu/monitor/loop.sh
 Restart=always
-RestartSec=900
+RestartSec=3600
 RuntimeMaxSec=2700
 TimeoutStopSec=30
 

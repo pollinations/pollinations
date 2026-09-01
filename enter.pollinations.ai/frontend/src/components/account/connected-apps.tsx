@@ -189,9 +189,8 @@ export function ConnectedApps() {
     return (
         <Section title="Connectors" framed>
             <Text size="sm" tone="muted">
-                Agents can show you a sign-in link when they need access to an
-                app. You can also connect one here first. Composio stores the
-                credentials; agents never see them.
+                Connect apps for your agents. Supported by{" "}
+                <InlineLink href="https://composio.dev">Composio</InlineLink>.
             </Text>
 
             {connections.length > 0 && (

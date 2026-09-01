@@ -60,6 +60,7 @@ import {
     type ChatMessageState,
     compactRouting,
     conversationForRequest,
+    extractAgentActivity,
     extractStreamedMedia,
     fileKind,
     type RenderedMedia,
@@ -578,13 +579,11 @@ function VideoPlayer({
 function MessageCard({
     message,
     assistantName,
-    streamingStatus,
     canRetry,
     onRetry,
 }: {
     message: ConversationMessage;
     assistantName: string;
-    streamingStatus: string;
     canRetry: boolean;
     onRetry: () => void;
 }) {
@@ -643,11 +642,13 @@ function MessageCard({
                         ))}
                     </div>
                 )}
-                {message.status === "streaming" && !rawText && (
-                    <Text size="sm" tone="muted">
-                        {streamingStatus || `${assistantName} is thinking…`}
-                    </Text>
-                )}
+                {message.status === "streaming" &&
+                    (message.activity || !rawText) && (
+                        <Text size="sm" tone="muted">
+                            {message.activity ||
+                                `${assistantName} is thinking…`}
+                        </Text>
+                    )}
                 {message.status === "cancelled" && (
                     <Text size="xs" tone="muted">
                         Stopped
@@ -889,7 +890,6 @@ export function Chat() {
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [status, setStatus] = useState("Ready");
     const abortRef = useRef<AbortController | null>(null);
     const requestIdRef = useRef<string | null>(null);
     const transcriptRef = useRef<HTMLDivElement | null>(null);
@@ -970,6 +970,8 @@ export function Chat() {
     ) {
         if (!client || !selectedAgent) return;
         let accumulated = "";
+        let visibleContent = "";
+        let activity: string | undefined;
         try {
             for await (const chunk of client.chatStream(
                 conversationForRequest(history),
@@ -982,13 +984,28 @@ export function Chat() {
                     signal: controller.signal,
                 },
             )) {
-                const delta = chunk.choices[0]?.delta?.content;
+                const delta = chunk.choices[0]?.delta;
                 if (!delta || requestIdRef.current !== assistantId) continue;
-                accumulated += delta;
+                const toolActivity = delta.tool_calls
+                    ?.map((toolCall) => toolCall.function?.name?.trim())
+                    .findLast((name): name is string => Boolean(name));
+                if (toolActivity) activity = toolActivity;
+                if (delta.content) accumulated += delta.content;
+                const extracted = extractAgentActivity(accumulated);
+                if (extracted.activity) activity = extracted.activity;
+                if (extracted.content !== visibleContent) {
+                    visibleContent = extracted.content;
+                    if (visibleContent) activity = undefined;
+                }
+                if (!toolActivity && !delta.content) continue;
                 setMessages((current) =>
                     current.map((message) =>
                         message.id === assistantId
-                            ? { ...message, content: accumulated }
+                            ? {
+                                  ...message,
+                                  content: visibleContent,
+                                  activity,
+                              }
                             : message,
                     ),
                 );
@@ -1007,7 +1024,6 @@ export function Chat() {
                         : message,
                 ),
             );
-            setStatus(agentError ? "Response failed" : "Response complete");
         } catch (caught) {
             const cancelled = isCancellation(caught);
             setMessages((current) =>
@@ -1023,8 +1039,6 @@ export function Chat() {
                     ];
                 }),
             );
-            if (!cancelled) setStatus("Response failed");
-            else setStatus("Stopped");
         }
     }
 
@@ -1036,7 +1050,6 @@ export function Chat() {
         abortRef.current = controller;
         requestIdRef.current = assistantId;
         setSending(true);
-        setStatus(`${assistantName} is responding`);
         await streamAssistant(history, assistantId, controller);
         if (requestIdRef.current === assistantId) {
             abortRef.current = null;
@@ -1061,7 +1074,6 @@ export function Chat() {
         abortRef.current = controller;
         setSending(true);
         setError(null);
-        setStatus(files.length ? "Uploading attachments" : "Preparing message");
         try {
             const attachments = await Promise.all(
                 files.map((file) =>
@@ -1096,7 +1108,6 @@ export function Chat() {
             setSending(false);
             abortRef.current = null;
             requestIdRef.current = null;
-            setStatus(isCancellation(caught) ? "Stopped" : "Upload failed");
         }
     }
 
@@ -1193,7 +1204,6 @@ export function Chat() {
         setFiles([]);
         setError(null);
         setAdvancedOpen(false);
-        setStatus("Ready");
         composerRef.current?.focus();
     }
 
@@ -1266,7 +1276,6 @@ export function Chat() {
                             <MessageCard
                                 message={selectedWelcome}
                                 assistantName={assistantName}
-                                streamingStatus=""
                                 canRetry={false}
                                 onRetry={() => undefined}
                             />
@@ -1276,7 +1285,6 @@ export function Chat() {
                                 key={message.id}
                                 message={message}
                                 assistantName={assistantName}
-                                streamingStatus={status}
                                 canRetry={
                                     canRetryLast(message.id) &&
                                     (message.status === "error" ||
@@ -1445,7 +1453,6 @@ export function Chat() {
                                         setDraft("");
                                         setFiles([]);
                                         setError(null);
-                                        setStatus("Ready");
                                         composerRef.current?.focus();
                                     }}
                                 >

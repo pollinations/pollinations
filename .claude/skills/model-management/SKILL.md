@@ -148,6 +148,9 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   immediately before the Worker deploy. Keep mappings in migrations only; do
   not add a runtime normalization layer.
 - Update every consumer of a changed public ID at once.
+- Do not invent a convenience alias for a brand-new canonical model. Add an
+  alias only for an existing compatibility contract or when explicitly
+  approved. In `MODEL_SLUGS.md`, use `—` when no historical public ID exists.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 

@@ -1222,7 +1222,7 @@ export const TEXT_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5.1": {
-        aliases: ["claude-fable-5.1"],
+        aliases: [],
         provider: "bedrock",
         brand: "Anthropic",
         category: "text",

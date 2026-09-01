@@ -258,3 +258,41 @@ test("thin-proxies the generic Composio router and reports executed actions", as
         "upstream-session",
     );
 });
+
+test("creates a hosted connection link with the current session contract", async () => {
+    const requests = [];
+    const worker = createWorker({
+        fetchImpl: async (url, init) => {
+            requests.push({ url: new URL(url), init });
+            if (new URL(url).pathname.endsWith("/tool_router/session")) {
+                return Response.json({ session_id: "trs_user_1" });
+            }
+            return Response.json({ redirect_url: "https://connect.example" });
+        },
+    });
+    const response = await worker.fetch(
+        new Request("https://composio.internal/connections", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                [MCP_USER_ID_HEADER]: "user-1",
+            },
+            body: JSON.stringify({
+                toolkit: "googledrive",
+                callbackUrl: "https://staging.enter.pollinations.ai/account",
+            }),
+        }),
+        { COMPOSIO_API_KEY: "test-key" },
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(JSON.parse(requests[0].init.body), {
+        user_id: "user-1",
+        toolkits: { enable: ["googledrive"] },
+        manage_connections: { enable: false },
+        sandbox: { enable: false },
+    });
+    assert.deepEqual(await response.json(), {
+        redirectUrl: "https://connect.example",
+    });
+});

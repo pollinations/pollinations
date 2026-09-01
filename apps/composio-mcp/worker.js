@@ -56,10 +56,11 @@ async function callComposio(path, env, fetchImpl, init = {}) {
     }
     const body = await response.json().catch(() => null);
     if (!response.ok) {
+        const error = body?.error;
         throw new ComposioFailure(
             response.status >= 500 ? 502 : response.status,
             body?.message ||
-                body?.error ||
+                (typeof error === "string" ? error : error?.message) ||
                 `Composio returned HTTP ${response.status}`,
         );
     }
@@ -113,12 +114,9 @@ function createSession(userId, toolkits, env, fetchImpl) {
         method: "POST",
         body: JSON.stringify({
             user_id: userId,
-            toolkits: { enabled: toolkits },
+            toolkits: { enable: toolkits },
             manage_connections: { enable: false },
-            workbench: {
-                enable: false,
-                proxy_execution_enabled: false,
-            },
+            sandbox: { enable: false },
         }),
     });
 }

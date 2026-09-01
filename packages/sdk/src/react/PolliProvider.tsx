@@ -228,6 +228,7 @@ export function PolliProvider({
     // Authorization codes are single-use; React StrictMode must not exchange
     // the same callback twice when it replays effects in development.
     const hydrationStarted = useRef(false);
+    const loginStarted = useRef(false);
 
     const defaultPermissions = useMemo<readonly AccountPermission[]>(
         () => permissions ?? [],
@@ -337,10 +338,11 @@ export function PolliProvider({
 
     const login = useCallback(
         (request?: AuthorizeRequest) => {
-            if (typeof window === "undefined") return;
+            if (typeof window === "undefined" || loginStarted.current) return;
             const redirectUrl = currentRedirectUrl();
             const returnPath = currentReturnPath();
             if (!redirectUrl || !returnPath) return;
+            loginStarted.current = true;
             const extraPermissions = request?.permissions;
             const perms: AccountPermission[] =
                 extraPermissions && extraPermissions.length > 0
@@ -368,6 +370,7 @@ export function PolliProvider({
                     });
                 })
                 .catch((cause) => {
+                    loginStarted.current = false;
                     storage.removeItem(stateStorageKey);
                     storage.removeItem(verifierStorageKey);
                     storage.removeItem(returnPathStorageKey);

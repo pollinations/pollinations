@@ -103,6 +103,34 @@ describe("PolliProvider", () => {
         });
     });
 
+    it("ignores repeated login calls while a redirect is pending", async () => {
+        stubWindow("https://app.example/");
+        const storage = memoryStorage();
+        let login: (() => void) | null = null;
+
+        function GrabLogin() {
+            login = useAuthActions().login;
+            return null;
+        }
+
+        await act(async () => {
+            create(
+                <PolliProvider appKey="pk_test" storage={storage}>
+                    <GrabLogin />
+                </PolliProvider>,
+            );
+        });
+
+        await act(async () => {
+            login?.();
+            const pendingLogin = storage.snapshot();
+            expect(pendingLogin["polli:pk_test:oauth_state"]).toBeTruthy();
+            expect(pendingLogin["polli:pk_test:oauth_verifier"]).toBeTruthy();
+            login?.();
+            expect(storage.snapshot()).toEqual(pendingLogin);
+        });
+    });
+
     it("exchanges the callback code once and restores the original route", async () => {
         const win = stubWindow(
             "https://app.example/?code=single-use&state=expected",

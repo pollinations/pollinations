@@ -1,15 +1,19 @@
 import { Buffer } from "node:buffer";
 import {
+    communityImageEditsUrl,
+    communityImageGenerationsUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     communityEndpointErrorDetail,
-    communityImageEditsUrl,
-    communityImageGenerationsUrl,
+    normalizeCommunityEndpointBearerToken,
+} from "@shared/community-endpoints.ts";
+import {
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
-    normalizeCommunityEndpointBearerToken,
-} from "@shared/community-endpoints.ts";
+} from "@shared/community-media.ts";
 import { HttpError } from "@shared/http-error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";

@@ -9,23 +9,27 @@ import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import {
+    communityAudioTranscriptionsUrl,
+    communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
+    communityImageEditsUrl,
+    communityImageGenerationsUrl,
+    communityOpenAIBaseUrl,
+    normalizeCommunityAssetUrl,
+    validateCommunityEndpointUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
     type CommunityEndpointRuntime,
-    communityAudioTranscriptionsUrl,
-    communityChatCompletionsUrl,
-    communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointSupportedEndpoints,
-    communityImageEditsUrl,
-    communityImageGenerationsUrl,
     communityModelDefinition,
     communityModelId,
-    communityOpenAIBaseUrl,
     communityPriceDefinition,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
@@ -38,7 +42,6 @@ import {
     MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
-    normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
@@ -46,8 +49,10 @@ import {
     normalizeCommunityProviderUrl,
     PROMPT_AGENT_BASE_URL_PLACEHOLDER,
     type PromptAgentListingPayload,
+    type ProxyListingPayload,
     parseCommunityModelId,
-    validateCommunityEndpointUrl,
+    parseListingPayload,
+    resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
@@ -82,19 +87,19 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
-import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
-import { getCommunityModelRegistryEntries } from "./community-models.ts";
+import { callCommunityTranscriptionEndpoint } from "../src/audio/communityEndpoint.ts";
+import { getCommunityModelRegistryEntries } from "../src/community-models.ts";
 import {
     callCommunityImageEndpoint,
     callCommunityVideoEndpoint,
-} from "./image/communityEndpoint.ts";
-import worker from "./index.ts";
+} from "../src/image/communityEndpoint.ts";
+import worker from "../src/index.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
-} from "./model-registry.ts";
-import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
+} from "../src/model-registry.ts";
+import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
 
@@ -491,6 +496,128 @@ async function createCommunityFallbackPair({
 }
 
 describe("community endpoint helpers", () => {
+    it("resolves pending visibility and pricing as one effective listing", () => {
+        const current: ProxyListingPayload = {
+            bearerTokenCiphertext: "current-credential",
+            humanResponders: false,
+            paidOnly: false,
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            perUserRpm: null,
+            fallbacks: ["owner/current-fallback"],
+            prices: communityEndpointPrices({ promptTextPrice: 0.1 }),
+        };
+        const pending: ProxyListingPayload = {
+            ...current,
+            bearerTokenCiphertext: "stale-credential",
+            paidOnly: true,
+            fallbacks: ["owner/stale-fallback"],
+            prices: communityEndpointPrices({ promptTextPrice: 0.2 }),
+        };
+        const pendingAt = new Date(0);
+        const state = {
+            visibility: "private" as const,
+            payload: current,
+            pendingVisibility: "public" as const,
+            pendingPayload: pending,
+            pendingAt,
+        };
+
+        const queued = resolveEffectiveProxyListing(
+            state,
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+        );
+        expect(queued).toMatchObject({
+            pendingReady: false,
+            visibility: "private",
+            payload: current,
+            pending: { visibility: "public", payload: pending },
+        });
+        expect(queued.pending?.effectiveAt.getTime()).toBe(
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+        );
+
+        const effective = resolveEffectiveProxyListing(
+            state,
+            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
+        );
+        expect(effective).toMatchObject({
+            pendingReady: true,
+            visibility: "public",
+            pending: null,
+            payload: {
+                bearerTokenCiphertext: "current-credential",
+                paidOnly: true,
+                fallbacks: ["owner/current-fallback"],
+                prices: { promptTextPrice: 0.2 },
+            },
+        });
+    });
+
+    it("parses stored proxy payloads into the canonical schema", () => {
+        const payload = parseListingPayload(
+            "proxy",
+            JSON.stringify({
+                bearerTokenCiphertext: "ciphertext",
+                modality: "image",
+                imagePricing: "request",
+                inputModalities: ["image", "image"],
+                perUserRpm: null,
+                fallbacks: ["owner/model"],
+                prices: { completionImagePrice: 0.2 },
+            }),
+        );
+
+        expect(payload).toMatchObject({
+            bearerTokenCiphertext: "ciphertext",
+            paidOnly: false,
+            modality: "image",
+            imagePricing: "request",
+            inputModalities: ["image"],
+            perUserRpm: null,
+            fallbacks: ["owner/model"],
+            prices: {
+                promptTextPrice: 0,
+                completionImagePrice: 0.2,
+                completionVideoPrice: 0,
+            },
+        });
+    });
+
+    it("rejects stored payloads that do not match their listing schema", () => {
+        expect(parseListingPayload("proxy", "not json")).toBeNull();
+        expect(
+            parseListingPayload("proxy", JSON.stringify({ prices: {} })),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "prompt_agent",
+                JSON.stringify({ systemPrompt: "Missing base model" }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "endpoint_agent",
+                JSON.stringify({ perUserRpm: -1 }),
+            ),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    modality: "image",
+                    imagePricing: "request",
+                    inputModalities: ["unsupported"],
+                    perUserRpm: null,
+                    fallbacks: [],
+                    prices: {},
+                }),
+            ),
+        ).toBeNull();
+    });
+
     it("checks the community endpoint owner GitHub ID allowlist", () => {
         expect(
             isCommunityEndpointOwnerAllowed({

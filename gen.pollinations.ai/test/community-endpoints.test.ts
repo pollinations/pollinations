@@ -6935,9 +6935,9 @@ fixtureTest(
                 upstreamHosts.push(host);
                 if (host === primaryHostname) {
                     return Response.json(
-                        { error: "upstream down" },
+                        { error: "upstream timed out" },
                         {
-                            status: 500,
+                            status: 524,
                         },
                     );
                 }

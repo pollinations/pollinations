@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 
 afterEach(() => {
@@ -673,5 +674,40 @@ describe("genericOpenAIClient", () => {
             status: 502,
             requestUrl: new URL("https://portkey.test/chat"),
         });
+    });
+});
+
+describe("Chat Completions stream usage", () => {
+    const encoder = new TextEncoder();
+
+    it("accepts valid usage followed by the terminal DONE event", () => {
+        const validator = createChatStreamUsageValidator();
+
+        validator.feed(
+            encoder.encode(
+                'data: {"model":"provider-model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\ndata: [DONE]\n\n',
+            ),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+    });
+
+    it("rejects DONE without valid usage", () => {
+        const validator = createChatStreamUsageValidator();
+
+        expect(() =>
+            validator.feed(encoder.encode("data: [DONE]\n\n")),
+        ).toThrow(/omitted terminal usage/);
+    });
+
+    it("rejects a stream that ends before terminal usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"model":"provider-model","choices":[{"delta":{"content":"ok"}}]}\n\n',
+            ),
+        );
+
+        expect(() => validator.finish()).toThrow(/without terminal usage/);
     });
 });

@@ -19,6 +19,10 @@ import {
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import {
+    requireChatCompletionUsage,
+    requireChatStreamUsage,
+} from "./chat/usage.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
@@ -312,14 +316,19 @@ async function generateTextResponse(
             index,
         } = await withModelFallback(
             fallbackCandidates(c.var.model),
-            async (attempt) =>
-                generateTextPortkey(
+            async (attempt) => {
+                const result = await generateTextPortkey(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
                     portkey
                         ? (input, init) => portkey.fetch(input, init)
                         : undefined,
-                ),
+                );
+                if (!normalizedRequestData.stream) {
+                    requireChatCompletionUsage(result);
+                }
+                return result;
+            },
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
@@ -333,8 +342,18 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        if (normalizedRequestData.stream)
-            return sendTextStreamResponse(completion, servedModelId);
+        if (normalizedRequestData.stream) {
+            if (!completion.responseStream) {
+                return sendTextStreamResponse(completion, servedModelId);
+            }
+            const [clientBody, trackingBody] = completion.responseStream.tee();
+            completion.responseStream = requireChatStreamUsage(clientBody);
+            const response = sendTextStreamResponse(completion, servedModelId);
+            c.var.track?.overrideResponseTracking(
+                new Response(trackingBody, { headers: response.headers }),
+            );
+            return response;
+        }
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);

@@ -632,19 +632,29 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
+                "",
+                "Successful JSON responses contain usage. Streaming responses contain a usage chunk before `[DONE]`; missing provider usage fails the response.",
             ].join("\n"),
             responses: {
                 200: {
-                    description: "Success",
+                    description: "Chat completion JSON or SSE stream",
                     content: {
                         "application/json": {
                             schema: resolver(
                                 CreateChatCompletionResponseSchema,
                             ),
                         },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "OpenAI-compatible Chat Completions SSE events ending with a usage chunk and data: [DONE]",
+                                }),
+                            ),
+                        },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
             },
         }),
         ...chatCompletionHandlers,
@@ -660,6 +670,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Requests and streaming events are sent directly to that upstream without conversion to Chat Completions. Models without a verified direct Responses route return an unsupported-model error.",
                 "",
                 "Response storage, previous response IDs, conversations, background execution, encrypted reusable state, and hosted tools are not supported.",
+                "",
+                "Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.",
             ].join("\n"),
             responses: {
                 200: {
@@ -668,9 +680,17 @@ export const proxyRoutes = new Hono<Env>()
                         "application/json": {
                             schema: resolver(CreateResponseResponseSchema),
                         },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Semantic Responses API SSE events ending with response.completed, response.incomplete, or response.failed containing usage",
+                                }),
+                            ),
+                        },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
             },
         }),
         ...responsesHandlers,

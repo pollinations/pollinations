@@ -488,14 +488,19 @@ async function fakePortkeyResponse(request: Request) {
                         selectedCase?.completionFilterResults,
                 },
             ],
-            usage: {
-                prompt_tokens: selectedCase?.promptTokens || 7,
-                completion_tokens: selectedCase?.completionTokens || 3,
-                total_tokens:
-                    (selectedCase?.promptTokens || 7) +
-                    (selectedCase?.completionTokens || 3),
-                ...selectedCase?.usageExtras,
-            },
+            ...(prompt.includes("vcr missing chat usage")
+                ? {}
+                : {
+                      usage: {
+                          prompt_tokens: selectedCase?.promptTokens || 7,
+                          completion_tokens:
+                              selectedCase?.completionTokens || 3,
+                          total_tokens:
+                              (selectedCase?.promptTokens || 7) +
+                              (selectedCase?.completionTokens || 3),
+                          ...selectedCase?.usageExtras,
+                      },
+                  }),
         },
         { headers: usageHeaders({}) },
     );
@@ -587,6 +592,41 @@ test("chat completions use local text generation with VCR-backed Portkey", async
     expect(mocks.tinybird.state.events[0]).not.toHaveProperty(
         "adjustmentUnits",
     );
+});
+
+test("chat completions reject a successful envelope without usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "vcr missing chat usage" }],
+        }),
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            code: "BAD_GATEWAY",
+            message: expect.stringContaining("omitted usage"),
+        },
+    });
+    await wait();
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+    });
 });
 
 test("direct Responses JSON preserves protocol and bills once", async ({

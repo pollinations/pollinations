@@ -9,23 +9,27 @@ import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import {
+    communityAudioTranscriptionsUrl,
+    communityChatCompletionsUrl,
+    communityEmbeddingsUrl,
+    communityImageEditsUrl,
+    communityImageGenerationsUrl,
+    communityOpenAIBaseUrl,
+    normalizeCommunityAssetUrl,
+    validateCommunityEndpointUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
     type CommunityEndpointPrices,
     type CommunityEndpointRuntime,
-    communityAudioTranscriptionsUrl,
-    communityChatCompletionsUrl,
-    communityEmbeddingsUrl,
     communityEndpointPriceFieldsForModality,
     communityEndpointPrices,
     communityEndpointSupportedEndpoints,
-    communityImageEditsUrl,
-    communityImageGenerationsUrl,
     communityModelDefinition,
     communityModelId,
-    communityOpenAIBaseUrl,
     communityPriceDefinition,
     type EndpointAgentCommunityEndpointRuntime,
     isCommunityEndpointOwnerAllowed,
@@ -38,7 +42,6 @@ import {
     MAX_COMMUNITY_PRICE_PER_VIDEO_SECOND,
     MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS,
     MIN_COMMUNITY_PRICE_PER_TOKEN,
-    normalizeCommunityAssetUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityEndpointImagePricing,
     normalizeCommunityEndpointInputModalities,
@@ -50,7 +53,6 @@ import {
     parseCommunityModelId,
     parseListingPayload,
     resolveEffectiveProxyListing,
-    validateCommunityEndpointUrl,
 } from "@shared/community-endpoints.ts";
 import {
     communityEndpoint as communityEndpointTable,
@@ -85,19 +87,19 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { withInlineGenerationCoordinator } from "../test/helpers/inline-generation-coordinator.ts";
-import { callCommunityTranscriptionEndpoint } from "./audio/communityEndpoint.ts";
-import { getCommunityModelRegistryEntries } from "./community-models.ts";
+import { callCommunityTranscriptionEndpoint } from "../src/audio/communityEndpoint.ts";
+import { getCommunityModelRegistryEntries } from "../src/community-models.ts";
 import {
     callCommunityImageEndpoint,
     callCommunityVideoEndpoint,
-} from "./image/communityEndpoint.ts";
-import worker from "./index.ts";
+} from "../src/image/communityEndpoint.ts";
+import worker from "../src/index.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
-} from "./model-registry.ts";
-import { communityEndpointGatewayContext } from "./text/communityEndpoint.ts";
+} from "../src/model-registry.ts";
+import { communityEndpointGatewayContext } from "../src/text/communityEndpoint.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const db = drizzle(env.DB);
 

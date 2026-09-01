@@ -203,4 +203,13 @@ describe("opencode harness", () => {
 
         expect(opencode.status(ctx).configured).toBe(true);
     });
+
+    it("stops before configuration when OpenCode is unavailable", async () => {
+        await expect(opencode.on(ctx, {})).rejects.toThrow(
+            "OpenCode was not found",
+        );
+        expect(existsSync(opencodeFile())).toBe(false);
+        expect(existsSync(pluginConfig())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
 });

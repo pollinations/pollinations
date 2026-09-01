@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /**
  * Pollinations Discord Bot with BYOP (Bring Your Own Pollen).
  *
@@ -18,21 +19,20 @@
  *   /status    — Check your connection status
  */
 
+import { existsSync } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import {
+    type ChatInputCommandInteraction,
     Client,
     Events,
     GatewayIntentBits,
+    Partials,
     REST,
     Routes,
     SlashCommandBuilder,
-    type ChatInputCommandInteraction,
-    type Message,
-    Partials,
 } from "discord.js";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import { homedir } from "node:os";
 
 // ---------------------------------------------------------------------------
 // Config
@@ -40,8 +40,10 @@ import { homedir } from "node:os";
 
 const ENTER_BASE = "https://enter.pollinations.ai";
 const GEN_BASE = "https://gen.pollinations.ai";
-const APP_KEY = process.env.POLLINATIONS_APP_KEY || "pk_discord_pollinations_001";
-const AGENT_MODEL = process.env.AGENT_MODEL || "pollinations/research-assistant";
+const APP_KEY =
+    process.env.POLLINATIONS_APP_KEY || "pk_discord_pollinations_001";
+const AGENT_MODEL =
+    process.env.AGENT_MODEL || "pollinations/research-assistant";
 const DATA_DIR = join(homedir(), ".config", "pollinations-discord-bot");
 const USERS_FILE = join(DATA_DIR, "users.json");
 
@@ -108,7 +110,10 @@ async function generateText(
     history: Array<{ role: string; content: string }> = [],
 ): Promise<string> {
     const messages = [
-        { role: "system", content: `You are a helpful assistant called ${AGENT_MODEL}. Reply concisely in Discord markdown.` },
+        {
+            role: "system",
+            content: `You are a helpful assistant called ${AGENT_MODEL}. Reply concisely in Discord markdown.`,
+        },
         ...history,
         { role: "user", content: prompt },
     ];
@@ -171,9 +176,7 @@ async function startDeviceFlow(): Promise<{
     }
 }
 
-async function pollForToken(
-    deviceCode: string,
-): Promise<string | null> {
+async function pollForToken(deviceCode: string): Promise<string | null> {
     const deadline = Date.now() + 600_000; // 10 minutes
     let interval = 5;
 
@@ -192,11 +195,12 @@ async function pollForToken(
             };
             if (data.access_token) return data.access_token;
             if (data.error === "slow_down") interval += 5;
-            if (data.error === "expired_token" || data.error === "access_denied")
+            if (
+                data.error === "expired_token" ||
+                data.error === "access_denied"
+            )
                 return null;
-        } catch {
-            continue;
-        }
+        } catch {}
     }
     return null;
 }
@@ -209,7 +213,9 @@ const DISCORD_TOKEN = process.env.DISCORD_BOT_TOKEN;
 const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
 
 if (!DISCORD_TOKEN || !CLIENT_ID) {
-    console.error("Missing DISCORD_BOT_TOKEN or DISCORD_CLIENT_ID in environment.");
+    console.error(
+        "Missing DISCORD_BOT_TOKEN or DISCORD_CLIENT_ID in environment.",
+    );
     process.exit(1);
 }
 
@@ -242,7 +248,10 @@ const commands = [
         .setName("ask")
         .setDescription("Ask the community agent a question")
         .addStringOption((opt) =>
-            opt.setName("question").setDescription("Your question").setRequired(true),
+            opt
+                .setName("question")
+                .setDescription("Your question")
+                .setRequired(true),
         ),
     new SlashCommandBuilder()
         .setName("status")
@@ -250,8 +259,14 @@ const commands = [
 ].map((cmd) => cmd.toJSON());
 
 async function registerCommands() {
-    const rest = new REST({ version: "10" }).setToken(DISCORD_TOKEN!);
-    await rest.put(Routes.applicationCommands(CLIENT_ID!), { body: commands });
+    if (!DISCORD_TOKEN || !CLIENT_ID) {
+        console.warn(
+            "DISCORD_TOKEN or CLIENT_ID not set, skipping command registration",
+        );
+        return;
+    }
+    const rest = new REST({ version: "10" }).setToken(DISCORD_TOKEN);
+    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
     console.log("Slash commands registered.");
 }
 
@@ -343,12 +358,12 @@ async function handleAsk(interaction: ChatInputCommandInteraction) {
         // Discord has a 2000 char limit
         const truncated =
             response.length > 1900
-                ? response.slice(0, 1900) + "\n\n_(truncated)_"
+                ? `${response.slice(0, 1900)}\n\n_(truncated)_`
                 : response;
 
         await interaction.editReply(truncated);
-    } catch (err: any) {
-        const msg = err?.message || String(err);
+    } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
         if (msg.includes("401") || msg.includes("403")) {
             await interaction.editReply(
                 "Authorization expired. Use `/connect` to reconnect.",
@@ -422,13 +437,12 @@ client.on(Events.MessageCreate, async (message) => {
 
         const truncated =
             response.length > 1900
-                ? response.slice(0, 1900) + "\n\n_(truncated)_"
+                ? `${response.slice(0, 1900)}\n\n_(truncated)_`
                 : response;
         await message.reply(truncated);
-    } catch (err: any) {
-        await message.reply(
-            `Error: ${(err?.message || String(err)).slice(0, 500)}`,
-        );
+    } catch (err: unknown) {
+        const errMsg = err instanceof Error ? err.message : String(err);
+        await message.reply(`Error: ${errMsg.slice(0, 500)}`);
     }
 });
 

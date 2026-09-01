@@ -129,16 +129,21 @@ key for the harness, backs up its config, and writes the provider; `off`
 restores the backup.
 
 ```bash
-polli harness --help            # supported harnesses
-polli harness dsh on            # DeepSeek Harness → Pollinations (default model: deepseek)
+polli harness --help              # supported harnesses
+polli harness dsh on              # DeepSeek Harness → Pollinations (default model: deepseek)
 polli harness dsh on --model kimi
-polli harness dsh on --no-mcp   # skip MCP tool configuration
-polli harness dsh status
-polli harness dsh off
+polli harness dsh on --no-mcp     # skip MCP tool configuration
+polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
+polli harness pi on               # native provider, key, startup model, and Polli skill
+polli harness prime on            # native Prime Agent provider support
+polli harness <harness> status
+polli harness <harness> off
 ```
 
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
-and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`).
+and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
+its official plugin; Pi and Prime Agent use their native `models.json` provider
+support.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

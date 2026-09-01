@@ -107,13 +107,6 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                 })}
             </div>
             <p className="text-xs text-theme-text-muted">
-                <span className="font-medium text-theme-text-strong">
-                    Code quality:
-                </span>{" "}
-                Built-in MCPs favor stateless HTTP, thin proxy logic, clear
-                Pollen billing, and focused tests.
-            </p>
-            <p className="text-xs text-theme-text-muted">
                 Connect with your Pollinations API key. See the{" "}
                 <InlineLink href={genDocsUrl("#tag/mcp-server")}>
                     MCP docs

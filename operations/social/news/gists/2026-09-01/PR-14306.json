@@ -1,0 +1,33 @@
+{
+  "pr_number": 14306,
+  "title": "fix: persist monitor protocol state",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14306",
+  "merged_at": "2026-09-01T18:37:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds protocolFlagged to the final state-write checklist\n- Keeps the new two-cycle stream-error streak explicit across agent cycles\n\nFollow-up to #14302",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The monitor remembers",
+    "blurb": "The community monitor now carries its protocol flag cleanly between cycles. Even little checklist bees deserve persistent memory.",
+    "summary": "Updated the community-monitor cycle checklist so protocolFlagged is written into final state and a two-cycle stream-error streak remains explicit across agent cycles.",
+    "impact": "Community monitoring agents now retain their protocol and stream-error context between runs, making follow-up behavior more consistent.",
+    "keywords": [
+      "community-monitor",
+      "protocol-state",
+      "agent-cycles",
+      "stream-errors",
+      "operations"
+    ],
+    "visual_concept": "A cozy garden-shed monitoring station where Polli records a small protocol flag and a two-day error streak in a persistent logbook beside a CRT terminal. The scene represents state surviving from one monitoring cycle to the next, with sprouts growing from labeled checklist pages.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny librarian scarf, carefully writing a protocol flag into a glowing logbook beside a retro CRT monitoring terminal; two small calendar tiles show an explicit two-cycle stream-error streak, while code-plants sprout from the checklist pages. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14306.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot wearing a tiny librarian scarf, carefully writing a protocol flag into a glowing logbook beside a retro CRT monitoring terminal; two small calendar tiles show an explicit two-cycle stream-error streak, while code-plants sprout from the checklist pages. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-09-01T18:38:33.326056+00:00"
+}

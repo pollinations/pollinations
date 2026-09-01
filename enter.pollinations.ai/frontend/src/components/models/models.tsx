@@ -16,7 +16,6 @@ import {
     SearchIcon,
     Section,
     SparklesIcon,
-    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -360,7 +359,6 @@ export const Models: FC = () => {
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
             ?.accessibleLabel ?? "Most popular";
-
     return (
         <div className="flex flex-col gap-6">
             <Section
@@ -437,45 +435,20 @@ export const Models: FC = () => {
                                 );
                             })}
                         </div>
-                        {activePrimaryTab !== "mcp" && (
+                        {activePrimaryTab === "models" && (
                             <div className="flex w-full flex-wrap items-center justify-between gap-2">
-                                {activePrimaryTab === "models" && (
-                                    <div className="flex flex-wrap gap-1.5">
-                                        {MODEL_SECTION_ORDER.map((section) => (
-                                            <TabButton
-                                                key={section}
-                                                active={activeTab === section}
-                                                onClick={() =>
-                                                    setActiveTab(section)
-                                                }
-                                            >
-                                                {sectionLabels[section]}
-                                            </TabButton>
-                                        ))}
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-2 text-sm text-theme-text-muted">
-                                    <span className="inline-flex items-center gap-1.5">
-                                        Community
-                                        <Chip intent="alpha" size="sm">
-                                            Alpha
-                                        </Chip>
-                                    </span>
-                                    <Switch
-                                        checked={
-                                            activePrimaryTab === "agent" ||
-                                            includeCommunity
-                                        }
-                                        onChange={setIncludeCommunity}
-                                        disabled={activePrimaryTab === "agent"}
-                                        ariaLabel={
-                                            activePrimaryTab === "agent"
-                                                ? "All agents are community models for now"
-                                                : includeCommunity
-                                                  ? "Hide community models"
-                                                  : "Include community models"
-                                        }
-                                    />
+                                <div className="flex flex-wrap gap-1.5">
+                                    {MODEL_SECTION_ORDER.map((section) => (
+                                        <TabButton
+                                            key={section}
+                                            active={activeTab === section}
+                                            onClick={() =>
+                                                setActiveTab(section)
+                                            }
+                                        >
+                                            {sectionLabels[section]}
+                                        </TabButton>
+                                    ))}
                                 </div>
                             </div>
                         )}
@@ -505,58 +478,89 @@ export const Models: FC = () => {
                             </div>
                         </div>
                         {activeTab !== "mcp" && (
-                            <Dropdown
-                                align="end"
-                                className="w-max p-2"
-                                trigger={(open) => (
-                                    <Button
-                                        type="button"
-                                        size="md"
-                                        aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                        className="shrink-0 justify-end gap-2"
-                                    >
-                                        <span className="text-right">
-                                            {activeSortLabel}
-                                        </span>
-                                        <ChevronIcon expanded={open} />
-                                    </Button>
-                                )}
-                            >
-                                {(close) => (
-                                    <div
-                                        role="menu"
-                                        aria-label="Sort models"
-                                        onKeyDown={handleSortMenuKeyDown}
-                                        className="flex flex-col gap-1"
-                                    >
-                                        {SORT_OPTIONS.map((option) => (
-                                            <DropdownItem
-                                                key={option.value}
-                                                role="menuitemradio"
-                                                aria-label={
-                                                    option.accessibleLabel
-                                                }
-                                                aria-checked={
-                                                    activeSort === option.value
-                                                }
-                                                onClick={() => {
-                                                    setActiveSort(option.value);
-                                                    close();
-                                                }}
-                                                className={
-                                                    activeSort === option.value
-                                                        ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
-                                                        : "justify-end text-right"
-                                                }
-                                            >
-                                                <span className="flex-1 text-right">
-                                                    {option.label}
-                                                </span>
-                                            </DropdownItem>
-                                        ))}
-                                    </div>
-                                )}
-                            </Dropdown>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <TabButton
+                                    active={
+                                        activePrimaryTab === "agent" ||
+                                        includeCommunity
+                                    }
+                                    onClick={() =>
+                                        setIncludeCommunity(!includeCommunity)
+                                    }
+                                    disabled={activePrimaryTab === "agent"}
+                                    size="md"
+                                    ariaLabel={
+                                        activePrimaryTab === "agent"
+                                            ? "All agents are community models for now"
+                                            : includeCommunity
+                                              ? "Hide community models"
+                                              : "Show community models"
+                                    }
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        Community
+                                        <Chip intent="alpha" size="sm">
+                                            Alpha
+                                        </Chip>
+                                    </span>
+                                </TabButton>
+                                <Dropdown
+                                    align="end"
+                                    className="w-max p-2"
+                                    trigger={(open) => (
+                                        <Button
+                                            type="button"
+                                            size="md"
+                                            aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                            className="shrink-0 justify-end gap-2"
+                                        >
+                                            <span className="text-right">
+                                                {activeSortLabel}
+                                            </span>
+                                            <ChevronIcon expanded={open} />
+                                        </Button>
+                                    )}
+                                >
+                                    {(close) => (
+                                        <div
+                                            role="menu"
+                                            aria-label="Sort models"
+                                            onKeyDown={handleSortMenuKeyDown}
+                                            className="flex flex-col gap-1"
+                                        >
+                                            {SORT_OPTIONS.map((option) => (
+                                                <DropdownItem
+                                                    key={option.value}
+                                                    role="menuitemradio"
+                                                    aria-label={
+                                                        option.accessibleLabel
+                                                    }
+                                                    aria-checked={
+                                                        activeSort ===
+                                                        option.value
+                                                    }
+                                                    onClick={() => {
+                                                        setActiveSort(
+                                                            option.value,
+                                                        );
+                                                        close();
+                                                    }}
+                                                    className={
+                                                        activeSort ===
+                                                        option.value
+                                                            ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                            : "justify-end text-right"
+                                                    }
+                                                >
+                                                    <span className="flex-1 text-right">
+                                                        {option.label}
+                                                    </span>
+                                                </DropdownItem>
+                                            ))}
+                                        </div>
+                                    )}
+                                </Dropdown>
+                            </div>
                         )}
                     </div>
                 </div>

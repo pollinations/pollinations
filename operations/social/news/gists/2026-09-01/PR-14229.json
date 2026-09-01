@@ -1,0 +1,35 @@
+{
+  "pr_number": 14229,
+  "title": "feat(video): route Wan inputs across T2V, I2V, and R2V upstreams",
+  "author": "fkom13",
+  "url": "https://github.com/pollinations/pollinations/pull/14229",
+  "merged_at": "2026-09-01T18:05:28Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14021\n\n## Summary\n- route `wan-pro` across T2V, I2V, and Replicate Wan 2.7 R2V while preserving the public model ID\n- route `wan-3.0` across T2V, I2V, and Fal Wan 3.0 Prime R2V\n- forward Wan 3.0 `image[1]` as `end_image_url` and advertise end-frame/reference capabilities\n- reject frame + reference combinations explicitly\n- enforce Wan 2.7 R2V's 2–10s duration window while keeping T2V/I2V up to 15s\n- preserve tracking, response shape, and existing lifecycle behavior\n\n## Provider contract details\n- Replicate R2V uses `wan-video/wan-2.7-r2v` with `reference_images` / `reference_videos`\n- Fal Prime R2V uses `alibaba/wan-3.0-prime/reference-to-video` with the provider schema fields `reference_image_urls`, `reference_video_urls`, and `reference_audio_urls`\n- Wan 3.0 R2V also forwards resolution, aspect ratio, duration, audio, safety/prompt settings, and seed\n\n## Billing coverage\nAdded a test that exercises the real cost selector for Wan 2.7 1080p:\n- T2V: $0.10/s\n- I2V: $0.15/s\n- R2V: $0.10/s\n\nThis verifies that R2V reference media does not trigger the I2V 1080p surcharge.\n\n## Validation\n- `npx vitest run test/image/wanVideoModel.test.ts test/image/wan3FalVideoModel.test.ts test/image/videoFrameValidation.test.ts test/model-registry.test.ts` — 58/58 passed\n- `npm run typecheck` — passed\n- `npx biome check --write` on the six modified files — passed\n- `git diff --check` — clean\n\nThe implementation stays within the two existing Wan adapters and registry/tests; no new public endpoints or generic routing layer are introduced.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Wan found more routes",
+    "blurb": "The Wan video models learned a few new paths through the garden: text, images, and reference media can now all lead to moving pictures. Same public model IDs, considerably more ways to make them wiggle.",
+    "summary": "`wan-pro` now routes text-to-video, image-to-video, and Replicate Wan 2.7 reference-to-video requests, while `wan-3.0` routes those modes through Fal Wan 3.0 Prime and supports a second image as an end frame.",
+    "impact": "Video builders can keep using the existing Wan model IDs while gaining reference-image, reference-video, reference-audio, and Wan 3.0 end-frame workflows, with mode-specific duration validation and correct 1080p R2V billing.",
+    "keywords": [
+      "video",
+      "wan-pro",
+      "wan-3.0",
+      "reference-to-video",
+      "image-to-video",
+      "routing",
+      "models"
+    ],
+    "visual_concept": "Depict Wan video routing as a cozy branching garden path from one retro video terminal into three labeled, glowing paths: T2V, I2V, and R2V. Polli, wearing a tiny film director beret, guides a strip of pixel film through the paths; one path begins with a text scroll, one with a still-image frame, and one with reference photos and audio notes, ending in a second frame to represent Wan 3.0 end-frame support. Include small flowers and code-vines growing around the routing signposts.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee mascot with dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny film director beret, guiding a glowing pixel film strip through a garden signpost with three paths labeled \"T2V\", \"I2V\", and \"R2V\"; text scrolls, image frames, reference photos, and tiny audio notes feed the paths, with a final end-frame image waiting at one branch. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers around a retro video terminal, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14229.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee mascot with dark brown stripes, pink rectangular cheek blush, light blue wings, and a tiny film director beret, guiding a glowing pixel film strip through a garden signpost with three paths labeled \"T2V\", \"I2V\", and \"R2V\"; text scrolls, image frames, reference photos, and tiny audio notes feed the paths, with a final end-frame image waiting at one branch. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers around a retro video terminal, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T18:06:36.532489+00:00"
+}

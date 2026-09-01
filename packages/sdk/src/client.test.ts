@@ -507,6 +507,121 @@ describe("Pollinations simple text facade", () => {
             response_format: { type: "json_object" },
         });
     });
+
+    it("surfaces streamed API errors instead of yielding invalid chunks", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"error":{"message":"Upstream model unavailable"}}',
+                    "data: [DONE]",
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "STREAM_ERROR",
+            status: 502,
+            message: "Upstream model unavailable",
+        });
+    });
+
+    it("rejects malformed stream events without choices", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"provider_metadata":{"status":"ok"}}',
+                    "data: [DONE]",
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+
+    it("rejects invalid JSON in a stream", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse("data: [invalid-json]\n\n", {
+                kind: "stream",
+                contentType: "text/event-stream",
+            }),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+
+    it("reports malformed provider data appended after DONE", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"choices":[]}',
+                    "data: [DONE]",
+                    'data: {"provider_metadata":{"private":true}}',
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
 });
 
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {

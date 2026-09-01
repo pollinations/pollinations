@@ -961,7 +961,7 @@ describe("prompt-agent runtime", () => {
         expect(finalChunk.usage.prompt_tokens).toBe(6);
     });
 
-    it("streams base-model errors as SSE", async () => {
+    it("streams base-model errors as completion content", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () =>
@@ -978,10 +978,78 @@ describe("prompt-agent runtime", () => {
         });
 
         expect(response.status).toBe(200);
-        expect(await response.text()).toBe(
-            'data: {"error":{"message":"Insufficient balance"}}\n\n' +
-                "data: [DONE]\n\n",
+        const events = (await response.text())
+            .split("\n\n")
+            .map((block) => block.replace(/^data: /, "").trim())
+            .filter(Boolean);
+        expect(events.at(-1)).toBe("[DONE]");
+        const chunks = events.slice(0, -1).map((event) => JSON.parse(event));
+        expect(chunks.every((chunk) => Array.isArray(chunk.choices))).toBe(
+            true,
         );
+        expect(chunks[0].choices[0].delta.content).toContain(
+            "<summary>Agent Failed</summary>",
+        );
+        expect(chunks[0].choices[0].delta.content).toContain(
+            "Insufficient balance",
+        );
+        expect(chunks.at(-1).choices[0].finish_reason).toBe("stop");
+    });
+
+    it.each([
+        false,
+        true,
+    ])("reports an empty base-model response when stream:%s", async (stream) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                if (!stream) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: null,
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 1,
+                            completion_tokens: 0,
+                        },
+                    });
+                }
+                return new Response(
+                    'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n' +
+                        "data: [DONE]\n\n",
+                    {
+                        headers: {
+                            "content-type": "text/event-stream",
+                        },
+                    },
+                );
+            }),
+        );
+
+        const response = await runAgent({
+            messages: [{ role: "user", content: "hello" }],
+            stream,
+        });
+
+        if (stream) {
+            expect(response.status).toBe(200);
+            const body = await response.text();
+            expect(body).toContain("<summary>Agent Failed</summary>");
+            expect(body).toContain("Agent produced no response");
+            expect(body).not.toContain('data: {"error"');
+            expect(body.endsWith("data: [DONE]\n\n")).toBe(true);
+            return;
+        }
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toEqual({
+            error: { message: "Agent produced no response" },
+        });
     });
 
     it("feeds a failing tool's error back to the model instead of 502", async () => {

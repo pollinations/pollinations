@@ -1,0 +1,35 @@
+{
+  "pr_number": 14320,
+  "title": "feat: add Claude Fable 5.1",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14320",
+  "merged_at": "2026-09-01T23:27:39Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical-only `anthropic/claude-fable-5.1` alongside unchanged Fable 5, routed to Bedrock `global.anthropic.claude-fable-5-1`.\n- Enables text/image input, tools with automatic choice, adaptive reasoning, 1M context, 128K output, and prompt caching.\n- Sets paid-only access and 1x pricing: $10/M input, $50/M output, $12.50/M cache write, and $0.25/M cache read. Source: https://platform.claude.com/docs/en/models/fable-5-1/overview\n- Documents the 512-token cache minimum and forced-tool-choice 400 behavior. Source: https://platform.claude.com/docs/en/models/fable-5-1/whats-new-fable-5-1\n- E2E request `0647cac3-bc0e-4533-9465-0a10c1696be9`: HTTP 200 via Bedrock, 28 input + 15 output tokens, exact $0.00103 local wallet debit, and one billed staging Tinybird row on `v1:meter:pack` with matching model, provider, usage, cost, and price.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fable joins the hive",
+    "blurb": "Claude Fable 5.1 has landed through Bedrock, with a very large context window and room for both images and careful thinking. Polli put out 1M tiny chairs for the tokens.",
+    "summary": "Added paid-only canonical model anthropic/claude-fable-5.1 via Bedrock global.anthropic.claude-fable-5-1, with text and image input, automatic tool choice, adaptive reasoning, prompt caching, 1M context, and 128K output.",
+    "impact": "Developers can now call Claude Fable 5.1 through the unified API at 1x pricing, including $10/M input and $50/M output, while using long-context, multimodal, tool, reasoning, and cache workflows.",
+    "keywords": [
+      "claude-fable-5.1",
+      "anthropic",
+      "bedrock",
+      "text-generation",
+      "prompt-caching",
+      "long-context",
+      "tools"
+    ],
+    "visual_concept": "Depict a cozy library-garden built around a huge open storybook representing Claude Fable 5.1 and its 1M-token context. Polli, wearing tiny librarian glasses, tends flowering code-vines growing from the book while a small CRT monitor robot organizes image cards and tool icons; subtle cache jars and a long glowing parchment convey prompt caching and large output capacity.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny librarian glasses, tending code-flowers growing from an enormous open storybook in a warm garden-library; a friendly CRT monitor robot stacks image cards, tool symbols, and small glowing cache jars beside a long scroll. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"FABLE 5.1\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14320.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny librarian glasses, tending code-flowers growing from an enormous open storybook in a warm garden-library; a friendly CRT monitor robot stacks image cards, tool symbols, and small glowing cache jars beside a long scroll. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"FABLE 5.1\"."
+  },
+  "generated_at": "2026-09-01T23:28:43.813434+00:00"
+}

@@ -111,31 +111,28 @@ describe("Fal fallback media models", () => {
                 camera_fixed: false,
             },
         ],
-    ] as const)(
-        "sends %s through its exact Fal endpoint",
-        async (model, endpoint, input) => {
-            const requests = mockFal({
-                video: { url: MEDIA_URL, content_type: "video/mp4" },
-            });
-            const resultPromise = callFalFallbackVideo("a blue circle", {
-                ...baseParams,
-                model,
-                duration: input.duration,
-                resolution: model === "seedance-pro-fal" ? "480p" : undefined,
-            });
-            await vi.advanceTimersByTimeAsync(5_000);
-            const result = await resultPromise;
+    ] as const)("sends %s through its exact Fal endpoint", async (model, endpoint, input) => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("a blue circle", {
+            ...baseParams,
+            model,
+            duration: input.duration,
+            resolution: model === "seedance-pro-fal" ? "480p" : undefined,
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
 
-            expect(requests[0]).toEqual({
-                url: `https://queue.fal.run/${endpoint}`,
-                body: { prompt: "a blue circle", ...input, seed: 42 },
-            });
-            expect(result.durationSeconds).toBe(input.duration);
-            expect(result.trackingData.usage.completionVideoSeconds).toBe(
-                input.duration,
-            );
-        },
-    );
+        expect(requests[0]).toEqual({
+            url: `https://queue.fal.run/${endpoint}`,
+            body: { prompt: "a blue circle", ...input, seed: 42 },
+        });
+        expect(result.durationSeconds).toBe(input.duration);
+        expect(result.trackingData.usage.completionVideoSeconds).toBe(
+            input.duration,
+        );
+    });
 
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({

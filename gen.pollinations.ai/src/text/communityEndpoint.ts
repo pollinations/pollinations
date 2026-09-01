@@ -10,37 +10,6 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { RequestData, TransformOptions } from "./types.js";
 
-function bytesToBase64Url(bytes: Uint8Array): string {
-    let binary = "";
-    for (const byte of bytes) binary += String.fromCharCode(byte);
-    return btoa(binary)
-        .replaceAll("+", "-")
-        .replaceAll("/", "_")
-        .replace(/=+$/, "");
-}
-
-/** Stable for one caller and endpoint, opaque to the community service. */
-async function humanCallerId(
-    secret: string,
-    endpointId: string,
-    userId: string,
-): Promise<string> {
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-        "raw",
-        encoder.encode(secret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"],
-    );
-    const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        encoder.encode(`human-caller:v1:${endpointId}:${userId}`),
-    );
-    return `hc_${bytesToBase64Url(new Uint8Array(signature))}`;
-}
-
 /**
  * The run token a delegating endpoint authenticates with, or undefined.
  *
@@ -105,7 +74,6 @@ export async function communityEndpointGatewayContext({
     userApiKey,
     parentRequestId,
     parentApiKeyId,
-    callerUserId,
 }: {
     endpoint: CommunityEndpointRuntime;
     modelDefinition: ModelDefinition;
@@ -115,7 +83,6 @@ export async function communityEndpointGatewayContext({
     userApiKey: string;
     parentRequestId: string;
     parentApiKeyId?: string;
-    callerUserId?: string;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
     const runToken = await mintDelegatedToken({
@@ -136,23 +103,8 @@ export async function communityEndpointGatewayContext({
             : runToken;
     if (!authKey) throw new Error("Agent request has no agent run token");
 
-    let trustedHumanMetadata: Record<string, unknown> | undefined;
-    if (endpoint.type === "proxy" && endpoint.humanResponders) {
-        if (!callerUserId) {
-            throw new Error("Human responder request has no caller identity");
-        }
-        trustedHumanMetadata = {
-            caller: {
-                id: await humanCallerId(secret, endpoint.id, callerUserId),
-            },
-        };
-    }
-
     return {
         ...requestDataWithoutMessages,
-        ...(trustedHumanMetadata && {
-            _pollinations: trustedHumanMetadata,
-        }),
         modelConfig: {
             provider: "openai",
             "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),

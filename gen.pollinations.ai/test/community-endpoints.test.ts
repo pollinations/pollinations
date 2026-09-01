@@ -116,7 +116,6 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         bearerTokenCiphertext?: string | null;
         perUserRpm?: number | null;
         fallbacks?: string[] | null;
-        humanResponders?: boolean;
     };
 
 /**
@@ -138,7 +137,6 @@ function insertCommunityEndpoints(
             bearerTokenCiphertext,
             perUserRpm,
             fallbacks,
-            humanResponders,
             promptTextPrice: _promptTextPrice,
             promptCachedPrice: _promptCachedPrice,
             promptCacheWritePrice: _promptCacheWritePrice,
@@ -176,7 +174,6 @@ function insertCommunityEndpoints(
                             ),
                         perUserRpm: perUserRpm ?? null,
                         fallbacks: fallbacks ?? [],
-                        humanResponders: humanResponders ?? false,
                         prices: communityEndpointPrices(row),
                     };
         return {
@@ -499,7 +496,6 @@ describe("community endpoint helpers", () => {
     it("resolves pending visibility and pricing as one effective listing", () => {
         const current: ProxyListingPayload = {
             bearerTokenCiphertext: "current-credential",
-            humanResponders: false,
             paidOnly: false,
             modality: "text",
             imagePricing: "request",
@@ -2060,53 +2056,6 @@ describe("community endpoint helpers", () => {
         expect(context).not.toHaveProperty("messages");
     });
 
-    it("adds an opaque caller scope for human responder endpoints", async () => {
-        const secret = "test-secret";
-        const endpoint: CommunityEndpointRuntime = {
-            type: "proxy",
-            id: "humans-endpoint-id",
-            ownerUserId: "owner-id",
-            modelId: "voodoohop/humans",
-            name: "humans",
-            title: "Humans",
-            description: null,
-            modality: "text",
-            imagePricing: "request",
-            inputModalities: null,
-            baseUrl: "https://polli.example.com/v1",
-            upstreamModel: "humans",
-            visibility: "public",
-            paidOnly: false,
-            perUserRpm: null,
-            fallbacks: [],
-            humanResponders: true,
-            hiddenAt: null,
-            hiddenReason: null,
-            bearerTokenCiphertext: await encryptSecret("secret", secret),
-            ...communityEndpointPrices({}),
-        };
-
-        const context = await communityEndpointGatewayContext({
-            endpoint,
-            modelDefinition: communityModelDefinition(endpoint),
-            requestData: {
-                messages: [{ role: "user", content: "hello" }],
-                stream: true,
-            },
-            secret,
-            portkeyGatewayUrl: "https://portkey.test",
-            userApiKey: "sk_user_key",
-            parentRequestId: "parent-request-id",
-            callerUserId: "internal-user-id",
-        });
-
-        expect(context.stream).toBe(true);
-        expect(context._pollinations).toEqual({
-            caller: { id: expect.stringMatching(/^hc_[A-Za-z0-9_-]{43}$/) },
-        });
-        expect(JSON.stringify(context)).not.toContain("internal-user-id");
-    });
-
     describe("endpoint agents", () => {
         const secret = "test-secret";
 
@@ -2766,7 +2715,6 @@ fixtureTest(
             ),
             promptTextPrice: 0.1 / 1_000_000,
             completionTextPrice: 0.2 / 1_000_000,
-            humanResponders: true,
             createdAt: new Date(),
             updatedAt: new Date(),
         });
@@ -2841,10 +2789,6 @@ fixtureTest(
                 }),
             ]),
         );
-        const registry = await getGenerationModelRegistry(env);
-        expect(registry.resolve(modelId)?.communityEndpoint).toMatchObject({
-            humanResponders: true,
-        });
     },
 );
 

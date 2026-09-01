@@ -135,13 +135,11 @@ class HumanService:
         await self.database.execute("PRAGMA journal_mode = WAL")
         await self.database.execute(
             """
-            CREATE TABLE IF NOT EXISTS human_conversation_history (
-                caller_id TEXT NOT NULL,
-                transcript TEXT NOT NULL,
+            CREATE TABLE IF NOT EXISTS human_conversations (
+                transcript TEXT PRIMARY KEY,
                 thread_id INTEGER NOT NULL,
                 message_count INTEGER NOT NULL,
-                updated_at REAL NOT NULL,
-                PRIMARY KEY (caller_id, transcript)
+                updated_at REAL NOT NULL
             ) STRICT
             """
         )
@@ -178,7 +176,6 @@ class HumanService:
     async def complete(
         self,
         *,
-        caller_id: str,
         messages: list[dict],
         max_tokens: int | None,
         max_completion_tokens: int | None,
@@ -186,7 +183,7 @@ class HumanService:
         if not self.database:
             raise RuntimeError("Human model is not configured")
 
-        match = await self._thread_for_messages(caller_id, messages)
+        match = await self._thread_for_messages(messages)
         if match is None:
             thread_id = await self.gateway.create_thread(conversation_thread_name(messages))
             prompt = messages
@@ -202,15 +199,14 @@ class HumanService:
         prompt_tokens = count_prompt_tokens(messages)
         await self.database.execute(
             """
-            INSERT INTO human_conversation_history
-                (caller_id, transcript, thread_id, message_count, updated_at)
-            VALUES (?, ?, ?, ?, ?)
-            ON CONFLICT (caller_id, transcript) DO UPDATE SET
+            INSERT INTO human_conversations
+                (transcript, thread_id, message_count, updated_at)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT (transcript) DO UPDATE SET
                 thread_id = excluded.thread_id,
                 updated_at = excluded.updated_at
             """,
             (
-                caller_id,
                 serialize_identity([*messages, {"role": "assistant", "content": answer}]),
                 thread_id,
                 len(conversation_identity(messages)) + 1,
@@ -237,7 +233,7 @@ class HumanService:
             },
         }
 
-    async def _thread_for_messages(self, caller_id: str, messages: list[dict]) -> tuple[int, int] | None:
+    async def _thread_for_messages(self, messages: list[dict]) -> tuple[int, int] | None:
         assert self.database
         identity = conversation_identity(messages)
         if not identity:
@@ -246,11 +242,11 @@ class HumanService:
         async with self.database.execute(
             """
             SELECT thread_id, transcript
-            FROM human_conversation_history
-            WHERE caller_id = ? AND message_count < ?
+            FROM human_conversations
+            WHERE message_count < ?
             ORDER BY message_count DESC, updated_at DESC
             """,
-            (caller_id, len(identity)),
+            (len(identity),),
         ) as cursor:
             async for thread_id, transcript in cursor:
                 stored = json.loads(transcript)
@@ -283,8 +279,7 @@ def discord_preview(content: str) -> str:
 
 def format_transcript(messages: list[dict]) -> list[str]:
     text = "\n\n".join(
-        f"{message['role'].upper()}: {harden_content(discord_preview(message['content']))}"
-        for message in messages
+        f"{message['role'].upper()}: {harden_content(discord_preview(message['content']))}" for message in messages
     )
     return [text[offset : offset + _MAX_DISCORD_CONTENT] for offset in range(0, len(text), _MAX_DISCORD_CONTENT)]
 

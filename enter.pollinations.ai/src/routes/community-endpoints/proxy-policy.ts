@@ -27,9 +27,7 @@ export type ProxyPolicy = Pick<
     | "imagePricing"
     | "inputModalities"
     | "paidOnly"
-    | "humanResponders"
     | "perUserRpm"
-    | "fallbacks"
     | "advertised"
     | "prices"
 >;
@@ -140,16 +138,6 @@ function validatePolicy(
     // An omitted update preserves stored metadata without revalidating it.
     assertAdvertised(policy.modality, requestedAdvertised);
     assertPriceLimits(policy.prices, policy.modality, policy.imagePricing);
-    if (policy.humanResponders && policy.modality !== "text") {
-        throw new HTTPException(400, {
-            message: "Human responder models must use the text modality",
-        });
-    }
-    if (policy.humanResponders && policy.fallbacks.length > 0) {
-        throw new HTTPException(400, {
-            message: "Human responder models cannot declare fallbacks",
-        });
-    }
     return policy;
 }
 
@@ -167,8 +155,6 @@ export function deriveCreateProxyPolicy(input: ProxyCreateInput): ProxyPolicy {
             inputModalities,
             advertised: normalizeAdvertised(input.advertised),
             perUserRpm: input.perUserRpm ?? null,
-            humanResponders: input.humanResponders,
-            fallbacks: input.fallbacks ?? [],
             ...visibilityPolicy(
                 input.visibility,
                 input.paidOnly,
@@ -225,8 +211,6 @@ export function deriveUpdatedProxyPolicy(
                 input.perUserRpm === undefined
                     ? stored.perUserRpm
                     : input.perUserRpm,
-            humanResponders: input.humanResponders ?? stored.humanResponders,
-            fallbacks: input.fallbacks ?? stored.fallbacks,
             ...visibilityPolicy(
                 visibility,
                 input.paidOnly ?? stored.paidOnly,
@@ -279,7 +263,6 @@ export function changesProxyPayload(input: ProxyUpdateInput): boolean {
         input.bearerToken,
         input.visibility,
         input.perUserRpm,
-        input.humanResponders,
         input.paidOnly,
         input.imagePricing,
         input.inputModalities,

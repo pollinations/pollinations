@@ -53,10 +53,9 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         await self.service.close()
         self.temporary_directory.cleanup()
 
-    async def test_returns_response_and_reuses_caller_history(self):
+    async def test_returns_response_and_reuses_message_history(self):
         search_context = "<details><summary>Web search: Hello humans</summary>generated context"
         first = await self.service.complete(
-            caller_id="caller-a",
             messages=[
                 {"role": "user", "content": search_context},
                 {"role": "user", "content": "Hello humans"},
@@ -69,7 +68,6 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.gateway.thread_names, ["Hello humans"])
 
         await self.service.complete(
-            caller_id="caller-a",
             messages=[
                 {"role": "user", "content": "Hello humans"},
                 {"role": "user", "content": search_context},
@@ -90,7 +88,6 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         )
 
         await self.service.complete(
-            caller_id="caller-b",
             messages=[
                 {"role": "user", "content": "Hello humans"},
                 {"role": "assistant", "content": "A human answer"},
@@ -99,12 +96,11 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
             max_tokens=None,
             max_completion_tokens=None,
         )
-        self.assertEqual(self.gateway.thread_count, 2)
+        self.assertEqual(self.gateway.thread_count, 1)
 
     async def test_uses_smallest_completion_limit(self):
         self.gateway.reply.content = "one two three four five"
         response = await self.service.complete(
-            caller_id="caller-a",
             messages=[{"role": "user", "content": "short answer"}],
             max_tokens=4,
             max_completion_tokens=2,

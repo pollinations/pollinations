@@ -534,8 +534,6 @@ const StoredCommunityEndpointPricesSchema = z.object(
 export const ProxyListingPayloadSchema = z
     .object({
         bearerTokenCiphertext: z.string().min(1),
-        // Marks a text proxy whose completion is written by a linked person.
-        humanResponders: z.boolean().default(false),
         // Owner-set: callers may only spend Paid Pollen on this model. Rows
         // from before paid-only support are public-spend by default.
         paidOnly: z.boolean().default(false),
@@ -562,18 +560,6 @@ export const ProxyListingPayloadSchema = z
             ),
             ...(Object.keys(advertised).length ? { advertised } : {}),
         };
-    })
-    .superRefine((payload, context) => {
-        if (
-            payload.humanResponders &&
-            (payload.modality !== "text" || payload.fallbacks.length > 0)
-        ) {
-            context.addIssue({
-                code: "custom",
-                message:
-                    "Human responder models must be text proxies without fallbacks",
-            });
-        }
     });
 
 export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
@@ -741,7 +727,6 @@ type CommunityEndpointRuntimeBase = {
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     paidOnly: boolean;
-    humanResponders?: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
     perUserRpm: number | null;

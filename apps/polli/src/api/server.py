@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from ..ai.client import UpstreamAuthError, _auth_override
 from ..utils.uuid import uuid4_hex
@@ -17,14 +17,6 @@ logger = logging.getLogger(__name__)
 class Message(BaseModel):
     role: str
     content: str | list | None = None
-
-
-class CallerMetadata(BaseModel):
-    id: str
-
-
-class PollinationsMetadata(BaseModel):
-    caller: CallerMetadata | None = None
 
 
 class ChatRequest(BaseModel):
@@ -82,8 +74,6 @@ class ChatRequest(BaseModel):
     image_urls: list[str] | None = None
     video_urls: list[str] | None = None
     file_urls: list[str] | None = None
-    pollinations_metadata: PollinationsMetadata | None = Field(default=None, alias="_pollinations")
-
     model_config = {"extra": "ignore"}
 
 
@@ -150,9 +140,6 @@ def create_api_app(pollinations_client, config, human_service: HumanService | No
                 human_service.authorize(auth_header)
             except PermissionError:
                 raise HTTPException(status_code=401, detail="Unauthorized")
-            caller = request.pollinations_metadata and request.pollinations_metadata.caller
-            if not caller:
-                raise HTTPException(status_code=400, detail="Trusted caller metadata is required")
             if not request.messages or any(
                 message.role not in {"assistant", "developer", "system", "user"} or not isinstance(message.content, str)
                 for message in request.messages
@@ -166,7 +153,6 @@ def create_api_app(pollinations_client, config, human_service: HumanService | No
                     raise HTTPException(status_code=400, detail=f"{name} must be a positive integer")
             try:
                 completion = await human_service.complete(
-                    caller_id=caller.id,
                     messages=[message.model_dump() for message in request.messages],
                     max_tokens=request.max_tokens,
                     max_completion_tokens=request.max_completion_tokens,

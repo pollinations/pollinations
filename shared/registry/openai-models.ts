@@ -30,12 +30,15 @@ const GPT_5_6_SOL_COST_VARIANTS = defineCostVariants(
 );
 
 export const GPT_5_6_SOL_SERVICE = {
-    aliases: ["chatgpt-sol", "chatgpt-5.6-sol"],
+    aliases: ["chatgpt-sol", "chatgpt-5.6-sol", "openai/gpt-5.6-sol"],
     provider: "azure",
     brand: "OpenAI",
     category: "text",
     addedDate: new Date("2026-07-10").getTime(),
-    priceMultiplier: 0.5,
+    // OpenRouter's standard OpenAI endpoint discounts Azure output more
+    // deeply than input/cache. One third matches its output rate and keeps
+    // the other dimensions below that endpoint under a uniform multiplier.
+    priceMultiplier: 1 / 3,
     cost: GPT_5_6_SOL_COST,
     ...GPT_5_6_SOL_COST_VARIANTS,
     title: "GPT-5.6 Sol",

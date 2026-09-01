@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { driveDocumentLink } from "./documents";
+import {
+    driveDocumentLink,
+    hasArchivedEvidence,
+    hasReconciledTransactionEvidence,
+    isAcknowledgedLostTransactionEvidence,
+} from "./documents";
 
 describe("driveDocumentLink", () => {
     it("recognizes Drive folders", () => {
@@ -46,6 +51,18 @@ describe("driveDocumentLink", () => {
         });
     });
 
+    it("extracts a Drive link from an evidence note", () => {
+        const evidence =
+            "Invoice: https://drive.google.com/file/d/file-id/view?usp=drivesdk — fully covered by provider credit";
+
+        expect(driveDocumentLink(evidence)).toEqual({
+            href: "https://drive.google.com/file/d/file-id/view?usp=drivesdk",
+            label: "Open document",
+            previewHref: "https://drive.google.com/file/d/file-id/preview",
+        });
+        expect(hasArchivedEvidence(evidence)).toBe(true);
+    });
+
     it("rejects blank, non-Drive, insecure, and deceptive links", () => {
         expect(driveDocumentLink("")).toBeNull();
         expect(driveDocumentLink("wise-statement.zip")).toBeNull();
@@ -57,5 +74,50 @@ describe("driveDocumentLink", () => {
                 "https://drive.google.com.example.com/file/d/file-id/view",
             ),
         ).toBeNull();
+    });
+
+    it("keeps an archived but unresolved transaction open", () => {
+        const evidence =
+            "https://drive.google.com/file/d/exception-register/view";
+
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Distinct supplier invoice unresolved",
+                evidence,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description:
+                    "Supplier invoice unavailable; standing exception retained",
+                evidence,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Polar self-purchase checkout test",
+                evidence,
+            }),
+        ).toBe(false);
+    });
+
+    it("distinguishes permanent document loss from an actionable gap", () => {
+        expect(
+            isAcknowledgedLostTransactionEvidence({
+                description:
+                    "Discord · supplier invoice unavailable; standing exception retained",
+            }),
+        ).toBe(true);
+        expect(
+            isAcknowledgedLostTransactionEvidence({
+                description:
+                    "Pruna top-up · bank payment verified; exact supplier receipt unresolved",
+            }),
+        ).toBe(true);
+        expect(
+            isAcknowledgedLostTransactionEvidence({
+                description: "Polar self-purchase checkout test",
+            }),
+        ).toBe(false);
     });
 });

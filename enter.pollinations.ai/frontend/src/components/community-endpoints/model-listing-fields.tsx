@@ -2,14 +2,15 @@ import {
     ButtonGroup,
     CheckIcon,
     FieldStack,
+    InlineLink,
     Input,
     TabButton,
 } from "@pollinations/ui";
 import {
     COMMUNITY_ENDPOINT_CAPABILITIES,
     COMMUNITY_ENDPOINT_DESCRIPTION_MAX_LENGTH,
-    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_TITLE_MAX_LENGTH,
+    COMMUNITY_MODALITY_SPEC,
     type CommunityEndpointCapability,
     type CommunityEndpointModality,
 } from "@shared/community-endpoints.ts";
@@ -57,7 +58,7 @@ export function ModelListingFields({
         if (selected) next.delete(input);
         else next.add(input);
         onInputModalitiesChange?.(
-            COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality].filter((value) =>
+            COMMUNITY_MODALITY_SPEC[modality].inputModalities.filter((value) =>
                 next.has(value),
             ),
         );
@@ -84,7 +85,7 @@ export function ModelListingFields({
                     alignLabelRow
                 >
                     <ButtonGroup aria-label="Accepted input modalities">
-                        {COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality].map(
+                        {COMMUNITY_MODALITY_SPEC[modality].inputModalities.map(
                             (input) => {
                                 const selected =
                                     form.inputModalities.includes(input);
@@ -114,9 +115,21 @@ export function ModelListingFields({
                 <FieldStack
                     label={isAgent ? "ID" : "Model ID"}
                     helper={
-                        isAgent
-                            ? "Public ID: {username}/{id}."
-                            : "Public ID: {username}/{model-id}."
+                        isAgent ? (
+                            "Public ID: {username}/{id}."
+                        ) : (
+                            <>
+                                Public ID: {"{username}"}/{"{model-id}"}.{" "}
+                                <InlineLink
+                                    href="https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md#model-names"
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    Naming tips
+                                </InlineLink>
+                                .
+                            </>
+                        )
                     }
                     alignLabelRow
                 >

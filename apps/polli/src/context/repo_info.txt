@@ -29,7 +29,7 @@ Tool calling supported: openai (all), claude (all), gemini (non-search), deepsee
 
 Complete quests from the Quests dashboard at enter.pollinations.ai/quests → rewards land as Quest Pollen.
 - Lanes: onboarding, model usage, app growth, GitHub contributions
-- Contribute quests: comment on a POLLEN-QUEST GitHub issue to claim; fixed reward paid when merged
+- Contribute quests: multiple contributors may submit PRs; maintainers select and assign the best solution before merge; the selected contributor claims the fixed reward
 - In alpha — rewards and availability evolve
 - Quest Pollen spent BEFORE Paid Pollen | Paid-only models require Paid Pollen
 

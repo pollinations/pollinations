@@ -9,10 +9,32 @@ import {
     teardownFetchMock,
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
-import { afterEach, expect } from "vitest";
+import { afterEach, expect, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
 import worker from "../../src/index.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
+
+const bedrockMocks = vi.hoisted(() => ({
+    calls: [] as Record<string, unknown>[],
+}));
+
+vi.mock("@aws-sdk/client-bedrock-runtime", () => ({
+    BedrockRuntimeClient: vi.fn().mockImplementation(() => ({
+        send: vi.fn().mockImplementation(async (command) => {
+            bedrockMocks.calls.push(JSON.parse(command.body));
+            return {
+                body: new TextEncoder().encode(
+                    JSON.stringify({ images: ["iVBORw0KGgo="] }),
+                ),
+            };
+        }),
+    })),
+    InvokeModelCommand: vi.fn().mockImplementation((input) => input),
+}));
+
+vi.mock("@smithy/fetch-http-handler", () => ({
+    FetchHttpHandler: vi.fn(),
+}));
 
 const INPUT_IMAGE_URL = "https://media.example.test/input.png";
 const OUTPUT_IMAGE_URL = "https://media.example.test/output.png";
@@ -189,6 +211,49 @@ test("qwen-image selects text-to-image and edit billing from the real handler in
         tokenPriceCompletionImage: 0.03,
         totalCost: 0.03,
         totalPrice: 0.03,
+    });
+});
+
+test("nova-canvas bills the final dimensions sent to Bedrock", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+    bedrockMocks.calls = [];
+
+    await generate(
+        "/image/billing-nova-low?model=nova-canvas&width=1025&height=1024&seed=105",
+        paidApiKey,
+    );
+    await generate(
+        "/image/billing-nova-high?model=nova-canvas&width=1008&height=1040&seed=106",
+        paidApiKey,
+    );
+
+    expect(
+        bedrockMocks.calls.map((call) => call.imageGenerationConfig),
+    ).toEqual([
+        expect.objectContaining({ width: 1024, height: 1024 }),
+        expect.objectContaining({ width: 1008, height: 1040 }),
+    ]);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelRequested: "nova-canvas",
+        modelUsed: "nova-canvas",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.04,
+        totalCost: 0.04,
+        totalPrice: 0.04,
+    });
+    expect(mocks.tinybird.state.events[0].costVariant).toBeUndefined();
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        modelRequested: "nova-canvas",
+        modelUsed: "nova-canvas",
+        costVariant: "2048",
+        tokenCountCompletionImage: 1,
+        tokenPriceCompletionImage: 0.06,
+        totalCost: 0.06,
+        totalPrice: 0.06,
     });
 });
 

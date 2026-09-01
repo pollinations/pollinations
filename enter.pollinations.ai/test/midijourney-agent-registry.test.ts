@@ -14,6 +14,7 @@ describe("MIDIjourney agent registry", () => {
         const definition = getRegistryModelDefinition("midijourney");
         const baseDefinition = getRegistryModelDefinition("gpt-5.6-sol");
         const info = modelInfoFromDefinition("midijourney", definition);
+        const baseInfo = modelInfoFromDefinition("gpt-5.6-sol", baseDefinition);
 
         expect(definition.cost).toBe(baseDefinition.cost);
         expect(definition.costVariants).toBe(baseDefinition.costVariants);
@@ -43,13 +44,7 @@ describe("MIDIjourney agent registry", () => {
             base_model: "gpt-5.6-sol",
             capabilities: ["tool_calling", "reasoning"],
             context_length: 1050000,
-            pricing: {
-                currency: "pollen",
-                promptTextTokens: "0.0000025",
-                promptCachedTokens: "0.00000025",
-                promptCacheWriteTokens: "0.000003125",
-                completionTextTokens: "0.000015",
-            },
+            pricing: baseInfo.pricing,
         });
         expect(info).not.toHaveProperty("is_specialized");
         expect(info).not.toHaveProperty("category");

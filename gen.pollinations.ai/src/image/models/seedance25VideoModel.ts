@@ -6,7 +6,6 @@ import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
     toReplicateHttpError,
 } from "../utils/replicateClient.ts";
@@ -27,6 +26,9 @@ interface Seedance25Input {
     seed?: number;
     image?: string;
     last_frame_image?: string;
+    reference_images?: string[];
+    reference_videos?: string[];
+    reference_audios?: string[];
 }
 
 function resolveAspectRatio(safeParams: ImageParams): Seedance25AspectRatio {
@@ -71,12 +73,6 @@ export async function callSeedance25API(
     }
 
     const images = safeParams.image ?? [];
-    if (images.length > 2) {
-        throw new HttpError(
-            "Seedance 2.5 supports at most two images: image[0] as first frame and image[1] as last frame.",
-            400,
-        );
-    }
 
     const input: Seedance25Input = {
         prompt,
@@ -90,6 +86,15 @@ export async function callSeedance25API(
     }
     if (images[0]) input.image = await toDataUri(images[0]);
     if (images[1]) input.last_frame_image = await toDataUri(images[1]);
+    if (safeParams.reference_images?.length) {
+        input.reference_images = safeParams.reference_images;
+    }
+    if (safeParams.reference_videos?.length) {
+        input.reference_videos = safeParams.reference_videos;
+    }
+    if (safeParams.reference_audios?.length) {
+        input.reference_audios = safeParams.reference_audios;
+    }
 
     let videoUrl: string;
     let actualDurationSeconds: number | undefined;
@@ -107,12 +112,6 @@ export async function callSeedance25API(
         });
     } catch (error) {
         logError("prediction failed", error);
-        if (error instanceof ReplicateError) {
-            logError("Replicate error", {
-                message: error.message,
-                status: error.status,
-            });
-        }
         throw toReplicateHttpError(error, "Seedance 2.5 generation failed");
     }
 

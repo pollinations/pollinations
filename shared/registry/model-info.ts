@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
     getPriceDefinitionForModel,
@@ -9,9 +10,13 @@ import {
     getVisibleModel3dModels,
     getVisibleRealtimeModels,
     getVisibleTextModels,
+    MODEL_CATEGORIES,
+    MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelName,
     type PriceDefinition,
+    VIDEO_CAPABILITIES,
 } from "./registry";
 
 export const ModelCapabilitySchema = z.enum([
@@ -32,17 +37,7 @@ export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
-    category: z
-        .enum([
-            "text",
-            "image",
-            "audio",
-            "video",
-            "3d",
-            "embedding",
-            "realtime",
-        ])
-        .optional(),
+    category: z.enum(MODEL_CATEGORIES).optional(),
     brand: z.string(),
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
@@ -90,10 +85,10 @@ export const ModelInfoSchema = z.object({
     resolutions: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
-    input_modalities: z.array(z.string()).optional(),
-    output_modalities: z.array(z.string()).optional(),
+    input_modalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).optional(),
+    output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
-    video_capabilities: z.array(z.string()).optional(),
+    video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
     max_duration: z.number().positive().optional(),
     default_duration: z.number().positive().optional(),
@@ -107,20 +102,21 @@ export const ModelInfoSchema = z.object({
     context_length: z.number().optional(),
     voices: z.array(z.string()).optional(),
     paid_only: z.boolean().optional(),
+    pending_change: z
+        .object({
+            effective_at: z.string().datetime(),
+            paid_only: z.boolean(),
+            pricing: z
+                .record(z.string(), z.string())
+                .and(z.object({ currency: z.literal("pollen") })),
+        })
+        .optional(),
     alpha: z.boolean().optional(),
     flat_rate: z.boolean().optional(),
     added_date: z.number().optional(),
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
-
-/**
- * Format a number to fixed-point string, avoiding scientific notation (e.g. 1.65e-7 → "0.000000165").
- * Strips trailing zeros for cleaner output.
- */
-function toFixedPoint(n: number): string {
-    return n.toFixed(12).replace(/\.?0+$/, "");
-}
 
 function getCapabilities(service: ModelDefinition): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
@@ -134,7 +130,6 @@ function getCapabilities(service: ModelDefinition): ModelCapability[] {
 type ModelInfoOptions = {
     community?: boolean;
     agent?: boolean;
-    perUserRpm?: number | null;
 };
 
 function pricingInfoFromDefinition(
@@ -155,18 +150,7 @@ function pricingAdjustmentInfoFromRule(
     rule: BillingAdjustmentRule,
     service: ModelDefinition,
 ) {
-    const { label, quantity, unit, suffix, option } = rule.publicPricing;
-    return {
-        name: rule.id,
-        label,
-        kind: rule.kind,
-        price: toFixedPoint(rule.unitCost * quantity * service.priceMultiplier),
-        currency: "pollen" as const,
-        quantity,
-        unit,
-        suffix,
-        option,
-    };
+    return publicPriceInfo(rule, service.priceMultiplier);
 }
 
 export function modelInfoFromDefinition(
@@ -184,7 +168,7 @@ export function modelInfoFromDefinition(
         community: options.community || undefined,
         agent,
         base_model: service.baseModel,
-        per_user_rpm: options.perUserRpm,
+        per_user_rpm: service.perUserRpm,
         pricing: pricingInfoFromDefinition(getPriceDefinitionForModel(service)),
         pricing_variants:
             service.costVariants && service.costVariantMetadata

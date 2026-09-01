@@ -25,10 +25,6 @@ const STATE_PATH =
 const RESULTS_PATH =
     process.env.MONITOR_RESULTS_PATH ??
     "/home/ubuntu/monitor/probe-results.json";
-// Reasoning tokens count against this limit. Ten tokens left many healthy
-// reasoning models with no final text, so allow enough room for the short
-// marker after their internal reasoning.
-const MAX_TOKENS = 64;
 // Rough estimate for planning only -- actual spend is reconciled from real
 // `usage` in each response, not from these constants.
 const EST_PROMPT_TOKENS = 20;
@@ -162,6 +158,17 @@ function imageBillingSanityFlags(usage) {
     return flags;
 }
 
+function finalCompletionContent(content) {
+    if (typeof content !== "string") return "";
+    const withoutReasoning = content
+        .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+        .replace(/<think>[\s\S]*?<\/think>/gi, "");
+    // An unclosed reasoning wrapper means the response ended before its final
+    // answer. Do not accept a copy of the marker from inside that reasoning.
+    if (/<(?:thought|think)>/i.test(withoutReasoning)) return "";
+    return withoutReasoning.trim();
+}
+
 async function probeText(model) {
     const started = Date.now();
     const marker = `ok-${randomUUID().slice(0, 8)}`;
@@ -182,7 +189,6 @@ async function probeText(model) {
             body: JSON.stringify({
                 model: model.name,
                 messages: [{ role: "user", content: prompt }],
-                max_tokens: MAX_TOKENS,
             }),
             signal: ctrl.signal,
         });
@@ -198,21 +204,25 @@ async function probeText(model) {
                 // leave usage/content undefined -- reconciliation/checks just skip this request
             }
         }
-        const hasCompletion =
-            typeof content === "string" && content.trim().length > 0;
-        const ok = res.ok && hasCompletion;
+        const finalContent = finalCompletionContent(content);
+        const hasProbeMarker = finalContent.includes(marker);
+        const contentPreview =
+            typeof content === "string" && content.trim()
+                ? JSON.stringify(content.trim().slice(0, 200))
+                : "<empty>";
+        const ok = res.ok && hasProbeMarker;
         const result = {
             model: model.name,
             category: model.category,
             ok,
-            status: res.ok && !hasCompletion ? "INVALID" : res.status,
+            status: res.ok && !hasProbeMarker ? "INVALID" : res.status,
             ms: Date.now() - started,
             usage,
             probeMarker: marker,
             detail: res.ok
-                ? hasCompletion
+                ? hasProbeMarker
                     ? undefined
-                    : "successful response did not contain a non-empty completion"
+                    : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
                 : body.slice(0, 300),
         };
         if (res.ok) result.billingFlags = billingSanityFlags(usage, content);

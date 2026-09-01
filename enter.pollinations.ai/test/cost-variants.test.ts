@@ -85,24 +85,6 @@ describe("long-context cost variants", () => {
         ).toBe("long_context");
     });
 
-    it("Grok uses OpenRouter's inclusive 200K boundary", () => {
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 199_999,
-            }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).costVariant,
-        ).toBe("long_context");
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_001,
-            }).costVariant,
-        ).toBe("long_context");
-    });
-
     it.each([
         [31_999, undefined],
         [32_000, "context_32k"],
@@ -203,23 +185,24 @@ describe("long-context cost variants", () => {
             12,
         );
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 10 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 45 / 1e6,
+            promptTextTokens: (10 / 1e6) * 0.75,
+            promptCachedTokens: (1 / 1e6) * 0.75,
+            completionTextTokens: (45 / 1e6) * 0.75,
         });
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45],
-        ["gpt-5.6-terra", 5, 0.5, 6.25, 22.5],
-        ["gpt-5.6-luna", 2, 0.2, 2.5, 9],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
     ] satisfies [
         ModelName,
         number,
         number,
         number,
         number,
-    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output) => {
+        number,
+    ][])("%s applies every Azure long-context meter to the full request", (model, input, cached, cacheWrite, output, multiplier) => {
         const billing = bill(model, {
             promptTextTokens: 272_001,
             promptCachedTokens: 1_000,
@@ -228,7 +211,6 @@ describe("long-context cost variants", () => {
         });
 
         expect(billing.costVariant).toBe("long_context");
-        const multiplier = model === "gpt-5.6-luna" ? 0.2 : 0.5;
         expect(billing.priceDefinition).toMatchObject({
             promptTextTokens: (input / 1e6) * multiplier,
             promptCachedTokens: (cached / 1e6) * multiplier,
@@ -317,7 +299,7 @@ describe("long-context cost variants", () => {
         expect(long.adjustments[0].cost).toBeCloseTo(0.375, 12);
     });
 
-    it("Qwen and Grok apply their advertised long-context sheets", () => {
+    it("Qwen applies its advertised long-context sheet", () => {
         expect(
             bill("qwen-large", {
                 promptTextTokens: 256_000,
@@ -327,15 +309,6 @@ describe("long-context cost variants", () => {
             promptCachedTokens: 0.192 / 1e6,
             promptCacheWriteTokens: 1.2 / 1e6,
             completionTextTokens: 3.84 / 1e6,
-        });
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).priceDefinition,
-        ).toMatchObject({
-            promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 12 / 1e6,
         });
     });
 
@@ -349,6 +322,33 @@ describe("long-context cost variants", () => {
             2_000 * (22.5 / 1e6),
             12,
         );
+    });
+});
+
+describe("AssemblyAI transcription cost variants", () => {
+    it.each([
+        ["universal-2", "json", false, 0.15, undefined],
+        ["universal-2", "diarized_json", false, 0.17, "diarization"],
+        ["universal-3.5-pro", "json", false, 0.21, undefined],
+        ["universal-3.5-pro", "json", true, 0.26, "prompting"],
+        ["universal-3.5-pro", "diarized_json", false, 0.23, "diarization"],
+        [
+            "universal-3.5-pro",
+            "diarized_json",
+            true,
+            0.28,
+            "prompting_diarization",
+        ],
+    ] as const)("%s format=%s prompt=%s bills $%s/hour", (model, responseFormat, hasPrompt, hourlyCost, variant) => {
+        const billing = bill(
+            model,
+            { promptAudioSeconds: 3600 },
+            { hasDiarization: responseFormat === "diarized_json", hasPrompt },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(hourlyCost, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(hourlyCost, 12);
+        expect(billing.costVariant).toBe(variant);
     });
 });
 
@@ -388,6 +388,23 @@ describe("request-mode cost variants", () => {
 });
 
 describe("resolution cost variants", () => {
+    it.each([
+        [1024, 1024, 0.04, undefined],
+        [1008, 1040, 0.06, "2048"],
+        [1024, 1040, 0.06, "2048"],
+        [2048, 2048, 0.06, "2048"],
+    ] as const)("nova-canvas bills %sx%s at $%s/image", (width, height, rate, variant) => {
+        const billing = bill(
+            "nova-canvas",
+            { completionImageTokens: 1 },
+            { maxImageDimension: Math.max(width, height) },
+        );
+
+        expect(billing.costVariant).toBe(variant);
+        expect(billing.cost.totalCost).toBeCloseTo(rate, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(rate, 12);
+    });
+
     it("p-video bills the 720p base and 1080p variant", () => {
         expect(
             bill("p-video", { completionVideoSeconds: 10 }).cost.totalCost,
@@ -447,6 +464,39 @@ describe("resolution cost variants", () => {
             );
             expect(billing.cost.totalCost).toBeCloseTo(6 * rate, 12);
         }
+    });
+
+    it("uses the Replicate video-in rates for Seedance reference videos", () => {
+        expect(
+            bill("seedance-2.0", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.18, 12);
+        expect(
+            bill("seedance-2.5", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.1028, 12);
+
+        const seedance20 = bill(
+            "seedance-2.0",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance20.costVariant).toBe("video_in");
+        expect(seedance20.cost.totalCost).toBeCloseTo(4 * 0.22, 12);
+
+        const seedance25_480p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance25_480p.costVariant).toBe("video_in_480p");
+        expect(seedance25_480p.cost.totalCost).toBeCloseTo(4 * 0.4304, 12);
+
+        const seedance25_720p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true, resolution: "720p" },
+        );
+        expect(seedance25_720p.costVariant).toBe("video_in_720p");
+        expect(seedance25_720p.cost.totalCost).toBeCloseTo(4 * 0.9676, 12);
     });
 
     it("publishes supported resolutions with effective variant pricing", () => {
@@ -644,6 +694,37 @@ describe("selection safety and composition", () => {
     });
 });
 
+describe("FLUX.2 image billing", () => {
+    it("bills Pro's initial premium plus rounded input and output megapixels", () => {
+        const billing = bill("flux-2-pro", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "azure.flux_2_pro.initial_output_megapixel.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("bills Flex input and output megapixels at the same rate", () => {
+        const billing = bill("flux-2-flex", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.3, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.225, 12);
+        expect(billing.adjustments).toEqual([]);
+    });
+});
+
 describe("registry-wide variant invariants", () => {
     it("variant sheets only contain valid finite rates from the base sheet", () => {
         for (const model of getModels()) {
@@ -679,6 +760,14 @@ describe("registry-wide variant invariants", () => {
     it("every advertised non-default resolution selects a variant", () => {
         for (const model of getModels()) {
             const definition = getRegistryModelDefinition(model);
+            // Token-metered video routes keep one per-token rate; resolution
+            // changes the provider-reported output-token quantity instead.
+            if (
+                definition.cost.completionVideoTokens !== undefined &&
+                !definition.costVariants
+            ) {
+                continue;
+            }
             for (const resolution of definition.resolutions?.slice(1) ?? []) {
                 const variant = definition.selectCostVariant?.({
                     usage: {},

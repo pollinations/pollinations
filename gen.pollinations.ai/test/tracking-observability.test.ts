@@ -5,10 +5,7 @@ import {
 } from "cloudflare:test";
 import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
-import {
-    selectCommunityModelReward,
-    selectHumanResponderReward,
-} from "@shared/billing/track-helpers.ts";
+import { selectCommunityModelReward } from "@shared/billing/track-helpers.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
     type CommunityEndpointRuntime,
@@ -409,21 +406,6 @@ describe("selectCommunityModelReward", () => {
             userId: endpoint.ownerUserId,
             rewardRate: COMMUNITY_MODEL_REWARD_RATE,
             basePrice: undefined,
-        });
-    });
-
-    it("rewards a human responder from completion price only", () => {
-        const endpoint = createCommunityEndpoint("community-owner", {
-            humanResponders: true,
-        });
-
-        expect(
-            selectHumanResponderReward(endpoint, "responder-user", 0.00005),
-        ).toStrictEqual({
-            userId: "responder-user",
-            ownerUserId: endpoint.ownerUserId,
-            rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-            basePrice: 0.00005,
         });
     });
 });

@@ -35,8 +35,6 @@ export type CommunityModelRewardResolution = {
 
 export type CommunityModelRewardInput = {
     userId: string;
-    /** Listing owner, which can differ from the human who produced the answer. */
-    ownerUserId?: string;
     rewardRate: number;
     /**
      * What to pay the reward on, when that is not what the caller was charged.
@@ -46,28 +44,6 @@ export type CommunityModelRewardInput = {
      */
     basePrice?: number;
 };
-
-export function selectHumanResponderReward(
-    servedCommunityEndpoint: CommunityEndpointRuntime | null | undefined,
-    responderUserId: string | null,
-    completionPrice: number | undefined,
-): CommunityModelRewardInput | null {
-    if (
-        servedCommunityEndpoint?.type !== "proxy" ||
-        !servedCommunityEndpoint.humanResponders ||
-        servedCommunityEndpoint.visibility !== "public" ||
-        !responderUserId ||
-        completionPrice === undefined
-    ) {
-        return null;
-    }
-    return {
-        userId: responderUserId,
-        ownerUserId: servedCommunityEndpoint.ownerUserId,
-        rewardRate: COMMUNITY_MODEL_REWARD_RATE,
-        basePrice: completionPrice,
-    };
-}
 
 export function selectCommunityModelReward(
     requestedCommunityEndpoint: CommunityEndpointRuntime | null | undefined,
@@ -159,9 +135,6 @@ export function resolveCommunityModelReward(
     payerUserId: string | undefined,
 ): CommunityModelRewardResolution | null {
     if (!reward || !payerUserId) return null;
-    // The responder still generated a billable answer when they were also the
-    // caller. Charge the request normally, but do not pay it back to them.
-    if (reward.userId === payerUserId) return null;
     // Never above what was charged: a target repriced between resolving the
     // fallback and settling the request must not pay out more than we took.
     const rewardBase = Math.min(
@@ -188,7 +161,7 @@ export function resolveCommunityModelReward(
  *   1. resolve markup eligibility (DB lookup) and the community reward (pure),
  *   2. compute `billedPrice` (baseline + markup, snapped to ledger precision),
  *   3. deduct the payer (user balance, then API-key budget),
- *   4. credit the dev (BYOP markup) and community reward recipient.
+ *   4. credit the dev (BYOP markup) and community owner (reward).
  *
  * Returns `billedPrice` — the rounded amount actually debited from the payer
  * (`totalPrice + devCredit`, snapped to `POLLEN_BILLING_PRECISION`). Callers
@@ -245,10 +218,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
     // endpoint. Do not charge them through Pollinations or pay them back a
     // partial reward. The reward input follows the endpoint that actually
     // served the request, so a fallback owned by somebody else is still billed.
-    if (
-        (communityModelRewardInput?.ownerUserId ??
-            communityModelRewardInput?.userId) === userId
-    ) {
+    if (communityModelRewardInput?.userId === userId) {
         await reconcileApiKeyBalance(
             db,
             apiKeyId,
@@ -345,11 +315,7 @@ export async function handleBalanceDeduction(params: DeductionParams): Promise<{
             await creditDev(db, markup, payerBucket);
         }
         if (communityModelReward) {
-            await creditCommunityRewardRecipient(
-                db,
-                communityModelReward,
-                payerBucket,
-            );
+            await creditCommunityOwner(db, communityModelReward, payerBucket);
         }
     } catch (error) {
         if (!payerDeducted) {
@@ -426,8 +392,8 @@ async function creditDev(
     );
 }
 
-/** Credit the model owner or human responder into the payer's bucket. */
-async function creditCommunityRewardRecipient(
+/** Credit the community model owner their reward, into the payer's bucket. */
+async function creditCommunityOwner(
     db: DrizzleD1Database,
     reward: CommunityModelRewardResolution,
     payerBucket: Bucket | null,
@@ -449,7 +415,7 @@ async function creditCommunityRewardRecipient(
         );
     }
     log.debug(
-        "Credited {credit} pollen to community reward recipient {userId} {bucket} balance (reward={pct}%)",
+        "Credited {credit} pollen to community model owner {userId} {bucket} balance (reward={pct}%)",
         {
             credit: reward.credit,
             userId: reward.userId,

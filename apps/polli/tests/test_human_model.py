@@ -11,7 +11,7 @@ class FakeGateway:
     def __init__(self):
         self.thread_count = 0
         self.asks = []
-        self.reply = SimpleNamespace(content="A human answer", author=SimpleNamespace(id=12345678901234567))
+        self.reply = SimpleNamespace(content="A human answer")
 
     async def create_thread(self):
         self.thread_count += 1
@@ -46,7 +46,7 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
             max_completion_tokens=None,
         )
         self.assertEqual(first["choices"][0]["message"]["content"], "A human answer")
-        self.assertEqual(first["_pollinations"]["responder"]["discordId"], "12345678901234567")
+        self.assertNotIn("_pollinations", first)
 
         await self.service.complete(
             caller_id="caller-a",
@@ -117,7 +117,6 @@ class HumanRequestTests(unittest.TestCase):
                 }
             ],
             "usage": {"prompt_tokens": 4, "completion_tokens": 3, "total_tokens": 7},
-            "_pollinations": {"responder": {"discordId": "12345678901234567"}},
         }
 
         events = list(stream_completion(completion))
@@ -127,7 +126,6 @@ class HumanRequestTests(unittest.TestCase):
         self.assertEqual(parsed[2]["choices"][0]["finish_reason"], "stop")
         self.assertEqual(parsed[3]["choices"], [])
         self.assertEqual(parsed[3]["usage"], completion["usage"])
-        self.assertTrue(all("_pollinations" not in event for event in parsed))
         self.assertEqual(events[-1], "data: [DONE]\n\n")
 
 

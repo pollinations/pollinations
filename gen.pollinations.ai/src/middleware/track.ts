@@ -7,7 +7,6 @@ import {
     handleBalanceDeduction,
     type MarkupResolution,
     selectCommunityModelReward,
-    selectHumanResponderReward,
 } from "@shared/billing/track-helpers.ts";
 import {
     getRealClientIp,
@@ -144,7 +143,6 @@ export type TrackVariables = {
         // Service layers register normalized request facts that affect
         // pricing. Consumed once at billing time by selectCostVariant.
         setPricingInput: (input: PricingInput) => void;
-        setCommunityResponderUserId?: (userId: string) => void;
         /** Ordered upstream calls; one is marked when it settles the request. */
         attempts: FallbackAttempt[];
     };
@@ -181,7 +179,6 @@ export const track = (eventType: EventType) =>
 
         let responseOverride: Response | null = null;
         let pricingInput: PricingInput | undefined;
-        let communityResponderUserId: string | null = null;
         /** Filled by the fallback loop; this middleware turns it into rows. */
         const attempts: FallbackAttempt[] = [];
 
@@ -262,9 +259,6 @@ export const track = (eventType: EventType) =>
             },
             setPricingInput: (input: PricingInput) => {
                 pricingInput = input;
-            },
-            setCommunityResponderUserId: (userId: string) => {
-                communityResponderUserId = userId;
             },
             attempts,
         });
@@ -383,20 +377,11 @@ export const track = (eventType: EventType) =>
                         // A private endpoint only earns a reward when it backs
                         // its owner's public listing. Cross-owner private
                         // fallbacks are rejected when the fallback is linked.
-                        communityModelReward:
-                            servedCommunityEndpoint?.type === "proxy" &&
-                            servedCommunityEndpoint.humanResponders
-                                ? selectHumanResponderReward(
-                                      servedCommunityEndpoint,
-                                      communityResponderUserId,
-                                      responseTracking.price
-                                          ?.completionTextTokens,
-                                  )
-                                : selectCommunityModelReward(
-                                      requestedCommunityEndpoint,
-                                      servedCommunityEndpoint,
-                                      responseTracking.servedPrice,
-                                  ),
+                        communityModelReward: selectCommunityModelReward(
+                            requestedCommunityEndpoint,
+                            servedCommunityEndpoint,
+                            responseTracking.servedPrice,
+                        ),
                     });
                     c.var.balance.apiKeyReservation = undefined;
                     markup = deduction.markup;

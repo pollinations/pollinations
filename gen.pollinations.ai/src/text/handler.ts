@@ -9,7 +9,6 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
-import { HTTPException } from "hono/http-exception";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
@@ -22,11 +21,6 @@ import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
-import {
-    resolveHumanResponderUserId,
-    stripHumanResponderMetadata,
-    validateHumanResponderCompletion,
-} from "./communityResponder.ts";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -143,15 +137,6 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
         userApiKey: c.var.auth?.apiKey?.rawKey || "",
         portkeyGatewayUrl: c.env.PORTKEY_GATEWAY_URL,
     };
-}
-
-function usesHumanResponders(
-    candidate: Pick<FallbackCandidate, "communityEndpoint">,
-): boolean {
-    return (
-        candidate.communityEndpoint?.type === "proxy" &&
-        candidate.communityEndpoint.humanResponders === true
-    );
 }
 
 /**
@@ -330,72 +315,6 @@ function sendTextStreamResponse(
     return new Response(completion.responseStream, { headers });
 }
 
-function wrapCompletedChatAsStream(completion: ChatCompletion): ChatCompletion {
-    const choice = completion.choices?.[0];
-    const content = choice?.message?.content;
-    if (typeof content !== "string") {
-        invalidHumanResponse(
-            "Human responder returned an invalid text response",
-            completion.upstreamRequestUrl,
-        );
-    }
-
-    const base = {
-        id: completion.id,
-        object: "chat.completion.chunk",
-        created: completion.created,
-        model: completion.model,
-    };
-    const events = [
-        {
-            ...base,
-            choices: [
-                {
-                    index: 0,
-                    delta: { role: "assistant" },
-                    finish_reason: null,
-                },
-            ],
-        },
-        {
-            ...base,
-            choices: [
-                {
-                    index: 0,
-                    delta: { content },
-                    finish_reason: null,
-                },
-            ],
-        },
-        {
-            ...base,
-            choices: [
-                {
-                    index: 0,
-                    delta: {},
-                    finish_reason: choice?.finish_reason ?? "stop",
-                },
-            ],
-        },
-        { ...base, choices: [], usage: completion.usage },
-    ];
-    const encoder = new TextEncoder();
-    return {
-        ...completion,
-        responseStream: new ReadableStream({
-            start(controller) {
-                for (const event of events) {
-                    controller.enqueue(
-                        encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
-                    );
-                }
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                controller.close();
-            },
-        }),
-    };
-}
-
 function base64ToArrayBuffer(value: string): ArrayBuffer {
     const binary = atob(value);
     const bytes = new Uint8Array(binary.length);
@@ -411,7 +330,6 @@ function serializeDetails(details: unknown): string | undefined {
 }
 
 function throwTextError(error: ServiceError): never {
-    if (error instanceof HTTPException) throw error;
     const status =
         typeof error.status === "number"
             ? error.status
@@ -431,35 +349,6 @@ function throwTextError(error: ServiceError): never {
     });
 }
 
-function invalidHumanResponse(message: string, requestUrl?: URL): never {
-    throw new UpstreamError(502, { message, requestUrl });
-}
-
-async function protectHumanResponderCompletion(
-    c: TextContext,
-    completion: ChatCompletion,
-): Promise<{ completion: ChatCompletion; responderUserId: string }> {
-    const validated = validateHumanResponderCompletion(completion);
-    if ("error" in validated) {
-        invalidHumanResponse(validated.error, completion.upstreamRequestUrl);
-    }
-    const responderUserId = await resolveHumanResponderUserId(
-        c.env.DB,
-        validated.discordId,
-    );
-    if (!responderUserId) {
-        invalidHumanResponse(
-            "Human responder does not have one active linked Discord account",
-            completion.upstreamRequestUrl,
-        );
-    }
-
-    return {
-        completion: stripHumanResponderMetadata(completion),
-        responderUserId,
-    };
-}
-
 async function generateTextResponse(
     c: TextContext,
     requestData: RequestData,
@@ -473,72 +362,50 @@ async function generateTextResponse(
             return normalization.errorResponse;
         }
         const normalizedRequestData = normalization.requestData;
-        const candidates = fallbackCandidates(c.var.model);
         const portkey = c.env.PORTKEY;
         const {
             result: completion,
             candidate,
             index,
         } = await withModelFallback(
-            candidates,
-            async (attempt) => {
-                return generateTextPortkey(
+            fallbackCandidates(c.var.model),
+            async (attempt) =>
+                generateTextPortkey(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
                     portkey
                         ? (input, init) => portkey.fetch(input, init)
                         : undefined,
-                );
-            },
+                ),
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
-        let publicCompletion = completion;
-        let responderUserId: string | undefined;
-        if (usesHumanResponders(candidate)) {
-            const protectedCompletion = await protectHumanResponderCompletion(
-                c,
-                completion,
-            );
-            publicCompletion = protectedCompletion.completion;
-            responderUserId = protectedCompletion.responderUserId;
-        }
-        c.set("upstreamRequestUrl", publicCompletion.upstreamRequestUrl);
-        publicCompletion.id = publicCompletion.id || generatePollinationsId();
+        c.set("upstreamRequestUrl", completion.upstreamRequestUrl);
+        completion.id = completion.id || generatePollinationsId();
         // Keep the internal "config.targets[N]" marker stable for response
         // headers and cached tracking data. Non-enumerable so JSON.stringify /
         // R2 cache snapshots never leak the field.
-        attachFallbackTarget(publicCompletion, index);
+        attachFallbackTarget(completion, index);
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
+        if (normalizedRequestData.stream)
+            return sendTextStreamResponse(completion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
-        if (responderUserId) {
-            c.var.track?.setCommunityResponderUserId?.(responderUserId);
-        }
-        if (normalizedRequestData.stream) {
-            const streamCompletion = usesHumanResponders(candidate)
-                ? wrapCompletedChatAsStream(publicCompletion)
-                : publicCompletion;
-            return sendTextStreamResponse(streamCompletion, servedModelId);
-        }
-        const trackingResponse = sendOpenAIResponse(
-            publicCompletion,
-            servedModelId,
-        );
-        const clientCompletion = publicChatCompletion(publicCompletion);
+        const trackingResponse = sendOpenAIResponse(completion, servedModelId);
+        const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
             return sendTextContentResponse(
-                clientCompletion,
+                publicCompletion,
                 servedModelId,
                 c.var.upstreamRequestUrl,
             );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(clientCompletion, servedModelId);
+        return sendOpenAIResponse(publicCompletion, servedModelId);
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }

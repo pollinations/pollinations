@@ -1,5 +1,8 @@
 import { AUDIO_SERVICES } from "@shared/registry/audio";
+import { EMBEDDING_SERVICES } from "@shared/registry/embeddings";
 import { IMAGE_SERVICES } from "@shared/registry/image";
+import { MODEL3D_SERVICES } from "@shared/registry/model3d";
+import { REALTIME_SERVICES } from "@shared/registry/realtime";
 import type { ModelDefinition } from "@shared/registry/registry.js";
 import {
     calculateCost,
@@ -53,6 +56,43 @@ test.for(
 )("Audio service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
     const resolved = resolveModelName(alias);
     expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(EMBEDDING_SERVICES),
+)("Embedding service alias %s is resolved to %s", ([
+    alias,
+    shouldResolveTo,
+]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(REALTIME_SERVICES),
+)("Realtime service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test.for(
+    serviceAliasTestCases(MODEL3D_SERVICES),
+)("3D service alias %s is resolved to %s", ([alias, shouldResolveTo]) => {
+    const resolved = resolveModelName(alias);
+    expect(resolved).toBe(shouldResolveTo);
+});
+
+test("every public model has one publisher-qualified ID", () => {
+    for (const model of getModels()) {
+        const definition = getRegistryModelDefinition(model);
+        if (definition.hidden) continue;
+
+        const publisherQualifiedIds = [model, ...definition.aliases].filter(
+            (id) => id.includes("/"),
+        );
+
+        expect(publisherQualifiedIds, model).toHaveLength(1);
+    }
 });
 
 test("gemini-search applies grounding cost on top of shared token rates", () => {
@@ -115,7 +155,9 @@ test("GPT-5.5 is available without paid-only gating", () => {
 });
 
 test("Azure models use the approved public-price multipliers", () => {
-    const azureMultiplierOverrides = new Map([["gpt-5.6-sol", 1 / 3]]);
+    const azureMultiplierOverrides = new Map<string, number>([
+        ["gpt-5.6-sol", 1 / 3],
+    ]);
 
     for (const model of getModels()) {
         const definition = getRegistryModelDefinition(model);
@@ -138,6 +180,21 @@ test("GPT-5.6 models remain available without paid-only gating", () => {
             model,
         ).toBeUndefined();
     }
+});
+
+test("Grok 4.6 uses the public Azure route contract", () => {
+    const definition = getRegistryModelDefinition("grok-4.6");
+
+    expect(definition.provider).toBe("azure");
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(0.75);
+    expect(definition.contextLength).toBe(200000);
+    expect(definition.cost).toMatchObject({
+        promptTextTokens: 2 / 1e6,
+        promptCachedTokens: 0.5 / 1e6,
+        promptImageTokens: 2 / 1e6,
+        completionTextTokens: 6 / 1e6,
+    });
 });
 
 test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {

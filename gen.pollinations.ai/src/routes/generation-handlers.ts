@@ -8,6 +8,7 @@ import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
+import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import {
     generateEmbeddings,
     getEmbeddingProviderModelId,
@@ -150,8 +151,16 @@ export async function generateEmbeddingsResponse(
     >;
     return withModelFallbackResponse(
         c.var.model,
-        (candidate) =>
-            generateEmbeddings(
+        (candidate) => {
+            if (candidate.communityEndpoint) {
+                return generateCommunityEmbeddings(
+                    candidate.communityEndpoint,
+                    requestBody,
+                    candidate.id,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+            }
+            return generateEmbeddings(
                 c.env,
                 {
                     ...requestBody,
@@ -159,7 +168,8 @@ export async function generateEmbeddingsResponse(
                 },
                 candidate.definition ?? c.var.model.definition,
                 candidate.id,
-            ),
+            );
+        },
         c.var.track?.attempts,
         (candidate) => enforceModelRateLimit(c, candidate),
     );

@@ -88,7 +88,7 @@ function toResponse(row: AgentRow, baseUrl: string) {
     return {
         id: row.id,
         name: row.name,
-        title: row.title ?? row.name,
+        title: row.title,
         description: row.description,
         visibility: row.visibility,
         baseUrl,

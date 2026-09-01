@@ -34,5 +34,5 @@ Think: the tone of a well-written README, a CCC talk abstract, or a Phrack artic
 
 Earn Pollen by completing useful actions — onboarding, using models, growing an app, GitHub contributions.
 - complete a Quest, claim the reward, Pollen lands in your wallet
-- Contribute quests may receive multiple PRs; maintainers select and assign the best solution before merge, then the selected contributor claims the fixed reward
+- Contribute quests may receive multiple PRs; the author of the selected merged PR claims the fixed reward
 - in alpha — rewards and availability evolve

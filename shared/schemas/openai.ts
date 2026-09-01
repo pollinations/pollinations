@@ -294,29 +294,17 @@ export const CreateChatCompletionRequestSchema = z
                 format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
             })
             .optional(),
-        frequency_penalty: z
-            .number()
-            .min(-2)
-            .max(2)
-            .nullable()
-            .optional()
-            .default(0),
+        frequency_penalty: z.number().min(-2).max(2).nullable().optional(),
         repetition_penalty: z.number().min(0).max(2).nullable().optional(),
         logit_bias: z
             .record(z.string(), z.number().int())
             .nullable()
             .optional()
             .default(null),
-        logprobs: z.boolean().nullable().optional().default(false),
+        logprobs: z.boolean().nullable().optional(),
         top_logprobs: z.number().int().min(0).max(20).nullable().optional(),
         max_tokens: z.number().int().min(0).nullable().optional(),
-        presence_penalty: z
-            .number()
-            .min(-2)
-            .max(2)
-            .nullable()
-            .optional()
-            .default(0),
+        presence_penalty: z.number().min(-2).max(2).nullable().optional(),
         response_format: ResponseFormatUnionSchema.optional(),
         seed: z.number().int().min(-1).max(2147483647).nullable().optional(),
         stop: z
@@ -592,7 +580,7 @@ const imageQualityField = z
             "Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents",
     });
 const imageResolutionField = z
-    .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+    .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
     .optional()
     .meta({
         description:
@@ -626,6 +614,12 @@ export const CreateImageRequestSchema = z
                 description:
                     "Reference image URL(s) for image-to-image generation (Pollinations extension)",
             }),
+        // Reference media is supported only by the native GET image/video
+        // routes. Keep these keys explicit so the passthrough extension
+        // policy cannot accidentally expose them on OpenAI POST requests.
+        reference_images: z.never().optional(),
+        reference_videos: z.never().optional(),
+        reference_audios: z.never().optional(),
         resolution: imageResolutionField,
         safe: SafeSchema,
     })

@@ -24,6 +24,7 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
+    getModelOutputModalities,
     hasPollinationsTools,
     isAlpha,
     isNewModel,
@@ -228,6 +229,50 @@ export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
         </span>
     );
 }
+
+export const AgentDetails: FC<{
+    model: ModelPrice;
+    className?: string;
+}> = ({ model, className }) => {
+    if (!model.agent) return null;
+
+    const description = getModelDescriptionWithoutName(model);
+    const inputModalities = getModelInputModalities(model);
+    const outputModalities = getModelOutputModalities(model);
+    const capabilities = getModelCapabilities(model);
+
+    return (
+        <div className={cn("flex min-w-0 flex-col gap-2", className)}>
+            {description && (
+                <p className="text-sm leading-relaxed text-theme-text-soft">
+                    {description}
+                </p>
+            )}
+            <div className="flex min-w-0 flex-wrap gap-x-4 gap-y-1.5 text-xs text-theme-text-muted capitalize">
+                <span className="inline-flex items-center gap-1.5">
+                    <strong className="font-semibold text-theme-text-base">
+                        Input:
+                    </strong>
+                    <span>{inputModalities.join(", ")}</span>
+                </span>
+                <span className="inline-flex items-center gap-1.5">
+                    <strong className="font-semibold text-theme-text-base">
+                        Output:
+                    </strong>
+                    <span>{outputModalities.join(", ")}</span>
+                </span>
+                {capabilities.length > 0 && (
+                    <span className="inline-flex items-center gap-1.5">
+                        <strong className="font-semibold text-theme-text-base">
+                            Capabilities:
+                        </strong>
+                        <span>{getModelCapabilityLabel(model)}</span>
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+};
 
 export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const modelDisplayName = getModelDisplayName(model);
@@ -455,7 +500,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {!model.agent && (
+            {model.agent ? (
+                <AgentDetails
+                    model={model}
+                    className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1"
+                />
+            ) : (
                 <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
                     <ModelPricingLedger
                         pricing={pricing}

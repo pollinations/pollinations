@@ -47,9 +47,7 @@ type AgentFields = Pick<
 
 export type AgentFormState = AgentFields;
 
-export type AgentPayload = Omit<AgentFields, "requiredSafetyFeatures"> & {
-    requiredSafetyFeatures?: SafetyFeature[];
-};
+export type AgentPayload = AgentFields;
 
 export type CommunityProviderProfile = {
     name: string | null;
@@ -72,6 +70,7 @@ type CommunityEndpointBase = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    requiredSafetyFeatures: SafetyFeature[];
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
@@ -87,7 +86,6 @@ export type ProxyCommunityEndpoint = CommunityEndpointBase &
         modality: CommunityEndpointModality;
         imagePricing: CommunityEndpointImagePricing;
         inputModalities: ModelInputModality[];
-        requiredSafetyFeatures: SafetyFeature[];
         advertised: CommunityEndpointAdvertised;
         perUserRpm: number | null;
         paidOnly: boolean;
@@ -346,6 +344,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
             perUserRpm: endpoint.perUserRpm?.toString() ?? "",
             baseUrl: endpoint.baseUrl,
             upstreamModel: endpoint.upstreamModel,
+            requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         };
     }
     const imagePricing = pending?.imagePricing ?? endpoint.imagePricing;
@@ -487,9 +486,7 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     return {
         systemPrompt,
         baseModel,
-        ...(form.requiredSafetyFeatures.length
-            ? { requiredSafetyFeatures: form.requiredSafetyFeatures }
-            : {}),
+        requiredSafetyFeatures: form.requiredSafetyFeatures,
         mcpServers: form.mcpServers,
     };
 }

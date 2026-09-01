@@ -35,7 +35,7 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
-const RequiredSafetyFeaturesSchema = z
+export const RequiredSafetyFeaturesSchema = z
     .array(z.enum(SAFETY_FEATURES))
     .max(SAFETY_FEATURES.length)
     .describe(
@@ -152,6 +152,9 @@ export const CreateEndpointAgentSchema = z
         visibility: VisibilitySchema.optional().default("private"),
         baseUrl: EndpointFieldsSchema.baseUrl,
         upstreamModel: EndpointFieldsSchema.upstreamModel,
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
+            [],
+        ),
         perUserRpm: PerUserRpmSchema.optional().default(null),
     })
     .strict();
@@ -161,6 +164,7 @@ const CommonUpdateFieldsSchema = {
     title: EndpointFieldsSchema.title.optional(),
     description: EndpointFieldsSchema.description,
     visibility: VisibilitySchema.optional(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
     hidden: z.boolean().optional(),
 } as const;
 const ProxyUpdateSchema = z
@@ -173,7 +177,6 @@ const ProxyUpdateSchema = z
         paidOnly: PaidOnlySchema.optional(),
         imagePricing: ImagePricingSchema.optional(),
         inputModalities: InputModalitiesSchema.optional(),
-        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
         advertised: AdvertisedSchema.optional(),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
@@ -259,6 +262,7 @@ const CommunityEndpointResponseFieldsSchema = {
     baseUrl: z.string().url(),
     upstreamModel: z.string().min(1),
     visibility: VisibilitySchema,
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
     pending: PendingCommunityEndpointChangeSchema,
     hidden: z.boolean(),
     hiddenReason: z.string().nullable(),
@@ -273,7 +277,6 @@ const ProxyEndpointResponseSchema = z
         modality: ModalitySchema,
         imagePricing: ImagePricingSchema,
         inputModalities: z.array(InputModalitySchema),
-        requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
         advertised: AdvertisedSchema,
         perUserRpm: PerUserRpmSchema,
         paidOnly: z.boolean(),

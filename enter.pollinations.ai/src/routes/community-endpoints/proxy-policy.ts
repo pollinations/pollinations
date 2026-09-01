@@ -26,7 +26,6 @@ export type ProxyPolicy = Pick<
     | "modality"
     | "imagePricing"
     | "inputModalities"
-    | "requiredSafetyFeatures"
     | "paidOnly"
     | "perUserRpm"
     | "advertised"
@@ -154,7 +153,6 @@ export function deriveCreateProxyPolicy(input: ProxyCreateInput): ProxyPolicy {
             modality,
             imagePricing,
             inputModalities,
-            requiredSafetyFeatures: input.requiredSafetyFeatures,
             advertised: normalizeAdvertised(input.advertised),
             perUserRpm: input.perUserRpm ?? null,
             ...visibilityPolicy(
@@ -205,8 +203,6 @@ export function deriveUpdatedProxyPolicy(
             modality,
             imagePricing,
             inputModalities,
-            requiredSafetyFeatures:
-                input.requiredSafetyFeatures ?? stored.requiredSafetyFeatures,
             advertised:
                 input.advertised === undefined
                     ? stored.advertised
@@ -270,7 +266,6 @@ export function changesProxyPayload(input: ProxyUpdateInput): boolean {
         input.paidOnly,
         input.imagePricing,
         input.inputModalities,
-        input.requiredSafetyFeatures,
         input.advertised,
         input.fallbacks,
         ...COMMUNITY_ENDPOINT_PRICE_FIELDS.map(({ key }) => input[key]),

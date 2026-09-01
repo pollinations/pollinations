@@ -51,6 +51,8 @@ export async function getCommunityModelRegistryEntries(
             type: schema.communityEndpoint.type,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
+            requiredSafetyFeatures:
+                schema.communityEndpoint.requiredSafetyFeatures,
             payload: schema.communityEndpoint.payload,
             pendingPayload: schema.communityEndpoint.pendingPayload,
             pendingVisibility: schema.communityEndpoint.pendingVisibility,
@@ -109,6 +111,7 @@ export async function getCommunityModelRegistryEntries(
             providerUrl: row.providerUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
+            requiredSafetyFeatures: row.requiredSafetyFeatures,
             visibility: effectiveVisibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,
@@ -121,7 +124,6 @@ export async function getCommunityModelRegistryEntries(
             modality: "text" as const,
             imagePricing: "request" as const,
             inputModalities: null,
-            requiredSafetyFeatures: [],
             paidOnly: false,
             perUserRpm: null,
             fallbacks: [],
@@ -148,8 +150,6 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
-                    requiredSafetyFeatures:
-                        payload.requiredSafetyFeatures ?? [],
                 };
                 break;
             }
@@ -178,7 +178,6 @@ export async function getCommunityModelRegistryEntries(
                     modality: payload.modality,
                     imagePricing: payload.imagePricing,
                     inputModalities: payload.inputModalities,
-                    requiredSafetyFeatures: payload.requiredSafetyFeatures,
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,

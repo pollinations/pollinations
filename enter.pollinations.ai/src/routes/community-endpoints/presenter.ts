@@ -66,6 +66,7 @@ export function toCommunityEndpointResponse(
         description: row.description,
         baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
         upstreamModel: row.upstreamModel,
+        requiredSafetyFeatures: row.requiredSafetyFeatures,
         visibility:
             proxyState?.visibility ??
             effectiveCommunityEndpointVisibility(
@@ -107,7 +108,6 @@ export function toCommunityEndpointResponse(
         ...common,
         type: row.type,
         ...proxy,
-        requiredSafetyFeatures: payload.requiredSafetyFeatures ?? [],
         advertised: normalizeCommunityEndpointAdvertised(
             payload.advertised,
             payload.modality,

@@ -65,6 +65,7 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            requiredSafetyFeatures: ["sexual"],
         });
 
         expect(created).toMatchObject({
@@ -76,6 +77,7 @@ describe("community endpoint configuration policy", () => {
             visibility: "private",
             baseUrl: "https://agent.example.com/v1/?ignored=yes",
             upstreamModel: "external-agent",
+            requiredSafetyFeatures: ["sexual"],
             perUserRpm: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
@@ -91,11 +93,19 @@ describe("community endpoint configuration policy", () => {
             type: "endpoint_agent",
             baseUrl: "https://agent.example.com/v1/?ignored=yes",
             upstreamModel: "external-agent",
+            requiredSafetyFeatures: ["sexual"],
             visibility: "private",
         });
         expect(
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
         ).toEqual({ perUserRpm: null });
+
+        const updated = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { requiredSafetyFeatures: ["violence"] },
+        );
+        expect(updated.requiredSafetyFeatures).toEqual(["violence"]);
     });
 
     test("rejects proxy-only fields and unapproved public endpoint agents", async ({

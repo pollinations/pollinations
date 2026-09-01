@@ -16,7 +16,7 @@ import {
     OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
-import { SAFETY_FEATURES, type SafetyFeature } from "./schemas/safety.ts";
+import type { SafetyFeature } from "./schemas/safety.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
@@ -541,10 +541,6 @@ export const ProxyListingPayloadSchema = z
         modality: z.enum(COMMUNITY_ENDPOINT_MODALITIES),
         imagePricing: z.enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES),
         inputModalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).min(1),
-        requiredSafetyFeatures: z
-            .array(z.enum(SAFETY_FEATURES))
-            .max(SAFETY_FEATURES.length)
-            .optional(),
         perUserRpm: z.number().finite().positive().nullable(),
         fallbacks: z
             .array(z.string().min(1))
@@ -577,10 +573,6 @@ export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
-    requiredSafetyFeatures: z
-        .array(z.enum(SAFETY_FEATURES))
-        .max(SAFETY_FEATURES.length)
-        .optional(),
     mcpServers: z
         .array(BuiltinMcpServerIdSchema)
         .max(MCP_SERVER_IDS.length)
@@ -735,6 +727,7 @@ type CommunityEndpointRuntimeBase = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    requiredSafetyFeatures?: SafetyFeature[];
     paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
@@ -750,7 +743,6 @@ type CommunityEndpointRuntimeBase = {
 export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     type: "proxy";
     bearerTokenCiphertext: string;
-    requiredSafetyFeatures?: SafetyFeature[];
     advertised?: CommunityEndpointAdvertised;
 };
 
@@ -758,7 +750,6 @@ export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
 export type PromptAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "prompt_agent";
-        requiredSafetyFeatures?: SafetyFeature[];
     };
 
 /** An agent on the owner's own server, sent a run token instead of a key. */

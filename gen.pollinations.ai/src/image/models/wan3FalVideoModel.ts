@@ -80,67 +80,42 @@ export async function callWan3FalAPI(
     const deadline = Date.now() + WAN_3_TIMEOUT_MS;
     const authorization = { Authorization: `Key ${apiKey}` };
 
-    let endpoint: string;
-    let body: Record<string, unknown>;
-
-    if (hasReference) {
-        endpoint = WAN_3_R2V_ENDPOINT;
-        body = {
-            prompt,
-            resolution,
-            aspect_ratio: closestRatioLogSpace(
-                safeParams.width,
-                safeParams.height,
-                WAN_3_ASPECT_RATIOS,
-            ),
-            duration,
-            audio: safeParams.audio,
-            enable_prompt_expansion: true,
-            enable_safety_checker: true,
-            seed: safeParams.seed,
-            ...(safeParams.reference_images?.length
-                ? { reference_image_urls: safeParams.reference_images }
-                : {}),
-            ...(safeParams.reference_videos?.length
-                ? { reference_video_urls: safeParams.reference_videos }
-                : {}),
-            ...(safeParams.reference_audios?.length
-                ? { reference_audio_urls: safeParams.reference_audios }
-                : {}),
-        };
-    } else if (hasFrames) {
-        const startImage = images[0];
-        const endImage = images[1];
-        endpoint = WAN_3_IMAGE_ENDPOINT;
-        body = {
-            prompt,
-            resolution,
-            aspect_ratio: "adaptive",
-            duration,
-            audio: safeParams.audio,
-            enable_prompt_expansion: true,
-            enable_safety_checker: true,
-            seed: safeParams.seed,
-            start_image_url: startImage,
-            ...(endImage ? { end_image_url: endImage } : {}),
-        };
-    } else {
-        endpoint = WAN_3_TEXT_ENDPOINT;
-        body = {
-            prompt,
-            resolution,
-            aspect_ratio: closestRatioLogSpace(
-                safeParams.width,
-                safeParams.height,
-                WAN_3_ASPECT_RATIOS,
-            ),
-            duration,
-            audio: safeParams.audio,
-            enable_prompt_expansion: true,
-            enable_safety_checker: true,
-            seed: safeParams.seed,
-        };
-    }
+    const endpoint = hasReference
+        ? WAN_3_R2V_ENDPOINT
+        : hasFrames
+          ? WAN_3_IMAGE_ENDPOINT
+          : WAN_3_TEXT_ENDPOINT;
+    const body = {
+        prompt,
+        resolution,
+        aspect_ratio: hasFrames
+            ? "adaptive"
+            : closestRatioLogSpace(
+                  safeParams.width,
+                  safeParams.height,
+                  WAN_3_ASPECT_RATIOS,
+              ),
+        duration,
+        audio: safeParams.audio,
+        enable_prompt_expansion: true,
+        enable_safety_checker: true,
+        seed: safeParams.seed,
+        ...(hasFrames
+            ? {
+                  start_image_url: images[0],
+                  ...(images[1] ? { end_image_url: images[1] } : {}),
+              }
+            : {}),
+        ...(safeParams.reference_images?.length
+            ? { reference_image_urls: safeParams.reference_images }
+            : {}),
+        ...(safeParams.reference_videos?.length
+            ? { reference_video_urls: safeParams.reference_videos }
+            : {}),
+        ...(safeParams.reference_audios?.length
+            ? { reference_audio_urls: safeParams.reference_audios }
+            : {}),
+    };
 
     const submissionResponse = await fetchUpstream(endpoint, {
         method: "POST",

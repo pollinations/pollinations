@@ -180,7 +180,7 @@ const IMAGE_BASE_SERVICES = {
             // Gemini 3.1 Flash-Lite Image (GA) via Vertex AI — half of nanobanana-2
             promptTextTokens: perMillion(0.25), // per 1M tokens
             promptImageTokens: perMillion(0.25), // per 1M tokens
-            completionTextTokens: perMillion(1.5), // per 1M tokens
+            completionTextTokens: perMillion(1.5), // text/reasoning output tokens
             completionImageTokens: perMillion(30), // per 1M tokens, 1120 tokens/1K image = $0.0336
         },
         title: "Nano Banana 2 Lite",
@@ -899,8 +899,8 @@ const IMAGE_BASE_SERVICES = {
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
-        priceMultiplier: 1,
         paidOnly: true,
+        priceMultiplier: 1,
         // Moved off Alibaba DashScope to Replicate: qwen/qwen-image (t2i,
         // $0.025) + qwen/qwen-image-edit-plus (edit, $0.03).
         cost: {
@@ -935,8 +935,8 @@ const IMAGE_BASE_SERVICES = {
         brand: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
-        priceMultiplier: 1,
         paidOnly: true,
+        priceMultiplier: 1,
         cost: {
             promptImageTokens: 0.003, // per reference image ingested by Fal
             completionImageTokens: 0.04, // per image up to 1536x1536
@@ -974,8 +974,8 @@ const IMAGE_BASE_SERVICES = {
         brand: "xAI",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
-        paidOnly: true,
         priceMultiplier: 1,
+        paidOnly: true,
         cost: {
             promptImageTokens: 0.002, // per input image on edits
             completionImageTokens: 0.02, // per image
@@ -1430,7 +1430,6 @@ const IMAGE_BASE_SERVICES = {
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
-        paidOnly: true,
         cost: {
             completionVideoSeconds: 0.08, // per sec
         },

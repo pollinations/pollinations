@@ -130,7 +130,7 @@ function buildServer(env, fetchImpl, reportUsage) {
                 "Search the live web for current information and return relevant pages with highlights.",
             inputSchema: z.object({
                 query: z.string().min(1),
-                numResults: z.number().int().min(1).max(100).optional(),
+                numResults: z.number().int().min(1).max(10).optional(),
             }),
         },
         (params) =>

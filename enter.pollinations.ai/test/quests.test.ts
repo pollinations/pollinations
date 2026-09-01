@@ -4,6 +4,7 @@ import * as schema from "@shared/db/better-auth.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
+import issueRewardMigration from "../drizzle/0058_rekey_issue_rewards.sql?raw";
 import { checkQuestsForUser } from "../src/services/quest-checker.ts";
 import * as discordCommunity from "../src/services/quests/groups/discord-community.ts";
 import * as questIndex from "../src/services/quests/index.ts";
@@ -129,6 +130,49 @@ async function getOnlyUser() {
     if (!user) throw new Error("Expected fixture user");
     return user;
 }
+
+test("issue reward migration embeds the legacy winner's GitHub id", async ({
+    sessionToken: _sessionToken,
+}) => {
+    const db = drizzle(env.DB, { schema });
+    const user = await getOnlyUser();
+    if (user.githubId === null) throw new Error("Expected fixture GitHub id");
+
+    const questId = "github:issue:legacy-migration";
+    const legacyKey = `quest:${questId}`;
+    await db.insert(schema.rewards).values({
+        id: legacyKey,
+        idempotencyKey: legacyKey,
+        userId: user.id,
+        questId,
+        title: "Legacy issue reward",
+        pollenAmount: 5,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
+
+    await env.DB.prepare(issueRewardMigration).run();
+    await env.DB.prepare(issueRewardMigration).run();
+
+    const [reward] = await db
+        .select({ idempotencyKey: schema.rewards.idempotencyKey })
+        .from(schema.rewards)
+        .where(eq(schema.rewards.id, legacyKey));
+    expect(reward?.idempotencyKey).toBe(`${legacyKey}:github:${user.githubId}`);
+
+    const unmappedKey = "quest:github:issue:unmapped";
+    await db.insert(schema.rewards).values({
+        id: unmappedKey,
+        idempotencyKey: unmappedKey,
+        userId: null,
+        questId: "github:issue:unmapped",
+        title: "Unmapped legacy issue reward",
+        pollenAmount: 5,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
+    await expect(env.DB.prepare(issueRewardMigration).run()).rejects.toThrow();
+});
 
 /** Distinct GitHub id per fixture account — github_id is unique. */
 function hashGithubId(seed: string): number {
@@ -460,7 +504,7 @@ test("catalog includes coming-soon GitHub issue placeholder", async ({
     expect(placeholder?.description).toEqual(expect.any(String));
 });
 
-test("catalog excludes closed GitHub quest issues without merged PRs", async ({
+test("catalog hides assigned and closed GitHub quest issues", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -489,6 +533,12 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
         reward: 5,
         completedByPrNumber: 1803,
     });
+    seedQuestIssue(mocks.github.state, {
+        issueNumber: 804,
+        title: "Unassigned bounty",
+        goal: "Still available.",
+        reward: 6,
+    });
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/catalog",
@@ -502,9 +552,10 @@ test("catalog excludes closed GitHub quest issues without merged PRs", async ({
     };
     const byId = new Map(payload.quests.map((quest) => [quest.id, quest]));
 
-    expect(byId.get("github:issue:801")?.state).toBe("available");
+    expect(byId.get("github:issue:801")?.state).toBe("completed");
     expect(byId.has("github:issue:802")).toBe(false);
     expect(byId.get("github:issue:803")?.state).toBe("completed");
+    expect(byId.get("github:issue:804")?.state).toBe("available");
 });
 
 test("account quests merge earned rewards into completed status", async ({
@@ -1488,7 +1539,7 @@ test("quest check records elixpo intern easter egg once", async ({
     });
 });
 
-test("quest check rewards the merged quest PR author, not the issue assignee", async ({
+test("quest check rewards every merged author without duplicating a legacy assignee", async ({
     mocks,
     sessionToken: _sessionToken,
 }) => {
@@ -1500,18 +1551,18 @@ test("quest check rewards the merged quest PR author, not the issue assignee", a
     const issueNumber = 777;
     const issueQuestId = `github:issue:${issueNumber}`;
     const issueTitle = "Ship a focused fix";
-    const otherGithubId = 987654;
+    const secondAuthorGithubId = 987654;
 
     await db.insert(schema.user).values({
-        id: "github-quest-other-user",
-        name: "Other Dev",
-        email: "other-dev@example.com",
+        id: "github-quest-second-author",
+        name: "Second Author",
+        email: "second-author@example.com",
         emailVerified: false,
         image: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-        githubId: otherGithubId,
-        githubUsername: "other-dev",
+        githubId: secondAuthorGithubId,
+        githubUsername: "second-author",
         tierBalance: 0,
         packBalance: 0,
     });
@@ -1521,18 +1572,42 @@ test("quest check rewards the merged quest PR author, not the issue assignee", a
         title: issueTitle,
         goal: "Merge the quest PR.",
         reward: 17,
-        assigneeGithubId: otherGithubId,
-        assigneeLogin: "other-dev",
+        assigneeGithubId: secondAuthorGithubId,
+        assigneeLogin: "second-author",
         completedByPrNumber: 888,
         completedByGithubId: user.githubId,
         completedByLogin: user.githubUsername,
     });
+    const seededIssue = mocks.github.state.questIssues.find(
+        (issue) => issue.number === issueNumber,
+    );
+    seededIssue?.closedByPullRequestsReferences?.push({
+        number: 889,
+        mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
+        author: { databaseId: secondAuthorGithubId },
+    });
+    mocks.github.state.mergedPullRequests.push({
+        number: 889,
+        authorLogin: "second-author",
+        mergedAt: new Date("2026-06-03T00:00:00Z").toISOString(),
+    });
 
-    const first = await checkQuestsForUser(env, user.id);
-    expect(first.recorded).toBeGreaterThanOrEqual(1);
+    // The migration gives an existing winner the same per-author key that new
+    // checks produce, so the normal unique constraint prevents a second reward.
+    const migratedRewardKey = `quest:${issueQuestId}:github:${secondAuthorGithubId}`;
+    await db.insert(schema.rewards).values({
+        id: migratedRewardKey,
+        idempotencyKey: migratedRewardKey,
+        userId: "github-quest-second-author",
+        questId: issueQuestId,
+        title: `Ship bounty #${issueNumber}: ${issueTitle}`,
+        pollenAmount: 17,
+        balanceBucket: "tier",
+        earnedAt: new Date(),
+    });
 
-    const second = await checkQuestsForUser(env, "github-quest-other-user");
-    expect(second.recorded).toBe(0);
+    await checkQuestsForUser(env, user.id);
+    await checkQuestsForUser(env, "github-quest-second-author");
 
     // Recording does not credit either balance; pollen moves only when claimed.
     const [balance] = await db
@@ -1540,11 +1615,11 @@ test("quest check rewards the merged quest PR author, not the issue assignee", a
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
-    const [otherBalance] = await db
+    const [secondAuthorBalance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
-        .where(eq(schema.user.githubId, otherGithubId));
-    expect(otherBalance?.tierBalance).toBeCloseTo(0);
+        .where(eq(schema.user.githubId, secondAuthorGithubId));
+    expect(secondAuthorBalance?.tierBalance).toBeCloseTo(0);
 
     const rewards = await db
         .select({
@@ -1558,21 +1633,26 @@ test("quest check rewards the merged quest PR author, not the issue assignee", a
         .from(schema.rewards)
         .where(eq(schema.rewards.questId, issueQuestId));
 
-    // scope:"once" idempotency: exactly one reward, keyed WITHOUT a userId, owned
-    // by the merged PR author who triggered the first recording.
-    expect(rewards).toHaveLength(1);
-    expect(rewards[0]).toMatchObject({
-        idempotencyKey: `quest:github:issue:${issueNumber}`,
-        userId: user.id,
-        title: `Ship bounty #${issueNumber}: ${issueTitle}`,
-        pollenAmount: 17,
-        balanceBucket: "tier",
-    });
+    expect(rewards).toHaveLength(2);
+    expect(rewards).toEqual(
+        expect.arrayContaining([
+            expect.objectContaining({
+                idempotencyKey: migratedRewardKey,
+                userId: "github-quest-second-author",
+            }),
+            expect.objectContaining({
+                idempotencyKey: `quest:${issueQuestId}:github:${user.githubId}`,
+                userId: user.id,
+                title: `Ship bounty #${issueNumber}: ${issueTitle}`,
+                pollenAmount: 17,
+                balanceBucket: "tier",
+            }),
+        ]),
+    );
 });
 
-// Regression guard for the idempotency-key collapse: issue bounty quest ids MUST
-// be derived from the issue number. Otherwise every scope:"once" bounty would
-// share one key and only the first one ever records.
+// Regression guard: each issue keeps its own quest id, and each author gets a
+// per-user key under that issue.
 test("two lazy GitHub issue bounties each record independently", async ({
     mocks,
     sessionToken: _sessionToken,
@@ -1646,8 +1726,8 @@ test("two lazy GitHub issue bounties each record independently", async ({
     );
     expect(issueRewards).toHaveLength(2);
     expect(issueRewards.map((g) => g.idempotencyKey).sort()).toEqual([
-        "quest:github:issue:901",
-        "quest:github:issue:902",
+        `quest:github:issue:901:github:${user.githubId}`,
+        `quest:github:issue:902:github:${secondGithubId}`,
     ]);
     // Both PR authors have their own issue's reward (901→user, 902→other).
     expect(

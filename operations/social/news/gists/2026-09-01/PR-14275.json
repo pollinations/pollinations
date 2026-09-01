@@ -1,0 +1,34 @@
+{
+  "pr_number": 14275,
+  "title": "docs: clarify hosted MCP servers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14275",
+  "merged_at": "2026-09-01T12:24:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses Gen-hosted MCP endpoints as the canonical URLs\n- Lists Pollinations, FFmpeg, and Exa Search with their purpose and tools\n- Groups Pollinations tools into discovery, generation, and account sections\n- Clarifies shared authentication, permissions, billing, and resource-link behavior\n\nTests:\n- `npm run typecheck` in `gen.pollinations.ai`\n- Biome and `git diff --check`",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "MCP map, freshly labeled",
+    "blurb": "The hosted MCP garden has proper signposts now. Pollinations, FFmpeg, and Exa Search are all listed with the tools they bring to the picnic.",
+    "summary": "Added a dedicated hosted-MCP guide using Gen-hosted canonical endpoints, documenting Pollinations, FFmpeg, and Exa Search tools plus shared authentication, permissions, billing, and resource-link behavior.",
+    "impact": "Developers can now connect agents to the right hosted MCP server with clearer tool groupings for Pollinations discovery, generation, and account tasks.",
+    "keywords": [
+      "mcp",
+      "documentation",
+      "agents",
+      "hosted servers",
+      "authentication",
+      "tools"
+    ],
+    "visual_concept": "A cozy garden directory for hosted MCP servers: Polli acts as a friendly guide beside three labeled little terminals for Pollinations, FFmpeg, and Exa Search. Paths branch into discovery, generation, and account flowerbeds, while glowing shared keys and resource-link vines show that the servers share access rules.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny librarian scarf, pointing at a garden map of three chunky retro terminals labeled \"POLLINATIONS\", \"FFMPEG\", and \"EXA\"; paths lead through flowerbeds labeled \"DISCOVER\", \"GENERATE\", and \"ACCOUNT\", with shared key-shaped vines linking them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14275.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny librarian scarf, pointing at a garden map of three chunky retro terminals labeled \"POLLINATIONS\", \"FFMPEG\", and \"EXA\"; paths lead through flowerbeds labeled \"DISCOVER\", \"GENERATE\", and \"ACCOUNT\", with shared key-shaped vines linking them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow and pixel-font text."
+  },
+  "generated_at": "2026-09-01T12:25:51.731354+00:00"
+}

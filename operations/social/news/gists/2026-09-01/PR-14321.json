@@ -1,0 +1,34 @@
+{
+  "pr_number": 14321,
+  "title": "fix: reroute MiniMax M2.7 to OpenRouter",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14321",
+  "merged_at": "2026-09-01T23:08:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes the MiniMax M2.7 outage: the Fireworks route returned model-not-deployed 404s and produced 0/121 successful requests in the reported hour. Other Fireworks models remained healthy, so this is isolated to that deployment.\n- Routes the existing canonical model and aliases to exact OpenRouter model minimax/minimax-m2.7, pinned to DeepInfra FP8 with provider fallback disabled. This prevents route and price drift. Azure is not used because it has no exact serverless M2.7 deployment.\n- Makes the model paid-only and records the pinned endpoint rates: $0.25/M input, $0.05/M cached input, and $1.00/M output at multiplier 1. Public identity, aliases, reasoning, tools, and the no-Pollinations-fallback contract remain unchanged.\n- Verified directly against OpenRouter: HTTP 200 from DeepInfra for text, reasoning, usage, and tool calling; reported cost reconciled exactly to the registry rates. Focused gen tests passed 83/83, Enter pricing and alias tests passed 512/512, the pricing snapshot was updated, both services typecheck, and Biome is clean.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "MiniMax Finds a New Nest",
+    "blurb": "MiniMax M2.7 has moved to a working branch of the hive. Its aliases, reasoning, and tool calls are back in business, with the route pinned neatly in place.",
+    "summary": "Rerouted MiniMax M2.7 and its aliases from the unavailable Fireworks deployment to OpenRouter's exact DeepInfra FP8 endpoint, with paid-only pricing pinned at $0.25/M input, $0.05/M cached input, and $1.00/M output.",
+    "impact": "MiniMax M2.7 requests now return successfully for text, reasoning, usage reporting, and tool calling while preserving the existing model identity, aliases, and no-Pollinations-fallback behavior.",
+    "keywords": [
+      "MiniMax M2.7",
+      "OpenRouter",
+      "DeepInfra",
+      "model routing",
+      "pricing",
+      "text API"
+    ],
+    "visual_concept": "Depict MiniMax M2.7 as a cozy glowing model seed being carefully rerouted from a quiet, crossed-out terminal path into a healthy OpenRouter garden pipeline labeled DeepInfra FP8. Polli, wearing a tiny network technician cap, guides the seed along the new cable-vine while a cheerful CRT monitor robot confirms a successful response; include small code-plants and a subtle pricing tag to represent the pinned endpoint and rates.",
+    "image_prompt": "A cozy pixel art garden-hackerspace where Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, a small smile, light blue translucent wings, and a tiny network technician cap, guides a glowing MiniMax M2.7 seed through a cable-vine into a healthy retro terminal labeled in simple pixel text \"OPENROUTER\" and \"DeepInfra FP8\"; a chunky CRT monitor robot happily displays \"200 OK\" beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow and scanlines, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14321.jpg",
+    "prompt": "A cozy pixel art garden-hackerspace where Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, a small smile, light blue translucent wings, and a tiny network technician cap, guides a glowing MiniMax M2.7 seed through a cable-vine into a healthy retro terminal labeled in simple pixel text \"OPENROUTER\" and \"DeepInfra FP8\"; a chunky CRT monitor robot happily displays \"200 OK\" beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, chunky retro sprites, warm lighting, subtle CRT glow and scanlines, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T23:09:53.142374+00:00"
+}

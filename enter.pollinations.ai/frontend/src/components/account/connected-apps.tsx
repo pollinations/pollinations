@@ -45,10 +45,21 @@ type AppCardProps = {
     name: string;
     logo: string | null;
     details?: ReactNode;
-    action: ReactNode;
+    actionLabel: string;
+    pendingLabel: string;
+    pending: boolean;
+    onAction: () => void;
 };
 
-function AppCard({ name, logo, details, action }: AppCardProps) {
+function AppCard({
+    name,
+    logo,
+    details,
+    actionLabel,
+    pendingLabel,
+    pending,
+    onAction,
+}: AppCardProps) {
     return (
         <Surface
             variant="card"
@@ -69,7 +80,9 @@ function AppCard({ name, logo, details, action }: AppCardProps) {
                     {details}
                 </div>
             </div>
-            {action}
+            <Button type="button" disabled={pending} onClick={onAction}>
+                {pending ? pendingLabel : actionLabel}
+            </Button>
         </Surface>
     );
 }
@@ -170,6 +183,9 @@ export function ConnectedApps() {
     const availableToolkits = toolkits.filter(
         ({ slug }) => !connectedToolkits.has(slug),
     );
+    const resultsSummary = submittedSearch
+        ? `${availableToolkits.length} ${availableToolkits.length === 1 ? "result" : "results"} for “${submittedSearch}”.`
+        : `Showing ${availableToolkits.length} popular apps. Search to find more.`;
 
     return (
         <Section title="Connected apps" framed>
@@ -204,21 +220,10 @@ export function ConnectedApps() {
                                             </Text>
                                         ) : undefined
                                     }
-                                    action={
-                                        <Button
-                                            type="button"
-                                            disabled={
-                                                pendingId === connection.id
-                                            }
-                                            onClick={() =>
-                                                void disconnect(connection)
-                                            }
-                                        >
-                                            {pendingId === connection.id
-                                                ? "Disconnecting..."
-                                                : "Disconnect"}
-                                        </Button>
-                                    }
+                                    actionLabel="Disconnect"
+                                    pendingLabel="Disconnecting..."
+                                    pending={pendingId === connection.id}
+                                    onAction={() => void disconnect(connection)}
                                 />
                             );
                         })}
@@ -254,9 +259,7 @@ export function ConnectedApps() {
                                     : "Popular apps"}
                             </Text>
                             <Text size="sm" tone="muted">
-                                {submittedSearch
-                                    ? `${availableToolkits.length} ${availableToolkits.length === 1 ? "result" : "results"} for “${submittedSearch}”.`
-                                    : `Showing ${availableToolkits.length} popular apps. Search to find more.`}
+                                {resultsSummary}
                             </Text>
                         </div>
                         <InlineLink href="https://composio.dev/toolkits">
@@ -280,21 +283,10 @@ export function ConnectedApps() {
                                             {toolkit.description}
                                         </Text>
                                     }
-                                    action={
-                                        <Button
-                                            type="button"
-                                            disabled={
-                                                pendingId === toolkit.slug
-                                            }
-                                            onClick={() =>
-                                                void connect(toolkit.slug)
-                                            }
-                                        >
-                                            {pendingId === toolkit.slug
-                                                ? "Connecting..."
-                                                : "Connect"}
-                                        </Button>
-                                    }
+                                    actionLabel="Connect"
+                                    pendingLabel="Connecting..."
+                                    pending={pendingId === toolkit.slug}
+                                    onAction={() => void connect(toolkit.slug)}
                                 />
                             ))}
                         </div>

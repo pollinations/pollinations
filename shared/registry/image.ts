@@ -35,6 +35,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 300,
         cost: {
             completionImageTokens: 0.0001, // per image
         },
@@ -221,6 +222,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 20,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.035, // per image

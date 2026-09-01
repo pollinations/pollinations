@@ -6,11 +6,11 @@ import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
 
 describe("model rate limiting", () => {
-    it("limits the self-hosted image models without limiting DreamShaper", () => {
+    it("limits the self-hosted image models", () => {
         expect(IMAGE_SERVICES.flux.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.zimage.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.klein.perUserRpm).toBe(60);
-        expect("perUserRpm" in IMAGE_SERVICES.dreamshaper).toBe(false);
+        expect(IMAGE_SERVICES.dreamshaper.perUserRpm).toBe(300);
     });
 
     it("publishes a catalog model's configured per-user RPM", () => {

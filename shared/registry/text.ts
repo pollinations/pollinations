@@ -470,6 +470,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 10,
         cost: {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
@@ -707,6 +708,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 30,
         cost: {
             promptTextTokens: perMillion(0.22),
             promptCachedTokens: perMillion(0.007),
@@ -1481,6 +1483,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 20,
         cost: {
             // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
             promptTextTokens: perMillion(0.05),
@@ -1800,6 +1803,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 5,
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
@@ -1848,6 +1852,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 10,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
             // prompt $0.30/M, completion $1.20/M, cache read $0.06/M.
@@ -1874,6 +1879,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 10,
         cost: {
             promptTextTokens: perMillion(0.35),
             promptCachedTokens: perMillion(0.04),

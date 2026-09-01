@@ -6,6 +6,7 @@ import type { ImageParams } from "../../src/image/params.ts";
 const XAI_GENERATE_URL = "https://api.x.ai/v1/images/generations";
 const XAI_EDITS_URL = "https://api.x.ai/v1/images/edits";
 const IMAGE_URL = "https://image.example.com/xai-output.png";
+const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
 
 interface XaiRequest {
     url: string;
@@ -85,7 +86,7 @@ describe("xaiModel usage accounting", () => {
 
         const result = await callXaiImageAPI("test prompt", {
             ...baseParams,
-            image: ["https://example.com/input.png"],
+            image: [CLEAN_JPEG_DATA_URI],
         });
 
         expect(requests[0].url).toBe(XAI_EDITS_URL);

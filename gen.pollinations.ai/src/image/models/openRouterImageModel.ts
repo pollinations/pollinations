@@ -413,7 +413,9 @@ export async function callOpenRouterGrokImagineProAPI(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const referenceImage = safeParams.image?.[0];
+    const referenceImage = safeParams.image?.[0]
+        ? await toDataUri(safeParams.image[0])
+        : undefined;
     const requestBody: Record<string, unknown> = {
         model: GROK_IMAGINE_QUALITY_MODEL,
         prompt,
@@ -478,10 +480,12 @@ export async function callOpenRouterGrokImagineImage2API(
         );
     }
     const apiKey = requireOpenRouterImageApiKey();
-    const inputReferences = safeParams.image.map((url) => ({
-        type: "image_url",
-        image_url: { url },
-    }));
+    const inputReferences = await Promise.all(
+        safeParams.image.map(async (url) => ({
+            type: "image_url",
+            image_url: { url: await toDataUri(url) },
+        })),
+    );
     const requestBody: Record<string, unknown> = {
         model: GROK_IMAGINE_IMAGE_2_MODEL,
         prompt,
@@ -638,7 +642,9 @@ export async function callOpenRouterRecraftVectorAPI(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     const apiKey = requireOpenRouterImageApiKey();
-    const referenceImage = safeParams.image?.[0];
+    const referenceImage = safeParams.image?.[0]
+        ? await toDataUri(safeParams.image[0])
+        : undefined;
     const requestBody: Record<string, unknown> = {
         model: RECRAFT_VECTOR_MODEL,
         prompt,

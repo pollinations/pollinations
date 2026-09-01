@@ -31,12 +31,12 @@ async function fetchImageAsBase64(
 }
 
 /**
- * Returns true if the URL is an HTTP(S) URL that needs base64 conversion.
- * Data URLs and GCS URLs are already supported natively.
+ * Every caller-controlled HTTP(S) or data URL is decoded and rebuilt so
+ * metadata stripping happens before provider delivery. GCS references are
+ * internal provider-native objects that this worker cannot fetch directly.
  */
-function needsConversion(url: string | undefined): boolean {
+function needsSanitization(url: string | undefined): boolean {
     if (!url) return false;
-    if (url.startsWith("data:")) return false;
     if (url.startsWith("gs://")) return false;
     return true;
 }
@@ -57,7 +57,7 @@ async function processContentPart(
         return part;
     }
 
-    if (!needsConversion(part.image_url.url)) {
+    if (!needsSanitization(part.image_url.url)) {
         return part;
     }
 
@@ -93,8 +93,10 @@ async function processMessageContent(
 }
 
 /**
- * Creates a transform that converts HTTP image URLs to base64 data URLs
- * for providers/models that require inline image data.
+ * Converts caller-controlled images to sanitized base64 data URLs before any
+ * text provider sees them. Besides satisfying providers that require inline
+ * bytes, this prevents URL-forwarding providers from fetching the original
+ * image with its EXIF/XMP/IPTC metadata intact.
  */
 export const imageUrlToBase64Transform: TransformFn = async (
     messages,
@@ -102,13 +104,7 @@ export const imageUrlToBase64Transform: TransformFn = async (
 ) => {
     const config = options?.modelConfig as Record<string, unknown> | undefined;
     const provider = config?.provider as string | undefined;
-    const requiresBase64ImageUrls = config?.requiresBase64ImageUrls === true;
-
-    if (provider !== "bedrock" && !requiresBase64ImageUrls) {
-        return { messages, options };
-    }
-
-    const providerInfo = provider ?? "base64-required";
+    const providerInfo = provider ?? "unknown-provider";
     log(`Processing messages for ${providerInfo} image URL conversion`);
 
     const context: ImageConversionContext = {

@@ -4,6 +4,8 @@ import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
 import { callTrellis2 } from "../../src/model3d/models/trellis2Model.ts";
 import type { Model3dParams } from "../../src/model3d/params.ts";
 
+const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
+
 beforeEach(() => {
     syncModel3dEnvironment({
         ...env,
@@ -19,7 +21,7 @@ function params(resolution: "low" | "medium" | "high" = "low"): Model3dParams {
     return {
         model: "trellis-2",
         resolution,
-        image: ["https://example.com/ref.jpg"],
+        image: [CLEAN_JPEG_DATA_URI],
         safe: false,
     };
 }

@@ -18,6 +18,7 @@ const PNG = Buffer.from(
     "base64",
 );
 const PNG_DATA_URI = `data:image/png;base64,${PNG.toString("base64")}`;
+const SVG_DATA_URI = "data:image/svg+xml;base64,PHN2Zy8+";
 const WIDE_PNG = Buffer.alloc(24);
 WIDE_PNG.set([0x89, 0x50, 0x4e, 0x47]);
 WIDE_PNG.writeUInt32BE(2560, 16);
@@ -115,7 +116,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
             ...baseParams,
             width: 1280,
             height: 720,
-            image: ["https://example.com/input.png"],
+            image: [PNG_DATA_URI],
         });
 
         expect(requests[0]).toEqual({
@@ -127,7 +128,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/input.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
             ],
         });
@@ -176,11 +177,7 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
             model: "grok-imagine-image-2.0",
             quality,
             resolution,
-            image: [
-                "https://example.com/one.png",
-                "https://example.com/two.png",
-                "https://example.com/three.png",
-            ],
+            image: [PNG_DATA_URI, PNG_DATA_URI, PNG_DATA_URI],
         });
 
         expect(requests[0]).toEqual({
@@ -197,15 +194,15 @@ describe("OpenRouter Grok Imagine Image 2.0", () => {
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/one.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/two.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/three.png" },
+                    image_url: { url: PNG_DATA_URI },
                 },
             ],
         });
@@ -894,7 +891,7 @@ describe("OpenRouter Recraft vector", () => {
         const result = await callOpenRouterRecraftVectorAPI("edit prompt", {
             ...baseParams,
             model: "recraft-v4.1-vector",
-            image: ["https://example.com/input.svg"],
+            image: [SVG_DATA_URI],
         });
 
         expect(requests[0]).toEqual({
@@ -909,7 +906,7 @@ describe("OpenRouter Recraft vector", () => {
             input_references: [
                 {
                     type: "image_url",
-                    image_url: { url: "https://example.com/input.svg" },
+                    image_url: { url: SVG_DATA_URI },
                 },
             ],
         });

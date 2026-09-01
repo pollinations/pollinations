@@ -8,6 +8,8 @@ import {
 } from "../../src/model3d/models/rodinModel.ts";
 import type { Model3dParams } from "../../src/model3d/params.ts";
 
+const CLEAN_JPEG_DATA_URI = "data:image/jpeg;base64,/9j/2gADAP/Z";
+
 beforeEach(() => {
     syncModel3dEnvironment({
         ...env,
@@ -81,10 +83,7 @@ describe("callRodinFalAPI", () => {
     it("routes image input to the image-to-3D endpoint", async () => {
         const fetchSpy = mockFalQueue();
 
-        await callWithFakeTimers(
-            "",
-            params({ image: ["https://example.com/ref.jpg"] }),
-        );
+        await callWithFakeTimers("", params({ image: [CLEAN_JPEG_DATA_URI] }));
 
         const [submitUrl, submitInit] = fetchSpy.mock.calls[0] as [
             string,
@@ -92,7 +91,7 @@ describe("callRodinFalAPI", () => {
         ];
         expect(submitUrl).toBe(`https://queue.fal.run/${RODIN_IMAGE_ENDPOINT}`);
         const body = JSON.parse(submitInit.body as string);
-        expect(body.image_urls).toEqual(["https://example.com/ref.jpg"]);
+        expect(body.image_urls).toEqual([CLEAN_JPEG_DATA_URI]);
     });
 
     it("routes text-only input to the dedicated text-to-3D endpoint", async () => {
@@ -119,7 +118,7 @@ describe("callRodinFalAPI", () => {
 
         const result = await callWithFakeTimers(
             "",
-            params({ image: ["https://example.com/ref.jpg"] }),
+            params({ image: [CLEAN_JPEG_DATA_URI] }),
         );
 
         expect(result.contentType).toBe("model/gltf-binary");
@@ -130,7 +129,7 @@ describe("callRodinFalAPI", () => {
 
         await callWithFakeTimers(
             "",
-            params({ image: ["https://example.com/ref.jpg"], seed: 42 }),
+            params({ image: [CLEAN_JPEG_DATA_URI], seed: 42 }),
         );
 
         const body = JSON.parse(

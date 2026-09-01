@@ -5,6 +5,7 @@ import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { closestAspectRatio } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import { toDataUri } from "../utils/imageDownload.ts";
 
 const logOps = debug("pollinations:xai:ops");
 
@@ -38,7 +39,9 @@ export async function callXaiImageAPI(
         );
     }
 
-    const referenceImage = safeParams.image?.[0];
+    const referenceImage = safeParams.image?.[0]
+        ? await toDataUri(safeParams.image[0])
+        : undefined;
     const isEditMode = !!referenceImage;
     const endpoint = isEditMode ? XAI_EDITS_URL : XAI_GENERATE_URL;
 

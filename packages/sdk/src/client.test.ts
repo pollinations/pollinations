@@ -507,6 +507,37 @@ describe("Pollinations simple text facade", () => {
             response_format: { type: "json_object" },
         });
     });
+
+    it("surfaces streamed API errors instead of yielding invalid chunks", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"error":{"message":"Upstream model unavailable"}}',
+                    "data: [DONE]",
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "STREAM_ERROR",
+            status: 502,
+            message: "Upstream model unavailable",
+        });
+    });
 });
 
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {

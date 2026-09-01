@@ -438,8 +438,12 @@ async function runAgent(
                 }
             }
         }
+        const finalContent = limited
+            ? `${content}\n\n${STEP_LIMIT_MESSAGE}`
+            : content;
+        if (!finalContent.trim()) throw new Error("Agent produced no response");
         return {
-            content: limited ? `${content}\n\n${STEP_LIMIT_MESSAGE}` : content,
+            content: finalContent,
             finishReason: limited
                 ? "length"
                 : openAIFinishReason(result.finishReason),
@@ -541,6 +545,9 @@ async function streamAgent(
                             `\n\n${STEP_LIMIT_MESSAGE}`,
                         ),
                     );
+                }
+                if (!hasContent && !limited) {
+                    throw new Error("Agent produced no response");
                 }
                 send({
                     id,

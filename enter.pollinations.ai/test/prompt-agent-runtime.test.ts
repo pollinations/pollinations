@@ -984,6 +984,61 @@ describe("prompt-agent runtime", () => {
         );
     });
 
+    it.each([false, true])(
+        "reports an empty base-model response when stream:%s",
+        async (stream) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => {
+                    if (!stream) {
+                        return Response.json({
+                            choices: [
+                                {
+                                    message: {
+                                        role: "assistant",
+                                        content: null,
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            usage: {
+                                prompt_tokens: 1,
+                                completion_tokens: 0,
+                            },
+                        });
+                    }
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n' +
+                            "data: [DONE]\n\n",
+                        {
+                            headers: {
+                                "content-type": "text/event-stream",
+                            },
+                        },
+                    );
+                }),
+            );
+
+            const response = await runAgent({
+                messages: [{ role: "user", content: "hello" }],
+                stream,
+            });
+
+            if (stream) {
+                expect(response.status).toBe(200);
+                expect(await response.text()).toBe(
+                    'data: {"error":{"message":"Agent produced no response"}}\n\n' +
+                        "data: [DONE]\n\n",
+                );
+                return;
+            }
+            expect(response.status).toBe(502);
+            await expect(response.json()).resolves.toEqual({
+                error: { message: "Agent produced no response" },
+            });
+        },
+    );
+
     it("feeds a failing tool's error back to the model instead of 502", async () => {
         let modelCalls = 0;
         const fetchMock = vi.fn(

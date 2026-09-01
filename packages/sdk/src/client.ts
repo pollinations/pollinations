@@ -141,6 +141,19 @@ interface SSEParseResult<T> {
     remainingBuffer: string;
 }
 
+function chatStreamError(chunk: unknown): PollinationsError | null {
+    if (!chunk || typeof chunk !== "object" || !("error" in chunk)) return null;
+
+    const error = (chunk as { error: unknown }).error;
+    let message = "Streaming request failed";
+    if (typeof error === "string") message = error;
+    else if (error && typeof error === "object" && "message" in error) {
+        const errorMessage = (error as { message: unknown }).message;
+        if (typeof errorMessage === "string") message = errorMessage;
+    }
+    return new PollinationsError(message, "STREAM_ERROR", 502);
+}
+
 // Parse SSE lines from buffer and extract data
 function parseSSEBuffer<T>(
     buffer: string,
@@ -893,14 +906,16 @@ export class Pollinations {
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<ChatStreamChunk>(
+                const result = parseSSEBuffer<unknown>(
                     buffer,
-                    (data) => JSON.parse(data) as ChatStreamChunk,
+                    (data) => JSON.parse(data) as unknown,
                 );
 
                 buffer = result.remainingBuffer;
                 for (const chunk of result.chunks) {
-                    yield chunk;
+                    const error = chatStreamError(chunk);
+                    if (error) throw error;
+                    yield chunk as ChatStreamChunk;
                 }
             }
         } finally {

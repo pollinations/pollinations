@@ -13,7 +13,7 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
-const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
+const DONE_EVENT = "data: [DONE]";
 
 function isClientInputError(details: unknown): boolean {
     const serialized =
@@ -44,27 +44,41 @@ function ensureOpenAISseDone(
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
     let seenDone = false;
-    let tail = "";
+    let buffer = "";
 
     return source.pipeThrough(
         new TransformStream<Uint8Array, Uint8Array>({
             transform(chunk, controller) {
-                const text = decoder.decode(chunk, { stream: true });
-                const check = `${tail}${text}`;
-                if (DONE_EVENT_PATTERN.test(check)) seenDone = true;
-                tail = check.slice(-64);
-                controller.enqueue(chunk);
+                if (seenDone) return;
+                buffer += decoder.decode(chunk, { stream: true });
+                const doneIndex = buffer.indexOf(DONE_EVENT);
+                if (doneIndex >= 0) {
+                    controller.enqueue(
+                        encoder.encode(
+                            `${buffer.slice(0, doneIndex)}${DONE_EVENT}\n\n`,
+                        ),
+                    );
+                    buffer = "";
+                    seenDone = true;
+                    return;
+                }
+
+                const safeLength = Math.max(
+                    0,
+                    buffer.length - DONE_EVENT.length + 1,
+                );
+                if (safeLength > 0) {
+                    controller.enqueue(
+                        encoder.encode(buffer.slice(0, safeLength)),
+                    );
+                    buffer = buffer.slice(safeLength);
+                }
             },
             flush(controller) {
-                const finalText = decoder.decode();
-                if (finalText) {
-                    const check = `${tail}${finalText}`;
-                    if (DONE_EVENT_PATTERN.test(check)) seenDone = true;
-                    controller.enqueue(encoder.encode(finalText));
-                }
-                if (!seenDone) {
-                    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                }
+                if (seenDone) return;
+                buffer += decoder.decode();
+                if (buffer) controller.enqueue(encoder.encode(buffer));
+                controller.enqueue(encoder.encode(`${DONE_EVENT}\n\n`));
             },
         }),
     );

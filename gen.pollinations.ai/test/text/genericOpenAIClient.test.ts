@@ -660,6 +660,49 @@ describe("genericOpenAIClient", () => {
         expect(text).toContain("data: [DONE]\n\n");
     });
 
+    it("discards provider data appended after the DONE event", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () => {
+            const encoder = new TextEncoder();
+            return new Response(
+                new ReadableStream({
+                    start(controller) {
+                        controller.enqueue(
+                            encoder.encode(
+                                'data: {"choices":[{"delta":{"content":"ok"}}]}\n\n',
+                            ),
+                        );
+                        controller.enqueue(encoder.encode("data: [DO"));
+                        controller.enqueue(
+                            encoder.encode(
+                                'NE]\ndata: {"private_trailer":true}\n\n',
+                            ),
+                        );
+                        controller.close();
+                    },
+                }),
+                {
+                    headers: {
+                        "content-type": "text/event-stream; charset=utf-8",
+                    },
+                },
+            );
+        });
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        const text = await new Response(
+            completion.responseStream as ReadableStream,
+        ).text();
+
+        expect(text).toContain('"content":"ok"');
+        expect(text.endsWith("data: [DONE]\n\n")).toBe(true);
+        expect(text).not.toContain("private_trailer");
+    });
+
     it("rejects an empty upstream stream as a retryable failure", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(null));
 

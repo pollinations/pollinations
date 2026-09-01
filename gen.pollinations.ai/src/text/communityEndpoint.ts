@@ -121,6 +121,12 @@ export async function communityEndpointGatewayContext({
     return {
         ...requestDataWithoutMessages,
         ...(trustedHumanMetadata && {
+            // A human produces one complete Discord message. Fetch it as JSON,
+            // then let Gen wrap the validated completion for streaming callers.
+            stream: false,
+            stream_options: undefined,
+        }),
+        ...(trustedHumanMetadata && {
             _pollinations: trustedHumanMetadata,
         }),
         modelConfig: {

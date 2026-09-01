@@ -1,9 +1,10 @@
+import json
 import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
 
-from src.api.humans import HumanService, format_transcript, harden_content, truncate_tokens
+from src.api.humans import HumanService, format_transcript, harden_content, stream_completion, truncate_tokens
 
 
 class FakeGateway:
@@ -37,11 +38,10 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         await self.service.close()
         self.temporary_directory.cleanup()
 
-    async def test_returns_response_and_reuses_caller_conversation(self):
+    async def test_returns_response_and_reuses_caller_history(self):
         first = await self.service.complete(
             caller_id="caller-a",
             messages=[{"role": "user", "content": "Hello humans"}],
-            conversation_id=None,
             max_tokens=None,
             max_completion_tokens=None,
         )
@@ -55,28 +55,29 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
                 {"role": "assistant", "content": "A human answer"},
                 {"role": "user", "content": "Continue"},
             ],
-            conversation_id=first["conversation_id"],
             max_tokens=None,
             max_completion_tokens=None,
         )
         self.assertEqual(self.gateway.thread_count, 1)
         self.assertEqual(self.gateway.asks[1][1], [{"role": "user", "content": "Continue"}])
 
-        with self.assertRaises(LookupError):
-            await self.service.complete(
-                caller_id="caller-b",
-                messages=[{"role": "user", "content": "Continue"}],
-                conversation_id=first["conversation_id"],
-                max_tokens=None,
-                max_completion_tokens=None,
-            )
+        await self.service.complete(
+            caller_id="caller-b",
+            messages=[
+                {"role": "user", "content": "Hello humans"},
+                {"role": "assistant", "content": "A human answer"},
+                {"role": "user", "content": "Continue"},
+            ],
+            max_tokens=None,
+            max_completion_tokens=None,
+        )
+        self.assertEqual(self.gateway.thread_count, 2)
 
     async def test_uses_smallest_completion_limit(self):
         self.gateway.reply.content = "one two three four five"
         response = await self.service.complete(
             caller_id="caller-a",
             messages=[{"role": "user", "content": "short answer"}],
-            conversation_id=None,
             max_tokens=4,
             max_completion_tokens=2,
         )
@@ -101,6 +102,33 @@ class HumanRequestTests(unittest.TestCase):
 
     def test_truncates_cl100k_tokens(self):
         self.assertEqual(truncate_tokens("hello world", 1), ("hello", 1, True))
+
+    def test_wraps_completed_reply_as_openai_stream(self):
+        completion = {
+            "id": "chatcmpl-human",
+            "object": "chat.completion",
+            "created": 1,
+            "model": "humans",
+            "choices": [
+                {
+                    "index": 0,
+                    "message": {"role": "assistant", "content": "A human answer"},
+                    "finish_reason": "stop",
+                }
+            ],
+            "usage": {"prompt_tokens": 4, "completion_tokens": 3, "total_tokens": 7},
+            "_pollinations": {"responder": {"discordId": "12345678901234567"}},
+        }
+
+        events = list(stream_completion(completion))
+        parsed = [json.loads(event.removeprefix("data: ")) for event in events[:-1]]
+        self.assertEqual(parsed[0]["choices"][0]["delta"], {"role": "assistant"})
+        self.assertEqual(parsed[1]["choices"][0]["delta"], {"content": "A human answer"})
+        self.assertEqual(parsed[2]["choices"][0]["finish_reason"], "stop")
+        self.assertEqual(parsed[3]["choices"], [])
+        self.assertEqual(parsed[3]["usage"], completion["usage"])
+        self.assertTrue(all("_pollinations" not in event for event in parsed))
+        self.assertEqual(events[-1], "data: [DONE]\n\n")
 
 
 if __name__ == "__main__":

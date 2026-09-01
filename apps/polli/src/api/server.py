@@ -4,12 +4,12 @@ from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from ..ai.client import UpstreamAuthError, _auth_override
 from ..utils.uuid import uuid4_hex
-from .humans import HumanService
+from .humans import HumanService, stream_completion
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +82,6 @@ class ChatRequest(BaseModel):
     image_urls: list[str] | None = None
     video_urls: list[str] | None = None
     file_urls: list[str] | None = None
-    conversation_id: str | None = None
     pollinations_metadata: PollinationsMetadata | None = Field(default=None, alias="_pollinations")
 
     model_config = {"extra": "ignore"}
@@ -151,8 +150,6 @@ def create_api_app(pollinations_client, config, human_service: HumanService | No
                 human_service.authorize(auth_header)
             except PermissionError:
                 raise HTTPException(status_code=401, detail="Unauthorized")
-            if request.stream:
-                raise HTTPException(status_code=400, detail="Streaming is not supported for the humans model")
             caller = request.pollinations_metadata and request.pollinations_metadata.caller
             if not caller:
                 raise HTTPException(status_code=400, detail="Trusted caller metadata is required")
@@ -168,17 +165,15 @@ def create_api_app(pollinations_client, config, human_service: HumanService | No
                 if value is not None and value <= 0:
                     raise HTTPException(status_code=400, detail=f"{name} must be a positive integer")
             try:
-                return JSONResponse(
-                    content=await human_service.complete(
-                        caller_id=caller.id,
-                        messages=[message.model_dump() for message in request.messages],
-                        conversation_id=request.conversation_id,
-                        max_tokens=request.max_tokens,
-                        max_completion_tokens=request.max_completion_tokens,
-                    )
+                completion = await human_service.complete(
+                    caller_id=caller.id,
+                    messages=[message.model_dump() for message in request.messages],
+                    max_tokens=request.max_tokens,
+                    max_completion_tokens=request.max_completion_tokens,
                 )
-            except LookupError as error:
-                raise HTTPException(status_code=404, detail=str(error))
+                if request.stream:
+                    return StreamingResponse(stream_completion(completion), media_type="text/event-stream")
+                return JSONResponse(content=completion)
             except TimeoutError:
                 raise HTTPException(status_code=504, detail="No human response before timeout")
             except RuntimeError as error:

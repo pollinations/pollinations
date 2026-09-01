@@ -330,6 +330,72 @@ function sendTextStreamResponse(
     return new Response(completion.responseStream, { headers });
 }
 
+function wrapCompletedChatAsStream(completion: ChatCompletion): ChatCompletion {
+    const choice = completion.choices?.[0];
+    const content = choice?.message?.content;
+    if (typeof content !== "string") {
+        invalidHumanResponse(
+            "Human responder returned an invalid text response",
+            completion.upstreamRequestUrl,
+        );
+    }
+
+    const base = {
+        id: completion.id,
+        object: "chat.completion.chunk",
+        created: completion.created,
+        model: completion.model,
+    };
+    const events = [
+        {
+            ...base,
+            choices: [
+                {
+                    index: 0,
+                    delta: { role: "assistant" },
+                    finish_reason: null,
+                },
+            ],
+        },
+        {
+            ...base,
+            choices: [
+                {
+                    index: 0,
+                    delta: { content },
+                    finish_reason: null,
+                },
+            ],
+        },
+        {
+            ...base,
+            choices: [
+                {
+                    index: 0,
+                    delta: {},
+                    finish_reason: choice?.finish_reason ?? "stop",
+                },
+            ],
+        },
+        { ...base, choices: [], usage: completion.usage },
+    ];
+    const encoder = new TextEncoder();
+    return {
+        ...completion,
+        responseStream: new ReadableStream({
+            start(controller) {
+                for (const event of events) {
+                    controller.enqueue(
+                        encoder.encode(`data: ${JSON.stringify(event)}\n\n`),
+                    );
+                }
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+                controller.close();
+            },
+        }),
+    };
+}
+
 function base64ToArrayBuffer(value: string): ArrayBuffer {
     const binary = atob(value);
     const bytes = new Uint8Array(binary.length);
@@ -407,11 +473,6 @@ async function generateTextResponse(
             return normalization.errorResponse;
         }
         const normalizedRequestData = normalization.requestData;
-        if (usesHumanResponders(c.var.model) && normalizedRequestData.stream) {
-            throw new HTTPException(400, {
-                message: "Human responder models do not support streaming",
-            });
-        }
         const candidates = fallbackCandidates(c.var.model);
         const portkey = c.env.PORTKEY;
         const {
@@ -421,15 +482,6 @@ async function generateTextResponse(
         } = await withModelFallback(
             candidates,
             async (attempt) => {
-                if (
-                    usesHumanResponders(attempt) &&
-                    normalizedRequestData.stream
-                ) {
-                    throw new HTTPException(400, {
-                        message:
-                            "Human responder models do not support streaming",
-                    });
-                }
                 return generateTextPortkey(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
@@ -461,12 +513,16 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        if (normalizedRequestData.stream)
-            return sendTextStreamResponse(publicCompletion, servedModelId);
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         if (responderUserId) {
             c.var.track?.setCommunityResponderUserId?.(responderUserId);
+        }
+        if (normalizedRequestData.stream) {
+            const streamCompletion = usesHumanResponders(candidate)
+                ? wrapCompletedChatAsStream(publicCompletion)
+                : publicCompletion;
+            return sendTextStreamResponse(streamCompletion, servedModelId);
         }
         const trackingResponse = sendOpenAIResponse(
             publicCompletion,

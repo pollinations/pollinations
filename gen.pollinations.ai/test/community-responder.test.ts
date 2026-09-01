@@ -255,6 +255,7 @@ describe("human responder identity", () => {
 
         const app = new Hono<Env>()
             .use("*", async (c, next) => {
+                const body = await c.req.json();
                 c.set("log", testLog);
                 c.set("requestId", "human-request-id");
                 c.set("auth", {
@@ -265,7 +266,7 @@ describe("human responder identity", () => {
                 c.set("track", {
                     modelRequested: endpoint.modelId,
                     resolvedModelRequested: endpoint.modelId,
-                    streamRequested: false,
+                    streamRequested: body.stream === true,
                     overrideResponseTracking() {},
                     setPricingInput() {},
                     setCommunityResponderUserId: setResponderUserId,
@@ -277,7 +278,6 @@ describe("human responder identity", () => {
                     definition: communityModelDefinition(endpoint),
                     communityEndpoint: endpoint,
                 });
-                const body = await c.req.json();
                 c.req.addValidatedData("json", body);
                 await next();
             })
@@ -313,5 +313,42 @@ describe("human responder identity", () => {
         const body = await response.json<Record<string, unknown>>();
         expect(body).not.toHaveProperty("_pollinations");
         expect(setResponderUserId).toHaveBeenCalledWith(responderUserId);
+
+        const streamResponse = await app.request(
+            "/v1/chat/completions",
+            {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: endpoint.modelId,
+                    safe: false,
+                    stream: true,
+                    messages: [{ role: "user", content: "Please answer" }],
+                }),
+            },
+            bindings,
+        );
+
+        expect(streamResponse.status, await streamResponse.clone().text()).toBe(
+            200,
+        );
+        expect(streamResponse.headers.get("content-type")).toContain(
+            "text/event-stream",
+        );
+        const streamBody = await streamResponse.text();
+        expect(streamBody).toContain('"delta":{"content":"A human answer"}');
+        expect(streamBody).toContain('"finish_reason":"stop"');
+        expect(streamBody).toContain(
+            '"usage":{"prompt_tokens":4,"completion_tokens":3,"total_tokens":7}',
+        );
+        expect(streamBody).toContain("data: [DONE]");
+        expect(streamBody).not.toContain("_pollinations");
+        expect(setResponderUserId).toHaveBeenCalledTimes(2);
+
+        const streamedUpstreamBody = JSON.parse(
+            String(upstreamFetch.mock.calls.at(-1)?.[1]?.body),
+        );
+        expect(streamedUpstreamBody.stream).toBe(false);
+        expect(streamedUpstreamBody).not.toHaveProperty("stream_options");
     });
 });

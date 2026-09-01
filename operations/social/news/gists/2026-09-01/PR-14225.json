@@ -1,0 +1,34 @@
+{
+  "pr_number": 14225,
+  "title": "feat(sdk): use PKCE in PolliProvider",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14225",
+  "merged_at": "2026-09-01T19:37:42Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces fragment token callbacks with OAuth authorization-code + PKCE.\n- Keeps the existing `PolliProvider` API and stored token key unchanged.\n- Uses a stable callback URL, then restores the app's original query/hash route.\n- Covers state validation, code exchange, route restoration, and React StrictMode.\n\nTests: `npm test`, `npm run typecheck`, `npm run build`, Biome.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli takes the safe route",
+    "blurb": "PolliProvider has traded fragment-token acrobatics for the OAuth authorization-code flow with PKCE. Your app still finds its way back to the exact query and hash route it left behind.",
+    "summary": "Updated the SDK's React PolliProvider from fragment token callbacks to OAuth authorization-code + PKCE, with state validation, code exchange, a stable callback URL, and restoration of the app's original query/hash route.",
+    "impact": "React apps keep the same PolliProvider API and stored token key while gaining a safer OAuth sign-in flow that reliably returns users to their original route, including under React StrictMode.",
+    "keywords": [
+      "sdk",
+      "react",
+      "oauth",
+      "pkce",
+      "PolliProvider",
+      "authentication"
+    ],
+    "visual_concept": "Depict Polli as a tiny explorer using a secure garden path through an OAuth gateway: a code-shaped key and a small state-validation sign represent PKCE and callback safety, while route signposts preserve a query and hash path back to a cozy React app. A CRT monitor robot can eagerly hold a map showing the restored route, with code-plants and flowers making the security journey feel friendly rather than ominous.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny explorer scarf, following a secure lime green (#ecf874) garden path through a friendly OAuth gate while carrying a code-shaped PKCE key; a cute CRT monitor robot holds a route map with small pixel text \"CODE → HOME\" and flowers grow from code-plants around the path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14225.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny explorer scarf, following a secure lime green (#ecf874) garden path through a friendly OAuth gate while carrying a code-shaped PKCE key; a cute CRT monitor robot holds a route map with small pixel text \"CODE → HOME\" and flowers grow from code-plants around the path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) outlines and a warm cream background."
+  },
+  "generated_at": "2026-09-01T19:38:50.127384+00:00"
+}

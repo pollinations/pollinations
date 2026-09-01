@@ -1,8 +1,8 @@
 # Agents and MCP Architecture
 
 This document describes how Pollinations agents, MCP servers, run tokens, and
-billing fit together today. The final section separates current behavior from
-the open design work around richer agent media tools.
+billing fit together today. It ends with a snapshot of current behavior and
+links to related work.
 
 ## Terms and boundaries
 
@@ -33,87 +33,94 @@ The main implementation boundaries are:
   [MCP registry](./shared/registry/mcp.ts) — expose hosted MCPs and settle their
   usage.
 
-## User to agent to model
+## Calling a prompt agent
 
-The caller always enters through Gen with their own API key. Gen resolves the
-agent listing and replaces that key with a run token before crossing either
-agent boundary.
+The caller always enters through Gen with their own API key. For a prompt
+agent, Gen replaces that key with a run token before calling the Pollinations
+runtime in Enter. Enter uses the same run token for the agent's base-model
+requests.
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant User as User or app
+    participant Caller as User or app
     participant Gen as gen.pollinations.ai
-    participant DB as Enter D1
-    participant Hosted as Enter prompt-agent runtime
-    participant External as Owner-hosted endpoint agent
+    participant Runtime as Enter prompt-agent runtime
     participant Model as Model provider
 
-    User->>Gen: Chat request (owner/agent, pk_ or sk_)
-    Gen->>DB: Resolve listing and parent key ID
-    Gen->>Gen: Mint ag_ token (parent key + request ID, max 30 min)
-    alt Prompt agent
-        Gen->>Hosted: OpenAI request + ag_ bearer
-        Hosted->>DB: Load prompt, base model, and MCP selection
-        Hosted->>Gen: Base-model request + same ag_ bearer
-        Gen->>Model: Provider request
-        Model-->>Gen: Model response
-        Gen-->>Hosted: Billed model response
-        Hosted-->>Gen: Final agent response
-    else Endpoint agent
-        Gen->>External: OpenAI request + ag_ bearer
-        opt Agent uses Pollinations
-            External->>Gen: Generation or MCP request + ag_ bearer
-            Gen->>Model: Provider request
-            Model-->>Gen: Result
-            Gen-->>External: Billed result
-        end
-        External-->>Gen: Final agent response
-    end
-    Gen-->>User: OpenAI-compatible response
+    Caller->>Gen: Chat request (owner/agent + pk_ or sk_)
+    Gen->>Gen: Resolve prompt agent and mint ag_ token
+    Gen->>Runtime: Agent request + ag_ bearer
+    Runtime->>Runtime: Load prompt, base model, and MCP selection
+    Runtime->>Gen: Base-model request + same ag_ bearer
+    Gen->>Model: Provider request
+    Model-->>Gen: Model response
+    Gen-->>Runtime: Billed model response
+    Runtime-->>Gen: Final agent response
+    Gen-->>Caller: OpenAI-compatible response
 ```
 
 A prompt-agent token includes its managed agent ID. Enter rejects it if the
-requested runtime configuration does not match that ID. An endpoint-agent
-token has no managed agent ID because the owner selects the runtime on their
-own server.
+requested runtime configuration does not match that ID.
+
+## Calling an endpoint agent
+
+For an endpoint agent, Gen sends the run token to the owner's server. The
+owner operates the agent runtime and may use that token to call Pollinations
+models or hosted MCPs. The parent API key never leaves Pollinations.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as User or app
+    participant Gen as gen.pollinations.ai
+    participant Runtime as Owner-hosted agent
+
+    Caller->>Gen: Chat request (owner/agent + pk_ or sk_)
+    Gen->>Gen: Resolve endpoint agent and mint ag_ token
+    Gen->>Runtime: Agent request + ag_ bearer
+    opt Agent uses Pollinations
+        Runtime->>Gen: Model or hosted MCP request + ag_ bearer
+        Gen-->>Runtime: Billed result
+    end
+    Runtime-->>Gen: Final agent response
+    Gen-->>Caller: OpenAI-compatible response
+```
+
+An endpoint-agent token has no managed agent ID because the owner selects the
+runtime on their own server.
 
 ## Agent to MCP
 
 Prompt agents connect to the MCP servers selected in their stored
-configuration. Endpoint agents own their MCP client configuration; they can
-present the run token Pollinations sent them to the same hosted MCP endpoints.
-That endpoint-agent path is implemented by the shared authentication layer,
+configuration. Endpoint agents own their MCP client configuration. After that
+setup difference, both use the same hosted MCP request path shown below.
+
+The endpoint-agent path is implemented by the shared authentication layer,
 while end-to-end production verification is tracked in
 [#14171](https://github.com/pollinations/pollinations/issues/14171).
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Agent as Prompt or endpoint agent
+    participant Runtime as Agent runtime
     participant Gen as Gen MCP gateway
-    participant Auth as Run-token auth
     participant MCP as Hosted MCP worker
     participant Tool as Provider or container
-    participant Wallet as D1 wallet
-    participant Events as Tinybird
 
-    Agent->>Gen: Streamable HTTP /mcp/{id} + ag_ bearer
-    Gen->>Auth: Verify signature, expiry, and parent key
-    Auth-->>Gen: User + restricted parent-key context
+    Runtime->>Gen: /mcp/{id} request + ag_ bearer
+    Gen->>Gen: Verify token and load restricted parent-key context
     Gen->>MCP: Forward over service binding
     MCP->>Tool: Execute tool
     Tool-->>MCP: Result
     MCP-->>Gen: MCP result (+ usage receipt when applicable)
-    alt Usage-receipt MCP (FFmpeg or Exa)
-        Gen->>Wallet: Reconcile measured tool cost
-        Gen->>Events: Record mcp.call usage
-    else Downstream-billed MCP (Pollinations)
-        MCP->>Gen: Generation calls using the same bearer
-        Gen->>Wallet: Bill each downstream generation
-    end
-    Gen-->>Agent: MCP result without internal billing headers
+    Gen->>Gen: Settle and record any measured usage
+    Gen-->>Runtime: MCP result without internal billing headers
 ```
+
+FFmpeg and Exa return usage receipts that Gen settles after execution. The
+Pollinations MCP instead makes generation calls with the same run token, so
+those downstream calls are billed normally.
 
 Generated binary media is returned by HTTPS resource link rather than embedded
 in MCP messages. This keeps media out of model context and uses the existing
@@ -140,26 +147,29 @@ key ID and parent request ID.
 
 ## Billing and delegation
 
+The billing path below is the same for both agent types. `Agent runtime` means
+either the Enter prompt-agent runtime or the owner's endpoint-agent runtime.
+
 ```mermaid
 sequenceDiagram
     autonumber
     participant Caller
     participant Gen
-    participant Agent
+    participant Runtime as Agent runtime
     participant Auth
     participant Wallet
     participant Tinybird
 
     Caller->>Gen: Agent request + parent API key
-    Gen->>Agent: Free wrapper call + ag_ token
+    Gen->>Runtime: Free wrapper call + ag_ token
     loop Each delegated model or MCP operation
-        Agent->>Gen: Downstream request + ag_ token
+        Runtime->>Gen: Downstream request + ag_ token
         Gen->>Auth: Resolve active parent key and restrictions
         Gen->>Wallet: Debit the applicable parent-key wallet bucket
         Gen->>Tinybird: Record usage with parentRequestId
-        Gen-->>Agent: Downstream result
+        Gen-->>Runtime: Downstream result
     end
-    Agent-->>Gen: Final answer
+    Runtime-->>Gen: Final answer
     Gen->>Tinybird: Record outer agent request
     Gen-->>Caller: Final answer
 ```
@@ -187,27 +197,12 @@ runtime. Its minimal allowlist and nested-call behavior are tracked in
 | Long work        | Durable generation requests support up to 300 seconds.                                                | Work expected to exceed 300 seconds needs a separately approved asynchronous contract; MCP tasks are proposed but not implemented.                                                           |
 | Tool hosting     | Existing FFmpeg and Exa MCPs run on Cloudflare infrastructure behind registry-owned service bindings. | Evaluate listing hosted external MCPs, and compare Cloudflare with the E2B spike before choosing a new toolbox runtime: [#14168](https://github.com/pollinations/pollinations/issues/14168). |
 
-## Direction for the media-toolbox proposal
+## Related work
 
-[#13657](https://github.com/pollinations/pollinations/issues/13657) proposes a
-larger media-toolbox MCP. The architecture above answers its shared concerns
-without committing to infrastructure that has not been tested:
-
-- Keep Gen as the canonical public MCP catalog, authentication, and billing
-  boundary. Do not add `tools.pollinations.ai` until a concrete routing need
-  requires another public hostname.
-- Keep media URL-in/resource-link-out. Do not put binary files into MCP tool
-  arguments or results.
-- Add operations to a small coherent tool surface; do not create one service
-  per operation.
-- Reuse the existing wallet and Tinybird usage path. A tool runtime reports
-  measured usage; it does not implement account billing.
-- Do not choose Cloudflare Containers, E2B, Daytona, or an external provider in
-  this document. The E2B spike and concrete operation requirements should make
-  that decision.
-- Do not add a generic code-execution surface merely to provide a fixed set of
-  media binaries.
-
-Still open are the first toolbox operation set, the runtime host, whether a
-separate crawl tool adds value beyond Exa, and the public asynchronous contract
-for work that can exceed 300 seconds.
+- [Agent media-tool architecture proposal](https://github.com/pollinations/pollinations/issues/13657)
+- [Prompt-agent MCP tool and model restrictions](https://github.com/pollinations/pollinations/issues/13783)
+- [Native model delegation for prompt agents](https://github.com/pollinations/pollinations/issues/13788)
+- [Crawl MCP and E2B hosting spike](https://github.com/pollinations/pollinations/issues/14168)
+- [Endpoint-agent MCP verification and Floret integration](https://github.com/pollinations/pollinations/issues/14171)
+- [Responses API support for managed prompt agents](https://github.com/pollinations/pollinations/issues/14243)
+- [Caller-supplied hosted and MCP tools in Responses](https://github.com/pollinations/pollinations/issues/14305)

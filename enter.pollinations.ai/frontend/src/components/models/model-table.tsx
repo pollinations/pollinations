@@ -20,7 +20,6 @@ import {
     isPaidOnly,
 } from "./model-info.ts";
 import {
-    AgentDetails,
     getModelTitleTooltipContent,
     ModelId,
     ModelRow,
@@ -287,9 +286,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            {model.agent ? (
-                <AgentDetails model={model} className="px-4 pb-4 pt-0" />
-            ) : (
+            {!model.agent && (
                 <div className="flex gap-2.5 px-4 pb-4 pt-0">
                     {hasLeadingIcon && (
                         <>

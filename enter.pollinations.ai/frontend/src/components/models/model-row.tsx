@@ -426,10 +426,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                         )}
                                     </div>
                                 )}
-                                <ModelPricingControls
-                                    model={model}
-                                    pricing={pricing}
-                                />
+                                {!model.agent && (
+                                    <ModelPricingControls
+                                        model={model}
+                                        pricing={pricing}
+                                    />
+                                )}
                             </div>
                         )}
                         {model.perUserRpm != null && (
@@ -443,21 +445,27 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
-                        <BalanceAccessChip
-                            access={balanceAccess}
-                            className="whitespace-nowrap"
-                        />
+                        {!model.agent && (
+                            <BalanceAccessChip
+                                access={balanceAccess}
+                                className="whitespace-nowrap"
+                            />
+                        )}
                     </div>
                 </div>
             </div>
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
-                <ModelPricingLedger
-                    pricing={pricing}
-                    hasTools={pollinationsTools}
-                    requestEstimate={<PerPollenEstimate model={model} ledger />}
-                />
-            </div>
+            {!model.agent && (
+                <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
+                    <ModelPricingLedger
+                        pricing={pricing}
+                        hasTools={pollinationsTools}
+                        requestEstimate={
+                            <PerPollenEstimate model={model} ledger />
+                        }
+                    />
+                </div>
+            )}
         </Surface>
     );
 };

@@ -38,6 +38,7 @@ function formatCount(num: number): string {
 // stats pipe's priced-request floor, so it has no measured cost and still
 // reads "∞".
 export function calculatePerPollen(model: ModelPrice): string {
+    if (model.agent) return "—";
     if (model.realAvgCost !== undefined && model.realAvgCost > 0) {
         return formatCount(1 / model.realAvgCost);
     }

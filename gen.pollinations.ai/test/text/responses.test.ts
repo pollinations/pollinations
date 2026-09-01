@@ -5,6 +5,7 @@ import {
 import { describe, expect, it, vi } from "vitest";
 import {
     callDirectResponses,
+    type DirectResponsesTarget,
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
 import { validateDirectResponsesRequest } from "@/text/responses/request.ts";
@@ -19,6 +20,18 @@ function request(
         store: false,
         safe: "false",
         ...overrides,
+    };
+}
+
+function authorizedTarget(
+    directRequest: CreateResponseRequest,
+): DirectResponsesTarget {
+    const target = resolveDirectResponsesTarget("qwen-large", directRequest);
+    if (!target) throw new Error("expected direct target");
+    return {
+        ...target,
+        authConfigured: true,
+        headers: { Authorization: "Bearer openrouter-test-key" },
     };
 }
 
@@ -139,17 +152,9 @@ describe("direct Responses transport", () => {
                 },
             ],
         });
-        const target = resolveDirectResponsesTarget(
-            "qwen-large",
-            directRequest,
-        );
-        if (!target) throw new Error("expected direct target");
-        target.authConfigured = true;
-        target.headers = { Authorization: "Bearer openrouter-test-key" };
-
         const result = await callDirectResponses(
             directRequest,
-            target,
+            authorizedTarget(directRequest),
             fetcher,
         );
         await expect(result.response.json()).resolves.toEqual(body);
@@ -161,16 +166,9 @@ describe("direct Responses transport", () => {
             'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
             'event: response.completed\ndata: {"type":"response.completed","response":{"object":"response","model":"qwen/qwen3.7-plus","status":"completed","usage":{"input_tokens":2,"output_tokens":1,"total_tokens":3}}}\n\n';
         const directRequest = request({ stream: true });
-        const target = resolveDirectResponsesTarget(
-            "qwen-large",
-            directRequest,
-        );
-        if (!target) throw new Error("expected direct target");
-        target.authConfigured = true;
-        target.headers = { Authorization: "Bearer openrouter-test-key" };
         const result = await callDirectResponses(
             directRequest,
-            target,
+            authorizedTarget(directRequest),
             async () =>
                 new Response(upstream, {
                     headers: { "Content-Type": "text/event-stream" },

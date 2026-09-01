@@ -167,9 +167,8 @@ function createCommunityEntry(
     };
 }
 
-// App that returns a wrong content-type for the given event type, exercising
-// the not-billed content-type guards in trackResponse.
-function createWrongContentTypeApp(
+// Minimal tracked app for exercising response parsing and billing directly.
+function createTrackedResponseApp(
     consumePollen: (amount: number) => Promise<void>,
     eventType: "generate.image" | "generate.text" | "generate.audio",
     response: Response,
@@ -274,58 +273,6 @@ function createSseStreamApp(
         });
     });
 
-    return app;
-}
-
-function createResponsesSseStreamApp(
-    consumePollen: (amount: number) => Promise<void>,
-) {
-    const app = new Hono<Env>();
-    app.use("*", requestId());
-    app.use("*", logger);
-    app.use("*", async (c, next) => {
-        c.set("auth", {
-            user: trackingUser,
-            requireUser: () => trackingUser,
-            requireModelAccess: () => {},
-        });
-        c.set("balance", {
-            getBalance: async () => ({ tierBalance: 1, packBalance: 0 }),
-        });
-        c.set("frontendKeyRateLimit", { consumePollen });
-        c.set("model", {
-            requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
-        });
-        await next();
-    });
-    app.post("/v1/responses", track("generate.text"), () => {
-        const response = {
-            object: "response",
-            model: "upstream-model",
-            status: "completed",
-            usage: {
-                input_tokens: 1000,
-                input_tokens_details: { cached_tokens: 200 },
-                output_tokens: 500,
-                output_tokens_details: { reasoning_tokens: 100 },
-                total_tokens: 1500,
-            },
-        };
-        return new Response(
-            `event: response.completed\ndata: ${JSON.stringify({
-                type: "response.completed",
-                response,
-            })}\n\n`,
-            {
-                headers: {
-                    "content-type": "text/event-stream",
-                    "x-model-used": "openai",
-                },
-            },
-        );
-    });
     return app;
 }
 
@@ -818,7 +765,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
             upstream,
@@ -890,7 +837,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
             upstream,
@@ -1724,7 +1671,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.image",
             upstream,
@@ -1784,7 +1731,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
@@ -1843,7 +1790,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
@@ -1901,7 +1848,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        await createWrongContentTypeApp(
+        await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
@@ -1956,7 +1903,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.image",
             upstream,
@@ -2011,7 +1958,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
             upstream,
@@ -2115,9 +2062,37 @@ describe("tracking observability", () => {
             },
         );
         const consumePollen = vi.fn(async (_amount: number) => {});
+        const upstreamResponse = {
+            object: "response",
+            model: "upstream-model",
+            status: "completed",
+            usage: {
+                input_tokens: 1000,
+                input_tokens_details: { cached_tokens: 200 },
+                output_tokens: 500,
+                output_tokens_details: { reasoning_tokens: 100 },
+                total_tokens: 1500,
+            },
+        };
+        const upstream = new Response(
+            `event: response.completed\ndata: ${JSON.stringify({
+                type: "response.completed",
+                response: upstreamResponse,
+            })}\n\n`,
+            {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": "openai",
+                },
+            },
+        );
         const ctx = createExecutionContext();
-        const response = await createResponsesSseStreamApp(consumePollen).fetch(
-            new Request("https://gen.pollinations.ai/v1/responses", {
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({

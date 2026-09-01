@@ -3,10 +3,19 @@ import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
 import { findModelByName } from "../availableModels.js";
 import type { ServiceError, TransformOptions } from "../types.js";
 import { resolveModelConfig } from "../utils/modelResolver.js";
+import { isPlainObject } from "../utils/objectCleaners.js";
 import { buildDirectResponsesRequestBody } from "./request.js";
-import type { DirectResponsesTarget, JsonObject } from "./types.js";
 
 const REQUEST_TIMEOUT_MS = 290_000;
+type JsonObject = Record<string, unknown>;
+
+export type DirectResponsesTarget = {
+    authConfigured: boolean;
+    endpoint: string;
+    headers: Record<string, string>;
+    model: string;
+    defaults: JsonObject;
+};
 
 function reasoningEffort(request: CreateResponseRequest): string | undefined {
     const effort = request.reasoning?.effort;
@@ -46,25 +55,15 @@ export function resolveDirectResponsesTarget(
             : config.responsesAuthHeader === "api-key"
               ? { "api-key": authKey }
               : { Authorization: `Bearer ${authKey}` };
-    const configuredHeaders =
-        config.responsesHeaders &&
-        typeof config.responsesHeaders === "object" &&
-        !Array.isArray(config.responsesHeaders)
-            ? (config.responsesHeaders as Record<string, string>)
-            : {};
-
-    const chatDefaults =
-        config.defaultOptions &&
-        typeof config.defaultOptions === "object" &&
-        !Array.isArray(config.defaultOptions)
-            ? (config.defaultOptions as JsonObject)
-            : {};
-    const responsesDefaults =
-        config.responsesDefaults &&
-        typeof config.responsesDefaults === "object" &&
-        !Array.isArray(config.responsesDefaults)
-            ? (config.responsesDefaults as JsonObject)
-            : {};
+    const configuredHeaders = isPlainObject(config.responsesHeaders)
+        ? (config.responsesHeaders as Record<string, string>)
+        : {};
+    const chatDefaults = isPlainObject(config.defaultOptions)
+        ? config.defaultOptions
+        : {};
+    const responsesDefaults = isPlainObject(config.responsesDefaults)
+        ? config.responsesDefaults
+        : {};
     const defaults: JsonObject = {
         ...(chatDefaults.provider === undefined
             ? {}

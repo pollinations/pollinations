@@ -19,14 +19,17 @@ import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
 import type { ServiceError } from "../types.js";
-import { callDirectResponses, resolveDirectResponsesTarget } from "./client.js";
+import {
+    callDirectResponses,
+    type DirectResponsesTarget,
+    resolveDirectResponsesTarget,
+} from "./client.js";
 import {
     responsesInvalidRequest,
     validateDirectResponsesRequest,
 } from "./request.js";
 import { applySafetyToResponseRequest } from "./safety.js";
 import { getResponsesUsage } from "./tracking.js";
-import type { DirectResponsesTarget } from "./types.js";
 
 type ResponsesContext = Context<Env>;
 

@@ -1,6 +1,7 @@
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
 import type { ServiceError } from "../types.js";
-import type { DirectResponsesTarget, JsonObject } from "./types.js";
+import { cleanNullAndUndefined } from "../utils/objectCleaners.js";
+import type { DirectResponsesTarget } from "./client.js";
 
 export function responsesInvalidRequest(
     message: string,
@@ -54,8 +55,8 @@ export function validateDirectResponsesRequest(
 export function buildDirectResponsesRequestBody(
     request: CreateResponseRequest,
     target: DirectResponsesTarget,
-): JsonObject {
-    const body: JsonObject = {
+): Record<string, unknown> {
+    const body: Record<string, unknown> = {
         ...target.defaults,
         ...request,
         model: target.model,
@@ -65,10 +66,7 @@ export function buildDirectResponsesRequestBody(
 
     // SDKs often serialize inert state fields. Do not forward them because
     // this endpoint has no Pollinations or provider-side response state.
-    if (body.previous_response_id == null) delete body.previous_response_id;
-    if (body.conversation == null) delete body.conversation;
-    if (body.background === false || body.background == null)
-        delete body.background;
+    if (body.background === false) delete body.background;
     if (Array.isArray(body.include) && body.include.length === 0)
         delete body.include;
     if (
@@ -76,11 +74,6 @@ export function buildDirectResponsesRequestBody(
         body.context_management.length === 0
     )
         delete body.context_management;
-    if (body.prompt == null) delete body.prompt;
     if (!body.stream) delete body.stream_options;
-
-    for (const [key, value] of Object.entries(body)) {
-        if (value === undefined || value === null) delete body[key];
-    }
-    return body;
+    return cleanNullAndUndefined(body) as Record<string, unknown>;
 }

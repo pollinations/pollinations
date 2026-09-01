@@ -721,6 +721,32 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "deepseek/deepseek-v4-flash-vision-exp": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.22),
+            promptCachedTokens: perMillion(0.007),
+            promptImageTokens: perMillion(0.22),
+            completionTextTokens: perMillion(0.66),
+        },
+        title: "DeepSeek V4 Flash Vision Exp",
+        description:
+            "Low-cost multimodal reasoning for coding, agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30,
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemma": {
         aliases: [
             "gemma-4",

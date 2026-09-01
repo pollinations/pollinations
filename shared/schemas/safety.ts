@@ -18,7 +18,7 @@ export const HARMFUL_CONTENT_SAFETY_FEATURES = [
 
 const SAFETY_ALIASES: Record<string, SafetyFeature[]> = {
     true: ["privacy", "secrets"],
-    nsfw: ["sexual", "violence"],
+    nsfw: [...HARMFUL_CONTENT_SAFETY_FEATURES],
 };
 
 const DISABLED_SAFE_TOKENS = new Set(["false", "0"]);

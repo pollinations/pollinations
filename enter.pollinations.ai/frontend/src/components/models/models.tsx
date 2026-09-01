@@ -21,6 +21,7 @@ import {
     TokensIcon,
     TrendUpIcon,
     UsageIcon,
+    WarningIcon,
 } from "@pollinations/ui";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
@@ -560,35 +561,36 @@ export const Models: FC = () => {
                     </div>
                 </div>
                 {includeCommunity && (
-                    <Alert
-                        intent="warning"
-                        title="Community model privacy"
-                        className="mb-4"
+                    <aside
+                        aria-label="Community privacy notice"
+                        className="mb-4 flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
                     >
-                        <p>
-                            Requests go to independent providers and configured
-                            fallbacks, which handle your data under their own
-                            policies.
-                        </p>
-                        <p className="mt-2">
-                            <strong>Avoid sensitive data.</strong> For text
-                            input, you can use our optional{" "}
-                            <InlineLink
-                                href="https://gen.pollinations.ai/docs#tag/Safety"
-                                showIcon={false}
-                            >
-                                privacy filter
-                            </InlineLink>
-                            . See our{" "}
-                            <InlineLink
-                                href="https://pollinations.ai/privacy"
-                                showIcon={false}
-                            >
-                                Privacy Policy
-                            </InlineLink>
-                            .
-                        </p>
-                    </Alert>
+                        <WarningIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intent-warning-text" />
+                        <span className="min-w-0">
+                            <strong className="font-semibold text-theme-text-strong">
+                                Community privacy
+                            </strong>{" "}
+                            — Independent providers may process requests.{" "}
+                            <strong className="font-semibold text-theme-text-strong">
+                                Avoid sensitive data.
+                            </strong>{" "}
+                            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                <InlineLink
+                                    href="https://gen.pollinations.ai/docs#tag/Safety"
+                                    showIcon={false}
+                                >
+                                    Privacy filter
+                                </InlineLink>
+                                <span aria-hidden="true">·</span>
+                                <InlineLink
+                                    href="https://pollinations.ai/privacy"
+                                    showIcon={false}
+                                >
+                                    Privacy Policy
+                                </InlineLink>
+                            </span>
+                        </span>
+                    </aside>
                 )}
                 {catalogError && activeTab !== "mcp" && (
                     <Alert intent="danger" className="mb-4">

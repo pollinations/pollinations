@@ -1130,91 +1130,128 @@ export function Playground() {
             </FieldStack>
         ) : null;
     return (
-        <div className="flex w-full flex-col gap-3 text-theme-text-base">
-            <div className="play-chat-shell flex flex-col">
-                <ModalityTabs
-                    activeCategory={activeCategory}
-                    onSelectCategory={selectCategory}
-                />
+        <div className="flex w-full flex-col text-theme-text-base">
+            <ModalityTabs
+                activeCategory={activeCategory}
+                onSelectCategory={selectCategory}
+            />
 
-                {activeCategory === "text" && <Chat />}
+            {activeCategory === "text" && <Chat />}
 
-                {activeCategory !== "text" && (
-                    <div className="polli-playground-main-grid">
-                        {catalogError && (
-                            <div className="pt-4">
-                                <Alert intent="danger">
-                                    Model catalog failed to load:{" "}
-                                    {catalogError.message}
-                                </Alert>
-                            </div>
-                        )}
-                        <div className="polli-playground-input-panel flex flex-col gap-4 pt-4">
-                            <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                                {activeCategory === "audio" && (
-                                    <AudioTaskPicker
-                                        value={audioTask}
-                                        onChange={selectAudioTask}
-                                    />
-                                )}
-                                <ModelPicker
-                                    models={categoryModels}
-                                    selectedModel={selectedModel}
-                                    isLoading={isLoading || !isHydrated}
-                                    onSelectModel={selectModel}
+            {activeCategory !== "text" && (
+                <div className="grid overflow-clip">
+                    {catalogError && (
+                        <div className="pt-4">
+                            <Alert intent="danger">
+                                Model catalog failed to load:{" "}
+                                {catalogError.message}
+                            </Alert>
+                        </div>
+                    )}
+                    <div className="flex flex-col gap-4 pt-4">
+                        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                            {activeCategory === "audio" && (
+                                <AudioTaskPicker
+                                    value={audioTask}
+                                    onChange={selectAudioTask}
                                 />
-                            </div>
-                            {isAudioTranscription && audioInput}
-                            {showPromptInput && (
-                                <FieldStack label={promptLabel}>
-                                    <Textarea
-                                        value={prompt}
-                                        rows={isAudioTranscription ? 3 : 7}
-                                        onChange={(event) =>
-                                            setPrompt(event.target.value)
-                                        }
-                                        placeholder={promptPlaceholder(
-                                            activeCategory,
-                                            activeCategory === "audio"
-                                                ? audioTask
-                                                : undefined,
-                                        )}
-                                        className={cn(
-                                            "polli-playground-textarea",
-                                            isAudioTranscription
-                                                ? "min-h-24"
-                                                : "min-h-44",
-                                        )}
-                                    />
-                                </FieldStack>
                             )}
-                            {!isAudioTranscription && audioInput}
+                            <ModelPicker
+                                models={categoryModels}
+                                selectedModel={selectedModel}
+                                isLoading={isLoading || !isHydrated}
+                                onSelectModel={selectModel}
+                            />
+                        </div>
+                        {isAudioTranscription && audioInput}
+                        {showPromptInput && (
+                            <FieldStack label={promptLabel}>
+                                <Textarea
+                                    value={prompt}
+                                    rows={isAudioTranscription ? 3 : 7}
+                                    onChange={(event) =>
+                                        setPrompt(event.target.value)
+                                    }
+                                    placeholder={promptPlaceholder(
+                                        activeCategory,
+                                        activeCategory === "audio"
+                                            ? audioTask
+                                            : undefined,
+                                    )}
+                                    className={cn(
+                                        "polli-playground-textarea",
+                                        isAudioTranscription
+                                            ? "min-h-24"
+                                            : "min-h-44",
+                                    )}
+                                />
+                            </FieldStack>
+                        )}
+                        {!isAudioTranscription && audioInput}
 
-                            {isReferenceImageListMode && (
-                                <FieldStack
+                        {isReferenceImageListMode && (
+                            <FieldStack
+                                label={
+                                    <>
+                                        Reference images (up to{" "}
+                                        {pluralizeImages(maxReferenceImages)})
+                                    </>
+                                }
+                            >
+                                <FileUpload
+                                    value={referenceImages}
+                                    onChange={setReferenceImages}
+                                    variant="compact"
+                                    maxFiles={maxReferenceImages}
+                                    maxSizeBytes={5 * 1024 * 1024}
                                     label={
                                         <>
-                                            Reference images (up to{" "}
+                                            Drag up to{" "}
                                             {pluralizeImages(
                                                 maxReferenceImages,
-                                            )}
-                                            )
+                                            )}{" "}
+                                            here or{" "}
+                                            <span className="underline">
+                                                browse
+                                            </span>
                                         </>
                                     }
-                                >
+                                    onReject={(rejected) => {
+                                        const reason = rejected[0]?.reason;
+                                        if (reason === "size") {
+                                            setError(
+                                                "Images must be under 5 MB each.",
+                                            );
+                                        } else if (reason === "count") {
+                                            setError(
+                                                `Use up to ${pluralizeImages(
+                                                    maxReferenceImages,
+                                                )}.`,
+                                            );
+                                        } else if (reason === "type") {
+                                            setError(
+                                                "Only image files are allowed.",
+                                            );
+                                        }
+                                    }}
+                                />
+                            </FieldStack>
+                        )}
+
+                        {isVideoReferenceMode && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                <FieldStack label="First frame">
                                     <FileUpload
-                                        value={referenceImages}
-                                        onChange={setReferenceImages}
+                                        value={firstFrameFiles}
+                                        onChange={(files) =>
+                                            setFrameImage(0, files)
+                                        }
                                         variant="compact"
-                                        maxFiles={maxReferenceImages}
+                                        maxFiles={1}
                                         maxSizeBytes={5 * 1024 * 1024}
                                         label={
                                             <>
-                                                Drag up to{" "}
-                                                {pluralizeImages(
-                                                    maxReferenceImages,
-                                                )}{" "}
-                                                here or{" "}
+                                                Drag first frame here or{" "}
                                                 <span className="underline">
                                                     browse
                                                 </span>
@@ -1228,9 +1265,7 @@ export function Playground() {
                                                 );
                                             } else if (reason === "count") {
                                                 setError(
-                                                    `Use up to ${pluralizeImages(
-                                                        maxReferenceImages,
-                                                    )}.`,
+                                                    "Use one first frame.",
                                                 );
                                             } else if (reason === "type") {
                                                 setError(
@@ -1240,26 +1275,31 @@ export function Playground() {
                                         }}
                                     />
                                 </FieldStack>
-                            )}
 
-                            {isVideoReferenceMode && (
-                                <div className="polli-playground-two-column-grid">
-                                    <FieldStack label="First frame">
+                                {supportsLastFrame && (
+                                    <FieldStack label="Last frame">
                                         <FileUpload
-                                            value={firstFrameFiles}
+                                            value={lastFrameFiles}
                                             onChange={(files) =>
-                                                setFrameImage(0, files)
+                                                setFrameImage(1, files)
                                             }
                                             variant="compact"
                                             maxFiles={1}
                                             maxSizeBytes={5 * 1024 * 1024}
+                                            disabled={
+                                                firstFrameFiles.length === 0
+                                            }
                                             label={
-                                                <>
-                                                    Drag first frame here or{" "}
-                                                    <span className="underline">
-                                                        browse
-                                                    </span>
-                                                </>
+                                                firstFrameFiles.length === 0 ? (
+                                                    "Add first frame before last frame"
+                                                ) : (
+                                                    <>
+                                                        Drag last frame here or{" "}
+                                                        <span className="underline">
+                                                            browse
+                                                        </span>
+                                                    </>
+                                                )
                                             }
                                             onReject={(rejected) => {
                                                 const reason =
@@ -1270,7 +1310,7 @@ export function Playground() {
                                                     );
                                                 } else if (reason === "count") {
                                                     setError(
-                                                        "Use one first frame.",
+                                                        "Use one last frame.",
                                                     );
                                                 } else if (reason === "type") {
                                                     setError(
@@ -1280,336 +1320,274 @@ export function Playground() {
                                             }}
                                         />
                                     </FieldStack>
+                                )}
+                            </div>
+                        )}
 
-                                    {supportsLastFrame && (
-                                        <FieldStack label="Last frame">
-                                            <FileUpload
-                                                value={lastFrameFiles}
-                                                onChange={(files) =>
-                                                    setFrameImage(1, files)
-                                                }
-                                                variant="compact"
-                                                maxFiles={1}
-                                                maxSizeBytes={5 * 1024 * 1024}
-                                                disabled={
-                                                    firstFrameFiles.length === 0
-                                                }
-                                                label={
-                                                    firstFrameFiles.length ===
-                                                    0 ? (
-                                                        "Add first frame before last frame"
-                                                    ) : (
-                                                        <>
-                                                            Drag last frame here
-                                                            or{" "}
-                                                            <span className="underline">
-                                                                browse
-                                                            </span>
-                                                        </>
-                                                    )
-                                                }
-                                                onReject={(rejected) => {
-                                                    const reason =
-                                                        rejected[0]?.reason;
-                                                    if (reason === "size") {
-                                                        setError(
-                                                            "Images must be under 5 MB each.",
-                                                        );
-                                                    } else if (
-                                                        reason === "count"
-                                                    ) {
-                                                        setError(
-                                                            "Use one last frame.",
-                                                        );
-                                                    } else if (
-                                                        reason === "type"
-                                                    ) {
-                                                        setError(
-                                                            "Only image files are allowed.",
-                                                        );
-                                                    }
-                                                }}
-                                            />
-                                        </FieldStack>
-                                    )}
-                                </div>
-                            )}
-
-                            {(currentModel?.category === "image" ||
-                                currentModel?.category === "video") && (
-                                <div
-                                    className={cn(
-                                        "gap-y-4",
-                                        currentModel.category === "video"
-                                            ? "polli-playground-two-column-grid"
-                                            : "flex flex-col",
-                                    )}
+                        {(currentModel?.category === "image" ||
+                            currentModel?.category === "video") && (
+                            <div
+                                className={cn(
+                                    "gap-y-4",
+                                    currentModel.category === "video"
+                                        ? "grid gap-3 sm:grid-cols-2"
+                                        : "flex flex-col",
+                                )}
+                            >
+                                <FieldStack
+                                    label="Format"
+                                    className="min-w-0 max-w-full"
                                 >
-                                    <FieldStack
-                                        label="Format"
-                                        className="min-w-0 max-w-full"
-                                    >
-                                        <ButtonGroup aria-label="Format">
-                                            {currentModel.category === "image"
-                                                ? IMAGE_FORMATS.map(
-                                                      (format) => (
-                                                          <TabButton
-                                                              key={format.id}
-                                                              active={
-                                                                  imageFormat ===
-                                                                  format.id
-                                                              }
-                                                              size="sm"
-                                                              onClick={() =>
-                                                                  selectImageFormat(
-                                                                      format.id,
-                                                                  )
-                                                              }
-                                                              className="gap-1.5"
-                                                          >
-                                                              <span>
-                                                                  {format.label}
-                                                              </span>
-                                                              <span className="text-theme-text-muted text-xs">
-                                                                  {format.ratio}
-                                                              </span>
-                                                          </TabButton>
-                                                      ),
-                                                  )
-                                                : VIDEO_FORMATS.map(
-                                                      (format) => (
-                                                          <TabButton
-                                                              key={format.id}
-                                                              active={
-                                                                  videoFormat ===
-                                                                  format.id
-                                                              }
-                                                              size="sm"
-                                                              onClick={() =>
-                                                                  setVideoFormat(
-                                                                      format.id,
-                                                                  )
-                                                              }
-                                                              className="gap-1.5"
-                                                          >
-                                                              <span>
-                                                                  {format.label}
-                                                              </span>
-                                                              <span className="text-theme-text-muted text-xs">
-                                                                  {format.ratio}
-                                                              </span>
-                                                          </TabButton>
-                                                      ),
-                                                  )}
-                                            {currentModel.category ===
-                                                "image" && (
-                                                <TabButton
-                                                    active={
-                                                        imageFormat === "custom"
-                                                    }
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        selectImageFormat(
-                                                            "custom",
-                                                        )
-                                                    }
-                                                >
-                                                    Custom
-                                                </TabButton>
-                                            )}
-                                        </ButtonGroup>
-                                    </FieldStack>
-
-                                    {currentModel.category === "image" &&
-                                        imageFormat === "custom" && (
-                                            <div className="grid gap-3 sm:grid-cols-2">
-                                                <FieldStack label="Width">
-                                                    <Input
-                                                        type="number"
-                                                        min={256}
-                                                        max={2048}
-                                                        step={64}
-                                                        value={width}
-                                                        onChange={(event) =>
-                                                            setWidth(
-                                                                Number(
-                                                                    event.target
-                                                                        .value,
-                                                                ),
-                                                            )
-                                                        }
-                                                        hideNumberSteppers
-                                                    />
-                                                </FieldStack>
-                                                <FieldStack label="Height">
-                                                    <Input
-                                                        type="number"
-                                                        min={256}
-                                                        max={2048}
-                                                        step={64}
-                                                        value={height}
-                                                        onChange={(event) =>
-                                                            setHeight(
-                                                                Number(
-                                                                    event.target
-                                                                        .value,
-                                                                ),
-                                                            )
-                                                        }
-                                                        hideNumberSteppers
-                                                    />
-                                                </FieldStack>
-                                            </div>
+                                    <ButtonGroup aria-label="Format">
+                                        {currentModel.category === "image"
+                                            ? IMAGE_FORMATS.map((format) => (
+                                                  <TabButton
+                                                      key={format.id}
+                                                      active={
+                                                          imageFormat ===
+                                                          format.id
+                                                      }
+                                                      size="sm"
+                                                      onClick={() =>
+                                                          selectImageFormat(
+                                                              format.id,
+                                                          )
+                                                      }
+                                                      className="gap-1.5"
+                                                  >
+                                                      <span>
+                                                          {format.label}
+                                                      </span>
+                                                      <span className="text-theme-text-muted text-xs">
+                                                          {format.ratio}
+                                                      </span>
+                                                  </TabButton>
+                                              ))
+                                            : VIDEO_FORMATS.map((format) => (
+                                                  <TabButton
+                                                      key={format.id}
+                                                      active={
+                                                          videoFormat ===
+                                                          format.id
+                                                      }
+                                                      size="sm"
+                                                      onClick={() =>
+                                                          setVideoFormat(
+                                                              format.id,
+                                                          )
+                                                      }
+                                                      className="gap-1.5"
+                                                  >
+                                                      <span>
+                                                          {format.label}
+                                                      </span>
+                                                      <span className="text-theme-text-muted text-xs">
+                                                          {format.ratio}
+                                                      </span>
+                                                  </TabButton>
+                                              ))}
+                                        {currentModel.category === "image" && (
+                                            <TabButton
+                                                active={
+                                                    imageFormat === "custom"
+                                                }
+                                                size="sm"
+                                                onClick={() =>
+                                                    selectImageFormat("custom")
+                                                }
+                                            >
+                                                Custom
+                                            </TabButton>
                                         )}
+                                    </ButtonGroup>
+                                </FieldStack>
 
-                                    {currentModel.resolutions.length > 1 && (
-                                        <FieldStack
-                                            label="Resolution"
-                                            className="min-w-0 max-w-full"
-                                        >
-                                            <ButtonGroup aria-label="Resolution">
-                                                {currentModel.resolutions.map(
-                                                    (resolution) => (
-                                                        <TabButton
-                                                            key={resolution}
-                                                            active={
-                                                                selectedResolution ===
-                                                                resolution
-                                                            }
-                                                            size="sm"
-                                                            onClick={() =>
-                                                                setSelectedResolution(
-                                                                    resolution,
-                                                                )
-                                                            }
-                                                        >
-                                                            {resolution.toUpperCase()}
-                                                        </TabButton>
-                                                    ),
-                                                )}
-                                            </ButtonGroup>
-                                        </FieldStack>
-                                    )}
-
-                                    {currentModel.category === "video" && (
-                                        <FieldStack
-                                            label="Duration"
-                                            className="w-full max-w-80"
-                                            action={
-                                                <Text
-                                                    as="span"
-                                                    size="sm"
-                                                    tone="strong"
-                                                    weight="semibold"
-                                                    className="tabular-nums"
-                                                >
-                                                    {duration}s
-                                                </Text>
-                                            }
-                                        >
-                                            {fixedDuration ? (
-                                                <Text size="xs" tone="muted">
-                                                    Fixed for this model
-                                                </Text>
-                                            ) : (
-                                                <Slider
-                                                    aria-label="Video duration"
-                                                    aria-valuetext={`${duration} seconds`}
-                                                    style={
-                                                        {
-                                                            "--polli-slider-fill":
-                                                                "var(--polli-color-text-soft)",
-                                                            "--polli-slider-track":
-                                                                "var(--polli-color-bg-active)",
-                                                        } as CSSProperties
-                                                    }
-                                                    min={durationSliderMin}
-                                                    max={durationSliderMax}
-                                                    step={durationSliderStep}
-                                                    value={durationSliderValue}
+                                {currentModel.category === "image" &&
+                                    imageFormat === "custom" && (
+                                        <div className="grid gap-3 sm:grid-cols-2">
+                                            <FieldStack label="Width">
+                                                <Input
+                                                    type="number"
+                                                    min={256}
+                                                    max={2048}
+                                                    step={64}
+                                                    value={width}
                                                     onChange={(event) =>
-                                                        selectDuration(
+                                                        setWidth(
                                                             Number(
                                                                 event.target
                                                                     .value,
                                                             ),
                                                         )
                                                     }
+                                                    hideNumberSteppers
                                                 />
-                                            )}
-                                        </FieldStack>
+                                            </FieldStack>
+                                            <FieldStack label="Height">
+                                                <Input
+                                                    type="number"
+                                                    min={256}
+                                                    max={2048}
+                                                    step={64}
+                                                    value={height}
+                                                    onChange={(event) =>
+                                                        setHeight(
+                                                            Number(
+                                                                event.target
+                                                                    .value,
+                                                            ),
+                                                        )
+                                                    }
+                                                    hideNumberSteppers
+                                                />
+                                            </FieldStack>
+                                        </div>
                                     )}
-                                </div>
-                            )}
 
-                            {currentModel && currentModel.voices.length > 0 && (
-                                <FieldStack label="Voice">
-                                    <ButtonGroup aria-label="Voice">
-                                        {currentModel.voices.map((voice) => (
-                                            <TabButton
-                                                key={voice}
-                                                active={selectedVoice === voice}
+                                {currentModel.resolutions.length > 1 && (
+                                    <FieldStack
+                                        label="Resolution"
+                                        className="min-w-0 max-w-full"
+                                    >
+                                        <ButtonGroup aria-label="Resolution">
+                                            {currentModel.resolutions.map(
+                                                (resolution) => (
+                                                    <TabButton
+                                                        key={resolution}
+                                                        active={
+                                                            selectedResolution ===
+                                                            resolution
+                                                        }
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            setSelectedResolution(
+                                                                resolution,
+                                                            )
+                                                        }
+                                                    >
+                                                        {resolution.toUpperCase()}
+                                                    </TabButton>
+                                                ),
+                                            )}
+                                        </ButtonGroup>
+                                    </FieldStack>
+                                )}
+
+                                {currentModel.category === "video" && (
+                                    <FieldStack
+                                        label="Duration"
+                                        className="w-full max-w-80"
+                                        action={
+                                            <Text
+                                                as="span"
                                                 size="sm"
-                                                onClick={() =>
-                                                    setSelectedVoice(voice)
-                                                }
+                                                tone="strong"
+                                                weight="semibold"
+                                                className="tabular-nums"
                                             >
-                                                {voice}
-                                            </TabButton>
-                                        ))}
-                                    </ButtonGroup>
-                                </FieldStack>
-                            )}
+                                                {duration}s
+                                            </Text>
+                                        }
+                                    >
+                                        {fixedDuration ? (
+                                            <Text size="xs" tone="muted">
+                                                Fixed for this model
+                                            </Text>
+                                        ) : (
+                                            <Slider
+                                                aria-label="Video duration"
+                                                aria-valuetext={`${duration} seconds`}
+                                                style={
+                                                    {
+                                                        "--polli-slider-fill":
+                                                            "var(--polli-color-text-soft)",
+                                                        "--polli-slider-track":
+                                                            "var(--polli-color-bg-active)",
+                                                    } as CSSProperties
+                                                }
+                                                min={durationSliderMin}
+                                                max={durationSliderMax}
+                                                step={durationSliderStep}
+                                                value={durationSliderValue}
+                                                onChange={(event) =>
+                                                    selectDuration(
+                                                        Number(
+                                                            event.target.value,
+                                                        ),
+                                                    )
+                                                }
+                                            />
+                                        )}
+                                    </FieldStack>
+                                )}
+                            </div>
+                        )}
 
-                            {error && <Alert intent="danger">{error}</Alert>}
+                        {currentModel && currentModel.voices.length > 0 && (
+                            <FieldStack label="Voice">
+                                <ButtonGroup aria-label="Voice">
+                                    {currentModel.voices.map((voice) => (
+                                        <TabButton
+                                            key={voice}
+                                            active={selectedVoice === voice}
+                                            size="sm"
+                                            onClick={() =>
+                                                setSelectedVoice(voice)
+                                            }
+                                        >
+                                            {voice}
+                                        </TabButton>
+                                    ))}
+                                </ButtonGroup>
+                            </FieldStack>
+                        )}
 
-                            {/* Not connected is not a broken state, so the button
+                        {error && <Alert intent="danger">{error}</Alert>}
+
+                        {/* Not connected is not a broken state, so the button
                             does not sit there disabled under a 🚫 cursor with
                             no explanation — it becomes the connect action. The
                             tooltip covers the cases that genuinely are blocked
                             (nothing typed, model not on this key). */}
-                            {blockedReason ? (
-                                <Tooltip
-                                    triggerAs="span"
-                                    align="center"
-                                    content={blockedReason}
-                                    className="self-end"
-                                >
-                                    <Button size="lg" disabled>
-                                        <GenerateIcon className="mr-2 h-4 w-4" />
-                                        {generateLabel}
-                                    </Button>
-                                </Tooltip>
-                            ) : (
-                                <Button
-                                    size="lg"
-                                    disabled={isGenerating}
-                                    // Wrapped: login() takes an optional request
-                                    // object, so passing the ref directly would
-                                    // hand it the click event.
-                                    onClick={
-                                        needsSignIn ? () => login() : generate
-                                    }
-                                    className="self-end"
-                                >
-                                    {needsSignIn ? (
-                                        <LockIcon className="mr-2 h-4 w-4" />
-                                    ) : (
-                                        <GenerateIcon className="mr-2 h-4 w-4" />
-                                    )}
-                                    {isGenerating
-                                        ? "Generating…"
-                                        : needsSignIn
-                                          ? connectLabel
-                                          : generateLabel}
+                        {blockedReason ? (
+                            <Tooltip
+                                triggerAs="span"
+                                align="center"
+                                content={blockedReason}
+                                className="self-end"
+                            >
+                                <Button size="lg" disabled>
+                                    <GenerateIcon className="mr-2 h-4 w-4" />
+                                    {generateLabel}
                                 </Button>
-                            )}
-                        </div>
-
-                        {result && <ResultPanel result={result} />}
+                            </Tooltip>
+                        ) : (
+                            <Button
+                                size="lg"
+                                disabled={isGenerating}
+                                // Wrapped: login() takes an optional request
+                                // object, so passing the ref directly would
+                                // hand it the click event.
+                                onClick={needsSignIn ? () => login() : generate}
+                                className="self-end"
+                            >
+                                {needsSignIn ? (
+                                    <LockIcon className="mr-2 h-4 w-4" />
+                                ) : (
+                                    <GenerateIcon className="mr-2 h-4 w-4" />
+                                )}
+                                {isGenerating
+                                    ? "Generating…"
+                                    : needsSignIn
+                                      ? connectLabel
+                                      : generateLabel}
+                            </Button>
+                        )}
                     </div>
-                )}
-            </div>
+
+                    {result && <ResultPanel result={result} />}
+                </div>
+            )}
         </div>
     );
 }

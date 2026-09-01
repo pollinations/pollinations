@@ -432,17 +432,13 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 />
                             </div>
                         )}
-                        {model.perUserRpm != null && (
-                            <div className="flex min-w-0 items-center">
-                                <PerUserRateLimit value={model.perUserRpm} />
-                            </div>
-                        )}
                     </div>
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
+                        <PerUserRateLimit value={model.perUserRpm} />
                         <BalanceAccessChip
                             access={balanceAccess}
                             className="whitespace-nowrap"

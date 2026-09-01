@@ -23,7 +23,7 @@ function AccountAction() {
                 dashboardHref={`${ENTER_URL}/keys`}
                 triggerVariant="action"
                 labels={{
-                    authorize: "Log in or register",
+                    authorize: "Connect your account",
                     topUpAccount: "Manage access",
                     logout: "Disconnect",
                 }}

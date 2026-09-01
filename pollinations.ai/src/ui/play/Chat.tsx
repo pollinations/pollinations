@@ -1197,6 +1197,43 @@ export function Chat() {
         composerRef.current?.focus();
     }
 
+    if (!selectedAgent) {
+        return (
+            <section className="min-w-0" aria-label="Agent chat">
+                <div className="pt-4 pb-3">
+                    <AgentPicker
+                        agents={agents}
+                        selectedAgentId={null}
+                        isLoading={catalog.isLoading}
+                        disabled
+                        onSelectAgent={selectAgent}
+                    />
+                </div>
+                <div
+                    className="flex min-h-32 flex-col items-center justify-center gap-3 py-6 text-center"
+                    aria-live="polite"
+                >
+                    <Text size="sm" tone="muted">
+                        {catalog.isLoading
+                            ? "Loading agents…"
+                            : catalog.error
+                              ? "Agents could not be loaded right now."
+                              : "No agents are available right now."}
+                    </Text>
+                    {catalog.error && (
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => void catalog.refresh()}
+                        >
+                            Retry catalog
+                        </Button>
+                    )}
+                </div>
+            </section>
+        );
+    }
+
     return (
         <section className="min-w-0" aria-label={`${assistantName} chat`}>
             <div className="play-chat-window flex min-h-0 flex-col">

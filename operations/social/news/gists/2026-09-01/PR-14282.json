@@ -1,0 +1,32 @@
+{
+  "pr_number": 14282,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14282",
+  "merged_at": "2026-09-01T13:00:10Z",
+  "labels": [],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Docs caught up",
+    "blurb": "The API reference has been regenerated from the production OpenAPI spec. The paper trail remains alive, somehow.",
+    "summary": "Regenerated APIDOCS.md from the production OpenAPI specification so the published API reference matches the deployed service.",
+    "impact": "Developers reading APIDOCS.md get documentation aligned with the current production API.",
+    "keywords": [
+      "documentation",
+      "api",
+      "openapi",
+      "reference"
+    ],
+    "visual_concept": "A cozy documentation garden: Polli, wearing tiny librarian glasses, tends a code-plant whose leaves are API reference pages while a retro terminal confirms the production spec is in sync.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, carefully filing glowing API reference pages beside a retro terminal and a code-plant in a prominent lime green (#ecf874) pot; warm cream, mint, lavender, and peach garden-shed atmosphere with subtle pixel-font text: 'API DOCS SYNC'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14282.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, carefully filing glowing API reference pages beside a retro terminal and a code-plant in a prominent lime green (#ecf874) pot; warm cream, mint, lavender, and peach garden-shed atmosphere with subtle pixel-font text: 'API DOCS SYNC'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, emotionally warm."
+  },
+  "generated_at": "2026-09-01T13:01:10.843135+00:00"
+}

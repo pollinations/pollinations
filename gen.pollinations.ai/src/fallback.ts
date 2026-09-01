@@ -34,17 +34,15 @@ export function attachFallbackTarget<T extends object>(
 }
 
 /**
- * Upstream statuses that make a request move on to the model's next fallback
- * target.
+ * Non-5xx upstream statuses that make a request move on to the model's next
+ * fallback target. Every upstream 5xx retries without needing to be listed.
  *
  * 400 and 422 are left out on purpose: those are caller errors and retrying
  * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
  * the primary's credentials or upstream model are broken, which the fallback may
  * survive.
  */
-export const FALLBACK_ON_STATUS_CODES = [
-    401, 402, 403, 404, 408, 429, 500, 502, 503, 504, 524,
-];
+export const FALLBACK_ON_STATUS_CODES = [401, 402, 403, 404, 408, 429];
 
 /**
  * Network-level failures — unreachable host, expired cert, refused connection —
@@ -64,8 +62,9 @@ export function isNetworkFailure(error: unknown): boolean {
  * The upstream failure shapes the generation clients throw. The image client
  * throws the provider's status as-is; the text client remaps it before throwing
  * (429 → 502, see remapUpstreamStatus) and keeps the original in
- * `upstreamStatus`, so the unremapped one is preferred and the list above can
- * name the statuses providers actually send.
+ * `upstreamStatus`, so the unremapped one is normally preferred. A successful
+ * upstream status is the exception: if its body is malformed, the client wraps
+ * that provider failure in a retryable status such as 502.
  */
 type UpstreamFailure = {
     status?: unknown;
@@ -117,8 +116,15 @@ function isGatewayRoutingFailure(failure: UpstreamFailure): boolean {
 }
 
 function upstreamStatus(failure: UpstreamFailure): number | undefined {
-    const status = failure.upstreamStatus ?? failure.status;
-    return typeof status === "number" ? status : undefined;
+    const upstream = failure.upstreamStatus;
+    if (typeof upstream === "number" && (upstream < 200 || upstream >= 300)) {
+        return upstream;
+    }
+    return typeof failure.status === "number"
+        ? failure.status
+        : typeof upstream === "number"
+          ? upstream
+          : undefined;
 }
 
 /** The deadline we send to Portkey is the request's terminal time budget. */
@@ -172,10 +178,7 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
  * delegating endpoint, a failed secret decryption all reach here as a plain
  * Error and are rethrown untouched.
  */
-export function isRetryableFallbackError(
-    error: unknown,
-    allowedStatusCodes: readonly number[] = FALLBACK_ON_STATUS_CODES,
-): boolean {
+export function isRetryableFallbackError(error: unknown): boolean {
     if (isNetworkFailure(error)) return true;
     if (!(error instanceof Error)) return false;
     const failure = error as UpstreamFailure;
@@ -187,10 +190,13 @@ export function isRetryableFallbackError(
     if (isPortkeyRequestTimeout(failure)) return false;
     // A dead endpoint reaches us as the gateway's own 400 rather than as a
     // network error, because the gateway is the one that could not connect.
-    const gatewayRoutingFailure =
-        allowedStatusCodes === FALLBACK_ON_STATUS_CODES &&
-        isGatewayRoutingFailure(failure);
-    if (!allowedStatusCodes.includes(status) && !gatewayRoutingFailure) {
+    const gatewayRoutingFailure = isGatewayRoutingFailure(failure);
+    const serverError = status >= 500 && status <= 599;
+    if (
+        !serverError &&
+        !FALLBACK_ON_STATUS_CODES.includes(status) &&
+        !gatewayRoutingFailure
+    ) {
         return false;
     }
     return !firstContentPolicyMessage(upstreamFailureText(failure));
@@ -335,7 +341,6 @@ export async function withModelFallback<T>(
     attempts?: FallbackAttempt[],
     beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<{ result: T; candidate: FallbackCandidate; index: number }> {
-    const allowedStatusCodes = candidates[0]?.definition?.fallbackOnStatusCodes;
     for (const [index, candidate] of candidates.entries()) {
         // Local gates are not upstream failures and must not trigger or be
         // attributed to another fallback candidate.
@@ -356,7 +361,7 @@ export async function withModelFallback<T>(
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
-                !isRetryableFallbackError(error, allowedStatusCodes);
+                !isRetryableFallbackError(error);
             attempts?.push({
                 candidate,
                 error,

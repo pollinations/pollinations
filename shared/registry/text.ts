@@ -379,6 +379,30 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "inception/mercury-2.5-preview": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Inception",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's exact Inception route rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.04),
+            promptCachedTokens: perMillion(0.004),
+            completionTextTokens: perMillion(0.15),
+        },
+        title: "Mercury 2.5 Preview",
+        description:
+            "Ultra-fast diffusion reasoning for coding, tool use, and structured outputs",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 260000,
+        isSpecialized: false,
+    },
     "command-a-plus": {
         aliases: [
             "cohere-command-a-plus",
@@ -718,6 +742,32 @@ export const TEXT_SERVICES = {
         description: "Fast reasoning and coding at bargain prices",
         inputModalities: ["text"],
         outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "deepseek/deepseek-v4-flash-vision-exp": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.22),
+            promptCachedTokens: perMillion(0.007),
+            promptImageTokens: perMillion(0.22),
+            completionTextTokens: perMillion(0.66),
+        },
+        title: "DeepSeek V4 Flash Vision Exp",
+        description:
+            "Low-cost multimodal reasoning for coding, agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30,
         tools: true,
         reasoning: true,
         contextLength: 1048576,

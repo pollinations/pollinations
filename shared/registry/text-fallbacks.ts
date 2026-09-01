@@ -37,7 +37,27 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen3.8-27b": {
-        "qwen3.8-27b-openrouter": {
+        "qwen3.8-27b-openrouter-ionstream": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.35),
+                promptImageTokens: perMillion(0.35),
+                promptVideoTokens: perMillion(0.35),
+                completionTextTokens: perMillion(2.55),
+            },
+        },
+        "qwen3.8-27b-openrouter-reka": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptTextTokens: perMillion(0.35),
+                promptImageTokens: perMillion(0.35),
+                promptVideoTokens: perMillion(0.35),
+                completionTextTokens: perMillion(2.55),
+            },
+        },
+        "qwen3.8-27b-openrouter-akashml": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -71,7 +91,12 @@ export const TEXT_FALLBACKS = {
         },
     },
     "mistral-large": {
-        "mistral-large-openrouter": {
+        "mistral-large-openrouter-zdr": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+            paidOnly: true,
+        },
+        "mistral-large-openrouter-mistral": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             paidOnly: true,
@@ -100,7 +125,15 @@ export const TEXT_FALLBACKS = {
         },
     },
     "claude-opus-4.7": {
-        "claude-opus-4.7-openrouter": {
+        "claude-opus-4.7-openrouter-vertex": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+        "claude-opus-4.7-openrouter-anthropic": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+        "claude-opus-4.7-openrouter-azure": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },

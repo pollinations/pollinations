@@ -195,17 +195,21 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
-    "qwen3.8-27b-openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "qwen/qwen3.8-27b",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["ionstream/fp8", "reka/fp8", "akashml/fp8"],
-                    allow_fallbacks: true,
-                },
-            },
-        }),
+    "qwen3.8-27b-openrouter-ionstream": createPinnedOpenRouterConfig(
+        "qwen/qwen3.8-27b",
+        "ionstream/fp8",
+        64000,
+    ),
+    "qwen3.8-27b-openrouter-reka": createPinnedOpenRouterConfig(
+        "qwen/qwen3.8-27b",
+        "reka/fp8",
+        64000,
+    ),
+    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+        "qwen/qwen3.8-27b",
+        "akashml/fp8",
+        64000,
+    ),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -298,26 +302,26 @@ export const portkeyConfig: PortkeyConfigMap = {
         createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
     "google/gemma-4-31B-it": () =>
         createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
-    "mistral-large-openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "mistralai/mistral-large-2512",
-            defaultOptions: {
-                provider: {
-                    only: ["mistral/zdr", "mistral"],
-                    allow_fallbacks: true,
-                },
-            },
-        }),
-    "claude-opus-4.7-openrouter": () =>
-        createOpenRouterModelConfig({
-            model: "anthropic/claude-opus-4.7",
-            defaultOptions: {
-                provider: {
-                    only: ["google-vertex/global", "anthropic", "azure/global"],
-                    allow_fallbacks: true,
-                },
-            },
-        }),
+    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
+        "mistralai/mistral-large-2512",
+        "mistral/zdr",
+    ),
+    "mistral-large-openrouter-mistral": createPinnedOpenRouterConfig(
+        "mistralai/mistral-large-2512",
+        "mistral",
+    ),
+    "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-4.7",
+        "google-vertex/global",
+    ),
+    "claude-opus-4.7-openrouter-anthropic": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-4.7",
+        "anthropic",
+    ),
+    "claude-opus-4.7-openrouter-azure": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-4.7",
+        "azure/global",
+    ),
 
     // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>

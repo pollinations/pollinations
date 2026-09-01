@@ -86,7 +86,35 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
   },
-  "claude-opus-4.7-openrouter": {
+  "claude-opus-4.7-openrouter-anthropic": {
+    "cost": {
+      "completionTextTokens": 0.000025,
+      "promptCacheWriteTokens": 0.00000625,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionTextTokens": 0.000025,
+      "promptCacheWriteTokens": 0.00000625,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+  },
+  "claude-opus-4.7-openrouter-azure": {
+    "cost": {
+      "completionTextTokens": 0.000025,
+      "promptCacheWriteTokens": 0.00000625,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionTextTokens": 0.000025,
+      "promptCacheWriteTokens": 0.00000625,
+      "promptCachedTokens": 0.0000005,
+      "promptTextTokens": 0.000005,
+    },
+  },
+  "claude-opus-4.7-openrouter-vertex": {
     "cost": {
       "completionTextTokens": 0.000025,
       "promptCacheWriteTokens": 0.00000625,
@@ -1214,7 +1242,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000375,
     },
   },
-  "mistral-large-openrouter": {
+  "mistral-large-openrouter-mistral": {
+    "cost": {
+      "completionTextTokens": 0.0000015,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.0000005,
+    },
+    "price": {
+      "completionTextTokens": 0.000001125,
+      "promptCachedTokens": 0.0000000375,
+      "promptTextTokens": 0.000000375,
+    },
+  },
+  "mistral-large-openrouter-zdr": {
     "cost": {
       "completionTextTokens": 0.0000015,
       "promptCachedTokens": 0.00000005,
@@ -1780,7 +1820,35 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000035,
     },
   },
-  "qwen3.8-27b-openrouter": {
+  "qwen3.8-27b-openrouter-akashml": {
+    "cost": {
+      "completionTextTokens": 0.00000255,
+      "promptImageTokens": 0.00000035,
+      "promptTextTokens": 0.00000035,
+      "promptVideoTokens": 0.00000035,
+    },
+    "price": {
+      "completionTextTokens": 0.00000255,
+      "promptImageTokens": 0.00000035,
+      "promptTextTokens": 0.00000035,
+      "promptVideoTokens": 0.00000035,
+    },
+  },
+  "qwen3.8-27b-openrouter-ionstream": {
+    "cost": {
+      "completionTextTokens": 0.00000255,
+      "promptImageTokens": 0.00000035,
+      "promptTextTokens": 0.00000035,
+      "promptVideoTokens": 0.00000035,
+    },
+    "price": {
+      "completionTextTokens": 0.00000255,
+      "promptImageTokens": 0.00000035,
+      "promptTextTokens": 0.00000035,
+      "promptVideoTokens": 0.00000035,
+    },
+  },
+  "qwen3.8-27b-openrouter-reka": {
     "cost": {
       "completionTextTokens": 0.00000255,
       "promptImageTokens": 0.00000035,

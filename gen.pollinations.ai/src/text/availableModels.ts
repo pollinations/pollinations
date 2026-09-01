@@ -136,11 +136,15 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.8-27b"],
         transform: createReasoningEffortTransform("toggle"),
     },
-    {
-        name: "qwen3.8-27b-openrouter",
-        config: portkeyConfig["qwen3.8-27b-openrouter"],
+    ...[
+        "qwen3.8-27b-openrouter-ionstream",
+        "qwen3.8-27b-openrouter-reka",
+        "qwen3.8-27b-openrouter-akashml",
+    ].map((name) => ({
+        name,
+        config: portkeyConfig[name],
         transform: createReasoningEffortTransform("toggle"),
-    },
+    })),
     {
         name: "qwen3.8-max",
         config: portkeyConfig["qwen/qwen3.8-max"],
@@ -268,10 +272,11 @@ const models: ModelDefinition[] = [
         // Opus 4.7/4.8 require adaptive thinking + output_config.effort.
         transform: claudeAdaptiveThinking,
     },
-    {
-        name: "claude-opus-4.7-openrouter",
-        config: portkeyConfig["claude-opus-4.7-openrouter"],
-    },
+    ...[
+        "claude-opus-4.7-openrouter-vertex",
+        "claude-opus-4.7-openrouter-anthropic",
+        "claude-opus-4.7-openrouter-azure",
+    ].map((name) => ({ name, config: portkeyConfig[name] })),
     {
         name: "claude-large",
         config: portkeyConfig["claude-opus-5"],
@@ -494,11 +499,14 @@ const models: ModelDefinition[] = [
         // Azure deployment 500s on reasoning_effort.
         transform: stripReasoning,
     },
-    {
-        name: "mistral-large-openrouter",
-        config: portkeyConfig["mistral-large-openrouter"],
+    ...[
+        "mistral-large-openrouter-zdr",
+        "mistral-large-openrouter-mistral",
+    ].map((name) => ({
+        name,
+        config: portkeyConfig[name],
         transform: stripReasoning,
-    },
+    })),
     {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],

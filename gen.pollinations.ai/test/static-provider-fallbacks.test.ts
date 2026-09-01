@@ -6,17 +6,59 @@ import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 
 const TEXT_ROUTES = {
-    deepseek: "deepseek-deepinfra",
-    "minimax-m2.7": "minimax-m2.7-deepinfra",
-    "qwen3.8-2.4t-a95b": "qwen3.8-2.4t-a95b-deepinfra",
-    "qwen3.8-27b": "qwen3.8-27b-openrouter",
-    kimi: "kimi-deepinfra",
-    llama: "llama-deepinfra",
-    "mistral-large": "mistral-large-openrouter",
-    gemma: "gemma-deepinfra",
-    "gemma-4-31b": "gemma-4-31b-deepinfra",
-    "claude-opus-4.7": "claude-opus-4.7-openrouter",
+    deepseek: ["deepseek-deepinfra"],
+    "minimax-m2.7": ["minimax-m2.7-deepinfra"],
+    "qwen3.8-2.4t-a95b": ["qwen3.8-2.4t-a95b-deepinfra"],
+    "qwen3.8-27b": [
+        "qwen3.8-27b-openrouter-ionstream",
+        "qwen3.8-27b-openrouter-reka",
+        "qwen3.8-27b-openrouter-akashml",
+    ],
+    kimi: ["kimi-deepinfra"],
+    llama: ["llama-deepinfra"],
+    "mistral-large": [
+        "mistral-large-openrouter-zdr",
+        "mistral-large-openrouter-mistral",
+    ],
+    gemma: ["gemma-deepinfra"],
+    "gemma-4-31b": ["gemma-4-31b-deepinfra"],
+    "claude-opus-4.7": [
+        "claude-opus-4.7-openrouter-vertex",
+        "claude-opus-4.7-openrouter-anthropic",
+        "claude-opus-4.7-openrouter-azure",
+    ],
 } as const;
+
+const OPENROUTER_ROUTES = [
+    ["qwen3.8-27b-openrouter-ionstream", "qwen/qwen3.8-27b", "ionstream/fp8"],
+    ["qwen3.8-27b-openrouter-reka", "qwen/qwen3.8-27b", "reka/fp8"],
+    ["qwen3.8-27b-openrouter-akashml", "qwen/qwen3.8-27b", "akashml/fp8"],
+    [
+        "mistral-large-openrouter-zdr",
+        "mistralai/mistral-large-2512",
+        "mistral/zdr",
+    ],
+    [
+        "mistral-large-openrouter-mistral",
+        "mistralai/mistral-large-2512",
+        "mistral",
+    ],
+    [
+        "claude-opus-4.7-openrouter-vertex",
+        "anthropic/claude-opus-4.7",
+        "google-vertex/global",
+    ],
+    [
+        "claude-opus-4.7-openrouter-anthropic",
+        "anthropic/claude-opus-4.7",
+        "anthropic",
+    ],
+    [
+        "claude-opus-4.7-openrouter-azure",
+        "anthropic/claude-opus-4.7",
+        "azure/global",
+    ],
+] as const;
 
 const IMAGE_ROUTES = {
     kontext: "kontext-replicate",
@@ -47,9 +89,15 @@ function expectInheritedRoute(
 
 describe("static provider fallbacks", () => {
     it("registers exact text routes as hidden inherited models", () => {
-        for (const [parent, route] of Object.entries(TEXT_ROUTES)) {
-            expectInheritedRoute(TEXT_SERVICES, parent, route);
-            expect(findModelByName(route)).not.toBeNull();
+        for (const [parent, routes] of Object.entries(TEXT_ROUTES)) {
+            expect(
+                (TEXT_SERVICES as Record<string, ModelDefinition>)[parent]
+                    .fallbacks,
+            ).toEqual(routes);
+            for (const route of routes) {
+                expectInheritedRoute(TEXT_SERVICES, parent, route);
+                expect(findModelByName(route)).not.toBeNull();
+            }
         }
     });
 
@@ -72,11 +120,7 @@ describe("static provider fallbacks", () => {
         expect(MODEL3D_SERVICES["trellis-2-fal"].cost).toEqual({
             completionImageTokens: 0.25,
         });
-        for (const route of [
-            "qwen3.8-27b-openrouter",
-            "mistral-large-openrouter",
-            "claude-opus-4.7-openrouter",
-        ] as const) {
+        for (const [route] of OPENROUTER_ROUTES) {
             expect(TEXT_SERVICES[route].paidOnly).toBe(true);
         }
     });
@@ -86,27 +130,16 @@ describe("static provider fallbacks", () => {
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         });
-        expect(
-            findModelByName("qwen3.8-27b-openrouter")?.config(),
-        ).toMatchObject({
-            model: "qwen/qwen3.8-27b",
-            defaultOptions: {
-                provider: {
-                    only: ["ionstream/fp8", "reka/fp8", "akashml/fp8"],
-                    allow_fallbacks: true,
+        for (const [route, model, provider] of OPENROUTER_ROUTES) {
+            expect(findModelByName(route)?.config()).toMatchObject({
+                model,
+                defaultOptions: {
+                    provider: {
+                        only: [provider],
+                        allow_fallbacks: false,
+                    },
                 },
-            },
-        });
-        expect(
-            findModelByName("claude-opus-4.7-openrouter")?.config(),
-        ).toMatchObject({
-            model: "anthropic/claude-opus-4.7",
-            defaultOptions: {
-                provider: {
-                    only: ["google-vertex/global", "anthropic", "azure/global"],
-                    allow_fallbacks: true,
-                },
-            },
-        });
+            });
+        }
     });
 });

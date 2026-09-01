@@ -19,7 +19,7 @@ const VIDEO_FRAME_LIMITS = [
     ["seedance-2.0-mini", 2],
     ["seedance-2.0-fast", 2],
     ["wan", 1],
-    ["wan-3.0", 1],
+    ["wan-3.0", 2],
     ["wan-fast", 2],
     ["wan-pro", 2],
     ["grok-video-pro", 1],

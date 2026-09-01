@@ -1,0 +1,33 @@
+{
+  "pr_number": 14231,
+  "title": "chore(apps): remove GimpToPolli listing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14231",
+  "merged_at": "2026-09-01T01:13:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes GimpToPolli from the community app catalog.\n- Its two Python entrypoints only open `https://pollinations.ai/` in the default browser and do not integrate the API.\n- Keeps Orange City, the author’s actual Pollinations-powered GIMP plugin, listed.\n\nValidation: `node operations/app-management/app.js validate` and Biome passed.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden got tidier",
+    "blurb": "GimpToPolli has left the app catalog, making room for projects that actually grow with Pollinations. Orange City, the real API-powered GIMP plugin, is still happily blooming.",
+    "summary": "Removed the GimpToPolli catalog entry because its Python launchers only opened pollinations.ai in a browser, while retaining Orange City, the author's Pollinations-powered GIMP plugin.",
+    "impact": "Community app visitors get a more accurate catalog, with Orange City remaining as the listed GIMP integration that actually uses the Pollinations API.",
+    "keywords": [
+      "community apps",
+      "app catalog",
+      "GIMP",
+      "Orange City",
+      "curation"
+    ],
+    "visual_concept": "A cozy community-app garden is being pruned: Polli, wearing a tiny gardener's hat and holding shears, gently removes an empty signpost labeled GimpToPolli while a healthy code-flower labeled Orange City blooms beside a retro GIMP-like art workstation. This represents accurate catalog curation and preserves the actual Pollinations-powered plugin.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and carefully pruning an empty garden sign while a thriving code-flower labeled \"ORANGE CITY\" grows beside a retro digital art workstation. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14231.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing a tiny gardener hat and carefully pruning an empty garden sign while a thriving code-flower labeled \"ORANGE CITY\" grows beside a retro digital art workstation. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-01T01:14:36.946434+00:00"
+}

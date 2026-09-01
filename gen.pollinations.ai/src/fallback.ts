@@ -43,7 +43,7 @@ export function attachFallbackTarget<T extends object>(
  * survive.
  */
 export const FALLBACK_ON_STATUS_CODES = [
-    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
+    401, 402, 403, 404, 408, 429, 500, 502, 503, 504, 524,
 ];
 
 /**
@@ -252,6 +252,7 @@ function isUsableCommunityFallback(
     const primary = from.communityEndpoint;
     const candidate = target.communityEndpoint;
     if (!primary || !candidate) return false;
+    if (primary.modality !== candidate.modality) return false;
     if (usesAgentRunToken(candidate)) return false;
     if (primary.imagePricing !== candidate.imagePricing) return false;
     if (!isCommunityFallbackBalanceAllowed(primary, candidate)) return false;

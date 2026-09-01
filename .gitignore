@@ -313,7 +313,9 @@ text.pollinations.ai/v2/
 
 # Local Netlify folder
 .netlify
+.build/
 .dev.vars
+.dev.vars.tmp
 .wrangler/
 
 # Crush Dev Agent

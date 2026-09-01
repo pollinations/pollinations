@@ -246,6 +246,34 @@ describe("registry fallback linking", () => {
 
         expect(primary.fallbackEntries).toBeUndefined();
     });
+
+    it("does not link community fallbacks across modalities", () => {
+        const primary = communityEntry("owner/image", "owner", "public", null, [
+            "owner/video",
+        ]);
+        primary.eventType = "generate.image";
+        primary.communityEndpoint = {
+            ...primary.communityEndpoint,
+            modality: "image",
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const target = communityEntry("owner/video", "owner");
+        // Images and videos share the same event type, so the modality check is
+        // what prevents a stale image fallback from routing into a video model.
+        target.eventType = "generate.image";
+        target.communityEndpoint = {
+            ...target.communityEndpoint,
+            modality: "video",
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const entries = [primary, target];
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        expect(primary.fallbackEntries).toBeUndefined();
+    });
 });
 
 describe("formatFallbackTarget", () => {
@@ -300,6 +328,7 @@ describe("isRetryableFallbackError", () => {
     it("fails over on a rate-limited or broken upstream", () => {
         expect(isRetryableFallbackError(textFailure(429))).toBe(true);
         expect(isRetryableFallbackError(textFailure(503))).toBe(true);
+        expect(isRetryableFallbackError(textFailure(524))).toBe(true);
         expect(isRetryableFallbackError(new HttpError("down", 500))).toBe(true);
         expect(isRetryableFallbackError(new HttpError("no quota", 402))).toBe(
             true,

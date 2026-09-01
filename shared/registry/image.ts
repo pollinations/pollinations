@@ -35,6 +35,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 300,
         cost: {
             completionImageTokens: 0.0001, // per image
         },
@@ -221,6 +222,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 20,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.035, // per image
@@ -411,6 +413,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.002, // per image
         },
@@ -426,6 +429,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.004, // per image
         },
@@ -1297,6 +1301,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.005,
         },

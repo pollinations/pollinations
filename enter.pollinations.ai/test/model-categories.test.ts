@@ -3,10 +3,7 @@ import {
     computeCategoryModalities,
     getModelCategoriesFromCatalog,
 } from "../frontend/src/components/models/model-categories.ts";
-import {
-    getAvailableModelSections,
-    validateModelSearch,
-} from "../frontend/src/components/models/model-search.ts";
+import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 
 const catalog = [
     { name: "official-text", category: "text" as const },
@@ -98,28 +95,7 @@ describe("model categories", () => {
         ]);
     });
 
-    it("derives community sections from the model categories in the catalog", () => {
-        expect(
-            getAvailableModelSections([
-                { type: "text" },
-                { type: "image" },
-                { type: "video" },
-                { type: "audio" },
-                { type: "embedding" },
-                { type: "text", agent: true },
-            ]),
-        ).toEqual([
-            "all",
-            "text",
-            "image",
-            "video",
-            "audio",
-            "embedding",
-            "agent",
-        ]);
-    });
-
-    it("accepts every model category in the community scope", () => {
+    it("accepts every model category independently of scope", () => {
         expect(validateModelSearch({ scope: "community" })).toEqual({
             scope: "community",
             category: undefined,
@@ -171,7 +147,7 @@ describe("model categories", () => {
         });
         expect(validateModelSearch({ category: "agent" })).toEqual({
             scope: undefined,
-            category: undefined,
+            category: "agent",
             q: undefined,
             sort: undefined,
         });
@@ -185,7 +161,7 @@ describe("model categories", () => {
             validateModelSearch({ scope: "community", category: "mcp" }),
         ).toEqual({
             scope: "community",
-            category: undefined,
+            category: "mcp",
             q: undefined,
             sort: undefined,
         });

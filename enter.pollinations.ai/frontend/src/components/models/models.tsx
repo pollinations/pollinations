@@ -221,8 +221,14 @@ export const Models: FC = () => {
     const query = search.trim();
     const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const visibleModels = useMemo(
-        () => allModels.filter((model) => includeCommunity || !model.community),
-        [allModels, includeCommunity],
+        () =>
+            allModels.filter(
+                (model) =>
+                    activePrimaryTab === "agent" ||
+                    includeCommunity ||
+                    !model.community,
+            ),
+        [activePrimaryTab, allModels, includeCommunity],
     );
     const filteredModels = useMemo(
         () =>
@@ -328,12 +334,6 @@ export const Models: FC = () => {
             search: (previous) => ({
                 ...previous,
                 category: primaryTab === "models" ? undefined : primaryTab,
-                scope:
-                    primaryTab === "agent"
-                        ? "community"
-                        : primaryTab === "mcp"
-                          ? undefined
-                          : previous.scope,
             }),
         });
     };
@@ -567,7 +567,7 @@ export const Models: FC = () => {
                         )}
                     </div>
                 </div>
-                {includeCommunity && (
+                {(activePrimaryTab === "agent" || includeCommunity) && (
                     <aside
                         aria-label="Community privacy notice"
                         className="mb-4 flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
@@ -577,7 +577,8 @@ export const Models: FC = () => {
                             <strong className="font-semibold text-theme-text-strong">
                                 Community privacy
                             </strong>{" "}
-                            — Independent providers may process requests.{" "}
+                            — Independent providers and configured fallbacks
+                            process requests under their own policies.{" "}
                             <strong className="font-semibold text-theme-text-strong">
                                 Avoid sensitive data.
                             </strong>{" "}

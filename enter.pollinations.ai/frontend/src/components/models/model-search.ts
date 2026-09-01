@@ -8,6 +8,7 @@ export const MODEL_CATEGORIES = [
     "text",
     "embedding",
     "agent",
+    "mcp",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
@@ -87,7 +88,7 @@ export function validateModelSearch(
         scope: scope === "community" ? scope : undefined,
         category:
             category !== "all" &&
-            (scope === "community" || category !== "agent")
+            category !== (scope === "community" ? "mcp" : "agent")
                 ? category
                 : undefined,
         q: query || undefined,

@@ -411,8 +411,15 @@
     {
       "idx": 58,
       "version": "6",
+      "when": 1788203007557,
+      "tag": "0058_rekey_issue_rewards",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
       "when": 1788203891872,
-      "tag": "0058_massive_brood",
+      "tag": "0059_massive_brood",
       "breakpoints": true
     }
   ]

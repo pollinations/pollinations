@@ -8,6 +8,11 @@ import {
 } from "@shared/community-endpoints.ts";
 import { describe, expect, it } from "vitest";
 import {
+    basePriceKeysForModality,
+    hasValidVisibleFormPrices,
+} from "../frontend/src/components/community-endpoints/price-table.tsx";
+import {
+    emptyForm,
     formPriceToStoredPrice,
     isValidPriceInput,
     pricePerMillionToPerToken,
@@ -15,6 +20,18 @@ import {
 } from "../frontend/src/components/community-endpoints/types.ts";
 
 describe("community endpoint price input", () => {
+    it("allows publishing embeddings with only an input-token price", () => {
+        const visiblePriceKeys = new Set(basePriceKeysForModality("embedding"));
+
+        expect([...visiblePriceKeys]).toEqual(["promptTextPrice"]);
+        expect(
+            hasValidVisibleFormPrices(
+                { ...emptyForm, modality: "embedding" },
+                visiblePriceKeys,
+            ),
+        ).toBe(true);
+    });
+
     it("accepts free and minimum prices", () => {
         expect(isValidPriceInput("")).toBe(true);
         expect(isValidPriceInput("0")).toBe(true);

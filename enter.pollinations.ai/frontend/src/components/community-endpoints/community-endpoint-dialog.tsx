@@ -21,9 +21,7 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
-    BASE_TEXT_PRICE_KEYS,
-    BASE_TRANSCRIPTION_PRICE_KEYS,
-    BASE_VIDEO_PRICE_KEYS,
+    basePriceKeysForModality,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
     PriceGroups,
@@ -283,14 +281,7 @@ export function CommunityEndpointDialog({
         : [];
     // Reveal the modality's base price plus whatever the test observed or the
     // model already had saved. Blank and zero prices mean free.
-    const basePriceKeys =
-        form.modality === "image"
-            ? (["completionImagePrice"] as const)
-            : form.modality === "video"
-              ? BASE_VIDEO_PRICE_KEYS
-              : form.modality === "transcription"
-                ? BASE_TRANSCRIPTION_PRICE_KEYS
-                : BASE_TEXT_PRICE_KEYS;
+    const basePriceKeys = basePriceKeysForModality(form.modality);
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -303,6 +294,8 @@ export function CommunityEndpointDialog({
         visiblePriceKeys,
     );
     const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
+    const cancelsPendingChange =
+        Boolean(endpoint?.pending) && form.visibility === "private";
     // First-time publishing of an external endpoint re-observes its billed
     // buckets, so it needs a successful test. A model already public or queued
     // for publication has server-validated pricing, so re-editing it does not
@@ -412,6 +405,17 @@ export function CommunityEndpointDialog({
                                 endpoint.pending.effectiveAt,
                             ).toLocaleString()}
                             .
+                        </Alert>
+                    )}
+
+                    {cancelsPendingChange && (
+                        <Alert
+                            intent="danger"
+                            title="Queued changes will be cancelled"
+                        >
+                            Saving this model as Private removes its queued
+                            changes. Publishing it again starts a new 12-hour
+                            wait.
                         </Alert>
                     )}
 

@@ -1,6 +1,10 @@
-import { existsSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -215,21 +219,10 @@ export const disableOpenCode = (ctx: HarnessContext): HarnessResult => {
     return { ...result(ctx), configured: false, outcome };
 };
 
-/** First match on PATH, or the install script's default install location. */
-const findOpenCodeBinary = (ctx: HarnessContext): string | null => {
-    const pathEnv = ctx.env.PATH ?? ctx.env.Path ?? "";
-    const isWindows = process.platform === "win32";
-    const extensions = isWindows ? [".exe", ".cmd", ".bat", ""] : [""];
-    for (const dir of pathEnv.split(isWindows ? ";" : ":")) {
-        if (!dir) continue;
-        for (const extension of extensions) {
-            const candidate = join(dir, `opencode${extension}`);
-            if (existsSync(candidate)) return candidate;
-        }
-    }
-    const scriptDefault = join(ctx.home, ".opencode", "bin", "opencode");
-    return existsSync(scriptDefault) ? scriptDefault : null;
-};
+const openCodeInstalled = (ctx: HarnessContext) =>
+    commandExists("opencode", ctx.env, [
+        join(ctx.home, ".opencode", "bin", "opencode"),
+    ]);
 
 export const opencode: HarnessAdapter = {
     id: ID,
@@ -239,6 +232,11 @@ export const opencode: HarnessAdapter = {
         "Restart OpenCode, then pick a Pollinations model with /models. Inside OpenCode: /poll quests shows claimable Pollen, /poll help lists the media tools.",
 
     async on(ctx, options) {
+        if (!openCodeInstalled(ctx)) {
+            throw new Error(
+                "OpenCode was not found. Install it first: curl -fsSL https://opencode.ai/install | bash",
+            );
+        }
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((candidate) => candidate.id === model)) {
@@ -246,12 +244,6 @@ export const opencode: HarnessAdapter = {
                 `Model "${model}" is not a tool-calling text model. Run: polli models`,
             );
         }
-        if (findOpenCodeBinary(ctx) === null) {
-            throw new Error(
-                "OpenCode was not found. Install it first: curl -fsSL https://opencode.ai/install | bash",
-            );
-        }
-
         const apiKey = await resolveHarnessKey(
             {
                 id: ID,

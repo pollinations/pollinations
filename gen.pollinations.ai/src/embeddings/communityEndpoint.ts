@@ -1,7 +1,7 @@
+import { communityEmbeddingsUrl } from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
-    communityEmbeddingsUrl,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";

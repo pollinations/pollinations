@@ -57,8 +57,9 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
 
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
-export const COMPOSIO_TOOL_CALL_PRICE = 0.0005;
+export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
 const COMPOSIO_MCP_PRICING = {
+    description: "Launch price",
     rates: [
         {
             id: "composio.tool_call.v1",

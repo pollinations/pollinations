@@ -128,7 +128,7 @@ test("thin-proxies the generic Composio router and reports executed actions", as
         env,
     );
     assert.equal(call.status, 200);
-    assert.equal(call.headers.get(MCP_USAGE_HEADERS.cost), "0.001");
+    assert.equal(call.headers.get(MCP_USAGE_HEADERS.cost), "0.0004");
     assert.equal(call.headers.get(MCP_USAGE_HEADERS.adjustmentUnits), "2");
     const sessionRequest = calls.find(({ url }) =>
         url.pathname.endsWith("/tool_router/session"),

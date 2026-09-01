@@ -31,14 +31,13 @@ async function begin(auth: ReturnType<typeof createPollinationsAuth>) {
     return { response, location, flow };
 }
 
-function adminUserUpstream() {
+function userUpstream() {
     return vi.fn(async (input: RequestInfo | URL) =>
-        String(input).endsWith("/api/oauth/token")
+        String(input).endsWith("/api/auth/oauth2/token")
             ? Response.json({ access_token: "oauth_login" })
             : Response.json({
                   sub: "user-1",
                   email: "alice@example.com",
-                  role: "admin",
                   preferred_username: "alice",
               }),
     );
@@ -71,14 +70,13 @@ describe("Pollinations OAuth", () => {
 
         expect(response.status).toBe(302);
         expect(location.origin).toBe("https://enter.pollinations.ai");
-        expect(location.pathname).toBe("/authorize");
+        expect(location.pathname).toBe("/api/auth/oauth2/authorize");
         expect(location.searchParams.get("response_type")).toBe("code");
         expect(location.searchParams.get("client_id")).toBe(config.clientId);
         expect(location.searchParams.get("redirect_uri")).toBe(
             "https://kpi.pollinations.ai/auth/callback",
         );
-        expect(location.searchParams.get("scope")).toBe("profile");
-        expect(location.searchParams.get("purpose")).toBe("login");
+        expect(location.searchParams.get("scope")).toBe("openid profile email");
         expect(location.searchParams.has("budget")).toBe(false);
         expect(location.searchParams.has("expiry")).toBe(false);
         expect(location.searchParams.has("models")).toBe(false);
@@ -104,14 +102,13 @@ describe("Pollinations OAuth", () => {
         const location = new URL(response?.headers.get("Location") || "");
 
         expect(location.origin).toBe("http://127.0.0.1:3000");
-        expect(location.pathname).toBe("/authorize");
-        expect(location.searchParams.get("purpose")).toBe("login");
+        expect(location.pathname).toBe("/api/auth/oauth2/authorize");
     });
 
     it("rejects return paths that resolve outside the app origin", async () => {
         const auth = createPollinationsAuth({
             ...config,
-            fetch: adminUserUpstream(),
+            fetch: userUpstream(),
         });
         const maliciousPaths = [
             String.raw`/\evil.example`,
@@ -154,7 +151,7 @@ describe("Pollinations OAuth", () => {
         }
     });
 
-    it("exchanges the code and creates an admin session", async () => {
+    it("exchanges the code and creates a dashboard session", async () => {
         const upstream = vi
             .fn()
             .mockResolvedValueOnce(
@@ -164,7 +161,6 @@ describe("Pollinations OAuth", () => {
                 Response.json({
                     sub: "user-1",
                     email: "ALICE@example.com",
-                    role: "admin",
                     preferred_username: "alice",
                 }),
             );
@@ -186,7 +182,7 @@ describe("Pollinations OAuth", () => {
         expect(session).toBeTruthy();
         expect(upstream).toHaveBeenCalledTimes(2);
         expect(upstream.mock.calls[1]?.[0]).toBe(
-            "https://enter.pollinations.ai/api/oauth/userinfo",
+            "https://enter.pollinations.ai/api/auth/oauth2/userinfo",
         );
 
         const user = await auth.getUser(
@@ -208,34 +204,6 @@ describe("Pollinations OAuth", () => {
         expect(sessionResponse?.status).toBe(200);
         expect(await sessionResponse?.json()).toEqual({ user });
         expect(sessionResponse?.headers.get("Cache-Control")).toBe("no-store");
-    });
-
-    it("denies users without the database admin role", async () => {
-        const upstream = vi
-            .fn()
-            .mockResolvedValueOnce(
-                Response.json({ access_token: "oauth_login" }),
-            )
-            .mockResolvedValueOnce(
-                Response.json({
-                    sub: "user-2",
-                    email: "alice@example.com",
-                    role: "user",
-                }),
-            );
-        const auth = createPollinationsAuth({ ...config, fetch: upstream });
-        const { location, flow } = await begin(auth);
-        const response = await auth.handle(
-            new Request(
-                `https://kpi.pollinations.ai/auth/callback?code=code-2&state=${location.searchParams.get("state")}`,
-                { headers: { Cookie: `pollinations_oauth_flow=${flow}` } },
-            ),
-        );
-
-        expect(response?.status).toBe(403);
-        expect(
-            cookieFrom(response as Response, "pollinations_session"),
-        ).toBeUndefined();
     });
 
     it("rejects a mismatched OAuth state before the token exchange", async () => {
@@ -273,7 +241,7 @@ describe("Pollinations OAuth", () => {
     it("rejects a tampered session signature", async () => {
         const auth = createPollinationsAuth({
             ...config,
-            fetch: adminUserUpstream(),
+            fetch: userUpstream(),
         });
         const session = await authenticatedSession(auth);
 
@@ -293,7 +261,7 @@ describe("Pollinations OAuth", () => {
         vi.setSystemTime(new Date("2026-08-29T10:00:00Z"));
         const auth = createPollinationsAuth({
             ...config,
-            fetch: adminUserUpstream(),
+            fetch: userUpstream(),
         });
         const session = await authenticatedSession(auth);
         vi.advanceTimersByTime(43_201_000);
@@ -310,7 +278,7 @@ describe("Pollinations OAuth", () => {
     it("rejects a valid session on a different origin", async () => {
         const auth = createPollinationsAuth({
             ...config,
-            fetch: adminUserUpstream(),
+            fetch: userUpstream(),
         });
         const session = await authenticatedSession(auth);
 
@@ -346,7 +314,6 @@ describe("Pollinations OAuth", () => {
                 Response.json({
                     sub: "user-1",
                     email: "alice@example.com",
-                    role: "admin",
                 }),
             );
         const auth = createPollinationsAuth({ ...config, fetch: upstream });

@@ -19,14 +19,9 @@ export type PollinationsUser = {
     preferred_username?: string;
 };
 
-type Userinfo = PollinationsUser & {
-    role?: string;
-};
-
 type Session = PollinationsUser & {
     aud: string;
     exp: number;
-    role: string;
 };
 
 type Flow = {
@@ -163,19 +158,13 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
 
     const requestFetch = config.fetch ?? fetch;
     const authBaseUrl = new URL(config.baseUrl ?? DEFAULT_AUTH_BASE_URL);
-    const authorizeUrl = new URL("/authorize", authBaseUrl);
-    const tokenUrl = new URL("/api/oauth/token", authBaseUrl).toString();
-    const userinfoUrl = new URL("/api/oauth/userinfo", authBaseUrl).toString();
+    const authorizeUrl = new URL("/api/auth/oauth2/authorize", authBaseUrl);
+    const tokenUrl = new URL("/api/auth/oauth2/token", authBaseUrl).toString();
+    const userinfoUrl = new URL(
+        "/api/auth/oauth2/userinfo",
+        authBaseUrl,
+    ).toString();
     const key = hmacKey(config.sessionSecret);
-
-    function isAdmin(user: Pick<Userinfo, "role">): user is { role: string } {
-        return (
-            user.role
-                ?.split(",")
-                .map((role) => role.trim())
-                .includes("admin") === true
-        );
-    }
 
     async function sign(payload: string) {
         const signature = await crypto.subtle.sign(
@@ -221,8 +210,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             await codeChallenge(verifier),
         );
         loginUrl.searchParams.set("code_challenge_method", "S256");
-        loginUrl.searchParams.set("scope", "profile");
-        loginUrl.searchParams.set("purpose", "login");
+        loginUrl.searchParams.set("scope", "openid profile email");
 
         return redirect(loginUrl.toString(), [
             cookie(
@@ -287,8 +275,8 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         });
         const user = (await userResponse
             .json()
-            .catch(() => null)) as Userinfo | null;
-        if (!userResponse.ok || !user?.sub || !user.email || !isAdmin(user)) {
+            .catch(() => null)) as PollinationsUser | null;
+        if (!userResponse.ok || !user?.sub || !user.email) {
             return authError("Forbidden", 403, clearFlow);
         }
 
@@ -332,12 +320,11 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 !session.email ||
                 session.aud !== new URL(request.url).origin ||
                 !Number.isInteger(session.exp) ||
-                session.exp <= Math.floor(Date.now() / 1000) ||
-                !isAdmin(session)
+                session.exp <= Math.floor(Date.now() / 1000)
             ) {
                 return null;
             }
-            const { aud: _aud, exp: _exp, role: _role, ...user } = session;
+            const { aud: _aud, exp: _exp, ...user } = session;
             return user;
         } catch {
             return null;

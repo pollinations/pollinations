@@ -1,11 +1,8 @@
 import {
-    AccountIcon,
     Button,
     Collapsible,
     cn,
     ExternalLinkIcon,
-    GitHubIcon,
-    ImageIcon,
     MailIcon,
     ScrollArea,
     useScrollLock,
@@ -73,7 +70,6 @@ export function Authorize() {
         app_key,
         state,
         response_type,
-        purpose,
         code_challenge,
         code_challenge_method,
         models,
@@ -87,7 +83,6 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
-    const isAccountLogin = isCodeFlow && purpose === "login";
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -107,8 +102,6 @@ export function Authorize() {
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
-    const loginDestination =
-        attribution?.appName || redirectHostname || "this app";
 
     const keyPermissions = useKeyPermissions(
         getAuthorizeInitialPermissions({
@@ -329,7 +322,7 @@ export function Authorize() {
     ]);
 
     useEffect(() => {
-        if (!user || isAccountLogin) return;
+        if (!user) return;
 
         apiClient.customer.balance
             .$get()
@@ -341,7 +334,7 @@ export function Authorize() {
                 );
             })
             .catch(() => {});
-    }, [user, isAccountLogin]);
+    }, [user]);
 
     async function handleAuthorize(): Promise<void> {
         if (!canAuthorize || isAuthorizing) return;
@@ -350,47 +343,6 @@ export function Authorize() {
         setError(null);
 
         try {
-            if (isAccountLogin) {
-                if (
-                    !parsedRedirectUrl ||
-                    !app_key ||
-                    !code_challenge ||
-                    !redirect_url
-                ) {
-                    throw new Error(
-                        "Missing client_id, redirect_uri, or PKCE code_challenge",
-                    );
-                }
-                const res = await apiClient.oauth.code
-                    .$post({
-                        json: {
-                            purpose: "login",
-                            clientId: app_key,
-                            redirectUri: redirect_url,
-                            codeChallenge: code_challenge,
-                            codeChallengeMethod: "S256",
-                        },
-                    })
-                    .catch(() => null);
-                if (!res || !res.ok) {
-                    const data = (await res?.json().catch(() => null)) as {
-                        message?: string;
-                        error?: { message?: string };
-                    } | null;
-                    throw new Error(
-                        data?.message ||
-                            data?.error?.message ||
-                            "Failed to create authorization code",
-                    );
-                }
-                const { code } = (await res.json()) as { code: string };
-                const url = new URL(parsedRedirectUrl.href);
-                url.searchParams.set("code", code);
-                if (state) url.searchParams.set("state", state);
-                window.location.href = url.toString();
-                return;
-            }
-
             const { allowedModels, pollenBudget, accountPermissions } =
                 keyPermissions.permissions;
             const grantedAccountPermissions =
@@ -560,11 +512,7 @@ export function Authorize() {
         const displayedError = error ?? signInError;
         return (
             <AuthModal
-                dialog={{
-                    label: isAccountLogin
-                        ? "Sign in with Pollinations"
-                        : "Sign in to authorize",
-                }}
+                dialog={{ label: "Sign in to authorize" }}
                 tone={displayedError ? "error" : undefined}
             >
                 <AuthModalHeader />
@@ -578,12 +526,10 @@ export function Authorize() {
                                 isDeviceMode={isDeviceMode}
                                 userCode={user_code}
                                 redirectHostname={redirectHostname}
-                                isAccountLogin={isAccountLogin}
                             />
                             <p className="text-sm text-theme-text-base mt-3">
-                                {isAccountLogin
-                                    ? "Sign in to Pollinations to review this request."
-                                    : "Sign in to review and approve the requested access."}
+                                Sign in to review and approve the requested
+                                access.
                             </p>
                         </AuthInfoCard>
                     )}
@@ -595,7 +541,7 @@ export function Authorize() {
                             intent="danger"
                             disabled={isSigningIn}
                         >
-                            {isAccountLogin ? "Cancel" : "Deny"}
+                            Deny
                         </Button>
                         {!error && (
                             <Button
@@ -609,115 +555,6 @@ export function Authorize() {
                             </Button>
                         )}
                     </div>
-                </div>
-            </AuthModal>
-        );
-    }
-
-    if (isAccountLogin) {
-        return (
-            <AuthModal
-                dialog={
-                    error
-                        ? { label: "Sign-in error" }
-                        : { labelledBy: "login-dialog-title" }
-                }
-                tone={error ? "error" : undefined}
-            >
-                <AuthModalHeader>
-                    <a
-                        href={config.baseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 min-w-0"
-                    >
-                        {user.image && (
-                            <img
-                                src={user.image}
-                                alt=""
-                                className="w-6 h-6 rounded-full shrink-0"
-                            />
-                        )}
-                        <span className="text-sm font-medium text-theme-text-strong truncate">
-                            {user.githubUsername || user.email}
-                        </span>
-                    </a>
-                </AuthModalHeader>
-                <div className="px-6 py-5 space-y-5">
-                    {error ? (
-                        <ErrorBanner>{error}</ErrorBanner>
-                    ) : (
-                        <>
-                            <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
-                                <p className="mb-2 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                                    Pollinations account
-                                </p>
-                                <AppAttribution
-                                    attribution={attribution}
-                                    isDeviceMode={false}
-                                    redirectHostname={redirectHostname}
-                                    isAccountLogin
-                                    titleId="login-dialog-title"
-                                />
-                            </div>
-                            <div className="text-sm text-theme-text-base">
-                                <p className="mb-3 font-body text-xs font-semibold tracking-wide text-theme-text-soft">
-                                    Share
-                                </p>
-                                <ul className="space-y-3">
-                                    <li className="flex items-center gap-2">
-                                        <AccountIcon
-                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
-                                            aria-hidden="true"
-                                        />
-                                        <span>Your name</span>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <MailIcon
-                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
-                                            aria-hidden="true"
-                                        />
-                                        <span>Your email address</span>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <GitHubIcon
-                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
-                                            aria-hidden="true"
-                                        />
-                                        <span>Your GitHub username</span>
-                                    </li>
-                                    <li className="flex items-center gap-2">
-                                        <ImageIcon
-                                            className="h-4 w-4 shrink-0 text-theme-text-soft"
-                                            aria-hidden="true"
-                                        />
-                                        <span>Your profile picture</span>
-                                    </li>
-                                </ul>
-                            </div>
-                        </>
-                    )}
-                </div>
-                <div className="flex justify-end gap-2 border-t border-divider p-6 pt-4">
-                    <Button
-                        as="button"
-                        onClick={handleDeny}
-                        intent="danger"
-                        disabled={isAuthorizing}
-                    >
-                        Cancel
-                    </Button>
-                    {!error && (
-                        <Button
-                            as="button"
-                            onClick={handleAuthorize}
-                            disabled={!canAuthorize || isAuthorizing}
-                        >
-                            {isAuthorizing
-                                ? "Continuing..."
-                                : `Continue to ${loginDestination}`}
-                        </Button>
-                    )}
                 </div>
             </AuthModal>
         );

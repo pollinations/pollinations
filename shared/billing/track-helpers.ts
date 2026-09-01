@@ -100,7 +100,7 @@ export async function resolveDevMarkup(
 
     const [clientRow] = await db
         .select({
-            userId: apikeyTable.userId,
+            userId: apikeyTable.referenceId,
             metadata: apikeyTable.metadata,
             prefix: apikeyTable.prefix,
             enabled: apikeyTable.enabled,

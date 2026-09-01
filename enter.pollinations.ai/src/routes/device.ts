@@ -340,8 +340,7 @@ export async function exchangeDeviceCode(
  * name/email are PII gated behind the `profile` scope, same as
  * GET /api/account/profile: sessions always see them, API keys only when
  * they carry account:profile. sub/picture/preferred_username (public GitHub
- * identity) are always returned. The database role is returned only to the
- * short-lived account-login flow used by internal applications.
+ * identity) are always returned.
  */
 export async function handleUserinfo(c: AuthedContext) {
     const user = c.var.auth.requireUser();
@@ -349,35 +348,24 @@ export async function handleUserinfo(c: AuthedContext) {
         c.var.auth.apiKey,
         "profile",
     );
-    return c.json(await getUserinfoForUser(c.env, user.id, includeProfilePII));
-}
-
-export async function getUserinfoForUser(
-    env: Env["Bindings"],
-    userId: string,
-    includeProfilePII: boolean,
-    includeRole = false,
-) {
-    const db = drizzle(env.DB, { schema });
+    const db = drizzle(c.env.DB, { schema });
     const row = await db.query.user.findFirst({
-        where: eq(schema.user.id, userId),
+        where: eq(schema.user.id, user.id),
         columns: {
             id: true,
             name: true,
             email: true,
             image: true,
             githubUsername: true,
-            role: true,
         },
     });
     if (!row) {
         throw new HTTPException(404, { message: "User not found" });
     }
-    return {
+    return c.json({
         sub: row.id,
         ...(includeProfilePII && { name: row.name, email: row.email }),
-        ...(includeRole && { role: row.role ?? "user" }),
         picture: row.image,
         preferred_username: row.githubUsername,
-    };
+    });
 }

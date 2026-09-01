@@ -11,8 +11,6 @@ type AppAttributionProps = {
     isDeviceMode: boolean;
     userCode?: string;
     redirectHostname: string;
-    isAccountLogin?: boolean;
-    titleId?: string;
 };
 
 export function AppAttribution({
@@ -20,8 +18,6 @@ export function AppAttribution({
     isDeviceMode,
     userCode,
     redirectHostname,
-    isAccountLogin = false,
-    titleId,
 }: AppAttributionProps) {
     const displayName =
         attribution?.appName ??
@@ -32,7 +28,7 @@ export function AppAttribution({
     ].join("\n");
     return (
         <>
-            <p id={titleId} className="text-theme-text-strong">
+            <p className="text-theme-text-strong">
                 <span className="font-bold text-lg">{displayName}</span>
             </p>
             {attribution?.githubUsername && (
@@ -58,12 +54,10 @@ export function AppAttribution({
                     Code: {userCode}
                 </p>
             )}
-            {!isAccountLogin && (
-                <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mt-3">
-                    To access your Pollinations account{" "}
-                    <InfoTip text={tipText} label="API key sharing warning" />
-                </p>
-            )}
+            <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mt-3">
+                To access your Pollinations account{" "}
+                <InfoTip text={tipText} label="API key sharing warning" />
+            </p>
         </>
     );
 }

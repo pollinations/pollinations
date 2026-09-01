@@ -28,6 +28,6 @@
   },
   "dependencies": {
     "wrangler": "^4.59.1",
-    "zod": "^4.3.5"
+    "zod": "4.5.4"
   }
 }

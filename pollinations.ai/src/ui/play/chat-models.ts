@@ -2,10 +2,12 @@ import type {
     AudioFormat,
     ChatRouting,
     ChatRoutingCapability,
+    ChatStreamChunk,
     Message,
     MessageContent,
     MessageContentPart,
     ModelInfo,
+    PollinationsAgentEvent,
 } from "@pollinations/sdk";
 
 export const ROUTING_FIELDS = [
@@ -48,6 +50,17 @@ export interface RenderedMedia {
     label?: string;
 }
 
+export interface AgentToolActivity {
+    callId: string;
+    name: string;
+    status: "running" | "failed";
+}
+
+export interface AgentResourceCandidate extends RenderedMedia {
+    callId: string;
+    mediaType?: string;
+}
+
 export type ChatMessageStatus =
     | "complete"
     | "streaming"
@@ -60,7 +73,123 @@ export interface ChatMessageState {
     content: MessageContent;
     status: ChatMessageStatus;
     error?: string;
-    activity?: string;
+    activities?: AgentToolActivity[];
+    resourceCandidates?: AgentResourceCandidate[];
+    media?: RenderedMedia[];
+}
+
+function safeAgentResource(
+    event: Extract<
+        PollinationsAgentEvent,
+        { type: "resource.created" | "resource.finalized" }
+    >,
+): AgentResourceCandidate | null {
+    try {
+        const url = new URL(event.url);
+        if (url.protocol !== "https:") return null;
+        return {
+            callId: event.call_id,
+            kind: event.kind,
+            url: url.href,
+            ...(event.name ? { label: event.name } : {}),
+            ...(event.media_type ? { mediaType: event.media_type } : {}),
+        };
+    } catch {
+        return null;
+    }
+}
+
+/** Apply one typed managed-agent event without reparsing assistant prose. */
+export function applyAgentEvent(
+    message: ChatMessageState,
+    event: PollinationsAgentEvent,
+): ChatMessageState {
+    if (
+        event.type === "resource.created" ||
+        event.type === "resource.finalized"
+    ) {
+        const resource = safeAgentResource(event);
+        if (!resource) return message;
+        if (event.type === "resource.created") {
+            if (
+                message.resourceCandidates?.some(
+                    (item) =>
+                        item.callId === resource.callId &&
+                        item.url === resource.url,
+                )
+            )
+                return message;
+            return {
+                ...message,
+                resourceCandidates: [
+                    ...(message.resourceCandidates ?? []),
+                    resource,
+                ],
+            };
+        }
+        if (message.media?.some((item) => item.url === resource.url))
+            return message;
+        const { callId: _callId, mediaType: _mediaType, ...media } = resource;
+        return { ...message, media: [...(message.media ?? []), media] };
+    }
+
+    const current = (message.activities ?? []).filter(
+        (activity) =>
+            activity.callId !== event.call_id &&
+            (event.type !== "tool.started" || activity.status === "running"),
+    );
+    if (event.type === "tool.completed") {
+        return { ...message, activities: current };
+    }
+    return {
+        ...message,
+        activities: [
+            ...current,
+            {
+                callId: event.call_id,
+                name: event.name,
+                status: event.type === "tool.failed" ? "failed" : "running",
+            },
+        ],
+    };
+}
+
+/** Track standard OpenAI tool-call deltas as a compatibility activity source. */
+export function applyOpenAIToolCallDelta(
+    message: ChatMessageState,
+    toolCall: NonNullable<
+        ChatStreamChunk["choices"][number]["delta"]["tool_calls"]
+    >[number],
+): ChatMessageState {
+    const name = toolCall.function?.name?.trim();
+    if (!name) return message;
+    const callId = toolCall.id?.trim() || `openai-tool-${toolCall.index}`;
+    const activities = message.activities ?? [];
+    if (
+        activities.some(
+            (activity) =>
+                activity.callId === callId &&
+                activity.name === name &&
+                activity.status === "running",
+        )
+    )
+        return message;
+    return {
+        ...message,
+        activities: [
+            ...activities.filter((activity) => activity.callId !== callId),
+            { callId, name, status: "running" },
+        ],
+    };
+}
+
+export function agentActivity(message: ChatMessageState): string | undefined {
+    const activities = message.activities;
+    const activity = activities?.[activities.length - 1];
+    if (!activity) return undefined;
+    return activity.status === "failed"
+        ? `${activity.name} failed`
+        : activity.name;
 }
 
 interface FileDescriptor {
@@ -298,53 +427,33 @@ export function extractStreamedMedia(markdown: string): {
 } {
     const media: RenderedMedia[] = [];
     const seen = new Set<string>();
-    const linkPattern = /(!?)\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/gi;
-    const displayMarkdown = markdown.replace(
-        linkPattern,
-        (source, imageMarker: string, label: string, url: string) => {
-            const kind = mediaKind(url, imageMarker === "!", label);
-            if (!kind) return source;
-            if (!seen.has(url)) {
-                seen.add(url);
-                media.push({ kind, url, label: label || undefined });
-            }
-            return "";
-        },
-    );
-
-    return {
-        markdown: displayMarkdown.replace(/\n{3,}/g, "\n\n").trim(),
-        media,
+    const remember = (
+        url: string,
+        isImageSyntax: boolean,
+        label: string,
+    ): boolean => {
+        const kind = mediaKind(url, isImageSyntax, label);
+        if (!kind) return false;
+        if (!seen.has(url)) {
+            seen.add(url);
+            media.push({ kind, url, label: label || undefined });
+        }
+        return true;
     };
-}
-
-const TOOL_DETAILS_PATTERN =
-    /<details\b([^>]*)\btype=(["'])tool_calls\2([^>]*)>[\s\S]*?<\/details>/gi;
-const TOOL_NAME_PATTERN = /\bname=(["'])(.*?)\1/i;
-
-/**
- * Managed agents encode completed tool calls as HTML-like details blocks in
- * streamed content. Keep those implementation details out of the answer while
- * preserving the exact emitted tool name for the transient activity label.
- */
-export function extractAgentActivity(content: string): {
-    content: string;
-    activity?: string;
-} {
-    let activity: string | undefined;
-    const visibleContent = content.replace(
-        TOOL_DETAILS_PATTERN,
-        (_source, beforeType: string, _quote: string, afterType: string) => {
-            const name = `${beforeType} ${afterType}`
-                .match(TOOL_NAME_PATTERN)?.[2]
-                ?.trim();
-            if (name) activity = name;
-            return "";
-        },
+    const markdownLinkPattern =
+        /(!?)\[([^\]]*)\]\(\s*<?(https?:\/\/[^\s)>]+)>?\s*\)/gi;
+    const displayMarkdown = markdown.replace(
+        markdownLinkPattern,
+        (source, imageMarker: string, label: string, url: string) =>
+            remember(url, imageMarker === "!", label) ? "" : source,
     );
 
+    const cleanedMarkdown = displayMarkdown.replace(/\n{3,}/g, "\n\n").trim();
+
     return {
-        content: visibleContent.replace(/\n{3,}/g, "\n\n").trim(),
-        ...(activity ? { activity } : {}),
+        // Generated media is the answer. The native player already provides
+        // playback, expansion, and download controls without duplicate prose.
+        markdown: media.length > 0 ? "" : cleanedMarkdown,
+        media,
     };
 }

@@ -106,16 +106,14 @@ with the link can access it, and it expires after 30 days.
 | --- | --- |
 | `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
 
-## Other built-in MCPs
-
-### FFmpeg
+## FFmpeg MCP
 
 `runFfmpeg` accepts public HTTPS media inputs and ordinary FFmpeg arguments. It
 supports multiple inputs and returns the output as a hosted MCP resource link.
 Pollinations supplies the input and output files, so omit the `ffmpeg`
 executable and output path from the arguments.
 
-### Exa Search
+## Exa Search MCP
 
 - `web_search_exa` searches the live web and returns relevant pages with
   highlights.

@@ -553,7 +553,9 @@ describe("docs routes", () => {
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ffmpeg");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
         expect(mcpBody).toContain("## Pollinations MCP");
-        expect(mcpBody).toContain("## Other built-in MCPs");
+        expect(mcpBody).toContain("## FFmpeg MCP");
+        expect(mcpBody).toContain("## Exa Search MCP");
+        expect(mcpBody).not.toContain("## Other built-in MCPs");
         expect(mcpBody).toContain("`generateImage`");
         expect(mcpBody).toContain("`runFfmpeg`");
         expect(mcpBody).toContain("`web_search_exa`");

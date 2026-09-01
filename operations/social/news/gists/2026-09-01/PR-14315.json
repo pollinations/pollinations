@@ -1,0 +1,34 @@
+{
+  "pr_number": 14315,
+  "title": "refactor: unify safety input preparation",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14315",
+  "merged_at": "2026-09-01T20:28:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces route-specific safety helpers with one typed input preparer\n- Preserves existing text, chat, image, video, 3D, and audio prompt behavior\n- Keeps guardrail policy, batching, redaction, and failure handling unchanged\n- Adds direct coverage for batched text inputs\n\nNo public API or model configuration changes.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One safety gate, many doors",
+    "blurb": "The hive now prepares every kind of prompt through one tidy safety path. Same guardrails, fewer route-specific weeds to water.",
+    "summary": "Unified text, chat, image, video, 3D, and audio safety-input preparation behind one typed middleware helper while preserving existing guardrail policy, batching, redaction, and failure behavior.",
+    "impact": "Generation requests keep their existing safety behavior, with direct test coverage now ensuring batched text prompts travel through the shared preparation path correctly.",
+    "keywords": [
+      "safety",
+      "middleware",
+      "guardrails",
+      "prompt-processing",
+      "testing",
+      "gen-api"
+    ],
+    "visual_concept": "Polli acts as a careful garden keeper at a single cozy checkpoint where several labeled prompt parcels—text, chat bubbles, an image tile, film strip, tiny 3D cube, and music note—are gently sorted into one glowing preparation basket; small code-plants and a neat batch of text seeds show the shared typed path and batched-input coverage.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, carefully placing text scrolls, chat bubbles, an image tile, film strip, small 3D cube, and music note into one glowing lime green (#ecf874) prompt-preparation basket beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"ONE PATH\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14315.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener visor, carefully placing text scrolls, chat bubbles, an image tile, film strip, small 3D cube, and music note into one glowing lime green (#ecf874) prompt-preparation basket beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: \"ONE PATH\"."
+  },
+  "generated_at": "2026-09-01T20:29:40.999155+00:00"
+}

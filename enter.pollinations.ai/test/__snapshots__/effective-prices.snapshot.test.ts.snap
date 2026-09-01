@@ -166,6 +166,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000132,
     },
   },
+  "deepseek/deepseek-v4-flash-vision-exp": {
+    "cost": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptImageTokens": 0.00000022,
+      "promptTextTokens": 0.00000022,
+    },
+    "price": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptImageTokens": 0.00000022,
+      "promptTextTokens": 0.00000022,
+    },
+  },
   "dreamshaper": {
     "cost": {
       "completionImageTokens": 0.0001,
@@ -849,6 +863,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
     "price": {
       "completionImageTokens": 0.03,
+    },
+  },
+  "inception/mercury-2.5-preview": {
+    "cost": {
+      "completionTextTokens": 0.00000015,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.00000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00000015,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.00000004,
     },
   },
   "inkling": {

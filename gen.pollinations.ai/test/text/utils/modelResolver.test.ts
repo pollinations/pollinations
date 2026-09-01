@@ -99,6 +99,19 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-2.5-preview",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-2.5-preview");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Nemotron directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, { model: "nemotron" });
 
@@ -344,6 +357,21 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4-flash-0731",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes DeepSeek Vision to the exact Fireworks vision checkpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4-flash-vision-exp",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
         );
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",

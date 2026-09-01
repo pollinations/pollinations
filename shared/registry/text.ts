@@ -379,6 +379,30 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "inception/mercury-2.5-preview": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Inception",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's exact Inception route rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.04),
+            promptCachedTokens: perMillion(0.004),
+            completionTextTokens: perMillion(0.15),
+        },
+        title: "Mercury 2.5 Preview",
+        description:
+            "Ultra-fast diffusion reasoning for coding, tool use, and structured outputs",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 260000,
+        isSpecialized: false,
+    },
     "command-a-plus": {
         aliases: [
             "cohere-command-a-plus",
@@ -470,6 +494,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 10,
         cost: {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
@@ -707,6 +732,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 30,
         cost: {
             promptTextTokens: perMillion(0.22),
             promptCachedTokens: perMillion(0.007),
@@ -716,6 +742,32 @@ export const TEXT_SERVICES = {
         description: "Fast reasoning and coding at bargain prices",
         inputModalities: ["text"],
         outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "deepseek/deepseek-v4-flash-vision-exp": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.22),
+            promptCachedTokens: perMillion(0.007),
+            promptImageTokens: perMillion(0.22),
+            completionTextTokens: perMillion(0.66),
+        },
+        title: "DeepSeek V4 Flash Vision Exp",
+        description:
+            "Low-cost multimodal reasoning for coding, agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30,
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -1507,6 +1559,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 20,
         cost: {
             // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
             promptTextTokens: perMillion(0.05),
@@ -1826,6 +1879,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 5,
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
@@ -1874,6 +1928,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 10,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
             // prompt $0.30/M, completion $1.20/M, cache read $0.06/M.
@@ -1900,6 +1955,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 10,
         cost: {
             promptTextTokens: perMillion(0.35),
             promptCachedTokens: perMillion(0.04),

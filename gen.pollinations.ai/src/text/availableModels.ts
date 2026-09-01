@@ -95,6 +95,11 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "inception/mercury-2.5-preview",
+        config: portkeyConfig["inception/mercury-2.5-preview"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "command-a-plus",
         config: portkeyConfig["Cohere-command-a-plus-05-2026"],
     },
@@ -176,6 +181,13 @@ const models: ModelDefinition[] = [
         name: "deepseek",
         config: portkeyConfig[
             "accounts/fireworks/models/deepseek-v4-flash-0731"
+        ],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek/deepseek-v4-flash-vision-exp",
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4-flash-vision-exp"
         ],
         transform: fireworksThinking,
     },

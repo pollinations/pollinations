@@ -61,6 +61,7 @@ export function AgentDialog({
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
                       mcpServers: agent.mcpServers,
+                      delegateModels: agent.delegateModels ?? [],
                   }
                 : emptyAgentForm),
         });
@@ -70,7 +71,7 @@ export function AgentDialog({
 
     function updateAgentForm(
         key: keyof AgentFormState,
-        value: string | AgentFormState["mcpServers"],
+        value: string | AgentFormState["mcpServers"] | AgentFormState["delegateModels"],
     ): void {
         setForm((current) => ({ ...current, [key]: value }));
     }

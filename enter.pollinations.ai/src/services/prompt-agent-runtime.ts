@@ -1,10 +1,12 @@
 import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
+import { asSchema } from "@ai-sdk/provider-utils";
 import { getLogger } from "@logtape/logtape";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import {
     APICallError,
     type FinishReason,
+    generateText,
     type ModelMessage,
     stepCountIs,
     ToolLoopAgent,
@@ -176,6 +178,65 @@ async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
         apiKey: runtime.apiKey,
         baseURL: `${genBaseUrl}/v1`,
     });
+
+    // Inject the built-in delegate tool only when the agent has configured
+    // one or more delegation targets. The tool must not exist at all when the
+    // list is empty so the LLM never sees it.
+    const delegateModels = runtime.config.delegateModels ?? [];
+    if (delegateModels.length > 0) {
+        const [first, ...rest] = delegateModels as [string, ...string[]];
+        const paramSchema = z.object({
+            model: z
+                .enum([first, ...rest])
+                .describe(
+                    `The model or agent ID to delegate to. Must be one of: ${delegateModels.join(", ")}.`,
+                ),
+            prompt: z
+                .string()
+                .describe(
+                    "The self-contained prompt to send to the delegated model.",
+                ),
+        });
+        tools["delegate"] = {
+            description:
+                "Delegate a self-contained prompt to another model or agent " +
+                "and return its response as a tool result. " +
+                "Do NOT forward the full conversation history — choose exactly " +
+                "what you want the delegated model to process. " +
+                `Allowed models: ${delegateModels.join(", ")}.`,
+            parameters: paramSchema,
+            inputSchema: asSchema(paramSchema),
+            toModelOutput: safeMcpModelOutput,
+            async execute(
+                input: unknown,
+                options: { abortSignal?: AbortSignal },
+            ): Promise<CallToolResult> {
+                const { model, prompt } = (input ?? {}) as {
+                    model: string;
+                    prompt: string;
+                };
+                // Runtime allowlist check — do not rely solely on the schema.
+                if (!delegateModels.includes(model)) {
+                    throw new Error(
+                        `Model "${model}" is not in the configured delegateModels list. ` +
+                            `Allowed: ${delegateModels.join(", ")}.`,
+                    );
+                }
+                const result = await generateText({
+                    model: pollinations(model),
+                    prompt,
+                    abortSignal: options.abortSignal,
+                    // Delegated calls are single-turn; billing, telemetry, and
+                    // caching are handled by Gen using the parent ag_ credential
+                    // already embedded in the pollinations provider's apiKey.
+                    maxRetries: 0,
+                });
+                return {
+                    content: [{ type: "text", text: result.text }],
+                };
+            },
+        } as unknown as McpTool;
+    }
 
     const agent = new ToolLoopAgent({
         model: pollinations(runtime.config.baseModel),

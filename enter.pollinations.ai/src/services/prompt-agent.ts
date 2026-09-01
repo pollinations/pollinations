@@ -2,12 +2,17 @@
 // Worker; the agent row selects the prompt, model, and attached MCP servers.
 import {
     BuiltinMcpServerIdSchema,
+    OptiLLMConfigSchema,
     PromptAgentConfigSchema,
     PromptAgentInputSchema,
     type PromptAgentListingPayload,
 } from "@shared/community-endpoints.ts";
 
-export { BuiltinMcpServerIdSchema, PromptAgentInputSchema };
+export {
+    BuiltinMcpServerIdSchema,
+    OptiLLMConfigSchema,
+    PromptAgentInputSchema,
+};
 export type PromptAgentConfig = PromptAgentListingPayload;
 export type PromptAgentInput = PromptAgentListingPayload;
 

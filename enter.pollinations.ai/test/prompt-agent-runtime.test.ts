@@ -16,6 +16,7 @@ import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
 import { PromptAgentInputSchema } from "../src/services/prompt-agent.ts";
 import {
     handlePromptAgentRequest,
+    optillmRequestFields,
     type PromptAgentRequest,
     PromptAgentRuntimeRequestSchema,
 } from "../src/services/prompt-agent-runtime.ts";
@@ -30,6 +31,7 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     },
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
+    optillmBaseUrl: "https://optillm.test.example/v1",
 };
 const POLLINATIONS_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/pollinations`;
 const BROWSER_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/browser`;
@@ -88,6 +90,40 @@ describe("prompt-agent config", () => {
         expect(result.error?.issues).toContainEqual(
             expect.objectContaining({
                 message: "Duplicate MCP servers are not allowed",
+            }),
+        );
+    });
+
+    it("normalizes bounded OptiLLM approach settings", () => {
+        expect(
+            PromptAgentConfigSchema.parse({
+                ...config,
+                optillm: { approach: "mcts" },
+            }).optillm,
+        ).toEqual({
+            approach: "mcts",
+            simulations: 2,
+            depth: 1,
+            exploration: 0.2,
+        });
+        expect(
+            PromptAgentConfigSchema.safeParse({
+                ...config,
+                optillm: { approach: "bon", bestOfN: 20 },
+            }).success,
+        ).toBe(false);
+    });
+
+    it("rejects OptiLLM combined with MCP tools", () => {
+        const result = PromptAgentConfigSchema.safeParse({
+            ...config,
+            mcpServers: ["pollinations"],
+            optillm: { approach: "re2" },
+        });
+
+        expect(result.error?.issues).toContainEqual(
+            expect.objectContaining({
+                message: "OptiLLM approaches cannot be combined with MCP tools",
             }),
         );
     });
@@ -189,6 +225,85 @@ describe("prompt-agent runtime", () => {
         await expect(response.json()).resolves.toMatchObject({
             model: "openai-fast",
             choices: [{ message: { content: "done" } }],
+        });
+    });
+
+    it("routes configured approaches through OptiLLM with bounded settings", async () => {
+        const requests: Record<string, unknown>[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://optillm.test.example/v1/chat/completions",
+                );
+                expect(request.headers.get("Authorization")).toBe(
+                    `Bearer ${BASE_RUNTIME.apiKey}`,
+                );
+                requests.push(
+                    (await request.json()) as Record<string, unknown>,
+                );
+                return Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "optimized",
+                            },
+                        },
+                    ],
+                    usage: { prompt_tokens: 2, completion_tokens: 1 },
+                });
+            }),
+        );
+
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "solve this" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    optillm: {
+                        approach: "mcts",
+                        simulations: 3,
+                        depth: 2,
+                        exploration: 0.4,
+                    },
+                },
+            },
+        );
+
+        expect(response.status).toBe(200);
+        expect(requests).toHaveLength(1);
+        expect(requests[0]).toMatchObject({
+            model: "openai",
+            optillm_approach: "mcts",
+            mcts_simulations: 3,
+            mcts_depth: 2,
+            mcts_exploration: 0.4,
+        });
+    });
+
+    it("maps every supported OptiLLM approach to upstream fields", () => {
+        expect(optillmRequestFields({ approach: "re2" })).toEqual({
+            optillm_approach: "re2",
+        });
+        expect(optillmRequestFields({ approach: "bon", bestOfN: 4 })).toEqual({
+            optillm_approach: "bon",
+            best_of_n: 4,
+        });
+        expect(
+            optillmRequestFields({
+                approach: "rstar",
+                maxDepth: 2,
+                rollouts: 4,
+                exploration: 1.2,
+            }),
+        ).toEqual({
+            optillm_approach: "rstar",
+            rstar_max_depth: 2,
+            rstar_num_rollouts: 4,
+            rstar_c: 1.2,
         });
     });
 

@@ -61,6 +61,7 @@ export function AgentDialog({
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
                       mcpServers: agent.mcpServers,
+                      optillm: agent.optillm,
                   }
                 : emptyAgentForm),
         });
@@ -68,9 +69,9 @@ export function AgentDialog({
         setIsSubmitting(false);
     }, [open, agent, endpoint]);
 
-    function updateAgentForm(
-        key: keyof AgentFormState,
-        value: string | AgentFormState["mcpServers"],
+    function updateAgentForm<K extends keyof AgentFormState>(
+        key: K,
+        value: AgentFormState[K],
     ): void {
         setForm((current) => ({ ...current, [key]: value }));
     }

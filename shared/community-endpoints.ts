@@ -564,12 +564,55 @@ export const ProxyListingPayloadSchema = z
 
 export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
+const OptiLLMRe2ConfigSchema = z
+    .object({ approach: z.literal("re2") })
+    .strict();
+const OptiLLMCotReflectionConfigSchema = z
+    .object({ approach: z.literal("cot_reflection") })
+    .strict();
+const OptiLLMBonConfigSchema = z
+    .object({
+        approach: z.literal("bon"),
+        bestOfN: z.number().int().min(2).max(5).optional().default(3),
+    })
+    .strict();
+const OptiLLMMctsConfigSchema = z
+    .object({
+        approach: z.literal("mcts"),
+        simulations: z.number().int().min(1).max(4).optional().default(2),
+        depth: z.number().int().min(1).max(3).optional().default(1),
+        exploration: z.number().min(0).max(1).optional().default(0.2),
+    })
+    .strict();
+const OptiLLMRStarConfigSchema = z
+    .object({
+        approach: z.literal("rstar"),
+        maxDepth: z.number().int().min(1).max(4).optional().default(3),
+        rollouts: z.number().int().min(1).max(8).optional().default(5),
+        exploration: z.number().min(0.1).max(5).optional().default(1.4),
+    })
+    .strict();
+
+/**
+ * Deliberately small per-agent OptiLLM surface. These bounds cap the extra
+ * model calls an approach can create; arbitrary plugins and server config are
+ * not part of the public agent contract.
+ */
+export const OptiLLMConfigSchema = z.discriminatedUnion("approach", [
+    OptiLLMRe2ConfigSchema,
+    OptiLLMCotReflectionConfigSchema,
+    OptiLLMBonConfigSchema,
+    OptiLLMMctsConfigSchema,
+    OptiLLMRStarConfigSchema,
+]);
+export type OptiLLMConfig = z.infer<typeof OptiLLMConfigSchema>;
+
 /**
  * An agent Enter runs itself. Its row id is also the model sent to the shared
  * runtime, which loads this configuration from the same row.
  */
 export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
-export const PromptAgentConfigSchema = z.object({
+const PromptAgentConfigObjectSchema = z.object({
     systemPrompt: z.string().trim().min(1).max(8000),
     baseModel: z.string().trim().min(1).max(253),
     mcpServers: z
@@ -580,8 +623,17 @@ export const PromptAgentConfigSchema = z.object({
         })
         .optional()
         .default([]),
+    optillm: OptiLLMConfigSchema.optional(),
 });
-export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
+export const PromptAgentInputSchema =
+    PromptAgentConfigObjectSchema.strict().refine(
+        (config) => !config.optillm || config.mcpServers.length === 0,
+        {
+            message: "OptiLLM approaches cannot be combined with MCP tools",
+            path: ["optillm"],
+        },
+    );
+export const PromptAgentConfigSchema = PromptAgentInputSchema;
 
 export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14308,
+  "title": "fix: parse chat content arrays in Play",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/14308",
+  "merged_at": "2026-09-01T19:33:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extracts text from OpenAI content-parts arrays before rendering chat results.\n- Keeps existing string-content behavior unchanged.\n- Supports Floret responses containing text plus linked media parts.\n\nSplit from #14294.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Play reads the whole bouquet",
+    "blurb": "Chat replies in Play can now unpack OpenAI-style content parts before putting words on screen. Floret may bring text and media together; the UI now knows where the text lives.",
+    "summary": "PlayGenerator now extracts text from OpenAI content-part arrays, so Floret chat responses that combine text with linked media render their written result while existing string responses continue unchanged.",
+    "impact": "Users can see the text in mixed Floret text-and-media responses in Play instead of receiving a chat result the renderer cannot read.",
+    "keywords": [
+      "Play",
+      "Floret",
+      "chat",
+      "OpenAI content parts",
+      "media",
+      "UI"
+    ],
+    "visual_concept": "Depict Polli as a cheerful little librarian or gardener sorting a bouquet of message cards: readable text cards and tiny linked image/media cards from a Floret chat response. A retro Play terminal displays the extracted text clearly, with code-plants and flowers around it to show that the mixed response has been carefully parsed rather than discarded.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, sorting a Floret chat bouquet of text cards and linked media tiles beside a glowing retro monitor that cleanly displays the extracted message. Lime green (#ecf874) is prominent across the terminal glow and flower pots, with code-plants, soft mint-lavender-peach gradients, cozy pixel art, 8-bit aesthetic, warm lighting, retro gaming vibes, and subtle pixel-font text: 'PLAY'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14308.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, sorting a Floret chat bouquet of text cards and linked media tiles beside a glowing retro monitor that cleanly displays the extracted message. Lime green (#ecf874) is prominent across the terminal glow and flower pots, with code-plants, soft mint-lavender-peach gradients, cozy pixel art, 8-bit aesthetic, warm lighting, retro gaming vibes, and subtle pixel-font text: 'PLAY'."
+  },
+  "generated_at": "2026-09-01T19:34:38.978919+00:00"
+}

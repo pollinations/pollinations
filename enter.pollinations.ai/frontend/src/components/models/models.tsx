@@ -12,9 +12,11 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
+    McpIcon,
     SearchIcon,
     Section,
     SparklesIcon,
+    Switch,
     TabButton,
     TokensIcon,
     TrendUpIcon,
@@ -41,11 +43,7 @@ import {
     matchesModelQuery,
     parseModelQuery,
 } from "./model-query.ts";
-import {
-    getAvailableModelSections,
-    type ModelScope,
-    type ModelSort,
-} from "./model-search.ts";
+import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
@@ -55,7 +53,7 @@ import {
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
-const POLLINATIONS_SECTION_ORDER: SectionType[] = [
+const MODEL_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
     "image",
@@ -64,18 +62,22 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "embedding",
-    "mcp",
 ];
 
-const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+type PrimaryTab = "models" | "agent" | "mcp";
+
+const PRIMARY_TABS: Array<{
+    value: PrimaryTab;
+    label: string;
+    Icon: FC<{ className?: string }>;
+}> = [
+    { value: "models", label: "Models", Icon: BeakerIcon },
+    { value: "agent", label: "Agents", Icon: BotIcon },
+    { value: "mcp", label: "MCP", Icon: McpIcon },
+];
 
 const MODEL_SLUG_LIST_URL =
     "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
-
-const SCOPE_LABELS: Record<ModelScope, string> = {
-    pollinations: "Official",
-    community: "Community",
-};
 
 const SORT_OPTIONS: Array<{
     value: ModelSort;
@@ -134,7 +136,7 @@ function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
     const categorized: Record<SectionType, ModelPrice[]> = {
-        all: models,
+        all: [],
         image: [],
         video: [],
         "3d": [],
@@ -147,7 +149,12 @@ function categorizeModels(
     };
 
     for (const model of models) {
-        categorized[model.agent ? "agent" : model.type].push(model);
+        if (model.agent) {
+            categorized.agent.push(model);
+        } else {
+            categorized.all.push(model);
+            categorized[model.type].push(model);
+        }
     }
     return categorized;
 }
@@ -188,6 +195,13 @@ export const Models: FC = () => {
     const modelSearch = useSearch({ from: "/_dashboard/models" });
     const activeScope = modelSearch.scope ?? "pollinations";
     const activeTab = modelSearch.category ?? "all";
+    const activePrimaryTab: PrimaryTab =
+        activeTab === "agent"
+            ? "agent"
+            : activeTab === "mcp"
+              ? "mcp"
+              : "models";
+    const includeCommunity = activeScope === "community";
     const activeSort = modelSearch.sort ?? "popular";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
@@ -203,29 +217,25 @@ export const Models: FC = () => {
     );
     const query = search.trim();
     const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
-    const scopedModels = useMemo(
-        () =>
-            allModels.filter(
-                (model) =>
-                    Boolean(model.community) === (activeScope === "community"),
-            ),
-        [activeScope, allModels],
+    const visibleModels = useMemo(
+        () => allModels.filter((model) => includeCommunity || !model.community),
+        [allModels, includeCommunity],
     );
     const filteredModels = useMemo(
         () =>
             query
-                ? scopedModels.filter((model) =>
+                ? visibleModels.filter((model) =>
                       matchesModelQuery(model, parsedQuery),
                   )
-                : scopedModels,
-        [parsedQuery, query, scopedModels],
+                : visibleModels,
+        [parsedQuery, query, visibleModels],
     );
     const searchOptions = useMemo(
         () =>
             activeTab === "mcp"
                 ? []
-                : getModelQuerySuggestions(search, scopedModels),
-        [activeTab, search, scopedModels],
+                : getModelQuerySuggestions(search, visibleModels),
+        [activeTab, search, visibleModels],
     );
 
     useEffect(() => {
@@ -255,20 +265,17 @@ export const Models: FC = () => {
         () => categorizeModels(sortModels(filteredModels, activeSort)),
         [activeSort, filteredModels],
     );
-    const sectionOrder =
-        activeScope === "community"
-            ? getAvailableModelSections(scopedModels)
-            : POLLINATIONS_SECTION_ORDER;
-
-    const hasAgents = scopedModels.some((model) => model.agent);
-    const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
         activeTab === "mcp"
             ? "MCP servers"
-            : activeTab === "all"
-              ? `${scopeLabel} models`
-              : `${scopeLabel} ${searchLabel} models`;
+            : activeTab === "agent"
+              ? "agents"
+              : activeTab === "all"
+                ? includeCommunity
+                    ? "models"
+                    : "official models"
+                : `${includeCommunity ? "" : "official "}${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -313,21 +320,26 @@ export const Models: FC = () => {
         });
     };
 
-    const setActiveScope = (scope: ModelScope) => {
+    const setActivePrimaryTab = (primaryTab: PrimaryTab) => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                scope: scope === "pollinations" ? undefined : scope,
-                category:
-                    scope === "community"
-                        ? getAvailableModelSections(
-                              allModels.filter((model) => model.community),
-                          ).includes(previous.category ?? "all")
-                            ? previous.category
-                            : undefined
-                        : previous.category === "agent"
+                category: primaryTab === "models" ? undefined : primaryTab,
+                scope:
+                    primaryTab === "agent"
+                        ? "community"
+                        : primaryTab === "mcp"
                           ? undefined
-                          : previous.category,
+                          : previous.scope,
+            }),
+        });
+    };
+
+    const setIncludeCommunity = (include: boolean) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                scope: include ? "community" : undefined,
             }),
         });
     };
@@ -403,58 +415,61 @@ export const Models: FC = () => {
                     </a>
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">
-                            {SCOPE_ORDER.map((scope) => (
-                                <TabButton
-                                    key={scope}
-                                    active={activeScope === scope}
-                                    onClick={() => setActiveScope(scope)}
-                                    size="lg"
-                                    ariaLabel={
-                                        scope === "community"
-                                            ? "Community alpha models"
-                                            : undefined
-                                    }
-                                >
-                                    <span className="inline-flex items-center gap-1.5">
-                                        {SCOPE_LABELS[scope]}
-                                        {scope === "community" && (
-                                            <Chip intent="alpha" size="sm">
-                                                Alpha
-                                            </Chip>
-                                        )}
-                                    </span>
-                                </TabButton>
-                            ))}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                            {sectionOrder.map((section) => {
-                                const showAgentsNew =
-                                    section === "agent" && hasAgents;
+                            {PRIMARY_TABS.map((tab) => {
+                                const TabIcon = tab.Icon;
                                 return (
                                     <TabButton
-                                        key={section}
-                                        active={activeTab === section}
-                                        onClick={() => setActiveTab(section)}
-                                        ariaLabel={
-                                            showAgentsNew
-                                                ? "Agents, new"
-                                                : undefined
+                                        key={tab.value}
+                                        active={activePrimaryTab === tab.value}
+                                        onClick={() =>
+                                            setActivePrimaryTab(tab.value)
                                         }
+                                        size="lg"
                                     >
                                         <span className="inline-flex items-center gap-1.5">
-                                            {sectionLabels[section]}
-                                            {showAgentsNew && (
-                                                <Chip intent="new" size="sm">
-                                                    New
-                                                </Chip>
-                                            )}
+                                            <TabIcon className="h-4 w-4" />
+                                            {tab.label}
                                         </span>
                                     </TabButton>
                                 );
                             })}
                         </div>
+                        {activePrimaryTab === "models" && (
+                            <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                    {MODEL_SECTION_ORDER.map((section) => (
+                                        <TabButton
+                                            key={section}
+                                            active={activeTab === section}
+                                            onClick={() =>
+                                                setActiveTab(section)
+                                            }
+                                        >
+                                            {sectionLabels[section]}
+                                        </TabButton>
+                                    ))}
+                                </div>
+                                <div className="flex items-center gap-2 text-sm text-theme-text-muted">
+                                    <span className="inline-flex items-center gap-1.5">
+                                        Community
+                                        <Chip intent="alpha" size="sm">
+                                            Alpha
+                                        </Chip>
+                                    </span>
+                                    <Switch
+                                        checked={includeCommunity}
+                                        onChange={setIncludeCommunity}
+                                        ariaLabel={
+                                            includeCommunity
+                                                ? "Hide community models"
+                                                : "Include community models"
+                                        }
+                                    />
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0 max-w-md flex-1 basis-[240px]">
@@ -536,7 +551,7 @@ export const Models: FC = () => {
                         )}
                     </div>
                 </div>
-                {activeScope === "community" && (
+                {includeCommunity && (
                     <Alert
                         intent="warning"
                         title="Community model privacy"

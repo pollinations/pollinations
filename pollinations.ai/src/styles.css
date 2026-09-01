@@ -131,6 +131,36 @@
     text-decoration-color: currentColor;
 }
 
+@keyframes site-drawer-card-enter {
+    from {
+        opacity: 0;
+        transform: translateY(0.5rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.site-drawer-card-enter {
+    animation: site-drawer-card-enter 240ms ease-out both;
+}
+
+.site-drawer-card-delay-1 {
+    animation-delay: 40ms;
+}
+
+.site-drawer-card-delay-2 {
+    animation-delay: 80ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .site-drawer-card-enter {
+        animation: none;
+    }
+}
+
 .apps-featured-rail {
     scrollbar-width: none;
 }

@@ -152,6 +152,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000132,
     },
   },
+  "deepseek/deepseek-v4-flash-vision-exp": {
+    "cost": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptImageTokens": 0.00000022,
+      "promptTextTokens": 0.00000022,
+    },
+    "price": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptImageTokens": 0.00000022,
+      "promptTextTokens": 0.00000022,
+    },
+  },
   "dreamshaper": {
     "cost": {
       "completionImageTokens": 0.0001,

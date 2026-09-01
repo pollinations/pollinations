@@ -185,6 +185,13 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "deepseek/deepseek-v4-flash-vision-exp",
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4-flash-vision-exp"
+        ],
+        transform: fireworksThinking,
+    },
+    {
         name: "gemma",
         config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14247,
+  "title": "test: update community relisting fixture",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14247",
+  "merged_at": "2026-09-01T04:05:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Advances the hidden timestamp past the 12-hour relisting delay\n- Keeps the existing account API relisting assertion meaningful\n- Fixes the Gen suite failure introduced by the new relisting policy",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The clock blooms again",
+    "blurb": "A test account waited out the full 12-hour relisting nap. The Gen suite can once again confirm that hidden communities return exactly when the policy says they should.",
+    "summary": "Updated the Gen community endpoint fixture to advance its hidden timestamp beyond the 12-hour relisting delay, preserving the account API relisting assertion under the new policy.",
+    "impact": "Developers get a reliable regression check that communities become eligible for relisting after the configured 12-hour window.",
+    "keywords": [
+      "tests",
+      "community",
+      "relisting",
+      "gen-api",
+      "fixtures"
+    ],
+    "visual_concept": "A cozy garden clock marks twelve hours while Polli, wearing tiny watchmaker glasses, tends a code-flower emerging from a hidden planter; this represents the test fixture advancing past the relisting window. A small CRT monitor robot can hold a passing-test printout, with lime-green terminal glow and surrounding flowers.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny watchmaker glasses as she adjusts a garden clock at twelve hours beside a code-flower sprouting from a once-hidden planter; a happy CRT monitor robot holds a small pixel printout reading \"TEST OK\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle flowers and vines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14247.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny watchmaker glasses as she adjusts a garden clock at twelve hours beside a code-flower sprouting from a once-hidden planter; a happy CRT monitor robot holds a small pixel printout reading \"TEST OK\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle flowers and vines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T04:06:39.331570+00:00"
+}

@@ -1,19 +1,13 @@
 import {
     Button,
-    FieldStack,
     InlineLink,
     Input,
+    SearchIcon,
     Section,
     Surface,
     Text,
 } from "@pollinations/ui";
-import {
-    type FormEvent,
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useState,
-} from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 
 type Connection = {
@@ -109,33 +103,43 @@ export function ConnectedApps() {
             query: query ? { search: query } : {},
         });
         if (!response.ok) throw new Error("Could not load available apps.");
-        setToolkits(((await response.json()) as { data: Toolkit[] }).data);
+        return ((await response.json()) as { data: Toolkit[] }).data;
     }, []);
 
     useEffect(() => {
-        void Promise.all([loadConnections(), loadToolkits()])
-            .catch((loadError) =>
-                setError(
-                    errorMessage(loadError, "Could not load connected apps."),
-                ),
-            )
-            .finally(() => setLoading(false));
-    }, [loadConnections, loadToolkits]);
+        void loadConnections().catch((loadError) =>
+            setError(errorMessage(loadError, "Could not load connected apps.")),
+        );
+    }, [loadConnections]);
 
-    async function handleSearch(event: FormEvent) {
-        event.preventDefault();
+    useEffect(() => {
         const query = search.trim();
-        setSubmittedSearch(query);
-        setError(null);
-        setLoading(true);
-        try {
-            await loadToolkits(query);
-        } catch (searchError) {
-            setError(errorMessage(searchError, "Could not search apps."));
-        } finally {
-            setLoading(false);
-        }
-    }
+        let cancelled = false;
+        const timeout = window.setTimeout(() => {
+            setSubmittedSearch(query);
+            setError(null);
+            setLoading(true);
+            void loadToolkits(query)
+                .then((results) => {
+                    if (!cancelled) setToolkits(results);
+                })
+                .catch((searchError) => {
+                    if (!cancelled) {
+                        setError(
+                            errorMessage(searchError, "Could not search apps."),
+                        );
+                    }
+                })
+                .finally(() => {
+                    if (!cancelled) setLoading(false);
+                });
+        }, 200);
+
+        return () => {
+            cancelled = true;
+            window.clearTimeout(timeout);
+        };
+    }, [loadToolkits, search]);
 
     async function connect(toolkit: string) {
         setPendingId(toolkit);
@@ -231,26 +235,18 @@ export function ConnectedApps() {
                 </div>
             )}
 
-            <form
-                onSubmit={(event) => void handleSearch(event)}
-                className="flex items-end gap-2"
-            >
-                <FieldStack
-                    label="Search connectors"
-                    className="min-w-0 flex-1"
-                >
-                    <Input
-                        value={search}
-                        placeholder="Search Gmail, Slack, Notion…"
-                        onChange={(event) =>
-                            setSearch(event.currentTarget.value)
-                        }
-                    />
-                </FieldStack>
-                <Button type="submit" disabled={loading}>
-                    Search
-                </Button>
-            </form>
+            <div className="relative max-w-md">
+                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                <Input
+                    value={search}
+                    placeholder="Search connectors…"
+                    aria-label="Search connectors"
+                    autoComplete="off"
+                    className="pl-9"
+                    onChange={(event) => setSearch(event.currentTarget.value)}
+                    onBlur={() => setSearch(search.trim())}
+                />
+            </div>
 
             {!loading && (
                 <div className="space-y-2">

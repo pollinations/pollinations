@@ -837,6 +837,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "inception/mercury-2.5-preview": {
+    "cost": {
+      "completionTextTokens": 0.00000015,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.00000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00000015,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.00000004,
+    },
+  },
   "inkling": {
     "cost": {
       "completionTextTokens": 0.0000012,

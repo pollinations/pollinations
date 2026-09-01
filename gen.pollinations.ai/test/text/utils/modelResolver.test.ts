@@ -83,6 +83,19 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-2.5-preview",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-2.5-preview");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Nemotron directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, { model: "nemotron" });
 

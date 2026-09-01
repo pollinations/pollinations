@@ -3,7 +3,6 @@ import {
     type CreateChatCompletionRequest,
     type CreateChatCompletionResponse,
     CreateChatCompletionResponseSchema,
-    type CreateResponseRequest,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
@@ -19,7 +18,6 @@ import { handleImagePrompt } from "@/image/handler.ts";
 import {
     applySafety,
     applySafetyToChatRequest,
-    applySafetyToResponseRequest,
     applySafetyToTexts,
     withSafetyHeaders,
 } from "@/middleware/safety.ts";
@@ -28,12 +26,12 @@ import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
-    handleCreateResponseLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { assertStreamContentType } from "../utils/upstream-response.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -222,18 +220,6 @@ export async function generateChatCompletion(
     );
 }
 
-export async function generateCreateResponse(
-    c: Context<Env>,
-): Promise<Response> {
-    const requestBody = await applySafetyToResponseRequest(c, {
-        ...(c.req.valid("json" as never) as CreateResponseRequest),
-        model: c.var.model.resolved,
-    });
-    const response = await handleCreateResponseLocal(c, requestBody);
-    assertStreamContentType(c, response, c.var.upstreamRequestUrl);
-    return withSafetyHeaders(c, response);
-}
-
 export async function generateTextContent(c: Context<Env>): Promise<Response> {
     const requestBody = await applySafetyToChatRequest(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
@@ -265,23 +251,6 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
             system,
         }),
     );
-}
-
-function assertStreamContentType(
-    c: Context<Env>,
-    response: Response,
-    upstreamRequestUrl: URL | undefined,
-): void {
-    if (c.var.track.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            throw new UpstreamError(502, {
-                message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: upstreamRequestUrl,
-                responseBody: contentType,
-            });
-        }
-    }
 }
 
 export function contentFilterResultsToHeaders(

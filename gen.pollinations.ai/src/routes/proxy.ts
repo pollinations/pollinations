@@ -78,6 +78,7 @@ import {
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
     generationAccess,
@@ -89,7 +90,6 @@ import {
 import { handleSimpleAudio } from "./audio.ts";
 import {
     generateChatCompletion,
-    generateCreateResponse,
     generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,

@@ -41,7 +41,6 @@ import {
     MODEL_USED_HEADER,
     openaiUsageToUsage,
     parseUsageHeaders,
-    responsesUsageToUsage,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type {
@@ -59,7 +58,6 @@ import {
     type ContentFilterResult,
     ContentFilterResultSchema,
     ContentFilterSeveritySchema,
-    ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
 import { getRoutePath, removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
@@ -79,6 +77,10 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import {
+    getResponsesEventUsage,
+    isResponsesFailure,
+} from "@/text/responses/tracking.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -766,19 +768,8 @@ function containsFinishReasonError(output: unknown): boolean {
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
+        if (isResponsesFailure(event)) return true;
         if (!event || typeof event !== "object") continue;
-        const responseEvent = event as {
-            type?: unknown;
-            status?: unknown;
-            response?: { status?: unknown };
-        };
-        if (
-            responseEvent.type === "response.failed" ||
-            responseEvent.status === "failed" ||
-            responseEvent.response?.status === "failed"
-        ) {
-            return true;
-        }
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
         for (const choice of choices) {
@@ -1225,31 +1216,13 @@ async function extractUsageAndContentFilterResultsStream(
             model = parseResult.data?.model;
         }
 
-        if (event && typeof event === "object") {
-            const responseEvent = event as {
-                type?: unknown;
-                response?: { model?: unknown; usage?: unknown };
-            };
-            if (
-                responseEvent.type === "response.completed" ||
-                responseEvent.type === "response.incomplete" ||
-                responseEvent.type === "response.failed"
-            ) {
-                const responsesUsage = ResponseUsageSchema.safeParse(
-                    responseEvent.response?.usage,
-                );
-                if (responsesUsage.success) {
-                    if (usage) {
-                        log.warn(
-                            "Multiple usage objects found in event stream",
-                        );
-                    }
-                    usage = responsesUsageToUsage(responsesUsage.data);
-                    if (typeof responseEvent.response?.model === "string") {
-                        model = responseEvent.response.model;
-                    }
-                }
+        const responsesUsage = getResponsesEventUsage(event);
+        if (responsesUsage) {
+            if (usage) {
+                log.warn("Multiple usage objects found in event stream");
             }
+            usage = responsesUsage.usage;
+            model = responsesUsage.model ?? model;
         }
     }
 

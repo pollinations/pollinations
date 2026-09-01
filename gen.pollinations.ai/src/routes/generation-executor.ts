@@ -29,6 +29,7 @@ import {
     Generate3dRequestQueryParamsSchema,
 } from "@/schemas/model3d.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import { apiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
     handleSimpleAudio,
@@ -40,7 +41,6 @@ import {
 } from "./audio.ts";
 import {
     generateChatCompletion,
-    generateCreateResponse,
     generateEmbeddingsResponse,
     generateImageVideo,
     generateModel3d,

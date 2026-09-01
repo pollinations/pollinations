@@ -6,8 +6,8 @@ import { describe, expect, it, vi } from "vitest";
 import {
     callDirectResponses,
     resolveDirectResponsesTarget,
-    validateDirectResponsesRequest,
-} from "@/text/responses.ts";
+} from "@/text/responses/client.ts";
+import { validateDirectResponsesRequest } from "@/text/responses/request.ts";
 
 function request(
     overrides: Partial<CreateResponseRequest> = {},

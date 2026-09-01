@@ -7,6 +7,40 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    kontext: {
+        "kontext-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "flux-2-pro": {
+        "flux-2-pro-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "qwen-image-3": {
+        "qwen-image-3-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptImageTokens: 0,
+                completionImageTokens: 0.03,
+            },
+            costVariants: {
+                "2k": {
+                    promptImageTokens: 0,
+                    completionImageTokens: 0.03,
+                },
+            },
+        },
+    },
+    "p-image-edit": {
+        "p-image-edit-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
     zimage: {
         "zimage-fal": {
             provider: "fal",

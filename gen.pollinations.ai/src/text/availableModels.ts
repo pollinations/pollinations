@@ -127,8 +127,18 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "qwen3.8-2.4t-a95b-deepinfra",
+        config: portkeyConfig["Qwen/Qwen3.8-2.4T-A95B"],
+        transform: fireworksThinking,
+    },
+    {
         name: "qwen3.8-27b",
         config: portkeyConfig["qwen/qwen3.8-27b"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen3.8-27b-openrouter",
+        config: portkeyConfig["qwen3.8-27b-openrouter"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
@@ -180,12 +190,25 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "deepseek-deepinfra",
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash-0731"],
+        transform: fireworksThinking,
+    },
+    {
         name: "gemma",
         config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
+        name: "gemma-deepinfra",
+        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
+    },
+    {
         name: "gemma-4-31b",
         config: portkeyConfig["google/gemma-4-31b-it"],
+    },
+    {
+        name: "gemma-4-31b-deepinfra",
+        config: portkeyConfig["google/gemma-4-31B-it"],
     },
     {
         name: "deepseek-pro",
@@ -244,6 +267,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["claude-opus-4-7"],
         // Opus 4.7/4.8 require adaptive thinking + output_config.effort.
         transform: claudeAdaptiveThinking,
+    },
+    {
+        name: "claude-opus-4.7-openrouter",
+        config: portkeyConfig["claude-opus-4.7-openrouter"],
     },
     {
         name: "claude-large",
@@ -323,6 +350,11 @@ const models: ModelDefinition[] = [
     {
         name: "kimi",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p6"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "kimi-deepinfra",
+        config: portkeyConfig["moonshotai/Kimi-K2.6"],
         transform: fireworksThinking,
     },
     {
@@ -416,6 +448,11 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "minimax-m2.7-deepinfra",
+        config: portkeyConfig["MiniMaxAI/MiniMax-M2.7"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "minimax",
         config: portkeyConfig["accounts/fireworks/models/minimax-m3"],
         transform: fireworksThinking,
@@ -436,6 +473,11 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "llama-deepinfra",
+        config: portkeyConfig["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
+        transform: stripReasoning,
+    },
+    {
         name: "llama-maverick",
         config: portkeyConfig["Llama-4-Maverick-17B-128E-Instruct-FP8"],
         transform: stripReasoning,
@@ -450,6 +492,11 @@ const models: ModelDefinition[] = [
         name: "mistral-large",
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.
+        transform: stripReasoning,
+    },
+    {
+        name: "mistral-large-openrouter",
+        config: portkeyConfig["mistral-large-openrouter"],
         transform: stripReasoning,
     },
     {

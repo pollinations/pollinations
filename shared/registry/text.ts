@@ -9,6 +9,7 @@ import {
     openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { mergeFallbacks } from "./merge-fallbacks";
 import {
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
@@ -16,6 +17,7 @@ import {
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
+import { TEXT_FALLBACKS } from "./text-fallbacks";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -37,7 +39,7 @@ export const AUDIO_VOICES = [
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
-export const TEXT_SERVICES = {
+const TEXT_BASE_SERVICES = {
     "openai": {
         aliases: ["gpt-5.4-nano", "openai/gpt-5.4-nano"],
         provider: "azure",
@@ -2327,3 +2329,5 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const TEXT_SERVICES = mergeFallbacks(TEXT_BASE_SERVICES, TEXT_FALLBACKS);

@@ -195,6 +195,17 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-27b-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-27b",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["ionstream/fp8", "reka/fp8", "akashml/fp8"],
+                    allow_fallbacks: true,
+                },
+            },
+        }),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -267,6 +278,46 @@ export const portkeyConfig: PortkeyConfigMap = {
         "google/gemma-4-31b-it",
         "novita/bf16",
     ),
+
+    // -- Exact-checkpoint text fallbacks -------------------------------------
+    "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+        }),
+    "MiniMaxAI/MiniMax-M2.7": () =>
+        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M2.7" }),
+    "Qwen/Qwen3.8-2.4T-A95B": () =>
+        createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
+    "moonshotai/Kimi-K2.6": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
+        createDeepInfraModelConfig({
+            model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        }),
+    "google/gemma-4-26B-A4B-it": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
+    "google/gemma-4-31B-it": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
+    "mistral-large-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "mistralai/mistral-large-2512",
+            defaultOptions: {
+                provider: {
+                    only: ["mistral/zdr", "mistral"],
+                    allow_fallbacks: true,
+                },
+            },
+        }),
+    "claude-opus-4.7-openrouter": () =>
+        createOpenRouterModelConfig({
+            model: "anthropic/claude-opus-4.7",
+            defaultOptions: {
+                provider: {
+                    only: ["google-vertex/global", "anthropic", "azure/global"],
+                    allow_fallbacks: true,
+                },
+            },
+        }),
 
     // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>

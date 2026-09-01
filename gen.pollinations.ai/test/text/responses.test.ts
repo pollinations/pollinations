@@ -200,8 +200,12 @@ describe("direct Responses transport", () => {
         const body = new Response(upstream).body;
         if (!body) throw new Error("expected response body");
         const reader = requireResponsesStreamUsage(body).getReader();
+        const closedError = reader.closed.catch((error) => error);
 
         await expect(reader.read()).rejects.toThrow(
+            /omitted valid terminal usage/,
+        );
+        await expect(closedError).resolves.toThrow(
             /omitted valid terminal usage/,
         );
     });
@@ -212,9 +216,13 @@ describe("direct Responses transport", () => {
         ).body;
         if (!body) throw new Error("expected response body");
         const reader = requireResponsesStreamUsage(body).getReader();
+        const closedError = reader.closed.catch((error) => error);
 
         await expect(reader.read()).resolves.toMatchObject({ done: false });
         await expect(reader.read()).rejects.toThrow(
+            /without a terminal usage event/,
+        );
+        await expect(closedError).resolves.toThrow(
             /without a terminal usage event/,
         );
     });

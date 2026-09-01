@@ -499,14 +499,13 @@ const models: ModelDefinition[] = [
         // Azure deployment 500s on reasoning_effort.
         transform: stripReasoning,
     },
-    ...[
-        "mistral-large-openrouter-zdr",
-        "mistral-large-openrouter-mistral",
-    ].map((name) => ({
-        name,
-        config: portkeyConfig[name],
-        transform: stripReasoning,
-    })),
+    ...["mistral-large-openrouter-zdr", "mistral-large-openrouter-mistral"].map(
+        (name) => ({
+            name,
+            config: portkeyConfig[name],
+            transform: stripReasoning,
+        }),
+    ),
     {
         name: "qwen-safety",
         config: portkeyConfig["Qwen3Guard-Gen-8B"],

@@ -180,7 +180,7 @@ describe("direct Responses transport", () => {
     it("preserves semantic Responses SSE without a Chat done marker", async () => {
         const upstream =
             'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
-            'event: response.completed\ndata: {"type":"response.completed","response":{"object":"response","model":"qwen/qwen3.7-plus","status":"completed","usage":{"input_tokens":2,"output_tokens":1,"total_tokens":3}}}\n\n';
+            'event: response.completed\ndata: {"type":"response.completed","response":{"object":"response","model":"qwen/qwen3.7-plus","status":"completed","usage":{"input_tokens":2,"output_tokens":1,"total_tokens":3}}}\n';
         const directRequest = request({ stream: true });
         const result = await callDirectResponses(
             directRequest,

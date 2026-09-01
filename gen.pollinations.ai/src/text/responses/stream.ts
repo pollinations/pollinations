@@ -58,7 +58,9 @@ export function createResponsesStreamUsageValidator() {
             if (validationError) throw validationError;
         },
         finish() {
-            parser.feed(decoder.decode());
+            // Accept a final event closed by EOF instead of an empty SSE
+            // separator without adding bytes to the client stream.
+            parser.feed(`${decoder.decode()}\n\n`);
             parser.reset({ consume: true });
             if (validationError) throw validationError;
             if (!terminalSeen) {

@@ -63,7 +63,10 @@ export function createChatStreamUsageValidator() {
             if (validationError) throw validationError;
         },
         finish() {
-            parser.feed(decoder.decode());
+            // Some compatible providers close after one newline instead of an
+            // empty SSE separator. Flush that final event for validation only;
+            // the client still receives the exact upstream bytes.
+            parser.feed(`${decoder.decode()}\n\n`);
             parser.reset({ consume: true });
             if (validationError) throw validationError;
             if (!doneSeen || !usageSeen) {

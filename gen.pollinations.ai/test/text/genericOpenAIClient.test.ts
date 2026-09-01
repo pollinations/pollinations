@@ -685,7 +685,7 @@ describe("Chat Completions stream usage", () => {
 
         validator.feed(
             encoder.encode(
-                'data: {"model":"provider-model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\ndata: [DONE]\n\n',
+                'data: {"model":"provider-model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\ndata: [DONE]\n',
             ),
         );
 

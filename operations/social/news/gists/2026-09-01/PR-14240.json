@@ -1,0 +1,33 @@
+{
+  "pr_number": 14240,
+  "title": "fix: publish Polli CLI through npm OIDC",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14240",
+  "merged_at": "2026-09-01T03:25:10Z",
+  "labels": [],
+  "pr_body_excerpt": "- Migrates only `@pollinations/cli` publishing from the expired repository token to npm Trusted Publishing.\n- Uses Node 24 and grants the CLI job the required GitHub OIDC permission.\n- Retriggers the CLI publisher when this workflow change reaches `main`, allowing unpublished 0.1.12 to ship.\n- Requires npm package setting: GitHub Actions publisher `pollinations/pollinations`, workflow `release-publish-npm-packages.yml`, action `npm publish`.\n\nTests: `actionlint`; `npm run build`; `npm test` (57 passed); `npm pack --dry-run`.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The CLI finds its way home",
+    "blurb": "Polli’s CLI publishing route has been replanted with npm Trusted Publishing. Version 0.1.12 can now leave the greenhouse and reach npm properly.",
+    "summary": "Migrated publishing for @pollinations/cli from an expired repository token to npm Trusted Publishing via GitHub OIDC, using Node 24 and retriggering the release workflow so unpublished version 0.1.12 can ship.",
+    "impact": "Developers can receive @pollinations/cli 0.1.12 from npm again, with releases authenticated through GitHub Actions OIDC rather than a repository token.",
+    "keywords": [
+      "polli-cli",
+      "npm",
+      "trusted-publishing",
+      "github-oidc",
+      "release"
+    ],
+    "visual_concept": "Depict Polli as a tiny release engineer delivering a boxed @pollinations/cli package from a cozy GitHub Actions-style workshop to an npm package garden. A glowing OIDC key or trusted badge represents the new publishing path, while code-plants and small flowers show that the release pipeline is growing reliably again.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny release-engineer hard hat while carrying a parcel labeled '@pollinations/cli' toward a friendly npm package garden; a retro terminal displays a simple glowing 'OIDC OK' badge, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14240.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny release-engineer hard hat while carrying a parcel labeled '@pollinations/cli' toward a friendly npm package garden; a retro terminal displays a simple glowing 'OIDC OK' badge, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T03:26:11.483961+00:00"
+}

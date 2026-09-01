@@ -8,6 +8,7 @@ import { LiveApps } from "../ui/home/LiveApps";
 import { MoneyMoves } from "../ui/home/MoneyMoves";
 import { OnTheWay } from "../ui/home/OnTheWay";
 import { StartBuilding } from "../ui/home/StartBuilding";
+import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/")({
@@ -46,7 +47,10 @@ function HelloPage() {
     return (
         <>
             {/* Polli herself opens the site — the one the brand already had. */}
-            <HeroScene scene="/heroes/home.webp">
+            <HeroScene
+                scene="/heroes/home.webp"
+                nightScene="/heroes/home-top-night.webp"
+            >
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
                     title="Every model, one wallet."
@@ -84,6 +88,10 @@ function HelloPage() {
             <LiveApps />
             <OnTheWay />
             <StartBuilding />
+            <BottomScene
+                dayScene="/heroes/home-bottom-day.webp"
+                nightScene="/heroes/home-bottom-night.webp"
+            />
         </>
     );
 }

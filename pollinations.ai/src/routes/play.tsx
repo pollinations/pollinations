@@ -5,6 +5,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
 import { routeHead } from "../routeMeta";
 import { Playground } from "../ui/play/Playground";
+import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene } from "../ui/site/HeroScene";
 import { PageCard } from "../ui/site/PageCard";
 
@@ -53,7 +54,11 @@ function PlayPage() {
         >
             <PageCard className="pb-0 sm:pb-0">
                 {/* The monitor robot, showing off something it just made. */}
-                <HeroScene scene="/heroes/play.webp" compactBottom>
+                <HeroScene
+                    scene="/heroes/play.webp"
+                    nightScene="/heroes/play-top-night.webp"
+                    compactBottom
+                >
                     <ContentHeader
                         eyebrow="Official models, in the browser"
                         title="Try it out."
@@ -75,6 +80,10 @@ function PlayPage() {
             </PageCard>
             <PageCard className="pt-6 sm:pt-8">
                 <Playground />
+                <BottomScene
+                    dayScene="/heroes/play-bottom-day.webp"
+                    nightScene="/heroes/play-bottom-night.webp"
+                />
             </PageCard>
         </PolliProvider>
     );

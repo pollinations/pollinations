@@ -383,6 +383,19 @@ export const pollenGiftRateLimit = sqliteTable("pollen_gift_rate_limit", {
   attempts: integer("attempts").notNull(),
 });
 
+export const pollenGiftPaymentLoss = sqliteTable(
+  "pollen_gift_payment_loss",
+  {
+    key: text("key").primaryKey(),
+    paymentIntentId: text("payment_intent_id").notNull(),
+    kind: text("kind", { enum: ["refund", "dispute"] }).notNull(),
+    active: integer("active", { mode: "boolean" }).default(true).notNull(),
+  },
+  (table) => [
+    index("idx_pollen_gift_payment_loss_intent").on(table.paymentIntentId),
+  ],
+);
+
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   sessionId: text("session_id").primaryKey(),
   eventId: text("event_id").notNull(),

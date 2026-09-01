@@ -584,6 +584,75 @@ test("paid gift lifecycle is authenticated, single-use, and idempotent", async (
     expect(userAfterRefund?.packBalance).toBe(userBefore.packBalance ?? 0);
 });
 
+test("refund before checkout completion keeps the gift voided", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird");
+
+    const giftId = "gift_refunded_before_completion";
+    const checkoutSessionId = "cs_refunded_before_completion";
+    const paymentIntentId = "pi_refunded_before_completion";
+    await env.DB.prepare(
+        `INSERT INTO pollen_gift_code (
+            id, code_hash, pollen_amount, status, stripe_checkout_session_id
+         ) VALUES (?, ?, 20, 'pending', ?)`,
+    )
+        .bind(giftId, "a".repeat(64), checkoutSessionId)
+        .run();
+
+    const refundResponse = await postSignedStripeWebhook({
+        id: "evt_refund_before_completion",
+        type: "refund.created",
+        created: Math.floor(Date.now() / 1000),
+        livemode: false,
+        data: {
+            object: {
+                id: "re_before_completion",
+                object: "refund",
+                amount: 2_000,
+                currency: "usd",
+                status: "succeeded",
+                payment_intent: paymentIntentId,
+                metadata: {},
+            },
+        },
+    });
+    expect(refundResponse.status).toBe(200);
+
+    const checkoutResponse = await postSignedStripeWebhook({
+        id: "evt_checkout_after_refund",
+        type: "checkout.session.completed",
+        created: Math.floor(Date.now() / 1000),
+        livemode: false,
+        data: {
+            object: {
+                id: checkoutSessionId,
+                object: "checkout.session",
+                mode: "payment",
+                metadata: {
+                    purpose: POLLEN_GIFT_PURPOSE,
+                    giftId,
+                    pollenAmount: "20",
+                },
+                payment_status: "paid",
+                amount_total: 2_000,
+                currency: "usd",
+                payment_intent: paymentIntentId,
+                payment_method_types: ["card"],
+            },
+        },
+    });
+    expect(checkoutResponse.status).toBe(200);
+
+    const gift = await env.DB.prepare(
+        `SELECT status, stripe_payment_intent_id AS paymentIntentId
+         FROM pollen_gift_code WHERE id = ?`,
+    )
+        .bind(giftId)
+        .first<{ status: string; paymentIntentId: string }>();
+    expect(gift).toEqual({ status: "voided", paymentIntentId });
+});
+
 test("expired Checkout Session voids a pending gift", async ({ mocks }) => {
     await mocks.enable("stripe", "tinybird");
 

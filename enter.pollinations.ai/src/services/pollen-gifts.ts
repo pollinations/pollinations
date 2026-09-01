@@ -9,6 +9,7 @@ import type Stripe from "stripe";
 import { getStripeId } from "../utils/stripe.ts";
 
 type PollenGiftStatus = "pending" | "active" | "redeemed" | "voided";
+export type PollenGiftPaymentLossKind = "refund" | "dispute";
 
 type PollenGiftRow = {
     id: string;
@@ -125,23 +126,35 @@ export async function fulfillPollenGiftCheckout(
     }
 
     const paymentIntentId = getStripeId(session.payment_intent);
+    if (!paymentIntentId) {
+        return { success: false, message: "Missing payment intent" };
+    }
     const activated = await db
         .prepare(
             `UPDATE pollen_gift_code
-             SET status = 'active',
+             SET status = CASE
+                     WHEN EXISTS (
+                         SELECT 1 FROM pollen_gift_payment_loss
+                         WHERE payment_intent_id = ? AND active = 1
+                     ) THEN 'voided'
+                     ELSE 'active'
+                 END,
                  stripe_payment_intent_id = ?
              WHERE id = ?
                AND stripe_checkout_session_id = ?
                AND status = 'pending'
-             RETURNING pollen_amount AS pollenAmount`,
+             RETURNING pollen_amount AS pollenAmount, status`,
         )
-        .bind(paymentIntentId, giftId, session.id)
-        .first<{ pollenAmount: number }>();
+        .bind(paymentIntentId, paymentIntentId, giftId, session.id)
+        .first<{ pollenAmount: number; status: PollenGiftStatus }>();
 
     if (activated) {
         return {
             success: true,
-            message: `Activated ${activated.pollenAmount} Pollen gift`,
+            message:
+                activated.status === "active"
+                    ? `Activated ${activated.pollenAmount} Pollen gift`
+                    : "Gift payment was already reversed",
             duplicate: false,
         };
     }
@@ -223,27 +236,104 @@ export async function voidRefundedPollenGift(
     const paymentIntentId = getStripeId(refund.payment_intent);
     if (!paymentIntentId) return;
 
+    await setPollenGiftPaymentLoss(db, {
+        paymentIntentId,
+        kind: "refund",
+        active: true,
+    });
+}
+
+export async function setPollenGiftPaymentLoss(
+    db: D1Database,
+    input: {
+        paymentIntentId: string;
+        kind: PollenGiftPaymentLossKind;
+        active: boolean;
+    },
+): Promise<void> {
+    const lossKey = `${input.paymentIntentId}:${input.kind}`;
+    const upsertLoss = db
+        .prepare(
+            `INSERT INTO pollen_gift_payment_loss (
+                key, payment_intent_id, kind, active
+             ) VALUES (?, ?, ?, ?)
+             ON CONFLICT(key) DO UPDATE SET active = excluded.active`,
+        )
+        .bind(lossKey, input.paymentIntentId, input.kind, input.active ? 1 : 0);
+
+    if (input.active) {
+        await db.batch([
+            upsertLoss,
+            db
+                .prepare(
+                    `UPDATE user
+                     SET pack_balance = ROUND(COALESCE(pack_balance, 0) - (
+                         SELECT pollen_amount FROM pollen_gift_code
+                         WHERE stripe_payment_intent_id = ? AND status = 'redeemed'
+                     ), ${POLLEN_BILLING_PRECISION})
+                     WHERE id = (
+                         SELECT redeemer_user_id FROM pollen_gift_code
+                         WHERE stripe_payment_intent_id = ? AND status = 'redeemed'
+                     )`,
+                )
+                .bind(input.paymentIntentId, input.paymentIntentId),
+            db
+                .prepare(
+                    `UPDATE pollen_gift_code SET status = 'voided'
+                     WHERE stripe_payment_intent_id = ?
+                       AND status IN ('active', 'redeemed')`,
+                )
+                .bind(input.paymentIntentId),
+        ]);
+        return;
+    }
+
     await db.batch([
+        upsertLoss,
         db
             .prepare(
                 `UPDATE user
-                 SET pack_balance = ROUND(COALESCE(pack_balance, 0) - (
+                 SET pack_balance = ROUND(COALESCE(pack_balance, 0) + (
                      SELECT pollen_amount FROM pollen_gift_code
-                     WHERE stripe_payment_intent_id = ? AND status = 'redeemed'
+                     WHERE stripe_payment_intent_id = ?
+                       AND status = 'voided'
+                       AND redeemer_user_id IS NOT NULL
+                       AND NOT EXISTS (
+                           SELECT 1 FROM pollen_gift_payment_loss
+                           WHERE payment_intent_id = ? AND active = 1
+                       )
                  ), ${POLLEN_BILLING_PRECISION})
                  WHERE id = (
                      SELECT redeemer_user_id FROM pollen_gift_code
-                     WHERE stripe_payment_intent_id = ? AND status = 'redeemed'
+                     WHERE stripe_payment_intent_id = ?
+                       AND status = 'voided'
+                       AND NOT EXISTS (
+                           SELECT 1 FROM pollen_gift_payment_loss
+                           WHERE payment_intent_id = ? AND active = 1
+                       )
                  )`,
             )
-            .bind(paymentIntentId, paymentIntentId),
+            .bind(
+                input.paymentIntentId,
+                input.paymentIntentId,
+                input.paymentIntentId,
+                input.paymentIntentId,
+            ),
         db
             .prepare(
-                `UPDATE pollen_gift_code SET status = 'voided'
+                `UPDATE pollen_gift_code
+                 SET status = CASE
+                     WHEN redeemer_user_id IS NULL THEN 'active'
+                     ELSE 'redeemed'
+                 END
                  WHERE stripe_payment_intent_id = ?
-                   AND status IN ('active', 'redeemed')`,
+                   AND status = 'voided'
+                   AND NOT EXISTS (
+                       SELECT 1 FROM pollen_gift_payment_loss
+                       WHERE payment_intent_id = ? AND active = 1
+                   )`,
             )
-            .bind(paymentIntentId),
+            .bind(input.paymentIntentId, input.paymentIntentId),
     ]);
 }
 

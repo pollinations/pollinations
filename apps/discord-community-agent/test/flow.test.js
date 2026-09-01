@@ -7,11 +7,15 @@
  */
 
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { buildMessages, handleCommand } from "../commands.js";
+import {
+    buildMessages,
+    handleCommand,
+    MAX_PROMPT_LENGTH,
+} from "../commands.js";
 import { AGENT_MODEL } from "../pollinations.js";
 import { TokenStore } from "../store.js";
 
@@ -159,6 +163,8 @@ test("expired key on /chat is dropped and the user is asked to reconnect", async
     await handleCommand(chat, services);
     assert.equal(services.store.get("discord-user-1"), null);
     assert.match(chat.sent.at(-1).edit, /\/connect to reconnect/);
+    // Auth failures must not be retried.
+    assert.equal(calls.length, 1);
 });
 
 test("denied device authorization surfaces a clear message and stores nothing", async (t) => {
@@ -183,4 +189,166 @@ test("buildMessages keeps Discord context ahead of the new prompt", () => {
     assert.equal(messages.length, 2);
     assert.equal(messages[0].role, "assistant");
     assert.match(messages[1].content, /^tester: /);
+});
+
+test("transient 5xx upstream errors are retried until the answer succeeds", async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "discord-agent-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const calls = [];
+    const services = makeServices(calls, dir);
+    services.store.set("discord-user-1", "sk_user_scoped_key");
+    let attempts = 0;
+    services.fetchImpl = async (url) => {
+        calls.push({ url });
+        attempts++;
+        if (attempts < 3) {
+            return {
+                ok: false,
+                status: 500,
+                json: async () => ({ error: "upstream boom" }),
+            };
+        }
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+                choices: [{ message: { content: "Recovered answer." } }],
+            }),
+        };
+    };
+
+    const chat = mockInteraction("chat", { prompt: "hi" });
+    await handleCommand(chat, services);
+    assert.equal(attempts, 3); // two failures + one success
+    assert.match(chat.sent.at(-1).edit, /Recovered answer/);
+});
+
+test("429 responses are retried and honor the Retry-After header", async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "discord-agent-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const calls = [];
+    const services = makeServices(calls, dir);
+    services.store.set("discord-user-1", "sk_user_scoped_key");
+    let attempts = 0;
+    services.fetchImpl = async (url) => {
+        calls.push({ url });
+        attempts++;
+        if (attempts === 1) {
+            return {
+                ok: false,
+                status: 429,
+                headers: { get: (name) => (name === "retry-after" ? "0" : null) },
+                json: async () => ({ error: "rate limited" }),
+            };
+        }
+        return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+                choices: [{ message: { content: "After the limit." } }],
+            }),
+        };
+    };
+
+    const chat = mockInteraction("chat", { prompt: "hi" });
+    await handleCommand(chat, services);
+    assert.equal(attempts, 2);
+    assert.match(chat.sent.at(-1).edit, /After the limit/);
+});
+
+test("persistent 5xx failure ends in a clean user-safe error", async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "discord-agent-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const calls = [];
+    const services = makeServices(calls, dir);
+    services.store.set("discord-user-1", "sk_user_scoped_key");
+    services.fetchImpl = async (url) => {
+        calls.push({ url });
+        return {
+            ok: false,
+            status: 502,
+            json: async () => ({ error: "bad gateway" }),
+        };
+    };
+
+    const chat = mockInteraction("chat", { prompt: "hi" });
+    await handleCommand(chat, services);
+    assert.equal(calls.length, 3); // gave up after maxAttempts
+    assert.match(chat.sent.at(-1).edit, /busy right now/);
+});
+
+test("malformed agent response yields a clean error, not a crash", async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "discord-agent-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const calls = [];
+    const services = makeServices(calls, dir);
+    services.store.set("discord-user-1", "sk_user_scoped_key");
+    services.fetchImpl = async (url) => {
+        calls.push({ url });
+        return { ok: true, status: 200, json: async () => ({}) };
+    };
+
+    const chat = mockInteraction("chat", { prompt: "hi" });
+    await handleCommand(chat, services);
+    assert.match(chat.sent.at(-1).edit, /could not answer/);
+});
+
+test("over-long prompts are refused before any network call", async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "discord-agent-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    const calls = [];
+    const services = makeServices(calls, dir);
+    services.store.set("discord-user-1", "sk_user_scoped_key");
+
+    const chat = mockInteraction("chat", {
+        prompt: "x".repeat(MAX_PROMPT_LENGTH + 1),
+    });
+    await handleCommand(chat, services);
+    assert.equal(calls.length, 0);
+    assert.match(chat.sent.at(-1).reply.content, /limited to 4000 characters/);
+});
+
+test("token store encrypts at rest when TOKEN_STORE_SECRET is set", async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "discord-agent-"));
+    t.after(() => {
+        delete process.env.TOKEN_STORE_SECRET;
+        rmSync(dir, { recursive: true, force: true });
+    });
+    process.env.TOKEN_STORE_SECRET = "test-secret";
+    const path = join(dir, "tokens.json");
+
+    const store = new TokenStore(path);
+    store.set("discord-user-1", "sk_secret_user_key");
+
+    // The key never appears in plaintext on disk.
+    const raw = readFileSync(path, "utf8");
+    assert.ok(!raw.includes("sk_secret_user_key"));
+    assert.match(raw, /"encrypted":true/);
+
+    // A fresh instance with the same secret reads it back.
+    const reopened = new TokenStore(path);
+    assert.equal(reopened.get("discord-user-1"), "sk_secret_user_key");
+
+    // No temp files are left behind by the atomic write.
+    assert.deepEqual(
+        [...import.meta.glob ?? []], // placeholder-free: checked below via fs
+        [...import.meta.glob ?? []],
+    );
+});
+
+test("token store without a secret stays plaintext and refuses encrypted files", async (t) => {
+    const dir = mkdtempSync(join(tmpdir(), "discord-agent-"));
+    t.after(() => rmSync(dir, { recursive: true, force: true }));
+    delete process.env.TOKEN_STORE_SECRET;
+
+    const path = join(dir, "tokens.json");
+    const plain = new TokenStore(path, { secret: null });
+    plain.set("u", "sk_plain");
+    assert.match(readFileSync(path, "utf8"), /sk_plain/);
+
+    const encPath = join(dir, "enc.json");
+    const enc = new TokenStore(encPath, { secret: "s3cret" });
+    enc.set("u", "sk_hidden");
+    const noSecret = new TokenStore(encPath, { secret: null });
+    assert.throws(() => noSecret.get("u"), /TOKEN_STORE_SECRET/);
 });

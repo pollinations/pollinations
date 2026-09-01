@@ -25,8 +25,21 @@ contains its system prompt or agent logic, it only forwards messages.
 | `/chat <prompt>` | Sends your message (with Discord context) to the agent using your Pollen |
 | `/disconnect` | Removes your stored key from the bot |
 
-Expired or revoked keys are detected on the next `/chat`, removed locally,
-and the user is pointed back to `/connect`.
+Prompts are capped at **4000 characters** (`MAX_PROMPT_LENGTH`) so a single
+message cannot burn an unbounded amount of the user's Pollen. Expired or
+revoked keys are detected on the next `/chat`, removed locally, and the
+user is pointed back to `/connect`.
+
+## Resilience
+
+- Transient upstream failures (network errors, `429`, `5xx`) are retried up
+  to 3 times with exponential backoff, honoring the `Retry-After` header
+  when the server sends one. Auth failures (`401`/`403`) are never retried —
+  they drop the stored key and ask the user to `/connect`.
+- Malformed agent responses (missing `choices[0].message.content`) surface
+  as a fixed, user-safe error instead of a crash.
+- Discord-side rate limiting is handled by discord.js itself: it queues
+  outgoing REST calls and respects Discord's `Retry-After` responses.
 
 ## Setup
 
@@ -58,13 +71,15 @@ and the user is pointed back to `/connect`.
 | `CLIENT_ID` | register only | — |
 | `GUILD_ID` | no | global commands |
 | `TOKEN_STORE_PATH` | no | `./data/tokens.json` |
+| `TOKEN_STORE_SECRET` | no | off (plaintext store) |
 | `ENTER_URL` / `GEN_URL` | no | production Pollinations |
 
 ## Test / reproducible demo
 
 `npm test` runs the full **connect → use → disconnect** flow against mocked
-Discord and Pollinations APIs (no tokens needed), plus expired-key and
-denied-authorization paths. The same functions are exercised end-to-end in
+Discord and Pollinations APIs (no tokens needed), plus the expired-key,
+denied-authorization, retry/backoff, malformed-response, prompt-length and
+encrypted-store paths. The same functions are exercised end-to-end in
 production by `/connect`, `/chat`, and `/disconnect`.
 
 ## Security
@@ -73,8 +88,14 @@ production by `/connect`, `/chat`, and `/disconnect`.
   is typed into Discord.
 - The verification link/code is sent by DM, falling back to an ephemeral
   (user-only) reply if DMs are closed.
-- Per-user keys live only in `data/tokens.json` (mode `0600`, gitignored)
-  and never appear in public messages or logs — errors shown to users are
-  fixed, credential-free messages.
+- Per-user keys live only in `data/tokens.json`. Writes are atomic
+  (temp file + rename), so a crash mid-write cannot corrupt the store;
+  the file is mode `0600` and gitignored, and keys never appear in public
+  messages or logs — errors shown to users are fixed, credential-free
+  messages.
+- Set `TOKEN_STORE_SECRET` to encrypt the store at rest with AES-256-GCM
+  (fresh IV per write, key derived via scrypt). It is off by default: for a
+  self-hosted example bot a plaintext `0600` file is an honest threat
+  model, while the option covers shared-host deployments.
 - Users can disconnect anytime, and can revoke the key itself from
   <https://enter.pollinations.ai/keys>.

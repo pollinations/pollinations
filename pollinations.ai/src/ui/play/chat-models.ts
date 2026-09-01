@@ -60,6 +60,7 @@ export interface ChatMessageState {
     content: MessageContent;
     status: ChatMessageStatus;
     error?: string;
+    activity?: string;
 }
 
 interface FileDescriptor {
@@ -314,5 +315,36 @@ export function extractStreamedMedia(markdown: string): {
     return {
         markdown: displayMarkdown.replace(/\n{3,}/g, "\n\n").trim(),
         media,
+    };
+}
+
+const TOOL_DETAILS_PATTERN =
+    /<details\b([^>]*)\btype=(["'])tool_calls\2([^>]*)>[\s\S]*?<\/details>/gi;
+const TOOL_NAME_PATTERN = /\bname=(["'])(.*?)\1/i;
+
+/**
+ * Managed agents encode completed tool calls as HTML-like details blocks in
+ * streamed content. Keep those implementation details out of the answer while
+ * preserving the exact emitted tool name for the transient activity label.
+ */
+export function extractAgentActivity(content: string): {
+    content: string;
+    activity?: string;
+} {
+    let activity: string | undefined;
+    const visibleContent = content.replace(
+        TOOL_DETAILS_PATTERN,
+        (_source, beforeType: string, _quote: string, afterType: string) => {
+            const name = `${beforeType} ${afterType}`
+                .match(TOOL_NAME_PATTERN)?.[2]
+                ?.trim();
+            if (name) activity = name;
+            return "";
+        },
+    );
+
+    return {
+        content: visibleContent.replace(/\n{3,}/g, "\n\n").trim(),
+        ...(activity ? { activity } : {}),
     };
 }

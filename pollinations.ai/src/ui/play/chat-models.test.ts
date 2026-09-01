@@ -8,6 +8,7 @@ import {
     buildUserContent,
     compactRouting,
     conversationForRequest,
+    extractAgentActivity,
     extractStreamedMedia,
     fileKind,
     routingChoices,
@@ -282,5 +283,36 @@ describe("streamed media rendering", () => {
                 },
             ],
         });
+    });
+});
+
+describe("agent activity rendering", () => {
+    it("extracts the exact managed-agent tool name from response content", () => {
+        expect(
+            extractAgentActivity(
+                '<details type="tool_calls" done="true" id="call-1" name="transcribeAudio" arguments="{}">\n' +
+                    "<summary>Tool Executed</summary>\nhello\n</details>\n\nThe audio says hello.",
+            ),
+        ).toEqual({
+            activity: "transcribeAudio",
+            content: "The audio says hello.",
+        });
+    });
+
+    it("uses the latest tool name and preserves ordinary details", () => {
+        const result = extractAgentActivity(
+            "<details><summary>Read more</summary>Keep me</details>\n\n" +
+                '<details name="web_search_exa" type="tool_calls"><summary>Tool Executed</summary>one</details>\n\n' +
+                '<details type="tool_calls" name="bash"><summary>Tool Executed</summary>two</details>',
+        );
+
+        expect(result.activity).toBe("bash");
+        expect(result.content).toContain("Read more");
+        expect(result.content).not.toContain("Tool Executed");
+    });
+
+    it("leaves unfinished tool markup untouched until the event is complete", () => {
+        const content = '<details type="tool_calls" name="web_search"';
+        expect(extractAgentActivity(content)).toEqual({ content });
     });
 });

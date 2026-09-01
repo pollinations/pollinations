@@ -33,9 +33,6 @@ function requestForMcp(request: Request, server: McpServerDefinition): Request {
         headers.delete("authorization");
     }
     headers.delete("cookie");
-    for (const header of Object.values(MCP_USAGE_HEADERS)) {
-        headers.delete(header);
-    }
     const url = new URL(request.url);
     url.protocol = "https:";
     url.host = "mcp.internal";

@@ -12,9 +12,9 @@ Connect any Streamable HTTP client to `https://mcp.pollinations.ai` with:
 Authorization: Bearer YOUR_KEY
 ```
 
-The server can only use models and account features allowed by that key's
-permissions, and it cannot spend beyond the key's budget. Configure both in
-[API key settings](https://enter.pollinations.ai/keys); see
+Calls use the key's permissions. Usage-priced tools settle after execution, so
+a completed call may exceed the key's remaining budget. Configure both in [API
+key settings](https://enter.pollinations.ai/keys); see
 [Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
 
 ## Hosted MCP catalog

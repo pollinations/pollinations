@@ -22,6 +22,11 @@ describe("resolveModelConfig", () => {
             resolveModelConfig(messages, { model: "claude-fable-5" }).options
                 .max_tokens,
         ).toBe(128000);
+        expect(
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-fable-5.1",
+            }).options.max_tokens,
+        ).toBe(128000);
     });
 
     it("lets callers override Anthropic max_tokens", () => {
@@ -39,6 +44,14 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
+    it("routes Claude Fable 5.1 to its global profile", () => {
+        expect(
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-fable-5.1",
+            }).options.model,
+        ).toBe("global.anthropic.claude-fable-5-1");
     });
 
     it("does not set max_tokens for non-Anthropic models", () => {
@@ -300,6 +313,7 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["minimax-m2.7", "minimax/minimax-m2.7", "deepinfra/fp8"],
         ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });

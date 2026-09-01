@@ -1220,6 +1220,32 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-fable-5.1": {
+        aliases: [],
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            promptTextTokens: perMillion(10),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50),
+        },
+        title: "Claude Fable 5.1",
+        description:
+            "Frontier intelligence for complex reasoning, coding and long-running agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: [
             "sonar",
@@ -1875,15 +1901,16 @@ export const TEXT_SERVICES = {
             "minimax-m2p5",
             "minimax/minimax-m2.7",
         ],
-        provider: "fireworks",
+        provider: "openrouter",
         brand: "MiniMax",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.3),
-            promptCachedTokens: perMillion(0.06),
-            completionTextTokens: perMillion(1.2),
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.05),
+            completionTextTokens: perMillion(1),
         },
         title: "MiniMax M2.7",
         description: "Multilingual coding and agent tasks at a friendly price",

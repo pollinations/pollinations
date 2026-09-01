@@ -201,7 +201,7 @@ describe("model categories", () => {
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
             "title-desc",
         );
-        expect(validateModelSearch({ sort: "oldest" }).sort).toBe("oldest");
+        expect(validateModelSearch({ sort: "oldest" }).sort).toBeUndefined();
         expect(validateModelSearch({ sort: "brand-desc" }).sort).toBe(
             "brand-desc",
         );

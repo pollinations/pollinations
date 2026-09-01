@@ -89,8 +89,11 @@ const SORT_OPTIONS: Array<{
         label: "Popular",
         accessibleLabel: "Most popular",
     },
-    { value: "newest", label: "Newest", accessibleLabel: "Newest" },
-    { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
+    {
+        value: "newest",
+        label: "Date added",
+        accessibleLabel: "Date added, newest first",
+    },
     {
         value: "price-low",
         label: "Price: Low",

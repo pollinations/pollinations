@@ -19,7 +19,6 @@ export type ModelScope = (typeof MODEL_SCOPES)[number];
 export const MODEL_SORTS = [
     "popular",
     "newest",
-    "oldest",
     "price-low",
     "price-high",
     "title",

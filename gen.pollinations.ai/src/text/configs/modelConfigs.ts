@@ -165,6 +165,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "xiaomi/mimo-v2.5-pro",
         "xiaomi/fp8",
     ),
+    "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
+        "minimax/minimax-m2.7",
+        "deepinfra/fp8",
+    ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
     // which reasoning models can burn entirely on their internal thinking
@@ -450,10 +454,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p3-flash",
             defaultOptions: { max_tokens: 64000 },
-        }),
-    "accounts/fireworks/models/minimax-m2p7": () =>
-        createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p7",
         }),
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({

@@ -102,16 +102,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "claude-sonnet-5": {
     "cost": {
-      "completionTextTokens": 0.000015,
+      "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000003,
+      "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.000015,
+      "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000003,
+      "promptTextTokens": 0.000002,
     },
   },
   "cohere-embed-v4": {
@@ -1116,14 +1116,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "minimax-m2.7": {
     "cost": {
-      "completionTextTokens": 0.0000012,
-      "promptCachedTokens": 0.00000006,
-      "promptTextTokens": 0.0000003,
+      "completionTextTokens": 0.000001,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.00000025,
     },
     "price": {
-      "completionTextTokens": 0.0000012,
-      "promptCachedTokens": 0.00000006,
-      "promptTextTokens": 0.0000003,
+      "completionTextTokens": 0.000001,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.00000025,
     },
   },
   "mistral": {

@@ -313,6 +313,7 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["minimax-m2.7", "minimax/minimax-m2.7", "deepinfra/fp8"],
         ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });

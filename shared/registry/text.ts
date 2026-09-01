@@ -1099,12 +1099,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-sonnet-5 standard rates effective 2026-09-01.
-            // Cache meters remain at AWS's currently published rates pending post-promo evidence.
-            promptTextTokens: perMillion(3),
+            // AWS Price List global standard meters, published 2026-09-01T18:36:49Z.
+            promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
             promptCacheWriteTokens: perMillion(2.5),
-            completionTextTokens: perMillion(15),
+            completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
         description:
@@ -1902,15 +1901,16 @@ export const TEXT_SERVICES = {
             "minimax-m2p5",
             "minimax/minimax-m2.7",
         ],
-        provider: "fireworks",
+        provider: "openrouter",
         brand: "MiniMax",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.3),
-            promptCachedTokens: perMillion(0.06),
-            completionTextTokens: perMillion(1.2),
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.05),
+            completionTextTokens: perMillion(1),
         },
         title: "MiniMax M2.7",
         description: "Multilingual coding and agent tasks at a friendly price",

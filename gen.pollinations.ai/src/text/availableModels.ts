@@ -423,7 +423,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "minimax-m2.7",
-        config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
+        config: portkeyConfig["minimax/minimax-m2.7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
         transform: mandatoryReasoning,
     },

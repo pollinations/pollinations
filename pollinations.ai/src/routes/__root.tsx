@@ -1,6 +1,12 @@
-import { Button, ContentHeader } from "@pollinations/ui";
-import { createRootRoute, HeadContent, Outlet } from "@tanstack/react-router";
+import { Button, ContentHeader, cn } from "@pollinations/ui";
+import {
+    createRootRoute,
+    HeadContent,
+    Outlet,
+    useRouterState,
+} from "@tanstack/react-router";
 import { NOT_FOUND_META } from "../routeMeta";
+import { pageCardClassName } from "../ui/site/PageCard";
 import { SiteFooter } from "../ui/site/SiteFooter";
 import { SiteHeader } from "../ui/site/SiteHeader";
 
@@ -34,7 +40,9 @@ function NotFoundPage() {
 }
 
 /**
- * One sheet and one vertical beat, owned here rather than repeated per route.
+ * One sheet and one vertical beat by default, owned here rather than repeated
+ * per route. Play opts into two sibling sheets because its hero and workspace
+ * are separate pieces of the interface.
  *
  * The gap lives on this flex column, so sections carry no spacing of their
  * own. Before, Hello ran 64 / 72 / 64 / 64 / 0 as per-section bottom padding
@@ -52,12 +60,21 @@ function NotFoundPage() {
  * children, never auth state, which is what keeps this site SDK-free.
  */
 function RootLayout() {
+    const isPlay = useRouterState({
+        select: (state) => state.location.pathname === "/play",
+    });
+
     return (
         <div className="flex min-h-dvh flex-col bg-app-bg font-body text-theme-text-base">
             <HeadContent />
             <SiteHeader />
             <div className="site-shell mb-6 flex flex-1 flex-col pt-4 min-[700px]:pt-0">
-                <main className="flex flex-1 flex-col gap-12 overflow-clip rounded-[28px] bg-theme-bg-pale px-4 py-10 shadow-container sm:gap-18 sm:px-8 sm:py-16 md:px-18">
+                <main
+                    className={cn(
+                        "flex flex-1 flex-col",
+                        isPlay ? "gap-6" : pageCardClassName,
+                    )}
+                >
                     <Outlet />
                 </main>
             </div>

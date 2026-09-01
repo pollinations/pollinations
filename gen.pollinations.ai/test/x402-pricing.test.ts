@@ -510,6 +510,21 @@ test("unpaid challenge performs no durable operation write", async () => {
     expect(durableCalls).toBe(0);
 });
 
+test("accepts hexadecimal Permit2 nonces for durable payment identity", async () => {
+    const replayEnv = {
+        ...x402Env,
+        GENERATION_COORDINATOR: env.GENERATION_COORDINATOR,
+    } as unknown as CloudflareBindings;
+    const counts = { work: 0, payment: 0, settlement: 0 };
+    const app = operationApp(replayEnv, counts);
+    const payment = paymentHeader(paymentPayload("0x2a"));
+
+    const response = await app.request(crypto.randomUUID(), request(), payment);
+
+    expect(response.status).toBe(200);
+    expect(counts).toEqual({ work: 1, payment: 1, settlement: 1 });
+});
+
 test("same operation and payment runs protected work once", async () => {
     const replayEnv = {
         ...x402Env,

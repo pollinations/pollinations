@@ -49,6 +49,7 @@ describe("prime harness", () => {
         expect(provider).toMatchObject({
             baseUrl: "https://gen.pollinations.ai/v1",
             api: "openai-completions",
+            apiKey: "pollinations",
             compat: { supportsDeveloperRole: false },
         });
         expect(provider.models.map((m: { id: string }) => m.id)).toEqual([
@@ -184,5 +185,20 @@ describe("prime harness", () => {
         configurePrime(ctx, models, "sk_test_key", "deepseek");
         rmSync(authFile());
         expect(prime.status(ctx).configured).toBe(false);
+    });
+
+    it("reports unconfigured when the provider API key marker is missing", () => {
+        configurePrime(ctx, models, "sk_test_key", "deepseek");
+        const data = JSON.parse(read(modelsFile()));
+        delete data.providers.pollinations.apiKey;
+        writeFileSync(modelsFile(), `${JSON.stringify(data, null, 2)}\n`);
+        expect(prime.status(ctx).configured).toBe(false);
+    });
+
+    it("stops before configuration when Prime Agent is unavailable", async () => {
+        await expect(prime.on(ctx, {})).rejects.toThrow(
+            "Prime Agent was not found",
+        );
+        expect(existsSync(agentDir())).toBe(false);
     });
 });

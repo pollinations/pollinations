@@ -1,8 +1,12 @@
 import { join, resolve } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
-import { readJsonIfExists, writeJsonAtomic } from "./json-config.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -21,11 +25,8 @@ const ID = "prime";
 const LABEL = "Prime Agent";
 const PROVIDER = "pollinations";
 const DEFAULT_MODEL = "deepseek";
-const MAX_TOKENS = 16384;
 
-/**
- * Pi resolves its agent dir from PRIME_AGENT_CODING_AGENT_DIR, tilde included.
- */
+/** Prime Agent resolves its agent dir from this override, tilde included. */
 export const primeAgentDir = (ctx: HarnessContext) => {
     const configured = ctx.env.PRIME_AGENT_CODING_AGENT_DIR;
     if (!configured?.trim()) return join(ctx.home, ".prime", "agent");
@@ -52,6 +53,16 @@ const files = (ctx: HarnessContext) => [
     skillPath(ctx),
 ];
 
+const loadJson = (path: string): Record<string, unknown> => {
+    const text = readTextIfExists(path);
+    if (!text?.trim()) return {};
+    return JSON.parse(text) as Record<string, unknown>;
+};
+
+const saveJson = (path: string, data: Record<string, unknown>) => {
+    writeTextAtomic(path, `${JSON.stringify(data, null, 2)}\n`, 0o600);
+};
+
 // Compat flags shared with the dsh provider block: gen.pollinations.ai/v1
 // speaks standard completions without store/developer-role/strict-mode extras.
 const compat = {
@@ -66,14 +77,14 @@ const compat = {
 const providerEntry = (models: HarnessModel[]) => ({
     baseUrl: `${BASE_URL}/v1`,
     api: "openai-completions",
+    // Prime validates custom providers before resolving their auth.json entry.
+    apiKey: PROVIDER,
     compat,
     models: models.map((model) => ({
         id: model.id,
         name: model.id,
-        reasoning: false,
         input: model.input,
         contextWindow: model.contextWindow,
-        maxTokens: MAX_TOKENS,
     })),
 });
 
@@ -91,25 +102,25 @@ interface PrimeSettings {
 }
 
 const readKey = (ctx: HarnessContext) => {
-    const auth = readJsonIfExists<PrimeAuth>(authPath(ctx));
-    const credential = auth?.[PROVIDER];
+    const auth = loadJson(authPath(ctx)) as PrimeAuth;
+    const credential = auth[PROVIDER];
     return credential?.type === "api_key" && credential.key
         ? credential.key
         : null;
 };
 
 const writeAuth = (ctx: HarnessContext, apiKey: string) => {
-    const auth = readJsonIfExists<PrimeAuth>(authPath(ctx)) ?? {};
+    const auth = loadJson(authPath(ctx)) as PrimeAuth;
     auth[PROVIDER] = { type: "api_key", key: apiKey };
-    writeJsonAtomic(authPath(ctx), auth);
+    saveJson(authPath(ctx), auth);
 };
 
 const deleteAuth = (ctx: HarnessContext) => {
-    const auth = readJsonIfExists<PrimeAuth>(authPath(ctx));
-    if (!auth || !(PROVIDER in auth)) return false;
+    const auth = loadJson(authPath(ctx)) as PrimeAuth;
+    if (!(PROVIDER in auth)) return false;
     delete auth[PROVIDER];
     if (Object.keys(auth).length === 0) removeIfExists(authPath(ctx));
-    else writeJsonAtomic(authPath(ctx), auth);
+    else saveJson(authPath(ctx), auth);
     return true;
 };
 
@@ -119,17 +130,17 @@ const writeConfig = (
     apiKey: string,
     model: string,
 ) => {
-    const doc = readJsonIfExists<PrimeModels>(modelsPath(ctx)) ?? {};
+    const doc = loadJson(modelsPath(ctx)) as PrimeModels;
     const providers = (doc.providers ?? {}) as Record<string, unknown>;
     providers[PROVIDER] = providerEntry(models);
     doc.providers = providers;
-    writeJsonAtomic(modelsPath(ctx), doc);
+    saveJson(modelsPath(ctx), doc);
     writeAuth(ctx, apiKey);
 
-    const settings = readJsonIfExists<PrimeSettings>(settingsPath(ctx)) ?? {};
+    const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
     settings.defaultProvider = PROVIDER;
     settings.defaultModel = model;
-    writeJsonAtomic(settingsPath(ctx), settings);
+    saveJson(settingsPath(ctx), settings);
 
     if (readTextIfExists(skillPath(ctx)) === null) {
         writeTextAtomic(skillPath(ctx), polliSkill, 0o600);
@@ -138,20 +149,20 @@ const writeConfig = (
 
 const stripConfig = (ctx: HarnessContext) => {
     let changed = false;
-    const doc = readJsonIfExists<PrimeModels>(modelsPath(ctx));
+    const doc = loadJson(modelsPath(ctx)) as PrimeModels;
     if (doc?.providers && PROVIDER in doc.providers) {
         delete doc.providers[PROVIDER];
         if (Object.keys(doc.providers).length === 0) delete doc.providers;
-        writeJsonAtomic(modelsPath(ctx), doc);
+        saveJson(modelsPath(ctx), doc);
         changed = true;
     }
     changed = deleteAuth(ctx) || changed;
 
-    const settings = readJsonIfExists<PrimeSettings>(settingsPath(ctx));
+    const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
     if (settings && settings.defaultProvider === PROVIDER) {
         delete settings.defaultProvider;
         delete settings.defaultModel;
-        writeJsonAtomic(settingsPath(ctx), settings);
+        saveJson(settingsPath(ctx), settings);
         changed = true;
     }
 
@@ -163,11 +174,11 @@ const stripConfig = (ctx: HarnessContext) => {
 };
 
 const result = (ctx: HarnessContext): HarnessResult => {
-    const doc = readJsonIfExists<PrimeModels>(modelsPath(ctx));
+    const doc = loadJson(modelsPath(ctx)) as PrimeModels;
     const provider = doc?.providers?.[PROVIDER] as
-        | { baseUrl?: string; api?: string }
+        | { baseUrl?: string; api?: string; apiKey?: string }
         | undefined;
-    const settings = readJsonIfExists<PrimeSettings>(settingsPath(ctx));
+    const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
     const model =
         settings?.defaultProvider === PROVIDER
             ? settings.defaultModel
@@ -178,6 +189,7 @@ const result = (ctx: HarnessContext): HarnessResult => {
         configured:
             provider?.baseUrl === `${BASE_URL}/v1` &&
             provider?.api === "openai-completions" &&
+            provider?.apiKey === PROVIDER &&
             readKey(ctx) !== null &&
             readTextIfExists(skillPath(ctx)) !== null,
         model: typeof model === "string" ? model : undefined,
@@ -215,6 +227,11 @@ export const prime: HarnessAdapter = {
         "Models reload when you open /model. Start Prime Agent with: prime-agent",
 
     async on(ctx, options) {
+        if (!commandExists("prime-agent", ctx.env)) {
+            throw new Error(
+                "Prime Agent was not found. Install it first: curl -fsSL https://app.primeintellect.ai/prime-agent/install.sh | sh",
+            );
+        }
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((candidate) => candidate.id === model)) {

@@ -74,6 +74,7 @@ export const TEXT_FALLBACKS = {
         "mistral-large-openrouter": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+            paidOnly: true,
         },
     },
     gemma: {

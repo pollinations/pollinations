@@ -72,6 +72,13 @@ describe("static provider fallbacks", () => {
         expect(MODEL3D_SERVICES["trellis-2-fal"].cost).toEqual({
             completionImageTokens: 0.25,
         });
+        for (const route of [
+            "qwen3.8-27b-openrouter",
+            "mistral-large-openrouter",
+            "claude-opus-4.7-openrouter",
+        ] as const) {
+            expect(TEXT_SERVICES[route].paidOnly).toBe(true);
+        }
     });
 
     it("binds hidden text ids to their exact provider routes", () => {

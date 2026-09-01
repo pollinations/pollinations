@@ -1,0 +1,34 @@
+{
+  "pr_number": 14283,
+  "title": "fix: handle malformed agent streams",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14283",
+  "merged_at": "2026-09-01T16:24:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Renders prompt-agent mid-stream failures as standard completion content instead of custom error events\n- Rejects blank prompt-agent completions and malformed SDK stream events\n- Surfaces upstream error envelopes as typed SDK errors instead of yielding invalid chunks\n- Leaves upstream provider stream bytes unchanged so provider defects remain observable\n\nTests:\n- packages/sdk: 26 focused tests + typecheck\n- enter.pollinations.ai: 21 focused tests",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Streams learn some manners",
+    "blurb": "The prompt-agent stream now handles mid-flight turbulence without tossing strange custom events into the garden. Bad chunks get caught, real errors arrive with proper labels, and the upstream stream remains visible for debugging.",
+    "summary": "Prompt-agent mid-stream failures now render as normal completion content, while blank completions, malformed SDK events, and upstream error envelopes are rejected or surfaced as typed SDK errors without altering provider stream bytes.",
+    "impact": "SDK users get cleaner completion streams and actionable typed errors instead of invalid chunks or custom error events, while upstream provider defects remain observable in their original bytes.",
+    "keywords": [
+      "sdk",
+      "streaming",
+      "prompt-agent",
+      "error-handling",
+      "typed-errors",
+      "api"
+    ],
+    "visual_concept": "Depict a cozy stream-cleanup station: Polli uses a tiny beekeeper-style tool belt and net to guide healthy glowing data droplets into a retro terminal while malformed pixel chunks are gently caught in a labeled sieve. A helpful CRT monitor robot watches the stream with clear square eyes; code-plants and flowers show that valid completion content continues growing uninterrupted.",
+    "image_prompt": "A cozy pixel art garden workshop where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny tool belt and gently filters a flowing stream of pixel data into a lime green (#ecf874) glowing retro terminal; a chunky CRT monitor robot helps catch malformed chunks in a small sieve while healthy code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14283.jpg",
+    "prompt": "A cozy pixel art garden workshop where Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny tool belt and gently filters a flowing stream of pixel data into a lime green (#ecf874) glowing retro terminal; a chunky CRT monitor robot helps catch malformed chunks in a small sieve while healthy code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T16:26:13.509760+00:00"
+}

@@ -139,6 +139,7 @@ function stripKeyFromUrl(url: string): string {
 interface SSEParseResult<T> {
     chunks: T[];
     remainingBuffer: string;
+    done: boolean;
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
@@ -162,23 +163,24 @@ function parseSSEBuffer<T>(
     const lines = buffer.split("\n");
     const remainingBuffer = lines.pop() || "";
     const chunks: T[] = [];
+    let done = false;
 
     for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed || trimmed === "data: [DONE]") continue;
+        if (!trimmed) continue;
+        if (trimmed === "data: [DONE]") {
+            done = true;
+            break;
+        }
         if (trimmed.startsWith("data: ")) {
-            try {
-                const parsed = parseChunk(trimmed.slice(6));
-                if (parsed !== null) {
-                    chunks.push(parsed);
-                }
-            } catch {
-                // Skip invalid JSON
+            const parsed = parseChunk(trimmed.slice(6));
+            if (parsed !== null) {
+                chunks.push(parsed);
             }
         }
     }
 
-    return { chunks, remainingBuffer };
+    return { chunks, remainingBuffer, done };
 }
 
 /**
@@ -908,15 +910,40 @@ export class Pollinations {
                 buffer += decoder.decode(value, { stream: true });
                 const result = parseSSEBuffer<unknown>(
                     buffer,
-                    (data) => JSON.parse(data) as unknown,
+                    (data) => {
+                        try {
+                            return JSON.parse(data) as unknown;
+                        } catch {
+                            throw new PollinationsError(
+                                "Invalid JSON in chat completion stream",
+                                "MALFORMED_STREAM",
+                                502,
+                            );
+                        }
+                    },
                 );
 
                 buffer = result.remainingBuffer;
                 for (const chunk of result.chunks) {
                     const error = chatStreamError(chunk);
                     if (error) throw error;
+                    if (
+                        !chunk ||
+                        typeof chunk !== "object" ||
+                        !("choices" in chunk) ||
+                        !Array.isArray(
+                            (chunk as { choices: unknown }).choices,
+                        )
+                    ) {
+                        throw new PollinationsError(
+                            "Invalid chat completion stream event",
+                            "MALFORMED_STREAM",
+                            502,
+                        );
+                    }
                     yield chunk as ChatStreamChunk;
                 }
+                if (result.done) return;
             }
         } finally {
             reader.releaseLock();

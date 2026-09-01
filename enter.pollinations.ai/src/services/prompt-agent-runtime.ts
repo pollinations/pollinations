@@ -484,7 +484,7 @@ async function streamAgent(
                 for await (const part of result.fullStream) {
                     if (part.type === "error") throw part.error;
                     if (part.type === "text-delta") {
-                        hasContent ||= part.text.length > 0;
+                        hasContent ||= part.text.trim().length > 0;
                         send(
                             contentChunk(
                                 id,
@@ -567,7 +567,33 @@ async function streamAgent(
                 });
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } catch (error) {
-                send({ error: { message: agentErrorMessage(error) } });
+                const content =
+                    (hasContent ? "\n\n" : "") +
+                    '<details type="error" done="true">\n' +
+                    "<summary>Agent Failed</summary>\n" +
+                    `${escapeHtml(agentErrorMessage(error))}\n` +
+                    "</details>";
+                send(
+                    contentChunk(
+                        id,
+                        created,
+                        runtime.config.baseModel,
+                        content,
+                    ),
+                );
+                send({
+                    id,
+                    object: "chat.completion.chunk",
+                    created,
+                    model: runtime.config.baseModel,
+                    choices: [
+                        {
+                            index: 0,
+                            delta: {},
+                            finish_reason: "stop",
+                        },
+                    ],
+                });
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } finally {
                 await close().catch((error) => console.error(error));

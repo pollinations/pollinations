@@ -961,7 +961,7 @@ describe("prompt-agent runtime", () => {
         expect(finalChunk.usage.prompt_tokens).toBe(6);
     });
 
-    it("streams base-model errors as SSE", async () => {
+    it("streams base-model errors as completion content", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () =>
@@ -978,10 +978,20 @@ describe("prompt-agent runtime", () => {
         });
 
         expect(response.status).toBe(200);
-        expect(await response.text()).toBe(
-            'data: {"error":{"message":"Insufficient balance"}}\n\n' +
-                "data: [DONE]\n\n",
+        const events = (await response.text())
+            .split("\n\n")
+            .map((block) => block.replace(/^data: /, "").trim())
+            .filter(Boolean);
+        expect(events.at(-1)).toBe("[DONE]");
+        const chunks = events.slice(0, -1).map((event) => JSON.parse(event));
+        expect(chunks.every((chunk) => Array.isArray(chunk.choices))).toBe(true);
+        expect(chunks[0].choices[0].delta.content).toContain(
+            "<summary>Agent Failed</summary>",
         );
+        expect(chunks[0].choices[0].delta.content).toContain(
+            "Insufficient balance",
+        );
+        expect(chunks.at(-1).choices[0].finish_reason).toBe("stop");
     });
 
     it.each([
@@ -1027,10 +1037,13 @@ describe("prompt-agent runtime", () => {
 
         if (stream) {
             expect(response.status).toBe(200);
-            expect(await response.text()).toBe(
-                'data: {"error":{"message":"Agent produced no response"}}\n\n' +
-                    "data: [DONE]\n\n",
+            const body = await response.text();
+            expect(body).toContain(
+                "<summary>Agent Failed</summary>",
             );
+            expect(body).toContain("Agent produced no response");
+            expect(body).not.toContain('data: {"error"');
+            expect(body.endsWith("data: [DONE]\n\n")).toBe(true);
             return;
         }
         expect(response.status).toBe(502);

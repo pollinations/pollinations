@@ -18,6 +18,7 @@ import { auth } from "../middleware/auth.ts";
 import {
     agentRuntimeBaseUrl,
     BuiltinMcpServerIdSchema,
+    OptiLLMConfigSchema,
     PromptAgentInputSchema,
     parsePromptAgentConfig,
     serializePromptAgentConfig,
@@ -44,16 +45,15 @@ const ListingFieldsSchema = z.object({
 
 // Agent writes are one operation: prompt configuration and catalog identity
 // live in the same community_endpoint row and cannot get out of sync.
-const AgentWriteSchema = PromptAgentInputSchema.extend(
-    ListingFieldsSchema.shape,
-).strict();
-const CreateAgentSchema = AgentWriteSchema.extend({
+const CreateAgentSchema = PromptAgentInputSchema.safeExtend({
+    name: ListingFieldsSchema.shape.name,
+    title: ListingFieldsSchema.shape.title,
     description: ListingFieldsSchema.shape.description.optional().default(""),
     visibility: ListingFieldsSchema.shape.visibility
         .optional()
         .default("private"),
 }).strict();
-const UpdateAgentSchema = PromptAgentInputSchema.extend({
+const UpdateAgentSchema = PromptAgentInputSchema.safeExtend({
     name: ListingFieldsSchema.shape.name.optional(),
     title: ListingFieldsSchema.shape.title.optional(),
     description: ListingFieldsSchema.shape.description.optional(),
@@ -70,6 +70,7 @@ const AgentResponseSchema = z.object({
     systemPrompt: z.string(),
     baseModel: z.string(),
     mcpServers: z.array(BuiltinMcpServerIdSchema),
+    optillm: OptiLLMConfigSchema.optional(),
     createdAt: z.string(),
     updatedAt: z.string(),
 });

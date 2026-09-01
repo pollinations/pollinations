@@ -118,6 +118,10 @@ polli agents delete <id>
 }
 ```
 
+As an alternative to MCP tools, add a bounded OptiLLM reasoning configuration,
+for example `"optillm": { "approach": "bon", "bestOfN": 3 }`. OptiLLM and
+`mcpServers` cannot be enabled together.
+
 Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.

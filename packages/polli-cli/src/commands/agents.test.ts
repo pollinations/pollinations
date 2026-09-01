@@ -13,7 +13,8 @@ describe("agentBody", () => {
             JSON.stringify({
                 systemPrompt: "Answer briefly.",
                 baseModel: "openai-fast",
-                mcpServers: ["pollinations"],
+                mcpServers: [],
+                optillm: { approach: "bon", bestOfN: 3 },
             }),
         );
 
@@ -27,7 +28,8 @@ describe("agentBody", () => {
         ).toEqual({
             systemPrompt: "Answer briefly.",
             baseModel: "openai-fast",
-            mcpServers: ["pollinations"],
+            mcpServers: [],
+            optillm: { approach: "bon", bestOfN: 3 },
             name: "brief-agent",
             title: "Brief Agent",
             description: "Concise answers",

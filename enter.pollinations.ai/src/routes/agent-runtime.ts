@@ -19,6 +19,10 @@ function genBaseUrl(env: Env["Bindings"]): string {
     );
 }
 
+function optillmBaseUrl(env: Env["Bindings"]): string {
+    return (env as { OPTILLM_BASE_URL?: string }).OPTILLM_BASE_URL ?? "";
+}
+
 export const agentRuntimeRoutes = new Hono<Env>()
     .use("*", auth({ allowSessionCookie: false, allowApiKey: true }))
     .post(
@@ -61,6 +65,7 @@ export const agentRuntimeRoutes = new Hono<Env>()
                 config,
                 apiKey,
                 genBaseUrl: genBaseUrl(c.env),
+                optillmBaseUrl: optillmBaseUrl(c.env),
             });
         },
     );

@@ -17,6 +17,7 @@ import {
     normalizeCommunityEndpointAdvertised,
     normalizeCommunityEndpointInputModalities,
     normalizeCommunityEndpointModality,
+    type OptiLLMConfig,
 } from "@shared/community-endpoints.ts";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -34,13 +35,14 @@ export type ManagedAgent = {
     systemPrompt: string;
     baseModel: string;
     mcpServers: McpServerId[];
+    optillm?: OptiLLMConfig;
     createdAt: string;
     updatedAt: string;
 };
 
 type AgentFields = Pick<
     ManagedAgent,
-    "systemPrompt" | "baseModel" | "mcpServers"
+    "systemPrompt" | "baseModel" | "mcpServers" | "optillm"
 >;
 
 export type AgentFormState = AgentFields;
@@ -253,6 +255,7 @@ export const emptyAgentForm: AgentFormState = {
     systemPrompt: "",
     baseModel: "",
     mcpServers: [],
+    optillm: undefined,
 };
 
 export const idleAction: ActionState = { status: "idle" };
@@ -478,6 +481,7 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
         systemPrompt,
         baseModel,
         mcpServers: form.mcpServers,
+        ...(form.optillm ? { optillm: form.optillm } : {}),
     };
 }
 

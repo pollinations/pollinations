@@ -25,7 +25,8 @@ An agent combines catalog fields with its runtime configuration:
 | `visibility` | No | `private` by default, or `public` with publisher access. |
 | `systemPrompt` | Yes | Instructions for the agent, from 1 to 8,000 characters. |
 | `baseModel` | Yes | A text model ID from [`GET /v1/models`](https://gen.pollinations.ai/v1/models). |
-| `mcpServers` | No | `[]` or `["pollinations"]` to enable the built-in Pollinations tools. |
+| `mcpServers` | No | Built-in MCP server IDs to enable as tools. |
+| `optillm` | No | A bounded OptiLLM reasoning configuration. Cannot be combined with MCP tools. |
 
 Example `agent.json`:
 
@@ -38,6 +39,21 @@ Example `agent.json`:
 ```
 
 Updates replace the runtime configuration, so include `systemPrompt` and `baseModel`; include `mcpServers` if tools should remain enabled. You can also change the name, title, description, or visibility.
+
+To apply extra inference-time reasoning instead of MCP tools, use one of the
+supported approaches. For example:
+
+```json
+{
+  "systemPrompt": "Solve the problem carefully.",
+  "baseModel": "openai",
+  "mcpServers": [],
+  "optillm": { "approach": "bon", "bestOfN": 3 }
+}
+```
+
+The supported approaches are `re2`, `cot_reflection`, `bon`, `mcts`, and
+`rstar`. The API applies strict limits to their compute settings.
 
 ## Create with the CLI
 

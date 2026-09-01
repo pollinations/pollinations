@@ -21,6 +21,7 @@ type Agent = {
     systemPrompt: string;
     baseModel: string;
     mcpServers: string[];
+    optillm?: { approach: string };
     createdAt: string;
     updatedAt: string;
 };
@@ -76,11 +77,19 @@ function printAgents(agents: Agent[]): void {
             name: agent.name,
             base_model: agent.baseModel,
             visibility: agent.visibility,
+            optillm: agent.optillm?.approach ?? "off",
             pollinations_tools: agent.mcpServers.includes("pollinations")
                 ? "yes"
                 : "no",
         })),
-        ["id", "name", "base_model", "visibility", "pollinations_tools"],
+        [
+            "id",
+            "name",
+            "base_model",
+            "visibility",
+            "optillm",
+            "pollinations_tools",
+        ],
     );
 }
 

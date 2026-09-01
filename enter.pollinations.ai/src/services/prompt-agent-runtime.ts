@@ -33,6 +33,7 @@ type PromptAgentRuntime = {
     config: PromptAgentConfig;
     apiKey: string;
     genBaseUrl: string;
+    optillmBaseUrl: string;
 };
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
@@ -57,6 +58,49 @@ const MAX_TOOL_CALLS = 16;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
+
+export function optillmRequestFields(
+    config: NonNullable<PromptAgentConfig["optillm"]>,
+): Record<string, string | number | boolean> {
+    switch (config.approach) {
+        case "bon":
+            return {
+                optillm_approach: config.approach,
+                best_of_n: config.bestOfN,
+            };
+        case "mcts":
+            return {
+                optillm_approach: config.approach,
+                mcts_simulations: config.simulations,
+                mcts_depth: config.depth,
+                mcts_exploration: config.exploration,
+            };
+        case "rstar":
+            return {
+                optillm_approach: config.approach,
+                rstar_max_depth: config.maxDepth,
+                rstar_num_rollouts: config.rollouts,
+                rstar_c: config.exploration,
+            };
+        default:
+            return { optillm_approach: config.approach };
+    }
+}
+
+function optillmFetch(
+    config: NonNullable<PromptAgentConfig["optillm"]>,
+): typeof fetch {
+    return async (input, init) => {
+        if (typeof init?.body !== "string") {
+            throw new Error("OptiLLM request body must be JSON");
+        }
+        const body = JSON.parse(init.body) as Record<string, unknown>;
+        return globalThis.fetch.call(globalThis, input, {
+            ...init,
+            body: JSON.stringify({ ...body, ...optillmRequestFields(config) }),
+        });
+    };
+}
 
 function agentErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
@@ -171,10 +215,14 @@ async function createAgent(runtime: PromptAgentRuntime, signal: AbortSignal) {
             },
         };
     }
+    const optillm = runtime.config.optillm;
     const pollinations = createOpenAICompatible({
         name: "pollinations",
         apiKey: runtime.apiKey,
-        baseURL: `${genBaseUrl}/v1`,
+        baseURL: optillm
+            ? runtime.optillmBaseUrl.replace(/\/$/, "")
+            : `${genBaseUrl}/v1`,
+        ...(optillm ? { fetch: optillmFetch(optillm) } : {}),
     });
 
     const agent = new ToolLoopAgent({

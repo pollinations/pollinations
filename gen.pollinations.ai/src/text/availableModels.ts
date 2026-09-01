@@ -95,6 +95,11 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "inception/mercury-2.5-preview",
+        config: portkeyConfig["inception/mercury-2.5-preview"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "command-a-plus",
         config: portkeyConfig["Cohere-command-a-plus-05-2026"],
     },

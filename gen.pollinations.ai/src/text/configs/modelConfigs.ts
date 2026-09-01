@@ -279,6 +279,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "inception/mercury-2.5-preview": createPinnedOpenRouterConfig(
+        "inception/mercury-2.5-preview",
+        "Inception",
+        64000,
+    ),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4-flash-0731": () =>

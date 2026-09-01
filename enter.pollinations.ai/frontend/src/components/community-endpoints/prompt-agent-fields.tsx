@@ -92,7 +92,7 @@ export function PromptAgentFields({
                 <p className="text-xs text-theme-text-muted">
                     Uses the caller's Pollinations API access. See the{" "}
                     <a
-                        href="https://gen.pollinations.ai/docs#tag/mcp-server"
+                        href="https://gen.pollinations.ai/docs#tag/mcp-servers"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"

@@ -136,6 +136,10 @@ test("display prices stay compact and use a readable token scale", () => {
         value: "0.00001",
         tokenScale: "M",
     });
+    expect(formatDisplayPrice("0.00000778")).toEqual({
+        value: "0.00000778",
+        tokenScale: "M",
+    });
 });
 
 test("catalog prices format token rates through formatPricePer1M", () => {
@@ -498,6 +502,22 @@ test("reasoning token usage bills through completion text rates", () => {
     }
 });
 
+test("Gemini Omni bills exact Vertex modality usage", () => {
+    const model = "google/gemini-omni-1.1-flash";
+    const usage = {
+        promptTextTokens: 31,
+        completionVideoTokens: 5_793,
+        completionReasoningTokens: 276,
+    };
+    const cost = calculateCost(model, usage);
+
+    expect(cost.totalCost).toBeCloseTo(
+        31 * 0.0000015 + 5_793 * 0.0000175 + 276 * 0.000009,
+        10,
+    );
+    expect(calculatePrice(model, usage).totalPrice).toBe(cost.totalCost);
+});
+
 test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     const definition = getRegistryModelDefinition("claude-fable-5");
 
@@ -667,7 +687,7 @@ test("Gemini search cost follows each route's provider metadata", () => {
     // OpenRouter search-capable routes bill per reported web search request.
     expect(gemini3FlashCost.totalCost).toBeCloseTo(3.528, 8);
     expect(geminiSearchFastCost.totalCost).toBeCloseTo(2.828, 8);
-    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(2.278, 8);
+    expect(geminiSearchLargeCost.totalCost).toBeCloseTo(4.528, 8);
     expect(ungroundedGeminiSearchFastCost.totalCost).toBeCloseTo(2.8, 8);
 });
 
@@ -1081,7 +1101,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(proCacheWrite[0].unitCost).toBeCloseTo(4.5 / 12_000_000, 15);
     expect(proCacheWrite[0].cost).toBeCloseTo(0.375, 15);
 
-    const discountedCacheWrite = calculateBillingAdjustments(
+    const geminiCacheWrite = calculateBillingAdjustments(
         getRegistryModelDefinition("gemini"),
         {
             usage: {
@@ -1090,9 +1110,9 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
         },
         "gemini",
     );
-    expect(discountedCacheWrite).toHaveLength(1);
-    expect(discountedCacheWrite[0].unitCost).toBeCloseTo(0.25 / 12_000_000, 15);
-    expect(discountedCacheWrite[0].cost).toBeCloseTo(0.25 / 12, 15);
+    expect(geminiCacheWrite).toHaveLength(1);
+    expect(geminiCacheWrite[0].unitCost).toBeCloseTo(0.5 / 12_000_000, 15);
+    expect(geminiCacheWrite[0].cost).toBeCloseTo(0.5 / 12, 15);
 
     for (const model of [
         "gemini-3-flash",

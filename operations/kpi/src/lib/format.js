@@ -8,6 +8,8 @@ export function formatValue(value, format = "number") {
         return `${sign}$${Math.round(size).toLocaleString()}`;
     }
     if (format === "percent") return `${Math.round(value)}%`;
+    if (format === "percentPrecise") return `${value.toFixed(2)}%`;
+    if (format === "perThousand") return `${value.toFixed(1)} / 1K`;
     if (format === "compact") {
         if (Math.abs(value) >= 1e9) return `${(value / 1e9).toFixed(1)}B`;
         if (Math.abs(value) >= 1e6) return `${(value / 1e6).toFixed(1)}M`;

@@ -43,6 +43,8 @@ export function sortModels(
 ): ModelPrice[] {
     return [...models].sort((a, b) => {
         switch (sort) {
+            case "popular":
+                return compareKnownValues(a.users7d, b.users7d, "desc");
             case "newest":
                 return compareKnownValues(a.addedDate, b.addedDate, "desc");
             case "oldest":

@@ -245,6 +245,18 @@ test("thin-proxies the generic Composio router and reports executed actions", as
     assert.equal(call.status, 200);
     assert.equal(call.headers.get(MCP_USAGE_HEADERS.cost), "0.001");
     assert.equal(call.headers.get(MCP_USAGE_HEADERS.adjustmentUnits), "2");
+    const sessionRequest = calls.find(({ url }) =>
+        url.pathname.endsWith("/tool_router/session"),
+    );
+    assert.deepEqual(JSON.parse(sessionRequest.init.body), {
+        user_id: "user-1",
+        manage_connections: {
+            enable: true,
+            enable_wait_for_connections: false,
+            enable_connection_removal: false,
+        },
+        sandbox: { enable: false },
+    });
     const proxiedCalls = calls.filter(
         ({ url }) => url.host === "app.composio.test",
     );

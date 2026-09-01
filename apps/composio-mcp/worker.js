@@ -108,15 +108,28 @@ async function listToolkits(env, fetchImpl) {
         }));
 }
 
-function createSession(userId, toolkits, env, fetchImpl) {
+function createSession(
+    userId,
+    toolkits,
+    env,
+    fetchImpl,
+    manageConnections = false,
+) {
+    const config = {
+        user_id: userId,
+        manage_connections: manageConnections
+            ? {
+                  enable: true,
+                  enable_wait_for_connections: false,
+                  enable_connection_removal: false,
+              }
+            : { enable: false },
+        sandbox: { enable: false },
+    };
+    if (toolkits.length) config.toolkits = { enable: toolkits };
     return callComposio("/tool_router/session", env, fetchImpl, {
         method: "POST",
-        body: JSON.stringify({
-            user_id: userId,
-            toolkits: { enable: toolkits },
-            manage_connections: { enable: false },
-            sandbox: { enable: false },
-        }),
+        body: JSON.stringify(config),
     });
 }
 
@@ -319,14 +332,7 @@ function decodeSession(value) {
 }
 
 async function createRouterSession(userId, env, fetchImpl) {
-    const toolkits = [
-        ...new Set(
-            (await listConnections(userId, env, fetchImpl))
-                .map((account) => account.toolkit?.slug)
-                .filter(Boolean),
-        ),
-    ];
-    return createSession(userId, toolkits, env, fetchImpl);
+    return createSession(userId, [], env, fetchImpl, true);
 }
 
 async function loadRouterSession(userId, sessionId, env, fetchImpl) {

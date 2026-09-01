@@ -1220,6 +1220,32 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-fable-5.1": {
+        aliases: [],
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            promptTextTokens: perMillion(10),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50),
+        },
+        title: "Claude Fable 5.1",
+        description:
+            "Frontier intelligence for complex reasoning, coding and long-running agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: [
             "sonar",

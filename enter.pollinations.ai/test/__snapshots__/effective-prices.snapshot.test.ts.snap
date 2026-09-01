@@ -2,6 +2,20 @@
 
 exports[`effective cost and price per model — snapshot 1`] = `
 {
+  "anthropic/claude-fable-5.1": {
+    "cost": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.00001,
+    },
+    "price": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.00001,
+    },
+  },
   "claude": {
     "cost": {
       "completionTextTokens": 0.000015,

@@ -8,38 +8,8 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
+import { humanCallerId } from "./communityResponder.ts";
 import type { RequestData, TransformOptions } from "./types.js";
-
-function bytesToBase64Url(bytes: Uint8Array): string {
-    let binary = "";
-    for (const byte of bytes) binary += String.fromCharCode(byte);
-    return btoa(binary)
-        .replaceAll("+", "-")
-        .replaceAll("/", "_")
-        .replace(/=+$/, "");
-}
-
-/** Stable for one caller and endpoint, opaque to the community service. */
-async function humanCallerId(
-    secret: string,
-    endpointId: string,
-    userId: string,
-): Promise<string> {
-    const encoder = new TextEncoder();
-    const key = await crypto.subtle.importKey(
-        "raw",
-        encoder.encode(secret),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"],
-    );
-    const signature = await crypto.subtle.sign(
-        "HMAC",
-        key,
-        encoder.encode(`human-caller:v1:${endpointId}:${userId}`),
-    );
-    return `hc_${bytesToBase64Url(new Uint8Array(signature))}`;
-}
 
 /**
  * The run token a delegating endpoint authenticates with, or undefined.
@@ -150,6 +120,12 @@ export async function communityEndpointGatewayContext({
 
     return {
         ...requestDataWithoutMessages,
+        ...(trustedHumanMetadata && {
+            // A human produces one complete Discord message. Fetch it as JSON,
+            // then let Gen wrap the validated completion for streaming callers.
+            stream: false,
+            stream_options: undefined,
+        }),
         ...(trustedHumanMetadata && {
             _pollinations: trustedHumanMetadata,
         }),

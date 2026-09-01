@@ -12,7 +12,12 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { configureOpenclaw, disableOpenclaw, openclaw } from "./openclaw.js";
+import {
+    configureOpenclaw,
+    disableOpenclaw,
+    openclaw,
+    openclawHome,
+} from "./openclaw.js";
 import type { HarnessContext } from "./types.js";
 
 const models = [
@@ -53,11 +58,12 @@ describe("openclaw harness", () => {
 
         const doc = readJson(configFile());
         const provider = doc.models.providers.pollinations;
-        expect(provider.apiKey).toBe("sk_test_key");
+        expect(provider.apiKey).toBe("${POLLI_OPENCLAW_API_KEY}");
         expect(provider.baseUrl).toBe("https://gen.pollinations.ai/v1");
         expect(provider.api).toBe("openai-completions");
         expect(doc.models.mode).toBe("merge");
-        expect(doc.models.defaultModel).toBe("pollinations/kimi");
+        expect(doc.agents.defaults.model.primary).toBe("pollinations/kimi");
+        expect(doc.env.vars.POLLI_OPENCLAW_API_KEY).toBe("sk_test_key");
         expect(provider.models.map((m: { id: string }) => m.id)).toEqual([
             "kimi",
             "deepseek",
@@ -87,7 +93,10 @@ describe("openclaw harness", () => {
         const doc = readJson(configFile());
         expect(doc.ui).toEqual({ theme: "dark" });
         expect(doc.other).toEqual({ setting: 42 });
-        expect(doc.models.providers.pollinations.apiKey).toBe("sk_test_key");
+        expect(doc.models.providers.pollinations.apiKey).toBe(
+            "${POLLI_OPENCLAW_API_KEY}",
+        );
+        expect(doc.env.vars.POLLI_OPENCLAW_API_KEY).toBe("sk_test_key");
     });
 
     it("restores the original files byte-for-byte on off", () => {
@@ -119,7 +128,8 @@ describe("openclaw harness", () => {
         expect(doc["agent-presets"]).toEqual({ default: "mine" });
         expect(doc.models?.providers?.pollinations).toBeUndefined();
         expect(doc.models?.mode).toBeUndefined();
-        expect(doc.models?.defaultModel).toBeUndefined();
+        expect(doc.agents?.defaults?.model?.primary).toBeUndefined();
+        expect(doc.env?.vars?.POLLI_OPENCLAW_API_KEY).toBeUndefined();
         expect(existsSync(skillFile())).toBe(false);
         expect(snapshotFiles()).toHaveLength(0);
     });
@@ -141,5 +151,22 @@ describe("openclaw harness", () => {
 
         disableOpenclaw(ctx);
         expect(existsSync(configFile())).toBe(false);
+    });
+
+    it("respects OPENCLAW_HOME env var", () => {
+        const customHome = mkdtempSync(join(tmpdir(), "openclaw-home-"));
+        const customCtx: HarnessContext = {
+            home,
+            env: { OPENCLAW_HOME: customHome },
+        };
+        try {
+            expect(openclawHome(customCtx)).toBe(customHome);
+            configureOpenclaw(customCtx, settings);
+            const doc = readJson(join(customHome, "openclaw.json"));
+            expect(doc.env.vars.POLLI_OPENCLAW_API_KEY).toBe("sk_test_key");
+            expect(doc.agents.defaults.model.primary).toBe("pollinations/kimi");
+        } finally {
+            rmSync(customHome, { recursive: true, force: true });
+        }
     });
 });

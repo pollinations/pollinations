@@ -85,7 +85,6 @@ export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
     const [search, setSearch] = useState("");
-    const [submittedSearch, setSubmittedSearch] = useState("");
     const [pendingId, setPendingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -116,7 +115,6 @@ export function ConnectedApps() {
         const query = search.trim();
         let cancelled = false;
         const timeout = window.setTimeout(() => {
-            setSubmittedSearch(query);
             setError(null);
             setLoading(true);
             void loadToolkits(query)
@@ -187,9 +185,6 @@ export function ConnectedApps() {
     const availableToolkits = toolkits.filter(
         ({ slug }) => !connectedToolkits.has(slug),
     );
-    const resultsSummary = submittedSearch
-        ? `${availableToolkits.length} ${availableToolkits.length === 1 ? "result" : "results"} for “${submittedSearch}”.`
-        : `Showing ${availableToolkits.length} popular connectors. Search to find more.`;
 
     return (
         <Section title="Connectors" framed>
@@ -235,37 +230,33 @@ export function ConnectedApps() {
                 </div>
             )}
 
-            <div className="relative max-w-md">
-                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
-                <Input
-                    value={search}
-                    placeholder="Search connectors…"
-                    aria-label="Search connectors"
-                    autoComplete="off"
-                    className="pl-9"
-                    onChange={(event) => setSearch(event.currentTarget.value)}
-                    onBlur={() => setSearch(search.trim())}
-                />
+            <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                    <Text tone="strong" weight="semibold">
+                        Add
+                    </Text>
+                    <InlineLink href="https://composio.dev/toolkits">
+                        View all connectors
+                    </InlineLink>
+                </div>
+                <div className="relative max-w-md">
+                    <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                    <Input
+                        value={search}
+                        placeholder="Search connectors…"
+                        aria-label="Search connectors"
+                        autoComplete="off"
+                        className="pl-9"
+                        onChange={(event) =>
+                            setSearch(event.currentTarget.value)
+                        }
+                        onBlur={() => setSearch(search.trim())}
+                    />
+                </div>
             </div>
 
             {!loading && (
-                <div className="space-y-2">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                        <div>
-                            <Text tone="strong" weight="semibold">
-                                {submittedSearch
-                                    ? "Search results"
-                                    : "Popular connectors"}
-                            </Text>
-                            <Text size="sm" tone="muted">
-                                {resultsSummary}
-                            </Text>
-                        </div>
-                        <InlineLink href="https://composio.dev/toolkits">
-                            View all connectors
-                        </InlineLink>
-                    </div>
-
+                <div>
                     {availableToolkits.length > 0 ? (
                         <div className="grid gap-2 sm:grid-cols-2">
                             {availableToolkits.map((toolkit) => (

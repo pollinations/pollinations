@@ -82,6 +82,66 @@ test("lists the MCP servers exposed through Gen", async () => {
                     ],
                 },
             },
+            {
+                id: "github",
+                name: "GitHub",
+                description:
+                    "Read and manage repositories, files, issues, pull requests, and Actions.",
+                url: "https://gen.pollinations.ai/mcp/github",
+                pricing: {
+                    rates: [
+                        {
+                            name: "composio.tool_call.v1",
+                            label: "Tool call",
+                            kind: "tool_call",
+                            price: "0.0005",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "call",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "discord",
+                name: "Discord",
+                description:
+                    "Read channels, send messages, and manage Discord communities.",
+                url: "https://gen.pollinations.ai/mcp/discord",
+                pricing: {
+                    rates: [
+                        {
+                            name: "composio.tool_call.v1",
+                            label: "Tool call",
+                            kind: "tool_call",
+                            price: "0.0005",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "call",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "connected-apps",
+                name: "Connected Apps",
+                description:
+                    "Find and use actions across the apps connected to your Pollinations account.",
+                url: "https://gen.pollinations.ai/mcp/connected-apps",
+                pricing: {
+                    rates: [
+                        {
+                            name: "composio.tool_call.v1",
+                            label: "Tool call",
+                            kind: "tool_call",
+                            price: "0.0005",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "call",
+                        },
+                    ],
+                },
+            },
         ],
     });
 });
@@ -191,6 +251,31 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.993,
         packBalance: 0,
+    });
+});
+
+test("routes GitHub with its registry toolkit and authenticated user", async () => {
+    const { key, userId } = await createTestApiKey();
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/github",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "x-pollinations-user-id": "spoofed-user",
+                "x-pollinations-mcp-toolkit": "discord",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: { content: [{ type: "text", text: `${userId}:github` }] },
     });
 });
 

@@ -16,6 +16,7 @@ import {
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
+import { ConnectedApps } from "../components/account/connected-apps.tsx";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -258,6 +259,8 @@ function AccountPage() {
                     )}
                 </Section>
             )}
+
+            <ConnectedApps />
 
             <Section title="Danger zone" framed>
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">

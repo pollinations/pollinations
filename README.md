@@ -65,7 +65,7 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 - **2026-08-28** – **🎯 The quest garden has rankings** The Community page now shows the top Quest contributors, completed quests, and Pollen earned. Useful motivation, mildly dangerous for your sleep schedule.
 - **2026-08-28** – **🎨 Two frames, then cinema** Generate 3–10 second, audio-synced video clips with `google/gemini-omni-1.1-flash`: text or two keyframes in, 360p to 4K video out. [Check the API docs](https://gen.pollinations.ai/docs).
 - **2026-08-28** – **✨ Pixels enter the forge** Pixel Forge is a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at the dimensions you choose. [Try it](https://b3b41020.github.io/pixel-forge) <!-- app -->
-- **2026-08-27** – **🚀 GLM-5.3 Flash** is now available for paid API users: multimodal input, tool use, mandatory reasoning, and a frankly unnecessary-but-useful 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-08-27** – **🚀 GLM-5.3 Flash** is now available through the API: multimodal input, tool use, mandatory reasoning, and a frankly unnecessary-but-useful 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-08-27** – **🎨 Seedance reference media** lets Seedance 2.0 and 2.5 use public image, video, and audio URLs as creative references for image and video generation. [Check the API docs](https://gen.pollinations.ai/docs)
 - **2026-08-27** – **✨ Model search filters** make the model browser substantially less like rummaging through a seed drawer: search by publisher, modality, capability, ID, and access level.
 ---
@@ -112,7 +112,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run agentic coding tools such as DeepSeek Harness on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
+Run agentic coding tools such as DeepSeek Harness, OpenCode, Pi, and Prime Agent on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on

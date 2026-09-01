@@ -73,10 +73,12 @@ test("lists Exa's default tools without usage", async () => {
     const { calls, env, worker } = createHarness();
     const responses = [];
     const client = await connect(worker, env, responses);
+    const { tools } = await client.listTools();
     assert.deepEqual(
-        (await client.listTools()).tools.map(({ name }) => name),
+        tools.map(({ name }) => name),
         ["web_search_exa", "web_fetch_exa"],
     );
+    assert.equal(tools[0].inputSchema.properties.numResults.maximum, 10);
     assert.equal(calls.length, 0);
     assert.equal(
         responses.some((response) =>

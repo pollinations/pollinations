@@ -978,6 +978,7 @@ describe("API Key Management", () => {
                     id: "owner-private-model",
                     ownerUserId,
                     name: "private-model",
+                    title: "Owner private model",
                     baseUrl: "https://owner.example.com/v1",
                     upstreamModel: "private-model",
                     payload: JSON.stringify({
@@ -997,6 +998,7 @@ describe("API Key Management", () => {
                     id: "other-private-model",
                     ownerUserId: "other-model-owner-id",
                     name: "private-model",
+                    title: "Other private model",
                     baseUrl: "https://other.example.com/v1",
                     upstreamModel: "private-model",
                     payload: JSON.stringify({

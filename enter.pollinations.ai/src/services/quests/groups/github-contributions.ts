@@ -3,7 +3,7 @@ import {
     githubAppCredentialsFromEnv,
 } from "@shared/github/app-auth.ts";
 import { graphql } from "@shared/github/client.ts";
-import type { QuestDefinition, QuestState } from "../definitions.ts";
+import type { QuestDefinition } from "../definitions.ts";
 import {
     type QuestCard,
     type QuestEvaluation,
@@ -44,7 +44,7 @@ const solveGithubIssueQuest: QuestDefinition = {
     id: "solve_github_issue",
     title: "Solve a quest issue in GitHub",
     description:
-        "Pick an open POLLEN-QUEST issue and submit a focused PR. Multiple contributors may submit; the author of the selected merged PR earns the reward.",
+        "Pick an open POLLEN-QUEST issue and submit a focused PR. Each author of a merged PR that closes the issue earns the reward.",
     category: CONTRIBUTION_CATEGORY,
     scope: "perUser",
     rewardAmount: 0,
@@ -59,13 +59,13 @@ type DerivedQuestIssue = {
     description: string;
     url: string;
     rewardAmount: number | null;
-    // "available" = open bounty; "completed" = closed by a merged PR.
+    // "completed" issues stay off the open board once assigned or merged.
     state: "available" | "completed";
-    completedByGithubId: number | null;
+    completedByGithubIds: number[];
 };
 
 type GitHubUser = {
-    databaseId?: number;
+    databaseId?: number | null;
 };
 
 type GitHubIssueNode = {
@@ -75,6 +75,7 @@ type GitHubIssueNode = {
     url: string;
     body: string | null;
     labels: { nodes: { name: string }[] };
+    assignees: { nodes: GitHubUser[] };
     closedByPullRequestsReferences: {
         nodes: {
             number: number;
@@ -102,6 +103,7 @@ query($query:String!){
       ... on Issue{
         number state title url body
         labels(first:100){ nodes{ name } }
+        assignees(first:1){ nodes{ databaseId } }
         closedByPullRequestsReferences(first:10){
           nodes{ number mergedAt author{ ... on User{ databaseId } } }
         }
@@ -167,21 +169,19 @@ function hasQuestLabel(labels: { name: string }[]): boolean {
     return labels.some((label) => label.name === QUEST_LABEL);
 }
 
-function firstMergedCloser(issue: GitHubIssueNode) {
-    return (
-        issue.closedByPullRequestsReferences.nodes
-            .flatMap((pr) =>
-                pr.mergedAt === null ? [] : [{ ...pr, mergedAt: pr.mergedAt }],
-            )
-            .sort((a, b) => a.mergedAt.localeCompare(b.mergedAt))[0] ?? null
+function mergedClosers(issue: GitHubIssueNode) {
+    return issue.closedByPullRequestsReferences.nodes.filter(
+        (pr) => pr.mergedAt !== null,
     );
 }
 
 function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
     const body = issue.body ?? "";
-    const completedBy = firstMergedCloser(issue);
+    const closers = mergedClosers(issue);
     const state: DerivedQuestIssue["state"] =
-        completedBy !== null ? "completed" : "available";
+        closers.length > 0 || issue.assignees.nodes.length > 0
+            ? "completed"
+            : "available";
     return {
         issueNumber: issue.number,
         title: issue.title,
@@ -189,7 +189,11 @@ function toDerivedQuestIssue(issue: GitHubIssueNode): DerivedQuestIssue {
         url: issue.url,
         rewardAmount: parseReward(body),
         state,
-        completedByGithubId: completedBy?.author?.databaseId ?? null,
+        completedByGithubIds: closers.flatMap((pr) =>
+            typeof pr.author?.databaseId === "number"
+                ? [pr.author.databaseId]
+                : [],
+        ),
     };
 }
 
@@ -204,31 +208,25 @@ async function loadQuestIssues(token: string): Promise<DerivedQuestIssue[]> {
         .filter((issue) => hasQuestLabel(issue.labels.nodes))
         .filter(
             (issue) =>
-                issue.state === "OPEN" || firstMergedCloser(issue) !== null,
+                issue.state === "OPEN" || mergedClosers(issue).length > 0,
         )
         .map(toDerivedQuestIssue)
         .filter((issue) => issue.rewardAmount !== null);
 }
 
-function issueState(issue: DerivedQuestIssue): QuestState {
-    return issue.state;
-}
-
 function toIssueQuestDefinition(issue: DerivedQuestIssue): QuestDefinition {
     return {
-        // Per-issue idempotency identity. The reward key for a scope:"once" quest
-        // is `quest:${id}` (no userId), so `id` MUST be unique per issue or every
-        // community bounty collapses to one key and only the first ever records.
-        // Derive the id from issueNumber so the key remains stable across runs.
+        // Keep the issue-derived id stable; per-user reward keys add the
+        // immutable GitHub id so each merged PR author can earn it once.
         id: `github:issue:${issue.issueNumber}`,
         title: `Ship bounty #${issue.issueNumber}: ${issue.title}`,
         description: `Help close this POLLEN-QUEST issue. ${issue.description}`,
         category: CONTRIBUTION_CATEGORY,
-        scope: "once",
+        scope: "perUser",
         rewardAmount: issue.rewardAmount ?? 0,
         balanceBucket: "tier",
         url: issue.url,
-        state: issueState(issue),
+        state: issue.state,
     };
 }
 
@@ -259,7 +257,8 @@ export async function evaluateUser(
     ctx: QuestEvaluationContext,
     user: QuestUser,
 ): Promise<QuestEvaluation> {
-    if (user.githubId === null) return { proposals: [] };
+    const githubId = user.githubId;
+    if (githubId === null) return { proposals: [] };
 
     const token = await githubToken(ctx.env);
     const [issues, mergedPr] = await Promise.all([
@@ -272,8 +271,7 @@ export async function evaluateUser(
     const issueProposals = issues
         .filter(
             (issue) =>
-                issue.state === "completed" &&
-                issue.completedByGithubId === user.githubId &&
+                issue.completedByGithubIds.includes(githubId) &&
                 (issue.rewardAmount ?? 0) > 0,
         )
         .map((issue) => ({

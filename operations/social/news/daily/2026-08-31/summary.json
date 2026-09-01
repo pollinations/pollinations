@@ -1,0 +1,147 @@
+{
+  "date": "2026-08-31",
+  "period_start": "2026-08-31",
+  "period_end": "2026-08-31",
+  "title": "More ways to generate: community video, Inkling, Grok, and FLUX.2",
+  "summary": "A crowded garden day: new video and multimodal models, a much tidier community catalog, one-command coding-harness setup, and API requests that finally arrive as sent.\n\nCommunity endpoints can now serve synchronous MP4 video generation, while the official lineup gained multimodal Inkling through Fireworks, Azure-backed Grok 4.6 with a 200K context window, and FLUX.2 Pro and Flex for large-format image work. Inkling audio now accepts common formats cleanly, video reconnects avoid duplicate work, and gpt-realtime-2 remains alive as an alias to the maintained 2.1 route.\n\nThe catalog now defaults to popular models, reliably exposes community video, audio, embedding, and 3D categories, and adds a separate MCP server directory with connection details and Pollen rates. Behind the scenes, one shared modality and listing contract now keeps catalog entries, endpoint behavior, publishing validation, queued changes, titles, and effective visibility in agreement. Embedding publishers can also publish with input-token pricing, as embeddings have declined to pretend they generate completion tokens.\n\nPolli CLI 0.1.12 can set up or remove Pollinations integrations for Pi and OpenCode with a command, dedicated credentials, model defaults, status checks, and safe cleanup. The text API now preserves omitted parameters, blank content, exact numeric settings, tool schemas, cache controls, and provider-supported inputs instead of helpfully changing them first. API docs were regenerated and the Agents endpoint now includes a copyable request body.",
+  "pr_count": 34,
+  "prs": [
+    {
+      "number": 13566,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14008,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14043,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14097,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14125,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14155,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14156,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14161,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14175,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14178,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14179,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14180,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14182,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14183,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14184,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14185,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14187,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14188,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14189,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14190,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14197,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14200,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14201,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14202,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14204,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14205,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14207,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14208,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14211,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14213,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14215,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14220,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14221,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14226,
+      "date": "2026-08-31"
+    }
+  ],
+  "generated_at": "2026-09-01T06:31:29.452077+00:00"
+}

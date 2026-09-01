@@ -120,7 +120,11 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
-    if (hasPollinationsTools(model)) labels.push("Pollinations models");
+    if (hasPollinationsTools(model)) {
+        labels.push(
+            model.agent ? "Built-in Pollinations tools" : "Pollinations models",
+        );
+    }
 
     return labels.join(", ");
 };

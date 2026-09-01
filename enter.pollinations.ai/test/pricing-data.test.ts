@@ -346,7 +346,7 @@ test("agent details show real capabilities without pricing", () => {
 
     const toolsAgent = {
         ...agent,
-        capabilities: ["pollinations_models" as const],
+        capabilities: ["web_search" as const, "pollinations_models" as const],
     };
 
     expect(hasPollinationsTools(agent)).toBe(false);
@@ -360,11 +360,12 @@ test("agent details show real capabilities without pricing", () => {
 
     expect(agentMarkup).toContain("Answers questions using selected tools.");
     expect(agentMarkup).toContain("Input:");
-    expect(agentMarkup).toContain("Output:");
+    expect(agentMarkup).not.toContain("Output:");
     expect(agentMarkup).not.toContain("req /pollen");
     expect(agentMarkup).not.toContain(">Free</span>");
-    expect(agentMarkup).not.toContain("Pollinations models");
-    expect(toolsAgentMarkup).toContain("Pollinations models");
+    expect(agentMarkup).not.toContain("Built-in Pollinations tools");
+    expect(toolsAgentMarkup).toContain("Web search");
+    expect(toolsAgentMarkup).toContain("Built-in Pollinations tools");
 });
 
 test("tool calling is shown through the shared model capability display", () => {

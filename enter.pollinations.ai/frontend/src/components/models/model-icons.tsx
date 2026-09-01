@@ -39,13 +39,6 @@ export const MODALITY_ICON: Record<InputModality, Icon> = {
     audio: MicIcon,
 };
 
-export const OUTPUT_MODALITY_ICON: Record<InputModality, Icon> = {
-    text: ChatIcon,
-    image: ImageIcon,
-    video: VideoIcon,
-    audio: SpeakerIcon,
-};
-
 /** Capability glyphs (reasoning/web search/code execution). */
 export const CAPABILITY_ICON: Record<DisplayCapability, Icon> = {
     agent: BotIcon,

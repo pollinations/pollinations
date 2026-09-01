@@ -4,24 +4,41 @@ name: CI / Pull request checks
   pull_request:
     branches: [main, master]
 
+# HEAD is the pull request merge commit. With fetch-depth 2 its first parent
+# (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
+# request diff without fetching the full repository history.
+
 jobs:
-  biome:
-    name: Check formatting and linting
+  lint:
+    name: Lint and format
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: Setup Node.js
+        id: node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
+      - name: Restore node_modules
+        id: node-modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            */node_modules
+            packages/*/node_modules
+            operations/economics/web/node_modules
+          key: node-modules-${{ runner.os }}-node${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Validate app catalog
@@ -32,7 +49,7 @@ jobs:
         run: |
           # Get only added/modified files (exclude deleted files)
           # Also exclude paths that biome.jsonc ignores (node_modules, dist, etc.)
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|dist|build|\.next|\.cache|out|package-lock\.json|secrets)/' | grep -v 'package-lock\.json$' || true)
+          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|dist|build|\.next|\.cache|out|package-lock\.json|secrets)/' | grep -v 'package-lock\.json$' || true)
           echo "Changed files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -46,7 +63,7 @@ jobs:
 
       - name: Verify SDK package lock
         run: |
-          if ! git diff --quiet "origin/${{ github.base_ref }}...HEAD" -- \
+          if ! git diff --quiet HEAD^1 HEAD -- \
             packages/sdk/package.json packages/sdk/package-lock.json; then
             npm ci --ignore-scripts --prefix packages/sdk
           fi
@@ -77,10 +94,20 @@ jobs:
           operations/app-management/ingestion/*.test.js
           operations/deployment/*.test.cjs
 
+  enter:
+    name: Test enter.pollinations.ai
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
       - name: Get changed TypeScript files in enter.pollinations.ai
         id: enter-ts-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(enter.pollinations.ai/|shared/).*\.(ts|tsx)$' || true)
+          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '^(enter.pollinations.ai/|shared/).*\.(ts|tsx)$' || true)
           echo "Changed TypeScript files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -91,6 +118,30 @@ jobs:
           else
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
+
+      - name: Setup Node.js
+        id: node
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Restore node_modules
+        id: node-modules
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            */node_modules
+            packages/*/node_modules
+            operations/economics/web/node_modules
+          key: node-modules-${{ runner.os }}-node${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.enter-ts-files.outputs.any_changed == 'true' && steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
 
       - name: Test enter.pollinations.ai
         if: steps.enter-ts-files.outputs.any_changed == 'true'
@@ -129,10 +180,20 @@ jobs:
             echo "✅ No type errors in changed files"
           fi
 
+  gen:
+    name: Test gen.pollinations.ai
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(gen.pollinations.ai/|shared/)' || true)
+          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '^(gen.pollinations.ai/|shared/)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -144,6 +205,30 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup Node.js
+        id: node
+        if: steps.gen-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Restore node_modules
+        id: node-modules
+        if: steps.gen-files.outputs.any_changed == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            */node_modules
+            packages/*/node_modules
+            operations/economics/web/node_modules
+          key: node-modules-${{ runner.os }}-node${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json') }}
+
+      - name: Install dependencies
+        if: steps.gen-files.outputs.any_changed == 'true' && steps.node-modules.outputs.cache-hit != 'true'
+        run: npm ci
+
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm test --workspace pollinations-gen
@@ -151,3 +236,18 @@ jobs:
       - name: Typecheck gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm run typecheck --workspace pollinations-gen
+
+  # Carries the status-check name required by the main branch ruleset so the
+  # three jobs above gate merges without a ruleset change.
+  gate:
+    name: Check formatting and linting
+    runs-on: ubuntu-latest
+    needs: [lint, enter, gen]
+    if: always()
+
+    steps:
+      - name: Require every job to succeed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        run: |
+          echo "A job did not succeed: ${{ toJSON(needs) }}"
+          exit 1

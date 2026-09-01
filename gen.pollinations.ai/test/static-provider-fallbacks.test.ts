@@ -106,6 +106,7 @@ function expectInheritedRoute(
     expect(parent.fallbacks).toContain(routeId);
     expect(route).toMatchObject({
         aliases: [],
+        hidden: true,
         fallbackOnly: true,
         brand: parent.brand,
         category: parent.category,
@@ -113,7 +114,6 @@ function expectInheritedRoute(
         inputModalities: parent.inputModalities,
         outputModalities: parent.outputModalities,
     });
-    expect(route.hidden).toBeUndefined();
     expect(route.fallbacks).toBeUndefined();
 }
 

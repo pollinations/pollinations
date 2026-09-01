@@ -38,6 +38,7 @@ function userUpstream() {
             : Response.json({
                   sub: "user-1",
                   email: "alice@example.com",
+                  role: "admin",
                   preferred_username: "alice",
               }),
     );
@@ -161,6 +162,7 @@ describe("Pollinations OAuth", () => {
                 Response.json({
                     sub: "user-1",
                     email: "ALICE@example.com",
+                    role: "admin",
                     preferred_username: "alice",
                 }),
             );
@@ -204,6 +206,34 @@ describe("Pollinations OAuth", () => {
         expect(sessionResponse?.status).toBe(200);
         expect(await sessionResponse?.json()).toEqual({ user });
         expect(sessionResponse?.headers.get("Cache-Control")).toBe("no-store");
+    });
+
+    it("does not create a dashboard session for a non-admin", async () => {
+        const upstream = vi
+            .fn()
+            .mockResolvedValueOnce(
+                Response.json({ access_token: "oauth_login" }),
+            )
+            .mockResolvedValueOnce(
+                Response.json({
+                    sub: "user-2",
+                    email: "user@example.com",
+                    role: "user",
+                }),
+            );
+        const auth = createPollinationsAuth({ ...config, fetch: upstream });
+        const { location, flow } = await begin(auth);
+        const response = await auth.handle(
+            new Request(
+                `https://kpi.pollinations.ai/auth/callback?code=code-2&state=${location.searchParams.get("state")}`,
+                { headers: { Cookie: `pollinations_oauth_flow=${flow}` } },
+            ),
+        );
+
+        expect(response?.status).toBe(403);
+        expect(cookieFrom(response as Response, "pollinations_session")).toBe(
+            undefined,
+        );
     });
 
     it("rejects a mismatched OAuth state before the token exchange", async () => {
@@ -314,6 +344,7 @@ describe("Pollinations OAuth", () => {
                 Response.json({
                     sub: "user-1",
                     email: "alice@example.com",
+                    role: "admin",
                 }),
             );
         const auth = createPollinationsAuth({ ...config, fetch: upstream });

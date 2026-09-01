@@ -19,9 +19,14 @@ export type PollinationsUser = {
     preferred_username?: string;
 };
 
+type Userinfo = PollinationsUser & {
+    role?: string;
+};
+
 type Session = PollinationsUser & {
     aud: string;
     exp: number;
+    role: "admin";
 };
 
 type Flow = {
@@ -275,14 +280,20 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         });
         const user = (await userResponse
             .json()
-            .catch(() => null)) as PollinationsUser | null;
-        if (!userResponse.ok || !user?.sub || !user.email) {
+            .catch(() => null)) as Userinfo | null;
+        if (
+            !userResponse.ok ||
+            !user?.sub ||
+            !user.email ||
+            user.role !== "admin"
+        ) {
             return authError("Forbidden", 403, clearFlow);
         }
 
         const session: Session = {
             ...user,
             email: normalizeEmail(user.email),
+            role: "admin",
             aud: requestUrl.origin,
             exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
         };
@@ -320,11 +331,12 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 !session.email ||
                 session.aud !== new URL(request.url).origin ||
                 !Number.isInteger(session.exp) ||
-                session.exp <= Math.floor(Date.now() / 1000)
+                session.exp <= Math.floor(Date.now() / 1000) ||
+                session.role !== "admin"
             ) {
                 return null;
             }
-            const { aud: _aud, exp: _exp, ...user } = session;
+            const { aud: _aud, exp: _exp, role: _role, ...user } = session;
             return user;
         } catch {
             return null;

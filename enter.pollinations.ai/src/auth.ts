@@ -87,18 +87,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             "pk_LBL0KnkHI6AZopCc",
             "pk_vVa38CFt1R1gGScW",
         ]),
-        postLogin: {
-            page: "/error",
-            consentReferenceId: () => undefined,
-            shouldRedirect: ({ user }) => {
-                if (!isAdminUser(user)) {
-                    throw new APIError("FORBIDDEN", {
-                        message: "Admin access required",
-                    });
-                }
-                return false;
-            },
-        },
+        customUserInfoClaims: ({ user }) => ({
+            role: isAdminUser(user) ? "admin" : "user",
+        }),
     });
 
     const openAPIPlugin = openAPI({

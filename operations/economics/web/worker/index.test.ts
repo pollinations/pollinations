@@ -31,10 +31,10 @@ function request(path: string, init?: RequestInit) {
 function upstream(options?: { role?: string; tinybird?: { data: unknown[] } }) {
     const mock = vi.fn(async (input: RequestInfo | URL) => {
         const url = String(input);
-        if (url.endsWith("/api/oauth/token")) {
+        if (url.endsWith("/api/auth/oauth2/token")) {
             return Response.json({ access_token: "sk_login" });
         }
-        if (url.endsWith("/api/oauth/userinfo")) {
+        if (url.endsWith("/api/auth/oauth2/userinfo")) {
             return Response.json({
                 sub: "user-1",
                 email: "alice@example.com",

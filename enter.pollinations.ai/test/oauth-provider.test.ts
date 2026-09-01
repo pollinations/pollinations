@@ -46,6 +46,44 @@ async function authorize(sessionToken?: string) {
     });
 }
 
+async function completeFlow(sessionToken: string) {
+    const authorization = await authorize(sessionToken);
+    const callback = new URL(authorization.headers.get("Location") || "");
+    const code = callback.searchParams.get("code");
+    if (!code) throw new Error("Expected authorization code");
+
+    const tokenResponse = await SELF.fetch(`${BASE}/api/auth/oauth2/token`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            grant_type: "authorization_code",
+            code,
+            client_id: CLIENT_ID,
+            redirect_uri: REDIRECT_URI,
+            code_verifier: VERIFIER,
+        }),
+    });
+    const token = (await tokenResponse.json()) as {
+        access_token: string;
+        expires_in: number;
+        scope: string;
+    };
+    const userinfo = await SELF.fetch(`${BASE}/api/auth/oauth2/userinfo`, {
+        headers: { Authorization: `Bearer ${token.access_token}` },
+    });
+
+    return {
+        authorization,
+        callback,
+        tokenResponse,
+        token,
+        userinfo,
+        profile: (await userinfo.json()) as Record<string, unknown>,
+    };
+}
+
 describe("Better Auth OAuth Provider", () => {
     test("continues the standard flow through sign-in", async () => {
         const response = await authorize();
@@ -57,61 +95,44 @@ describe("Better Auth OAuth Provider", () => {
         expect(location.searchParams.get("sig")).toBeTruthy();
     });
 
-    test("issues identity tokens only to admins", async ({ sessionToken }) => {
+    test("returns the admin role through UserInfo", async ({
+        sessionToken,
+    }) => {
         const db = drizzle(env.DB, { schema });
         await db.update(schema.user).set({ role: "admin" });
 
-        const authorization = await authorize(sessionToken);
+        const {
+            authorization,
+            callback,
+            tokenResponse,
+            token,
+            userinfo,
+            profile,
+        } = await completeFlow(sessionToken);
         expect(authorization.status).toBe(302);
-        const callback = new URL(authorization.headers.get("Location") || "");
         expect(callback.origin + callback.pathname).toBe(REDIRECT_URI);
         expect(callback.searchParams.get("state")).toBe("test-state");
-        const code = callback.searchParams.get("code");
-        expect(code).toBeTruthy();
-
-        const tokenResponse = await SELF.fetch(
-            `${BASE}/api/auth/oauth2/token`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams({
-                    grant_type: "authorization_code",
-                    code: code || "",
-                    client_id: CLIENT_ID,
-                    redirect_uri: REDIRECT_URI,
-                    code_verifier: VERIFIER,
-                }),
-            },
-        );
         expect(tokenResponse.status).toBe(200);
-        const token = (await tokenResponse.json()) as {
-            access_token: string;
-            expires_in: number;
-            scope: string;
-        };
         expect(token.access_token).toBeTruthy();
         expect(token.expires_in).toBe(60);
         expect(token.scope).toBe("openid profile email");
-
-        const userinfo = await SELF.fetch(`${BASE}/api/auth/oauth2/userinfo`, {
-            headers: {
-                Authorization: `Bearer ${token.access_token}`,
-            },
-        });
         expect(userinfo.status).toBe(200);
-        expect(await userinfo.json()).toMatchObject({
+        expect(profile).toMatchObject({
             email: expect.any(String),
+            role: "admin",
             sub: expect.any(String),
         });
     });
 
-    test("rejects non-admins before issuing a code", async ({
+    test("authenticates non-admins with a user role", async ({
         sessionToken,
     }) => {
-        const response = await authorize(sessionToken);
-        expect(response.status).toBe(403);
-        expect(response.headers.get("Location")).toBeNull();
+        const { authorization, tokenResponse, userinfo, profile } =
+            await completeFlow(sessionToken);
+
+        expect(authorization.status).toBe(302);
+        expect(tokenResponse.status).toBe(200);
+        expect(userinfo.status).toBe(200);
+        expect(profile).toMatchObject({ role: "user" });
     });
 });

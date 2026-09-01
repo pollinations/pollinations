@@ -50,7 +50,11 @@ function makeResponse(
 
     if (kind === "stream") {
         const encoder = new TextEncoder();
-        const chunks = typeof body === "string" ? [encoder.encode(body)] : [];
+        const chunks = Array.isArray(body)
+            ? body.map((chunk) => encoder.encode(String(chunk)))
+            : typeof body === "string"
+              ? [encoder.encode(body)]
+              : [];
         let i = 0;
         resp.body = {
             getReader: () => ({
@@ -514,6 +518,164 @@ describe("Pollinations chat routing", () => {
     });
 });
 
+describe("Pollinations chat event streaming", () => {
+    it("decodes standard SSE and typed agent comments across chunk boundaries", async () => {
+        const client = newClient();
+        const chunk = {
+            id: "chatcmpl-test",
+            object: "chat.completion.chunk",
+            created: 1,
+            model: "floret",
+            choices: [
+                {
+                    index: 0,
+                    delta: { content: "ready" },
+                    finish_reason: null,
+                },
+            ],
+        };
+        const json = JSON.stringify(chunk);
+        const split = json.indexOf(',"choices"') + 1;
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    ': pollinations-agent-event/v1 {"type":"tool.started","call_id":"call-1","name":"transcribeAudio"}\r',
+                    `\n: pollinations-agent-event/v1 {"type":"resource.finalized","call_id":"call-1","url":"https://media.pollinations.ai/audio-1","kind":"audio"}\r\n\r\ndata: ${json.slice(0, split)}\r\ndata:${json.slice(split)}\r\n\r\ndata:[DONE]\r\n\r\n`,
+                ],
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const events = [];
+        for await (const event of client.chatEventStream([
+            { role: "user", content: "transcribe this" },
+        ])) {
+            events.push(event);
+        }
+
+        expect(events).toEqual([
+            {
+                type: "agent",
+                event: {
+                    type: "tool.started",
+                    call_id: "call-1",
+                    name: "transcribeAudio",
+                },
+            },
+            {
+                type: "agent",
+                event: {
+                    type: "resource.finalized",
+                    call_id: "call-1",
+                    url: "https://media.pollinations.ai/audio-1",
+                    kind: "audio",
+                },
+            },
+            { type: "chunk", chunk },
+        ]);
+    });
+
+    it("keeps agent comments out of the OpenAI-only chat stream", async () => {
+        const client = newClient();
+        const stream = [
+            ': pollinations-agent-event/v1 {"type":"tool.started","call_id":"call-1","name":"searchWeb"}',
+            "",
+            'data: {"choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}',
+            "",
+            "data: [DONE]",
+            "",
+        ].join("\n");
+        fetchMock.mockResolvedValue(
+            makeResponse(stream, {
+                kind: "stream",
+                contentType: "text/event-stream",
+            }),
+        );
+
+        const chunks = [];
+        for await (const chunk of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toHaveLength(1);
+        expect(chunks[0].choices[0].delta.content).toBe("hello");
+    });
+
+    it("surfaces stream errors instead of silently completing", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"error":{"message":"Agent failed"}}\n\ndata: [DONE]\n\n',
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of client.chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            code: "STREAM_ERROR",
+            message: "Agent failed",
+        });
+    });
+
+    it("cancels an active response body when the caller aborts", async () => {
+        const client = newClient();
+        const encoder = new TextEncoder();
+        let cancelled = false;
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    encoder.encode(
+                        'data: {"choices":[{"index":0,"delta":{"content":"started"},"finish_reason":null}]}\n\n',
+                    ),
+                );
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
+        fetchMock.mockResolvedValue(
+            new Response(body, {
+                status: 200,
+                headers: { "content-type": "text/event-stream" },
+            }),
+        );
+        const controller = new AbortController();
+        const stream = client.chatEventStream(
+            [{ role: "user", content: "hello" }],
+            { signal: controller.signal },
+        );
+
+        await expect(stream.next()).resolves.toMatchObject({
+            value: {
+                type: "chunk",
+                chunk: {
+                    choices: [{ delta: { content: "started" } }],
+                },
+            },
+        });
+        const pending = stream.next();
+        controller.abort();
+
+        await expect(pending).rejects.toMatchObject({ code: "CANCELLED" });
+        expect(cancelled).toBe(true);
+    });
+});
+
 describe("Pollinations simple text facade", () => {
     it("maps every simple text option to one canonical chat request", async () => {
         const client = newClient();
@@ -561,7 +723,7 @@ describe("Pollinations simple text facade", () => {
             'data: {"choices":[{"delta":{"content":""}}]}',
             "data: [DONE]",
             "",
-        ].join("\n");
+        ].join("\n\n");
         fetchMock.mockResolvedValue(
             makeResponse(stream, {
                 kind: "stream",

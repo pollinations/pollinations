@@ -98,6 +98,7 @@ export type {
     ChatRouting,
     ChatRoutingCapability,
     ChatStreamChunk,
+    ChatStreamEvent,
     CompletionUsage,
     CreatedKey,
     CreateKeyOptions,
@@ -132,6 +133,11 @@ export type {
     ModelInfo,
     ModelInputModality,
     ModelOutputModality,
+    PollinationsAgentEvent,
+    PollinationsAgentResourceCreatedEvent,
+    PollinationsAgentResourceEvent,
+    PollinationsAgentResourceFinalizedEvent,
+    PollinationsAgentToolEvent,
     // Config
     PollinationsConfig,
     // Errors

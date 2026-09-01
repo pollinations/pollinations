@@ -1,0 +1,34 @@
+{
+  "pr_number": 14313,
+  "title": "fix: restore Claude Sonnet 5 AWS pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14313",
+  "merged_at": "2026-09-01T22:57:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores Claude Sonnet 5 provider costs to $2/M input and $10/M output for the exact AWS Bedrock Global Standard route.\n- Keeps cache read at $0.20/M, five-minute cache write at $2.50/M, multiplier 1, paid-only access, aliases, and routing unchanged.\n- Corrects the premature rollover merged in #13618; AWS's price-list offer published 2026-09-01T18:36:49Z still carries the promotional meters.\n- Verified the exact route with text and image input; 528 focused pricing/alias tests and both Enter and Gen typechecks pass.\n\nSource: https://pricing.us-east-1.amazonaws.com/offers/v1.0/aws/AmazonBedrockFoundationModels/current/index.json\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sonnet's spring pricing returns",
+    "blurb": "The AWS Bedrock Global Standard route is back on Claude Sonnet 5's promotional meters. Polli checked the price list twice; the hive can stop doing invoice archaeology.",
+    "summary": "Restored Claude Sonnet 5 pricing for the AWS Bedrock Global Standard route to $2/M input and $10/M output, while retaining $0.20/M cache reads, $2.50/M five-minute cache writes, multiplier 1, paid-only access, aliases, and routing.",
+    "impact": "Users calling Claude Sonnet 5 through AWS Bedrock Global Standard once again receive the published promotional rates for text and image input without changing their existing aliases or routing.",
+    "keywords": [
+      "Claude Sonnet 5",
+      "AWS Bedrock",
+      "pricing",
+      "text models",
+      "cache pricing",
+      "model registry"
+    ],
+    "visual_concept": "Depict Polli as a careful little accountant-gardener restoring correctly labeled price tags to a blooming Claude Sonnet 5 code-plant beside a cozy AWS Bedrock-style cloud-and-terminal station. A friendly CRT Monitor Robot can hold a tiny price-list scroll, while prominent lime green route markers and small flowers make the corrected Global Standard path feel clear and welcoming.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue wings, and a tiny green accountant visor, carefully restoring price tags on a blooming code-plant beside a warm retro cloud terminal labeled \"GLOBAL STANDARD\"; a cheerful CRT monitor robot holds a small price-list scroll, with flowers and vines around lime green (#ecf874) route markers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14313.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue wings, and a tiny green accountant visor, carefully restoring price tags on a blooming code-plant beside a warm retro cloud terminal labeled \"GLOBAL STANDARD\"; a cheerful CRT monitor robot holds a small price-list scroll, with flowers and vines around lime green (#ecf874) route markers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T22:58:26.328287+00:00"
+}

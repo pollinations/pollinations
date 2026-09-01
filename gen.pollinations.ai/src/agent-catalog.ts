@@ -1,9 +1,10 @@
 /**
- * Hosted agents, as the model catalog sees them.
+ * Managed prompt agents, as the model catalog sees them.
  *
- * Agents are community models whose runtime-specific metadata is not covered
- * by the generic model registry: what their stored config means and which
- * modalities or tools their runtime exposes.
+ * Agents are community models whose upstream is Enter's own agent runtime, so
+ * everything the catalog needs to know about them lives here rather than in
+ * the generic registry: where their runtime is, what their stored config
+ * means, and how they present the metadata of the base model they wrap.
  */
 
 import type { McpServerId } from "@shared/registry/mcp.ts";
@@ -15,29 +16,6 @@ export type AgentCatalogConfig = {
     baseModel: string;
     mcpServers: McpServerId[];
 };
-
-function applyEndpointAgentMetadata(entry: GenerationModelEntry): void {
-    const endpoint = entry.communityEndpoint;
-    if (endpoint?.type !== "endpoint_agent") return;
-
-    // Floret's brain accepts text and its built-in Pollinations tool loop can
-    // return generated media alongside the final chat response.
-    if (entry.id === "pollinations-router/floret") {
-        entry.info = {
-            ...entry.info,
-            input_modalities: ["text"],
-            output_modalities: ["text", "image", "video", "audio"],
-            capabilities: [
-                ...new Set([
-                    ...entry.info.capabilities,
-                    "web_search" as const,
-                    "code_execution" as const,
-                    "pollinations_models" as const,
-                ]),
-            ],
-        };
-    }
-}
 
 function applyBaseModelMetadata(
     entry: GenerationModelEntry,
@@ -89,15 +67,14 @@ function applyBaseModelMetadata(
 }
 
 /**
- * Present each agent listing with the modalities and capabilities of its
- * runtime, plus the prices of the base model used by managed prompt agents.
+ * Present each agent listing with the capabilities and prices of the base
+ * model it wraps, so callers see what they are actually charged for.
  */
 export function applyAgentMetadata(
     entries: GenerationModelEntry[],
     byIdOrAlias: Map<string, GenerationModelEntry>,
 ): void {
     for (const entry of entries) {
-        applyEndpointAgentMetadata(entry);
         const baseModel = entry.agentConfig?.baseModel;
         if (baseModel) {
             applyBaseModelMetadata(entry, byIdOrAlias.get(baseModel));

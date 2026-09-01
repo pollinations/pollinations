@@ -426,12 +426,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                         )}
                                     </div>
                                 )}
-                                {!model.agent && (
-                                    <ModelPricingControls
-                                        model={model}
-                                        pricing={pricing}
-                                    />
-                                )}
+                                <ModelPricingControls
+                                    model={model}
+                                    pricing={pricing}
+                                />
                             </div>
                         )}
                         {model.perUserRpm != null && (
@@ -445,27 +443,21 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
-                        {!model.agent && (
-                            <BalanceAccessChip
-                                access={balanceAccess}
-                                className="whitespace-nowrap"
-                            />
-                        )}
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
                     </div>
                 </div>
             </div>
 
-            {!model.agent && (
-                <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
-                    <ModelPricingLedger
-                        pricing={pricing}
-                        hasTools={pollinationsTools}
-                        requestEstimate={
-                            <PerPollenEstimate model={model} ledger />
-                        }
-                    />
-                </div>
-            )}
+            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
+                <ModelPricingLedger
+                    pricing={pricing}
+                    hasTools={pollinationsTools}
+                    requestEstimate={<PerPollenEstimate model={model} ledger />}
+                />
+            </div>
         </Surface>
     );
 };

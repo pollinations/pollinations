@@ -42,13 +42,11 @@ function PlayPage() {
             audio: 3,
         };
         const effectiveType = (m: (typeof registryModels)[0]) =>
-            m.agent
-                ? "text"
-                : m.hasVideoOutput
-                  ? "video"
-                  : m.hasAudioOutput || m.type === "audio"
-                    ? "audio"
-                    : m.type;
+            m.hasVideoOutput
+                ? "video"
+                : m.hasAudioOutput || m.type === "audio"
+                  ? "audio"
+                  : m.type;
         return [...registryModels].sort(
             (a, b) =>
                 (typeOrder[effectiveType(a)] ?? 99) -
@@ -57,9 +55,8 @@ function PlayPage() {
     }, [registryModels]);
 
     const currentModel = allModels.find((m) => m.id === selectedModel);
-    const isVideoModel = !currentModel?.agent && !!currentModel?.hasVideoOutput;
+    const isVideoModel = !!currentModel?.hasVideoOutput;
     const isAudioModel =
-        !currentModel?.agent &&
         !isVideoModel &&
         (!!currentModel?.hasAudioOutput || currentModel?.type === "audio");
     const isImageModel =

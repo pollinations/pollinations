@@ -134,12 +134,10 @@ export function PlayGenerator({
     // which are served by the same /image endpoint — keep them in this flag.
     const isImageModel = currentModelData?.type === "image";
     const isAudioModel =
-        !currentModelData?.agent &&
-        (currentModelData?.hasAudioOutput ||
-            currentModelData?.type === "audio" ||
-            false);
-    const isVideoModel =
-        (!currentModelData?.agent && currentModelData?.hasVideoOutput) || false;
+        currentModelData?.hasAudioOutput ||
+        currentModelData?.type === "audio" ||
+        false;
+    const isVideoModel = currentModelData?.hasVideoOutput || false;
     const supportsImageInput = currentModelData?.hasImageInput || false;
     const availableVoices = currentModelData?.voices || [];
 
@@ -389,11 +387,9 @@ export function PlayGenerator({
                 },
                 async (response) => {
                     const data = await response.json();
-                    const content = data.choices?.[0]?.message?.content;
-                    const text = Array.isArray(content)
-                        ? content.find((part) => part.type === "text")?.text
-                        : content;
-                    setResult(text ?? copy.noResponse);
+                    const text =
+                        data.choices?.[0]?.message?.content || copy.noResponse;
+                    setResult(text);
                     setResultType("text");
                     setIsLoading(false);
                 },

@@ -329,43 +329,29 @@ test("community models use their model type icon instead of a provider logo", ()
     );
 });
 
-test("agent details show real capabilities without pricing", () => {
+test("Pollinations tools are shown only for agents with the MCP capability", () => {
     const agent: ComponentProps<typeof ModelRow>["model"] = {
         name: "owner/agent",
         type: "text" as const,
         community: true,
         agent: true,
-        description: "Answers questions using selected tools.",
-        inputModalities: ["text", "image"],
-        outputModalities: ["text"],
-        free: true,
-        realAvgCost: 0.02,
         capabilities: [],
         prices: [],
     };
 
     const toolsAgent = {
         ...agent,
-        capabilities: ["web_search" as const, "pollinations_models" as const],
+        capabilities: ["pollinations_models" as const],
     };
 
     expect(hasPollinationsTools(agent)).toBe(false);
     expect(hasPollinationsTools(toolsAgent)).toBe(true);
-    const agentMarkup = renderToStaticMarkup(
-        createElement(ModelRow, { model: agent }),
-    );
-    const toolsAgentMarkup = renderToStaticMarkup(
-        createElement(ModelRow, { model: toolsAgent }),
-    );
-
-    expect(agentMarkup).toContain("Answers questions using selected tools.");
-    expect(agentMarkup).toContain("Input:");
-    expect(agentMarkup).not.toContain("Output:");
-    expect(agentMarkup).not.toContain("req /pollen");
-    expect(agentMarkup).not.toContain(">Free</span>");
-    expect(agentMarkup).not.toContain("Built-in Pollinations tools");
-    expect(toolsAgentMarkup).toContain("Web search");
-    expect(toolsAgentMarkup).toContain("Built-in Pollinations tools");
+    expect(
+        renderToStaticMarkup(createElement(ModelRow, { model: agent })),
+    ).not.toContain(">Tools</span>");
+    expect(
+        renderToStaticMarkup(createElement(ModelRow, { model: toolsAgent })),
+    ).toContain(">Tools</span>");
 });
 
 test("tool calling is shown through the shared model capability display", () => {

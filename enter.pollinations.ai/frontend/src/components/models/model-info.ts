@@ -77,13 +77,6 @@ export const getModelInputModalities = (model: ModelPrice): InputModality[] => {
     return keys;
 };
 
-export const getModelOutputModalities = (
-    model: ModelPrice,
-): InputModality[] => {
-    const modalities = model.outputModalities || ["text"];
-    return getModelInputModalities({ ...model, inputModalities: modalities });
-};
-
 export const getModelModalityLabel = (model: ModelPrice): string => {
     const modalities = getModelInputModalities(model);
     return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
@@ -120,11 +113,7 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
-    if (hasPollinationsTools(model)) {
-        labels.push(
-            model.agent ? "Built-in Pollinations tools" : "Pollinations models",
-        );
-    }
+    if (hasPollinationsTools(model)) labels.push("Pollinations models");
 
     return labels.join(", ");
 };

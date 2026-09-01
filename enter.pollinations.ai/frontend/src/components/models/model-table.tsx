@@ -258,12 +258,10 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 modalityLabel={modalityLabel}
                                 capabilityLabel={capabilityLabel}
                             />
-                            {!model.agent && (
-                                <ModelPricingControls
-                                    model={model}
-                                    pricing={pricing}
-                                />
-                            )}
+                            <ModelPricingControls
+                                model={model}
+                                pricing={pricing}
+                            />
                         </div>
                         {model.perUserRpm != null && (
                             <div className="flex min-w-0 items-center">
@@ -276,43 +274,39 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                             showNew={showNew}
                             showAlpha={showAlpha}
                         />
-                        {!model.agent && (
-                            <BalanceAccessChip
-                                access={balanceAccess}
-                                className="whitespace-nowrap"
-                            />
-                        )}
+                        <BalanceAccessChip
+                            access={balanceAccess}
+                            className="whitespace-nowrap"
+                        />
                     </div>
                 </div>
             </div>
 
-            {!model.agent && (
-                <div className="flex gap-2.5 px-4 pb-4 pt-0">
-                    {hasLeadingIcon && (
-                        <>
-                            <span
-                                aria-hidden="true"
-                                className="hidden w-8 shrink-0 min-[480px]:block"
-                            />
-                            <span
-                                aria-hidden="true"
-                                className="hidden w-px shrink-0 min-[480px]:block"
-                            />
-                        </>
-                    )}
-                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                        <ModelPricingLedger
-                            pricing={pricing}
-                            className="w-full"
-                            align="left"
-                            hasTools={pollinationsTools}
-                            requestEstimate={
-                                <PerPollenEstimate model={model} ledger />
-                            }
+            <div className="flex gap-2.5 px-4 pb-4 pt-0">
+                {hasLeadingIcon && (
+                    <>
+                        <span
+                            aria-hidden="true"
+                            className="hidden w-8 shrink-0 min-[480px]:block"
                         />
-                    </div>
+                        <span
+                            aria-hidden="true"
+                            className="hidden w-px shrink-0 min-[480px]:block"
+                        />
+                    </>
+                )}
+                <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <ModelPricingLedger
+                        pricing={pricing}
+                        className="w-full"
+                        align="left"
+                        hasTools={pollinationsTools}
+                        requestEstimate={
+                            <PerPollenEstimate model={model} ledger />
+                        }
+                    />
                 </div>
-            )}
+            </div>
         </div>
     );
 };

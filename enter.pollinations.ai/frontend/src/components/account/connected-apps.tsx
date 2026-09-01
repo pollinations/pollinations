@@ -185,6 +185,9 @@ export function ConnectedApps() {
     const availableToolkits = toolkits.filter(
         ({ slug }) => !connectedToolkits.has(slug),
     );
+    const displayedToolkits = search.trim()
+        ? availableToolkits
+        : availableToolkits.slice(0, 6);
 
     return (
         <Section title="Connectors" framed>
@@ -256,28 +259,38 @@ export function ConnectedApps() {
 
             {!loading && (
                 <div>
-                    {availableToolkits.length > 0 ? (
-                        <div className="grid gap-2 sm:grid-cols-2">
-                            {availableToolkits.map((toolkit) => (
-                                <AppCard
-                                    key={toolkit.slug}
-                                    name={toolkit.name}
-                                    logo={toolkit.logo}
-                                    details={
-                                        <Text
-                                            size="sm"
-                                            tone="muted"
-                                            className="line-clamp-2"
-                                        >
-                                            {toolkit.description}
-                                        </Text>
-                                    }
-                                    actionLabel="Connect"
-                                    pendingLabel="Connecting..."
-                                    pending={pendingId === toolkit.slug}
-                                    onAction={() => void connect(toolkit.slug)}
-                                />
-                            ))}
+                    {displayedToolkits.length > 0 ? (
+                        <div className="space-y-2">
+                            <div className="grid gap-2 sm:grid-cols-2">
+                                {displayedToolkits.map((toolkit) => (
+                                    <AppCard
+                                        key={toolkit.slug}
+                                        name={toolkit.name}
+                                        logo={toolkit.logo}
+                                        details={
+                                            <Text
+                                                size="sm"
+                                                tone="muted"
+                                                className="line-clamp-2"
+                                            >
+                                                {toolkit.description}
+                                            </Text>
+                                        }
+                                        actionLabel="Connect"
+                                        pendingLabel="Connecting..."
+                                        pending={pendingId === toolkit.slug}
+                                        onAction={() =>
+                                            void connect(toolkit.slug)
+                                        }
+                                    />
+                                ))}
+                            </div>
+                            {!search.trim() && (
+                                <Text size="sm" tone="muted">
+                                    Showing {displayedToolkits.length} popular
+                                    connectors.
+                                </Text>
+                            )}
                         </div>
                     ) : (
                         <Text size="sm" tone="muted">

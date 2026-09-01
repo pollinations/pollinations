@@ -77,7 +77,7 @@ async function listToolkits(search, env, fetchImpl) {
     const params = new URLSearchParams({
         managed_by: "composio",
         sort_by: "usage",
-        limit: search ? "8" : "6",
+        limit: search ? "8" : "10",
     });
     if (search) params.set("search", search);
     const body = await callComposio(`/toolkits?${params}`, env, fetchImpl);

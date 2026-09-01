@@ -34,17 +34,23 @@ export function attachFallbackTarget<T extends object>(
 }
 
 /**
- * Upstream statuses that make a request move on to the model's next fallback
- * target.
+ * Upstream statuses that must never move to another candidate.
  *
- * 400 and 422 are left out on purpose: those are caller errors and retrying
- * them elsewhere cannot succeed. 401/402/403/404 are included because they mean
- * the primary's credentials or upstream model are broken, which the fallback may
- * survive.
+ * Stated as the exceptions rather than as an allowlist, because a broken
+ * upstream is broken in more ways than we can enumerate: an allowlist silently
+ * turned every status nobody thought of — 529 from an overloaded Anthropic, the
+ * 52x range a Cloudflare-fronted provider emits, 501, 507 — into a terminal
+ * failure, when the whole point of a fallback is that the next candidate might
+ * not be having the same bad day.
+ *
+ * What is left is the request being wrong rather than the upstream: no other
+ * provider can answer it differently, so trying costs money and time and
+ * changes nothing. It is the same split `remapUpstreamStatus` makes when it
+ * decides which upstream 4xx are our operational problem (401/402/403/404/409/
+ * 415/429 → 502) and which reflect the caller's input (400/413/422). Content
+ * policy is excluded separately below, at any status.
  */
-export const FALLBACK_ON_STATUS_CODES = [
-    401, 402, 403, 404, 408, 429, 500, 502, 503, 504,
-];
+export const NEVER_FALLBACK_ON_STATUS_CODES = [400, 413, 422];
 
 /**
  * Network-level failures — unreachable host, expired cert, refused connection —
@@ -174,7 +180,7 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
  */
 export function isRetryableFallbackError(
     error: unknown,
-    allowedStatusCodes: readonly number[] = FALLBACK_ON_STATUS_CODES,
+    allowedStatusCodes?: readonly number[],
 ): boolean {
     if (isNetworkFailure(error)) return true;
     if (!(error instanceof Error)) return false;
@@ -185,14 +191,18 @@ export function isRetryableFallbackError(
     // timeout envelope is our own total deadline and must not multiply across
     // fallback candidates.
     if (isPortkeyRequestTimeout(failure)) return false;
-    // A dead endpoint reaches us as the gateway's own 400 rather than as a
-    // network error, because the gateway is the one that could not connect.
-    const gatewayRoutingFailure =
-        allowedStatusCodes === FALLBACK_ON_STATUS_CODES &&
-        isGatewayRoutingFailure(failure);
-    if (!allowedStatusCodes.includes(status) && !gatewayRoutingFailure) {
-        return false;
-    }
+    // A model that names its own statuses is narrowing on purpose — usually
+    // because its fallback costs money the primary does not — so that list is
+    // read as the only statuses worth paying for, not as an addition.
+    const retryableStatus = allowedStatusCodes
+        ? allowedStatusCodes.includes(status)
+        : !NEVER_FALLBACK_ON_STATUS_CODES.includes(status) ||
+          // A dead endpoint reaches us as the gateway's own 400 rather than as
+          // a network error, because the gateway is the one that could not
+          // connect. That is an upstream failure wearing a caller error's
+          // status.
+          isGatewayRoutingFailure(failure);
+    if (!retryableStatus) return false;
     return !firstContentPolicyMessage(upstreamFailureText(failure));
 }
 

@@ -15,6 +15,7 @@ import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
     MODALITY_ICON,
+    OUTPUT_MODALITY_ICON,
 } from "./model-icons.tsx";
 import {
     getModelBrandLogoPath,
@@ -24,6 +25,7 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
+    getModelOutputModalities,
     hasPollinationsTools,
     isAlpha,
     isNewModel,
@@ -235,6 +237,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
     const inputModalities = getModelInputModalities(model);
+    const outputModalities = model.agent ? getModelOutputModalities(model) : [];
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
@@ -353,10 +356,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
+                            outputModalities.length > 0 ||
                             capabilities.length > 0 ||
                             pricing.dropdowns.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 {(inputModalities.length > 0 ||
+                                    outputModalities.length > 0 ||
                                     capabilities.length > 0) && (
                                     <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
                                         {inputModalities.length > 0 && (
@@ -394,6 +399,45 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                             </Tooltip>
                                         )}
                                         {inputModalities.length > 0 &&
+                                            outputModalities.length > 0 && (
+                                                <span className="h-3.5 w-px bg-current opacity-30" />
+                                            )}
+                                        {outputModalities.length > 0 && (
+                                            <Tooltip
+                                                content={
+                                                    <span>
+                                                        <strong className="font-semibold text-theme-text-strong">
+                                                            Output:
+                                                        </strong>{" "}
+                                                        {outputModalities.join(
+                                                            ", ",
+                                                        )}
+                                                    </span>
+                                                }
+                                                ariaLabel={`Output: ${outputModalities.join(", ")}`}
+                                                tapEnabled
+                                                displayContents
+                                            >
+                                                <span className="inline-flex items-center gap-2">
+                                                    {outputModalities.map(
+                                                        (key) => {
+                                                            const Icon =
+                                                                OUTPUT_MODALITY_ICON[
+                                                                    key
+                                                                ];
+                                                            return (
+                                                                <Icon
+                                                                    key={key}
+                                                                    className="h-4 w-4"
+                                                                />
+                                                            );
+                                                        },
+                                                    )}
+                                                </span>
+                                            </Tooltip>
+                                        )}
+                                        {(inputModalities.length > 0 ||
+                                            outputModalities.length > 0) &&
                                             capabilities.length > 0 && (
                                                 <span className="h-3.5 w-px bg-current opacity-30" />
                                             )}

@@ -4,6 +4,7 @@ import {
     CAPABILITY_ICON,
     getCommunityModelIcon,
     MODALITY_ICON,
+    OUTPUT_MODALITY_ICON,
 } from "./model-icons.tsx";
 import {
     type DisplayCapability,
@@ -13,6 +14,7 @@ import {
     getModelDisplayName,
     getModelInputModalities,
     getModelModalityLabel,
+    getModelOutputModalities,
     hasPollinationsTools,
     type InputModality,
     isAlpha,
@@ -171,6 +173,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
     const CommunityModelIcon = getCommunityModelIcon(model);
     const hasLeadingIcon = Boolean(brandLogoPath || CommunityModelIcon);
     const inputModalities = getModelInputModalities(model);
+    const outputModalities = model.agent ? getModelOutputModalities(model) : [];
     const modalityLabel = getModelModalityLabel(model);
     const capabilities = getModelCapabilities(model);
     const capabilityLabel = getModelCapabilityLabel(model);
@@ -254,6 +257,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         <div className="mb-1 flex min-w-0 flex-wrap items-center gap-1.5">
                             <MobileMetadataBadges
                                 inputModalities={inputModalities}
+                                outputModalities={outputModalities}
                                 capabilities={capabilities}
                                 modalityLabel={modalityLabel}
                                 capabilityLabel={capabilityLabel}
@@ -319,6 +323,7 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
 
 type MobileMetadataBadgesProps = {
     inputModalities: InputModality[];
+    outputModalities: InputModality[];
     capabilities: DisplayCapability[];
     modalityLabel: string;
     capabilityLabel: string;
@@ -326,11 +331,16 @@ type MobileMetadataBadgesProps = {
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     inputModalities,
+    outputModalities,
     capabilities,
     modalityLabel,
     capabilityLabel,
 }) => {
-    if (inputModalities.length === 0 && capabilities.length === 0) {
+    if (
+        inputModalities.length === 0 &&
+        outputModalities.length === 0 &&
+        capabilities.length === 0
+    ) {
         return null;
     }
 
@@ -359,9 +369,36 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     </span>
                 </Tooltip>
             )}
-            {inputModalities.length > 0 && capabilities.length > 0 && (
+            {inputModalities.length > 0 && outputModalities.length > 0 && (
                 <span className="h-3.5 w-px bg-current opacity-30" />
             )}
+            {outputModalities.length > 0 && (
+                <Tooltip
+                    triggerAs="span"
+                    content={
+                        <span>
+                            <strong className="font-semibold text-theme-text-strong">
+                                Output:
+                            </strong>{" "}
+                            {outputModalities.join(", ")}
+                        </span>
+                    }
+                    ariaLabel={`Output: ${outputModalities.join(", ")}`}
+                    tapEnabled
+                    displayContents
+                >
+                    <span className="inline-flex items-center gap-1">
+                        {outputModalities.map((key) => {
+                            const Icon = OUTPUT_MODALITY_ICON[key];
+                            return <Icon key={key} className="h-4 w-4" />;
+                        })}
+                    </span>
+                </Tooltip>
+            )}
+            {(inputModalities.length > 0 || outputModalities.length > 0) &&
+                capabilities.length > 0 && (
+                    <span className="h-3.5 w-px bg-current opacity-30" />
+                )}
             {capabilities.length > 0 && (
                 <Tooltip
                     triggerAs="span"

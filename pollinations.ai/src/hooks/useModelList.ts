@@ -17,6 +17,7 @@ export interface Model {
     hasVideoOutput: boolean;
     inputModalities?: string[];
     outputModalities?: string[];
+    agent?: boolean;
     voices?: string[];
     paid_only?: boolean;
 }
@@ -44,6 +45,7 @@ type RawModel =
           description?: string;
           input_modalities?: string[];
           output_modalities?: string[];
+          agent?: boolean;
           voices?: string[];
           paid_only?: boolean;
       }
@@ -103,6 +105,7 @@ function apiModelToModel(model: RawModel, type: Model["type"]): Model | null {
         hasVideoOutput: model.output_modalities?.includes("video") || false,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
+        agent: model.agent,
         voices: model.voices,
         paid_only: model.paid_only,
     };

@@ -45,6 +45,7 @@ const COLOR_VARS: Record<ModelCategory, { strong: string; light: string }> = {
 };
 
 function getModelCategory(m: Model): ModelCategory {
+    if (m.agent) return "text";
     if (m.hasVideoOutput) return "video";
     if (m.hasAudioOutput || m.type === "audio") return "audio";
     if (m.type === "image") return "image";

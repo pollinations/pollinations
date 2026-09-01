@@ -95,6 +95,14 @@ export async function resolveModelDefinition(
         });
     }
 
+    // Provider routes are registry entries so fallback linking and billing can
+    // use them, but callers must select the public model they belong to.
+    if (entry.definition.fallbackOnly === true) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
     // A private community endpoint is owner-only: to everyone else it doesn't
     // exist. Reuse the same "invalid model" response as an unknown name so
     // private models aren't discoverable by probing.
@@ -216,7 +224,7 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // Hidden registry fallbacks are provider implementations of the public
+        // Fallback-only entries are provider implementations of the public
         // model the caller selected, so they inherit that model's permission.
         // Visible and community targets remain independently scoped: a key can
         // never be served — or billed for — a model it could not call directly.
@@ -224,7 +232,7 @@ export function resolveModel(
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (entry.definition.hidden === true &&
+                    (entry.definition.fallbackOnly === true &&
                         !entry.communityEndpoint) ||
                     allowedModels.includes(entry.id),
             );

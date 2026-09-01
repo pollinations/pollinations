@@ -15,6 +15,7 @@ import {
     type Category,
     getModels,
     getRegistryModelDefinition,
+    isVisibleModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -122,7 +123,7 @@ const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
             supportedEndpointsForEventType(eventType),
         definition,
         info: modelInfoFromDefinition(modelName, definition),
-        visible: definition.hidden !== true,
+        visible: isVisibleModelDefinition(definition),
     };
 });
 

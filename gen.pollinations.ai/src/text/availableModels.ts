@@ -268,6 +268,11 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
+        name: "anthropic/claude-fable-5.1",
+        config: portkeyConfig["anthropic/claude-fable-5.1"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
         name: "gemini-3-flash",
         config: portkeyConfig["google/gemini-3-flash-preview"],
         transform: pipe(

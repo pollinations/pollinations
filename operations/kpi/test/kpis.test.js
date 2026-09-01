@@ -9,8 +9,23 @@ import {
     kpiViewById,
     kpiViewId,
 } from "../src/lib/kpis";
+import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "../src/lib/range";
 
 const community = KPIS.find((row) => row.key === "communityModels");
+
+describe("dashboard time range", () => {
+    it("defaults to 12 weeks and accepts the supported 20-week view", () => {
+        expect(DEFAULT_WEEKS).toBe(12);
+        expect(WEEK_RANGES).toEqual([12, 20]);
+        expect(weeksFromSearch("")).toBe(12);
+        expect(weeksFromSearch("?weeks=20")).toBe(20);
+    });
+
+    it("ignores unsupported or malformed URL values", () => {
+        expect(weeksFromSearch("?weeks=52")).toBe(12);
+        expect(weeksFromSearch("?weeks=nope")).toBe(12);
+    });
+});
 
 // One week as the dashboard sees it, after useKpiData maps the usage pipe.
 const week = {

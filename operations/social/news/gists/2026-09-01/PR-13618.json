@@ -1,0 +1,34 @@
+{
+  "pr_number": 13618,
+  "title": "[MERGE 2026-09-01 after cache verification] update Claude Sonnet 5 pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13618",
+  "merged_at": "2026-09-01T09:23:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sets Claude Sonnet 5 Bedrock input/output costs to the AWS standard rates effective 2026-09-01: $3/M input and $15/M output.\n- Preserves the current $2.50/M cache-write and $0.20/M cache-read meters until AWS publishes authoritative post-promotion values.\n- Leaves the canonical name, alias, route, paid-only policy, multiplier, capabilities, and no-fallback contract unchanged.\n- Do not merge before 2026-09-01 or before rechecking AWS cache meters and completing direct-provider, local E2E, wallet, Tinybird, and catalog verification.\n- Validation: 83 focused pricing/registry tests; Enter and Gen type checks; Biome.\n\nSources: https://aws.amazon.com/bedrock/pricing/ and https://docs.aws.amazon.com/bedrock/latest/userguide/model-card-anthropic-claude-sonnet-5.html",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Sonnet rates find their groove",
+    "blurb": "Claude Sonnet 5's Bedrock meter now follows AWS's September rate card. Polli checked the cache jars twice and left their existing labels alone.",
+    "summary": "Updated Claude Sonnet 5 Bedrock pricing to AWS's 2026-09-01 standard rates of $3/M input tokens and $15/M output tokens, while retaining $2.50/M cache-write and $0.20/M cache-read meters pending AWS's authoritative cache pricing.",
+    "impact": "Claude Sonnet 5 users now receive billing aligned with AWS's published input and output rates, with cache reads and writes continuing at their established meters.",
+    "keywords": [
+      "claude-sonnet-5",
+      "bedrock",
+      "pricing",
+      "billing",
+      "cache",
+      "text-models"
+    ],
+    "visual_concept": "Depict Polli as a careful little bookkeeper in a cozy garden billing station, comparing a Bedrock-style cloud price card with token jars labeled input, output, cache write, and cache read. Input and output jars receive fresh labels while the two cache jars remain safely unchanged; small flowers and code-plants make the accounting feel like gentle maintenance rather than a sterile spreadsheet.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, carefully updating two glowing token jars beside a soft cloud-shaped Bedrock price card while two cache jars keep their existing labels; code-plants and small flowers grow around the desk, with lime green (#ecf874) prominent across the warm cream and lavender background. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text reading \"SONNET 5 RATES\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-13618.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny accountant visor, carefully updating two glowing token jars beside a soft cloud-shaped Bedrock price card while two cache jars keep their existing labels; code-plants and small flowers grow around the desk, with lime green (#ecf874) prominent across the warm cream and lavender background. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, pixel-font text reading \"SONNET 5 RATES\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-01T09:24:34.291250+00:00"
+}

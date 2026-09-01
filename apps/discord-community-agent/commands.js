@@ -17,6 +17,13 @@ import {
 /** Discord messages cap at 2000 characters. */
 const MAX_REPLY = 1990;
 
+/**
+ * Hard cap on user prompt length. Unbounded prompts would let a single
+ * message burn arbitrary amounts of the user's Pollen (or stall the agent),
+ * so over-long prompts are refused before any network call.
+ */
+export const MAX_PROMPT_LENGTH = 4000;
+
 /** Build the conversation sent to the hosted agent from Discord context. */
 export function buildMessages({ username, prompt, history = [] }) {
     return [...history, { role: "user", content: `${username}: ${prompt}` }];
@@ -93,13 +100,22 @@ export async function handleChat(
             ephemeral: true,
         });
     }
+    const prompt = interaction.options.getString("prompt", true);
+    if (prompt.length > MAX_PROMPT_LENGTH) {
+        return interaction.reply({
+            content:
+                `❌ Prompts are limited to ${MAX_PROMPT_LENGTH} characters ` +
+                `(yours has ${prompt.length}). Please shorten it.`,
+            ephemeral: true,
+        });
+    }
     await interaction.deferReply();
     try {
         const answer = await askAgent(
             token,
             buildMessages({
                 username: interaction.user.username,
-                prompt: interaction.options.getString("prompt", true),
+                prompt,
                 history,
             }),
             fetchImpl,

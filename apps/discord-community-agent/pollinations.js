@@ -20,6 +20,11 @@ const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 /** Error whose message is safe to show to a Discord user. */
 export class PublicError extends Error {}
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Exponential backoff for transient failures: 500ms, 1s, 2s, … */
+const backoffMs = (attempt) => 500 * 2 ** (attempt - 1);
+
 async function postJson(url, body, fetchImpl) {
     const res = await fetchImpl(url, {
         method: "POST",
@@ -44,8 +49,6 @@ export async function startDeviceFlow(appKey, fetchImpl = fetch) {
     }
     return data; // { device_code, user_code, verification_uri, interval, expires_in }
 }
-
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /**
  * Step 2 of the device flow: poll until the user approves, the code expires,
@@ -98,29 +101,75 @@ export async function getUserInfo(token, fetchImpl = fetch) {
 }
 
 /**
+ * Read the `Retry-After` response header (seconds), if the server sent one.
+ */
+function retryAfterMs(res) {
+    const seconds = Number(res.headers?.get?.("retry-after"));
+    return Number.isFinite(seconds) && seconds > 0 ? seconds * 1000 : null;
+}
+
+/**
  * Call the hosted Community Agent with the connected user's key.
  * `messages` is the OpenAI-style conversation built from Discord context.
- * Throws PublicError("expired-token") when the key is expired or revoked so
- * the caller can drop it and ask the user to reconnect.
+ *
+ * Transient failures (network errors, 429, 5xx) are retried up to
+ * `maxAttempts` times with exponential backoff, honoring `Retry-After`
+ * when the server provides it. Auth failures (401/403) are never retried:
+ * they throw PublicError("expired-token: …") so the caller can drop the
+ * key and ask the user to reconnect. A well-formed HTTP response with a
+ * missing/empty `choices[0].message.content` is treated as a clean,
+ * user-safe error instead of throwing a TypeError.
  */
-export async function askAgent(token, messages, fetchImpl = fetch) {
-    const res = await fetchImpl(`${GEN_URL}/v1/chat/completions`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ model: AGENT_MODEL, messages }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (res.status === 401 || res.status === 403) {
-        throw new PublicError(
-            "expired-token: Your Pollinations connection expired or was revoked. Run /connect to reconnect.",
-        );
+export async function askAgent(
+    token,
+    messages,
+    fetchImpl = fetch,
+    { maxAttempts = 3 } = {},
+) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        let res;
+        try {
+            res = await fetchImpl(`${GEN_URL}/v1/chat/completions`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ model: AGENT_MODEL, messages }),
+            });
+        } catch {
+            // Network-level failure (DNS, reset, timeout) — retryable.
+            if (attempt < maxAttempts) {
+                await sleep(backoffMs(attempt));
+                continue;
+            }
+            throw new PublicError(
+                "The agent could not be reached. Try again in a moment.",
+            );
+        }
+        if (res.status === 401 || res.status === 403) {
+            throw new PublicError(
+                "expired-token: Your Pollinations connection expired or was revoked. Run /connect to reconnect.",
+            );
+        }
+        if (res.status === 429 || res.status >= 500) {
+            // Rate-limited or upstream error — retryable.
+            if (attempt < maxAttempts) {
+                await sleep(retryAfterMs(res) ?? backoffMs(attempt));
+                continue;
+            }
+            throw new PublicError(
+                "The agent is busy right now. Try again in a moment.",
+            );
+        }
+        const data = await res.json().catch(() => ({}));
+        const content = data.choices?.[0]?.message?.content;
+        if (!res.ok || typeof content !== "string" || content.length === 0) {
+            throw new PublicError("The agent could not answer right now.");
+        }
+        return content;
     }
-    const content = data.choices?.[0]?.message?.content;
-    if (!res.ok || !content) {
-        throw new PublicError("The agent could not answer right now.");
-    }
-    return content;
+    throw new PublicError(
+        "The agent could not be reached. Try again in a moment.",
+    );
 }

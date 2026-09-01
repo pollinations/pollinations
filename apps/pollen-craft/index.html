@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="description" content="Pollen Craft — combine ingredients into an infinite craft book." />
+    <title>Pollen Craft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="./" aria-label="Pollen Craft home"><span class="brand-mark" aria-hidden="true">✦</span><span>Pollen Craft</span></a>
+      <span class="discovery-total" id="discovery-total">0 discoveries</span>
+      <nav class="top-actions" aria-label="Game options">
+        <button class="top-button" id="settings-open" type="button">Settings</button>
+        <button class="top-button" id="help-open" type="button">Help</button>
+        <button class="top-button" id="reset-game" type="button">Reset</button>
+      </nav>
+    </header>
+
+    <main class="crafting-canvas" id="crafting-canvas" aria-label="Crafting canvas">
+      <div class="canvas-garden" aria-hidden="true">
+        <span class="garden-flower garden-flower--upper"></span>
+        <span class="garden-flower garden-flower--lower"></span>
+        <span class="garden-pollen garden-pollen--one"></span>
+        <span class="garden-pollen garden-pollen--two"></span>
+        <span class="garden-pollen garden-pollen--three"></span>
+      </div>
+      <p class="canvas-hint" id="canvas-hint">Combine two ingredients to discover something new.</p>
+      <div id="merge-layer" aria-hidden="true"></div>
+      <div class="canvas-items" id="canvas-items"></div>
+    </main>
+
+    <aside class="inventory-rail" aria-labelledby="inventory-title">
+      <div class="inventory-head"><div><p class="inventory-kicker">Your book</p><h1 id="inventory-title">Inventory</h1></div><span class="inventory-count" id="inventory-count">4</span></div>
+      <label class="search-box"><span aria-hidden="true">⌕</span><span class="sr-only">Search inventory</span><input id="inventory-search" type="search" placeholder="Search" autocomplete="off" /></label>
+      <div class="inventory-chips" id="inventory-chips"></div>
+    </aside>
+
+    <div class="live-region" id="live-region" role="status" aria-live="polite"></div>
+
+    <dialog class="settings-dialog" id="settings-dialog" aria-labelledby="settings-title">
+      <div class="dialog-card">
+        <button class="dialog-close" id="settings-close" aria-label="Close settings" type="button">×</button>
+        <p class="inventory-kicker">Connection</p><h2 id="settings-title">Settings</h2>
+        <p class="dialog-copy">Connect your Pollinations wallet to generate discoveries. The temporary session connection stays in this browser tab only. No manual key is needed. Disconnect clears this tab; revoke an issued key in your Pollinations dashboard.</p>
+        <div class="dialog-row"><button class="primary-button" id="connect-wallet" type="button">Connect Pollinations wallet</button><button class="plain-button" id="disconnect-wallet" type="button" hidden>Disconnect</button></div>
+        <label for="text-model">Text model</label><select id="text-model" name="text-model"></select>
+        <p class="dialog-copy">The selected model is used for new or failed discoveries. Saved recipes stay cached.</p>
+        <p class="key-status" id="key-status" role="status" aria-live="polite">Not connected yet.</p>
+      </div>
+    </dialog>
+
+    <dialog class="help-dialog" id="help-dialog" aria-labelledby="help-title">
+      <form method="dialog" class="dialog-card">
+        <button class="dialog-close" value="cancel" aria-label="Close help" type="submit">×</button>
+        <p class="inventory-kicker">Quick guide</p><h2 id="help-title">How to craft</h2>
+        <ul class="help-list"><li>Drag any two canvas chips together.</li><li>Or focus a chip and press Enter/Space, then choose another.</li><li>New ideas join the canvas and your local book.</li><li>Images are optional and can be retried from the result.</li></ul>
+      </form>
+    </dialog>
+
+    <section class="result-popover" id="result-popover" role="dialog" aria-modal="false" aria-labelledby="result-title" hidden>
+      <div class="result-head"><span class="result-label" id="result-label">Discovery</span><button class="dialog-close" id="result-close" type="button" aria-label="Close discovery">×</button></div>
+      <div id="result-content"></div>
+      <div class="result-actions"><button class="plain-button" id="retry-text" type="button">Retry idea</button><button class="plain-button" id="retry-image" type="button">Retry image</button></div>
+    </section>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>

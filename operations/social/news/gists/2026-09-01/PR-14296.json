@@ -1,0 +1,34 @@
+{
+  "pr_number": 14296,
+  "title": "feat: add per-user RPM limits for burst-heavy models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14296",
+  "merged_at": "2026-09-01T22:49:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sets registry `perUserRpm` limits: Flux/Z-Image/Klein 60; DreamShaper 300; DeepSeek/Qwen TTS 30; Seedream 5/Nemotron 20; MiniMax/Muse Glimmer/Mistral 10; Llama Scout 5.\n- Uses the existing authenticated-user, canonical-model token bucket; aliases share the canonical limit and excess requests return the existing 429 response.\n- Bases the added limits on production user-minute burst concentration, upstream 429s, and conservative traffic-impact estimates.\n- Preserves providers, routes, pricing, access, capabilities, aliases, and fallbacks; the existing model catalog metadata displays each limit.\n- Passes locked Biome formatting, the focused Worker rate-limit suite (4/4), and Gen typechecking.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The burst garden gets trellises",
+    "blurb": "A few especially popular model paths now have per-user pacing rails, so the whole garden gets a steadier share of sunlight. The model catalog also shows the limits before anyone discovers them the traditional way: a 429.",
+    "summary": "Added authenticated per-user RPM limits to burst-heavy canonical models—60 RPM for Flux, Z-Image, and Klein; 300 for DreamShaper; 30 for DeepSeek and Qwen TTS; plus model-specific 5–20 RPM caps—while aliases share each canonical token bucket.",
+    "impact": "Users can see each model's RPM limit in the catalog, and concentrated bursts now receive the existing 429 response while providers, pricing, routes, access, aliases, and fallbacks remain unchanged.",
+    "keywords": [
+      "rate-limits",
+      "rpm",
+      "model-registry",
+      "429",
+      "burst-control",
+      "model-catalog"
+    ],
+    "visual_concept": "Depict Polli tending a cozy garden of labeled model-plants, each growing through small wooden trellises that represent per-user RPM pacing. A friendly CRT robot reads a model catalog sign with tiny rate badges, while a gentle token-bucket fountain distributes water evenly among Flux, DreamShaper, TTS, and other plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a small smile and rounded light-blue wings, wearing a tiny gardener's hat while tending model-plants supported by little wooden RPM trellises; a cheerful chunky CRT-monitor robot points at a catalog sign with simple pixel text: \"RPM\". Prominent soft lime green (#ecf874) garden glow, warm cream, mint, lavender and peach pastels, flowers and code-vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14296.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, pink rectangular blush, a small smile and rounded light-blue wings, wearing a tiny gardener's hat while tending model-plants supported by little wooden RPM trellises; a cheerful chunky CRT-monitor robot points at a catalog sign with simple pixel text: \"RPM\". Prominent soft lime green (#ecf874) garden glow, warm cream, mint, lavender and peach pastels, flowers and code-vines, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-01T22:50:45.722873+00:00"
+}

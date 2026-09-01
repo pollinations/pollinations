@@ -1,0 +1,34 @@
+{
+  "pr_number": 14280,
+  "title": "fix: route MCP generation fetches publicly",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14280",
+  "merged_at": "2026-09-01T12:44:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Cloudflare’s `global_fetch_strictly_public` compatibility flag to the hosted MCP Worker.\n- Prevents nested prompt-agent MCP tools from receiving Cloudflare 522 responses when they call Gen.\n- Keeps the existing MCP API, authentication, and billing flow unchanged.\n\nTests:\n- `npm test` in `apps/mcp` (7/7)\n- `npm run check` in `apps/mcp` (Wrangler dry-run)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The tools can reach Gen",
+    "blurb": "A small Cloudflare switch moved into place, and nested prompt-agent tools can once again talk to Gen without wandering into a 522 fog bank.",
+    "summary": "Enabled Cloudflare’s global_fetch_strictly_public compatibility flag for the hosted MCP Worker, preventing nested prompt-agent MCP tools from receiving 522 errors when calling Gen.",
+    "impact": "MCP agents using nested generation tools can reliably reach Gen while the existing MCP API, authentication, and billing flow stay exactly as they are.",
+    "keywords": [
+      "mcp",
+      "gen",
+      "cloudflare",
+      "prompt-agents",
+      "reliability",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict Polli as a tiny explorer with a weatherproof courier hat guiding a friendly CRT Monitor Robot across a clear public bridge from an MCP tool shed to a glowing Gen terminal. A previously foggy cloud barrier has opened into a safe route, with code-plants and flowers growing beside the connection to represent reliable nested tool calls.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel bee mascot with a yellow striped body, pink cheek blush, light blue wings, and a tiny courier hat guiding a cheerful CRT-monitor robot across a clear bridge from a little MCP tool shed to a glowing Gen terminal; the robot carries a code scroll while soft clouds part around the route. Lime green (#ecf874) appears prominently in the terminal glow and garden code-plants, with warm cream, mint, lavender, and peach pastels, subtle pixel text reading \"GEN OK\", cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14280.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel bee mascot with a yellow striped body, pink cheek blush, light blue wings, and a tiny courier hat guiding a cheerful CRT-monitor robot across a clear bridge from a little MCP tool shed to a glowing Gen terminal; the robot carries a code scroll while soft clouds part around the route. Lime green (#ecf874) appears prominently in the terminal glow and garden code-plants, with warm cream, mint, lavender, and peach pastels, subtle pixel text reading \"GEN OK\", cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-01T12:45:28.400982+00:00"
+}

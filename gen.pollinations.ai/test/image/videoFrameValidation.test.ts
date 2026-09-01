@@ -78,30 +78,28 @@ describe("video frame validation", () => {
         }
     });
 
-    it.each(VIDEO_FRAME_LIMITS)(
-        "%s accepts every advertised frame count through %i",
-        (model, maxFrames) => {
-            for (let frameCount = 0; frameCount <= maxFrames; frameCount++) {
-                expect(() =>
-                    validateVideoFrameCount(params(model, frameCount)),
-                ).not.toThrow();
-            }
-        },
-    );
+    it.each(
+        VIDEO_FRAME_LIMITS,
+    )("%s accepts every advertised frame count through %i", (model, maxFrames) => {
+        for (let frameCount = 0; frameCount <= maxFrames; frameCount++) {
+            expect(() =>
+                validateVideoFrameCount(params(model, frameCount)),
+            ).not.toThrow();
+        }
+    });
 
-    it.each(VIDEO_FRAME_LIMITS)(
-        "%s rejects more than its advertised %i frame limit before dispatch",
-        async (model, maxFrames) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it.each(
+        VIDEO_FRAME_LIMITS,
+    )("%s rejects more than its advertised %i frame limit before dispatch", async (model, maxFrames) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-            await expect(
-                createAndReturnVideo(
-                    "animate these frames",
-                    params(model, maxFrames + 1),
-                    "test-request-id",
-                ),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
+        await expect(
+            createAndReturnVideo(
+                "animate these frames",
+                params(model, maxFrames + 1),
+                "test-request-id",
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
 });

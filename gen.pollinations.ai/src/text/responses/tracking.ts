@@ -2,6 +2,28 @@ import type { Usage } from "@shared/registry/registry.ts";
 import { responsesUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { ResponseTerminalEventSchema } from "@shared/schemas/openai.ts";
 
+export const RESPONSE_TERMINAL_EVENT_TYPES = new Set([
+    "response.completed",
+    "response.incomplete",
+    "response.failed",
+]);
+
+export function normalizeResponsesTerminalEvent(
+    event: unknown,
+    sseEvent?: string,
+): unknown {
+    if (
+        !sseEvent ||
+        !RESPONSE_TERMINAL_EVENT_TYPES.has(sseEvent) ||
+        !event ||
+        typeof event !== "object" ||
+        typeof (event as { type?: unknown }).type === "string"
+    ) {
+        return event;
+    }
+    return { ...(event as Record<string, unknown>), type: sseEvent };
+}
+
 export function getResponsesEventUsage(
     event: unknown,
 ): { model?: string; usage: Usage } | null {

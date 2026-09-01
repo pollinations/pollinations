@@ -1,11 +1,9 @@
 import { createParser } from "eventsource-parser";
-import { getResponsesEventUsage } from "./tracking.js";
-
-const TERMINAL_EVENT_TYPES = new Set([
-    "response.completed",
-    "response.incomplete",
-    "response.failed",
-]);
+import {
+    getResponsesEventUsage,
+    normalizeResponsesTerminalEvent,
+    RESPONSE_TERMINAL_EVENT_TYPES,
+} from "./tracking.js";
 
 export class ResponsesUsageError extends Error {
     override readonly name = "ResponsesUsageError";
@@ -28,7 +26,10 @@ export function createResponsesStreamUsageValidator() {
             try {
                 event = JSON.parse(message.data);
             } catch {
-                if (message.event && TERMINAL_EVENT_TYPES.has(message.event)) {
+                if (
+                    message.event &&
+                    RESPONSE_TERMINAL_EVENT_TYPES.has(message.event)
+                ) {
                     validationError = new ResponsesUsageError(
                         "Responses provider returned a malformed terminal event",
                     );
@@ -37,13 +38,13 @@ export function createResponsesStreamUsageValidator() {
             }
 
             const type = eventType(event) ?? message.event;
-            if (!type || !TERMINAL_EVENT_TYPES.has(type)) return;
+            if (!type || !RESPONSE_TERMINAL_EVENT_TYPES.has(type)) return;
             terminalSeen = true;
 
-            const normalizedEvent =
-                eventType(event) === type
-                    ? event
-                    : { ...(event as Record<string, unknown>), type };
+            const normalizedEvent = normalizeResponsesTerminalEvent(
+                event,
+                message.event,
+            );
             if (!getResponsesEventUsage(normalizedEvent)) {
                 validationError = new ResponsesUsageError(
                     "Responses provider omitted valid terminal usage",

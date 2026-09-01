@@ -2,6 +2,7 @@ import {
     type CreateResponseRequest,
     CreateResponseRequestSchema,
     CreateResponseResponseSchema,
+    ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -11,6 +12,10 @@ import {
 } from "@/text/responses/client.ts";
 import { validateDirectResponsesRequest } from "@/text/responses/request.ts";
 import { createResponsesStreamUsageValidator } from "@/text/responses/stream.ts";
+import {
+    getResponsesEventUsage,
+    normalizeResponsesTerminalEvent,
+} from "@/text/responses/tracking.ts";
 
 const encoder = new TextEncoder();
 
@@ -59,10 +64,26 @@ describe("direct Responses transport", () => {
 
     it("rejects hosted tools without adapting or dropping them", () => {
         expect(() =>
-            validateDirectResponsesRequest(
-                request({ tools: [{ type: "web_search_preview" }] }),
-            ),
-        ).toThrow(/Only function tools/);
+            CreateResponseRequestSchema.parse({
+                model: "qwen-large",
+                input: "Hello",
+                tools: [{ type: "web_search_preview" }],
+            }),
+        ).toThrow();
+    });
+
+    it("accepts harmless stateless include and truncation options", () => {
+        expect(
+            CreateResponseRequestSchema.parse({
+                model: "qwen-large",
+                input: "Hello",
+                include: ["message.output_text.logprobs"],
+                truncation: "auto",
+            }),
+        ).toMatchObject({
+            include: ["message.output_text.logprobs"],
+            truncation: "auto",
+        });
     });
 
     it("rejects encrypted and referenced response state", () => {
@@ -177,6 +198,17 @@ describe("direct Responses transport", () => {
         ).toThrow();
     });
 
+    it("rejects malformed usage detail fields consumed by billing", () => {
+        expect(() =>
+            ResponseUsageSchema.parse({
+                input_tokens: 12,
+                input_tokens_details: { image_tokens: "5" },
+                output_tokens: 7,
+                total_tokens: 19,
+            }),
+        ).toThrow();
+    });
+
     it("preserves semantic Responses SSE without a Chat done marker", async () => {
         const upstream =
             'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
@@ -217,5 +249,29 @@ describe("direct Responses transport", () => {
         expect(() => validator.finish()).toThrow(
             /without a terminal usage event/,
         );
+    });
+
+    it("normalizes terminal type from the SSE event field for tracking", () => {
+        const event = normalizeResponsesTerminalEvent(
+            {
+                response: {
+                    model: "qwen/qwen3.7-plus",
+                    usage: {
+                        input_tokens: 2,
+                        output_tokens: 1,
+                        total_tokens: 3,
+                    },
+                },
+            },
+            "response.completed",
+        );
+
+        expect(getResponsesEventUsage(event)).toEqual({
+            model: "qwen/qwen3.7-plus",
+            usage: expect.objectContaining({
+                promptTextTokens: 2,
+                completionTextTokens: 1,
+            }),
+        });
     });
 });

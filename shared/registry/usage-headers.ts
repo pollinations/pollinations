@@ -289,9 +289,16 @@ export function responsesUsageToUsage(responsesUsage: {
     input_tokens_details?: {
         cached_tokens?: number | null;
         cache_write_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        video_tokens?: number | null;
     } | null;
     output_tokens_details?: {
         reasoning_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        accepted_prediction_tokens?: number | null;
+        rejected_prediction_tokens?: number | null;
     } | null;
 }): Usage {
     return openaiUsageToUsage({

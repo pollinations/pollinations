@@ -62,13 +62,15 @@ describe("getGenerationModelRegistry", () => {
             .map((entry) => entry.id)
             .sort();
 
-        expect(configured).toHaveLength(42);
+        expect(configured).toHaveLength(56);
         expect(advertised).toEqual(configured);
         for (const model of advertised) {
             expect(registry.resolve(model)?.info.supported_endpoints).toContain(
                 "/v1/responses",
             );
         }
+        expect(advertised).not.toContain("midijourney");
+        expect(advertised).not.toContain("midijourney-large");
     });
 
     it("serves static models when the community catalog query fails", async () => {

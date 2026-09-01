@@ -351,6 +351,25 @@ export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
 >;
 
+const StatelessResponseIncludeSchema = z.enum([
+    "web_search_call.action.sources",
+    "code_interpreter_call.outputs",
+    "computer_call_output.output.image_url",
+    "file_search_call.results",
+    "message.input_image.image_url",
+    "message.output_text.logprobs",
+]);
+
+const ResponseFunctionToolSchema = z
+    .object({
+        type: z.literal("function"),
+        name: z.string(),
+        description: z.string().optional(),
+        parameters: FunctionParametersSchema.optional(),
+        strict: z.boolean().nullable().optional(),
+    })
+    .passthrough();
+
 /**
  * Stateless subset of OpenAI's create Response request.
  *
@@ -373,11 +392,11 @@ export const CreateResponseRequestSchema = z
         previous_response_id: z.null().optional(),
         conversation: z.null().optional(),
         background: z.literal(false).nullish(),
-        include: z.array(z.string()).max(0).nullish(),
+        include: z.array(StatelessResponseIncludeSchema).nullish(),
         context_management: z.array(z.never()).max(0).nullish(),
         prompt: z.null().optional(),
         text: z.record(z.string(), z.any()).optional(),
-        tools: z.array(z.record(z.string(), z.any())).optional(),
+        tools: z.array(ResponseFunctionToolSchema).optional(),
         tool_choice: z.any().optional(),
         parallel_tool_calls: z.boolean().optional(),
         metadata: z.record(z.string(), z.string()).optional(),
@@ -398,7 +417,7 @@ export const CreateResponseRequestSchema = z
         top_logprobs: z.number().int().min(0).max(20).nullish(),
         frequency_penalty: z.number().min(-2).max(2).nullish(),
         presence_penalty: z.number().min(-2).max(2).nullish(),
-        truncation: z.literal("disabled").nullish(),
+        truncation: z.enum(["auto", "disabled"]).nullish(),
         safe: SafeSchema,
     })
     .strict();
@@ -412,6 +431,9 @@ export const ResponseUsageSchema = z
             .object({
                 cached_tokens: z.number().int().nonnegative().nullish(),
                 cache_write_tokens: z.number().int().nonnegative().nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
+                video_tokens: z.number().int().nonnegative().nullish(),
             })
             .passthrough()
             .nullish(),
@@ -419,6 +441,18 @@ export const ResponseUsageSchema = z
         output_tokens_details: z
             .object({
                 reasoning_tokens: z.number().int().nonnegative().nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
             })
             .passthrough()
             .nullish(),

@@ -80,6 +80,7 @@ import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-dura
 import {
     getResponsesEventUsage,
     isResponsesFailure,
+    normalizeResponsesTerminalEvent,
 } from "@/text/responses/tracking.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
@@ -860,7 +861,7 @@ async function* extractResponseStream(
         } catch {
             continue;
         }
-        yield data;
+        yield normalizeResponsesTerminalEvent(data, event.event);
     }
 }
 

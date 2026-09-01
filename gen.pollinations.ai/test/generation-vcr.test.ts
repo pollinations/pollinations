@@ -59,7 +59,14 @@ function createGenerationMocks() {
             headers: Record<string, string>;
         }>;
         omitUsage: boolean;
-    } = { requests: [], omitUsage: false };
+        wrongStreamContentType: boolean;
+        terminalTypeInEventOnly: boolean;
+    } = {
+        requests: [],
+        omitUsage: false,
+        wrongStreamContentType: false,
+        terminalTypeInEventOnly: false,
+    };
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
@@ -126,18 +133,22 @@ function createGenerationMocks() {
                         delete (response as { usage?: unknown }).usage;
                     }
                     if (body.stream) {
+                        if (responsesState.wrongStreamContentType) {
+                            return Response.json(response);
+                        }
+                        const terminalEvent = {
+                            ...(responsesState.terminalTypeInEventOnly
+                                ? {}
+                                : { type: "response.completed" }),
+                            response,
+                        };
                         return new Response(
                             `event: response.output_text.delta\ndata: ${JSON.stringify(
                                 {
                                     type: "response.output_text.delta",
                                     delta: "direct response",
                                 },
-                            )}\n\nevent: response.completed\ndata: ${JSON.stringify(
-                                {
-                                    type: "response.completed",
-                                    response,
-                                },
-                            )}\n\n`,
+                            )}\n\nevent: response.completed\ndata: ${JSON.stringify(terminalEvent)}\n\n`,
                             {
                                 headers: {
                                     "content-type": "text/event-stream",
@@ -151,6 +162,8 @@ function createGenerationMocks() {
             reset: () => {
                 responsesState.requests = [];
                 responsesState.omitUsage = false;
+                responsesState.wrongStreamContentType = false;
+                responsesState.terminalTypeInEventOnly = false;
             },
         },
         imageBackend: {
@@ -775,6 +788,98 @@ test("direct Responses SSE is unchanged and terminal usage bills once", async ({
         tokenCountCompletionReasoning: 3,
         isBilledUsage: true,
     });
+});
+
+test("direct Responses tracks terminal type supplied only by the SSE event field", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    mocks.responsesDirect.state.terminalTypeInEventOnly = true;
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "qwen-large",
+            input: "event field terminal",
+            stream: true,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toContain("event: response.completed");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        tokenCountPromptText: 9,
+        tokenCountCompletionText: 4,
+        isBilledUsage: true,
+    });
+});
+
+test("direct Responses rejects a non-SSE upstream before rewriting content-type", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    mocks.responsesDirect.state.wrongStreamContentType = true;
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "qwen-large",
+            input: "wrong content type",
+            stream: true,
+        }),
+    });
+
+    expect(response.status).toBe(502);
+    await expect(response.json()).resolves.toMatchObject({
+        error: { message: expect.stringContaining("content-type") },
+    });
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+    });
+});
+
+test("direct Responses returns 400 for reusable input state", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "qwen-large",
+            input: [{ type: "item_reference", id: "item_123" }],
+        }),
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            type: "invalid_request_error",
+            param: "input",
+        },
+    });
+    await wait();
+    expect(mocks.responsesDirect.state.requests).toHaveLength(0);
 });
 
 test("Responses rejects models without a direct endpoint without calling Chat", async ({

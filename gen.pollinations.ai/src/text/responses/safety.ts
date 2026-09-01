@@ -4,13 +4,34 @@ import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import { applySafetyToTexts } from "@/middleware/safety.ts";
 
+type SafetyTextTarget = { text: string; set: (value: string) => void };
+
+function collectTextParts(value: unknown, targets: SafetyTextTarget[]): void {
+    if (!Array.isArray(value)) return;
+    for (const rawPart of value) {
+        if (!rawPart || typeof rawPart !== "object") continue;
+        const part = rawPart as Record<string, unknown>;
+        if (
+            (part.type === "input_text" || part.type === "output_text") &&
+            typeof part.text === "string"
+        ) {
+            targets.push({
+                text: part.text,
+                set: (text) => {
+                    part.text = text;
+                },
+            });
+        }
+    }
+}
+
 /** Apply safety rewrites without converting the Responses request. */
 export async function applySafetyToResponseRequest(
     c: Context<Env>,
     body: CreateResponseRequest,
 ): Promise<CreateResponseRequest> {
     const next = structuredClone(body);
-    const targets: Array<{ text: string; set: (value: string) => void }> = [];
+    const targets: SafetyTextTarget[] = [];
 
     if (typeof next.instructions === "string") {
         targets.push({
@@ -38,6 +59,8 @@ export async function applySafetyToResponseRequest(
                         item.output = value;
                     },
                 });
+            } else {
+                collectTextParts(item.output, targets);
             }
             if (typeof item.content === "string") {
                 targets.push({
@@ -48,23 +71,7 @@ export async function applySafetyToResponseRequest(
                 });
                 continue;
             }
-            if (!Array.isArray(item.content)) continue;
-            for (const rawPart of item.content) {
-                if (!rawPart || typeof rawPart !== "object") continue;
-                const part = rawPart as Record<string, unknown>;
-                if (
-                    (part.type === "input_text" ||
-                        part.type === "output_text") &&
-                    typeof part.text === "string"
-                ) {
-                    targets.push({
-                        text: part.text,
-                        set: (value) => {
-                            part.text = value;
-                        },
-                    });
-                }
-            }
+            collectTextParts(item.content, targets);
         }
     }
 

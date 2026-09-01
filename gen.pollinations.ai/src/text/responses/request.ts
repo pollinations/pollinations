@@ -1,38 +1,40 @@
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
-import type { ServiceError } from "../types.js";
 import { cleanNullAndUndefined } from "../utils/objectCleaners.js";
 import type { DirectResponsesTarget } from "./client.js";
+
+export class ResponsesInvalidRequestError extends Error {
+    readonly details: {
+        error: {
+            message: string;
+            type: "invalid_request_error";
+            code: "unsupported_parameter";
+            param: string | null;
+        };
+    };
+
+    constructor(message: string, param: string | null = "model") {
+        super(message);
+        this.details = {
+            error: {
+                message,
+                type: "invalid_request_error",
+                code: "unsupported_parameter",
+                param,
+            },
+        };
+    }
+}
 
 export function responsesInvalidRequest(
     message: string,
     param: string | null = "model",
-): ServiceError {
-    const error = new Error(message) as ServiceError;
-    error.status = 400;
-    error.errorCode = "invalid_request_error";
-    error.details = {
-        error: {
-            message,
-            type: "invalid_request_error",
-            code: "unsupported_parameter",
-            param,
-        },
-    };
-    return error;
+): ResponsesInvalidRequestError {
+    return new ResponsesInvalidRequestError(message, param);
 }
 
 export function validateDirectResponsesRequest(
     request: CreateResponseRequest,
 ): void {
-    for (const [index, tool] of (request.tools ?? []).entries()) {
-        if (tool.type !== "function") {
-            throw responsesInvalidRequest(
-                "Only function tools are supported by the stateless direct Responses endpoint",
-                `tools[${index}].type`,
-            );
-        }
-    }
-
     const pending: unknown[] = [request.input];
     while (pending.length > 0) {
         const value = pending.pop();

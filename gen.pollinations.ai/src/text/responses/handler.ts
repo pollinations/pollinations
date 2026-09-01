@@ -8,6 +8,7 @@ import {
 import {
     type CreateResponseRequest,
     CreateResponseResponseSchema,
+    type ResponseUsage,
 } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
@@ -29,6 +30,7 @@ import {
     resolveDirectResponsesTarget,
 } from "./client.js";
 import {
+    ResponsesInvalidRequestError,
     responsesInvalidRequest,
     validateDirectResponsesRequest,
 } from "./request.js";
@@ -40,6 +42,10 @@ type ResponsesContext = Context<Env>;
 type DirectResponsesCandidate = FallbackCandidate & {
     responsesTarget: DirectResponsesTarget;
     originalIndex: number;
+};
+
+type DirectResponsesResult = Awaited<ReturnType<typeof callDirectResponses>> & {
+    usage: ResponseUsage | null;
 };
 
 function directResponsesCandidates(
@@ -92,12 +98,45 @@ async function handleDirectResponse(
     request: CreateResponseRequest,
 ): Promise<Response> {
     syncTextEnvironment(c.env);
-    validateDirectResponsesRequest(request);
 
     try {
+        validateDirectResponsesRequest(request);
         const { result, candidate } = await withModelFallback(
             directResponsesCandidates(c, request),
-            (attempt) => callDirectResponses(request, attempt.responsesTarget),
+            async (attempt): Promise<DirectResponsesResult> => {
+                const result = await callDirectResponses(
+                    request,
+                    attempt.responsesTarget,
+                );
+                if (request.stream) {
+                    assertStreamContentType(
+                        c,
+                        result.response,
+                        result.requestUrl,
+                    );
+                    return { ...result, usage: null };
+                }
+
+                let data: unknown;
+                try {
+                    data = await result.response.clone().json();
+                } catch (cause) {
+                    throw new UpstreamError(502, {
+                        message: "Responses provider returned invalid JSON",
+                        requestUrl: result.requestUrl,
+                        cause,
+                    });
+                }
+                const parsed = CreateResponseResponseSchema.safeParse(data);
+                if (!parsed.success) {
+                    throw new UpstreamError(502, {
+                        message:
+                            "Responses provider returned an invalid response or omitted usage",
+                        requestUrl: result.requestUrl,
+                    });
+                }
+                return { ...result, usage: parsed.data.usage };
+            },
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
@@ -118,28 +157,16 @@ async function handleDirectResponse(
         }
 
         if (!request.stream) {
-            let data: unknown;
-            try {
-                data = await result.response.clone().json();
-            } catch (cause) {
+            if (!result.usage) {
                 throw new UpstreamError(502, {
-                    message: "Responses provider returned invalid JSON",
-                    requestUrl: result.requestUrl,
-                    cause,
-                });
-            }
-            const parsed = CreateResponseResponseSchema.safeParse(data);
-            if (!parsed.success) {
-                throw new UpstreamError(502, {
-                    message:
-                        "Responses provider returned an invalid response or omitted usage",
+                    message: "Responses provider omitted usage",
                     requestUrl: result.requestUrl,
                 });
             }
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
                     candidate.id,
-                    responsesUsageToUsage(parsed.data.usage),
+                    responsesUsageToUsage(result.usage),
                 ),
             )) {
                 headers.set(name, value);
@@ -159,6 +186,9 @@ async function handleDirectResponse(
         );
         return response;
     } catch (thrown) {
+        if (thrown instanceof ResponsesInvalidRequestError) {
+            return c.json(thrown.details, 400);
+        }
         throwTextError(thrown as ServiceError);
     }
 }
@@ -171,6 +201,5 @@ export async function generateCreateResponse(
         model: c.var.model.resolved,
     });
     const response = await handleDirectResponse(c, requestBody);
-    assertStreamContentType(c, response, c.var.upstreamRequestUrl);
     return withSafetyHeaders(c, response);
 }

@@ -140,7 +140,7 @@ describe("Claude thinking model wiring", () => {
         "claude-opus-4.6",
         "claude-large",
         "claude-opus-4.7",
-        "claude-fable-5",
+        "anthropic/claude-fable-5.1",
     ])("wires adaptive thinking on %s", async (modelName) => {
         const transform = findModelByName(modelName)?.transform;
         if (!transform) throw new Error(`${modelName} transform missing`);

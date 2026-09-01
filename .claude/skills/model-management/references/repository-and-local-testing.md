@@ -14,7 +14,7 @@ Read live code before relying on this map; paths evolve.
 | Audio and speech | `gen.pollinations.ai/src/routes/audio.ts` and transcription/realtime routes |
 | Embeddings | `gen.pollinations.ai/src/embeddings/` |
 | Billing and observability | `gen.pollinations.ai/src/middleware/track.ts`, `enter.pollinations.ai/observability/` |
-| Catalog logo | model-info/brand mapping under the Enter frontend and `frontend/public/brand-logos/` |
+| Catalog logo | model-info/author mapping under the Enter frontend and `frontend/public/brand-logos/` |
 | Provider secrets | encrypted files under `gen.pollinations.ai/secrets/`; mutations follow `AGENTS.md` |
 
 Search for the canonical slug, aliases, provider model ID, registry key, and handler before adding code. Reuse existing provider clients, request transforms, polling, upload, response, error, billing, and fallback utilities.

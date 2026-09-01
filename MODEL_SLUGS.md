@@ -10,7 +10,8 @@ On **September 7, 2026 at 14:00 UTC**, we're standardizing model IDs. They will 
 
 You can use the new IDs now. Existing IDs will keep working, so current integrations do not need to change.
 
-Only the names are changing. Model behavior and pricing stay the same.
+Most entries only change names. Claude Fable also upgrades to version 5.1;
+its behavior and prompt-cache hit price change with the model version.
 
 ## Alibaba
 
@@ -37,7 +38,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 
 | Model | Existing ID | New ID |
 | --- | --- | --- |
-| Claude Fable 5 | `claude-fable-5` | `anthropic/claude-fable-5` |
+| Claude Fable 5.1 | `claude-fable-5` | `anthropic/claude-fable-5.1` |
 | Claude Haiku 4.5 | `claude-fast` | `anthropic/claude-haiku-4.5` |
 | Claude Opus 4.6 | `claude-opus-4.6` | `anthropic/claude-opus-4.6` |
 | Claude Opus 4.7 | `claude-opus-4.7` | `anthropic/claude-opus-4.7` |

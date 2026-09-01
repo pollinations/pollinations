@@ -910,6 +910,7 @@ describe("API Key Management", () => {
                     "flux",
                     "nanobanana2",
                     "gpt-realtime-2",
+                    "anthropic/claude-fable-5",
                     "retired-model",
                 ],
             });
@@ -930,6 +931,7 @@ describe("API Key Management", () => {
                 "flux",
                 "nanobanana-2",
                 "gpt-realtime-2.1",
+                "anthropic/claude-fable-5.1",
             ]);
 
             const db = drizzle(env.DB, { schema });
@@ -940,6 +942,7 @@ describe("API Key Management", () => {
                 "flux",
                 "nanobanana-2",
                 "gpt-realtime-2.1",
+                "anthropic/claude-fable-5.1",
                 "retired-model",
             ]);
         });

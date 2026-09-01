@@ -19,8 +19,9 @@ describe("resolveModelConfig", () => {
                 .max_tokens,
         ).toBe(128000);
         expect(
-            resolveModelConfig(messages, { model: "claude-fable-5" }).options
-                .max_tokens,
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-fable-5.1",
+            }).options.max_tokens,
         ).toBe(128000);
     });
 
@@ -39,6 +40,19 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
+    it("routes Claude Fable 5.1 aliases to the global Fable 5.1 profile", () => {
+        for (const model of [
+            "anthropic/claude-fable-5.1",
+            "claude-fable-5",
+            "anthropic/claude-fable-5",
+            "claude-fable-5.1",
+        ]) {
+            expect(resolveModelConfig(messages, { model }).options.model).toBe(
+                "global.anthropic.claude-fable-5-1",
+            );
+        }
     });
 
     it("does not set max_tokens for non-Anthropic models", () => {

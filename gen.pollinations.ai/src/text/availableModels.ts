@@ -251,8 +251,8 @@ const models: ModelDefinition[] = [
         transform: claudeOpus5Thinking,
     },
     {
-        name: "claude-fable-5",
-        config: portkeyConfig["claude-fable-5"],
+        name: "anthropic/claude-fable-5.1",
+        config: portkeyConfig["anthropic/claude-fable-5.1"],
         transform: claudeAdaptiveThinking,
     },
     {

@@ -539,6 +539,20 @@ describe("docs routes", () => {
         expect(agentsBody).toContain("## Publish an Agent");
         expect(agentsBody).toContain("/account/agents");
 
+        const mcpRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/llm.txt?section=mcp"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(mcpRes.status).toBe(200);
+        const mcpBody = await mcpRes.text();
+        expect(mcpBody).toContain("## MCP Server");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp");
+        expect(mcpBody).toContain("Streamable HTTP");
+        expect(mcpBody).not.toContain("stdio");
+        expect(mcpBody).not.toContain("npx @pollinations/mcp");
+        expect(mcpBody).not.toContain("## Text");
+
         const harnessRes = await worker.fetch(
             new Request(
                 "https://gen.pollinations.ai/docs/llm.txt?section=coding-harnesses",

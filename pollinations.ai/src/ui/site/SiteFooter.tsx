@@ -1,6 +1,5 @@
 import {
     Button,
-    ColorModeToggle,
     DiscordIcon,
     Eyebrow,
     GitHubIcon,
@@ -82,7 +81,7 @@ const SOCIAL = [
 
 export function SiteFooter() {
     return (
-        <footer className="site-shell">
+        <footer className="site-shell hidden min-[780px]:block">
             <div className="site-gutter flex flex-wrap justify-between gap-10 pt-11 pb-14">
                 <div className="flex max-w-xs flex-col gap-4">
                     <span
@@ -98,10 +97,6 @@ export function SiteFooter() {
                             Built with the community, in the open
                         </span>
                     </p>
-                    <div className="hidden items-center gap-3 min-[900px]:flex">
-                        <Eyebrow size="chrome">Appearance</Eyebrow>
-                        <ColorModeToggle />
-                    </div>
                     <nav aria-label="Social links" className="flex gap-1">
                         {SOCIAL.map(({ href, label, Icon }) => (
                             <Button

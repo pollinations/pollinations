@@ -105,23 +105,9 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 ### 4. Implement the smallest complete change
 
-- Canonical public IDs use `<publisher-slug>/<official-model-slug>`. Keep both
-  components lowercase, preserve the publisher's model family and version,
-  and follow the publisher's public slug when one exists. Never invent, drop,
-  or silently advance a version.
-- The registry `brand` is the human-readable publisher (`OpenAI`, `Anthropic`,
-  `xAI`), not the inference provider. Keep provider deployment IDs, casing,
-  punctuation, and revision suffixes internal when they are routing details
-  rather than the publisher's public model identity.
-- Never encode a provider route or fallback in a public canonical ID. Declare
-  routing through the registry's ordered fallback relationship. When that
-  relationship requires a hidden registry target for the same model, name it
-  `<public-canonical-id>:fallback`, mark it hidden, and never expose it in the
-  public catalog.
-- When multiple entries are only operations or parameter presets of the same
-  publisher model, consolidate them under that model identity and select the
-  operation through an explicit endpoint or request field. Do not create a
-  second canonical model or make an alias select behavior.
+- Canonical public IDs use lowercase
+  `<publisher-slug>/<official-model-slug>` and preserve the official family
+  and version. Keep provider deployment IDs and routing internal.
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
 - Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
@@ -148,11 +134,8 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   immediately before the Worker deploy. Keep mappings in migrations only; do
   not add a runtime normalization layer.
 - Update every consumer of a changed public ID at once.
-- Do not invent a convenience alias for a brand-new canonical model. Add an
-  alias only for an existing compatibility contract or when explicitly
-  approved.
-- `MODEL_SLUGS.md` is a public rename announcement. Add only models with a real
-  historical public ID; do not add brand-new models to its migration tables.
+- Add aliases only for existing compatibility contracts or explicit approval.
+- Add models to `MODEL_SLUGS.md` only when renaming a historical public ID.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 

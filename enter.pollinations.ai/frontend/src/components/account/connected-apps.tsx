@@ -84,6 +84,9 @@ function AppCard({
 export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
+    const [knownToolkits, setKnownToolkits] = useState<Record<string, Toolkit>>(
+        {},
+    );
     const [search, setSearch] = useState("");
     const [pendingId, setPendingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
@@ -119,7 +122,15 @@ export function ConnectedApps() {
             setLoading(true);
             void loadToolkits(query)
                 .then((results) => {
-                    if (!cancelled) setToolkits(results);
+                    if (cancelled) return;
+                    setToolkits(results);
+                    setKnownToolkits((current) => {
+                        const next = { ...current };
+                        for (const toolkit of results) {
+                            next[toolkit.slug] = toolkit;
+                        }
+                        return next;
+                    });
                 })
                 .catch((searchError) => {
                     if (!cancelled) {
@@ -190,7 +201,7 @@ export function ConnectedApps() {
         : availableToolkits.slice(0, 6);
 
     return (
-        <Section title="Connectors" framed>
+        <Section title="MCP Connectors" framed>
             <Text size="sm" tone="muted">
                 Connect apps for your agents. Supported by{" "}
                 <InlineLink href="https://composio.dev">Composio</InlineLink>.
@@ -203,9 +214,7 @@ export function ConnectedApps() {
                     </Text>
                     <div className="grid gap-2 sm:grid-cols-2">
                         {connections.map((connection) => {
-                            const toolkit = toolkits.find(
-                                ({ slug }) => slug === connection.toolkit,
-                            );
+                            const toolkit = knownToolkits[connection.toolkit];
                             return (
                                 <AppCard
                                     key={connection.id}

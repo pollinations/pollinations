@@ -43,11 +43,16 @@ describe("modelBody", () => {
         });
     });
 
-    it("maps required safety flags to the shared feature list", () => {
-        expect(modelBody({ requiredSafety: true }, false)).toEqual({
-            requiredSafetyFeatures: ["sexual", "violence"],
+    it("maps required safety features and clears them with none", () => {
+        expect(
+            modelBody(
+                { requiredSafety: "privacy, sexual,violence,shield" },
+                false,
+            ),
+        ).toEqual({
+            requiredSafetyFeatures: ["privacy", "sexual", "violence", "shield"],
         });
-        expect(modelBody({ requiredSafety: false }, false)).toEqual({
+        expect(modelBody({ requiredSafety: "none" }, false)).toEqual({
             requiredSafetyFeatures: [],
         });
     });

@@ -12,6 +12,7 @@ import {
     FieldStack,
     Input,
     ScrollArea,
+    Switch,
     TabButton,
 } from "@pollinations/ui";
 import { MAX_FALLBACK_TARGETS } from "@shared/community-endpoints.ts";
@@ -729,47 +730,20 @@ export function CommunityEndpointDialog({
                             }
                             alignLabelRow
                         >
-                            <ButtonGroup aria-label="Required prompt safety">
-                                <TabButton
-                                    active={
-                                        form.requiredSafetyFeatures.length === 0
-                                    }
-                                    onClick={() =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            requiredSafetyFeatures: [],
-                                        }))
-                                    }
-                                    size="sm"
-                                    className="min-w-20 gap-1.5"
-                                >
-                                    {form.requiredSafetyFeatures.length ===
-                                        0 && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    Off
-                                </TabButton>
-                                <TabButton
-                                    active={
-                                        form.requiredSafetyFeatures.length > 0
-                                    }
-                                    onClick={() =>
-                                        setForm((current) => ({
-                                            ...current,
-                                            requiredSafetyFeatures: [
-                                                ...HARMFUL_CONTENT_SAFETY_FEATURES,
-                                            ],
-                                        }))
-                                    }
-                                    size="sm"
-                                    className="min-w-36 gap-1.5"
-                                >
-                                    {form.requiredSafetyFeatures.length > 0 && (
-                                        <CheckIcon className="h-3.5 w-3.5" />
-                                    )}
-                                    Block harmful content
-                                </TabButton>
-                            </ButtonGroup>
+                            <Switch
+                                checked={form.requiredSafetyFeatures.length > 0}
+                                ariaLabel="Require harmful-content prompt safety"
+                                onChange={(required) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        requiredSafetyFeatures: required
+                                            ? [
+                                                  ...HARMFUL_CONTENT_SAFETY_FEATURES,
+                                              ]
+                                            : [],
+                                    }))
+                                }
+                            />
                         </FieldStack>
                     )}
                     {isShared && (

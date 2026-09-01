@@ -1,18 +1,5 @@
-import {
-    Button,
-    FieldStack,
-    Input,
-    Section,
-    Surface,
-    Text,
-} from "@pollinations/ui";
-import {
-    type FormEvent,
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useState,
-} from "react";
+import { Button, Section, Surface, Text } from "@pollinations/ui";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 
 type Connection = {
@@ -76,7 +63,6 @@ function AppCard({ name, logo, details, action }: AppCardProps) {
 export function ConnectedApps() {
     const [connections, setConnections] = useState<Connection[]>([]);
     const [toolkits, setToolkits] = useState<Toolkit[]>([]);
-    const [search, setSearch] = useState("");
     const [pendingId, setPendingId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -89,10 +75,8 @@ export function ConnectedApps() {
         );
     }, []);
 
-    const loadToolkits = useCallback(async (query = "") => {
-        const response = await apiClient.account.integrations.toolkits.$get({
-            query: query ? { search: query } : {},
-        });
+    const loadToolkits = useCallback(async () => {
+        const response = await apiClient.account.integrations.toolkits.$get();
         if (!response.ok) throw new Error("Could not load available apps.");
         setToolkits(((await response.json()) as { data: Toolkit[] }).data);
     }, []);
@@ -106,19 +90,6 @@ export function ConnectedApps() {
             )
             .finally(() => setLoading(false));
     }, [loadConnections, loadToolkits]);
-
-    async function handleSearch(event: FormEvent) {
-        event.preventDefault();
-        setError(null);
-        setLoading(true);
-        try {
-            await loadToolkits(search.trim());
-        } catch (searchError) {
-            setError(errorMessage(searchError, "Could not search apps."));
-        } finally {
-            setLoading(false);
-        }
-    }
 
     async function connect(toolkit: string) {
         setPendingId(toolkit);
@@ -205,24 +176,6 @@ export function ConnectedApps() {
                     />
                 );
             })}
-
-            <form
-                onSubmit={(event) => void handleSearch(event)}
-                className="flex items-end gap-2"
-            >
-                <FieldStack label="Connect an app" className="min-w-0 flex-1">
-                    <Input
-                        value={search}
-                        placeholder="Search GitHub, Gmail, Slack…"
-                        onChange={(event) =>
-                            setSearch(event.currentTarget.value)
-                        }
-                    />
-                </FieldStack>
-                <Button type="submit" disabled={loading}>
-                    Search
-                </Button>
-            </form>
 
             {!loading &&
                 availableToolkits.map((toolkit) => (

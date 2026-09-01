@@ -22,9 +22,6 @@ const ToolkitSchema = z.object({
     description: z.string(),
     logo: z.string().nullable(),
 });
-const SearchSchema = z.object({
-    search: z.string().trim().max(100).optional(),
-});
 const ConnectSchema = z
     .object({
         toolkit: z
@@ -111,14 +108,8 @@ export const integrationsRoutes = new Hono<Env>()
                 },
             },
         }),
-        validator("query", SearchSchema),
-        async (c) => {
-            const search = c.req.valid("query").search;
-            const query = search ? `?search=${encodeURIComponent(search)}` : "";
-            return forwardComposioResponse(
-                await composioRequest(c, `/toolkits${query}`),
-            );
-        },
+        async (c) =>
+            forwardComposioResponse(await composioRequest(c, "/toolkits")),
     )
     .post(
         "/",

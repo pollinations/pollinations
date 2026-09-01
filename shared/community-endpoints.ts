@@ -746,7 +746,7 @@ type CommunityEndpointRuntimeBase = {
 export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     type: "proxy";
     bearerTokenCiphertext: string;
-    requiredSafetyFeatures: SafetyFeature[];
+    requiredSafetyFeatures?: SafetyFeature[];
     advertised?: CommunityEndpointAdvertised;
 };
 

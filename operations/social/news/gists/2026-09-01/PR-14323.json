@@ -1,0 +1,34 @@
+{
+  "pr_number": 14323,
+  "title": "fix: make Grok 4.6 Quest-accessible",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14323",
+  "merged_at": "2026-09-01T23:38:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sets `grok-4.6` to `paidOnly: false`, allowing Quest Pollen while preserving its Azure route, aliases, 0.75 multiplier, pricing, and capabilities.\n- Adds registry-contract coverage and proves the model is visible to an authenticated caller with no paid balance.\n- E2E request `1f8f3c49-64c1-4b04-ae41-26c4ae5011b0`: pack balance 0, Azure HTTP 200, exact reply, and a $0.001218 debit entirely from Quest Pollen.\n- Staging Tinybird recorded one billed row with provider `azure`, meter `v1:meter:tier`, 17 prompt, 10 completion, and 255 reasoning tokens; focused tests, Biome, and Gen typecheck pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Grok joins the Quest garden",
+    "blurb": "Grok 4.6 can now run on Quest-earned Pollen, even when the paid balance is a perfectly respectable zero. Azure keeps doing the serving; the hive simply opened the right gate.",
+    "summary": "Updated the text-model registry so grok-4.6 has paidOnly: false, allowing authenticated callers to use its existing Azure route, aliases, 0.75 multiplier, pricing, and capabilities with Quest Pollen.",
+    "impact": "Developers with no paid Pollen balance can now call grok-4.6 using Quest-earned Pollen; an end-to-end request successfully routed through Azure and billed $0.001218 entirely from Quest balance.",
+    "keywords": [
+      "grok-4.6",
+      "quest-pollen",
+      "azure",
+      "text-models",
+      "model-registry",
+      "billing"
+    ],
+    "visual_concept": "Depict Grok 4.6 as a friendly glowing retro terminal in a cozy garden gate scene, with Quest Pollen represented by luminous flower-seeds flowing through an open gate into the terminal. Polli, wearing a tiny questing satchel, should be checking the gate mechanism while code-plants and a small Azure-blue cloud-shaped sign suggest the preserved Azure route without turning the scene corporate.",
+    "image_prompt": "A cozy pixel art garden gateway where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny questing satchel and opens a gate for glowing Pollen flower-seeds to reach a friendly retro terminal labeled “GROK 4.6”; code-plants bloom beside a small soft-blue cloud sign for the Azure route. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14323.jpg",
+    "prompt": "A cozy pixel art garden gateway where Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wears a tiny questing satchel and opens a gate for glowing Pollen flower-seeds to reach a friendly retro terminal labeled “GROK 4.6”; code-plants bloom beside a small soft-blue cloud sign for the Azure route. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T23:39:17.011262+00:00"
+}

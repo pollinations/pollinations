@@ -1,0 +1,19 @@
+{
+  "name": "pollinations-discord-osaii-swarm",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node bot.js",
+    "register": "node register.js",
+    "test": "node --test test/*.test.js"
+  },
+  "dependencies": {
+    "@pollinations/sdk": "5.1.0-alpha.6",
+    "discord.js": "^14.22.1",
+    "dotenv": "^17.2.2"
+  }
+}

@@ -6,7 +6,7 @@ provides live model discovery, health information, and Pollen balance.
 
 ## Quick Start
 
-For Streamable HTTP clients, connect to `https://mcp.pollinations.ai` with:
+Connect any Streamable HTTP client to `https://mcp.pollinations.ai` with:
 
 ```http
 Authorization: Bearer YOUR_KEY
@@ -16,12 +16,6 @@ The server can only use models and account features allowed by that key's
 permissions, and it cannot spend beyond the key's budget. Configure both in
 [API key settings](https://enter.pollinations.ai/keys); see
 [Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
-
-Or run it locally over stdio:
-
-```bash
-POLLINATIONS_API_KEY=YOUR_KEY npx @pollinations/mcp
-```
 
 ## Hosted MCP catalog
 
@@ -64,6 +58,15 @@ const { tools } = await client.listTools();
 The client handles MCP initialization and tool discovery. Other clients use the
 same endpoint and header; only their configuration format differs.
 
+### Claude Code
+
+```bash
+claude mcp add --transport http pollinations https://mcp.pollinations.ai \
+  --header "Authorization: Bearer YOUR_KEY"
+```
+
+Run `/mcp` in Claude Code to verify the connection.
+
 ## Authentication
 
 Get a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or use
@@ -74,13 +77,6 @@ through a web or device flow.
 
 - `pk_` — client-safe and rate-limited to 1 Pollen per IP per hour
 - `sk_` — server-side only and not rate-limited
-
-The local package calls `https://gen.pollinations.ai` by default and also
-supports the `setApiKey` tool. To use another compatible gateway:
-
-```bash
-POLLINATIONS_BASE_URL=http://localhost:8788 npx @pollinations/mcp
-```
 
 ## Available Tools
 
@@ -96,7 +92,6 @@ POLLINATIONS_BASE_URL=http://localhost:8788 npx @pollinations/mcp
 | `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
-| `setApiKey`, `getKeyInfo`, `clearApiKey` | Manage the local server's key | Local only |
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Links are
@@ -106,28 +101,9 @@ URL to edit it, and use separate tool calls for multiple images.
 Models, voices, capabilities, and pricing come from the live registry rather
 than hardcoded lists. Use `listModels` before selecting a model or voice.
 
-## Claude Desktop Integration
-
-Add to your Claude Desktop config:
-
-```json
-{
-  "mcpServers": {
-    "pollinations": {
-      "command": "npx",
-      "args": ["@pollinations/mcp"],
-      "env": {
-        "POLLINATIONS_API_KEY": "sk_your_key_here"
-      }
-    }
-  }
-}
-```
-
 ## Development
 
-Requires Node.js 20 or newer. Run the offline stdio, tool-registration, and
-model-listing checks with:
+Requires Node.js 20 or newer. Run the tests with:
 
 ```bash
 npm test

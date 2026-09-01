@@ -549,6 +549,8 @@ describe("docs routes", () => {
         expect(mcpBody).toContain("## MCP Server");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp");
         expect(mcpBody).toContain("Streamable HTTP");
+        expect(mcpBody).not.toContain("stdio");
+        expect(mcpBody).not.toContain("npx @pollinations/mcp");
         expect(mcpBody).not.toContain("## Text");
 
         const harnessRes = await worker.fetch(

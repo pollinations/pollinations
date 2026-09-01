@@ -26,7 +26,9 @@ import {
     type HTTPRequestContext,
     SETTLEMENT_OVERRIDES_HEADER,
 } from "@x402/core/http";
-import type { PaymentPayload, PaymentRequirements } from "@x402/core/types";
+import { validatePaymentPayload } from "@x402/core/schemas";
+import type { PaymentPayload } from "@x402/core/types";
+import { isUptoPermit2Payload } from "@x402/evm";
 import { UptoEvmScheme } from "@x402/evm/upto/server";
 import stableStringify from "fast-json-stable-stringify";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
@@ -251,59 +253,39 @@ const validateAnonymousShape = createMiddleware<Env>(async (c, next) => {
     await next();
 });
 
-type ResumablePaymentPayload = PaymentPayload & {
-    x402Version: 2;
-    accepted: PaymentRequirements & { network: string };
-    payload: Record<string, unknown> & {
-        permit2Authorization: {
-            from: string;
-            nonce: string;
-            spender: string;
-        };
-    };
-    extensions?: Record<string, unknown>;
-};
-
-function decodePayment(value: string): ResumablePaymentPayload {
+function parsePaymentIdentity(value: string) {
     let payment: PaymentPayload;
     try {
         payment = decodePaymentSignatureHeader(value);
+        validatePaymentPayload(payment);
     } catch {
         throw new HTTPException(400, {
             message: "Malformed x402 Permit2 authorization identity",
         });
     }
-    const envelope = payment as PaymentPayload & {
-        x402Version?: unknown;
-        accepted?: { scheme?: unknown; network?: unknown };
-        payload?: {
-            permit2Authorization?: {
-                from?: unknown;
-                nonce?: unknown;
-                spender?: unknown;
-            };
-        };
-    };
-    const network = envelope.accepted?.network;
-    const from = envelope.payload?.permit2Authorization?.from;
-    const nonce = envelope.payload?.permit2Authorization?.nonce;
-    const spender = envelope.payload?.permit2Authorization?.spender;
+    const payload = payment.payload;
     if (
-        envelope.x402Version !== 2 ||
-        envelope.accepted?.scheme !== "upto" ||
-        typeof network !== "string" ||
-        !/^[^:]+:[^:]+$/.test(network) ||
-        typeof from !== "string" ||
-        !/^0x[0-9a-fA-F]{40}$/.test(from) ||
-        typeof spender !== "string" ||
-        !/^0x[0-9a-fA-F]{40}$/.test(spender) ||
-        typeof nonce !== "string" ||
-        !/^\d+$/.test(nonce)
+        payment.x402Version !== 2 ||
+        payment.accepted.scheme !== "upto" ||
+        !isUptoPermit2Payload(payload)
     ) {
         throw new HTTPException(400, {
             message: "Malformed x402 Permit2 authorization identity",
         });
     }
+
+    const { network } = payment.accepted;
+    const { from, nonce, spender } = payload.permit2Authorization;
+    if (
+        !/^[^:]+:[^:]+$/.test(network) ||
+        !/^0x[0-9a-fA-F]{40}$/.test(from) ||
+        !/^0x[0-9a-fA-F]{40}$/.test(spender)
+    ) {
+        throw new HTTPException(400, {
+            message: "Malformed x402 Permit2 authorization identity",
+        });
+    }
+
     let canonicalNonce: bigint;
     try {
         canonicalNonce = BigInt(nonce);
@@ -312,12 +294,16 @@ function decodePayment(value: string): ResumablePaymentPayload {
             message: "Malformed x402 Permit2 authorization identity",
         });
     }
-    if (canonicalNonce >= 1n << 256n) {
+    if (canonicalNonce < 0n || canonicalNonce >= 1n << 256n) {
         throw new HTTPException(400, {
             message: "Malformed x402 Permit2 authorization identity",
         });
     }
-    return payment as ResumablePaymentPayload;
+    return {
+        payment,
+        permit2Authorization: payload.permit2Authorization,
+        canonicalNonce,
+    };
 }
 
 async function sha256(value: string): Promise<string> {
@@ -331,14 +317,15 @@ async function sha256(value: string): Promise<string> {
 }
 
 async function paymentDetails(value: string) {
-    const payment = decodePayment(value);
+    const { payment, permit2Authorization, canonicalNonce } =
+        parsePaymentIdentity(value);
     const { network } = payment.accepted;
-    const { from, nonce, spender } = payment.payload.permit2Authorization;
+    const { from, spender } = permit2Authorization;
     const payer = `${network.toLowerCase()}|${from.toLowerCase()}`;
     return {
         payment,
         payer,
-        identity: `${payer}|${spender.toLowerCase()}|${BigInt(nonce)}`,
+        identity: `${payer}|${spender.toLowerCase()}|${canonicalNonce}`,
         proof: await sha256(stableStringify(payment)),
     };
 }

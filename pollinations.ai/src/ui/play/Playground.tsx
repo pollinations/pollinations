@@ -25,7 +25,6 @@ import {
     ScrollArea,
     Slider,
     SproutIcon,
-    Surface,
     TabButton,
     Text,
     Textarea,
@@ -1131,8 +1130,8 @@ export function Playground() {
             </FieldStack>
         ) : null;
     return (
-        <div className="-mt-16 -mb-6 flex w-full flex-col gap-3 text-theme-text-base sm:-mt-24 sm:-mb-8 md:mb-0">
-            <Surface variant="panel" className="play-chat-shell flex flex-col">
+        <div className="flex w-full flex-col gap-3 text-theme-text-base">
+            <div className="play-chat-shell flex flex-col">
                 <ModalityTabs
                     activeCategory={activeCategory}
                     onSelectCategory={selectCategory}
@@ -1610,7 +1609,7 @@ export function Playground() {
                         {result && <ResultPanel result={result} />}
                     </div>
                 )}
-            </Surface>
+            </div>
         </div>
     );
 }

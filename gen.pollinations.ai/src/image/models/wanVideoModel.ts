@@ -7,14 +7,16 @@
  * supplied:
  *   - wan-fast → wan-2.2-t2v-fast / wan-2.2-i2v-fast  (480p, ~5s, silent)
  *   - wan      → wan-2.6-t2v      / wan-2.6-i2v       (720p, native audio)
- *   - wan-pro  → wan-2.7-t2v      / wan-2.7-i2v       (720p, native audio)
+ *   - wan-pro  → wan-2.7-t2v / wan-2.7-i2v / wan-2.7-r2v (720p or 1080p)
  *
- * Replicate prices Wan video per-second by mode and resolution. Each public
- * wan-pro exposes 720p and 1080p through one public model. Billing selects the
+ * Replicate prices Wan video per-second by mode and resolution. wan-pro
+ * exposes T2V, I2V, and R2V through one public model ID. Billing selects the
  * matching rate from the request resolution and whether an input frame routed
- * the call to I2V.
+ * the call to I2V. R2V (reference_images / reference_videos) is $0.10/s, the
+ * same rate as T2V, so it never trips the I2V surcharge.
  */
 
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
@@ -32,6 +34,17 @@ const logError = debug("pollinations:wan:error");
 interface WanVariantConfig {
     t2vModel: string;
     i2vModel: string;
+    /** Reference-to-video route; absent on variants without R2V support. */
+    r2v?: {
+        model: string;
+        buildInput(
+            prompt: string,
+            safeParams: ImageParams,
+        ): {
+            input: Record<string, unknown>;
+            duration: number;
+        };
+    };
     trackingName: string;
     displayName: string;
     predictionDeadlineMinutes?: number;
@@ -59,6 +72,8 @@ const WAN_FAST_FIXED_SECONDS = 5;
 const WAN_26_DURATIONS = [5, 10, 15] as const;
 const WAN_PRO_MIN_DURATION = 2;
 const WAN_PRO_MAX_DURATION = 15;
+// Wan 2.7 R2V accepts 2–10s, a tighter ceiling than the T2V/I2V routes.
+const WAN_PRO_R2V_MAX_DURATION = 10;
 const WAN_PRO_PREDICTION_DEADLINE_MINUTES = 15;
 
 /** Pick the supported aspect ratio closest to the request. */
@@ -162,6 +177,45 @@ function makeWan27Config(
     return {
         t2vModel: "wan-video/wan-2.7-t2v",
         i2vModel: "wan-video/wan-2.7-i2v",
+        r2v: {
+            model: "wan-video/wan-2.7-r2v",
+            buildInput(prompt, safeParams) {
+                const duration = Math.max(
+                    WAN_PRO_MIN_DURATION,
+                    Math.min(
+                        WAN_PRO_R2V_MAX_DURATION,
+                        Math.floor(safeParams.duration ?? 5),
+                    ),
+                );
+                return {
+                    duration,
+                    input: withSeed(
+                        {
+                            prompt,
+                            resolution,
+                            aspect_ratio: pickAspect(
+                                safeParams,
+                                WAN_PRO_RATIOS,
+                            ),
+                            duration,
+                            ...(safeParams.reference_images?.length
+                                ? {
+                                      reference_images:
+                                          safeParams.reference_images,
+                                  }
+                                : {}),
+                            ...(safeParams.reference_videos?.length
+                                ? {
+                                      reference_videos:
+                                          safeParams.reference_videos,
+                                  }
+                                : {}),
+                        },
+                        safeParams,
+                    ),
+                };
+            },
+        },
         trackingName,
         displayName: `Wan 2.7${resolution === "1080p" ? " 1080p" : ""}`,
         predictionDeadlineMinutes: WAN_PRO_PREDICTION_DEADLINE_MINUTES,
@@ -206,13 +260,43 @@ async function generateWanVideo(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const images = safeParams.image ?? [];
-    const mode: "t2v" | "i2v" = images.length > 0 ? "i2v" : "t2v";
-    const model = mode === "i2v" ? config.i2vModel : config.t2vModel;
+    const hasReference =
+        (safeParams.reference_images?.length ?? 0) > 0 ||
+        (safeParams.reference_videos?.length ?? 0) > 0;
 
-    const frames =
-        images.length > 0 ? await Promise.all(images.map(toDataUri)) : [];
-    const input = config.buildInput(mode, prompt, safeParams, frames);
-    const requestedDuration = config.resolveDuration(safeParams);
+    if (images.length > 0 && hasReference) {
+        throw new HttpError(
+            "Frame inputs (image[]) and reference media (reference_images, reference_videos) cannot be combined.",
+            400,
+        );
+    }
+
+    let model: string;
+    let input: Record<string, unknown>;
+    let requestedDuration: number;
+    let mode: string;
+    if (hasReference) {
+        if (!config.r2v) {
+            throw new HttpError(
+                `${config.displayName} does not support reference media.`,
+                400,
+            );
+        }
+        mode = "r2v";
+        model = config.r2v.model;
+        ({ input, duration: requestedDuration } = config.r2v.buildInput(
+            prompt,
+            safeParams,
+        ));
+    } else {
+        const frameMode: "t2v" | "i2v" = images.length > 0 ? "i2v" : "t2v";
+        mode = frameMode;
+        model = frameMode === "i2v" ? config.i2vModel : config.t2vModel;
+        const frames =
+            images.length > 0 ? await Promise.all(images.map(toDataUri)) : [];
+        input = config.buildInput(frameMode, prompt, safeParams, frames);
+        requestedDuration = config.resolveDuration(safeParams);
+    }
 
     logOps(`${config.displayName} (${mode}) input:`, {
         ...input,
@@ -221,6 +305,12 @@ async function generateWanVideo(
         first_frame: input.first_frame ? "[data uri]" : undefined,
         last_image: input.last_image ? "[data uri]" : undefined,
         last_frame: input.last_frame ? "[data uri]" : undefined,
+        reference_images: input.reference_images
+            ? `[${(input.reference_images as string[]).length} urls]`
+            : undefined,
+        reference_videos: input.reference_videos
+            ? `[${(input.reference_videos as string[]).length} urls]`
+            : undefined,
     });
 
     let videoUrl: string;

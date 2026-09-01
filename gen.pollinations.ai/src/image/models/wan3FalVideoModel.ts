@@ -10,6 +10,8 @@ const WAN_3_TEXT_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/text-to-video";
 const WAN_3_IMAGE_ENDPOINT =
     "https://queue.fal.run/alibaba/wan-3.0-prime/image-to-video";
+const WAN_3_R2V_ENDPOINT =
+    "https://queue.fal.run/alibaba/wan-3.0-prime/reference-to-video";
 const WAN_3_DURATION_SECONDS = 5;
 const WAN_3_TIMEOUT_MS = 5 * 60 * 1000;
 const WAN_3_POLL_INTERVAL_MS = 2_000;
@@ -60,30 +62,87 @@ export async function callWan3FalAPI(
         throw new HttpError("Wan 3.0 supports exactly 5 seconds", 400);
     }
 
-    const startImage = safeParams.image[0];
-    const endpoint = startImage ? WAN_3_IMAGE_ENDPOINT : WAN_3_TEXT_ENDPOINT;
-    const deadline = Date.now() + WAN_3_TIMEOUT_MS;
-    const authorization = { Authorization: `Key ${apiKey}` };
-    const submissionResponse = await fetchUpstream(endpoint, {
-        method: "POST",
-        headers: { ...authorization, "Content-Type": "application/json" },
-        body: JSON.stringify({
+    const images = safeParams.image ?? [];
+    const hasReference =
+        (safeParams.reference_images?.length ?? 0) > 0 ||
+        (safeParams.reference_videos?.length ?? 0) > 0 ||
+        (safeParams.reference_audios?.length ?? 0) > 0;
+
+    if (images.length > 0 && hasReference) {
+        throw new HttpError(
+            "Frame inputs (image[]) and reference media (reference_images, reference_videos, reference_audios) cannot be combined.",
+            400,
+        );
+    }
+
+    // Fal's Prime routes share the same per-second rate per resolution, so
+    // only the endpoint and input fields differ across T2V / I2V / R2V.
+    let endpoint: string;
+    let body: Record<string, unknown>;
+    if (hasReference) {
+        endpoint = WAN_3_R2V_ENDPOINT;
+        body = {
             prompt,
             resolution: safeParams.resolution ?? "480p",
-            aspect_ratio: startImage
-                ? "adaptive"
-                : closestRatioLogSpace(
-                      safeParams.width,
-                      safeParams.height,
-                      WAN_3_ASPECT_RATIOS,
-                  ),
+            aspect_ratio: closestRatioLogSpace(
+                safeParams.width,
+                safeParams.height,
+                WAN_3_ASPECT_RATIOS,
+            ),
             duration,
             audio: safeParams.audio,
             enable_prompt_expansion: true,
             enable_safety_checker: true,
             seed: safeParams.seed,
-            ...(startImage ? { start_image_url: startImage } : {}),
-        }),
+            ...(safeParams.reference_images?.length
+                ? { reference_image_urls: safeParams.reference_images }
+                : {}),
+            ...(safeParams.reference_videos?.length
+                ? { reference_video_urls: safeParams.reference_videos }
+                : {}),
+            ...(safeParams.reference_audios?.length
+                ? { reference_audio_urls: safeParams.reference_audios }
+                : {}),
+        };
+    } else if (images.length > 0) {
+        endpoint = WAN_3_IMAGE_ENDPOINT;
+        body = {
+            prompt,
+            resolution: safeParams.resolution ?? "480p",
+            aspect_ratio: "adaptive",
+            duration,
+            audio: safeParams.audio,
+            enable_prompt_expansion: true,
+            enable_safety_checker: true,
+            seed: safeParams.seed,
+            start_image_url: images[0],
+            // Wan 3.0 end-frame control via image[1].
+            ...(images[1] ? { end_image_url: images[1] } : {}),
+        };
+    } else {
+        endpoint = WAN_3_TEXT_ENDPOINT;
+        body = {
+            prompt,
+            resolution: safeParams.resolution ?? "480p",
+            aspect_ratio: closestRatioLogSpace(
+                safeParams.width,
+                safeParams.height,
+                WAN_3_ASPECT_RATIOS,
+            ),
+            duration,
+            audio: safeParams.audio,
+            enable_prompt_expansion: true,
+            enable_safety_checker: true,
+            seed: safeParams.seed,
+        };
+    }
+
+    const deadline = Date.now() + WAN_3_TIMEOUT_MS;
+    const authorization = { Authorization: `Key ${apiKey}` };
+    const submissionResponse = await fetchUpstream(endpoint, {
+        method: "POST",
+        headers: { ...authorization, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
         signal: AbortSignal.timeout(remainingTime(deadline)),
         errorLabel: "Wan 3.0 submission failed",
     });

@@ -48,6 +48,7 @@ import INTRODUCTION_MD from "../docs/introduction.md?raw";
 import MCP_MD from "../docs/mcp.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
+import OPENCODE_HARNESS_MD from "../docs/opencode-harness.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
 import QUICK_START_MD from "../docs/quick-start.md?raw";
 import SAFETY_MD from "../docs/safety.md?raw";
@@ -78,6 +79,7 @@ const DOC_TAGS = {
     embeddings: "Embeddings",
     models: "Models",
     quests: "Quests",
+    opencodeHarness: "OpenCode Harness",
     mediaStorage: "Media Storage",
     account: "Account",
     publicStats: "Public Stats",
@@ -204,6 +206,7 @@ const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
 const CODING_HARNESSES_DOCS = stripLeadingHeading(CODING_HARNESSES_MD.trim());
+const OPENCODE_HARNESS_DOCS = stripLeadingHeading(OPENCODE_HARNESS_MD.trim());
 
 // Dynamic registry values get injected into the markdown via {{PLACEHOLDER}}
 // substitution. The placeholders live in the .md files so the prose stays in
@@ -568,6 +571,10 @@ function generationDocumentation(): OpenApiSchema {
             {
                 name: DOC_TAGS.codingHarnesses,
                 description: CODING_HARNESSES_DOCS,
+            },
+            {
+                name: DOC_TAGS.opencodeHarness,
+                description: OPENCODE_HARNESS_DOCS,
             },
             {
                 name: DOC_TAGS.mcpServers,

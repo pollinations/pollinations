@@ -9,6 +9,7 @@ import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
@@ -45,6 +46,20 @@ export type ModelVariables = {
     };
     formData?: FormData;
 };
+
+/** Required checks for every provider this request may reach. */
+export function getRequiredSafetyFeatures(
+    model: ModelVariables["model"] | undefined,
+): SafetyFeature[] {
+    const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
+    for (const fallback of model?.fallbackEntries ?? []) {
+        for (const feature of fallback.definition.requiredSafetyFeatures ??
+            []) {
+            features.add(feature);
+        }
+    }
+    return [...features].sort();
+}
 
 type ResolveModelOptions = {
     defaultModel?: string;

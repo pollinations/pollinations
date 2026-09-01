@@ -9,6 +9,7 @@ import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
+import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type AgentFormState,
     type AgentListingDetailsPayload,
@@ -60,6 +61,7 @@ export function AgentDialog({
                 ? {
                       systemPrompt: agent.systemPrompt,
                       baseModel: agent.baseModel,
+                      requiredSafetyFeatures: agent.requiredSafetyFeatures,
                       mcpServers: agent.mcpServers,
                   }
                 : emptyAgentForm),
@@ -143,6 +145,17 @@ export function AgentDialog({
                             setForm((current) => ({
                                 ...current,
                                 [key]: value,
+                            }))
+                        }
+                    />
+
+                    <SafetyFeatureSelector
+                        value={form.requiredSafetyFeatures}
+                        disabled={isSubmitting}
+                        onChange={(requiredSafetyFeatures) =>
+                            setForm((current) => ({
+                                ...current,
+                                requiredSafetyFeatures,
                             }))
                         }
                     />

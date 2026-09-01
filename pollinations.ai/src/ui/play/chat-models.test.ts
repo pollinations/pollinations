@@ -2,13 +2,15 @@ import type { ModelInfo } from "@pollinations/sdk";
 import { describe, expect, it } from "vitest";
 import {
     AUTO_ROUTING,
+    agentActivity,
     agentChoices,
+    applyAgentEvent,
+    applyOpenAIToolCallDelta,
     arrayBufferToBase64,
     audioFormat,
     buildUserContent,
     compactRouting,
     conversationForRequest,
-    extractAgentActivity,
     extractStreamedMedia,
     fileKind,
     routingChoices,
@@ -234,7 +236,7 @@ describe("chat conversation history", () => {
 });
 
 describe("streamed media rendering", () => {
-    it("extracts and deduplicates generated media while preserving normal links", () => {
+    it("shows only generated media and deduplicates repeated assets", () => {
         const result = extractStreamedMedia(
             "Here is it.\n\n![flower](https://media.test/flower.png?x=1)\n" +
                 "[video](https://media.test/demo.mp4)\n" +
@@ -254,9 +256,7 @@ describe("streamed media rendering", () => {
                 label: "video",
             },
         ]);
-        expect(result.markdown).toContain("[docs](https://docs.test/guide)");
-        expect(result.markdown).not.toContain("flower.png");
-        expect(result.markdown).not.toContain("demo.mp4");
+        expect(result.markdown).toBe("");
     });
 
     it("does not embed unsafe or unfinished links", () => {
@@ -271,7 +271,7 @@ describe("streamed media rendering", () => {
     it("recognizes labelled extensionless Pollinations media links", () => {
         expect(
             extractStreamedMedia(
-                "[video](https://media.pollinations.ai/generated-video-id)",
+                "[video](<https://media.pollinations.ai/generated-video-id>)",
             ),
         ).toEqual({
             markdown: "",
@@ -284,35 +284,145 @@ describe("streamed media rendering", () => {
             ],
         });
     });
-});
 
-describe("agent activity rendering", () => {
-    it("extracts the exact managed-agent tool name from response content", () => {
-        expect(
-            extractAgentActivity(
-                '<details type="tool_calls" done="true" id="call-1" name="transcribeAudio" arguments="{}">\n' +
-                    "<summary>Tool Executed</summary>\nhello\n</details>\n\nThe audio says hello.",
-            ),
-        ).toEqual({
-            activity: "transcribeAudio",
-            content: "The audio says hello.",
+    it("does not guess media types from bare prose URLs", () => {
+        const markdown = "Video URL: https://media.pollinations.ai/video-id";
+        expect(extractStreamedMedia(markdown)).toEqual({
+            markdown,
+            media: [],
         });
     });
 
-    it("uses the latest tool name and preserves ordinary details", () => {
-        const result = extractAgentActivity(
-            "<details><summary>Read more</summary>Keep me</details>\n\n" +
-                '<details name="web_search_exa" type="tool_calls"><summary>Tool Executed</summary>one</details>\n\n' +
-                '<details type="tool_calls" name="bash"><summary>Tool Executed</summary>two</details>',
-        );
+    it("keeps ordinary links when the answer contains no media", () => {
+        const markdown = "Read [the docs](https://docs.pollinations.ai/guide).";
+        expect(extractStreamedMedia(markdown)).toEqual({
+            markdown,
+            media: [],
+        });
+    });
+});
 
-        expect(result.activity).toBe("bash");
-        expect(result.content).toContain("Read more");
-        expect(result.content).not.toContain("Tool Executed");
+describe("structured agent events", () => {
+    const message = {
+        id: "assistant-1",
+        role: "assistant" as const,
+        content: "",
+        status: "streaming" as const,
+    };
+
+    it("tracks parallel tools by call ID and removes completed work", () => {
+        const searching = applyAgentEvent(message, {
+            type: "tool.started",
+            call_id: "search-1",
+            name: "searchWeb",
+        });
+        const transcribing = applyAgentEvent(searching, {
+            type: "tool.started",
+            call_id: "audio-1",
+            name: "transcribeAudio",
+        });
+        const completed = applyAgentEvent(transcribing, {
+            type: "tool.completed",
+            call_id: "audio-1",
+            name: "transcribeAudio",
+        });
+
+        expect(agentActivity(transcribing)).toBe("transcribeAudio");
+        expect(agentActivity(completed)).toBe("searchWeb");
+        expect(completed.activities).toEqual([
+            { callId: "search-1", name: "searchWeb", status: "running" },
+        ]);
     });
 
-    it("leaves unfinished tool markup untouched until the event is complete", () => {
-        const content = '<details type="tool_calls" name="web_search"';
-        expect(extractAgentActivity(content)).toEqual({ content });
+    it("records a failed tool without exposing its arguments or output", () => {
+        const failed = applyAgentEvent(message, {
+            type: "tool.failed",
+            call_id: "audio-1",
+            name: "transcribeAudio",
+        });
+
+        expect(agentActivity(failed)).toBe("transcribeAudio failed");
+    });
+
+    it("uses standard OpenAI tool-call deltas as activity feedback", () => {
+        const active = applyOpenAIToolCallDelta(message, {
+            index: 0,
+            id: "call-1",
+            type: "function",
+            function: { name: "generateImage", arguments: "" },
+        });
+        const duplicate = applyOpenAIToolCallDelta(active, {
+            index: 0,
+            id: "call-1",
+            function: { name: "generateImage", arguments: '{"prompt":' },
+        });
+
+        expect(agentActivity(active)).toBe("generateImage");
+        expect(duplicate.activities).toEqual(active.activities);
+    });
+
+    it("keeps candidates separate and renders only finalized resources", () => {
+        const candidateEvent = {
+            type: "resource.created" as const,
+            call_id: "video-1",
+            url: "https://media.pollinations.ai/video-1",
+            kind: "video" as const,
+            media_type: "video/mp4",
+            name: "Generated video",
+        };
+        const withCandidate = applyAgentEvent(message, candidateEvent);
+        const duplicateCandidate = applyAgentEvent(
+            withCandidate,
+            candidateEvent,
+        );
+        const finalized = applyAgentEvent(duplicateCandidate, {
+            ...candidateEvent,
+            type: "resource.finalized",
+        });
+
+        expect(duplicateCandidate.media).toBeUndefined();
+        expect(duplicateCandidate.resourceCandidates).toEqual([
+            {
+                callId: "video-1",
+                kind: "video",
+                url: "https://media.pollinations.ai/video-1",
+                label: "Generated video",
+                mediaType: "video/mp4",
+            },
+        ]);
+        expect(finalized.media).toEqual([
+            {
+                kind: "video",
+                url: "https://media.pollinations.ai/video-1",
+                label: "Generated video",
+            },
+        ]);
+    });
+
+    it("accepts a finalized resource without a preceding candidate event", () => {
+        const finalized = applyAgentEvent(message, {
+            type: "resource.finalized",
+            call_id: "audio-1",
+            url: "https://media.pollinations.ai/audio-1",
+            kind: "audio",
+        });
+
+        expect(finalized.media).toEqual([
+            {
+                kind: "audio",
+                url: "https://media.pollinations.ai/audio-1",
+            },
+        ]);
+    });
+
+    it("rejects non-HTTPS resources", () => {
+        expect(
+            applyAgentEvent(message, {
+                type: "resource.created",
+                call_id: "video-1",
+                url: "javascript:alert(1)",
+                kind: "video",
+            }),
+        ).toBe(message);
     });
 });

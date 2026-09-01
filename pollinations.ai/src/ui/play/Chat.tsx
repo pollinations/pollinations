@@ -52,7 +52,10 @@ import {
 import {
     type AgentChoice,
     AUTO_ROUTING,
+    agentActivity,
     agentChoices,
+    applyAgentEvent,
+    applyOpenAIToolCallDelta,
     arrayBufferToBase64,
     audioFormat,
     buildUserContent,
@@ -60,7 +63,6 @@ import {
     type ChatMessageState,
     compactRouting,
     conversationForRequest,
-    extractAgentActivity,
     extractStreamedMedia,
     fileKind,
     type RenderedMedia,
@@ -590,9 +592,20 @@ function MessageCard({
     const rawText = textContent(message);
     const rendered =
         message.role === "assistant"
-            ? extractStreamedMedia(rawText)
+            ? message.media?.length
+                ? { markdown: "", media: message.media }
+                : extractStreamedMedia(rawText)
             : { markdown: rawText, media: [] };
     const isUser = message.role === "user";
+    const activity = agentActivity(message);
+    const displayedMarkdown =
+        message.status === "streaming" && !isUser ? "" : rendered.markdown;
+    const showArticle =
+        isUser ||
+        Boolean(displayedMarkdown) ||
+        message.attachments.length > 0 ||
+        message.status !== "complete" ||
+        canRetry;
 
     return (
         <div
@@ -602,75 +615,79 @@ function MessageCard({
             )}
             aria-busy={message.status === "streaming"}
         >
-            <article
-                className={cn(
-                    "flex max-w-full min-w-0 flex-col gap-3 rounded-xl px-4 py-3",
-                    isUser
-                        ? "bg-theme-bg-active text-theme-text-strong"
-                        : "bg-surface-opaque text-theme-text-base shadow-well",
-                )}
-            >
-                {isUser ? (
-                    <Text
-                        as="div"
-                        size="xs"
-                        tone="muted"
-                        weight="bold"
-                        className="uppercase tracking-wide"
-                    >
-                        You
-                    </Text>
-                ) : (
-                    <RobotIcon className="h-4 w-4 text-theme-text-strong" />
-                )}
-                {isUser
-                    ? rendered.markdown && (
-                          <p className="whitespace-pre-wrap break-words">
-                              {rendered.markdown}
-                          </p>
-                      )
-                    : rendered.markdown && (
-                          <Markdown>{rendered.markdown}</Markdown>
-                      )}
-                {message.attachments.length > 0 && (
-                    <div className="grid gap-3 sm:grid-cols-2">
-                        {message.attachments.map((attachment) => (
-                            <AttachmentView
-                                key={attachment.id}
-                                attachment={attachment}
-                            />
-                        ))}
-                    </div>
-                )}
-                {message.status === "streaming" &&
-                    (message.activity || !rawText) && (
-                        <Text size="sm" tone="muted">
-                            {message.activity ||
-                                `${assistantName} is thinking…`}
+            {showArticle && (
+                <article
+                    className={cn(
+                        "flex max-w-full min-w-0 flex-col gap-3 rounded-xl px-4 py-3",
+                        isUser
+                            ? "bg-theme-bg-active text-theme-text-strong"
+                            : "bg-surface-opaque text-theme-text-base shadow-well",
+                    )}
+                >
+                    {isUser ? (
+                        <Text
+                            as="div"
+                            size="xs"
+                            tone="muted"
+                            weight="bold"
+                            className="uppercase tracking-wide"
+                        >
+                            You
+                        </Text>
+                    ) : (
+                        <RobotIcon className="h-4 w-4 text-theme-text-strong" />
+                    )}
+                    {isUser
+                        ? displayedMarkdown && (
+                              <p className="whitespace-pre-wrap break-words">
+                                  {displayedMarkdown}
+                              </p>
+                          )
+                        : displayedMarkdown && (
+                              <Markdown>{displayedMarkdown}</Markdown>
+                          )}
+                    {message.attachments.length > 0 && (
+                        <div className="grid gap-3 sm:grid-cols-2">
+                            {message.attachments.map((attachment) => (
+                                <AttachmentView
+                                    key={attachment.id}
+                                    attachment={attachment}
+                                />
+                            ))}
+                        </div>
+                    )}
+                    {message.status === "streaming" && (
+                        <Text
+                            size="sm"
+                            tone="muted"
+                            className={cn(!activity && "animate-pulse")}
+                        >
+                            {activity || "Working…"}
                         </Text>
                     )}
-                {message.status === "cancelled" && (
-                    <Text size="xs" tone="muted">
-                        Stopped
-                    </Text>
-                )}
-                {message.status === "error" && (
-                    <Alert intent="danger" title="Response interrupted">
-                        {message.error ||
-                            `${assistantName} could not finish this response.`}
-                    </Alert>
-                )}
-                {canRetry && (
-                    <Button
-                        type="button"
-                        size="sm"
-                        onClick={onRetry}
-                        className="self-start"
-                    >
-                        Retry
-                    </Button>
-                )}
-            </article>
+                    {message.status === "cancelled" && (
+                        <Text size="xs" tone="muted">
+                            Stopped
+                        </Text>
+                    )}
+                    {message.status === "error" && (
+                        <Alert intent="danger" title="Response interrupted">
+                            {message.error ||
+                                `${assistantName} could not finish this response.`}
+                        </Alert>
+                    )}
+                    {canRetry && (
+                        <Button
+                            type="button"
+                            size="sm"
+                            onClick={onRetry}
+                            className="self-start"
+                        >
+                            Retry
+                        </Button>
+                    )}
+                </article>
+            )}
             {rendered.media.length > 0 && (
                 <div className="flex flex-col gap-3">
                     {rendered.media.map((media) => (
@@ -970,10 +987,8 @@ export function Chat() {
     ) {
         if (!client || !selectedAgent) return;
         let accumulated = "";
-        let visibleContent = "";
-        let activity: string | undefined;
         try {
-            for await (const chunk of client.chatStream(
+            for await (const streamEvent of client.chatEventStream(
                 conversationForRequest(history),
                 {
                     model: selectedAgent.id,
@@ -984,42 +999,63 @@ export function Chat() {
                     signal: controller.signal,
                 },
             )) {
-                const delta = chunk.choices[0]?.delta;
-                if (!delta || requestIdRef.current !== assistantId) continue;
-                const toolActivity = delta.tool_calls
-                    ?.map((toolCall) => toolCall.function?.name?.trim())
-                    .findLast((name): name is string => Boolean(name));
-                if (toolActivity) activity = toolActivity;
-                if (delta.content) accumulated += delta.content;
-                const extracted = extractAgentActivity(accumulated);
-                if (extracted.activity) activity = extracted.activity;
-                if (extracted.content !== visibleContent) {
-                    visibleContent = extracted.content;
-                    if (visibleContent) activity = undefined;
+                if (requestIdRef.current !== assistantId) continue;
+                if (streamEvent.type === "agent") {
+                    setMessages((current) =>
+                        current.map((message) =>
+                            message.id === assistantId
+                                ? {
+                                      ...message,
+                                      ...applyAgentEvent(
+                                          message,
+                                          streamEvent.event,
+                                      ),
+                                  }
+                                : message,
+                        ),
+                    );
+                    continue;
                 }
-                if (!toolActivity && !delta.content) continue;
+                const chunk = streamEvent.chunk;
+                const delta = chunk.choices[0]?.delta;
+                if (!delta) continue;
+                if (delta.tool_calls?.length) {
+                    setMessages((current) =>
+                        current.map((message) => {
+                            if (message.id !== assistantId) return message;
+                            const activityState = delta.tool_calls?.reduce(
+                                applyOpenAIToolCallDelta,
+                                message,
+                            );
+                            return activityState
+                                ? {
+                                      ...message,
+                                      activities: activityState.activities,
+                                  }
+                                : message;
+                        }),
+                    );
+                }
+                if (delta.content) accumulated += delta.content;
+                if (!delta.content) continue;
                 setMessages((current) =>
                     current.map((message) =>
                         message.id === assistantId
                             ? {
                                   ...message,
-                                  content: visibleContent,
-                                  activity,
+                                  content: accumulated,
                               }
                             : message,
                     ),
                 );
             }
-            const agentError = accumulated
-                .trim()
-                .match(/^\[error:\s*(.+)]$/s)?.[1];
             setMessages((current) =>
                 current.map((message) =>
                     message.id === assistantId
                         ? {
                               ...message,
-                              status: agentError ? "error" : "complete",
-                              error: agentError,
+                              status: "complete",
+                              activities: [],
                           }
                         : message,
                 ),
@@ -1029,12 +1065,18 @@ export function Chat() {
             setMessages((current) =>
                 current.flatMap((message) => {
                     if (message.id !== assistantId) return [message];
-                    if (cancelled && !textContent(message)) return [];
+                    if (
+                        cancelled &&
+                        !textContent(message) &&
+                        !message.media?.length
+                    )
+                        return [];
                     return [
                         {
                             ...message,
                             status: cancelled ? "cancelled" : "error",
                             error: cancelled ? undefined : errorMessage(caught),
+                            activities: [],
                         },
                     ];
                 }),
@@ -1464,9 +1506,12 @@ export function Chat() {
                                     intent="danger"
                                     size="lg"
                                     type="button"
+                                    aria-label="Stop generation"
+                                    title="Stop generation"
+                                    className="h-12 w-12 shrink-0 p-0"
                                     onClick={() => abortRef.current?.abort()}
                                 >
-                                    Stop
+                                    <XIcon className="h-5 w-5" />
                                 </Button>
                             ) : !isHydrated ? (
                                 <Button

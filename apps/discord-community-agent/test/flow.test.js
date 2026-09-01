@@ -7,7 +7,12 @@
  */
 
 import assert from "node:assert/strict";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -237,7 +242,9 @@ test("429 responses are retried and honor the Retry-After header", async (t) => 
             return {
                 ok: false,
                 status: 429,
-                headers: { get: (name) => (name === "retry-after" ? "0" : null) },
+                headers: {
+                    get: (name) => (name === "retry-after" ? "0" : null),
+                },
                 json: async () => ({ error: "rate limited" }),
             };
         }
@@ -330,10 +337,7 @@ test("token store encrypts at rest when TOKEN_STORE_SECRET is set", async (t) =>
     assert.equal(reopened.get("discord-user-1"), "sk_secret_user_key");
 
     // No temp files are left behind by the atomic write.
-    assert.deepEqual(
-        [...import.meta.glob ?? []], // placeholder-free: checked below via fs
-        [...import.meta.glob ?? []],
-    );
+    assert.deepEqual(readdirSync(dir).filter((f) => f.endsWith(".tmp")), []);
 });
 
 test("token store without a secret stays plaintext and refuses encrypted files", async (t) => {

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14312,
+  "title": "feat: add Mercury 2.5 Preview",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14312",
+  "merged_at": "2026-09-01T22:30:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical `inception/mercury-2.5-preview` as paid-only with multiplier `1`; no aliases, Pollinations GPU, or fallback.\n- Pins OpenRouter to Inception with provider fallback disabled and the exact upstream route. Keeps the existing `mercury` model unchanged.\n- Bills the live route rates: $0.04/M prompt, $0.004/M cached prompt, and $0.15/M completion. Inception Direct does not currently expose Mercury 2.5.\n- Adds reasoning/tool/cache-control routing coverage, effective-price snapshot, and the canonical row in `MODEL_SLUGS.md`.\n- Verified direct and local E2E: text, multi-turn, tools, structured output, streaming, native route, malformed input, 10-request burst, cache replay, one wallet debit, and one reconciled Tinybird event. OpenRouter did not report a prompt-cache hit in repeated-prefix probes.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Mercury gets a new orbit",
+    "blurb": "Mercury 2.5 Preview has landed on the text API, routed straight to Inception through OpenRouter. Polli checked the tools, streaming, structured output, cache controls, and the wallet ledger; the little bee enjoys a complete test matrix.",
+    "summary": "Added the paid-only canonical text model `inception/mercury-2.5-preview`, pinned to Inception's exact OpenRouter route with provider fallback disabled and live billing rates of $0.04/M prompt, $0.004/M cached prompt, and $0.15/M completion.",
+    "impact": "Developers can now call Mercury 2.5 Preview for chat, multi-turn conversations, reasoning, tools, structured output, and streaming while keeping the existing `mercury` model unchanged.",
+    "keywords": [
+      "mercury-2.5-preview",
+      "inception",
+      "openrouter",
+      "text-api",
+      "reasoning",
+      "tool-calling",
+      "streaming"
+    ],
+    "visual_concept": "Depict Mercury 2.5 Preview as a small friendly silver pixel planet or polished orbital terminal with a clearly marked Inception route, surrounded by neat glowing message packets representing tools, reasoning, structured output, and streaming. Polli, wearing tiny astronomer goggles, hovers beside a retro terminal and carefully charts the planet's single direct route; small code-plants and flowers make the technical observatory feel like a garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular blush, black oval eyes, light blue wings, and tiny astronomer goggles, tending a small garden observatory around a friendly silver pixel planet labeled \"MERCURY 2.5\"; a retro terminal glows with one clear route to an \"INCEPTION\" star while little tool, stream, and code icons orbit nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14312.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular blush, black oval eyes, light blue wings, and tiny astronomer goggles, tending a small garden observatory around a friendly silver pixel planet labeled \"MERCURY 2.5\"; a retro terminal glows with one clear route to an \"INCEPTION\" star while little tool, stream, and code icons orbit nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T22:31:31.451452+00:00"
+}

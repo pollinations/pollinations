@@ -1,0 +1,34 @@
+{
+  "pr_number": 14241,
+  "title": "fix: delay community model unhiding",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14241",
+  "merged_at": "2026-09-01T03:20:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Applies the existing 12-hour publication delay to owner-triggered unhiding of public community models\n- Keeps private model unhiding immediate and preserves monitor-managed recovery\n- Restores the monitor recovery eligibility window to one hour\n- Adds focused integration coverage for before and after the deadline\n\nTest: `npx vitest run test/integration/community-endpoint-price-delay.test.ts` (12 passed)",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden waits twelve hours",
+    "blurb": "Public community models now take the same 12-hour scenic route when their owners unhide them. Private models can still pop back out immediately, while the monitor keeps its one-hour rescue window.",
+    "summary": "Owner-triggered unhiding of public community models now respects the existing 12-hour publication delay, while private-model unhiding remains immediate and monitor-managed recovery remains eligible for one hour.",
+    "impact": "Community model visibility now behaves consistently around the 12-hour publication deadline, with immediate private recovery and a focused one-hour automated recovery path preserved.",
+    "keywords": [
+      "community-models",
+      "publication-delay",
+      "visibility",
+      "community-endpoints",
+      "monitor-recovery",
+      "integration-tests"
+    ],
+    "visual_concept": "Depict a cozy community-model garden with a public flower bed behind a friendly gate and a large pixel clock set to 12 hours, while a smaller private flower bed has an open gate. Polli, wearing a tiny gardener's hat and holding a clipboard, observes the scheduled bloom; the CRT monitor robot tends a small recovery plant beside a one-hour timer, representing the preserved monitor recovery window.",
+    "image_prompt": "A cozy pixel art garden scene where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener's hat and watches a public code-flower garden behind a sign reading “12H,” while a private garden gate is already open and a cute CRT-monitor robot carefully waters a recovery sprout beside a “1H” timer. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14241.jpg",
+    "prompt": "A cozy pixel art garden scene where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny gardener's hat and watches a public code-flower garden behind a sign reading “12H,” while a private garden gate is already open and a cute CRT-monitor robot carefully waters a recovery sprout beside a “1H” timer. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T03:21:37.220215+00:00"
+}

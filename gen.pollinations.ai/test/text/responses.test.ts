@@ -10,7 +10,9 @@ import {
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
 import { validateDirectResponsesRequest } from "@/text/responses/request.ts";
-import { requireResponsesStreamUsage } from "@/text/responses/stream.ts";
+import { createResponsesStreamUsageValidator } from "@/text/responses/stream.ts";
+
+const encoder = new TextEncoder();
 
 function request(
     overrides: Partial<CreateResponseRequest> = {},
@@ -193,36 +195,26 @@ describe("direct Responses transport", () => {
         expect(upstream).not.toContain("[DONE]");
     });
 
-    it("fails a Responses stream whose terminal event omits usage", async () => {
+    it("fails a Responses stream whose terminal event omits usage", () => {
         const upstream =
             'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n' +
             'event: response.completed\ndata: {"type":"response.completed","response":{"object":"response","model":"qwen/qwen3.7-plus","status":"completed"}}\n\n';
-        const body = new Response(upstream).body;
-        if (!body) throw new Error("expected response body");
-        const reader = requireResponsesStreamUsage(body).getReader();
-        const closedError = reader.closed.catch((error) => error);
+        const validator = createResponsesStreamUsageValidator();
 
-        await expect(reader.read()).rejects.toThrow(
-            /omitted valid terminal usage/,
-        );
-        await expect(closedError).resolves.toThrow(
+        expect(() => validator.feed(encoder.encode(upstream))).toThrow(
             /omitted valid terminal usage/,
         );
     });
 
-    it("fails a Responses stream that ends without a terminal event", async () => {
-        const body = new Response(
-            'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n',
-        ).body;
-        if (!body) throw new Error("expected response body");
-        const reader = requireResponsesStreamUsage(body).getReader();
-        const closedError = reader.closed.catch((error) => error);
-
-        await expect(reader.read()).resolves.toMatchObject({ done: false });
-        await expect(reader.read()).rejects.toThrow(
-            /without a terminal usage event/,
+    it("fails a Responses stream that ends without a terminal event", () => {
+        const validator = createResponsesStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n',
+            ),
         );
-        await expect(closedError).resolves.toThrow(
+
+        expect(() => validator.finish()).toThrow(
             /without a terminal usage event/,
         );
     });

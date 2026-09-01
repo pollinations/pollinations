@@ -17,13 +17,7 @@ function eventType(value: unknown): string | undefined {
     return typeof type === "string" ? type : undefined;
 }
 
-/**
- * Preserve upstream SSE bytes while making the client body fail if the
- * provider ends without a terminal Responses event containing valid usage.
- */
-export function requireResponsesStreamUsage<Chunk extends Uint8Array>(
-    body: ReadableStream<Chunk>,
-): ReadableStream<Chunk> {
+export function createResponsesStreamUsageValidator() {
     const decoder = new TextDecoder();
     let terminalSeen = false;
     let validationError: ResponsesUsageError | undefined;
@@ -58,22 +52,41 @@ export function requireResponsesStreamUsage<Chunk extends Uint8Array>(
         },
     });
 
+    return {
+        feed(chunk: Uint8Array) {
+            parser.feed(decoder.decode(chunk, { stream: true }));
+            if (validationError) throw validationError;
+        },
+        finish() {
+            parser.feed(decoder.decode());
+            parser.reset({ consume: true });
+            if (validationError) throw validationError;
+            if (!terminalSeen) {
+                throw new ResponsesUsageError(
+                    "Responses provider ended without a terminal usage event",
+                );
+            }
+        },
+    };
+}
+
+/**
+ * Preserve upstream SSE bytes while making the client body fail if the
+ * provider ends without a terminal Responses event containing valid usage.
+ */
+export function requireResponsesStreamUsage<Chunk extends Uint8Array>(
+    body: ReadableStream<Chunk>,
+): ReadableStream<Chunk> {
+    const validator = createResponsesStreamUsageValidator();
+
     return body.pipeThrough(
         new TransformStream<Chunk, Chunk>({
             transform(chunk, controller) {
-                parser.feed(decoder.decode(chunk, { stream: true }));
-                if (validationError) throw validationError;
+                validator.feed(chunk);
                 controller.enqueue(chunk);
             },
             flush() {
-                parser.feed(decoder.decode());
-                parser.reset({ consume: true });
-                if (validationError) throw validationError;
-                if (!terminalSeen) {
-                    throw new ResponsesUsageError(
-                        "Responses provider ended without a terminal usage event",
-                    );
-                }
+                validator.finish();
             },
         }),
     );

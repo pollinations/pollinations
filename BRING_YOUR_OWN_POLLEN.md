@@ -146,8 +146,7 @@ fetch('https://gen.pollinations.ai/v1/chat/completions', {
 });
 ```
 
-See `apps/oauth-client-demo/` for a zero-dependency server-backed reference
-client and `apps/oauth-test/` for a browser-only reference.
+See `apps/oauth-client-demo/` for a browser-only reference with no proxy.
 
 ## ⚙️ Legacy Web Apps (Fragment Flow)
 

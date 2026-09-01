@@ -1,0 +1,35 @@
+{
+  "pr_number": 14250,
+  "title": "docs: add hosted MCP guide",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14250",
+  "merged_at": "2026-09-01T06:07:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extends the existing MCP guide with the hosted catalog and direct external-client setup\n- Documents Streamable HTTP, bearer authentication, SDK connection, and Pollen billing\n- Condenses tool, deployment, and reference sections without removing core capabilities",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "MCP, now less archaeological",
+    "blurb": "The MCP guide now maps the hosted catalog and the path in from external clients. Bring a bearer token; the tools are already awake.",
+    "summary": "Expanded the MCP README with hosted catalog discovery, Streamable HTTP and bearer-auth setup, SDK connection examples, and Pollen billing guidance while consolidating deployment and tool references.",
+    "impact": "Developers can connect external MCP clients to Pollinations' hosted tools with clearer authentication, transport, SDK, and billing instructions instead of excavating the setup from scattered sections.",
+    "keywords": [
+      "mcp",
+      "documentation",
+      "hosted catalog",
+      "streamable http",
+      "authentication",
+      "sdk",
+      "pollen"
+    ],
+    "visual_concept": "Polli acts as a tiny guide with a map and explorer hat, leading the eager CRT Monitor Robot from an external laptop through a friendly garden gate labeled MCP toward a cozy hosted-tool catalog terminal. Streamable HTTP is represented by a gentle glowing river or pipeline connecting the client and catalog, with a small bearer-token key and Pollen flowers growing nearby.",
+    "image_prompt": "A cozy pixel art garden guide scene: Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny explorer hat, points at a hosted MCP catalog terminal while a cheerful CRT-monitor robot connects an external laptop through a glowing Streamable HTTP path; a small bearer-token key and Pollen flowers sit beside the route. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, pixel-font text: \"MCP GUIDE\", retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14250.jpg",
+    "prompt": "A cozy pixel art garden guide scene: Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny explorer hat, points at a hosted MCP catalog terminal while a cheerful CRT-monitor robot connects an external laptop through a glowing Streamable HTTP path; a small bearer-token key and Pollen flowers sit beside the route. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, pixel-font text: \"MCP GUIDE\", retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T06:08:14.208456+00:00"
+}

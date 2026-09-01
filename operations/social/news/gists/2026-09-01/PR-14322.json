@@ -1,0 +1,33 @@
+{
+  "pr_number": 14322,
+  "title": "fix: clarify canonical model identity policy",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14322",
+  "merged_at": "2026-09-01T23:16:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Defines canonical public IDs as lowercase `<publisher-slug>/<official-model-slug>` while keeping provider deployment IDs internal.\n- Adds aliases only for an existing compatibility contract or explicit approval.\n- Keeps brand-new models out of `MODEL_SLUGS.md`; that file is only for historical public-ID renames.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Names in the seed ledger",
+    "blurb": "The model garden got a clearer labeling rule: public names stay canonical, while provider deployment plumbing remains underground.",
+    "summary": "Updated the model-management skill to define public model IDs as lowercase `<publisher-slug>/<official-model-slug>`, reserve aliases for approved compatibility contracts, and limit `MODEL_SLUGS.md` to historical public-ID renames.",
+    "impact": "Future model additions get consistent canonical API identities while provider-specific deployment IDs remain internal and compatibility aliases stay deliberate.",
+    "keywords": [
+      "model-management",
+      "canonical-ids",
+      "model-aliases",
+      "api-policy",
+      "internal-tooling"
+    ],
+    "visual_concept": "Polli acts as a careful garden librarian, attaching neat canonical name tags to model-seed packets while tangled provider deployment labels are stored in a small back-room drawer. A tiny code-plant garden and a glowing retro terminal make the policy feel organized rather than bureaucratic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully labeling seed packets `<publisher>/<model>` beside a lime green (#ecf874) glowing retro terminal; provider deployment labels rest neatly in a small drawer behind her, with code-plants and pastel flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and orderly."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14322.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully labeling seed packets `<publisher>/<model>` beside a lime green (#ecf874) glowing retro terminal; provider deployment labels rest neatly in a small drawer behind her, with code-plants and pastel flowers growing nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, emotionally warm and orderly."
+  },
+  "generated_at": "2026-09-01T23:17:21.576603+00:00"
+}

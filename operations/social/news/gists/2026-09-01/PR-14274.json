@@ -1,0 +1,33 @@
+{
+  "pr_number": 14274,
+  "title": "fix: remove internal MCP quality copy",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14274",
+  "merged_at": "2026-09-01T10:55:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the internal code-quality note from the dashboard MCP list.\n- Keeps the user-facing connection and documentation guidance.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Less hive housekeeping",
+    "blurb": "The MCP dashboard list lost a note meant for the workshop, not the visitors. Connection steps and docs remain right where they belong.",
+    "summary": "Removed an internal code-quality note from the dashboard MCP server list while preserving the user-facing connection and documentation guidance.",
+    "impact": "Developers browsing MCP servers now get a cleaner list focused on connecting their tools and finding the relevant docs.",
+    "keywords": [
+      "mcp",
+      "dashboard",
+      "frontend",
+      "ux",
+      "cleanup"
+    ],
+    "visual_concept": "A tidy MCP connection board in a cozy garden hackerspace: Polli gently removes a small maintenance sticky note from a CRT terminal while the useful plug icon and documentation booklet remain clearly displayed. The scene represents internal workshop clutter being cleared away without disturbing the tools developers need.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carefully removes a small sticky note from an MCP connection board beside a glowing retro CRT terminal, while a plug icon and open documentation booklet stay in place among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14274.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carefully removes a small sticky note from an MCP connection board beside a glowing retro CRT terminal, while a plug icon and open documentation booklet stay in place among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T10:56:31.135833+00:00"
+}

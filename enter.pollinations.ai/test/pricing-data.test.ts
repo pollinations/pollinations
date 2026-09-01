@@ -1024,6 +1024,19 @@ test("OpenRouter models require paid balance", () => {
     }
 });
 
+test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
+    const definition = getRegistryModelDefinition("minimax-m2.7");
+
+    expect(definition.provider).toBe("openrouter");
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(1);
+    expect(definition.cost).toMatchObject({
+        promptTextTokens: 0.25 / 1e6,
+        promptCachedTokens: 0.05 / 1e6,
+        completionTextTokens: 1 / 1e6,
+    });
+});
+
 test("Step Flash uses DeepInfra's standard and cached token rates", () => {
     const definition = getRegistryModelDefinition("step-flash");
 

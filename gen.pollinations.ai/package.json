@@ -41,7 +41,7 @@
         "@logtape/logtape": "1.3.5",
         "@scalar/hono-api-reference": "0.9.32",
         "@smithy/fetch-http-handler": "^5.3.17",
-        "@weft-labs/sdk": "0.23.1",
+        "@weft-labs/sdk": "0.23.2",
         "@x402/core": "^2.24.0",
         "@x402/evm": "^2.24.0",
         "better-auth": "1.6.30",

@@ -26,19 +26,6 @@ interface Highlight {
 const PINNED_NEWS: Highlight[] = [
     {
         date: "2026-08-15",
-        dateLabel: "New quests",
-        emoji: "🌱",
-        title: "More ways for developers to earn Pollen",
-        description:
-            "Earn Quest Pollen when people use your apps or through your GitHub history.",
-        details: [
-            "Earn 15 Pollen for your first external Paid Pollen request and 15 Pollen when your apps reach ten external users.",
-            "GitHub accounts that are at least two years old can earn 3 Pollen.",
-            "Visit the [Quests tab](/quests) to see the new rewards and upcoming quests.",
-        ],
-    },
-    {
-        date: "2026-08-15",
         dateLabel: "Alpha",
         emoji: "🤖",
         title: "Build your own agents",
@@ -50,28 +37,20 @@ const PINNED_NEWS: Highlight[] = [
         ],
     },
     {
+        date: "2026-08-15",
+        dateLabel: "New quests",
+        emoji: "🌱",
+        title: "More ways to earn Pollen",
+        description:
+            "Earn 15 Pollen for your first external Paid Pollen request, 15 for reaching ten external app users, and 3 for an eligible two-year-old GitHub account. [View quests](/quests).",
+    },
+    {
         date: "2026-07-15",
         dateLabel: "Limited time",
         emoji: "☀️",
         title: "GPT-5.6 launch promotion",
         description:
-            "Try GPT-5.6 Sol, Terra, and Luna at half the provider price for a limited time.",
-        details: [
-            "Per 1M input/output tokens: Sol 2.50/15 Pollen, Terra 1.25/7.50 Pollen, Luna 0.50/3 Pollen.",
-            "Choose a GPT-5.6 model from the [Models tab](/models) and start building.",
-        ],
-    },
-    {
-        date: "2026-06-30",
-        dateLabel: "Now live",
-        emoji: "🎯",
-        title: "Quests are live",
-        description: "Earn Quest Pollen by completing dashboard quests.",
-        details: [
-            "New quests are available for onboarding, app growth, community, and GitHub contributions.",
-            "Open the [Quests tab](/quests) to see available rewards and claim completed quests.",
-            "Tiers have stopped; previous Tier Pollen is now Quest Pollen and balances stay unchanged.",
-        ],
+            "Try GPT-5.6 Sol, Terra, and Luna at half price for a limited time. [View models](/models).",
     },
     {
         date: "2026-06-30",
@@ -152,15 +131,47 @@ function formatNewsDate(date: string): string {
 
 /** Hand-curated, pinned announcements — stacked white cards. */
 export const Announcements: FC = () => {
-    if (PINNED_NEWS.length === 0) return null;
     return (
         <div className="flex flex-col gap-3">
+            <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
             ))}
         </div>
     );
 };
+
+const CanonicalModelSlugAnnouncement: FC = () => (
+    <Surface
+        id="canonical-model-slugs"
+        variant="card"
+        className="scroll-mt-4 leading-relaxed"
+    >
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+            Scheduled change · Sep 7, 2026 at 14:00 UTC
+        </div>
+        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
+            <span aria-hidden="true" className="shrink-0">
+                🧪
+            </span>
+            <span>We're standardizing model IDs</span>
+        </div>
+        <p className="mt-1 text-sm text-ink-700">
+            Model IDs will use the publisher and official model name—for
+            example, <code>flux</code> →{" "}
+            <code>black-forest-labs/flux.1-schnell</code>. You can use the new
+            IDs now. Existing IDs will keep working.
+        </p>
+        <a
+            href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
+        >
+            View all model ID changes →
+        </a>
+    </Surface>
+);
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);

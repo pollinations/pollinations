@@ -102,7 +102,7 @@ function zeroAudioBase64(byteLength: number): string {
     return btoa("\0".repeat(byteLength));
 }
 
-function mockRealtimeProvider(initialMessage?: string) {
+function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
     let upstreamRequest: Request | undefined;
     let upstreamClient: WebSocket | undefined;
     let upstreamServer: WebSocket | undefined;
@@ -119,7 +119,17 @@ function mockRealtimeProvider(initialMessage?: string) {
             }
             // checkBalance fetches the model-stats pipe for estimated pricing.
             if (request.url.includes("public_model_stats.json")) {
-                return Response.json({ data: [] });
+                return Response.json({
+                    data:
+                        estimatedCost > 0
+                            ? [
+                                  {
+                                      model: "gpt-realtime-2.1",
+                                      avg_cost_usd: estimatedCost,
+                                  },
+                              ]
+                            : [],
+                });
             }
 
             upstreamRequest = request;
@@ -193,6 +203,25 @@ async function getUserBalances(userId: string) {
     return user;
 }
 
+async function getApiKeyBalance(apiKeyId: string) {
+    const [row] = await drizzle(env.DB)
+        .select({ pollenBalance: apiKeyTable.pollenBalance })
+        .from(apiKeyTable)
+        .where(eq(apiKeyTable.id, apiKeyId));
+    return row?.pollenBalance;
+}
+
+async function waitForApiKeyBalanceAbove(apiKeyId: string, minBalance: number) {
+    for (let attempt = 0; attempt < 20; attempt++) {
+        const pollenBalance = await getApiKeyBalance(apiKeyId);
+        if (pollenBalance != null && pollenBalance > minBalance) {
+            return pollenBalance;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    return getApiKeyBalance(apiKeyId);
+}
+
 async function waitForPackBalanceBelow(userId: string, maxBalance: number) {
     for (let attempt = 0; attempt < 20; attempt++) {
         const user = await getUserBalances(userId);
@@ -216,16 +245,18 @@ async function waitForTinybirdRequests(
 
 async function openPaidRealtimeSession({
     name,
-    model = "gpt-realtime-2",
+    model = "gpt-realtime-2.1",
     referrer,
     initialProviderMessage,
     byopClientKeyId,
+    estimatedCost = 0,
 }: {
     name: string;
     model?: string;
     referrer?: string;
     initialProviderMessage?: string;
     byopClientKeyId?: string;
+    estimatedCost?: number;
 }) {
     const {
         key,
@@ -242,7 +273,10 @@ async function openPaidRealtimeSession({
             .set({ byopClientKeyId })
             .where(eq(apiKeyTable.id, apiKeyId));
     }
-    const upstream = mockRealtimeProvider(initialProviderMessage);
+    const upstream = mockRealtimeProvider(
+        initialProviderMessage,
+        estimatedCost,
+    );
     const headers: Record<string, string> = {
         Authorization: `Bearer ${key}`,
         Upgrade: "websocket",
@@ -445,7 +479,7 @@ test("proxies OpenAI-compatible realtime WebSockets on both public routes", asyn
 test("forwards the initial Azure session event after listeners are attached", async () => {
     const initialProviderMessage = JSON.stringify({
         type: "session.created",
-        session: { model: "gpt-realtime-2" },
+        session: { model: "gpt-realtime-2-1" },
     });
     const session = await openPaidRealtimeSession({
         name: "azure-realtime-initial-event-key",
@@ -1257,7 +1291,7 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
-    expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2");
+    expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2.1");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptText).toBe(200);
     expect(telemetry.tokenCountPromptCached).toBe(40);
@@ -1266,6 +1300,39 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.tokenCountCompletionText).toBe(100);
     expect(telemetry.tokenCountCompletionAudio).toBe(50);
     expect(telemetry.totalPrice).toBeCloseTo(expectedCharge, 8);
+});
+
+test("releases a realtime API key reservation when the session has no usage", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "unused-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    expect(await getApiKeyBalance(session.apiKeyId)).toBeCloseTo(0.8, 8);
+    await closeRealtimeSession(session);
+
+    expect(await waitForApiKeyBalanceAbove(session.apiKeyId, 0.9)).toBeCloseTo(
+        1,
+        8,
+    );
+});
+
+test("settles realtime usage against the API key reservation", async () => {
+    const session = await openPaidRealtimeSession({
+        name: "reserved-budgeted-realtime-key",
+        estimatedCost: 0.2,
+    });
+
+    const forwardedEvent = nextMessage(session.client);
+    session.upstream.server.send(cachedModalityUsageEvent);
+    await expect(forwardedEvent).resolves.toBe(cachedModalityUsageEvent);
+    await closeAndReadTelemetry(session);
+
+    const expectedCharge = 0.0023975 * 0.75;
+    expect(await waitForApiKeyBalanceAbove(session.apiKeyId, 0.9)).toBeCloseTo(
+        1 - expectedCharge,
+        7,
+    );
 });
 
 test("does not retry a partially completed realtime deduction", async () => {
@@ -1338,7 +1405,7 @@ test.each([
     const expectedCharge = expectedCost * 0.75;
     const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
-    expect(telemetry.resolvedModelRequested).toBe(model);
+    expect(telemetry.resolvedModelRequested).toBe("gpt-realtime-2.1");
     expect(telemetry.tokenCountPromptText).toBe(60);
     expect(telemetry.tokenCountPromptCached).toBe(60);
     expect(telemetry.tokenCountPromptAudio).toBe(70);
@@ -1559,13 +1626,12 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     };
     const realtimeModels = publicBody.data.filter((model) =>
         [
-            "gpt-realtime-2",
             "gpt-realtime-2.1",
             "gpt-realtime-2.1-mini",
             "gpt-live-transcribe",
         ].includes(model.id),
     );
-    expect(realtimeModels).toHaveLength(4);
+    expect(realtimeModels).toHaveLength(3);
     for (const model of realtimeModels) {
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
@@ -1592,8 +1658,13 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     const scribeRealtime = richModels.find(
         (model) => model.name === "scribe-realtime",
     );
+    expect(
+        richModels.find((model) => model.name === "gpt-realtime-2.1"),
+    ).toMatchObject({
+        aliases: ["openai/gpt-realtime-2.1", "gpt-realtime-2"],
+    });
     expect(scribeRealtime).toMatchObject({
-        aliases: [],
+        aliases: ["elevenlabs/scribe-v2-realtime"],
         brand: "ElevenLabs",
         title: "Scribe v2 Realtime",
         input_modalities: ["audio"],
@@ -1612,7 +1683,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
         (model) => model.name === "gpt-live-transcribe",
     );
     expect(gptLiveTranscribe).toMatchObject({
-        aliases: [],
+        aliases: ["openai/gpt-live-transcribe"],
         brand: "OpenAI",
         title: "GPT Live Transcribe",
         input_modalities: ["audio"],

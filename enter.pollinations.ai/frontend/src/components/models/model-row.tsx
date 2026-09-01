@@ -4,9 +4,11 @@ import {
     ClipboardIcon,
     CopyButton,
     cn,
+    RocketIcon,
     Surface,
     Tooltip,
 } from "@pollinations/ui";
+import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import type { FC, ReactNode } from "react";
 import { calculatePerPollen } from "./calculations.ts";
 import {
@@ -40,6 +42,22 @@ import {
     useModelPricingSelection,
 } from "./price-badge.tsx";
 import type { ModelPrice } from "./types.ts";
+
+function formatVideoDuration(model: ModelPrice): string | null {
+    if (model.allowedDurations?.length) {
+        const ds = [...model.allowedDurations].sort((a, b) => a - b);
+        if (ds.length === 1) return `${ds[0]}s`;
+        return `${ds[0]}–${ds[ds.length - 1]}s`;
+    }
+    if (model.minDuration != null && model.maxDuration != null) {
+        return model.minDuration === model.maxDuration
+            ? `${model.minDuration}s`
+            : `${model.minDuration}–${model.maxDuration}s`;
+    }
+    if (model.minDuration != null) return `${model.minDuration}s+`;
+    if (model.maxDuration != null) return `≤${model.maxDuration}s`;
+    return null;
+}
 
 type ModelRowProps = {
     model: ModelPrice;
@@ -169,18 +187,44 @@ export const PerPollenEstimate: FC<{
 
 export function getModelTitleTooltipContent(model: ModelPrice): ReactNode {
     const modelDescription = getModelDescriptionWithoutName(model);
+    const videoDuration = formatVideoDuration(model);
 
-    if (!model.agent || !model.baseModel) return modelDescription;
+    if (
+        !modelDescription &&
+        (!model.agent || !model.baseModel) &&
+        model.contextLength == null &&
+        !videoDuration
+    ) {
+        return null;
+    }
 
     return (
         <span className="flex max-w-sm flex-col gap-1.5 text-left">
             {modelDescription && <span>{modelDescription}</span>}
-            <span className="text-xs text-theme-text-muted">
-                <strong className="font-semibold text-theme-text-base">
-                    Base model:
-                </strong>{" "}
-                <span className="font-mono">{model.baseModel}</span>
-            </span>
+            {model.agent && model.baseModel && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Base model:
+                    </strong>{" "}
+                    <span className="font-mono">{model.baseModel}</span>
+                </span>
+            )}
+            {model.contextLength != null && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Context window:
+                    </strong>{" "}
+                    {model.contextLength.toLocaleString()} tokens
+                </span>
+            )}
+            {videoDuration && (
+                <span className="text-xs text-theme-text-muted">
+                    <strong className="font-semibold text-theme-text-base">
+                        Video duration:
+                    </strong>{" "}
+                    {videoDuration}
+                </span>
+            )}
         </span>
     );
 }
@@ -200,6 +244,10 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    const playSupported =
+        model.type !== "3d" &&
+        model.type !== "embedding" &&
+        model.type !== "realtime";
     const balanceAccess: BalanceAccess = model.free
         ? "free"
         : showPaidOnly
@@ -273,6 +321,23 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                             <span className="min-w-0 truncate text-base font-medium leading-tight">
                                 {publicModelName}
                             </span>
+                        )}
+                        {playSupported && (
+                            <Tooltip
+                                content="Try in Play"
+                                ariaLabel={`Try ${publicModelName} in Play`}
+                                tapEnabled
+                                displayContents
+                            >
+                                <a
+                                    href={`${PUBLIC_URLS.root}/play?model=${encodeURIComponent(model.name)}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex shrink-0 text-theme-text-muted transition-colors hover:text-theme-text-soft"
+                                >
+                                    <RocketIcon className="h-4 w-4" />
+                                </a>
+                            </Tooltip>
                         )}
                     </div>
                     <ModelId name={model.name} />

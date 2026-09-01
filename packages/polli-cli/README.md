@@ -92,6 +92,7 @@ Keys can't be edited — to change a name, budget, or model list, revoke and rec
 polli usage                  # pollen balance
 polli usage --history        # recent requests
 polli usage --daily          # daily spend
+polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
 polli my-models list         # invite-only community text, image, and transcription models
@@ -120,6 +121,31 @@ polli agents delete <id>
 Creating an agent also creates its callable model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for visibility, billing, and lifecycle details.
 
 `polli auth login` creates a key with all account permissions Polli needs: `profile`, `usage`, and `keys`. Use `account:usage` for narrow read-only account state like usage and quests. Use `account:keys` to manage keys and, where invite-only My Models access is enabled, my-models. Quest claiming remains in the dashboard.
+
+## Coding harnesses
+
+Point an agentic coding tool at Pollinations. `on` logs in if needed, mints a
+key for the harness, backs up its config, and writes the provider; `off`
+restores the backup.
+
+```bash
+polli harness --help              # supported harnesses
+polli harness dsh on              # DeepSeek Harness → Pollinations (default model: deepseek)
+polli harness dsh on --model kimi
+polli harness dsh on --no-mcp     # skip MCP tool configuration
+polli harness opencode on         # enables the Pollinations OpenCode plugin + default model
+polli harness pi on               # native provider, key, startup model, and Polli skill
+polli harness prime on            # native Prime Agent provider support
+polli harness <harness> status
+polli harness <harness> off
+```
+
+The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
+and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
+its official plugin; Pi and Prime Agent use their native `models.json` provider
+support.
+
+See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 
 ## Links
 

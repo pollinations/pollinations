@@ -20,7 +20,7 @@ import { z } from "zod";
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits`; "video" calls the exact configured URL; "transcription" uses `/v1/audio/transcriptions`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -46,7 +46,7 @@ const PriceSchema = z
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
     })
     .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
+        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second.',
     );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
@@ -106,7 +106,7 @@ const EndpointFieldsSchema = {
         .string()
         .url()
         .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
+            "OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
@@ -208,13 +208,37 @@ export const TestEndpointSchema = z
     .object({
         baseUrl: z.string().url(),
         bearerToken: z.string().min(1),
-        model: z.string().trim().min(1).max(253),
+        model: z.string().trim().min(1).max(253).optional(),
         modality: ModalitySchema.optional().default("text"),
     })
-    .strict();
+    .strict()
+    .superRefine((input, ctx) => {
+        if (input.modality !== "video" && !input.model) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["model"],
+                message: "model is required unless modality is video",
+            });
+        }
+    });
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
+const PendingCommunityEndpointChangeSchema = z
+    .object({
+        effectiveAt: z.string().datetime(),
+        visibility: z.literal("public").optional(),
+        paidOnly: z.boolean().optional(),
+        imagePricing: ImagePricingSchema.optional(),
+        ...Object.fromEntries(
+            COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
+                field.key,
+                z.number().optional(),
+            ]),
+        ),
+    })
+    .strict()
+    .nullable();
 const CommunityEndpointResponseFieldsSchema = {
     id: z.string(),
     modelId: z.string(),
@@ -224,6 +248,7 @@ const CommunityEndpointResponseFieldsSchema = {
     baseUrl: z.string().url(),
     upstreamModel: z.string().min(1),
     visibility: VisibilitySchema,
+    pending: PendingCommunityEndpointChangeSchema,
     hidden: z.boolean(),
     hiddenReason: z.string().nullable(),
     hiddenAt: z.string().nullable(),

@@ -76,12 +76,14 @@ const formatAdjustmentUnit = ({
     const quantityLabel = compactNumber
         .format(quantity)
         .replace(/^1(?=[A-Z])/, "");
-    if (kind === "search_request") return `${quantityLabel} req`;
-    if (kind === "grounded_prompt") return `${quantityLabel} prompts`;
+    const detail = suffix ? ` · ${suffix}` : "";
+    if (kind === "search_request") return `${quantityLabel} req${detail}`;
+    if (kind === "grounded_prompt") return `${quantityLabel} prompts${detail}`;
     if (kind === "cache_storage") {
-        return `${quantityLabel} tokens`;
+        return `${quantityLabel} tokens${detail}`;
     }
-    return `${quantityLabel} ${unit}${suffix ? ` · ${suffix}` : ""}`;
+    if (quantity === 1 && unit === "generation") return `gen${detail}`;
+    return `${quantityLabel} ${unit}${detail}`;
 };
 
 export type PriceBadgeConfig = Omit<ModelPriceLine, "direction"> & {
@@ -333,7 +335,7 @@ const LedgerPriceValue: FC<{ value: string }> = ({ value }) => {
     const [whole, fraction] = value.split(".", 2);
 
     return (
-        <span className="grid w-[10ch] shrink-0 grid-cols-[minmax(3ch,1fr)_auto_6ch] text-sm font-semibold tabular-nums text-theme-text-strong">
+        <span className="grid w-full grid-cols-[minmax(2ch,1fr)_auto_5ch] text-sm font-semibold tabular-nums text-theme-text-strong">
             <span className="sr-only">{value}</span>
             <span aria-hidden="true" className="text-right">
                 {whole}
@@ -353,41 +355,77 @@ const RequestBasedAdjustmentKinds = new Set([
     "grounded_prompt",
 ]);
 
-const PricingAdjustmentRows: FC<{
+const COMPACT_ADJUSTMENT_LABELS: Record<string, string> = {
+    "azure.flux_2_pro.initial_output_megapixel.v1": "Initial output MP",
+};
+
+const LedgerLabel: FC<{
+    label: string;
+    displayLabel?: string;
+    Icon?: FC<{ className?: string }>;
+}> = ({ label, displayLabel = label, Icon }) => (
+    <span className="grid min-w-0 grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-1.5 text-xs text-theme-text-muted">
+        {Icon ? (
+            <Icon className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+            <span aria-hidden="true" />
+        )}
+        {displayLabel !== label && <span className="sr-only">{label}</span>}
+        <span
+            className="truncate whitespace-nowrap"
+            aria-hidden={displayLabel === label ? undefined : true}
+            title={displayLabel === label ? undefined : label}
+        >
+            {displayLabel}
+        </span>
+    </span>
+);
+
+export const UsagePriceRows: FC<{
     adjustments: ModelPriceAdjustment[];
     align: "left" | "right";
 }> = ({ adjustments, align }) =>
     adjustments.map((adjustment) => {
         const isSearch = RequestBasedAdjustmentKinds.has(adjustment.kind);
+        const PriceIcon = isSearch
+            ? SearchIcon
+            : adjustment.kind === "cache_storage"
+              ? PRICE_ICON.cached
+              : adjustment.kind in PRICE_ICON
+                ? PRICE_ICON[adjustment.kind as PriceKind]
+                : undefined;
+        const unit = `/${formatAdjustmentUnit(adjustment)}`;
         return (
             <div
                 key={adjustment.name}
-                className="grid col-span-full grid-cols-subgrid items-baseline py-0.5"
+                className="grid col-span-full grid-cols-subgrid items-center py-0.5"
             >
                 {align === "right" && <span aria-hidden="true" />}
-                <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
-                    {isSearch && (
-                        <SearchIcon className="h-3.5 w-3.5 shrink-0" />
-                    )}
-                    {adjustment.label}
-                </span>
+                <LedgerLabel
+                    Icon={PriceIcon}
+                    label={adjustment.label}
+                    displayLabel={
+                        COMPACT_ADJUSTMENT_LABELS[adjustment.name] ??
+                        adjustment.label
+                    }
+                />
                 <LedgerPriceValue
                     value={formatDisplayPrice(adjustment.price).value}
                 />
-                <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
-                    /{formatAdjustmentUnit(adjustment)}
+                <span
+                    className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
+                    title={unit}
+                >
+                    {unit}
                 </span>
             </div>
         );
     });
 
 const ToolsPricingRow: FC<{ align: "left" | "right" }> = ({ align }) => (
-    <div className="grid col-span-full grid-cols-subgrid items-baseline py-0.5">
+    <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
         {align === "right" && <span aria-hidden="true" />}
-        <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
-            <McpIcon className="h-3.5 w-3.5 shrink-0" />
-            Tools
-        </span>
+        <LedgerLabel Icon={McpIcon} label="Tools" />
         <span className="col-span-2 whitespace-nowrap">
             <Tooltip
                 triggerAs="span"
@@ -589,15 +627,15 @@ export const ModelPricingLedger: FC<{
             return (
                 <div
                     key={row.key}
-                    className="grid col-span-full grid-cols-subgrid items-baseline py-0.5"
+                    className="grid col-span-full grid-cols-subgrid items-center py-0.5"
                 >
                     {align === "right" && <span aria-hidden="true" />}
-                    <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
-                        <PriceIcon className="h-3.5 w-3.5 shrink-0" />
-                        {row.label}
-                    </span>
+                    <LedgerLabel Icon={PriceIcon} label={row.label} />
                     <LedgerPriceValue value={row.value} />
-                    <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
+                    <span
+                        className="min-w-0 truncate whitespace-nowrap text-xs font-normal text-theme-text-muted"
+                        title={row.unit}
+                    >
                         {row.unit}
                     </span>
                 </div>
@@ -609,8 +647,8 @@ export const ModelPricingLedger: FC<{
             className={cn(
                 "grid w-full min-w-0 max-w-full gap-x-2",
                 align === "left"
-                    ? "grid-cols-[6.5rem_10ch_max-content]"
-                    : "grid-cols-[1fr_6.5rem_10ch_max-content]",
+                    ? "grid-cols-[6.5rem_9ch_minmax(0,1fr)] min-[480px]:grid-cols-[8rem_9ch_5.5rem]"
+                    : "grid-cols-[1fr_8rem_9ch_5.5rem]",
                 className,
             )}
         >
@@ -623,10 +661,7 @@ export const ModelPricingLedger: FC<{
                             : "col-span-full",
                     )}
                 >
-                    <span className="flex items-center gap-1.5 whitespace-nowrap text-xs text-theme-text-muted">
-                        <TokensIcon className="h-3.5 w-3.5 shrink-0" />
-                        Requests
-                    </span>
+                    <LedgerLabel Icon={TokensIcon} label="Requests" />
                     {requestEstimate}
                     <span className="whitespace-nowrap text-xs font-normal text-theme-text-muted">
                         /pollen
@@ -642,7 +677,7 @@ export const ModelPricingLedger: FC<{
                 standaloneTokenAdjustments.length > 0) && (
                 <div className="grid col-span-full grid-cols-subgrid">
                     {renderRateRows(cacheRateRows)}
-                    <PricingAdjustmentRows
+                    <UsagePriceRows
                         adjustments={standaloneTokenAdjustments}
                         align={align}
                     />
@@ -662,7 +697,7 @@ export const ModelPricingLedger: FC<{
                             align === "right" ? "col-start-2" : "col-start-1",
                         )}
                     />
-                    <PricingAdjustmentRows
+                    <UsagePriceRows
                         adjustments={requestBasedAdjustments}
                         align={align}
                     />

@@ -13,12 +13,7 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
-const DONE_EVENT = "data: [DONE]";
-const LINE_ENDING_PATTERN = /\r\n|\r|\n/;
-
-function isDoneEventLine(line: string): boolean {
-    return /^data:[ \t]*\[DONE\][ \t]*$/.test(line);
-}
+const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
 function isClientInputError(details: unknown): boolean {
     const serialized =
@@ -49,74 +44,27 @@ function ensureOpenAISseDone(
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
     let seenDone = false;
-    let buffer = "";
-    let lastLineWasBlank = true;
-    let reportedTrailingData = false;
-
-    const reportTrailingData = (text: string) => {
-        if (reportedTrailingData || !text.trim()) return;
-        reportedTrailingData = true;
-        errorLog("Discarded upstream SSE data after [DONE]");
-    };
-
-    const emitDone = (
-        controller: TransformStreamDefaultController<Uint8Array>,
-    ) => {
-        if (!lastLineWasBlank) controller.enqueue(encoder.encode("\n"));
-        controller.enqueue(encoder.encode(`${DONE_EVENT}\n\n`));
-        lastLineWasBlank = true;
-        seenDone = true;
-    };
-
-    const emitCompleteLines = (
-        controller: TransformStreamDefaultController<Uint8Array>,
-    ) => {
-        while (!seenDone) {
-            const lineEnding = LINE_ENDING_PATTERN.exec(buffer);
-            if (!lineEnding || lineEnding.index === undefined) return;
-
-            const line = buffer.slice(0, lineEnding.index);
-            buffer = buffer.slice(lineEnding.index + lineEnding[0].length);
-            if (isDoneEventLine(line)) {
-                emitDone(controller);
-                reportTrailingData(buffer);
-                buffer = "";
-                return;
-            }
-
-            controller.enqueue(encoder.encode(`${line}${lineEnding[0]}`));
-            lastLineWasBlank = line === "";
-        }
-    };
+    let tail = "";
 
     return source.pipeThrough(
         new TransformStream<Uint8Array, Uint8Array>({
             transform(chunk, controller) {
-                if (seenDone) {
-                    reportTrailingData(decoder.decode(chunk, { stream: true }));
-                    return;
-                }
-                buffer += decoder.decode(chunk, { stream: true });
-                emitCompleteLines(controller);
+                const text = decoder.decode(chunk, { stream: true });
+                const check = `${tail}${text}`;
+                if (DONE_EVENT_PATTERN.test(check)) seenDone = true;
+                tail = check.slice(-64);
+                controller.enqueue(chunk);
             },
             flush(controller) {
-                buffer += decoder.decode();
-                if (seenDone) {
-                    reportTrailingData(buffer);
-                    return;
+                const finalText = decoder.decode();
+                if (finalText) {
+                    const check = `${tail}${finalText}`;
+                    if (DONE_EVENT_PATTERN.test(check)) seenDone = true;
+                    controller.enqueue(encoder.encode(finalText));
                 }
-
-                emitCompleteLines(controller);
-                if (seenDone) return;
-                if (isDoneEventLine(buffer)) {
-                    emitDone(controller);
-                    return;
+                if (!seenDone) {
+                    controller.enqueue(encoder.encode("data: [DONE]\n\n"));
                 }
-                if (buffer) {
-                    controller.enqueue(encoder.encode(`${buffer}\n\n`));
-                    lastLineWasBlank = true;
-                }
-                emitDone(controller);
             },
         }),
     );

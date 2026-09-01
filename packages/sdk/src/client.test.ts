@@ -592,7 +592,7 @@ describe("Pollinations simple text facade", () => {
         });
     });
 
-    it("stops at DONE before provider trailer data", async () => {
+    it("reports malformed provider data appended after DONE", async () => {
         fetchMock.mockResolvedValue(
             makeResponse(
                 [
@@ -608,14 +608,19 @@ describe("Pollinations simple text facade", () => {
             ),
         );
 
-        const chunks = [];
-        for await (const chunk of newClient().chatStream([
-            { role: "user", content: "hello" },
-        ])) {
-            chunks.push(chunk);
-        }
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
 
-        expect(chunks).toEqual([{ choices: [] }]);
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
     });
 });
 

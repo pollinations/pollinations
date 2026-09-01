@@ -139,7 +139,6 @@ function stripKeyFromUrl(url: string): string {
 interface SSEParseResult<T> {
     chunks: T[];
     remainingBuffer: string;
-    done: boolean;
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
@@ -163,15 +162,9 @@ function parseSSEBuffer<T>(
     const lines = buffer.split("\n");
     const remainingBuffer = lines.pop() || "";
     const chunks: T[] = [];
-    let done = false;
-
     for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed) continue;
-        if (trimmed === "data: [DONE]") {
-            done = true;
-            break;
-        }
+        if (!trimmed || trimmed === "data: [DONE]") continue;
         if (trimmed.startsWith("data: ")) {
             const parsed = parseChunk(trimmed.slice(6));
             if (parsed !== null) {
@@ -180,7 +173,7 @@ function parseSSEBuffer<T>(
         }
     }
 
-    return { chunks, remainingBuffer, done };
+    return { chunks, remainingBuffer };
 }
 
 /**
@@ -938,7 +931,6 @@ export class Pollinations {
                     }
                     yield chunk as ChatStreamChunk;
                 }
-                if (result.done) return;
             }
         } finally {
             reader.releaseLock();

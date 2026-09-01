@@ -1,16 +1,17 @@
+import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
-    applyPendingProxyPricing,
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
     effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
-    normalizeCommunityEndpointBaseUrl,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
     parseListingPayload,
     pendingCommunityEndpointChangeIsReady,
+    resolveEffectiveProxyListing,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -24,11 +25,13 @@ import { describeRoute, resolver } from "hono-openapi";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
+    type CommunityEndpointTestResult,
     listCommunityEndpointModels,
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
@@ -65,9 +68,9 @@ import {
 
 const ENDPOINT_PROBE_THROTTLE_SECONDS = 30;
 type Db = ReturnType<typeof drizzle<typeof schema>>;
-function normalizeInputBaseUrl(value: string): string {
+function validateInputEndpointUrl(value: string): string {
     try {
-        return normalizeCommunityEndpointBaseUrl(value);
+        return validateCommunityEndpointUrl(value);
     } catch (error) {
         throw new HTTPException(400, {
             message:
@@ -380,15 +383,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (!currentPayload) {
                 throw new Error(`Invalid proxy payload for ${endpoint.id}`);
             }
-            const pendingPayload = pendingCommunityEndpointChangeIsReady(
-                endpoint.pendingAt,
-            )
-                ? parseListingPayload("proxy", endpoint.pendingPayload)
-                : null;
-            const endpointPayload = applyPendingProxyPricing(
-                currentPayload,
-                pendingPayload,
-            );
+            const endpointPayload = resolveEffectiveProxyListing({
+                visibility: endpoint.visibility,
+                payload: currentPayload,
+                pendingVisibility: endpoint.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    endpoint.pendingPayload,
+                ),
+                pendingAt: endpoint.pendingAt,
+            }).payload;
             const primary: FallbackPrimary = {
                 modelId: communityModelId(ownerGithubUsername, endpoint.name),
                 ownerUserId: user.id,
@@ -471,7 +475,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     pendingVisibility: queuesPublication ? "public" : null,
                     pendingAt: queuesPublication ? new Date() : null,
                     type: "endpoint_agent",
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
                     createdAt: new Date(),
@@ -493,7 +497,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -554,7 +558,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ? "private"
                         : input.visibility,
                     type: "proxy",
-                    baseUrl: normalizeInputBaseUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
                     payload: JSON.stringify(payload),
                     pendingPayload: queuesPublication
@@ -628,7 +632,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an OpenAI-compatible upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -658,14 +662,34 @@ export const communityEndpointsRoutes = new Hono<Env>()
             );
             if (throttled) return throttled;
             try {
-                const result =
-                    input.modality === "image"
-                        ? await testCommunityImageEndpoint(input)
-                        : input.modality === "transcription"
-                          ? await testCommunityTranscriptionEndpoint(input)
-                          : input.modality === "embedding"
-                            ? await testCommunityEmbeddingEndpoint(input)
-                            : await testCommunityEndpoint(input);
+                const endpointInput = {
+                    ...input,
+                    baseUrl: validateInputEndpointUrl(input.baseUrl),
+                };
+                let result: CommunityEndpointTestResult;
+                if (input.modality === "video") {
+                    result = await testCommunityVideoEndpoint(endpointInput);
+                } else {
+                    if (!input.model) {
+                        throw new HTTPException(400, {
+                            message:
+                                "model is required unless modality is video",
+                        });
+                    }
+                    const modelInput = { ...endpointInput, model: input.model };
+                    result =
+                        input.modality === "image"
+                            ? await testCommunityImageEndpoint(modelInput)
+                            : input.modality === "transcription"
+                              ? await testCommunityTranscriptionEndpoint(
+                                    modelInput,
+                                )
+                              : input.modality === "embedding"
+                                ? await testCommunityEmbeddingEndpoint(
+                                      modelInput,
+                                  )
+                                : await testCommunityEndpoint(modelInput);
+                }
                 return c.json({
                     ok: true,
                     message:
@@ -673,11 +697,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
                                 : "Generation endpoint responded; editing is not supported"
-                            : input.modality === "transcription"
-                              ? "Endpoint responded with transcription text"
-                              : input.modality === "embedding"
-                                ? "Endpoint responded with embedding data"
-                                : "Endpoint responded with usage",
+                            : input.modality === "video"
+                              ? "Endpoint responded with playable video"
+                              : input.modality === "transcription"
+                                ? "Endpoint responded with transcription text"
+                                : input.modality === "embedding"
+                                  ? "Endpoint responded with embedding data"
+                                  : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {
@@ -754,6 +780,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.description = input.description || null;
             }
             if (input.hidden !== undefined) {
+                if (
+                    !input.hidden &&
+                    (input.visibility ?? currentVisibility) === "public" &&
+                    endpoint.hiddenAt &&
+                    Date.now() <
+                        endpoint.hiddenAt.getTime() +
+                            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
+                ) {
+                    throw new HTTPException(400, {
+                        message:
+                            "Community models can be relisted 12 hours after they were hidden",
+                    });
+                }
                 update.hiddenAt = input.hidden ? new Date() : null;
                 update.hiddenReason = input.hidden ? "Hidden by owner" : null;
                 update.hiddenBy = input.hidden ? "owner" : null;
@@ -787,7 +826,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     );
                 }
                 if (input.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
@@ -802,13 +841,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (!current) {
                     throw new Error(`Invalid proxy payload for ${endpoint.id}`);
                 }
-                const maturedPending = pendingReady
-                    ? parseListingPayload("proxy", endpoint.pendingPayload)
-                    : null;
-                const stored = applyPendingProxyPricing(
-                    current,
-                    maturedPending,
-                );
+                const stored = resolveEffectiveProxyListing({
+                    visibility: endpoint.visibility,
+                    payload: current,
+                    pendingVisibility: endpoint.pendingVisibility,
+                    pendingPayload: parseListingPayload(
+                        "proxy",
+                        endpoint.pendingPayload,
+                    ),
+                    pendingAt: endpoint.pendingAt,
+                }).payload;
                 const queued = parseListingPayload("proxy", pendingPayload);
                 const targetBase = queued ?? stored;
                 const targetVisibility = pendingVisibility ?? nextVisibility;
@@ -853,7 +895,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               c.env.BETTER_AUTH_SECRET,
                           );
                 if (input.baseUrl !== undefined) {
-                    update.baseUrl = normalizeInputBaseUrl(input.baseUrl);
+                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;

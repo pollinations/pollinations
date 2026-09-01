@@ -1,18 +1,24 @@
 import {
-    COMMUNITY_ENDPOINT_TIMEOUT_MS,
-    type CommunityEndpointImagePricing,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
-    communityEndpointErrorDetail,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
+    type CommunityEndpointImagePricing,
+    communityEndpointErrorDetail,
     communityTranscriptionSeconds,
-    decodeCommunityBase64,
-    firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import {
+    decodeCommunityBase64,
+    firstCommunityImageBytes,
+    firstCommunityVideoBytes,
+    MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+} from "@shared/community-media.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
@@ -21,6 +27,8 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseText } from "@shared/response-bytes.ts";
+import { detectVideoMimeType } from "@shared/video-mime.ts";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
 type EndpointAuth = {
@@ -28,7 +36,7 @@ type EndpointAuth = {
     bearerToken: string;
 };
 
-type EndpointTestInput = EndpointAuth & { model: string };
+type ModelEndpointTestInput = EndpointAuth & { model: string };
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -48,7 +56,9 @@ function authorizationHeaders(bearerToken: string): HeadersInit {
 }
 
 function communityModelsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/models`;
+    const url = new URL(communityOpenAIBaseUrl(baseUrl));
+    url.pathname = `${url.pathname.replace(/\/+$/, "")}/models`;
+    return url.toString();
 }
 
 async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
@@ -66,11 +76,25 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         throw new Error("Endpoint request timed out or could not connect");
     }
 
-    const body = await response.json().catch(() => null);
+    const body = parseJson(
+        await readResponseText(
+            response,
+            MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+            () => new Error("Endpoint response is too large"),
+        ),
+    );
     if (!response.ok) {
         throw new Error(endpointErrorMessage(response.status, body));
     }
     return body;
+}
+
+function parseJson(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return null;
+    }
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
@@ -117,7 +141,7 @@ export async function testCommunityEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(communityChatCompletionsUrl(baseUrl), {
         method: "POST",
         headers: {
@@ -165,7 +189,7 @@ export async function testCommunityImageEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(communityImageGenerationsUrl(baseUrl), {
         method: "POST",
         headers: {
@@ -215,6 +239,33 @@ export async function testCommunityImageEndpoint({
     };
 }
 
+// Video registration uses the same synchronous contract as request-time
+// generation: the exact configured URL must return completed playable media.
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+}: EndpointAuth): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(baseUrl, {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            prompt: "A green sprout gently moving in the breeze.",
+            duration: 5,
+        }),
+    });
+    const video = await firstCommunityVideoBytes(body, baseUrl);
+    if (!video || !detectVideoMimeType(video)) {
+        throw new Error("Endpoint did not return a supported video");
+    }
+    return {
+        usage: { duration: 5 },
+        billableUsage: { completionVideoSeconds: 5 },
+    };
+}
+
 // Transcription endpoints are billed against prompt audio seconds, mirroring
 // the first-party whisper/scribe models. The probe uploads a real audio file
 // and validates the OpenAI transcription response shape.
@@ -222,7 +273,7 @@ export async function testCommunityTranscriptionEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const sampleBytes = decodeCommunityBase64(SAMPLE_AUDIO_BASE64);
     if (!sampleBytes) {
         throw new Error("Failed to decode sample audio");
@@ -292,7 +343,7 @@ export async function testCommunityEmbeddingEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(communityEmbeddingsUrl(baseUrl), {
         method: "POST",
         headers: {
@@ -337,7 +388,7 @@ export async function testCommunityEmbeddingEndpoint({
 }
 
 async function testCommunityImageEdits(
-    { baseUrl, bearerToken, model }: EndpointTestInput,
+    { baseUrl, bearerToken, model }: ModelEndpointTestInput,
     imageBytes: Uint8Array,
     imageMimeType: string,
 ): Promise<boolean> {

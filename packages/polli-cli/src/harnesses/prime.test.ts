@@ -2,7 +2,6 @@ import {
     existsSync,
     mkdirSync,
     mkdtempSync,
-    readdirSync,
     readFileSync,
     rmSync,
     statSync,
@@ -15,170 +14,191 @@ import { configurePrime, disablePrime, prime } from "./prime.js";
 import type { HarnessContext } from "./types.js";
 
 const models = [
-    { id: "openai", contextWindow: 128000, input: ["text", "image"] },
-    { id: "deepseek", contextWindow: 65536, input: ["text"] },
+    { id: "deepseek", contextWindow: 1048576, input: ["text"] },
+    { id: "kimi", contextWindow: 262000, input: ["text", "image"] },
 ];
-const settings = { apiKey: "sk_test_key", model: "openai", models };
 
 let home: string;
 let ctx: HarnessContext;
 
 beforeEach(() => {
-    home = mkdtempSync(join(tmpdir(), "polli-prime-"));
+    home = mkdtempSync(join(tmpdir(), "polli-harness-"));
     ctx = { home, env: {} };
 });
 
 afterEach(() => rmSync(home, { recursive: true, force: true }));
 
-const modelsFile = () => join(home, ".prime", "agent", "models.json");
-const skillFile = () =>
-    join(home, ".prime", "agent", "skills", "polli", "SKILL.md");
-const snapshotFiles = () => {
-    const dir = join(home, ".pollinations", "harnesses");
-    return existsSync(dir)
-        ? readdirSync(dir).filter((f) => f.startsWith("prime."))
-        : [];
-};
+const agentDir = () => join(home, ".prime", "agent");
+const modelsFile = () => join(agentDir(), "models.json");
+const authFile = () => join(agentDir(), "auth.json");
+const settingsFile = () => join(agentDir(), "settings.json");
+const skillFile = () => join(agentDir(), "skills", "polli", "SKILL.md");
 const read = (path: string) => readFileSync(path, "utf-8");
 
 describe("prime harness", () => {
-    it("writes the provider and skill from scratch", () => {
-        const result = configurePrime(ctx, settings);
+    it("writes the provider, credential, default model, and skill from scratch", () => {
+        const result = configurePrime(ctx, models, "sk_test_key", "deepseek");
         expect(result).toMatchObject({
             harness: "prime",
             configured: true,
-            model: "openai",
+            model: "deepseek",
         });
 
         const doc = JSON.parse(read(modelsFile()));
         const provider = doc.providers.pollinations;
-        expect(provider.apiKey).toBe("sk_test_key");
-        expect(provider.baseUrl).toBe("https://gen.pollinations.ai/v1");
-        expect(provider.api).toBe("openai-completions");
+        expect(provider).toMatchObject({
+            baseUrl: "https://gen.pollinations.ai/v1",
+            api: "openai-completions",
+            apiKey: "pollinations",
+            compat: { supportsDeveloperRole: false },
+        });
         expect(provider.models.map((m: { id: string }) => m.id)).toEqual([
-            "openai",
             "deepseek",
+            "kimi",
         ]);
 
+        expect(JSON.parse(read(authFile()))).toEqual({
+            pollinations: { type: "api_key", key: "sk_test_key" },
+        });
+        expect(JSON.parse(read(settingsFile()))).toMatchObject({
+            defaultProvider: "pollinations",
+            defaultModel: "deepseek",
+        });
         expect(read(skillFile())).toContain("name: polli");
         expect(statSync(modelsFile()).mode & 0o777).toBe(0o600);
-        expect(statSync(skillFile()).mode & 0o777).toBe(0o600);
+        expect(statSync(authFile()).mode & 0o777).toBe(0o600);
+        expect(statSync(settingsFile()).mode & 0o777).toBe(0o600);
         expect(prime.status(ctx)).toMatchObject({
             configured: true,
-            model: "openai",
+            model: "deepseek",
         });
     });
 
-    it("sorts the chosen model first in the models list", () => {
-        configurePrime(ctx, { ...settings, model: "deepseek" });
-        const doc = JSON.parse(read(modelsFile()));
-        const ids = doc.providers.pollinations.models.map(
-            (m: { id: string }) => m.id,
-        );
-        expect(ids[0]).toBe("deepseek");
-        expect(ids).toContain("openai");
-        expect(prime.status(ctx).model).toBe("deepseek");
-    });
-
-    it("preserves existing models.json entries and other providers", () => {
-        mkdirSync(join(home, ".prime", "agent"), { recursive: true });
+    it("keeps existing providers, settings, and auth entries", () => {
+        mkdirSync(agentDir(), { recursive: true });
         writeFileSync(
             modelsFile(),
             JSON.stringify({
                 providers: {
-                    anthropic: {
-                        baseUrl: "https://api.anthropic.com",
+                    ollama: {
+                        baseUrl: "http://localhost:11434/v1",
                         api: "openai-completions",
+                        apiKey: "ollama",
+                        models: [{ id: "llama3.1:8b" }],
                     },
                 },
             }),
         );
+        writeFileSync(
+            authFile(),
+            JSON.stringify({ anthropic: { type: "api_key", key: "ant" } }),
+        );
+        writeFileSync(
+            settingsFile(),
+            JSON.stringify({ defaultThinkingLevel: "low" }),
+        );
 
-        configurePrime(ctx, settings);
+        configurePrime(ctx, models, "sk_test_key", "deepseek");
 
         const doc = JSON.parse(read(modelsFile()));
-        expect(doc.providers.anthropic).toBeDefined();
-        expect(doc.providers.pollinations).toBeDefined();
+        expect(doc.providers.ollama.models).toEqual([{ id: "llama3.1:8b" }]);
+        expect(JSON.parse(read(authFile()))).toMatchObject({
+            anthropic: { type: "api_key", key: "ant" },
+            pollinations: { type: "api_key", key: "sk_test_key" },
+        });
+        expect(JSON.parse(read(settingsFile()))).toMatchObject({
+            defaultThinkingLevel: "low",
+            defaultProvider: "pollinations",
+        });
     });
 
     it("restores the original files byte-for-byte on off", () => {
-        mkdirSync(join(home, ".prime", "agent"), { recursive: true });
-        const original = `${JSON.stringify({ existing: true }, null, 2)}\n`;
+        mkdirSync(agentDir(), { recursive: true });
+        const original = JSON.stringify({
+            providers: { ollama: { models: [] } },
+        });
         writeFileSync(modelsFile(), original);
 
-        configurePrime(ctx, settings);
-        expect(snapshotFiles()).toHaveLength(1);
+        configurePrime(ctx, models, "sk_test_key", "deepseek");
         const result = disablePrime(ctx);
 
         expect(result.outcome).toBe("restored");
         expect(read(modelsFile())).toBe(original);
+        expect(existsSync(authFile())).toBe(false);
+        expect(existsSync(settingsFile())).toBe(false);
         expect(existsSync(skillFile())).toBe(false);
-        expect(snapshotFiles()).toHaveLength(0);
         expect(prime.status(ctx).configured).toBe(false);
     });
 
-    it("strips only the Pollinations entries when config changed since on", () => {
-        configurePrime(ctx, settings);
-
-        const doc = JSON.parse(read(modelsFile()));
-        doc.providers.local = { baseUrl: "http://localhost:11434/v1" };
-        writeFileSync(modelsFile(), JSON.stringify(doc, null, 2));
+    it("only strips the Pollinations entries when files changed since on", () => {
+        configurePrime(ctx, models, "sk_test_key", "deepseek");
+        const edited = JSON.parse(read(modelsFile()));
+        edited.providers.ollama = { models: [] };
+        writeFileSync(modelsFile(), JSON.stringify(edited));
 
         const result = disablePrime(ctx);
 
         expect(result.outcome).toBe("stripped");
-        const updated = JSON.parse(read(modelsFile()));
-        expect(updated.providers.local).toBeDefined();
-        expect(updated.providers.pollinations).toBeUndefined();
+        const doc = JSON.parse(read(modelsFile()));
+        expect(doc.providers.ollama).toBeDefined();
+        expect(doc.providers.pollinations).toBeUndefined();
+        expect(
+            JSON.parse(read(settingsFile())).defaultProvider,
+        ).toBeUndefined();
         expect(existsSync(skillFile())).toBe(false);
-        expect(snapshotFiles()).toHaveLength(0);
     });
 
-    it("reports unchanged when off runs on a harness that was never on", () => {
+    it("reports unchanged when off runs before on", () => {
         expect(disablePrime(ctx).outcome).toBe("unchanged");
     });
 
-    it("reports unconfigured when models.json is missing", () => {
-        expect(prime.status(ctx).configured).toBe(false);
-    });
-
-    it("reports unconfigured when the skill file is missing", () => {
-        configurePrime(ctx, settings);
-        rmSync(skillFile(), { recursive: true, force: true });
-        expect(prime.status(ctx).configured).toBe(false);
-    });
-
-    it("reports unconfigured when models.json is corrupt JSON", () => {
-        mkdirSync(join(home, ".prime", "agent"), { recursive: true });
-        writeFileSync(modelsFile(), "{bad json");
-        expect(prime.status(ctx).configured).toBe(false);
-    });
-
-    it("reports unconfigured when the api key is empty", () => {
-        configurePrime(ctx, settings);
-        const doc = JSON.parse(read(modelsFile()));
-        doc.providers.pollinations.apiKey = "";
-        writeFileSync(modelsFile(), JSON.stringify(doc, null, 2));
-        expect(prime.status(ctx).configured).toBe(false);
-    });
-
-    it("throws on corrupt models.json during on", () => {
-        mkdirSync(join(home, ".prime", "agent"), { recursive: true });
-        writeFileSync(modelsFile(), "{bad");
-        expect(() => configurePrime(ctx, settings)).toThrow();
-    });
-
-    it("preserves a corrupt snapshot and refuses to disable", () => {
-        configurePrime(ctx, settings);
-        const snapshot = join(
-            home,
-            ".pollinations",
-            "harnesses",
-            snapshotFiles()[0],
+    it("honors PRIME_AGENT_CODING_AGENT_DIR including tilde expansion", () => {
+        const custom = join(home, "custom-prime");
+        configurePrime(
+            { home, env: { PRIME_AGENT_CODING_AGENT_DIR: custom } },
+            models,
+            "sk_test_key",
+            "deepseek",
         );
-        writeFileSync(snapshot, "{");
-        expect(() => disablePrime(ctx)).toThrow();
-        expect(snapshotFiles()).toHaveLength(1);
-        expect(prime.status(ctx).configured).toBe(true);
+        expect(existsSync(join(custom, "models.json"))).toBe(true);
+        expect(existsSync(modelsFile())).toBe(false);
+
+        const tilde = {
+            home,
+            env: { PRIME_AGENT_CODING_AGENT_DIR: "~/tilde-prime" },
+        };
+        configurePrime(tilde, models, "sk_test_key", "deepseek");
+        expect(existsSync(join(home, "tilde-prime", "models.json"))).toBe(true);
+    });
+
+    it("treats an empty PRIME_AGENT_CODING_AGENT_DIR as unset", () => {
+        configurePrime(
+            { home, env: { PRIME_AGENT_CODING_AGENT_DIR: "  " } },
+            models,
+            "sk",
+            "deepseek",
+        );
+        expect(existsSync(modelsFile())).toBe(true);
+    });
+
+    it("reports unconfigured when the credential is missing", () => {
+        configurePrime(ctx, models, "sk_test_key", "deepseek");
+        rmSync(authFile());
+        expect(prime.status(ctx).configured).toBe(false);
+    });
+
+    it("reports unconfigured when the provider API key marker is missing", () => {
+        configurePrime(ctx, models, "sk_test_key", "deepseek");
+        const data = JSON.parse(read(modelsFile()));
+        delete data.providers.pollinations.apiKey;
+        writeFileSync(modelsFile(), `${JSON.stringify(data, null, 2)}\n`);
+        expect(prime.status(ctx).configured).toBe(false);
+    });
+
+    it("stops before configuration when Prime Agent is unavailable", async () => {
+        await expect(prime.on(ctx, {})).rejects.toThrow(
+            "Prime Agent was not found",
+        );
+        expect(existsSync(agentDir())).toBe(false);
     });
 });

@@ -1,9 +1,12 @@
-import { execSync } from "node:child_process";
 import { join, resolve } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { printInfo } from "../lib/output.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -54,11 +57,7 @@ const files = (ctx: HarnessContext) => [
 const loadJson = (path: string): Record<string, unknown> => {
     const text = readTextIfExists(path);
     if (!text?.trim()) return {};
-    try {
-        return JSON.parse(text) as Record<string, unknown>;
-    } catch {
-        return {};
-    }
+    return JSON.parse(text) as Record<string, unknown>;
 };
 
 const saveJson = (path: string, data: Record<string, unknown>) => {
@@ -76,6 +75,8 @@ const readKey = (ctx: HarnessContext): string | null => {
 const providerConfig = (models: HarnessModel[]) => ({
     baseUrl: `${BASE_URL}/v1`,
     api: "openai-completions",
+    // Pi validates custom providers before resolving their auth.json entry.
+    apiKey: PROVIDER,
     compat: {
         supportsStore: false,
         supportsDeveloperRole: false,
@@ -180,7 +181,10 @@ const result = (ctx: HarnessContext): HarnessResult => {
     const providers = modelsData.providers as
         | Record<string, unknown>
         | undefined;
-    const hasProvider = !!providers?.[PROVIDER];
+    const provider = providers?.[PROVIDER] as
+        | Record<string, unknown>
+        | undefined;
+    const hasProvider = provider?.apiKey === PROVIDER;
 
     const authEntry = authData[PROVIDER] as Record<string, unknown> | undefined;
     const hasKey =
@@ -229,18 +233,14 @@ export const pi: HarnessAdapter = {
     id: ID,
     label: LABEL,
     description: "Configure Pi as a Pollinations provider",
-    restartHint:
-        "Changes apply on the next Pi session. Start Pi with: pi\nNot installed? npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+    restartHint: "Changes apply on the next Pi session. Start Pi with: pi",
 
     async on(ctx, options) {
-        try {
-            execSync("pi --version", { stdio: "ignore" });
-        } catch {
-            printInfo(
-                "Pi is not installed. Install it with:\n  npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
+        if (!commandExists("pi", ctx.env)) {
+            throw new Error(
+                "Pi was not found. Install it first: npm install -g --ignore-scripts @earendil-works/pi-coding-agent",
             );
         }
-
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((candidate) => candidate.id === model)) {

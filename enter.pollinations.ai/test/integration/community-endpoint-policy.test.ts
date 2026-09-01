@@ -74,7 +74,7 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             visibility: "private",
-            baseUrl: "https://agent.example.com/v1",
+            baseUrl: "https://agent.example.com/v1/?ignored=yes",
             upstreamModel: "external-agent",
             perUserRpm: null,
         });
@@ -89,7 +89,7 @@ describe("community endpoint configuration policy", () => {
         });
         expect(stored).toMatchObject({
             type: "endpoint_agent",
-            baseUrl: "https://agent.example.com/v1",
+            baseUrl: "https://agent.example.com/v1/?ignored=yes",
             upstreamModel: "external-agent",
             visibility: "private",
         });

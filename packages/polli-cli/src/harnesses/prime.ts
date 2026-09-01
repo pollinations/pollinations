@@ -1,9 +1,12 @@
-import { execSync } from "node:child_process";
-import { existsSync } from "node:fs";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
-import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
+import {
+    commandExists,
+    readTextIfExists,
+    removeIfExists,
+    writeTextAtomic,
+} from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
 import {
@@ -21,136 +24,148 @@ import type {
 const ID = "prime";
 const LABEL = "Prime Agent";
 const PROVIDER = "pollinations";
-const DEFAULT_MODEL = "openai";
-const INSTALL_CMD =
-    "curl -fsSL https://app.primeintellect.ai/prime-agent/install.sh | sh";
+const DEFAULT_MODEL = "deepseek";
 
-export const primeHome = (ctx: HarnessContext) =>
-    join(ctx.home, ".prime", "agent");
-
-const modelsPath = (ctx: HarnessContext) => join(primeHome(ctx), "models.json");
-
+/** Prime Agent resolves its agent dir from this override, tilde included. */
+export const primeAgentDir = (ctx: HarnessContext) => {
+    const configured = ctx.env.PRIME_AGENT_CODING_AGENT_DIR;
+    if (!configured?.trim()) return join(ctx.home, ".prime", "agent");
+    const expanded =
+        configured === "~"
+            ? ctx.home
+            : configured.startsWith("~/") || configured.startsWith("~\\")
+              ? join(ctx.home, configured.slice(2))
+              : configured;
+    return resolve(expanded);
+};
+const modelsPath = (ctx: HarnessContext) =>
+    join(primeAgentDir(ctx), "models.json");
+const authPath = (ctx: HarnessContext) => join(primeAgentDir(ctx), "auth.json");
+const settingsPath = (ctx: HarnessContext) =>
+    join(primeAgentDir(ctx), "settings.json");
 const skillPath = (ctx: HarnessContext) =>
-    join(primeHome(ctx), "skills", "polli", "SKILL.md");
+    join(primeAgentDir(ctx), "skills", "polli", "SKILL.md");
 
-const files = (ctx: HarnessContext) => [modelsPath(ctx), skillPath(ctx)];
+const files = (ctx: HarnessContext) => [
+    modelsPath(ctx),
+    authPath(ctx),
+    settingsPath(ctx),
+    skillPath(ctx),
+];
 
-const isPrimeInstalled = (ctx: HarnessContext): boolean => {
-    if (existsSync(join(ctx.home, ".prime"))) return true;
-    try {
-        execSync("command -v pi", {
-            stdio: "ignore",
-            shell: true,
-            timeout: 3000,
-        });
-        return true;
-    } catch {
-        return false;
-    }
+const loadJson = (path: string): Record<string, unknown> => {
+    const text = readTextIfExists(path);
+    if (!text?.trim()) return {};
+    return JSON.parse(text) as Record<string, unknown>;
 };
 
-const readKey = (ctx: HarnessContext): string | null => {
-    const text = readTextIfExists(modelsPath(ctx));
-    if (!text) return null;
-    try {
-        const doc = JSON.parse(text) as {
-            providers?: Record<string, { apiKey?: unknown }>;
-        };
-        const key = doc.providers?.[PROVIDER]?.apiKey;
-        return typeof key === "string" && key.length > 0 ? key : null;
-    } catch {
-        return null;
-    }
+const saveJson = (path: string, data: Record<string, unknown>) => {
+    writeTextAtomic(path, `${JSON.stringify(data, null, 2)}\n`, 0o600);
 };
 
-// The chosen default model sorts first so Prime Agent's model picker surfaces it.
-const providerEntry = (
-    apiKey: string,
-    models: HarnessModel[],
-    defaultModel: string,
-) => {
-    const sorted = [
-        ...models.filter((m) => m.id === defaultModel),
-        ...models.filter((m) => m.id !== defaultModel),
-    ];
-    return {
-        baseUrl: `${BASE_URL}/v1`,
-        api: "openai-completions",
-        apiKey,
-        compat: {
-            supportsDeveloperRole: false,
-            supportsReasoningEffort: true,
-            supportsUsageInStreaming: true,
-            supportsStrictMode: false,
-        },
-        models: sorted.map((m) => ({
-            id: m.id,
-            name: m.id,
-            contextWindow: m.contextWindow,
-            input: m.input,
-        })),
-    };
+// Compat flags shared with the dsh provider block: gen.pollinations.ai/v1
+// speaks standard completions without store/developer-role/strict-mode extras.
+const compat = {
+    supportsStore: false,
+    supportsDeveloperRole: false,
+    supportsReasoningEffort: true,
+    supportsUsageInStreaming: true,
+    supportsStrictMode: false,
+    maxTokensField: "max_tokens",
 };
 
-interface PrimeSettings {
-    apiKey: string;
-    model: string;
-    models: HarnessModel[];
+const providerEntry = (models: HarnessModel[]) => ({
+    baseUrl: `${BASE_URL}/v1`,
+    api: "openai-completions",
+    // Prime validates custom providers before resolving their auth.json entry.
+    apiKey: PROVIDER,
+    compat,
+    models: models.map((model) => ({
+        id: model.id,
+        name: model.id,
+        input: model.input,
+        contextWindow: model.contextWindow,
+    })),
+});
+
+interface PrimeModels {
+    providers?: Record<string, unknown>;
+    [key: string]: unknown;
 }
 
-const writeConfig = (ctx: HarnessContext, settings: PrimeSettings) => {
-    const existing: Record<string, unknown> = (() => {
-        const text = readTextIfExists(modelsPath(ctx));
-        if (!text) return {};
-        try {
-            return JSON.parse(text) as Record<string, unknown>;
-        } catch {
-            throw new Error(
-                `${modelsPath(ctx)} is not valid JSON — fix it before running on`,
-            );
-        }
-    })();
+type PrimeAuth = Record<string, { type?: string; key?: string }>;
 
-    const providers =
-        (existing.providers as Record<string, unknown> | undefined) ?? {};
-    providers[PROVIDER] = providerEntry(
-        settings.apiKey,
-        settings.models,
-        settings.model,
-    );
-    existing.providers = providers;
+interface PrimeSettings {
+    defaultProvider?: string;
+    defaultModel?: string;
+    [key: string]: unknown;
+}
 
-    writeTextAtomic(
-        modelsPath(ctx),
-        `${JSON.stringify(existing, null, 2)}\n`,
-        0o600,
-    );
+const readKey = (ctx: HarnessContext) => {
+    const auth = loadJson(authPath(ctx)) as PrimeAuth;
+    const credential = auth[PROVIDER];
+    return credential?.type === "api_key" && credential.key
+        ? credential.key
+        : null;
+};
+
+const writeAuth = (ctx: HarnessContext, apiKey: string) => {
+    const auth = loadJson(authPath(ctx)) as PrimeAuth;
+    auth[PROVIDER] = { type: "api_key", key: apiKey };
+    saveJson(authPath(ctx), auth);
+};
+
+const deleteAuth = (ctx: HarnessContext) => {
+    const auth = loadJson(authPath(ctx)) as PrimeAuth;
+    if (!(PROVIDER in auth)) return false;
+    delete auth[PROVIDER];
+    if (Object.keys(auth).length === 0) removeIfExists(authPath(ctx));
+    else saveJson(authPath(ctx), auth);
+    return true;
+};
+
+const writeConfig = (
+    ctx: HarnessContext,
+    models: HarnessModel[],
+    apiKey: string,
+    model: string,
+) => {
+    const doc = loadJson(modelsPath(ctx)) as PrimeModels;
+    const providers = (doc.providers ?? {}) as Record<string, unknown>;
+    providers[PROVIDER] = providerEntry(models);
+    doc.providers = providers;
+    saveJson(modelsPath(ctx), doc);
+    writeAuth(ctx, apiKey);
+
+    const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
+    settings.defaultProvider = PROVIDER;
+    settings.defaultModel = model;
+    saveJson(settingsPath(ctx), settings);
+
     if (readTextIfExists(skillPath(ctx)) === null) {
         writeTextAtomic(skillPath(ctx), polliSkill, 0o600);
     }
 };
 
-const stripConfig = (ctx: HarnessContext): boolean => {
+const stripConfig = (ctx: HarnessContext) => {
     let changed = false;
-    const text = readTextIfExists(modelsPath(ctx));
-    if (text) {
-        try {
-            const doc = JSON.parse(text) as {
-                providers?: Record<string, unknown>;
-            };
-            if (doc.providers && PROVIDER in doc.providers) {
-                delete doc.providers[PROVIDER];
-                writeTextAtomic(
-                    modelsPath(ctx),
-                    `${JSON.stringify(doc, null, 2)}\n`,
-                    0o600,
-                );
-                changed = true;
-            }
-        } catch {
-            // Leave corrupt files alone — user must fix manually.
-        }
+    const doc = loadJson(modelsPath(ctx)) as PrimeModels;
+    if (doc?.providers && PROVIDER in doc.providers) {
+        delete doc.providers[PROVIDER];
+        if (Object.keys(doc.providers).length === 0) delete doc.providers;
+        saveJson(modelsPath(ctx), doc);
+        changed = true;
     }
+    changed = deleteAuth(ctx) || changed;
+
+    const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
+    if (settings && settings.defaultProvider === PROVIDER) {
+        delete settings.defaultProvider;
+        delete settings.defaultModel;
+        saveJson(settingsPath(ctx), settings);
+        changed = true;
+    }
+
     if (readTextIfExists(skillPath(ctx)) === polliSkill) {
         removeIfExists(skillPath(ctx));
         changed = true;
@@ -159,48 +174,38 @@ const stripConfig = (ctx: HarnessContext): boolean => {
 };
 
 const result = (ctx: HarnessContext): HarnessResult => {
-    let configured = false;
-    let model: string | undefined;
-    const text = readTextIfExists(modelsPath(ctx));
-    if (text) {
-        try {
-            const doc = JSON.parse(text) as {
-                providers?: Record<
-                    string,
-                    {
-                        api?: string;
-                        baseUrl?: string;
-                        apiKey?: string;
-                        models?: Array<{ id: string }>;
-                    }
-                >;
-            };
-            const p = doc.providers?.[PROVIDER];
-            configured =
-                p?.api === "openai-completions" &&
-                p?.baseUrl === `${BASE_URL}/v1` &&
-                typeof p?.apiKey === "string" &&
-                p.apiKey.length > 0 &&
-                readTextIfExists(skillPath(ctx)) !== null;
-            model = p?.models?.[0]?.id;
-        } catch {
-            // JSON parse error → not configured
-        }
-    }
+    const doc = loadJson(modelsPath(ctx)) as PrimeModels;
+    const provider = doc?.providers?.[PROVIDER] as
+        | { baseUrl?: string; api?: string; apiKey?: string }
+        | undefined;
+    const settings = loadJson(settingsPath(ctx)) as PrimeSettings;
+    const model =
+        settings?.defaultProvider === PROVIDER
+            ? settings.defaultModel
+            : undefined;
     return {
         harness: ID,
         label: LABEL,
-        configured,
-        model,
+        configured:
+            provider?.baseUrl === `${BASE_URL}/v1` &&
+            provider?.api === "openai-completions" &&
+            provider?.apiKey === PROVIDER &&
+            readKey(ctx) !== null &&
+            readTextIfExists(skillPath(ctx)) !== null,
+        model: typeof model === "string" ? model : undefined,
         files: files(ctx),
     };
 };
 
 export const configurePrime = (
     ctx: HarnessContext,
-    settings: PrimeSettings,
+    models: HarnessModel[],
+    apiKey: string,
+    model: string,
 ): HarnessResult => {
-    applyWithSnapshot(ctx, ID, files(ctx), () => writeConfig(ctx, settings));
+    applyWithSnapshot(ctx, ID, files(ctx), () =>
+        writeConfig(ctx, models, apiKey, model),
+    );
     return result(ctx);
 };
 
@@ -217,20 +222,19 @@ export const disablePrime = (ctx: HarnessContext): HarnessResult => {
 export const prime: HarnessAdapter = {
     id: ID,
     label: LABEL,
-    description: "Configure Prime Agent as a Pollinations provider",
+    description: "Add Pollinations as a custom provider in Prime Agent",
     restartHint:
-        "Changes apply on the next Prime Agent session. Start it with: pi",
+        "Models reload when you open /model. Start Prime Agent with: prime-agent",
 
     async on(ctx, options) {
-        if (!isPrimeInstalled(ctx)) {
+        if (!commandExists("prime-agent", ctx.env)) {
             throw new Error(
-                `Prime Agent (pi) is not installed.\nInstall it with: ${INSTALL_CMD}`,
+                "Prime Agent was not found. Install it first: curl -fsSL https://app.primeintellect.ai/prime-agent/install.sh | sh",
             );
         }
-
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
-        if (!models.some((m) => m.id === model)) {
+        if (!models.some((candidate) => candidate.id === model)) {
             throw new Error(
                 `Model "${model}" is not a tool-calling text model. Run: polli models`,
             );
@@ -240,8 +244,7 @@ export const prime: HarnessAdapter = {
             { id: ID, label: LABEL, existingKey: readKey(ctx) },
             { browser: options.browser },
         );
-
-        return configurePrime(ctx, { apiKey, model, models });
+        return configurePrime(ctx, models, apiKey, model);
     },
 
     off: disablePrime,

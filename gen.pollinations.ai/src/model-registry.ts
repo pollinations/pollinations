@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    communityEndpointSupportedEndpoints,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -23,10 +26,6 @@ import {
 import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
-    communityEmbeddingSupportedEndpoints,
-    communityImageSupportedEndpoints,
-    communityTextSupportedEndpoints,
-    communityTranscriptionSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
@@ -135,16 +134,10 @@ function communityEntryToGenerationEntry(
         id: entry.id,
         aliases: entry.aliases,
         eventType,
-        supportedEndpoints:
-            eventType === "generate.image"
-                ? communityImageSupportedEndpoints(
-                      entry.definition.inputModalities,
-                  )
-                : eventType === "generate.audio"
-                  ? communityTranscriptionSupportedEndpoints()
-                  : eventType === "generate.embedding"
-                    ? communityEmbeddingSupportedEndpoints()
-                    : communityTextSupportedEndpoints(),
+        supportedEndpoints: communityEndpointSupportedEndpoints(
+            entry.communityEndpoint.modality,
+            entry.definition.inputModalities ?? [],
+        ),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,

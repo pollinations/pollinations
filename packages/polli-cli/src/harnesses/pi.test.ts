@@ -59,6 +59,7 @@ describe("pi harness", () => {
             .pollinations as Record<string, unknown>;
         expect(provider).toMatchObject({
             api: "openai-completions",
+            apiKey: "pollinations",
             baseUrl: "https://gen.pollinations.ai/v1",
         });
         expect((provider.models as { id: string }[]).map((m) => m.id)).toEqual([
@@ -211,9 +212,14 @@ describe("pi harness", () => {
         expect(pi.status(ctx).configured).toBe(false);
     });
 
-    it("reports unconfigured when models.json is corrupt JSON", () => {
-        mkdirSync(agentDir(), { recursive: true });
-        writeFileSync(modelsFile(), "{bad json");
+    it("reports unconfigured when the provider API key marker is missing", () => {
+        configurePi(ctx, settings);
+        const data = readJson(modelsFile());
+        const provider = (
+            data.providers as Record<string, Record<string, unknown>>
+        ).pollinations;
+        delete provider.apiKey;
+        writeFileSync(modelsFile(), `${JSON.stringify(data, null, 2)}\n`);
         expect(pi.status(ctx).configured).toBe(false);
     });
 
@@ -252,5 +258,11 @@ describe("pi harness", () => {
 
         configurePi(ctx, settings);
         expect(read(skillFile())).toBe("custom content");
+    });
+
+    it("stops before configuration when Pi is unavailable", async () => {
+        await expect(pi.on(ctx, {})).rejects.toThrow("Pi was not found");
+        expect(existsSync(agentDir())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
     });
 });

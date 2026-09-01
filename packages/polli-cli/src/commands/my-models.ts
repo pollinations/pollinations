@@ -25,6 +25,7 @@ const PRICE_FLAGS = [
         "--completion-image-price <number>",
         "Generated-image price (per image when --image-pricing request; per token when --image-pricing tokens)",
     ],
+    ["--completion-video-price <number>", "Generated-video price per second"],
 ] as const;
 
 const PRICE_OPTION_KEYS = [
@@ -37,6 +38,7 @@ const PRICE_OPTION_KEYS = [
     "completionReasoningPrice",
     "completionAudioPrice",
     "completionImagePrice",
+    "completionVideoPrice",
 ] as const;
 
 type PriceOptionKey = (typeof PRICE_OPTION_KEYS)[number];
@@ -58,9 +60,10 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "transcription" | "embedding";
+    modality: "text" | "image" | "video" | "transcription" | "embedding";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
+    completionVideoPrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
     inputModalities: string[];
     fallbacks: string[];
@@ -131,11 +134,12 @@ export function modelBody(
         if (
             opts.modality !== "text" &&
             opts.modality !== "image" &&
+            opts.modality !== "video" &&
             opts.modality !== "transcription" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
             );
         }
         body.modality = opts.modality;
@@ -197,6 +201,10 @@ function printModels(models: MyModel[]) {
                 model.type === "proxy" && model.modality === "image"
                     ? `${model.completionImagePrice}/${model.imagePricing === "tokens" ? "token" : "req"}`
                     : "-",
+            video_price:
+                model.type === "proxy" && model.modality === "video"
+                    ? `${model.completionVideoPrice}/sec`
+                    : "-",
             inputs:
                 model.type === "proxy"
                     ? model.inputModalities?.join(", ") || "-"
@@ -205,7 +213,10 @@ function printModels(models: MyModel[]) {
                 model.type === "proxy" && model.paidOnly
                     ? `${model.visibility} (paid only)`
                     : model.visibility,
-            upstream: model.upstreamModel,
+            upstream:
+                model.type === "proxy" && model.modality === "video"
+                    ? "-"
+                    : model.upstreamModel,
             base_url: model.baseUrl,
             fallbacks:
                 model.type === "proxy"
@@ -220,6 +231,7 @@ function printModels(models: MyModel[]) {
             "type",
             "modality",
             "image_price",
+            "video_price",
             "inputs",
             "visibility",
             "upstream",
@@ -246,12 +258,18 @@ const list = new Command("list")
 
 const create = addPriceOptions(
     new Command("create")
-        .description("Register an OpenAI-compatible model endpoint")
+        .description("Register a community model endpoint")
         .requiredOption("--name <name>", "Model name")
         .requiredOption("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
+        .option(
+            "--base-url <url>",
+            "OpenAI-compatible base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
@@ -272,7 +290,7 @@ const create = addPriceOptions(
         )
         .option(
             "--modality <modality>",
-            "Model family: text (default), image, transcription, or embedding",
+            "Model family: text (default), image, video, transcription, or embedding",
         )
         .option(
             "--image-pricing <mode>",
@@ -303,8 +321,14 @@ const update = addPriceOptions(
         .option("--name <name>", "Model name")
         .option("--title <title>", "Display title shown in the catalog")
         .option("--description <text>", "Model description")
-        .option("--base-url <url>", "OpenAI-compatible base URL")
-        .option("--upstream-model <model>", "Upstream model id")
+        .option(
+            "--base-url <url>",
+            "OpenAI-compatible base URL, or exact video endpoint URL",
+        )
+        .option(
+            "--upstream-model <model>",
+            "Upstream model id (not used for video)",
+        )
         .option("--bearer-token <token>", "Upstream bearer token")
         .option(
             "--visibility <visibility>",
@@ -402,12 +426,15 @@ const models = new Command("models")
 
 const test = new Command("test")
     .description("Test an endpoint/model before registering it")
-    .requiredOption("--base-url <url>", "OpenAI-compatible base URL")
+    .requiredOption(
+        "--base-url <url>",
+        "OpenAI-compatible base URL, or exact video endpoint URL",
+    )
     .requiredOption("--bearer-token <token>", "Upstream bearer token")
-    .requiredOption("--model <model>", "Upstream model id")
+    .option("--model <model>", "Upstream model id (not used for video)")
     .option(
         "--modality <modality>",
-        "Model family: text (default), image, transcription, or embedding",
+        "Model family: text (default), image, video, transcription, or embedding",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -415,12 +442,17 @@ const test = new Command("test")
             opts.modality !== undefined &&
             opts.modality !== "text" &&
             opts.modality !== "image" &&
+            opts.modality !== "video" &&
             opts.modality !== "transcription" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
             );
+        }
+        const modality = opts.modality ?? "text";
+        if (modality !== "video" && !opts.model) {
+            fail("--model is required unless --modality is video");
         }
         try {
             const res = await gen<Record<string, unknown>>(
@@ -431,10 +463,8 @@ const test = new Command("test")
                     body: {
                         baseUrl: opts.baseUrl,
                         bearerToken: opts.bearerToken,
-                        model: opts.model,
-                        ...(opts.modality !== undefined && {
-                            modality: opts.modality,
-                        }),
+                        ...(opts.model && { model: opts.model }),
+                        modality,
                     },
                 },
             );
@@ -446,7 +476,7 @@ const test = new Command("test")
 
 export const myModelsCommand = new Command("my-models")
     .description(
-        "Manage private and published community text, image, transcription, and embedding models",
+        "Manage private and published community text, image, video, transcription, and embedding models",
     )
     .addCommand(list)
     .addCommand(create)

@@ -1,3 +1,5 @@
+import type { PublicPriceInfo } from "@shared/registry/public-pricing.ts";
+
 export type ModelCategory =
     | "text"
     | "image"
@@ -49,21 +51,7 @@ export type ModelPriceVariant = {
     prices: ModelPriceLine[];
 };
 
-export type ModelPriceAdjustment = {
-    name: string;
-    label: string;
-    kind: string;
-    price: string;
-    quantity: number;
-    unit: string;
-    suffix?: string;
-    option?: {
-        group: string;
-        value: string;
-        label: string;
-        default?: boolean;
-    };
-};
+export type ModelPriceAdjustment = PublicPriceInfo;
 
 export type ModelPrice = {
     name: string;
@@ -91,6 +79,7 @@ export type ModelPrice = {
     priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
+    users7d?: number;
     contextLength?: number;
     minDuration?: number;
     maxDuration?: number;

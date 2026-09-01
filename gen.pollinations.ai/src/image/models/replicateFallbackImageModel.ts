@@ -17,7 +17,8 @@ type ReplicateFallbackModel =
     | "kontext-replicate"
     | "flux-2-pro-replicate"
     | "qwen-image-3-replicate"
-    | "p-image-edit-replicate";
+    | "p-image-edit-replicate"
+    | "krea-replicate";
 
 const COMMON_RATIOS = [
     "1:1",
@@ -41,6 +42,17 @@ const QWEN_RATIOS = [
     "2:3",
     "2:1",
     "1:2",
+] as const;
+
+const KREA_RATIOS = [
+    "1:1",
+    "4:3",
+    "3:2",
+    "16:9",
+    "2.35:1",
+    "4:5",
+    "2:3",
+    "9:16",
 ] as const;
 
 async function runReplicateImage(
@@ -181,6 +193,21 @@ export async function callReplicateFallbackImage(
                     seed: params.seed,
                 },
                 "Pruna p-image-edit",
+            );
+            break;
+        }
+        case "krea-replicate": {
+            if (params.image.length > 0) {
+                throw new HttpError("Krea does not accept image input", 400);
+            }
+            buffer = await runReplicateImage(
+                "krea/krea-2-medium",
+                {
+                    prompt,
+                    aspect_ratio: closestRatio(params, KREA_RATIOS),
+                    seed: params.seed,
+                },
+                "Krea 2 Medium",
             );
             break;
         }

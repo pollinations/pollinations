@@ -9,6 +9,7 @@ import {
     callAzureFlux2,
     callAzureFluxKontext,
 } from "./models/azureFluxKontextModel.js";
+import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -25,6 +26,7 @@ import {
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
+    callFluxSchnellDeepInfraAPI,
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
@@ -698,6 +700,7 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
+        case "nanobanana-2-openrouter-ai-studio":
         case "nanobanana-2-lite": {
             logError(
                 "Nano Banana authentication check:",
@@ -720,7 +723,8 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana-pro": {
+        case "nanobanana-pro":
+        case "nanobanana-pro-openrouter-vertex": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -768,6 +772,9 @@ const generateImage = async (
 
         case "seedream5":
             return await callSeedream5API(prompt, safeParams);
+
+        case "seedream5-fal":
+            return await callFalFallbackImage(prompt, safeParams);
 
         case "seedream5-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
@@ -834,6 +841,7 @@ const generateImage = async (
         case "flux-2-pro-replicate":
         case "qwen-image-3-replicate":
         case "p-image-edit-replicate":
+        case "krea-replicate":
             return await callReplicateFallbackImage(prompt, safeParams);
 
         case "dreamshaper":
@@ -842,6 +850,9 @@ const generateImage = async (
 
         case "flux":
             return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "flux-deepinfra":
+            return await callFluxSchnellDeepInfraAPI(prompt, safeParams);
 
         case "zimage-fal":
             return await callZImageFalAPI(prompt, safeParams);

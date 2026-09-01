@@ -1,47 +1,25 @@
+import { AUDIO_SERVICES } from "@shared/registry/audio.ts";
+import { AUDIO_FALLBACKS } from "@shared/registry/audio-fallbacks.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    getVisibleAudioModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 
-const TEXT_ROUTES = {
-    deepseek: ["deepseek-deepinfra"],
-    "minimax-m2.7": ["minimax-m2.7-deepinfra"],
-    "qwen3.8-2.4t-a95b": ["qwen3.8-2.4t-a95b-deepinfra"],
-    "qwen3.8-27b": [
-        "qwen3.8-27b-openrouter-ionstream",
-        "qwen3.8-27b-openrouter-reka",
-        "qwen3.8-27b-openrouter-akashml",
-    ],
-    kimi: ["kimi-deepinfra"],
-    llama: ["llama-deepinfra"],
-    "mistral-large": [
-        "mistral-large-openrouter-zdr",
-        "mistral-large-openrouter-mistral",
-    ],
-    gemma: ["gemma-deepinfra"],
-    "gemma-4-31b": ["gemma-4-31b-deepinfra"],
-    "claude-opus-4.7": [
-        "claude-opus-4.7-openrouter-vertex",
-        "claude-opus-4.7-openrouter-anthropic",
-        "claude-opus-4.7-openrouter-azure",
-    ],
-} as const;
-
 const OPENROUTER_ROUTES = [
     ["qwen3.8-27b-openrouter-ionstream", "qwen/qwen3.8-27b", "ionstream/fp8"],
-    ["qwen3.8-27b-openrouter-reka", "qwen/qwen3.8-27b", "reka/fp8"],
-    ["qwen3.8-27b-openrouter-akashml", "qwen/qwen3.8-27b", "akashml/fp8"],
     [
         "mistral-large-openrouter-zdr",
         "mistralai/mistral-large-2512",
         "mistral/zdr",
-    ],
-    [
-        "mistral-large-openrouter-mistral",
-        "mistralai/mistral-large-2512",
-        "mistral",
     ],
     [
         "claude-opus-4.7-openrouter-vertex",
@@ -49,23 +27,74 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "claude-opus-4.7-openrouter-anthropic",
-        "anthropic/claude-opus-4.7",
-        "anthropic",
+        "llama-scout-openrouter-vertex",
+        "meta-llama/llama-4-scout",
+        "google-vertex/us-east5",
+    ],
+    ["grok-openrouter-xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
+    ["grok-large-openrouter-xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
+    [
+        "claude-fast-openrouter-vertex",
+        "anthropic/claude-haiku-4.5",
+        "google-vertex/global",
     ],
     [
-        "claude-opus-4.7-openrouter-azure",
-        "anthropic/claude-opus-4.7",
-        "azure/global",
+        "claude-fable-5-openrouter-vertex",
+        "anthropic/claude-fable-5",
+        "google-vertex/global",
+    ],
+    [
+        "muse-glimmer-openrouter-parasail",
+        "meta/muse-glimmer-30b",
+        "parasail/bf16",
+    ],
+    [
+        "nemotron-3.5-lightning-openrouter-coreweave",
+        "nvidia/nemotron-3.5-lightning",
+        "coreweave/bf16",
+    ],
+    ["mistral-openrouter-eu", "mistralai/mistral-small-2603", "mistral/eu"],
+    [
+        "gemini-openrouter-ai-studio-priority",
+        "google/gemini-3.7-flash",
+        "google-ai-studio/priority",
+    ],
+    [
+        "gemini-fast-openrouter-ai-studio",
+        "google/gemini-2.5-flash-lite",
+        "google-ai-studio",
+    ],
+    [
+        "gemini-flash-lite-3.5-openrouter-ai-studio-flex",
+        "google/gemini-3.5-flash-lite",
+        "google-ai-studio/flex",
+    ],
+    [
+        "gemini-large-openrouter-ai-studio",
+        "google/gemini-3.1-pro-preview",
+        "google-ai-studio",
+    ],
+    [
+        "qwen-vision-pro-openrouter-novita",
+        "qwen/qwen3-vl-235b-a22b-thinking",
+        "novita/bf16",
+    ],
+    ["glm-5.3-openrouter-friendli", "z-ai/glm-5.3", "friendli"],
+    [
+        "qwen-coder-large-openrouter-streamlake",
+        "qwen/qwen3-coder-next",
+        "streamlake",
     ],
 ] as const;
 
-const IMAGE_ROUTES = {
-    kontext: "kontext-replicate",
-    "flux-2-pro": "flux-2-pro-replicate",
-    "qwen-image-3": "qwen-image-3-replicate",
-    "p-image-edit": "p-image-edit-replicate",
-} as const;
+function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {
+    return Object.fromEntries(
+        Object.entries(fallbacks).map(([parent, routes]) => [
+            parent,
+            Object.keys(routes),
+        ]),
+    );
+}
 
 function expectInheritedRoute(
     services: Record<string, ModelDefinition>,
@@ -77,19 +106,22 @@ function expectInheritedRoute(
     expect(parent.fallbacks).toContain(routeId);
     expect(route).toMatchObject({
         aliases: [],
-        hidden: true,
+        fallbackOnly: true,
         brand: parent.brand,
         category: parent.category,
         title: parent.title,
         inputModalities: parent.inputModalities,
         outputModalities: parent.outputModalities,
     });
+    expect(route.hidden).toBeUndefined();
     expect(route.fallbacks).toBeUndefined();
 }
 
 describe("static provider fallbacks", () => {
-    it("registers exact text routes as hidden inherited models", () => {
-        for (const [parent, routes] of Object.entries(TEXT_ROUTES)) {
+    it("registers exact text routes as fallback-only inherited models", () => {
+        for (const [parent, routes] of Object.entries(
+            fallbackRoutes(TEXT_FALLBACKS),
+        )) {
             expect(
                 (TEXT_SERVICES as Record<string, ModelDefinition>)[parent]
                     .fallbacks,
@@ -102,10 +134,39 @@ describe("static provider fallbacks", () => {
     });
 
     it("registers image and 3D routes without public aliases", () => {
-        for (const [parent, route] of Object.entries(IMAGE_ROUTES)) {
-            expectInheritedRoute(IMAGE_SERVICES, parent, route);
+        for (const [parent, routes] of Object.entries(
+            fallbackRoutes(IMAGE_FALLBACKS),
+        )) {
+            for (const route of routes) {
+                expectInheritedRoute(IMAGE_SERVICES, parent, route);
+            }
+        }
+        for (const [parent, routes] of Object.entries(
+            fallbackRoutes(AUDIO_FALLBACKS),
+        )) {
+            for (const route of routes) {
+                expectInheritedRoute(AUDIO_SERVICES, parent, route);
+            }
         }
         expectInheritedRoute(MODEL3D_SERVICES, "trellis-2", "trellis-2-fal");
+    });
+
+    it("keeps provider routes out of public model lists", () => {
+        const publicText = new Set<string>(getVisibleTextModels());
+        const publicImage = new Set<string>(getVisibleImageModels());
+        const publicAudio = new Set<string>(getVisibleAudioModels());
+        for (const routes of Object.values(fallbackRoutes(TEXT_FALLBACKS))) {
+            for (const route of routes)
+                expect(publicText.has(route)).toBe(false);
+        }
+        for (const routes of Object.values(fallbackRoutes(IMAGE_FALLBACKS))) {
+            for (const route of routes)
+                expect(publicImage.has(route)).toBe(false);
+        }
+        for (const routes of Object.values(fallbackRoutes(AUDIO_FALLBACKS))) {
+            for (const route of routes)
+                expect(publicAudio.has(route)).toBe(false);
+        }
     });
 
     it("keeps provider-specific fallback costs", () => {
@@ -120,12 +181,9 @@ describe("static provider fallbacks", () => {
         expect(MODEL3D_SERVICES["trellis-2-fal"].cost).toEqual({
             completionImageTokens: 0.25,
         });
-        for (const [route] of OPENROUTER_ROUTES) {
-            expect(TEXT_SERVICES[route].paidOnly).toBe(true);
-        }
     });
 
-    it("binds hidden text ids to their exact provider routes", () => {
+    it("binds fallback-only text ids to their exact provider routes", () => {
         expect(findModelByName("deepseek-deepinfra")?.config()).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",

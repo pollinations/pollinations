@@ -1,3 +1,4 @@
+import { defineCostVariants, matchResolution } from "./cost-variants";
 import type { FallbackMap } from "./merge-fallbacks";
 
 /**
@@ -39,6 +40,83 @@ export const IMAGE_FALLBACKS = {
         "p-image-edit-replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "nanobanana-2": {
+        "nanobanana-2-openrouter-ai-studio": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "nanobanana-pro": {
+        "nanobanana-pro-openrouter-vertex": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    flux: {
+        "flux-deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: { completionImageTokens: 0.0005 },
+        },
+    },
+    krea: {
+        "krea-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    seedream5: {
+        "seedream5-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+            maxReferenceImages: 10,
+        },
+    },
+    "grok-video-pro": {
+        "grok-video-pro-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "grok-imagine-video-1.5": {
+        "grok-imagine-video-1.5-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    wan: {
+        "wan-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "seedance-pro": {
+        "seedance-pro-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: { completionVideoSeconds: 0.0216 },
+            ...defineCostVariants(
+                {
+                    "480p": { completionVideoSeconds: 0.0096 },
+                    "1080p": { completionVideoSeconds: 0.0486 },
+                },
+                matchResolution("480p", "1080p"),
+                {
+                    "480p": {
+                        label: "480p",
+                        description:
+                            "Applies when the requested video resolution is 480p.",
+                    },
+                    "1080p": {
+                        label: "1080p",
+                        description:
+                            "Applies when the requested video resolution is 1080p.",
+                    },
+                },
+                "720p",
+            ),
         },
     },
     zimage: {

@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+export const postHeroSpacingClassName = "-mt-5 sm:-mt-8";
+
 /** Website-only painted hero backdrop; shared controls inside come from @pollinations/ui. */
 export function HeroScene({
     scene,

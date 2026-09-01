@@ -80,8 +80,7 @@ export function QuestLeaderboardContent({
             title="Quest leaderboard"
             intro="Builders who completed public GitHub Pollen Quests."
             action={<LeaderboardAction />}
-            framed
-            panelClassName="gap-6"
+            className="gap-5"
         >
             <dl
                 className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
@@ -217,7 +216,7 @@ export function QuestLeaderboard() {
             title="Quest leaderboard"
             intro="Builders who completed public GitHub Pollen Quests."
             action={<LeaderboardAction />}
-            framed
+            className="gap-5"
         >
             {state.status === "loading" ? (
                 <output

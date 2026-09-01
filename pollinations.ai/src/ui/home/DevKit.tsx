@@ -3,6 +3,7 @@ import {
     BeakerIcon,
     CloudUploadIcon,
     ContentHeader,
+    cn,
     ExternalLinkButton,
     GenApiIcon,
     Heading,
@@ -169,12 +170,12 @@ function FeatureGroup({
     );
 }
 
-export function DevKit() {
+export function DevKit({ className }: { className?: string }) {
     const { data } = usePlatformStats();
     const modelCount = data?.models ?? null;
 
     return (
-        <section className="flex flex-col gap-10">
+        <section className={cn("flex flex-col gap-10", className)}>
             <Surface variant="card" className="flex flex-col gap-6 p-5 sm:p-6">
                 <ContentHeader
                     eyebrow="Start free"

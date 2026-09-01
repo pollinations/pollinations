@@ -1,4 +1,4 @@
-import { ScrollArea } from "@pollinations/ui";
+import { cn, ScrollArea } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
 import type { DirectoryApp } from "../../data/publicStats";
 import { AppTile } from "./cards";
@@ -18,10 +18,12 @@ export function AppCarousel({
     apps,
     size = "featured",
     ariaLabel = "Featured apps",
+    className,
 }: {
     apps: DirectoryApp[];
     size?: keyof typeof layouts;
     ariaLabel?: string;
+    className?: string;
 }) {
     const scroller = useRef<HTMLDivElement>(null);
     const drag = useRef<{
@@ -75,7 +77,7 @@ export function AppCarousel({
         <section
             aria-roledescription="carousel"
             aria-label={ariaLabel}
-            className="flex min-w-0 flex-col gap-3"
+            className={cn("flex min-w-0 flex-col gap-3", className)}
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             onFocus={() => setPaused(true)}
@@ -85,7 +87,7 @@ export function AppCarousel({
                 ref={scroller}
                 axis="x"
                 tabIndex={0}
-                className="apps-featured-rail cursor-grab select-none active:cursor-grabbing"
+                className="apps-featured-rail cursor-grab select-none pb-4 active:cursor-grabbing"
                 onClickCapture={(event) => {
                     if (suppressClick.current) {
                         event.preventDefault();

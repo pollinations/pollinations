@@ -1,0 +1,17 @@
+{
+  "name": "discord-byop-bot",
+  "version": "1.0.0",
+  "description": "Discord bot demonstrating Pollinations Bring Your Own Pollen device authorization flow",
+  "type": "module",
+  "scripts": {
+    "register": "node register.js",
+    "start": "node bot.js",
+    "test": "node test.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

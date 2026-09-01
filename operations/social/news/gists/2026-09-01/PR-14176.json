@@ -1,0 +1,34 @@
+{
+  "pr_number": 14176,
+  "title": "feat(cli): add Prime Agent harness",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/14176",
+  "merged_at": "2026-09-01T04:34:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `polli harness prime on|off|status` using Prime Agent’s native provider configuration.\n- Fetches the live compatible model list, stores a dedicated key in `auth.json`, selects the startup model, and installs the Polli skill.\n- Preserves unrelated Prime configuration and restores or removes only Pollinations-managed entries on `off`.\n- Checks that `prime-agent` is installed before login or file changes.\n\nTests: 67 CLI tests pass; CLI build passes.\n\nFixes #14120",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Prime gets a pollen plug-in",
+    "blurb": "Polli can now set up Prime Agent without turning its config file into compost. One command brings compatible models, a dedicated key, a startup model, and the Polli skill into the hive.",
+    "summary": "Added `polli harness prime on|off|status` to configure Prime Agent with Pollinations’ live compatible model list, a dedicated `auth.json` key, a startup model, and the Polli skill while preserving unrelated Prime settings.",
+    "impact": "Prime Agent users can connect and disconnect Pollinations through the CLI with reversible, narrowly scoped configuration changes, and Polli checks that `prime-agent` is installed before touching login or config files.",
+    "keywords": [
+      "polli-cli",
+      "prime-agent",
+      "harness",
+      "models",
+      "authentication",
+      "developer-tools"
+    ],
+    "visual_concept": "Depict Prime Agent as a friendly retro terminal workstation receiving a carefully labeled pollen-powered adapter rather than being rebuilt: Polli in a tiny mechanic tool belt plugs a lime-green key into a config panel, while a small code-plant grows beside it. The screen shows simple pixel text such as `PRIME: ON`, with neat separate drawers representing preserved existing settings and Pollinations-managed entries.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wearing a tiny mechanic tool belt as she gently plugs a lime green (#ecf874) pollen key into a friendly retro Prime Agent terminal; its CRT screen reads `PRIME: ON` in simple dark-purple pixel text, with tidy config drawers and a small code-plant flowering nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradients, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14176.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wearing a tiny mechanic tool belt as she gently plugs a lime green (#ecf874) pollen key into a friendly retro Prime Agent terminal; its CRT screen reads `PRIME: ON` in simple dark-purple pixel text, with tidy config drawers and a small code-plant flowering nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-cream gradients, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-01T04:35:11.320227+00:00"
+}

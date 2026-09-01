@@ -23,6 +23,7 @@ _URL = re.compile(r"https?://\S+", re.IGNORECASE)
 _MENTION = re.compile(r"<[@#][!&]?\d+>")
 _WEB_SEARCH_CONTEXT = re.compile(r"^\s*<details><summary>Web search:", re.IGNORECASE)
 _MAX_DISCORD_CONTENT = 1_900
+_DISCORD_PREVIEW_EDGE = 280
 _MAX_THREAD_NAME = 100
 _THREAD_CLEANUP_INTERVAL = 60
 _THREAD_INACTIVE_SECONDS = 5 * 60
@@ -274,8 +275,17 @@ def conversation_thread_name(messages: list[dict]) -> str:
     return f"human-{uuid4_hex()[:12]}"
 
 
+def discord_preview(content: str) -> str:
+    if len(content) <= _DISCORD_PREVIEW_EDGE * 2:
+        return content
+    return f"{content[:_DISCORD_PREVIEW_EDGE]}\n...\n{content[-_DISCORD_PREVIEW_EDGE:]}"
+
+
 def format_transcript(messages: list[dict]) -> list[str]:
-    text = "\n\n".join(f"{message['role'].upper()}: {harden_content(message['content'])}" for message in messages)
+    text = "\n\n".join(
+        f"{message['role'].upper()}: {harden_content(discord_preview(message['content']))}"
+        for message in messages
+    )
     return [text[offset : offset + _MAX_DISCORD_CONTENT] for offset in range(0, len(text), _MAX_DISCORD_CONTENT)]
 
 

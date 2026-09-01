@@ -8,6 +8,7 @@ from src.api.humans import (
     HumanService,
     conversation_identity,
     conversation_thread_name,
+    discord_preview,
     format_transcript,
     harden_content,
     stream_completion,
@@ -135,9 +136,13 @@ class HumanRequestTests(unittest.TestCase):
             harden_content("**hi** <@123> https://example.com"),
             "\\*\\*hi\\*\\* [mention] [link removed]",
         )
-        chunks = format_transcript([{"role": "user", "content": "x" * 4_000}])
-        self.assertEqual(len(chunks), 3)
-        self.assertTrue(all(len(chunk) <= 1_900 for chunk in chunks))
+        long_content = "a" * 300 + "hidden middle" + "z" * 300
+        self.assertEqual(
+            discord_preview(long_content),
+            "a" * 280 + "\n...\n" + "z" * 280,
+        )
+        chunks = format_transcript([{"role": "user", "content": long_content}])
+        self.assertEqual(chunks, ["USER: " + "a" * 280 + "\n...\n" + "z" * 280])
 
     def test_truncates_cl100k_tokens(self):
         self.assertEqual(truncate_tokens("hello world", 1), ("hello", 1, True))

@@ -1047,12 +1047,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-sonnet-5 standard rates effective 2026-09-01.
-            // Cache meters remain at AWS's currently published rates pending post-promo evidence.
-            promptTextTokens: perMillion(3),
+            // Bedrock anthropic.claude-sonnet-5 promo rates through 2026-08-31.
+            promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
             promptCacheWriteTokens: perMillion(2.5),
-            completionTextTokens: perMillion(15),
+            completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
         description:

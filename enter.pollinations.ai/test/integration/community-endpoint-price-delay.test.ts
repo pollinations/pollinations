@@ -326,56 +326,6 @@ describe("community endpoint 12-hour price-change delay", () => {
         expect(row?.pendingAt).toBeNull();
     });
 
-    test("unhiding waits for the publication delay", async ({
-        sessionToken,
-    }) => {
-        await approveCommunityModels();
-        const created = await postModel(sessionToken, "", {
-            name: "relisted-model",
-            title: "Relisted model",
-            visibility: "public",
-            baseUrl: "https://text.example.com/v1",
-            bearerToken: "tok",
-        });
-        const id = created.id as string;
-        await publishPendingModel(sessionToken, id);
-        const db = drizzle(env.DB);
-        await db
-            .update(schema.communityEndpoint)
-            .set({
-                hiddenAt: new Date(),
-                hiddenReason: "Hidden by monitor",
-                hiddenBy: "monitor",
-            })
-            .where(eq(schema.communityEndpoint.id, id));
-
-        const early = await SELF.fetch(`${endpointUrl}/${id}/update`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Cookie: `better-auth.session_token=${sessionToken}`,
-            },
-            body: JSON.stringify({ hidden: false }),
-        });
-        expect(early.status).toBe(400);
-        expect(await early.text()).toContain(
-            "can be relisted 12 hours after they were hidden",
-        );
-
-        await db
-            .update(schema.communityEndpoint)
-            .set({
-                hiddenAt: new Date(
-                    Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1000,
-                ),
-            })
-            .where(eq(schema.communityEndpoint.id, id));
-        const relisted = await postModel(sessionToken, `/${id}/update`, {
-            hidden: false,
-        });
-        expect(relisted).toMatchObject({ hidden: false, hiddenAt: null });
-    });
-
     test("price change during pending publication restarts the delay", async ({
         sessionToken,
     }) => {

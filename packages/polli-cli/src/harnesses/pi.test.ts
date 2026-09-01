@@ -59,7 +59,6 @@ describe("pi harness", () => {
             .pollinations as Record<string, unknown>;
         expect(provider).toMatchObject({
             api: "openai-completions",
-            apiKey: "pollinations",
             baseUrl: "https://gen.pollinations.ai/v1",
         });
         expect((provider.models as { id: string }[]).map((m) => m.id)).toEqual([
@@ -209,17 +208,6 @@ describe("pi harness", () => {
     it("reports unconfigured when the API key is missing", () => {
         configurePi(ctx, settings);
         rmSync(authFile());
-        expect(pi.status(ctx).configured).toBe(false);
-    });
-
-    it("reports unconfigured when the provider API key marker is missing", () => {
-        configurePi(ctx, settings);
-        const data = readJson(modelsFile());
-        const provider = (
-            data.providers as Record<string, Record<string, unknown>>
-        ).pollinations;
-        delete provider.apiKey;
-        writeFileSync(modelsFile(), `${JSON.stringify(data, null, 2)}\n`);
         expect(pi.status(ctx).configured).toBe(false);
     });
 

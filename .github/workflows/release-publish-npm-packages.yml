@@ -4,7 +4,6 @@ on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/release-publish-npm-packages.yml"
       - "packages/sdk/**"
       - "packages/ui/**"
       - "packages/mcp/**"
@@ -37,7 +36,7 @@ jobs:
           echo "sdk=$(echo "$changed" | grep -q '^packages/sdk/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "ui=$(echo "$changed" | grep -q '^packages/ui/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "mcp=$(echo "$changed" | grep -q '^packages/mcp/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "cli=$(echo "$changed" | grep -Eq '^packages/polli-cli/|^\.github/workflows/release-publish-npm-packages\.yml$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "cli=$(echo "$changed" | grep -q '^packages/polli-cli/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "Changed files:"
           echo "$changed" | grep '^packages/' || true
 
@@ -175,13 +174,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies & build
@@ -207,3 +205,5 @@ jobs:
         if: steps.check.outputs.skip != 'true'
         working-directory: packages/polli-cli
         run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

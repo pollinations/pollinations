@@ -1,6 +1,5 @@
 import { validateCommunityEndpointUrl } from "@shared/community-endpoint-urls.ts";
 import {
-    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointVisibility,
     communityModelId,
     type EndpointAgentListingPayload,
@@ -780,19 +779,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 update.description = input.description || null;
             }
             if (input.hidden !== undefined) {
-                if (
-                    !input.hidden &&
-                    (input.visibility ?? currentVisibility) === "public" &&
-                    endpoint.hiddenAt &&
-                    Date.now() <
-                        endpoint.hiddenAt.getTime() +
-                            COMMUNITY_ENDPOINT_CHANGE_DELAY_MS
-                ) {
-                    throw new HTTPException(400, {
-                        message:
-                            "Community models can be relisted 12 hours after they were hidden",
-                    });
-                }
                 update.hiddenAt = input.hidden ? new Date() : null;
                 update.hiddenReason = input.hidden ? "Hidden by owner" : null;
                 update.hiddenBy = input.hidden ? "owner" : null;

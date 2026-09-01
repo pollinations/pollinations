@@ -1,22 +1,39 @@
-# Pollinations OAuth browser demo
+# Sign in with Pollinations — demo client
 
-A minimal OAuth authorization-code + PKCE app. OAuth and generation requests
-go directly from the browser to Pollinations. There is no backend or proxy.
+Minimal OAuth 2.1 client (authorization code + PKCE S256, public client, no
+client secret) against `enter.pollinations.ai`. Zero dependencies, Node ≥ 18.
+This is the reference for third-party sites integrating "Log in with
+Pollinations" — the same shape alp.anondrop.net-style clients use.
+
+## Register a client
+
+1. Sign in at https://enter.pollinations.ai/keys and create an **App Key** (`pk_…`).
+2. Add `http://localhost:8789/callback` to the key's **redirect URIs**
+   (loopback redirects match any port per RFC 8252 §7.3).
 
 ## Run
 
-1. Create an **App Key** at https://enter.pollinations.ai/keys.
-2. Add `http://localhost:8789/` to its redirect URIs.
-3. Replace `pk_your_app_key` in `index.html` with the App Key.
-4. Serve this directory with any static file server, for example:
-
 ```bash
-npx serve . --listen 8789
+CLIENT_ID=pk_your_app_key npm start
+# open http://localhost:8789
 ```
 
-Then open http://localhost:8789.
+Env vars: `CLIENT_ID` (required), `ISSUER` (default
+`https://enter.pollinations.ai`), `PORT` (8789), `REDIRECT_URI`, `SCOPE`
+(default `profile`), `GEN_URL` (default `https://gen.pollinations.ai`).
 
-The example keeps the delegated key in memory. Production apps should do the
-same, or use `sessionStorage` when the key must survive a page reload. A backend
-is only needed when the app specifically wants server-side sessions or API
-calls.
+## What it demonstrates
+
+- **Discovery**: fetches `/.well-known/oauth-authorization-server` (RFC 8414)
+  and uses the advertised endpoints — no hardcoded paths.
+- **Authorization request**: `response_type=code` with `state` (CSRF) and a
+  fresh PKCE S256 `code_challenge` per login.
+- **Token exchange**: form-encoded `POST` to the token endpoint with
+  `code_verifier`; the access token is an opaque `sk_` key.
+- **Userinfo**: `Bearer` call to the advertised `userinfo_endpoint`.
+- **Delegated API access**: a chat completion against `gen.pollinations.ai`
+  paid from the signed-in user's pollen, within the budget/expiry they
+  approved on the consent screen.
+
+Sessions and pending logins are in-memory — restart logs everyone out. That is
+intentional; this is a protocol demo, not a production template.

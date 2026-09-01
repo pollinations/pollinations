@@ -37,6 +37,7 @@ import {
 } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
+import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/community")({
@@ -184,7 +185,10 @@ function CommunityParticipation() {
 
     return (
         <>
-            <HeroScene scene="/heroes/community.webp">
+            <HeroScene
+                scene="/heroes/community.webp"
+                nightScene="/heroes/community-top-night.webp"
+            >
                 <ContentHeader
                     eyebrow="Open source, open roadmap"
                     title="Contribute"
@@ -895,6 +899,10 @@ function CommunityPage() {
                     Browse the repo
                 </InlineLink>
             </Callout>
+            <BottomScene
+                dayScene="/heroes/community-bottom-day.webp"
+                nightScene="/heroes/community-bottom-night.webp"
+            />
         </>
     );
 }

@@ -29,6 +29,7 @@ import SPOTLIGHT from "../data/spotlight.json";
 import { routeHead } from "../routeMeta";
 import { AppCarousel } from "../ui/apps/AppCarousel";
 import { AppRow } from "../ui/apps/cards";
+import { BottomScene } from "../ui/site/BottomScene";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 import {
     APP_CATEGORIES,
@@ -182,7 +183,10 @@ function AppsPage() {
 
     return (
         <>
-            <HeroScene scene="/heroes/apps.webp">
+            <HeroScene
+                scene="/heroes/apps.webp"
+                nightScene="/heroes/apps-top-night.webp"
+            >
                 <ContentHeader
                     eyebrow={
                         loading
@@ -404,6 +408,10 @@ function AppsPage() {
                     </>
                 )}
             </section>
+            <BottomScene
+                dayScene="/heroes/apps-bottom-day.webp"
+                nightScene="/heroes/apps-bottom-night.webp"
+            />
         </>
     );
 }

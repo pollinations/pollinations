@@ -1,3 +1,4 @@
+import { useColorMode } from "@pollinations/ui";
 import type { ReactNode } from "react";
 
 export const postHeroSpacingClassName = "-mt-5 sm:-mt-8";
@@ -5,17 +6,21 @@ export const postHeroSpacingClassName = "-mt-5 sm:-mt-8";
 /** Website-only painted hero backdrop; shared controls inside come from @pollinations/ui. */
 export function HeroScene({
     scene,
+    nightScene,
     compactBottom = false,
     children,
 }: {
     scene: string;
+    nightScene: string;
     compactBottom?: boolean;
     children: ReactNode;
 }) {
+    const { isDark } = useColorMode();
+
     return (
         <section className="-mx-4 -mt-10 relative flex items-start sm:-mx-8 sm:-mt-16 md:-mx-18">
             <img
-                src={scene}
+                src={isDark ? nightScene : scene}
                 alt=""
                 aria-hidden="true"
                 width={2048}

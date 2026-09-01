@@ -284,6 +284,12 @@ main > * {
     mask-composite: intersect;
 }
 
+/* Closing scenes use the full card width. Their quiet sky dissolves into the
+   page above, while the illustrated ground reaches the card's rounded edge. */
+.bottom-scene {
+    mask-image: linear-gradient(to bottom, transparent 0%, black 34%);
+}
+
 /* ── /play ─────────────────────────────────────────────────────────────
    Layout that needs container queries or sticky positioning, which is
    clearer as CSS than as a wall of arbitrary variants. */

@@ -908,20 +908,17 @@ export class Pollinations {
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<unknown>(
-                    buffer,
-                    (data) => {
-                        try {
-                            return JSON.parse(data) as unknown;
-                        } catch {
-                            throw new PollinationsError(
-                                "Invalid JSON in chat completion stream",
-                                "MALFORMED_STREAM",
-                                502,
-                            );
-                        }
-                    },
-                );
+                const result = parseSSEBuffer<unknown>(buffer, (data) => {
+                    try {
+                        return JSON.parse(data) as unknown;
+                    } catch {
+                        throw new PollinationsError(
+                            "Invalid JSON in chat completion stream",
+                            "MALFORMED_STREAM",
+                            502,
+                        );
+                    }
+                });
 
                 buffer = result.remainingBuffer;
                 for (const chunk of result.chunks) {
@@ -931,9 +928,7 @@ export class Pollinations {
                         !chunk ||
                         typeof chunk !== "object" ||
                         !("choices" in chunk) ||
-                        !Array.isArray(
-                            (chunk as { choices: unknown }).choices,
-                        )
+                        !Array.isArray((chunk as { choices: unknown }).choices)
                     ) {
                         throw new PollinationsError(
                             "Invalid chat completion stream event",

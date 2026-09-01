@@ -36,6 +36,7 @@ import {
     getImageModelIds,
     getVideoModelIds,
 } from "@shared/registry/image.ts";
+import { ModelInfoSchema } from "@shared/registry/model-info.ts";
 import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
@@ -49,11 +50,13 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
     CreateEmbeddingRequestSchema,
@@ -93,6 +96,10 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
+
+const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
+    description: "List of models with pricing and metadata",
+});
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = getImageModelIds()
@@ -276,11 +283,63 @@ async function getVisibleVideoModelEntries(c: Context<Env>) {
     ).filter((entry) => entry.definition.category === "video");
 }
 
+// Single OpenAI-compatible mapper shared by /v1/models (list) and
+// /v1/models/:model (retrieve). `created` derives from the registry addedDate
+// so both endpoints return stable timestamps instead of per-request wall-clock
+// values.
+function toOpenAIModelEntry(entry: GenerationModelEntry) {
+    return {
+        id: entry.info.name,
+        object: "model" as const,
+        created: Math.floor(entry.definition.addedDate / 1000),
+        owned_by: entry.info.brand,
+        input_modalities: entry.info.input_modalities,
+        output_modalities: entry.info.output_modalities,
+        supported_endpoints: entry.supportedEndpoints,
+        ...(entry.info.agent && { agent: true }),
+        ...(entry.info.base_model && {
+            base_model: entry.info.base_model,
+        }),
+        pricing: entry.info.pricing,
+        capabilities: entry.info.capabilities,
+        ...(entry.info.tools && { tools: entry.info.tools }),
+        ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
+        ...(entry.info.context_length && {
+            context_length: entry.info.context_length,
+        }),
+        ...(entry.info.per_user_rpm !== undefined && {
+            per_user_rpm: entry.info.per_user_rpm,
+        }),
+    };
+}
+
+// Resolve one model by ID or alias against the caller-visible registry view.
+// Returns null when unknown, hidden, or a private community model owned by
+// someone else.
+async function resolveVisibleModelEntry(
+    c: Context<Env>,
+    modelId: string,
+): Promise<GenerationModelEntry | null> {
+    const entry = (await getGenerationModelRegistry(c.env)).resolve(modelId);
+    if (!entry) return null;
+    if (!entry.visible) {
+        const endpoint = entry.communityEndpoint;
+        if (
+            endpoint?.visibility !== "private" ||
+            endpoint.ownerUserId !== c.var.auth?.user?.id
+        ) {
+            return null;
+        }
+    }
+    return entry;
+}
+
 export const proxyRoutes = new Hono<Env>()
     // Edge rate limiter: first line of defense (10 req/s per IP)
     .use("*", edgeRateLimit)
     // Optional auth for models endpoints - doesn't require auth but uses it if provided
     .use("/v1/models", auth())
+    .use("/v1/models/:model", auth())
     .use("/image/models", auth())
     .use("/3d/models", auth())
     .use("/video/models", auth())
@@ -322,37 +381,54 @@ export const proxyRoutes = new Hono<Env>()
                 ),
                 community,
             );
-            const now = Date.now();
-
-            const toModelEntry = (entry: GenerationModelEntry) => ({
-                id: entry.info.name,
-                object: "model" as const,
-                created: now,
-                input_modalities: entry.info.input_modalities,
-                output_modalities: entry.info.output_modalities,
-                supported_endpoints: entry.supportedEndpoints,
-                ...(entry.info.agent && { agent: true }),
-                ...(entry.info.base_model && {
-                    base_model: entry.info.base_model,
-                }),
-                pricing: entry.info.pricing,
-                capabilities: entry.info.capabilities,
-                ...(entry.info.tools && { tools: entry.info.tools }),
-                ...(entry.info.reasoning && {
-                    reasoning: entry.info.reasoning,
-                }),
-                ...(entry.info.context_length && {
-                    context_length: entry.info.context_length,
-                }),
-                ...(entry.info.per_user_rpm !== undefined && {
-                    per_user_rpm: entry.info.per_user_rpm,
-                }),
-            });
-
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toModelEntry),
+                data: modelEntries.map(toOpenAIModelEntry),
             });
+        },
+    )
+    .get(
+        "/v1/models/:model",
+        describeRoute({
+            tags: ["🤖 Models"],
+            summary: "Retrieve Model (OpenAI-compatible)",
+            description:
+                "Returns a single model by ID or alias in the OpenAI-compatible format, resolved to its canonical ID with stable created timestamps and Pollinations pricing and capability extensions. Visibility, API-key model permissions, and paid-only rules match the list endpoint. Returns 404 when the model does not exist or is not accessible to the caller.",
+            responses: {
+                200: {
+                    description: "Success",
+                    content: {
+                        "application/json": {
+                            schema: resolver(GetModelResponseSchema),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 404, 500),
+            },
+        }),
+        async (c) => {
+            // Unknown, hidden, permission-filtered, and unaffordable models
+            // all collapse to the same 404 so the endpoint does not leak
+            // existence information.
+            const modelId = c.req.param("model");
+            const visible = await resolveVisibleModelEntry(c, modelId);
+            if (!visible) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+            // Same permission and paid-only semantics as the list endpoint.
+            const [entry] = filterEntriesByPermissions(
+                [visible],
+                c.var.auth?.apiKey?.permissions?.models,
+                hasPaidBalance(c),
+            );
+            if (!entry) {
+                throw new HTTPException(404, {
+                    message: `Model '${modelId}' not found`,
+                });
+            }
+            return c.json(toOpenAIModelEntry(entry));
         },
     )
     .get(
@@ -367,12 +443,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -393,12 +464,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -413,18 +479,13 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -445,12 +506,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -471,12 +527,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -499,12 +550,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -527,12 +573,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of embedding models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -772,6 +813,8 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
                 "",
+                "Seedance 2.0 and 2.5 also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.",
+                "",
                 "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),
             responses: {
@@ -974,10 +1017,10 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        generationAccess,
         every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
         prepareGenerationRequest,
         imageCache,
+        generationAccess,
         deduplicateGeneration,
         every(apiKeyBudgetReservation, handleImageGeneration),
     )

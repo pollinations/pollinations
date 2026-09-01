@@ -3,7 +3,9 @@ import {
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
+    effectiveCommunityEndpointVisibility,
     parseListingPayload,
+    resolveEffectiveProxyListing,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -11,36 +13,10 @@ import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type {
-    ModelDefinition,
-    ModelInputModality,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
-
-const COMMUNITY_TEXT_ENDPOINTS = [
-    "/v1/chat/completions",
-    "/text",
-    "/text/{prompt}",
-];
-export function communityTextSupportedEndpoints(): string[] {
-    return COMMUNITY_TEXT_ENDPOINTS;
-}
-
-export function communityTranscriptionSupportedEndpoints(): string[] {
-    return ["/v1/audio/transcriptions"];
-}
-
-export function communityImageSupportedEndpoints(
-    inputModalities: readonly ModelInputModality[] = ["text"],
-): string[] {
-    return [
-        "/v1/images/generations",
-        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
-        "/image/{prompt}",
-    ];
-}
 
 export type CommunityModelRegistryEntry = {
     id: string;
@@ -76,6 +52,9 @@ export async function getCommunityModelRegistryEntries(
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
             payload: schema.communityEndpoint.payload,
+            pendingPayload: schema.communityEndpoint.pendingPayload,
+            pendingVisibility: schema.communityEndpoint.pendingVisibility,
+            pendingAt: schema.communityEndpoint.pendingAt,
             visibility: schema.communityEndpoint.visibility,
             hiddenAt: schema.communityEndpoint.hiddenAt,
             hiddenReason: schema.communityEndpoint.hiddenReason,
@@ -96,6 +75,29 @@ export async function getCommunityModelRegistryEntries(
                 : row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
+        let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
+            null;
+        if (row.type === "proxy") {
+            const currentPayload = parseListingPayload("proxy", row.payload);
+            if (!currentPayload) return [];
+            proxyState = resolveEffectiveProxyListing({
+                visibility: row.visibility,
+                payload: currentPayload,
+                pendingVisibility: row.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    row.pendingPayload,
+                ),
+                pendingAt: row.pendingAt,
+            });
+        }
+        const effectiveVisibility =
+            proxyState?.visibility ??
+            effectiveCommunityEndpointVisibility(
+                row.visibility,
+                row.pendingVisibility,
+                row.pendingAt,
+            );
         const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
@@ -107,7 +109,7 @@ export async function getCommunityModelRegistryEntries(
             providerUrl: row.providerUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
-            visibility: row.visibility,
+            visibility: effectiveVisibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,
         };
@@ -164,8 +166,8 @@ export async function getCommunityModelRegistryEntries(
                 break;
             }
             case "proxy": {
-                const payload = parseListingPayload("proxy", row.payload);
-                if (!payload) return [];
+                if (!proxyState) return [];
+                const payload = proxyState.payload;
                 communityEndpoint = {
                     ...identity,
                     type: "proxy",
@@ -187,14 +189,34 @@ export async function getCommunityModelRegistryEntries(
             addedDate: row.createdAt.getTime(),
             hidden: communityEndpoint.hiddenAt !== null,
         });
+        const info = modelInfoFromDefinition(modelId, definition, {
+            community: true,
+            agent: usesAgentRunToken(communityEndpoint),
+        });
+        const pendingPayload = proxyState?.pending?.payload ?? null;
+        if (
+            proxyState?.pending &&
+            row.visibility === "public" &&
+            pendingPayload
+        ) {
+            const pendingDefinition = communityModelDefinition({
+                ...communityEndpoint,
+                paidOnly: pendingPayload.paidOnly,
+                imagePricing: pendingPayload.imagePricing,
+                ...pendingPayload.prices,
+            });
+            info.pending_change = {
+                effective_at: proxyState.pending.effectiveAt.toISOString(),
+                paid_only: pendingPayload.paidOnly,
+                pricing: modelInfoFromDefinition(modelId, pendingDefinition)
+                    .pricing,
+            };
+        }
         return [
             {
                 id: modelId,
                 aliases: definition.aliases,
-                info: modelInfoFromDefinition(modelId, definition, {
-                    community: true,
-                    agent: usesAgentRunToken(communityEndpoint),
-                }),
+                info,
                 definition,
                 communityEndpoint,
                 agentConfig,

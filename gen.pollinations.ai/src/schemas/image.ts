@@ -27,7 +27,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     model: modelSchema(DEFAULT_IMAGE_MODEL),
     width: z.coerce.number().int().nonnegative().optional().default(1024).meta({
         description:
-            "Width in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+            "Width in pixels. For images, exact pixels; `flux-2-pro` and `flux-2-flex` require multiples of 16. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
     }),
     height: z.coerce
         .number()
@@ -37,7 +37,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .default(1024)
         .meta({
             description:
-                "Height in pixels. For images, exact pixels. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
+                "Height in pixels. For images, exact pixels; `flux-2-pro` and `flux-2-flex` require multiples of 16. For video models, used for aspect ratio; use `resolution` to select a resolution tier.",
         }),
     seed: z.coerce
         .number()
@@ -84,7 +84,46 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`; other video models silently drop `image[1]`. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, flux-2-pro, flux-2-flex, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+        }),
+    reference_images: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
+        }),
+    reference_videos: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
+        }),
+    reference_audios: z
+        .string()
+        .transform((value) =>
+            value
+                .split("|")
+                .map((url) => url.trim())
+                .filter(Boolean),
+        )
+        .optional()
+        .meta({
+            description:
+                "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:
@@ -93,7 +132,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
 
     // Video-specific params
     resolution: z
-        .enum(["1k", "2k", "480p", "720p", "768p", "1080p"])
+        .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
         .optional()
         .meta({
             description:
@@ -101,15 +140,15 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `wan`: 2-15s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by explicit width/height; `seedance-2.5` otherwise defaults to `16:9`. `minimax-h3` supports only `16:9`.",
+            "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash` and `seedance-2.5` otherwise default to `16:9`. `minimax-h3` supports only `16:9`.",
     }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate audio for the video. Only applies to video models. `wan` and `minimax-h3` always generate audio regardless of this flag. For `veo`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. `google/gemini-omni-1.1-flash`, `wan`, and `minimax-h3` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio.",
     }),
 });
 

@@ -3,8 +3,11 @@
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
-import { getVideoModelIds } from "@shared/registry/image.ts";
+import { HttpError } from "@shared/http-error.ts";
+import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
+import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
@@ -19,6 +22,7 @@ import {
     callVeoAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
+import { callWan3FalAPI } from "./models/wan3FalVideoModel.ts";
 import {
     callWanAPI,
     callWanFastAPI,
@@ -31,15 +35,39 @@ export type { VideoGenerationResult };
 const logOps = debug("pollinations:video:ops");
 const VIDEO_MODEL_IDS = new Set(getVideoModelIds());
 
+export function validateVideoFrameCount(safeParams: ImageParams): void {
+    const definition = IMAGE_SERVICES[safeParams.model] as ModelDefinition;
+    const frameCount = safeParams.image.length;
+    const maxFrames = definition.maxReferenceImages ?? 0;
+
+    if (frameCount <= maxFrames) return;
+
+    const supportedFrames =
+        maxFrames === 0
+            ? "no frame images"
+            : maxFrames === 1
+              ? "one start-frame image (image[0])"
+              : `${maxFrames} frame images (image[0] as the start frame and image[1] as the end frame)`;
+
+    throw new HttpError(
+        `${definition.title} supports ${supportedFrames}; received ${frameCount}.`,
+        400,
+    );
+}
+
 export async function createAndReturnVideo(
     prompt: string,
     safeParams: ImageParams,
     requestId: string,
 ): Promise<VideoGenerationResult> {
     logOps("Starting video generation:", { prompt, model: safeParams.model });
+    validateVideoFrameCount(safeParams);
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
+        case "google/gemini-omni-1.1-flash":
+            result = await callGeminiOmniAPI(prompt, safeParams);
+            break;
         case "veo":
             result = await callVeoAPI(prompt, safeParams);
             break;
@@ -59,6 +87,9 @@ export async function createAndReturnVideo(
             break;
         case "wan-pro":
             result = await callWanProAPI(prompt, safeParams);
+            break;
+        case "wan-3.0":
+            result = await callWan3FalAPI(prompt, safeParams);
             break;
         case "p-video":
             result = await callPrunaVideoAPI(prompt, safeParams);

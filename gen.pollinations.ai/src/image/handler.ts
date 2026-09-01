@@ -20,7 +20,10 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
-import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
+import {
+    callCommunityImageEndpoint,
+    callCommunityVideoEndpoint,
+} from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -33,7 +36,12 @@ import {
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { type ImageParams, ImageParamsSchema } from "./params.ts";
+import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
+import {
+    CommunityReferenceParamsSchema,
+    type ImageParams,
+    ImageParamsSchema,
+} from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
@@ -125,16 +133,31 @@ function parseImageParams(
 ): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const resolvedModel = c.var.model.resolved;
-    const mergedParams = {
+    const mergedParams: Record<string, unknown> = {
         ...queryParams,
         ...body,
         model: c.var.model.communityEndpoint
             ? DEFAULT_IMAGE_MODEL
             : resolvedModel,
     };
-    delete (mergedParams as Record<string, unknown>).prompt;
-    delete (mergedParams as Record<string, unknown>).key;
+    delete mergedParams.prompt;
+    delete mergedParams.key;
 
+    const communityReferences =
+        c.var.model.communityEndpoint?.modality === "video"
+            ? CommunityReferenceParamsSchema.safeParse(mergedParams)
+            : null;
+    if (communityReferences && !communityReferences.success) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: ${communityReferences.error.issues[0]?.message || "validation failed"}`,
+            cause: communityReferences.error.issues,
+        });
+    }
+    if (communityReferences) {
+        delete mergedParams.reference_images;
+        delete mergedParams.reference_videos;
+        delete mergedParams.reference_audios;
+    }
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {
         throw new UpstreamError(400, {
@@ -144,6 +167,7 @@ function parseImageParams(
     }
     return {
         ...parseResult.data,
+        ...(communityReferences?.data ?? {}),
         model: resolvedModel,
     };
 }
@@ -425,15 +449,25 @@ async function generateMediaWithFallback(
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
             if (attempt.communityEndpoint) {
-                const generated = await callCommunityImageEndpoint(
-                    attempt.communityEndpoint,
-                    prompt,
-                    params,
-                    c.env.BETTER_AUTH_SECRET,
-                );
+                const isVideo = attempt.communityEndpoint.modality === "video";
+                const generated = isVideo
+                    ? await callCommunityVideoEndpoint(
+                          attempt.communityEndpoint,
+                          prompt,
+                          params,
+                          c.env.BETTER_AUTH_SECRET,
+                      )
+                    : await callCommunityImageEndpoint(
+                          attempt.communityEndpoint,
+                          prompt,
+                          params,
+                          c.env.BETTER_AUTH_SECRET,
+                      );
                 assertNonEmptyMedia(
                     generated.buffer,
-                    "Community image endpoint",
+                    isVideo
+                        ? "Community video endpoint"
+                        : "Community image endpoint",
                 );
                 return { result: generated, params };
             }
@@ -520,10 +554,19 @@ export async function generateImageOrVideoResponse(
         definition.inputModalities?.includes("image")
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
+    const pricingDimensions =
+        c.var.model.resolved === "nova-canvas"
+            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
+            : safeParams;
     c.var.track.setPricingInput({
         resolution: safeParams.resolution,
         quality: safeParams.quality,
         hasImage: (safeParams.image?.length ?? 0) > 0,
+        hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
+        maxImageDimension: Math.max(
+            pricingDimensions.width,
+            pricingDimensions.height,
+        ),
         megapixels: (safeParams.width * safeParams.height) / 1_000_000,
     });
 

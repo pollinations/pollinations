@@ -79,22 +79,3 @@ export const adaptGoogleSearchToolForOpenRouter: TransformFn = (
               }),
     },
 });
-
-/** Gemini 2.5 rejects logit_bias when OpenRouter native search is enabled. */
-export const stripLogitBiasForNativeWebSearch: TransformFn = (
-    messages,
-    options,
-) => {
-    const usesNativeWebSearch = options.tools?.some(
-        (tool) =>
-            typeof tool === "object" &&
-            tool !== null &&
-            "type" in tool &&
-            tool.type === "openrouter:web_search",
-    );
-    if (!usesNativeWebSearch) return { messages, options };
-
-    const supportedOptions = { ...options };
-    delete supportedOptions.logit_bias;
-    return { messages, options: supportedOptions };
-};

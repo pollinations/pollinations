@@ -572,9 +572,9 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
 const DashboardFooter: FC<{
     links: readonly FooterLink[];
 }> = ({ links }) => (
-    <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-snug text-theme-text-muted">
+    <div className="flex items-end justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
         {links.length > 0 && (
-            <div className="flex flex-wrap gap-x-2 gap-y-1">
+            <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
                 {links.map((link) => (
                     <a
                         key={link.href}
@@ -588,6 +588,7 @@ const DashboardFooter: FC<{
                 ))}
             </div>
         )}
+        {/* accent on the toggle's active icon, over the neutral rail */}
         <span data-theme="accent" className="ml-auto shrink-0">
             <ColorModeToggle />
         </span>

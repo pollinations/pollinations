@@ -5149,12 +5149,14 @@ fixtureTest(
             hidden: true,
             hiddenReason: "was failing",
         });
+        const elapsedDelayAt = new Date(
+            Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
+        );
         await db
             .update(communityEndpointTable)
             .set({
-                pendingAt: new Date(
-                    Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1,
-                ),
+                pendingAt: elapsedDelayAt,
+                hiddenAt: elapsedDelayAt,
             })
             .where(eq(communityEndpointTable.id, createdId));
 

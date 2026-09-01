@@ -1,0 +1,34 @@
+{
+  "pr_number": 14260,
+  "title": "fix: simplify Enter footer",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14260",
+  "merged_at": "2026-09-01T07:41:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the copyright notice from the Enter dashboard rail\n- Keeps Terms, Privacy, and Refunds together at the bottom-left\n- Keeps the color-mode toggle aligned at the bottom-right\n\nTests:\n- `npm run typecheck`\n- `biome check enter.pollinations.ai/frontend/src/components/layout/dashboard-shell.tsx`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Footer, Less Footery",
+    "blurb": "The Enter dashboard rail shed its copyright line and made room for the useful bits. Terms, Privacy, Refunds, and the theme switch now sit where tiny interface furniture ought to sit.",
+    "summary": "Simplified the Enter dashboard footer by removing the copyright notice, grouping Terms, Privacy, and Refunds at bottom-left, and keeping the color-mode toggle at bottom-right.",
+    "impact": "Enter users will see a cleaner dashboard rail with legal links and theme controls consistently aligned at the bottom.",
+    "keywords": [
+      "enter",
+      "dashboard",
+      "footer",
+      "ui",
+      "layout",
+      "theme"
+    ],
+    "visual_concept": "A tidy cozy dashboard workspace: Polli acts as a tiny interior designer, arranging three small footer-link plaques on the left edge of a retro terminal desk while a glowing light/dark mode switch rests on the right. Small code-plants and flowers make the newly cleared space feel intentional rather than empty.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, tidying the footer of a retro dashboard terminal: three small pixel plaques reading “TERMS”, “PRIVACY”, and “REFUNDS” sit neatly at the bottom-left while a soft glowing color-mode toggle sits at bottom-right. Lime green (#ecf874) is prominent among warm cream, mint, and lavender gradients, with little code-plants and flowers nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-01/PR-14260.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, tidying the footer of a retro dashboard terminal: three small pixel plaques reading “TERMS”, “PRIVACY”, and “REFUNDS” sit neatly at the bottom-left while a soft glowing color-mode toggle sits at bottom-right. Lime green (#ecf874) is prominent among warm cream, mint, and lavender gradients, with little code-plants and flowers nearby; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-01T07:42:29.679099+00:00"
+}

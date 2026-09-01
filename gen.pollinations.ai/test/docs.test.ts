@@ -547,7 +547,17 @@ describe("docs routes", () => {
         expect(mcpRes.status).toBe(200);
         const mcpBody = await mcpRes.text();
         expect(mcpBody).toContain("## MCP Server");
-        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp");
+        expect(mcpBody).toContain(
+            "https://gen.pollinations.ai/mcp/pollinations",
+        );
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ffmpeg");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
+        expect(mcpBody).toContain("## Pollinations MCP");
+        expect(mcpBody).toContain("## Other built-in MCPs");
+        expect(mcpBody).toContain("`generateImage`");
+        expect(mcpBody).toContain("`runFfmpeg`");
+        expect(mcpBody).toContain("`web_search_exa`");
+        expect(mcpBody).not.toContain("mcp.pollinations.ai");
         expect(mcpBody).toContain("Streamable HTTP");
         expect(mcpBody).not.toContain("stdio");
         expect(mcpBody).not.toContain("npx @pollinations/mcp");

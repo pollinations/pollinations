@@ -1,37 +1,37 @@
-# pollinations.ai MCP Server
+# Pollinations MCP
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for generating
-text, images, video, audio, embeddings, and 3D models with Pollinations. It also
-provides live model discovery, health information, and Pollen balance.
+Use Pollinations tools from any
+[Model Context Protocol](https://modelcontextprotocol.io) client that supports
+Streamable HTTP. All hosted MCP servers are exposed through
+`gen.pollinations.ai`.
 
-## Quick Start
+## Quick start
 
-Connect any Streamable HTTP client to `https://mcp.pollinations.ai` with:
+Get an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys),
+then choose a built-in server:
+
+| Server | Streamable HTTP endpoint | Use it for |
+| --- | --- | --- |
+| Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Pollinations models, media generation, model discovery, and account tools |
+| FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video |
+| Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content |
+
+Send the key with every request:
 
 ```http
 Authorization: Bearer YOUR_KEY
 ```
 
-The server can only use models and account features allowed by that key's
-permissions, and it cannot spend beyond the key's budget. Configure both in
-[API key settings](https://enter.pollinations.ai/keys); see
-[Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
-
-## Hosted MCP catalog
-
-Pollinations also hosts other MCP servers. List their Streamable HTTP URLs and
+The live catalog returns the same endpoints with current descriptions and
 pricing:
 
 ```bash
 curl https://gen.pollinations.ai/mcp
 ```
 
-Connect any MCP client directly to a returned `url` with the same bearer
-header. Creating a Pollinations agent is not required, and API keys must not be
-put in the URL. Calls use the same Pollen wallet and key permissions as the
-Pollinations API; generation tools use the selected model's listed rate.
+## Connect a client
 
-For example, with the official TypeScript client:
+The official TypeScript client handles initialization and tool discovery:
 
 ```ts
 import {
@@ -55,51 +55,84 @@ await client.connect(transport);
 const { tools } = await client.listTools();
 ```
 
-The client handles MCP initialization and tool discovery. Other clients use the
-same endpoint and header; only their configuration format differs.
+Other clients use the same endpoint and bearer header; only their configuration
+format differs.
 
 ### Claude Code
 
 ```bash
-claude mcp add --transport http pollinations https://mcp.pollinations.ai \
+claude mcp add --transport http pollinations \
+  https://gen.pollinations.ai/mcp/pollinations \
   --header "Authorization: Bearer YOUR_KEY"
 ```
 
-Run `/mcp` in Claude Code to verify the connection.
+Run `/mcp` in Claude Code to verify the connection. Replace the name and URL
+with another endpoint from the table to use FFmpeg or Exa Search.
 
-## Authentication
+## Pollinations MCP
 
-Get a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or use
-[BYOP](../../BRING_YOUR_OWN_POLLEN.md) to let users connect their own wallet
-through a web or device flow.
+The Pollinations server exposes the main Pollinations API as agent-friendly
+tools.
 
-**Key types:**
+### Discover models
 
-- `pk_` — client-safe and rate-limited to 1 Pollen per IP per hour
-- `sk_` — server-side only and not rate-limited
+| Tool | Purpose |
+| --- | --- |
+| `listModels` | List live models, aliases, capabilities, voices, endpoints, and pricing |
+| `getModelStatus` | Inspect recent requests, errors, and latency for a model |
 
-## Available Tools
+Use `listModels` before choosing a model or voice. The registry is live, so
+clients should not rely on a hardcoded model list.
 
-| Tool | Purpose | API route |
-| --- | --- | --- |
-| `generateText` | Text, search, multimodal input, and tool calling | `/v1/chat/completions` |
-| `generateImage` | Generate or edit images | `/v1/images/generations` |
-| `generateVideo` | Generate video | `/video/{prompt}` |
-| `generateAudio` | Generate speech, music, or sound | `/audio/{text}` |
-| `transcribeAudio` | Transcribe a public HTTPS audio URL | `/v1/audio/transcriptions` |
-| `generate3D` | Generate a GLB model | `/3d/{prompt}` |
-| `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
-| `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
-| `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
-| `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
+### Generate and transform
+
+| Tool | Purpose |
+| --- | --- |
+| `generateText` | Generate text, use search-capable models, process multimodal input, or call a listed agent |
+| `generateImage` | Generate or edit images |
+| `generateVideo` | Generate video |
+| `generateAudio` | Generate speech, music, or sound |
+| `transcribeAudio` | Transcribe audio from a public HTTPS URL |
+| `generate3D` | Generate a GLB 3D model |
+| `createEmbeddings` | Create text or multimodal embeddings |
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
-an MCP resource link, so binary data does not consume model context. Links are
-public to anyone who has them and expire after 30 days. Pass an image's HTTPS
-URL to edit it, and use separate tool calls for multiple images.
+an MCP resource link, so binary data does not consume model context. Anyone
+with the link can access it, and it expires after 30 days.
 
-Models, voices, capabilities, and pricing come from the live registry rather
-than hardcoded lists. Use `listModels` before selecting a model or voice.
+### Account
+
+| Tool | Purpose |
+| --- | --- |
+| `getBalance` | Check the remaining Pollen balance; requires `account:usage` permission |
+
+## Other built-in MCPs
+
+### FFmpeg
+
+`runFfmpeg` accepts public HTTPS media inputs and ordinary FFmpeg arguments. It
+supports multiple inputs and returns the output as a hosted MCP resource link.
+Pollinations supplies the input and output files, so omit the `ffmpeg`
+executable and output path from the arguments.
+
+### Exa Search
+
+- `web_search_exa` searches the live web and returns relevant pages with
+  highlights.
+- `web_fetch_exa` reads one or more known URLs as clean text when the search
+  highlights are not enough.
+
+## Billing and permissions
+
+Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
+shows each server's current pricing. Pollinations generation tools use the
+selected model's listed rate.
+
+The server can only use models and account features allowed by the caller's key
+and cannot spend beyond that key's budget. Configure both in
+[API key settings](https://enter.pollinations.ai/keys). See
+[Authentication](https://gen.pollinations.ai/docs#tag/authentication) for key
+types and security guidance.
 
 ## Development
 
@@ -109,15 +142,12 @@ Requires Node.js 20 or newer. Run the tests with:
 npm test
 ```
 
-Set `POLLINATIONS_API_KEY` to add live model, auth, text, image, and balance
-checks.
+Set `POLLINATIONS_API_KEY` to add live model, authentication, generation, and
+balance checks.
 
-The hosted Cloudflare Worker lives in [`apps/mcp/`](../../apps/mcp/) and is
-deployed from `production` by
-[`Deploy / Applications`](../../.github/workflows/deploy-applications.yml)
-whenever `apps/mcp/` or `packages/mcp/` changes. It has no separate staging
-deployment because it is a thin Gen proxy. Use the workflow's `mcp` target for
-a manual redeploy.
+The Pollinations MCP implementation lives in [`packages/mcp/`](./), with its
+Cloudflare Worker in [`apps/mcp/`](../../apps/mcp/). Hosted MCP traffic is
+routed through Gen.
 
 API reference: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs) ·
 Issues: [GitHub](https://github.com/pollinations/pollinations/issues) · License:

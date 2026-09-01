@@ -544,7 +544,7 @@ export const ProxyListingPayloadSchema = z
         requiredSafetyFeatures: z
             .array(z.enum(SAFETY_FEATURES))
             .max(SAFETY_FEATURES.length)
-            .default([]),
+            .optional(),
         perUserRpm: z.number().finite().positive().nullable(),
         fallbacks: z
             .array(z.string().min(1))

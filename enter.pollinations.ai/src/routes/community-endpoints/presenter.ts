@@ -107,6 +107,7 @@ export function toCommunityEndpointResponse(
         ...common,
         type: row.type,
         ...proxy,
+        requiredSafetyFeatures: payload.requiredSafetyFeatures ?? [],
         advertised: normalizeCommunityEndpointAdvertised(
             payload.advertised,
             payload.modality,

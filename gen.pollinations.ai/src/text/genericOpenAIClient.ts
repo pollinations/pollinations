@@ -14,6 +14,11 @@ import { cleanNullAndUndefined } from "./utils/objectCleaners.js";
 const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT = "data: [DONE]";
+const LINE_ENDING_PATTERN = /\r\n|\r|\n/;
+
+function isDoneEventLine(line: string): boolean {
+    return /^data:[ \t]*\[DONE\][ \t]*$/.test(line);
+}
 
 function isClientInputError(details: unknown): boolean {
     const serialized =
@@ -45,40 +50,73 @@ function ensureOpenAISseDone(
     const encoder = new TextEncoder();
     let seenDone = false;
     let buffer = "";
+    let lastLineWasBlank = true;
+    let reportedTrailingData = false;
+
+    const reportTrailingData = (text: string) => {
+        if (reportedTrailingData || !text.trim()) return;
+        reportedTrailingData = true;
+        errorLog("Discarded upstream SSE data after [DONE]");
+    };
+
+    const emitDone = (
+        controller: TransformStreamDefaultController<Uint8Array>,
+    ) => {
+        if (!lastLineWasBlank) controller.enqueue(encoder.encode("\n"));
+        controller.enqueue(encoder.encode(`${DONE_EVENT}\n\n`));
+        lastLineWasBlank = true;
+        seenDone = true;
+    };
+
+    const emitCompleteLines = (
+        controller: TransformStreamDefaultController<Uint8Array>,
+    ) => {
+        while (!seenDone) {
+            const lineEnding = LINE_ENDING_PATTERN.exec(buffer);
+            if (!lineEnding || lineEnding.index === undefined) return;
+
+            const line = buffer.slice(0, lineEnding.index);
+            buffer = buffer.slice(lineEnding.index + lineEnding[0].length);
+            if (isDoneEventLine(line)) {
+                emitDone(controller);
+                reportTrailingData(buffer);
+                buffer = "";
+                return;
+            }
+
+            controller.enqueue(encoder.encode(`${line}${lineEnding[0]}`));
+            lastLineWasBlank = line === "";
+        }
+    };
 
     return source.pipeThrough(
         new TransformStream<Uint8Array, Uint8Array>({
             transform(chunk, controller) {
-                if (seenDone) return;
+                if (seenDone) {
+                    reportTrailingData(decoder.decode(chunk, { stream: true }));
+                    return;
+                }
                 buffer += decoder.decode(chunk, { stream: true });
-                const doneIndex = buffer.indexOf(DONE_EVENT);
-                if (doneIndex >= 0) {
-                    controller.enqueue(
-                        encoder.encode(
-                            `${buffer.slice(0, doneIndex)}${DONE_EVENT}\n\n`,
-                        ),
-                    );
-                    buffer = "";
-                    seenDone = true;
+                emitCompleteLines(controller);
+            },
+            flush(controller) {
+                buffer += decoder.decode();
+                if (seenDone) {
+                    reportTrailingData(buffer);
                     return;
                 }
 
-                const safeLength = Math.max(
-                    0,
-                    buffer.length - DONE_EVENT.length + 1,
-                );
-                if (safeLength > 0) {
-                    controller.enqueue(
-                        encoder.encode(buffer.slice(0, safeLength)),
-                    );
-                    buffer = buffer.slice(safeLength);
-                }
-            },
-            flush(controller) {
+                emitCompleteLines(controller);
                 if (seenDone) return;
-                buffer += decoder.decode();
-                if (buffer) controller.enqueue(encoder.encode(buffer));
-                controller.enqueue(encoder.encode(`${DONE_EVENT}\n\n`));
+                if (isDoneEventLine(buffer)) {
+                    emitDone(controller);
+                    return;
+                }
+                if (buffer) {
+                    controller.enqueue(encoder.encode(`${buffer}\n\n`));
+                    lastLineWasBlank = true;
+                }
+                emitDone(controller);
             },
         }),
     );

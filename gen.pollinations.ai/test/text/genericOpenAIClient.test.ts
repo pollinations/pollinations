@@ -703,6 +703,33 @@ describe("genericOpenAIClient", () => {
         expect(text).not.toContain("private_trailer");
     });
 
+    it("does not mistake generated DONE text for the terminal event", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            new Response(
+                'data: {"choices":[{"delta":{"content":"data: [DONE]"}}]}\n\n' +
+                    "data:[DONE]\r\n\r\n",
+                {
+                    headers: {
+                        "content-type": "text/event-stream; charset=utf-8",
+                    },
+                },
+            ),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model", stream: true },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        const text = await new Response(
+            completion.responseStream as ReadableStream,
+        ).text();
+
+        expect(text).toContain('"content":"data: [DONE]"');
+        expect(text.endsWith("data: [DONE]\n\n")).toBe(true);
+    });
+
     it("rejects an empty upstream stream as a retryable failure", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(null));
 

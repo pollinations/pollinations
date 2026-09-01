@@ -379,6 +379,30 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "inception/mercury-2.5-preview": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Inception",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's exact Inception route rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.04),
+            promptCachedTokens: perMillion(0.004),
+            completionTextTokens: perMillion(0.15),
+        },
+        title: "Mercury 2.5 Preview",
+        description:
+            "Ultra-fast diffusion reasoning for coding, tool use, and structured outputs",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 260000,
+        isSpecialized: false,
+    },
     "command-a-plus": {
         aliases: [
             "cohere-command-a-plus",

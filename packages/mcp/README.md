@@ -29,6 +29,12 @@ pricing:
 curl https://gen.pollinations.ai/mcp
 ```
 
+## Use with hosted agents
+
+Built-in MCP servers can be attached to Pollinations-hosted agents. Create or
+edit an agent in [My Models](https://enter.pollinations.ai/my-models), then
+select the MCP servers it can use.
+
 ## Connect a client
 
 The official TypeScript client handles initialization and tool discovery:

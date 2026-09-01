@@ -199,10 +199,11 @@ describe("direct Responses transport", () => {
             'event: response.completed\ndata: {"type":"response.completed","response":{"object":"response","model":"qwen/qwen3.7-plus","status":"completed"}}\n\n';
         const body = new Response(upstream).body;
         if (!body) throw new Error("expected response body");
+        const reader = requireResponsesStreamUsage(body).getReader();
 
-        await expect(
-            new Response(requireResponsesStreamUsage(body)).text(),
-        ).rejects.toThrow(/omitted valid terminal usage/);
+        await expect(reader.read()).rejects.toThrow(
+            /omitted valid terminal usage/,
+        );
     });
 
     it("fails a Responses stream that ends without a terminal event", async () => {
@@ -210,9 +211,11 @@ describe("direct Responses transport", () => {
             'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"ok"}\n\n',
         ).body;
         if (!body) throw new Error("expected response body");
+        const reader = requireResponsesStreamUsage(body).getReader();
 
-        await expect(
-            new Response(requireResponsesStreamUsage(body)).text(),
-        ).rejects.toThrow(/without a terminal usage event/);
+        await expect(reader.read()).resolves.toMatchObject({ done: false });
+        await expect(reader.read()).rejects.toThrow(
+            /without a terminal usage event/,
+        );
     });
 });

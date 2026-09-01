@@ -157,13 +157,19 @@ function formatPercent(count, total, showZero = false) {
     return `${pct.toFixed(1)}%`;
 }
 
+const DEGRADED_5XX_PERCENT = 5;
+const OFF_5XX_PERCENT = 20;
+
 function get2xxColor(ok2xx, total) {
     if (!total || total <= 0) return "text-theme-text-muted";
     if (ok2xx === 0) return "text-intent-danger-text font-semibold";
     const pct = (ok2xx / total) * 100;
-    if (pct > 95) return "text-intent-success-text font-semibold";
-    if (pct > 80) return "text-intent-success-text";
-    if (pct > 50) return "text-theme-text-muted";
+    if (pct > 100 - DEGRADED_5XX_PERCENT) {
+        return "text-intent-success-text font-semibold";
+    }
+    if (pct > 100 - OFF_5XX_PERCENT) {
+        return "text-intent-warning-text font-semibold";
+    }
     return "text-intent-danger-text font-semibold";
 }
 
@@ -184,8 +190,8 @@ function computeHealthStatus(stats) {
     const modelRequests = success + total5xx;
     if (modelRequests === 0) return "on";
     const pct5xx = (total5xx / modelRequests) * 100;
-    if (pct5xx >= 50) return "off";
-    if (pct5xx >= 10) return "degraded";
+    if (pct5xx >= OFF_5XX_PERCENT) return "off";
+    if (pct5xx >= DEGRADED_5XX_PERCENT) return "degraded";
     return "on";
 }
 

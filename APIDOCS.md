@@ -534,7 +534,7 @@ Community image models use an owner/model id and support generation through `/im
 
 Generate an image from a text prompt. Returns JPEG, PNG, or SVG depending on the selected model.
 
-**Available models:** `krea`, `dreamshaper`, `kontext`, `flux-2-pro`, `flux-2-flex`, `nanobanana`, `nanobanana-2`, `nanobanana-2-lite`, `nanobanana-pro`, `seedream5`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `zimage`, `zimage-fal`, `wan-image`, `wan-image-pro`, `qwen-image`, `qwen-image-3`, `grok-imagine`, `grok-imagine-pro`, `grok-imagine-image-2.0`, `recraft-v4.1-vector`, `klein`, `p-image`, `p-image-edit`, `nova-canvas`. `zimage` is the default.
+**Available models:** `krea`, `krea-replicate`, `dreamshaper`, `kontext`, `kontext-replicate`, `flux-2-pro`, `flux-2-pro-replicate`, `flux-2-flex`, `nanobanana`, `nanobanana-2`, `nanobanana-2-openrouter-ai-studio`, `nanobanana-2-lite`, `nanobanana-pro`, `nanobanana-pro-openrouter-vertex`, `seedream5`, `seedream5-fal`, `seedream5-pro`, `seedream`, `seedream-pro`, `ideogram-v4-turbo`, `ideogram-v4-balanced`, `ideogram-v4-quality`, `gptimage`, `gptimage-large`, `gpt-image-2`, `flux`, `flux-deepinfra`, `zimage`, `zimage-fal`, `wan-image`, `wan-image-pro`, `qwen-image`, `qwen-image-3`, `qwen-image-3-replicate`, `grok-imagine`, `grok-imagine-pro`, `grok-imagine-image-2.0`, `recraft-v4.1-vector`, `klein`, `p-image`, `p-image-edit`, `p-image-edit-replicate`, `nova-canvas`. `zimage` is the default.
 
 Browse all available models and their capabilities at [`/image/models`](https://gen.pollinations.ai/image/models).
 
@@ -654,7 +654,7 @@ Community video models use an `owner/model` id and work on `/video/{prompt}`, `/
 
 Generate a video from a text prompt. Returns MP4.
 
-**Available models:** `veo`, `google/gemini-omni-1.1-flash`, `seedance-pro`, `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `wan`, `wan-fast`, `wan-pro`, `wan-3.0`, `grok-video-pro`, `grok-imagine-video-1.5`, `seedance-2.5`, `happyhorse-1.1`, `minimax-h3`, `p-video`, `nova-reel`.
+**Available models:** `veo`, `google/gemini-omni-1.1-flash`, `seedance-pro`, `seedance-pro-fal`, `seedance-2.0`, `seedance-2.0-mini`, `seedance-2.0-fast`, `wan`, `wan-fal`, `wan-fast`, `wan-pro`, `wan-3.0`, `grok-video-pro`, `grok-video-pro-fal`, `grok-imagine-video-1.5`, `grok-imagine-video-1.5-fal`, `seedance-2.5`, `happyhorse-1.1`, `minimax-h3`, `p-video`, `nova-reel`.
 
 Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.
 
@@ -2980,7 +2980,7 @@ https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=trellis-2&reso
 
 Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
 
-**Available models:** `trellis-2`, `hyper3d-rodin`. `trellis-2` is the default.
+**Available models:** `trellis-2`, `trellis-2-fal`, `hyper3d-rodin`. `trellis-2` is the default.
 
 Pass reference image URL(s) via the `image` parameter for image-to-3D models (`trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d-rodin` accepts both images and a text prompt.
 
@@ -2991,7 +2991,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2) |
-| `model` * | `query` | enum (8) — `"trellis-2"`, `"hyper3d-rodin"`, `"trellis-2-low"`, … | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2"` |
+| `model` * | `query` | enum (9) — `"trellis-2"`, `"trellis-2-fal"`, `"hyper3d-rodin"`, … | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2"` |
 | `resolution` | `query` | `"low"` \| `"medium"` \| `"high"` | Output detail for `trellis-2`. Defaults to `low`. |
 | `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`). |
 | `seed` | `query` | `integer` | Seed for varied generations. Passed through to models that support it (`hyper3d-rodin`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image. |
@@ -3028,7 +3028,7 @@ Generate a 3D model from a text prompt or reference image using JSON parameters.
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | enum (8) — `"trellis-2"`, `"hyper3d-rodin"`, `"trellis-2-low"`, … | Model to use for 3D generation. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2"` |
+| `model` | enum (9) — `"trellis-2"`, `"trellis-2-fal"`, `"hyper3d-rodin"`, … | Model to use for 3D generation. See /3d/models for the full list and per-model input requirements. · default: `"trellis-2"` |
 | `image` | `string` \| `string`[] | Reference image URL or array of URLs for image-to-3D generation, optionally guided by the path prompt on supported models. A string is treated as one complete URL. |
 | `resolution` | `"low"` \| `"medium"` \| `"high"` | Output voxel-grid resolution for `trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more. · default: `"low"` |
 | `seed` | `integer` | Seed for varied generations. Passed to models that support it. |

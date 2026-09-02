@@ -660,12 +660,12 @@ function ToolValue({ value }: { value: unknown }) {
                       return String(value);
                   }
               })();
-    const segments = formatted.split(/(https?:\/\/[^\s"\\]+)/g);
+    const segments = formatted.split(/(https:\/\/[^\s"\\]+)/g);
     let offset = 0;
     const linkedSegments = segments.map((segment) => {
         const key = `${offset}:${segment}`;
         offset += segment.length;
-        return /^https?:\/\//.test(segment) ? (
+        return segment.startsWith("https://") ? (
             <a
                 key={key}
                 href={segment}

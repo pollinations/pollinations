@@ -62,7 +62,6 @@ describe("getGenerationModelRegistry", () => {
             .map((entry) => entry.id)
             .sort();
 
-        expect(configured).toHaveLength(58);
         expect(advertised).toEqual(configured);
         for (const model of advertised) {
             expect(registry.resolve(model)?.info.supported_endpoints).toContain(

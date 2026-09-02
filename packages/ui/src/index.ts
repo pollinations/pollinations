@@ -50,6 +50,11 @@ export {
 } from "./compositions/PeriodPicker.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
+export {
+    ToolCallDetails,
+    type ToolCallDetailsProps,
+    type ToolCallStatus,
+} from "./compositions/ToolCallDetails.tsx";
 export { cn } from "./lib/cn-app.ts";
 export {
     currentPeriod,

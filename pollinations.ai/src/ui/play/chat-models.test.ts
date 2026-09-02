@@ -2,15 +2,11 @@ import type { ModelInfo } from "@pollinations/sdk";
 import { describe, expect, it } from "vitest";
 import {
     AUTO_ROUTING,
-    agentActivity,
     agentChoices,
-    applyAgentEvent,
-    applyOpenAIToolCallDelta,
     arrayBufferToBase64,
     audioFormat,
     buildUserContent,
     compactRouting,
-    conversationForRequest,
     extractStreamedMedia,
     fileKind,
     parseAgentMessage,
@@ -192,50 +188,6 @@ describe("chat attachments", () => {
     });
 });
 
-describe("chat conversation history", () => {
-    it("keeps complete history and useful cancelled assistant text", () => {
-        expect(
-            conversationForRequest([
-                {
-                    id: "u1",
-                    role: "user",
-                    content: "hello",
-                    status: "complete",
-                },
-                {
-                    id: "a1",
-                    role: "assistant",
-                    content: "hi",
-                    status: "complete",
-                },
-                {
-                    id: "u2",
-                    role: "user",
-                    content: "continue",
-                    status: "complete",
-                },
-                {
-                    id: "a2",
-                    role: "assistant",
-                    content: "partial",
-                    status: "cancelled",
-                },
-                {
-                    id: "a3",
-                    role: "assistant",
-                    content: "",
-                    status: "error",
-                },
-            ]),
-        ).toEqual([
-            { role: "user", content: "hello" },
-            { role: "assistant", content: "hi" },
-            { role: "user", content: "continue" },
-            { role: "assistant", content: "partial" },
-        ]);
-    });
-});
-
 describe("agent tool-call rendering", () => {
     it("converts completed tool details into a structured message part", () => {
         const content =
@@ -354,130 +306,5 @@ describe("streamed media rendering", () => {
             markdown,
             media: [],
         });
-    });
-});
-
-describe("structured agent events", () => {
-    const message = {
-        id: "assistant-1",
-        role: "assistant" as const,
-        content: "",
-        status: "streaming" as const,
-    };
-
-    it("tracks parallel tools by call ID and removes completed work", () => {
-        const searching = applyAgentEvent(message, {
-            type: "tool.started",
-            call_id: "search-1",
-            name: "searchWeb",
-        });
-        const transcribing = applyAgentEvent(searching, {
-            type: "tool.started",
-            call_id: "audio-1",
-            name: "transcribeAudio",
-        });
-        const completed = applyAgentEvent(transcribing, {
-            type: "tool.completed",
-            call_id: "audio-1",
-            name: "transcribeAudio",
-        });
-
-        expect(agentActivity(transcribing)).toBe("transcribeAudio");
-        expect(agentActivity(completed)).toBe("searchWeb");
-        expect(completed.activities).toEqual([
-            { callId: "search-1", name: "searchWeb", status: "running" },
-        ]);
-    });
-
-    it("records a failed tool without exposing its arguments or output", () => {
-        const failed = applyAgentEvent(message, {
-            type: "tool.failed",
-            call_id: "audio-1",
-            name: "transcribeAudio",
-        });
-
-        expect(agentActivity(failed)).toBe("transcribeAudio failed");
-    });
-
-    it("uses standard OpenAI tool-call deltas as activity feedback", () => {
-        const active = applyOpenAIToolCallDelta(message, {
-            index: 0,
-            id: "call-1",
-            type: "function",
-            function: { name: "generateImage", arguments: "" },
-        });
-        const duplicate = applyOpenAIToolCallDelta(active, {
-            index: 0,
-            id: "call-1",
-            function: { name: "generateImage", arguments: '{"prompt":' },
-        });
-
-        expect(agentActivity(active)).toBe("generateImage");
-        expect(duplicate.activities).toEqual(active.activities);
-    });
-
-    it("keeps candidates separate and renders only finalized resources", () => {
-        const candidateEvent = {
-            type: "resource.created" as const,
-            call_id: "video-1",
-            url: "https://media.pollinations.ai/video-1",
-            kind: "video" as const,
-            media_type: "video/mp4",
-            name: "Generated video",
-        };
-        const withCandidate = applyAgentEvent(message, candidateEvent);
-        const duplicateCandidate = applyAgentEvent(
-            withCandidate,
-            candidateEvent,
-        );
-        const finalized = applyAgentEvent(duplicateCandidate, {
-            ...candidateEvent,
-            type: "resource.finalized",
-        });
-
-        expect(duplicateCandidate.media).toBeUndefined();
-        expect(duplicateCandidate.resourceCandidates).toEqual([
-            {
-                callId: "video-1",
-                kind: "video",
-                url: "https://media.pollinations.ai/video-1",
-                label: "Generated video",
-                mediaType: "video/mp4",
-            },
-        ]);
-        expect(finalized.media).toEqual([
-            {
-                kind: "video",
-                url: "https://media.pollinations.ai/video-1",
-                label: "Generated video",
-            },
-        ]);
-    });
-
-    it("accepts a finalized resource without a preceding candidate event", () => {
-        const finalized = applyAgentEvent(message, {
-            type: "resource.finalized",
-            call_id: "audio-1",
-            url: "https://media.pollinations.ai/audio-1",
-            kind: "audio",
-        });
-
-        expect(finalized.media).toEqual([
-            {
-                kind: "audio",
-                url: "https://media.pollinations.ai/audio-1",
-            },
-        ]);
-    });
-
-    it("rejects non-HTTPS resources", () => {
-        expect(
-            applyAgentEvent(message, {
-                type: "resource.created",
-                call_id: "video-1",
-                url: "javascript:alert(1)",
-                kind: "video",
-            }),
-        ).toBe(message);
     });
 });

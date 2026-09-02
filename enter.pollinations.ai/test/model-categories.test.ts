@@ -95,11 +95,10 @@ describe("model categories", () => {
         ]);
     });
 
-    it("defaults to community models and accepts categories independently", () => {
-        expect(validateModelSearch({ scope: "community" })).toEqual({
-            scope: undefined,
+    it("accepts categories independently of the model query", () => {
+        expect(validateModelSearch({})).toEqual({
             category: undefined,
-            q: undefined,
+            q: "source:official",
             sort: undefined,
         });
         for (const category of [
@@ -112,21 +111,19 @@ describe("model categories", () => {
         ] as const) {
             expect(validateModelSearch({ category }).category).toBe(category);
         }
-        expect(
-            validateModelSearch({ scope: "pollinations", category: "image" }),
-        ).toEqual({
-            scope: "pollinations",
+        expect(validateModelSearch({ category: "image" })).toEqual({
             category: "image",
-            q: undefined,
+            q: "source:official",
             sort: undefined,
         });
+        expect(validateModelSearch({ category: "agent" }).q).toBeUndefined();
+        expect(validateModelSearch({ category: "mcp" }).q).toBeUndefined();
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
         expect(validateModelSearch({ sort: "brand" })).toEqual({
-            scope: undefined,
             category: undefined,
-            q: undefined,
+            q: "source:official",
             sort: "brand",
         });
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
@@ -137,21 +134,24 @@ describe("model categories", () => {
             "brand-desc",
         );
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
-            scope: undefined,
             category: undefined,
-            q: undefined,
+            q: "source:official",
             sort: undefined,
         });
         expect(validateModelSearch({ sort: "newest" })).toEqual({
-            scope: undefined,
             category: undefined,
-            q: undefined,
+            q: "source:official",
             sort: "newest",
         });
     });
 
     it("trims model search queries and drops whitespace-only values", () => {
-        expect(validateModelSearch({ q: "  flux  " }).q).toBe("flux");
-        expect(validateModelSearch({ q: "   " }).q).toBeUndefined();
+        expect(validateModelSearch({ q: "  flux  " }).q).toBe(
+            "source:official flux",
+        );
+        expect(validateModelSearch({ q: "   " }).q).toBe("source:official");
+        expect(validateModelSearch({ q: " source:community " }).q).toBe(
+            "source:community",
+        );
     });
 });

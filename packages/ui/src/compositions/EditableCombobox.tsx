@@ -1,7 +1,7 @@
 import { createListCollection } from "@ark-ui/react/collection";
 import { Combobox } from "@ark-ui/react/combobox";
 import { Portal } from "@ark-ui/react/portal";
-import { useMemo } from "react";
+import { type ReactNode, useMemo } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Input, type InputProps } from "../primitives/Input.tsx";
@@ -15,6 +15,7 @@ export type EditableComboboxProps = Omit<InputProps, "onChange" | "value"> & {
     align?: "start" | "end";
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    startContent?: ReactNode;
 };
 
 export function EditableCombobox({
@@ -25,6 +26,7 @@ export function EditableCombobox({
     align = "start",
     open,
     onOpenChange,
+    startContent,
     className,
     disabled,
     name,
@@ -48,6 +50,7 @@ export function EditableCombobox({
         [visibleOptions],
     );
     const hasOptions = options.length > 0;
+    const hasStartContent = Boolean(startContent);
 
     return (
         <Combobox.Root
@@ -68,13 +71,25 @@ export function EditableCombobox({
             onInputValueChange={(details) => onChange(details.inputValue)}
             onOpenChange={(details) => onOpenChange?.(details.open)}
         >
-            <Combobox.Control className="polli:relative polli:w-full">
+            <Combobox.Control
+                className={cn(
+                    "polli:relative polli:w-full",
+                    hasStartContent &&
+                        "polli-input-shell polli:flex polli:min-h-10 polli:flex-wrap polli:items-center polli:gap-1 polli:border polli:rounded-lg polli:px-2 polli:py-1 polli:pr-10",
+                )}
+            >
+                {startContent}
                 <Combobox.Input asChild>
                     <Input
                         {...inputProps}
                         name={name}
                         placeholder={placeholder}
-                        className={cn("polli:w-full polli:pr-10", className)}
+                        className={cn(
+                            hasStartContent
+                                ? "polli:min-w-28 polli:flex-1 polli:border-0 polli:bg-transparent polli:px-1 polli:py-1 polli:shadow-none polli:focus:shadow-none polli:focus-visible:shadow-none"
+                                : "polli:w-full polli:pr-10",
+                            className,
+                        )}
                     />
                 </Combobox.Input>
                 {hasOptions && (

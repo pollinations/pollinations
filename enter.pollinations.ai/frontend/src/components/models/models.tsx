@@ -4,7 +4,6 @@ import {
     BotIcon,
     Button,
     ChevronIcon,
-    Chip,
     ClockIcon,
     Dropdown,
     DropdownItem,
@@ -21,6 +20,7 @@ import {
     TrendUpIcon,
     UsageIcon,
     WarningIcon,
+    XIcon,
 } from "@pollinations/ui";
 import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -40,9 +40,20 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import {
+    getExplicitModelQuerySource,
+    getModelQueryDraftFilter,
+    getModelQueryFilterTokens,
+    getModelQuerySource,
     getModelQuerySuggestions,
+    type ModelQueryDraftFilter,
+    type ModelQueryFilter,
+    type ModelQueryFilterToken,
+    type ModelSource,
     matchesModelQuery,
     parseModelQuery,
+    removeModelQueryFilterToken,
+    removeModelQuerySource,
+    replaceModelQueryFilterToken,
 } from "./model-query.ts";
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
@@ -203,10 +214,53 @@ function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     items[nextIndex]?.focus();
 }
 
+const isSourceSuggestion = (option: string): boolean =>
+    option
+        .slice(option.lastIndexOf(" ") + 1)
+        .toLowerCase()
+        .startsWith("source:");
+
+const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
+    access: "Access",
+    source: "Source",
+    publisher: "Publisher",
+    id: "ID",
+    type: "Type",
+    capability: "Capability",
+};
+
+const formatFilterValue = (filter: ModelQueryFilter): string =>
+    filter.key === "id" || filter.key === "publisher"
+        ? filter.value
+        : filter.value.replaceAll("-", " ");
+
+function getVisibleSearch(
+    query: string,
+    filters: ModelQueryFilterToken[],
+    draftFilter?: ModelQueryDraftFilter,
+): string {
+    const filterIndexes = new Set(filters.map(({ index }) => index));
+    return query
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((token, index) =>
+            index === draftFilter?.index ? draftFilter.value : token,
+        )
+        .filter((_token, index) => !filterIndexes.has(index))
+        .filter(Boolean)
+        .join(" ");
+}
+
+const getDraftSuggestionValue = (option: string): string => {
+    const trimmedOption = option.trimEnd();
+    const token = trimmedOption.slice(trimmedOption.lastIndexOf(" ") + 1);
+    const trailingSpace = option.endsWith(" ") ? " " : "";
+    return `${token.slice(token.indexOf(":") + 1)}${trailingSpace}`;
+};
+
 export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
-    const activeScope = modelSearch.scope ?? "community";
     const activeTab = modelSearch.category ?? "all";
     const activePrimaryTab: PrimaryTab =
         activeTab === "agent"
@@ -214,10 +268,12 @@ export const Models: FC = () => {
             : activeTab === "mcp"
               ? "mcp"
               : "models";
-    const includeCommunity = activeScope === "community";
     const activeSort = modelSearch.sort ?? "popular";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
+    const [draftFilter, setDraftFilter] = useState<
+        ModelQueryDraftFilter | undefined
+    >(() => getModelQueryDraftFilter(urlSearch));
     const [searchFocused, setSearchFocused] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
@@ -232,17 +288,58 @@ export const Models: FC = () => {
         () => allModels.filter((model) => model.agent),
         [allModels],
     );
-    const communityModels = useMemo(
-        () => allModels.filter((model) => model.community && !model.agent),
-        [allModels],
+    const allFilterTokens = useMemo(
+        () => getModelQueryFilterTokens(search),
+        [search],
+    );
+    const filterTokens = useMemo(
+        () =>
+            allFilterTokens.filter(({ index }) => index !== draftFilter?.index),
+        [allFilterTokens, draftFilter],
+    );
+    const query =
+        draftFilter === undefined
+            ? search.trim()
+            : removeModelQueryFilterToken(search, draftFilter.index);
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
+    const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
+    const modelSource = getModelQuerySource(parsedQuery);
+    const visibleSearch = getVisibleSearch(search, filterTokens, draftFilter);
+    const supportsSourceFilter = activePrimaryTab === "models";
+    const renderedFilterTokens = useMemo(
+        () =>
+            activePrimaryTab === "mcp"
+                ? []
+                : filterTokens.filter(
+                      ({ filter }) =>
+                          filter.key !== "source" || supportsSourceFilter,
+                  ),
+        [activePrimaryTab, filterTokens, supportsSourceFilter],
+    );
+    const renderedDraftFilter =
+        activePrimaryTab !== "mcp" &&
+        draftFilter &&
+        (draftFilter.key !== "source" || supportsSourceFilter)
+            ? draftFilter
+            : undefined;
+    const effectiveQuery =
+        activePrimaryTab === "mcp"
+            ? visibleSearch.trim()
+            : supportsSourceFilter
+              ? query
+              : removeModelQuerySource(query).trim();
+    const effectiveParsedQuery = useMemo(
+        () => parseModelQuery(effectiveQuery),
+        [effectiveQuery],
     );
     const modelModels = useMemo(
         () =>
             allModels.filter(
                 (model) =>
-                    !model.agent && (includeCommunity || !model.community),
+                    !model.agent &&
+                    Boolean(model.community) === (modelSource === "community"),
             ),
-        [allModels, includeCommunity],
+        [allModels, modelSource],
     );
     const modelSections = useMemo(
         () => categorizeModels(modelModels),
@@ -253,8 +350,6 @@ export const Models: FC = () => {
         agent: agentModels.length,
         mcp: MCP_SERVERS.length,
     };
-    const query = search.trim();
-    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const activeTabModels = useMemo(() => {
         if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
@@ -262,20 +357,32 @@ export const Models: FC = () => {
     }, [activeTab, agentModels, modelSections]);
     const filteredModels = useMemo(
         () =>
-            query
+            effectiveQuery
                 ? activeTabModels.filter((model) =>
-                      matchesModelQuery(model, parsedQuery),
+                      matchesModelQuery(model, effectiveParsedQuery),
                   )
                 : activeTabModels,
-        [activeTabModels, parsedQuery, query],
+        [activeTabModels, effectiveParsedQuery, effectiveQuery],
     );
-    const searchOptions = useMemo(
-        () =>
-            activeTab === "mcp"
-                ? []
-                : getModelQuerySuggestions(search, activeTabModels),
-        [activeTab, activeTabModels, search],
-    );
+    const searchOptions = useMemo(() => {
+        if (activeTab === "mcp") return [];
+        let options = getModelQuerySuggestions(
+            draftFilter ? search : visibleSearch,
+            activeTabModels,
+        );
+        if (!supportsSourceFilter || explicitModelSource) {
+            options = options.filter((option) => !isSourceSuggestion(option));
+        }
+        return draftFilter ? options.map(getDraftSuggestionValue) : options;
+    }, [
+        activeTab,
+        activeTabModels,
+        draftFilter,
+        explicitModelSource,
+        search,
+        supportsSourceFilter,
+        visibleSearch,
+    ]);
 
     useEffect(() => {
         setSearchOpen(searchFocused && searchOptions.length > 0);
@@ -311,10 +418,8 @@ export const Models: FC = () => {
             : activeTab === "agent"
               ? "agents"
               : activeTab === "all"
-                ? includeCommunity
-                    ? "models"
-                    : "official models"
-                : `${includeCommunity ? "" : "official "}${searchLabel} models`;
+                ? `${modelSource} models`
+                : `${modelSource} ${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -333,10 +438,57 @@ export const Models: FC = () => {
         [navigate],
     );
 
+    const setVisibleSearch = (nextSearch: string) => {
+        const preservedFilters = filterTokens.map(({ token }) => token);
+        const editableTokens = nextSearch.trim().split(/\s+/).filter(Boolean);
+        const nextQuery = draftFilter
+            ? [
+                  ...preservedFilters,
+                  ...editableTokens.slice(0, -1),
+                  `${draftFilter.key}:${editableTokens.at(-1) ?? ""}`,
+              ]
+                  .filter(Boolean)
+                  .join(" ")
+            : [...preservedFilters, nextSearch.trim()]
+                  .filter(Boolean)
+                  .join(" ");
+        setDraftFilter(
+            nextSearch.endsWith(" ")
+                ? undefined
+                : getModelQueryDraftFilter(nextQuery, true),
+        );
+        setSearch(nextQuery);
+    };
+
+    const removeFilter = (filterToken: ModelQueryFilterToken) => {
+        setDraftFilter(undefined);
+        setSearch(removeModelQueryFilterToken(search, filterToken.index));
+    };
+
+    const removeDraftFilter = () => {
+        if (!draftFilter) return;
+        setSearch(removeModelQueryFilterToken(search, draftFilter.index));
+        setDraftFilter(undefined);
+    };
+
+    const setSourceFilter = (
+        filterToken: ModelQueryFilterToken,
+        source: ModelSource,
+    ) => {
+        setDraftFilter(undefined);
+        setSearch(
+            replaceModelQueryFilterToken(search, filterToken.index, {
+                key: "source",
+                value: source,
+            }),
+        );
+    };
+
     useEffect(() => {
         if (urlSearch === lastPushedSearchRef.current) return;
 
         lastPushedSearchRef.current = urlSearch;
+        setDraftFilter(getModelQueryDraftFilter(urlSearch));
         setSearch(urlSearch);
     }, [urlSearch]);
 
@@ -364,15 +516,6 @@ export const Models: FC = () => {
             search: (previous) => ({
                 ...previous,
                 category: primaryTab === "models" ? undefined : primaryTab,
-            }),
-        });
-    };
-
-    const setIncludeCommunity = (include: boolean) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                scope: include ? undefined : "pollinations",
             }),
         });
     };
@@ -507,62 +650,207 @@ export const Models: FC = () => {
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0 max-w-md flex-1 basis-[240px]">
-                            <div className="relative">
-                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                            <div>
                                 <EditableCombobox
-                                    value={search}
+                                    key={
+                                        [
+                                            ...filterTokens.map(
+                                                ({ token }) => token,
+                                            ),
+                                            renderedDraftFilter
+                                                ? `draft:${renderedDraftFilter.key}`
+                                                : "",
+                                        ]
+                                            .filter(Boolean)
+                                            .join("|") || "default"
+                                    }
+                                    value={visibleSearch}
                                     options={searchOptions}
-                                    onChange={setSearch}
+                                    onChange={setVisibleSearch}
                                     open={searchOpen}
                                     onOpenChange={setSearchOpen}
                                     onFocus={() => setSearchFocused(true)}
                                     onBlur={() => {
                                         setSearchFocused(false);
+                                        if (draftFilter?.value) {
+                                            setDraftFilter(undefined);
+                                        }
                                         const normalizedSearch = search.trim();
                                         setSearch(normalizedSearch);
                                         pushSearch(normalizedSearch);
                                     }}
-                                    placeholder={`Search ${searchTarget}…`}
+                                    placeholder={
+                                        renderedDraftFilter
+                                            ? `${MODEL_FILTER_LABELS[renderedDraftFilter.key]} value…`
+                                            : `Search ${searchTarget}…`
+                                    }
                                     aria-label={`Search ${searchTarget}`}
                                     autoComplete="off"
-                                    className="pl-9"
+                                    startContent={
+                                        renderedFilterTokens.length === 0 &&
+                                        !renderedDraftFilter ? (
+                                            <SearchIcon className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted" />
+                                        ) : (
+                                            <>
+                                                {renderedFilterTokens.map(
+                                                    (filterToken) => {
+                                                        const { filter } =
+                                                            filterToken;
+                                                        const label =
+                                                            MODEL_FILTER_LABELS[
+                                                                filter.key
+                                                            ];
+                                                        const value =
+                                                            formatFilterValue(
+                                                                filter,
+                                                            );
+                                                        const removeButton = (
+                                                            <button
+                                                                type="button"
+                                                                aria-label={`Remove ${label} filter: ${value}`}
+                                                                className="polli-control flex self-stretch items-center rounded-r-lg border-l border-divider px-1.5 text-theme-text-muted transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
+                                                                onClick={() =>
+                                                                    removeFilter(
+                                                                        filterToken,
+                                                                    )
+                                                                }
+                                                            >
+                                                                <XIcon className="h-3 w-3" />
+                                                            </button>
+                                                        );
+
+                                                        return (
+                                                            <div
+                                                                key={`${filterToken.index}:${filterToken.token}`}
+                                                                className="flex h-7 max-w-full shrink-0 items-center rounded-lg bg-theme-bg-active text-xs font-medium text-theme-text-strong shadow-sm"
+                                                            >
+                                                                {filter.key ===
+                                                                "source" ? (
+                                                                    <Dropdown
+                                                                        align="start"
+                                                                        className="w-max p-1"
+                                                                        trigger={(
+                                                                            open,
+                                                                        ) => (
+                                                                            <button
+                                                                                type="button"
+                                                                                aria-label={`Source filter: ${filter.value}`}
+                                                                                className="polli-control flex h-full min-w-0 items-center gap-1 rounded-l-lg px-2 transition-colors hover:bg-theme-bg-hover"
+                                                                            >
+                                                                                <span className="text-theme-text-muted">
+                                                                                    Source:
+                                                                                </span>
+                                                                                <span className="truncate capitalize">
+                                                                                    {
+                                                                                        filter.value
+                                                                                    }
+                                                                                </span>
+                                                                                <ChevronIcon
+                                                                                    expanded={
+                                                                                        open
+                                                                                    }
+                                                                                    className="h-3 w-3 shrink-0"
+                                                                                />
+                                                                            </button>
+                                                                        )}
+                                                                    >
+                                                                        {(
+                                                                            close,
+                                                                        ) => (
+                                                                            <div
+                                                                                role="menu"
+                                                                                aria-label="Model source"
+                                                                                onKeyDown={
+                                                                                    handleSortMenuKeyDown
+                                                                                }
+                                                                            >
+                                                                                {(
+                                                                                    [
+                                                                                        "official",
+                                                                                        "community",
+                                                                                    ] as const
+                                                                                ).map(
+                                                                                    (
+                                                                                        source,
+                                                                                    ) => (
+                                                                                        <DropdownItem
+                                                                                            key={
+                                                                                                source
+                                                                                            }
+                                                                                            role="menuitemradio"
+                                                                                            aria-checked={
+                                                                                                filter.value ===
+                                                                                                source
+                                                                                            }
+                                                                                            className="capitalize"
+                                                                                            onClick={() => {
+                                                                                                setSourceFilter(
+                                                                                                    filterToken,
+                                                                                                    source,
+                                                                                                );
+                                                                                                close();
+                                                                                            }}
+                                                                                        >
+                                                                                            {
+                                                                                                source
+                                                                                            }
+                                                                                        </DropdownItem>
+                                                                                    ),
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </Dropdown>
+                                                                ) : (
+                                                                    <span className="flex min-w-0 items-center gap-1 px-2">
+                                                                        <span className="text-theme-text-muted">
+                                                                            {
+                                                                                label
+                                                                            }
+                                                                            :
+                                                                        </span>
+                                                                        <span className="truncate">
+                                                                            {
+                                                                                value
+                                                                            }
+                                                                        </span>
+                                                                    </span>
+                                                                )}
+                                                                {removeButton}
+                                                            </div>
+                                                        );
+                                                    },
+                                                )}
+                                                {renderedDraftFilter && (
+                                                    <div className="flex h-7 max-w-full shrink-0 items-center rounded-lg bg-theme-bg-active text-xs font-medium text-theme-text-strong shadow-sm">
+                                                        <span className="px-2 text-theme-text-muted">
+                                                            {
+                                                                MODEL_FILTER_LABELS[
+                                                                    renderedDraftFilter
+                                                                        .key
+                                                                ]
+                                                            }
+                                                            :
+                                                        </span>
+                                                        <button
+                                                            type="button"
+                                                            aria-label={`Remove ${MODEL_FILTER_LABELS[renderedDraftFilter.key]} filter`}
+                                                            className="polli-control flex self-stretch items-center rounded-r-lg border-l border-divider px-1.5 text-theme-text-muted transition-colors hover:bg-theme-bg-hover hover:text-theme-text-strong"
+                                                            onClick={
+                                                                removeDraftFilter
+                                                            }
+                                                        >
+                                                            <XIcon className="h-3 w-3" />
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )
+                                    }
                                 />
                             </div>
                         </div>
                         {activeTab !== "mcp" && (
                             <div className="flex flex-wrap items-center gap-2">
-                                <TabButton
-                                    active={
-                                        activePrimaryTab === "agent" ||
-                                        includeCommunity
-                                    }
-                                    onClick={() =>
-                                        setIncludeCommunity(!includeCommunity)
-                                    }
-                                    disabled={activePrimaryTab === "agent"}
-                                    size="md"
-                                    ariaLabel={
-                                        activePrimaryTab === "agent"
-                                            ? `${agentModels.length} community agents; all agents are community models for now`
-                                            : includeCommunity
-                                              ? `Hide ${communityModels.length} community models`
-                                              : `Show ${communityModels.length} community models`
-                                    }
-                                >
-                                    <span className="inline-flex items-center gap-1.5">
-                                        Community
-                                        <TabCount
-                                            value={
-                                                activePrimaryTab === "agent"
-                                                    ? agentModels.length
-                                                    : communityModels.length
-                                            }
-                                        />
-                                        <Chip intent="alpha" size="sm">
-                                            Alpha
-                                        </Chip>
-                                    </span>
-                                </TabButton>
                                 <Dropdown
                                     align="end"
                                     className="w-max p-2"
@@ -623,7 +911,8 @@ export const Models: FC = () => {
                         )}
                     </div>
                 </div>
-                {(activePrimaryTab === "agent" || includeCommunity) && (
+                {(activePrimaryTab === "agent" ||
+                    modelSource === "community") && (
                     <aside
                         aria-label="Community privacy notice"
                         className="mb-4 flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
@@ -662,15 +951,19 @@ export const Models: FC = () => {
                     </Alert>
                 )}
                 {activeTab === "mcp" ? (
-                    <McpServerList query={query} />
-                ) : query && sectionModels[activeTab].length === 0 ? (
+                    <McpServerList query={effectiveQuery} />
+                ) : effectiveQuery && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
+                        No {searchTarget.toLowerCase()} match{" "}
+                        {visibleSearch.trim()
+                            ? `“${visibleSearch.trim()}”`
+                            : "the selected filters"}
+                        .
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
-                            listKey={`${activeScope}:${activeTab}:${query}:${activeSort}`}
+                            listKey={`${modelSource}:${activeTab}:${query}:${activeSort}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}

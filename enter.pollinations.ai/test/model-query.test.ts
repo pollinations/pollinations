@@ -1,8 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+    ensureModelQuerySource,
+    getExplicitModelQuerySource,
+    getModelQueryDraftFilter,
+    getModelQueryFilterTokens,
+    getModelQuerySource,
     getModelQuerySuggestions,
     matchesModelQuery,
     parseModelQuery,
+    removeModelQueryFilterToken,
+    removeModelQuerySource,
+    replaceModelQueryFilterToken,
 } from "../frontend/src/components/models/model-query.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
@@ -23,12 +31,13 @@ describe("parseModelQuery", () => {
     it("separates case-insensitive filters from text terms", () => {
         expect(
             parseModelQuery(
-                "Fast ACCESS:paid publisher:Alice id:Alice/Coder type:text capability:tool-calling",
+                "Fast ACCESS:paid SOURCE:community publisher:Alice id:Alice/Coder type:text capability:tool-calling",
             ),
         ).toEqual({
             terms: ["fast"],
             filters: [
                 { key: "access", value: "paid" },
+                { key: "source", value: "community" },
                 { key: "publisher", value: "alice" },
                 { key: "id", value: "alice/coder" },
                 { key: "type", value: "text" },
@@ -37,9 +46,11 @@ describe("parseModelQuery", () => {
         });
     });
 
-    it("keeps unsupported, incomplete, and invalid access filters as text", () => {
-        expect(parseModelQuery("unknown:value access: access:any")).toEqual({
-            terms: ["unknown:value", "access:", "access:any"],
+    it("keeps unsupported, incomplete, and invalid filters as text", () => {
+        expect(
+            parseModelQuery("unknown:value access: access:any source:any"),
+        ).toEqual({
+            terms: ["unknown:value", "access:", "access:any", "source:any"],
             filters: [],
         });
     });
@@ -49,6 +60,101 @@ describe("parseModelQuery", () => {
             terms: [],
             filters: [{ key: "id", value: "owner/model:variant" }],
         });
+    });
+});
+
+describe("getModelQuerySource", () => {
+    it("defaults to official models and allows community searches", () => {
+        const defaultQuery = parseModelQuery("flux");
+        expect(getExplicitModelQuerySource(defaultQuery)).toBeUndefined();
+        expect(getModelQuerySource(defaultQuery)).toBe("official");
+        expect(
+            getModelQuerySource(parseModelQuery("source:community flux")),
+        ).toBe("community");
+    });
+
+    it("separates the source token from visible search text", () => {
+        expect(
+            removeModelQuerySource(
+                "flux SOURCE:community access:quest publisher:alice",
+            ),
+        ).toBe("flux access:quest publisher:alice");
+    });
+
+    it("preselects official without replacing an explicit source", () => {
+        expect(ensureModelQuerySource("")).toBe("source:official");
+        expect(ensureModelQuerySource("capability:reasoning")).toBe(
+            "source:official capability:reasoning",
+        );
+        expect(ensureModelQuerySource("source:community")).toBe(
+            "source:community",
+        );
+    });
+});
+
+describe("model query filter tokens", () => {
+    const query =
+        "fast access:quest source:community capability:tool-calling type:text";
+
+    it("returns every completed filter in query order", () => {
+        expect(getModelQueryFilterTokens(query)).toEqual([
+            {
+                filter: { key: "access", value: "quest" },
+                index: 1,
+                token: "access:quest",
+            },
+            {
+                filter: { key: "source", value: "community" },
+                index: 2,
+                token: "source:community",
+            },
+            {
+                filter: { key: "capability", value: "tool-calling" },
+                index: 3,
+                token: "capability:tool-calling",
+            },
+            {
+                filter: { key: "type", value: "text" },
+                index: 4,
+                token: "type:text",
+            },
+        ]);
+    });
+
+    it("identifies a selected filter while its value is being entered", () => {
+        expect(
+            getModelQueryDraftFilter("source:official fast capability:"),
+        ).toEqual({
+            index: 2,
+            key: "capability",
+            token: "capability:",
+            value: "",
+        });
+        expect(
+            getModelQueryDraftFilter("source:official capability:tool", true),
+        ).toEqual({
+            index: 1,
+            key: "capability",
+            token: "capability:tool",
+            value: "tool",
+        });
+        expect(
+            getModelQueryDraftFilter("source:official capability:tool"),
+        ).toBeUndefined();
+    });
+
+    it("removes or replaces one filter without changing the others", () => {
+        expect(removeModelQueryFilterToken(query, 3)).toBe(
+            "fast access:quest source:community type:text",
+        );
+        expect(
+            replaceModelQueryFilterToken(query, 2, {
+                key: "source",
+                value: "official",
+            }),
+        ).toBe(
+            "fast access:quest source:official capability:tool-calling type:text",
+        );
     });
 });
 
@@ -104,6 +210,17 @@ describe("matchesModelQuery", () => {
         ).toBe(true);
         expect(matches(model({ brand: "NVIDIA" }), "publisher:nvidia")).toBe(
             true,
+        );
+    });
+
+    it("filters official and community model sources", () => {
+        expect(matches(model(), "source:official")).toBe(true);
+        expect(matches(model(), "source:community")).toBe(false);
+        expect(matches(model({ community: true }), "source:community")).toBe(
+            true,
+        );
+        expect(matches(model({ community: true }), "source:official")).toBe(
+            false,
         );
     });
 
@@ -177,6 +294,7 @@ describe("getModelQuerySuggestions", () => {
             "capability:",
             "id:",
             "publisher:",
+            "source:",
             "type:",
         ]);
         expect(getModelQuerySuggestions("access:", models)).toEqual([
@@ -189,6 +307,10 @@ describe("getModelQuerySuggestions", () => {
         ]);
         expect(getModelQuerySuggestions("publisher:o", models)).toEqual([
             "publisher:openai ",
+        ]);
+        expect(getModelQuerySuggestions("source:", models)).toEqual([
+            "source:community ",
+            "source:official ",
         ]);
     });
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14355,
+  "title": "fix: deploy Composio MCP secret",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14355",
+  "merged_at": "2026-09-02T15:47:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the encrypted Composio API key for Worker deployments.\n- Uses the existing SOPS secret-file pattern used by hosted MCP workers.\n- Fixes production agents loading zero Composio tools.\n\nChecks: Composio credential HTTP 200; worker tests pass; Wrangler production dry run detects the hidden binding.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The tools found their hive",
+    "blurb": "Production agents can now open the Composio tool shed again. The encrypted key made the trip to Worker deployments, and the empty toolbox problem has stopped pretending to be a feature.",
+    "summary": "Added the encrypted Composio API key to the composio-mcp Worker deployment using the existing SOPS secret-file pattern, so production agents load Composio tools instead of zero tools.",
+    "impact": "Agents using the production Composio MCP worker regain access to its connected tools, with the hidden Worker binding verified by a Wrangler production dry run.",
+    "keywords": [
+      "composio",
+      "mcp",
+      "workers",
+      "secrets",
+      "deployment",
+      "agents"
+    ],
+    "visual_concept": "Depict Polli helping a friendly CRT monitor robot unlock a cozy garden tool shed labeled COMPOSIO, with glowing API tool icons inside to represent production agents regaining their tool catalog. Use an encrypted key and a small secret-file scroll as visual symbols, plus code-plants and flowers to show the deployment secret safely reaching the worker.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny locksmith tool belt as she helps a cute CRT-monitor robot unlock a garden shed full of glowing Composio tool icons; an encrypted key and secret-file scroll sit beside lime green (#ecf874) code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: 'TOOLS ONLINE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14355.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny locksmith tool belt as she helps a cute CRT-monitor robot unlock a garden shed full of glowing Composio tool icons; an encrypted key and secret-file scroll sit beside lime green (#ecf874) code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: 'TOOLS ONLINE'."
+  },
+  "generated_at": "2026-09-02T15:48:34.921008+00:00"
+}

@@ -2,7 +2,7 @@ import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
 import type { SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
-import { applySafetyToTexts } from "@/middleware/safety.ts";
+import { applySafetyToInput } from "@/middleware/safety.ts";
 
 type SafetyTextTarget = { text: string; set: (value: string) => void };
 
@@ -75,7 +75,7 @@ export async function applySafetyToResponseRequest(
         }
     }
 
-    const safeTexts = await applySafetyToTexts(
+    const safeTexts = await applySafetyToInput(
         c,
         targets.map((target) => target.text),
         body.safe as SafeValue,

@@ -122,6 +122,16 @@ test("hides paid-only models from callers without paid balance", async ({
     expect(body.id).toBe("krea");
 });
 
+test("shows Grok 4.6 to callers without paid balance", async ({ apiKey }) => {
+    const response = await fetchWorker("/v1/models/grok-4.6", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe("grok-4.6");
+});
+
 test("applies the same 404 rule to aliases of hidden models", async ({
     apiKey,
 }) => {

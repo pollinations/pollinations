@@ -95,6 +95,11 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "inception/mercury-2.5-preview",
+        config: portkeyConfig["inception/mercury-2.5-preview"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "command-a-plus",
         config: portkeyConfig["Cohere-command-a-plus-05-2026"],
     },
@@ -180,6 +185,13 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "deepseek/deepseek-v4-flash-vision-exp",
+        config: portkeyConfig[
+            "accounts/fireworks/models/deepseek-v4-flash-vision-exp"
+        ],
+        transform: fireworksThinking,
+    },
+    {
         name: "gemma",
         config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
@@ -253,6 +265,11 @@ const models: ModelDefinition[] = [
     {
         name: "claude-fable-5",
         config: portkeyConfig["claude-fable-5"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
+        name: "anthropic/claude-fable-5.1",
+        config: portkeyConfig["anthropic/claude-fable-5.1"],
         transform: claudeAdaptiveThinking,
     },
     {
@@ -411,7 +428,7 @@ const models: ModelDefinition[] = [
     },
     {
         name: "minimax-m2.7",
-        config: portkeyConfig["accounts/fireworks/models/minimax-m2p7"],
+        config: portkeyConfig["minimax/minimax-m2.7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
         transform: mandatoryReasoning,
     },

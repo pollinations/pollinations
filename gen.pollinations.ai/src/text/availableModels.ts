@@ -141,7 +141,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.8-27b"],
         transform: createReasoningEffortTransform("toggle"),
     },
-    ...["qwen3.8-27b-openrouter-ionstream"].map((name) => ({
+    ...["qwen3.8-27b-openrouter-akashml"].map((name) => ({
         name,
         config: portkeyConfig[name],
         transform: createReasoningEffortTransform("toggle"),

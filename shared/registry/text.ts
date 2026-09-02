@@ -476,6 +476,7 @@ const TEXT_BASE_SERVICES = {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
             promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
@@ -740,6 +741,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
             promptTextTokens: perMillion(0.13),
+            promptImageTokens: perMillion(0.13),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 26B A4B",
@@ -763,6 +765,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.14),
+            promptImageTokens: perMillion(0.14),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 31B",
@@ -1269,6 +1272,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.16),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.6",
@@ -1299,6 +1303,8 @@ const TEXT_BASE_SERVICES = {
             // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.19),
+            promptCacheWriteTokens: perMillion(0.95),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.7 Code",
@@ -1805,6 +1811,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
         title: "Meta Llama 4 Scout",
@@ -1879,6 +1886,7 @@ const TEXT_BASE_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.35),
             promptCachedTokens: perMillion(0.04),
+            promptImageTokens: perMillion(0.35),
             completionTextTokens: perMillion(1.5),
         },
         title: "Muse Glimmer 30B",

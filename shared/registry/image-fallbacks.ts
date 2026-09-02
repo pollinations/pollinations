@@ -123,7 +123,6 @@ export const IMAGE_FALLBACKS = {
         "zimage-fal": {
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
-            paidOnly: true,
             // Fal bills $0.005 per output megapixel. The token line stays at
             // zero; the adjustment below records the exact provider cost while
             // the caller keeps the public zimage flat price.

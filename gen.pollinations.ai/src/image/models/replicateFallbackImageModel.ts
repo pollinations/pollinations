@@ -157,6 +157,7 @@ export async function callReplicateFallbackImage(
             const image = params.image[0]
                 ? await toDataUri(params.image[0])
                 : undefined;
+            promptImageTokens = params.image.length;
             buffer = await runReplicateImage(
                 "alibaba/qwen-image-3",
                 {

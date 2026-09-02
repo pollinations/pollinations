@@ -85,7 +85,7 @@ describe("callReplicateFallbackImage", () => {
     it("uses the first reference when Replicate supports fewer than the public route", async () => {
         const fetchSpy = mockPrediction();
 
-        await callReplicateFallbackImage(
+        const result = await callReplicateFallbackImage(
             "make it blue",
             params("qwen-image-3-replicate", [PNG, PNG]),
         );
@@ -94,6 +94,10 @@ describe("callReplicateFallbackImage", () => {
             (fetchSpy.mock.calls[0][1] as RequestInit).body as string,
         );
         expect(body.input.image).toBe(PNG);
+        expect(result.trackingData.usage).toEqual({
+            promptImageTokens: 2,
+            completionImageTokens: 1,
+        });
     });
 
     it("passes all supported p-image-edit references", async () => {

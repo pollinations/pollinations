@@ -942,7 +942,9 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
     const models = [
         "gemini-3-flash",
         "gemini",
+        "gemini-openrouter-ai-studio-priority",
         "gemini-flash-lite-3.5",
+        "gemini-flash-lite-3.5-openrouter-ai-studio-flex",
         "gemini-fast",
         "gemini-large",
         "gemini-search",
@@ -1015,10 +1017,13 @@ test("Google text model providers match their configured routes", () => {
     }
 });
 
-test("OpenRouter models require paid balance", () => {
+test("caller-selectable OpenRouter models require paid balance", () => {
     for (const model of getModels()) {
         const definition = getRegistryModelDefinition(model);
-        if (definition.provider === "openrouter") {
+        if (
+            definition.provider === "openrouter" &&
+            definition.fallbackOnly !== true
+        ) {
             expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
         }
     }

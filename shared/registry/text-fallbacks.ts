@@ -1,4 +1,5 @@
 import { defineCostVariants, longContextAtLeast } from "./cost-variants";
+import { openRouterGeminiBilling } from "./gemini-billing";
 import type { FallbackMap } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 
@@ -38,11 +39,12 @@ export const TEXT_FALLBACKS = {
         },
     },
     "qwen3.8-27b": {
-        "qwen3.8-27b-openrouter-ionstream": {
+        "qwen3.8-27b-openrouter-akashml": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.35),
+                promptCachedTokens: perMillion(0.05),
                 promptImageTokens: perMillion(0.35),
                 promptVideoTokens: perMillion(0.35),
                 completionTextTokens: perMillion(2.55),
@@ -75,7 +77,6 @@ export const TEXT_FALLBACKS = {
         "mistral-large-openrouter-zdr": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
-            paidOnly: true,
         },
     },
     gemma: {
@@ -214,12 +215,16 @@ export const TEXT_FALLBACKS = {
             cost: {
                 promptTextTokens: perMillion(1.35),
                 promptCachedTokens: perMillion(0.135),
-                promptCacheWriteTokens: perMillion(0.075),
+                promptCacheWriteTokens: perMillion(1.35),
                 promptAudioTokens: perMillion(1.35),
                 promptImageTokens: perMillion(1.35),
                 promptVideoTokens: perMillion(1.35),
                 completionTextTokens: perMillion(6.75),
             },
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14,
+                storageCostPerMillionTokenHours: 0.9,
+            }),
         },
     },
     "gemini-fast": {
@@ -235,12 +240,16 @@ export const TEXT_FALLBACKS = {
             cost: {
                 promptTextTokens: perMillion(0.15),
                 promptCachedTokens: perMillion(0.015),
-                promptCacheWriteTokens: perMillion(0.0416666666666667),
+                promptCacheWriteTokens: perMillion(0.15),
                 promptAudioTokens: perMillion(0.15),
                 promptImageTokens: perMillion(0.15),
                 promptVideoTokens: perMillion(0.15),
                 completionTextTokens: perMillion(1.25),
             },
+            billing: openRouterGeminiBilling({
+                searchCostPerThousandRequests: 14,
+                storageCostPerMillionTokenHours: 0.5,
+            }),
         },
     },
     "gemini-large": {
@@ -279,6 +288,7 @@ export const TEXT_FALLBACKS = {
             cost: {
                 promptTextTokens: perMillion(0.68),
                 promptCachedTokens: perMillion(0.136),
+                promptCacheWriteTokens: perMillion(0.85),
                 promptImageTokens: perMillion(0.68),
                 completionTextTokens: perMillion(3.4),
             },

@@ -15,7 +15,7 @@ import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 
 const OPENROUTER_ROUTES = [
-    ["qwen3.8-27b-openrouter-ionstream", "qwen/qwen3.8-27b", "ionstream/fp8"],
+    ["qwen3.8-27b-openrouter-akashml", "qwen/qwen3.8-27b", "akashml/fp8"],
     [
         "mistral-large-openrouter-zdr",
         "mistralai/mistral-large-2512",
@@ -114,7 +114,14 @@ function expectInheritedRoute(
         inputModalities: parent.inputModalities,
         outputModalities: parent.outputModalities,
     });
+    expect(route.paidOnly).toBe(parent.paidOnly);
     expect(route.fallbacks).toBeUndefined();
+    for (const usageType of Object.keys(route.cost ?? {})) {
+        expect(
+            parent.cost,
+            `${routeId}.${usageType} needs a quoted ${parentId} rate`,
+        ).toHaveProperty(usageType);
+    }
 }
 
 describe("static provider fallbacks", () => {
@@ -177,6 +184,25 @@ describe("static provider fallbacks", () => {
         expect(IMAGE_SERVICES["qwen-image-3-replicate"].cost).toMatchObject({
             promptImageTokens: 0,
             completionImageTokens: 0.03,
+        });
+        expect(
+            TEXT_SERVICES["qwen3.8-27b-openrouter-akashml"].cost,
+        ).toMatchObject({
+            promptCachedTokens: 0.05 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES["gemini-openrouter-ai-studio-priority"].cost,
+        ).toMatchObject({
+            promptCacheWriteTokens: 1.35 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES["gemini-flash-lite-3.5-openrouter-ai-studio-flex"]
+                .cost,
+        ).toMatchObject({
+            promptCacheWriteTokens: 0.15 / 1_000_000,
+        });
+        expect(TEXT_SERVICES["kimi-code-deepinfra"].cost).toMatchObject({
+            promptCacheWriteTokens: 0.85 / 1_000_000,
         });
         expect(MODEL3D_SERVICES["trellis-2-fal"].cost).toEqual({
             completionImageTokens: 0.25,

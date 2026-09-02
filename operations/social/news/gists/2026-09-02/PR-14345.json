@@ -1,0 +1,34 @@
+{
+  "pr_number": 14345,
+  "title": "fix: keep requested and used model IDs separate",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14345",
+  "merged_at": "2026-09-02T15:07:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps x-model-used as the exact registry route that handled the request.\n- Adds x-model-requested with the canonical model selected by the caller.\n- Keeps Tinybird model_used and resolved_model_requested independent, with no name parsing or publicId mapping.\n- Attributes unexpected-content-type failures to the route that actually responded.\n- Does not change fallback routing, pricing, billing, permissions, or model names.\n\nTests:\n- Gen typecheck\n- 69 fallback and tracking tests\n- Flux to DeepInfra fallback regression",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The route keeps its name",
+    "blurb": "Fallbacks can now tell the truth about who answered the door. Requested models and the registry route that actually served them get their own clean labels.",
+    "summary": "Generation responses now expose the caller-selected canonical model in `x-model-requested` while preserving the exact registry route that handled the request in `x-model-used`, with Tinybird tracking the two values independently.",
+    "impact": "Developers can distinguish the model they requested from the fallback route that responded, including accurate attribution for unexpected content-type failures, without any changes to routing, pricing, billing, permissions, or model names.",
+    "keywords": [
+      "model-routing",
+      "fallbacks",
+      "response-headers",
+      "tracking",
+      "tinybird",
+      "observability"
+    ],
+    "visual_concept": "Polli acts as a careful postal clerk in a cozy garden routing station, attaching two distinct labels to a request envelope: one for the requested model and one for the route that delivered the response. A friendly CRT monitor robot holds a route map beside flowering code-plants, making the distinction visible without suggesting that fallback behavior changed.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, carefully placing two separate pixel labels reading 'REQUESTED' and 'USED' on a model-request envelope at a garden routing desk; a cheerful CRT monitor robot holds a map of winding fallback paths beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14345.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny postal cap, carefully placing two separate pixel labels reading 'REQUESTED' and 'USED' on a model-request envelope at a garden routing desk; a cheerful CRT monitor robot holds a map of winding fallback paths beside code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T15:08:22.734529+00:00"
+}

@@ -563,8 +563,8 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "muse-glimmer-openrouter-parasail",
-        config: portkeyConfig["muse-glimmer-openrouter-parasail"],
+        name: "muse-glimmer-openrouter-deepinfra",
+        config: portkeyConfig["muse-glimmer-openrouter-deepinfra"],
         transform: fireworksThinking,
     },
     {

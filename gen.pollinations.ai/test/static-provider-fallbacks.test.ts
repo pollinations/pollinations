@@ -44,9 +44,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "muse-glimmer-openrouter-parasail",
+        "muse-glimmer-openrouter-deepinfra",
         "meta/muse-glimmer-30b",
-        "parasail/bf16",
+        "deepinfra/bf16",
     ],
     [
         "nemotron-3.5-lightning-openrouter-coreweave",

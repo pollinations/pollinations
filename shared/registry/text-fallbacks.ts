@@ -174,14 +174,14 @@ export const TEXT_FALLBACKS = {
         },
     },
     "muse-glimmer": {
-        "muse-glimmer-openrouter-parasail": {
+        "muse-glimmer-openrouter-deepinfra": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
                 promptTextTokens: perMillion(0.3),
                 promptCachedTokens: perMillion(0.04),
                 promptImageTokens: perMillion(0.3),
-                completionTextTokens: perMillion(1.1),
+                completionTextTokens: perMillion(1.2),
             },
         },
     },

@@ -324,9 +324,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-fable-5",
         "google-vertex/global",
     ),
-    "muse-glimmer-openrouter-parasail": createPinnedOpenRouterConfig(
+    "muse-glimmer-openrouter-deepinfra": createPinnedOpenRouterConfig(
         "meta/muse-glimmer-30b",
-        "parasail/bf16",
+        "deepinfra/bf16",
     ),
     "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
         "nvidia/nemotron-3.5-lightning",

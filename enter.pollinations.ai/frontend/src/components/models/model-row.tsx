@@ -75,13 +75,8 @@ export const ModelId: FC<ModelIdProps> = ({ name, showCopyIcon = false }) => (
         value={name}
         tooltip={
             showCopyIcon ? null : (
-                <span className="flex min-w-0 max-w-full flex-col items-start gap-1.5 text-left">
-                    <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                        Click to copy
-                    </span>
-                    <span className="max-w-full break-all font-mono text-xs text-theme-text-muted">
-                        {name}
-                    </span>
+                <span className="font-sans text-xs font-semibold text-theme-text-strong">
+                    Click to copy
                 </span>
             )
         }
@@ -456,7 +451,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
+            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden py-3 pl-3 pr-1">
                 <ModelPricingLedger
                     pricing={pricing}
                     hasTools={pollinationsTools}

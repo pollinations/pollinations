@@ -494,7 +494,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        perUserRpm: 10,
+        perUserRpm: 60,
         cost: {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
@@ -732,7 +732,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
-        perUserRpm: 30,
+        perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.22),
             promptCachedTokens: perMillion(0.007),
@@ -912,7 +912,7 @@ export const TEXT_SERVICES = {
         brand: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 0.75,
         // Provisional Azure sheet pending an exact public or account meter.
         // The direct route reports image tokens separately from text tokens.
@@ -1217,6 +1217,32 @@ export const TEXT_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "anthropic/claude-fable-5.1": {
+        aliases: [],
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            promptTextTokens: perMillion(10),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50),
+        },
+        title: "Claude Fable 5.1",
+        description:
+            "Frontier intelligence for complex reasoning, coding and long-running agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
         contextLength: 1000000,
         isSpecialized: false,
     },
@@ -1532,7 +1558,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        perUserRpm: 20,
+        perUserRpm: 60,
         cost: {
             // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
             promptTextTokens: perMillion(0.05),
@@ -1852,7 +1878,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        perUserRpm: 5,
+        perUserRpm: 60,
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
@@ -1902,7 +1928,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
-        perUserRpm: 10,
+        perUserRpm: 60,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
             // prompt $0.30/M, completion $1.20/M, cache read $0.06/M.
@@ -1929,7 +1955,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
-        perUserRpm: 10,
+        perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.35),
             promptCachedTokens: perMillion(0.04),

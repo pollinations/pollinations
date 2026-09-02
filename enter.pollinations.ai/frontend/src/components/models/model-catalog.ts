@@ -145,30 +145,56 @@ export function mergeModelCatalogs(
     return [...modelsById.values()];
 }
 
-async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
-    const response = await fetch(url, {
+function fetchCatalog(
+    url: string,
+    timeoutMs: number,
+): Promise<ApiModelInfo[]> {
+    return fetch(url, {
         cache: "no-store",
-        signal: AbortSignal.timeout(15_000),
+        signal: AbortSignal.timeout(timeoutMs),
+    }).then(async (response) => {
+        if (!response.ok) {
+            throw new Error(`Failed to fetch models (${response.status})`);
+        }
+        return parseModelCatalogResponse(await response.json());
     });
-    if (!response.ok) {
-        throw new Error(`Failed to fetch models (${response.status})`);
-    }
-    return parseModelCatalogResponse(await response.json());
 }
 
+// The official catalog is small and required: the models tab and permission
+// picker have nothing to show without it, so its failure must surface as an
+// error. The community catalog is comparatively huge (250+ entries with full
+// pricing/alias metadata) and purely additive, so it is fetched separately
+// and allowed to fail or time out on its own without blocking or failing the
+// rest of the page — users still get the official models instead of a hung
+// or broken picker.
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
     if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
         .then(async ({ config }) => {
-            const catalogs = await Promise.all([
-                fetchCatalog(`${config.genBaseUrl}/models`),
-                ...(config.communityCatalogUrl
-                    ? [fetchCatalog(config.communityCatalogUrl)]
-                    : []),
+            const officialCatalogPromise = fetchCatalog(
+                `${config.genBaseUrl}/models?community=false`,
+                15_000,
+            );
+            const communityCatalogPromise = config.communityCatalogUrl
+                ? fetchCatalog(config.communityCatalogUrl, 20_000).catch(
+                      (error) => {
+                          console.error(
+                              "Failed to fetch community model catalog",
+                              error,
+                          );
+                          return [] as ApiModelInfo[];
+                      },
+                  )
+                : Promise.resolve([] as ApiModelInfo[]);
+
+            const [officialCatalog, communityCatalog] = await Promise.all([
+                officialCatalogPromise,
+                communityCatalogPromise,
             ]);
-            return mergeModelCatalogs(catalogs);
+
+            return mergeModelCatalogs([officialCatalog, communityCatalog]);
         })
         .catch((error) => {
             modelCatalogPromise = null;

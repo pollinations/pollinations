@@ -22,14 +22,14 @@ const environmentConfig = {
         baseUrl: PUBLIC_URLS.enter.staging,
         apiBaseUrl: configuredApiBaseUrl ?? "/api",
         genBaseUrl: PUBLIC_URLS.gen.staging,
-        communityCatalogUrl: null,
+        communityCatalogUrl: `${PUBLIC_URLS.gen.production}/models?community=true`,
         authPath: "/api/auth",
     },
     production: {
         baseUrl: PUBLIC_URLS.enter.production,
         apiBaseUrl: configuredApiBaseUrl ?? "/api",
         genBaseUrl: PUBLIC_URLS.gen.production,
-        communityCatalogUrl: null,
+        communityCatalogUrl: `${PUBLIC_URLS.gen.production}/models?community=true`,
         authPath: "/api/auth",
     },
 } as const;

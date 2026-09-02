@@ -1,5 +1,42 @@
 # Pollinations Model Changelog
 
+## 2026-09-02
+
+### Added
+- `deepseek/deepseek-v4-flash-vision-exp` (DeepSeek, text) — text/image input with tool calling and reasoning.
+- `anthropic/claude-fable-5.1` (Anthropic, text) — text/image input with tool calling and reasoning.
+- `inception/mercury-2.5-preview` (Inception, text) — tool calling and reasoning.
+- `thinkingmachines/inkling` (Thinking Machines, text) — text/image/audio input with tool calling and reasoning.
+- `z-ai/glm-5.3-flash` (Z.ai, text) — text/image input with tool calling and reasoning.
+- `flux-2-flex` (Black Forest Labs, image) — text/image generation with up to 10 reference images.
+- `flux-2-pro` (Black Forest Labs, image) — text/image generation with up to 8 reference images.
+- `google/gemini-omni-1.1-flash` (Google, video) — text/image video generation with start/end frames and audio output.
+
+### Changed
+- `minimax-m2.7` — now paid-only; completion price cut ~15%.
+- `glm-5.3` — now free.
+- `grok-4.6` — now free; completion price cut ~25%.
+- `chigwell/claude-haiku-4-5` — now free.
+- `MarcosFRG/metraxai` — completion price cut ~55%.
+- `vendouple/gemini-3.6` — prompt price cut 50%.
+- `gemini` — completion price +100%.
+- `MarcosFRG/deepseek-v4-flash` — completion price +50%.
+- `MarcosFRG/glm-5.2` — completion price +150%.
+- `MarcosFRG/mimo-v2.5` — completion price +60%.
+- `MarcosFRG/minimax-m3` — completion price +100%.
+- `MarcosFRG/flux-1-schnell` — image price +50%.
+- `MarcosFRG/lucid-origin` — image price +40%.
+- `YoannDev90/laguna-s-2.1:free` — added reasoning support.
+- `wan-3.0` — added video/audio input, end-frame control, and reference image/video/audio support.
+- `seedance-2.5` — added video/audio input and reference image/video/audio support.
+- `wan-pro` — added video input and reference image/video support.
+- `seedance-2.0` — added video/audio input and reference image/video/audio support.
+
+### Removed
+- `rekty/visual-ai-artwork` (was: text)
+- `chigwell/firefly-image-5` (was: image)
+- `vendouple/whisper-large-v3:free` (was: audio)
+
 ## 2026-08-26
 
 ### Added

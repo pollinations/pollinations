@@ -1,0 +1,33 @@
+{
+  "pr_number": 14344,
+  "title": "docs: link hosted MCP sources",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14344",
+  "merged_at": "2026-09-02T14:12:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Links each hosted MCP to its README or source directory.\n- Expands the Pollinations MCP overview with its main capabilities.\n- Keeps implementation and registry data unchanged.\n\nTest: `npm test -- test/docs.test.ts` in `gen.pollinations.ai`",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "MCPs leave breadcrumbs",
+    "blurb": "The hosted MCP list now points back to where each little tool lives. The Pollinations MCP also got a clearer map of what it can do.",
+    "summary": "Updated the hosted MCP documentation with README or source-directory links for each server and expanded the Pollinations MCP capability overview.",
+    "impact": "Developers can now trace hosted MCPs to their source faster and understand the Pollinations MCP’s main tools without spelunking through the registry.",
+    "keywords": [
+      "mcp",
+      "documentation",
+      "hosted-mcps",
+      "developer-tools",
+      "open-source"
+    ],
+    "visual_concept": "Polli acts as a tiny librarian in a cozy garden workshop, pinning labeled trail signs from a glowing MCP directory to small README books and source-code planters. A cheerful CRT monitor robot follows the links with a map, while flowers and code vines make the documentation feel discoverable.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian hat, placing little link signs from a glowing hosted MCP directory to README books and source-code flower pots; a chunky CRT monitor robot happily follows the map beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, with small pixel-font text: 'MCP SOURCES'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14344.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian hat, placing little link signs from a glowing hosted MCP directory to README books and source-code flower pots; a chunky CRT monitor robot happily follows the map beside her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, with small pixel-font text: 'MCP SOURCES'."
+  },
+  "generated_at": "2026-09-02T14:15:03.064291+00:00"
+}

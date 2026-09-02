@@ -157,3 +157,25 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
         10,
     );
 });
+
+test("rejects direct calls to the internal Fal route", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal");
+    const { response, wait } = await fetchWorker(
+        "/image/a%20red%20apple?model=zimage-fal",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                'Invalid model or alias: "zimage-fal". Must be a valid model name or alias.',
+        },
+    });
+    await wait();
+    expect(mocks.fal.state.falRequests).toHaveLength(0);
+});

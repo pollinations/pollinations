@@ -5,7 +5,12 @@ import {
     effectiveCommunityEndpointVisibility,
 } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
-import { getModels, resolveModelName } from "./registry.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    isVisibleModelDefinition,
+    resolveModelName,
+} from "./registry.ts";
 
 export function canonicalizeModelPermissionIds(
     modelIds: readonly string[],
@@ -31,7 +36,11 @@ export async function getVisibleModelIdsForUser(
     dbBinding: D1Database,
     userId: string,
 ): Promise<Set<string>> {
-    const modelIds = new Set<string>(getModels());
+    const modelIds = new Set<string>(
+        getModels().filter((model) =>
+            isVisibleModelDefinition(getRegistryModelDefinition(model)),
+        ),
+    );
     const db = drizzle(dbBinding, { schema });
     const communityModels = await db
         .select({

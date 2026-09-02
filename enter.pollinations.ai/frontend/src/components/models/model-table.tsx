@@ -257,17 +257,13 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                                 capabilities={capabilities}
                                 modalityLabel={modalityLabel}
                                 capabilityLabel={capabilityLabel}
+                                perUserRpm={model.perUserRpm}
                             />
                             <ModelPricingControls
                                 model={model}
                                 pricing={pricing}
                             />
                         </div>
-                        {model.perUserRpm != null && (
-                            <div className="flex min-w-0 items-center">
-                                <PerUserRateLimit value={model.perUserRpm} />
-                            </div>
-                        )}
                     </div>
                     <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">
                         <ModelStatusChips
@@ -316,6 +312,7 @@ type MobileMetadataBadgesProps = {
     capabilities: DisplayCapability[];
     modalityLabel: string;
     capabilityLabel: string;
+    perUserRpm?: number | null;
 };
 
 const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
@@ -323,8 +320,13 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
     capabilities,
     modalityLabel,
     capabilityLabel,
+    perUserRpm,
 }) => {
-    if (inputModalities.length === 0 && capabilities.length === 0) {
+    if (
+        inputModalities.length === 0 &&
+        capabilities.length === 0 &&
+        perUserRpm == null
+    ) {
         return null;
     }
 
@@ -376,6 +378,11 @@ const MobileMetadataBadges: FC<MobileMetadataBadgesProps> = ({
                     </span>
                 </Tooltip>
             )}
+            {(inputModalities.length > 0 || capabilities.length > 0) &&
+                perUserRpm != null && (
+                    <span className="h-3.5 w-px bg-current opacity-30" />
+                )}
+            <PerUserRateLimit value={perUserRpm} />
         </div>
     );
 };

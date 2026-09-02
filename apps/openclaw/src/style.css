@@ -342,6 +342,11 @@
             transform: translateY(-2px);
         }
 
+        .model-row.dimmed {
+            opacity: 1;
+            color: inherit;
+        }
+
         .model-card.primary {
             background: var(--accent-bg);
         }
@@ -579,7 +584,7 @@
         }
 
         .model-row.dimmed {
-            opacity: 0.6;
+            opacity: 1;
         }
 
         .model-label {

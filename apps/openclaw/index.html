@@ -8,13 +8,13 @@
 
     <meta property="og:title" content="pollinations.ai × OpenClaw — AI Models for Your Agent">
     <meta property="og:description"
-        content="Use 25+ AI models as your OpenClaw brain through a single API. Kimi K2.5, DeepSeek, Claude, Gemini and more — set up in 30 seconds.">
+        content="Connect OpenClaw to Pollinations' OpenAI-compatible API: current models, web search, vision, and community-built media skills.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://openclaw.pollinations.ai">
     <meta property="og:image" content="https://pollinations.ai/og-image.png">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="description"
-        content="Use 25+ AI models as your OpenClaw brain through a single API. Free credits included, set up in 30 seconds.">
+        content="Connect OpenClaw to Pollinations' current model catalog with included starter credits and one API key.">
     <link rel="stylesheet" href="./src/style.css">
     <link rel="icon" type="image/png" sizes="32x32" href="./public/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="./public/favicon-16x16.png" />
@@ -47,9 +47,9 @@
 
             <section class="hero">
                 <h1><span class="brand">pollinations.ai</span> × <span class="accent">OpenClaw</span></h1>
-                <p>Use <strong>25+ AI models</strong> as your OpenClaw brain through a single API. Free models with
-                    <em>web search, vision & reasoning</em> — connect your account and start building in <strong>30
-                        seconds</strong>.
+                <p>Use Pollinations' live OpenAI-compatible model catalog as your OpenClaw brain. Choose models with
+                    <em>web search, vision, reasoning, and tool calling</em> — connect your account and start building
+                    in <strong>30 seconds</strong>.
                 </p>
             </section>
 
@@ -126,9 +126,11 @@
                                 <li>🔑 Saves API key to <code
                                         style="color:var(--accent); font-size:13px">~/.openclaw/openclaw.json</code>
                                 </li>
-                                <li>🤖 Adds 10 OpenClaw models: 7 free — OpenClaw, Kimi K2.5, DeepSeek, DeepSeek Pro,
-                                    GLM, Gemini + Search, Claude Haiku — plus 3 paid: Kimi K2.6, Claude Large, Gemini
-                                    Large</li>
+                                <li>🤖 Adds a curated set of current models: Kimi, DeepSeek, GLM, Gemini, Claude, Qwen,
+                                    Grok, and live web-search options</li>
+                                <li>💳 Usage is metered in Pollen; new accounts receive included starter credits.
+                                    Check the <a href="https://gen.pollinations.ai/v1/models" target="_blank">live
+                                        catalog</a> for current model pricing and capabilities.</li>
                                 <li>🔍 Also enables Perplexity Fast for the <code
                                         style="color:var(--accent); font-size:13px">web_search</code> tool <em>via
                                         pollinations.ai</em> (preserves existing if already set)</li>
@@ -150,15 +152,23 @@
                                         "fallbacks": ["pollinations/deepseek", "pollinations/glm"]
                                         },
                                         "models": {
-                                        "pollinations/kimi": { "alias": "Kimi K2.5" },
-                                        "pollinations/kimi-k2.6": { "alias": "Kimi K2.6" },
-                                        "pollinations/deepseek": { "alias": "DeepSeek V4 Flash" },
-                                        "pollinations/deepseek-pro": { "alias": "DeepSeek V4 Pro" },
-                                        "pollinations/glm": { "alias": "GLM 5.1" },
-                                        "pollinations/gemini-search": { "alias": "Gemini + Search" },
-                                        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5" },
-                                        "pollinations/claude-large": { "alias": "Claude Opus 4.6" },
-                                        "pollinations/gemini-large": { "alias": "Gemini 3 Pro" }
+                                        "pollinations/kimi": { "alias": "Kimi K2.6 (Quest)" },
+                                        "pollinations/kimi-code": { "alias": "Kimi K2.7 Code (Quest)" },
+                                        "pollinations/kimi-k3": { "alias": "Kimi K3 (Paid)" },
+                                        "pollinations/gpt-5.6-luna": { "alias": "GPT-5.6 Luna (Quest)" },
+                                        "pollinations/gpt-5.6-sol": { "alias": "GPT-5.6 Sol (Quest)" },
+                                        "pollinations/gpt-5.6-terra": { "alias": "GPT-5.6 Terra (Quest)" },
+                                        "pollinations/deepseek": { "alias": "DeepSeek V4 Flash (Quest)" },
+                                        "pollinations/deepseek-pro": { "alias": "DeepSeek V4 Pro (Quest)" },
+                                        "pollinations/glm": { "alias": "GLM" },
+                                        "pollinations/gemini-fast": { "alias": "Gemini Fast" },
+                                        "pollinations/claude-fast": { "alias": "Claude Haiku 4.5 (Paid)" },
+                                        "pollinations/claude-large": { "alias": "Claude Opus 5 (Paid)" },
+                                        "pollinations/claude-sonnet-5": { "alias": "Claude Sonnet 5 (Paid)" },
+                                        "pollinations/claude-fable-5": { "alias": "Claude Fable 5 (Paid)" },
+                                        "pollinations/qwen-coder": { "alias": "Qwen Coder" },
+                                        "pollinations/grok": { "alias": "Grok" },
+                                        "pollinations/gemini-large": { "alias": "Gemini Large" }
                                         }
                                         }
                                         },
@@ -170,23 +180,35 @@
                                         "apiKey": "${POLLINATIONS_API_KEY}",
                                         "api": "openai-completions",
                                         "models": [
-                                        { "id": "kimi", "name": "Kimi K2.5", "reasoning": true,
+                                        { "id": "kimi", "name": "Kimi K2.6 (Quest)", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 256000 },
-                                        { "id": "kimi-k2.6", "name": "Kimi K2.6 (Paid)", "reasoning": true,
-                                        "input": ["text","image"], "contextWindow": 262000 },
-                                        { "id": "deepseek", "name": "DeepSeek V4 Flash",
+                                        { "id": "kimi-code", "name": "Kimi K2.7 Code (Quest)", "reasoning": true,
+                                        "input": ["text","image"], "contextWindow": 262144 },
+                                        { "id": "kimi-k3", "name": "Kimi K3 (Paid)", "reasoning": true,
+                                        "input": ["text","image"], "contextWindow": 1048576 },
+                                        { "id": "gpt-5.6-luna", "name": "GPT-5.6 Luna (Quest)", "reasoning": true,
+                                        "input": ["text"], "contextWindow": 272000 },
+                                        { "id": "gpt-5.6-sol", "name": "GPT-5.6 Sol (Quest)", "reasoning": true,
+                                        "input": ["text"], "contextWindow": 272000 },
+                                        { "id": "gpt-5.6-terra", "name": "GPT-5.6 Terra (Quest)", "reasoning": true,
+                                        "input": ["text"], "contextWindow": 272000 },
+                                        { "id": "deepseek", "name": "DeepSeek V4 Flash (Quest)",
                                         "input": ["text"], "contextWindow": 1000000 },
-                                        { "id": "deepseek-pro", "name": "DeepSeek V4 Pro",
-                                        "input": ["text"], "contextWindow": 65536 },
-                                        { "id": "glm", "name": "GLM 5.1",
+                                        { "id": "deepseek-pro", "name": "DeepSeek V4 Pro (Quest)",
+                                        "input": ["text"], "contextWindow": 1000000 },
+                                        { "id": "glm", "name": "GLM",
                                         "input": ["text"], "contextWindow": 128000 },
-                                        { "id": "gemini-search", "name": "Gemini + Search",
+                                        { "id": "gemini-fast", "name": "Gemini Fast",
                                         "input": ["text","image"], "contextWindow": 128000 },
-                                        { "id": "claude-fast", "name": "Claude Haiku 4.5",
+                                        { "id": "claude-fast", "name": "Claude Haiku 4.5 (Paid)",
                                         "input": ["text","image"], "contextWindow": 200000 },
-                                        { "id": "claude-large", "name": "Claude Opus 4.6 (Paid)",
+                                        { "id": "claude-large", "name": "Claude Opus 5 (Paid)",
                                         "input": ["text","image"], "contextWindow": 200000 },
-                                        { "id": "gemini-large", "name": "Gemini 3 Pro (Paid)", "reasoning": true,
+                                        { "id": "claude-sonnet-5", "name": "Claude Sonnet 5 (Paid)",
+                                        "input": ["text","image"], "contextWindow": 1000000 },
+                                        { "id": "claude-fable-5", "name": "Claude Fable 5 (Paid)",
+                                        "input": ["text","image"], "contextWindow": 1000000 },
+                                        { "id": "gemini-large", "name": "Gemini Large", "reasoning": true,
                                         "input": ["text","image"], "contextWindow": 1000000 }
                                         ]
                                         }
@@ -233,55 +255,72 @@
 
                 <div class="model-table">
                     <div class="model-row recommended">
-                        <div class="model-label">Kimi K2.5 <span class="model-tag">default</span></div>
+                        <div class="model-label">Kimi K2.6 <span class="model-tag">default · quest</span></div>
                         <div class="model-id">pollinations/kimi</div>
                         <div class="model-note"><strong>Best open model</strong> for agentic coding. <em>256K
-                                context</em>, vision, tools, reasoning. 77% SWE-Bench.</div>
+                                context</em>, vision, tools, and reasoning.</div>
                     </div>
                     <div class="model-row">
-                        <div class="model-label">Kimi K2.6 <span class="model-tag">paid</span></div>
-                        <div class="model-id">pollinations/kimi-k2.6</div>
-                        <div class="model-note">Moonshot's flagship agentic model. <em>262K context</em>, vision,
-                            reasoning. Strongest open-weight option for long, tool-heavy sessions.</div>
+                        <div class="model-label">Kimi K2.7 Code <span class="model-tag">coding · quest</span></div>
+                        <div class="model-id">pollinations/kimi-code</div>
+                        <div class="model-note">Moonshot's coding-focused model with <em>262K context</em>, vision,
+                            reasoning, and tool calling.</div>
                     </div>
                     <div class="model-row">
-                        <div class="model-label">Gemini + Search <span class="model-tag">web search</span></div>
-                        <div class="model-id">pollinations/gemini-search</div>
-                        <div class="model-note">Google Gemini with <strong>always-on web search</strong>. Vision
-                            support. Look up docs, APIs, recent changes.</div>
+                        <div class="model-label">Kimi K3 <span class="model-tag">premium · paid</span></div>
+                        <div class="model-id">pollinations/kimi-k3</div>
+                        <div class="model-note">Premium Kimi reasoning, vision, and tools with a <em>1M context</em> window.</div>
                     </div>
                     <div class="model-row">
-                        <div class="model-label">DeepSeek V3.2 <span class="model-tag">reasoning</span> </div>
+                        <div class="model-label">Gemini 2.5 Flash Lite <span class="model-tag">web search · paid</span></div>
+                        <div class="model-id">pollinations/gemini-fast</div>
+                        <div class="model-note">Fast multimodal Gemini with <strong>web search</strong>. Look up
+                            docs, APIs, and recent changes.</div>
+                    </div>
+                    <div class="model-row">
+                        <div class="model-label">DeepSeek V4 Flash <span class="model-tag">reasoning · quest</span> </div>
                         <div class="model-id">pollinations/deepseek</div>
                         <div class="model-note"><strong>Strong reasoning</strong> & tool calling. Good alternative to
                             Kimi for hard problems.</div>
                     </div>
                     <div class="model-row">
-                        <div class="model-label">GLM 5</div>
-                        <div class="model-id">pollinations/glm</div>
-                        <div class="model-note">Z.ai — <em>coding, reasoning, agentic workflows</em>. Competitive with
-                            Kimi.</div>
+                        <div class="model-label">GPT-5.6 Luna <span class="model-tag">quest</span></div>
+                        <div class="model-id">pollinations/gpt-5.6-luna</div>
+                        <div class="model-note">Fast GPT-5.6 reasoning with a <em>1M context</em> window.</div>
                     </div>
                     <div class="model-row">
-                        <div class="model-label">Claude Haiku 4.5</div>
-                        <div class="model-id">pollinations/claude-fast</div>
-                        <div class="model-note">Anthropic — <strong>fast</strong> with good reasoning. Claude quality,
-                            lower cost.</div>
+                        <div class="model-label">GPT-5.6 Terra <span class="model-tag">quest</span></div>
+                        <div class="model-id">pollinations/gpt-5.6-terra</div>
+                        <div class="model-note">Higher-capability GPT-5.6 reasoning with a <em>1M context</em> window.</div>
                     </div>
-                    <div class="model-row dimmed">
-                        <div class="model-label">Claude Opus 4.6 <span class="model-tag paid">paid</span></div>
-                        <div class="model-id">pollinations/claude-large</div>
-                        <div class="model-note">Anthropic's most capable model. Vision, tools, deep reasoning.</div>
+                    <div class="model-row">
+                        <div class="model-label">GPT-5.6 Sol <span class="model-tag">quest</span></div>
+                        <div class="model-id">pollinations/gpt-5.6-sol</div>
+                        <div class="model-note">Premium GPT-5.6 reasoning with a <em>1M context</em> window.</div>
                     </div>
-                    <div class="model-row dimmed">
-                        <div class="model-label">Gemini 3 Pro <span class="model-tag paid">paid</span></div>
-                        <div class="model-id">pollinations/gemini-large</div>
-                        <div class="model-note">Google's flagship with vision, audio & video understanding.</div>
+                    <div class="model-row">
+                        <div class="model-label">DeepSeek V4 Flash <span class="model-tag">reasoning · quest</span></div>
+                        <div class="model-id">pollinations/deepseek</div>
+                        <div class="model-note">Fast reasoning and tool calling. Earn initial Pollen through quests.</div>
+                    </div>
+                    <div class="model-row">
+                        <div class="model-label">DeepSeek V4 Pro <span class="model-tag">reasoning · quest</span></div>
+                        <div class="model-id">pollinations/deepseek-pro</div>
+                        <div class="model-note">Advanced reasoning and coding with a <em>1M context</em> window.</div>
                     </div>
                 </div>
 
                 <p style="margin-top:24px; font-size:14px; color:var(--muted)">Switch models anytime: <code
-                        style="color:var(--text)">/model pollinations/kimi</code></p>
+                    style="color:var(--text)">/model pollinations/kimi</code>. Quest models use earned Pollen;
+                    paid models use Pollen at the rates in <a href="https://gen.pollinations.ai/v1/models" target="_blank">the
+                    live model API</a>. Community models may have different pricing or availability.</p>
+
+                <div class="skill-box" style="margin-top:24px;">
+                    <h3 style="font-family:'Fraunces',ui-serif,serif; font-weight:normal;">Need your first Pollen?</h3>
+                    <p style="margin-top:8px;">Complete the setup quests, then claim the rewards to credit your wallet.
+                        Quests can be retroactive when you qualify.</p>
+                    <a href="https://enter.pollinations.ai/pollen" target="_blank" style="font-weight:600;">View quests and claim Pollen ↗</a>
+                </div>
             </section>
 
             <section class="section">

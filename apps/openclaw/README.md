@@ -1,8 +1,8 @@
 # Pollinations x OpenClaw
 
-Use **25+ AI models** as your OpenClaw brain through a single API.
+Use Pollinations' live OpenAI-compatible model catalog as your OpenClaw brain through a single API.
 
-**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM 5, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
+**Kimi** is the default (262K context, vision, tools, reasoning), with GPT-5.6, DeepSeek V4, Gemini, Claude, Qwen, Grok, and community models available through the live catalog. Quest models use free Pollen earned from quests; Paid models use purchased Pollen.
 
 ## Setup
 
@@ -16,8 +16,8 @@ curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps
 
 This works for both fresh installs and existing OpenClaw setups. It:
 - Runs `openclaw onboard` for fresh installs (creates config + workspace)
-- Adds the Pollinations provider with 9 models to `~/.openclaw/openclaw.json`
-- Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks
+- Adds a curated Pollinations provider model set to `~/.openclaw/openclaw.json`
+- Sets Kimi K2.6 as default with DeepSeek V4 Flash + GLM fallbacks
 
 **Step 3 (fresh install only):** Start the gateway:
 
@@ -31,15 +31,21 @@ Switch models anytime in chat with `/model pollinations/<name>`:
 
 | Model | ID | Best for |
 |---|---|---|
-| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
-| **Kimi K2.6** | `pollinations/kimi-k2.6` | Flagship agentic, vision, reasoning (262K context, paid) |
-| **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
-| **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
-| **GLM 5.1** | `pollinations/glm` | Coding, reasoning, agentic workflows |
-| **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
-| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
-| **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |
-| **Gemini 3.1 Pro** | `pollinations/gemini-large` | 1M context (paid) |
+| **Kimi K2.6** (default, Quest) | `pollinations/kimi` | Agentic tasks, vision, reasoning (262K context) |
+| **Kimi K2.7 Code** (Quest) | `pollinations/kimi-code` | Agentic coding, vision, reasoning (262K context) |
+| **Kimi K3** (Paid) | `pollinations/kimi-k3` | Premium reasoning, vision, and tools (1M context) |
+| **GPT-5.6 Luna** (Quest) | `pollinations/gpt-5.6-luna` | Fast reasoning (272K context) |
+| **GPT-5.6 Sol** (Quest) | `pollinations/gpt-5.6-sol` | Premium reasoning (272K context) |
+| **GPT-5.6 Terra** (Quest) | `pollinations/gpt-5.6-terra` | Higher-capability reasoning (272K context) |
+| **DeepSeek V4 Flash** (Quest) | `pollinations/deepseek` | Fast reasoning & tool calling |
+| **DeepSeek V4 Pro** (Quest) | `pollinations/deepseek-pro` | Advanced reasoning & coding |
+| **GLM** | `pollinations/glm` | Coding, reasoning, agentic workflows |
+| **Gemini Fast** | `pollinations/gemini-fast` | Fast multimodal model with web search |
+| **Claude Haiku 4.5** (Paid) | `pollinations/claude-fast` | Fast multimodal Claude |
+| **Claude Opus 5** (Paid) | `pollinations/claude-large` | Deep reasoning and tool calling |
+| **Claude Sonnet 5** (Paid) | `pollinations/claude-sonnet-5` | Reasoning, vision, and tool calling |
+| **Claude Fable 5** (Paid) | `pollinations/claude-fable-5` | Long-context creative and agent tasks |
+| **Gemini Large** | `pollinations/gemini-large` | 1M context, reasoning, web search |
 
 ## Manual Setup
 
@@ -63,11 +69,11 @@ If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. 
             "maxTokens": 8192
           },
           {
-            "id": "kimi-k2.6",
-            "name": "Kimi K2.6",
+            "id": "kimi-code",
+            "name": "Kimi Code",
             "reasoning": true,
             "input": ["text", "image"],
-            "contextWindow": 262000,
+            "contextWindow": 262144,
             "maxTokens": 8192
           }
         ]
@@ -86,7 +92,9 @@ openclaw models fallbacks add pollinations/glm
 openclaw gateway restart
 ```
 
-See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
+See all available models, including community models and current Pollen pricing, at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
+
+Complete and claim the quests at [enter.pollinations.ai/pollen](https://enter.pollinations.ai/pollen) to get your initial free Pollen. Quest models spend that earned Pollen; Paid models spend purchased Pollen. Community models can have their own availability and pricing.
 
 ## Pollinations Skill (Image/Video/Audio)
 

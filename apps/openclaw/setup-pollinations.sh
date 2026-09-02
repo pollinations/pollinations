@@ -64,16 +64,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
   "models": [
     {
       "id": "kimi",
-      "name": "Kimi K2.5 — 256K context, vision, tools, reasoning",
-      "reasoning": true,
-      "input": ["text", "image"],
-      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
-      "contextWindow": 256000,
-      "maxTokens": 8192
-    },
-    {
-      "id": "kimi-k2.6",
-      "name": "Kimi K2.6 — Flagship agentic, vision, reasoning (paid)",
+      "name": "Kimi K2.6 — 262K context, vision, tools, reasoning",
       "reasoning": true,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -81,8 +72,26 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
+      "id": "kimi-code",
+      "name": "Kimi K2.7 Code — Agentic coding, vision, reasoning",
+      "reasoning": true,
+      "input": ["text", "image"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 262144,
+      "maxTokens": 8192
+    },
+    {
+      "id": "kimi-k3",
+      "name": "Kimi K3 — Paid, premium reasoning, vision, and tools",
+      "reasoning": true,
+      "input": ["text", "image"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 1048576,
+      "maxTokens": 8192
+    },
+    {
       "id": "deepseek",
-      "name": "DeepSeek V4 Flash — Fast reasoning & tool calling (paid)",
+      "name": "DeepSeek V4 Flash — Quest model, fast reasoning & tool calling",
       "reasoning": true,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -91,7 +100,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "deepseek-pro",
-      "name": "DeepSeek V4 Pro — Advanced reasoning & coding (paid)",
+      "name": "DeepSeek V4 Pro — Quest model, advanced reasoning & coding",
       "reasoning": true,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -100,7 +109,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "glm",
-      "name": "GLM 5 — Coding, reasoning, agentic workflows",
+      "name": "GLM — Coding, reasoning, agentic workflows",
       "reasoning": false,
       "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -108,8 +117,8 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "gemini-search",
-      "name": "Gemini + Search — Web search grounded answers",
+      "id": "gemini-fast",
+      "name": "Gemini Fast — Fast multimodal model with web search",
       "reasoning": false,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -118,7 +127,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "claude-fast",
-      "name": "Claude Haiku 4.5 — Fast with good reasoning",
+      "name": "Claude Fast — Fast multimodal Claude",
       "reasoning": false,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -127,7 +136,7 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
     },
     {
       "id": "claude-large",
-      "name": "Claude Opus 4.6 — Most intelligent (paid)",
+      "name": "Claude Opus 5 — Paid, deep reasoning and tool calling",
       "reasoning": false,
       "input": ["text", "image"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
@@ -135,12 +144,30 @@ POLLINATIONS_PROVIDER=$(cat <<'EOF'
       "maxTokens": 8192
     },
     {
-      "id": "gemini-large",
-      "name": "Gemini 3 Pro — 1M context (paid)",
+      "id": "gpt-5.6-luna",
+      "name": "GPT-5.6 Luna — Quest model, fast reasoning",
       "reasoning": true,
-      "input": ["text", "image"],
+      "input": ["text"],
       "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
-      "contextWindow": 1000000,
+      "contextWindow": 272000,
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "name": "GPT-5.6 Sol — Quest model, premium reasoning",
+      "reasoning": true,
+      "input": ["text"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 272000,
+      "maxTokens": 8192
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "name": "GPT-5.6 Terra — Quest model, higher-capability reasoning",
+      "reasoning": true,
+      "input": ["text"],
+      "cost": {"input": 0, "output": 0, "cacheRead": 0, "cacheWrite": 0},
+      "contextWindow": 272000,
       "maxTokens": 8192
     }
   ]
@@ -173,8 +200,8 @@ echo "  API Key:   $MASKED"
 echo "  Default:   pollinations/kimi (256K context, vision, reasoning)"
 echo "  Fallbacks: deepseek, glm"
 echo ""
-echo "  Switch models:  /model pollinations/deepseek or /model pollinations/deepseek-pro"
+echo "  Switch models:  /model pollinations/deepseek or /model pollinations/gemini-fast"
 echo "  Your account:   https://enter.pollinations.ai"
 echo ""
-echo "  Free: kimi, glm, gemini-search, claude-fast"
-echo "  Paid: deepseek, deepseek-pro, claude-large, gemini-large"
+echo "  Pricing:       metered in Pollen; included credits apply to new accounts"
+echo "  Catalog:       https://gen.pollinations.ai/v1/models"

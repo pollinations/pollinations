@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>pollinations.ai × Hermes — Give your agent a model</title>
+    <meta
+      name="description"
+      content="Connect Nous Research Hermes Agent to Pollinations' live model catalog with one API key."
+    />
+    <meta property="og:title" content="pollinations.ai × Hermes" />
+    <meta
+      property="og:description"
+      content="Set up Hermes Agent with Pollinations' OpenAI-compatible API, current models, and community catalog."
+    />
+    <meta property="og:url" content="https://hermes.pollinations.ai" />
+    <meta name="theme-color" content="#f3ead7" />
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="wordmark" href="https://pollinations.ai">pollinations.ai</a>
+      <nav>
+        <a href="https://hermes-agent.nousresearch.com/docs/">Hermes docs</a>
+        <a class="nav-cta" href="#setup">Set up Hermes</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero wrap">
+        <div class="hero-copy">
+          <p class="eyebrow">Pollinations × Hermes Agent</p>
+          <h1>Give Hermes a whole ecosystem of models.</h1>
+          <p class="lede">
+            Connect Hermes to Pollinations' OpenAI-compatible endpoint with a
+            live catalog, quest-backed models, paid models, and community
+            routes.
+          </p>
+          <div class="hero-actions">
+            <a class="button button-dark" href="#setup">Set up Hermes ↘</a>
+            <a
+              href="https://gen.pollinations.ai/v1/models"
+              target="_blank"
+              rel="noopener"
+              >Browse live models ↗</a
+            >
+          </div>
+          <p class="catalog-count">
+            <strong id="model-count">Checking</strong> models available
+          </p>
+        </div>
+      </section>
+
+      <section class="setup wrap" id="setup">
+        <div class="section-intro">
+          <p class="eyebrow">Three steps</p>
+          <h2>Connected in one sitting.</h2>
+          <p>
+            Run the official installer, launch <code>hermes model</code>, and
+            enter the values below.
+          </p>
+        </div>
+        <div class="steps">
+          <article class="step">
+            <div class="step-number">01</div>
+            <div>
+              <h3>Install Hermes</h3>
+              <p>
+                Linux, macOS, WSL2, and Termux are supported by the official
+                installer.
+              </p>
+              <div class="code" id="install-code">
+                <button
+                  class="copy"
+                  data-copy="install-code"
+                  aria-label="Copy install command"
+                >
+                  Copy
+                </button>
+                <code
+                  >curl -fsSL https://hermes-agent.nousresearch.com/install.sh |
+                  bash</code
+                >
+              </div>
+            </div>
+          </article>
+          <article class="step">
+            <div class="step-number">02</div>
+            <div>
+              <h3>Connect Pollinations</h3>
+              <p>Get a key, then launch Hermes' interactive model picker.</p>
+              <a
+                class="button button-light"
+                href="#"
+                onclick="
+                  startAuthorize();
+                  return false;
+                "
+                >Get a Pollinations key <span>↗</span></a
+              >
+              <div class="code" id="model-code">
+                <button
+                  class="copy"
+                  data-copy="model-code"
+                  aria-label="Copy Hermes model command"
+                >
+                  Copy
+                </button>
+                <code>hermes model</code>
+              </div>
+            </div>
+          </article>
+          <article class="step">
+            <div class="step-number">03</div>
+            <div>
+              <h3>Use these values</h3>
+              <p>The endpoint check should show the current catalog.</p>
+              <dl class="prompt-values">
+                <div>
+                  <dt>API base URL</dt>
+                  <dd>https://gen.pollinations.ai/v1</dd>
+                </div>
+                <div>
+                  <dt>Compatibility</dt>
+                  <dd>Chat Completions</dd>
+                </div>
+                <div>
+                  <dt>Default model</dt>
+                  <dd>kimi</dd>
+                </div>
+                <div>
+                  <dt>Display name</dt>
+                  <dd>Pollinations</dd>
+                </div>
+              </dl>
+            </div>
+          </article>
+        </div>
+        <aside class="note">
+          <strong>Verified setup:</strong> Hermes saves the custom Pollinations
+          provider in <code>~/.hermes/config.yaml</code>; keep your key in
+          <code>~/.hermes/.env</code>.
+        </aside>
+      </section>
+
+      <section class="catalog wrap">
+        <div class="section-intro split">
+          <div>
+            <p class="eyebrow">A living catalog</p>
+            <h2>Pick a brain.<br />Keep the rest.</h2>
+          </div>
+          <p>
+            Models and pricing change. This snapshot is a helpful starting
+            point; the API is the source of truth. Community models are
+            published by other builders and can have different availability or
+            pricing.
+          </p>
+        </div>
+        <div class="model-grid">
+          <div class="model-card featured">
+            <span class="tag">Recommended · quest</span>
+            <h3>Kimi K2.6</h3>
+            <code>kimi</code>
+            <p>
+              Agentic coding, vision, reasoning, and tools. A strong default for
+              Hermes. Earn free Pollen from quests.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Premium · paid</span>
+            <h3>Kimi K3</h3>
+            <code>kimi-k3</code>
+            <p>
+              Premium Kimi reasoning, vision, and tools. Uses purchased Pollen.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Reasoning · quest</span>
+            <h3>GPT-5.6 Luna</h3>
+            <code>gpt-5.6-luna</code>
+            <p>
+              Fast GPT-5.6 reasoning with a 272K context window. Earn free
+              Pollen from quests.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Reasoning · quest</span>
+            <h3>GPT-5.6 Terra</h3>
+            <code>gpt-5.6-terra</code>
+            <p>
+              Higher-capability GPT-5.6 reasoning with a 272K context window.
+              Earn free Pollen from quests.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Premium · quest</span>
+            <h3>GPT-5.6 Sol</h3>
+            <code>gpt-5.6-sol</code>
+            <p>
+              Premium GPT-5.6 reasoning with a 272K context window. Earn free
+              Pollen from quests.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Reasoning · quest</span>
+            <h3>DeepSeek V4 Flash</h3>
+            <code>deepseek</code>
+            <p>
+              Fast reasoning and tool calling. A good earned-Pollen starting
+              point.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Community</span>
+            <h3>Floret</h3>
+            <code>pollinations-router/floret</code>
+            <p>
+              A community-routed model. Browse the live response for more
+              entries.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Reasoning · quest</span>
+            <h3>DeepSeek V4 Pro</h3>
+            <code>deepseek-pro</code>
+            <p>Advanced reasoning and coding. Earn free Pollen from quests.</p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Fast · paid</span>
+            <h3>Claude Haiku 4.5</h3>
+            <code>claude-fast</code>
+            <p>Fast multimodal Claude for everyday agent work.</p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Premium · paid</span>
+            <h3>Claude Sonnet 5</h3>
+            <code>claude-sonnet-5</code>
+            <p>High-quality reasoning, vision, and tool use.</p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Premium · paid</span>
+            <h3>Claude Fable 5</h3>
+            <code>claude-fable-5</code>
+            <p>
+              Long-context Claude variant for demanding creative and agent
+              tasks.
+            </p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Paid</span>
+            <h3>Claude Opus 5</h3>
+            <code>claude-large</code>
+            <p>Official Claude Opus 5. Uses purchased Pollen.</p>
+          </div>
+          <div class="model-card">
+            <span class="tag">Community</span>
+            <h3>Floret</h3>
+            <code>pollinations-router/floret</code>
+            <p>
+              A community-routed model. Browse the live response for more
+              community entries.
+            </p>
+          </div>
+        </div>
+        <div class="catalog-links">
+          <a
+            class="button button-dark"
+            href="https://gen.pollinations.ai/v1/models"
+            target="_blank"
+            rel="noopener"
+            >Open full catalog ↗</a
+          ><a
+            href="https://gen.pollinations.ai/docs"
+            target="_blank"
+            rel="noopener"
+            >API docs ↗</a
+          ><a
+            href="https://enter.pollinations.ai/keys"
+            target="_blank"
+            rel="noopener"
+            >Manage keys ↗</a
+          >
+        </div>
+        <p class="pricing-note">
+          <strong>Paid models</strong> use Pollen according to current model
+          metadata. <strong>Quest models</strong> use earned Pollen. Community
+          models are not automatically free and may have different pricing or
+          availability. To get initial Pollen, complete and claim the setup
+          quests in your
+          <a
+            href="https://enter.pollinations.ai/pollen"
+            target="_blank"
+            rel="noopener"
+            >wallet</a
+          >; qualifying quests can be retroactive.
+        </p>
+      </section>
+    </main>
+
+    <footer class="wrap">
+      <span>pollinations.ai × Hermes Agent</span
+      ><span
+        ><a href="https://github.com/pollinations/pollinations">GitHub</a> ·
+        <a href="https://discord.gg/pollinations-ai-885844321461485618"
+          >Discord</a
+        ></span
+      >
+    </footer>
+    <script src="./src/script.js"></script>
+  </body>
+</html>

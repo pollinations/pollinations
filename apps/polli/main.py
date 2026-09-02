@@ -4,7 +4,6 @@ import logging
 import sys
 
 import discord
-
 from src.bot import bot
 from src.core.config import config
 from src.core.logging import setup_logging
@@ -12,12 +11,13 @@ from src.core.logging import setup_logging
 
 def main() -> None:
     # uvloop gives a 2-4x faster event loop, but is Linux-only.
-    try:
-        import uvloop
+    if sys.platform.startswith("linux"):
+        try:
+            import uvloop
 
-        uvloop.install()
-    except ImportError:
-        pass
+            uvloop.install()
+        except ImportError:
+            pass
 
     setup_logging(level=getattr(logging, config.log_level.upper(), logging.INFO))
     logger = logging.getLogger(__name__)

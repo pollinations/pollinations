@@ -601,12 +601,17 @@ async function runAgent(
     messages: ModelMessage[],
     signal: AbortSignal,
 ): Promise<AgentOutput> {
-    const systemMessage = messages
-        .filter((m) => m.role === "system")
-        .map((m) => m.content)
-        .join("\n\n") || undefined;
+    const systemMessage =
+        messages
+            .filter((m) => m.role === "system")
+            .map((m) => m.content)
+            .join("\n\n") || undefined;
     const filteredMessages = messages.filter((m) => m.role !== "system");
-    const { agent, close, toolCallCounts } = await createAgent(runtime, signal, systemMessage);
+    const { agent, close, toolCallCounts } = await createAgent(
+        runtime,
+        signal,
+        systemMessage,
+    );
     try {
         const result = await agent.generate({
             messages: filteredMessages,
@@ -1010,19 +1015,28 @@ function formatResponsesResponse(
             const typedStep = step as any;
             if (Array.isArray(typedStep.toolResults)) {
                 for (const tr of typedStep.toolResults) {
-                    const toolName = (tr.toolName || "").replace(/^mcp__[^_]+__/, "");
-                    
+                    const toolName = (tr.toolName || "").replace(
+                        /^mcp__[^_]+__/,
+                        "",
+                    );
+
                     let outputText = "";
                     if (typeof tr.output === "string") {
                         outputText = tr.output;
-                    } else if (tr.output && typeof tr.output === "object" && Array.isArray(tr.output.content)) {
-                        outputText = tr.output.content.map((c: any) => c.text || "").join("");
+                    } else if (
+                        tr.output &&
+                        typeof tr.output === "object" &&
+                        Array.isArray(tr.output.content)
+                    ) {
+                        outputText = tr.output.content
+                            .map((c: any) => c.text || "")
+                            .join("");
                     } else if (tr.output && typeof tr.output === "object") {
                         outputText = JSON.stringify(tr.output);
                     } else {
                         outputText = String(tr.output ?? "");
                     }
-                    
+
                     output.push({
                         type: "function_call",
                         id: tr.toolCallId,
@@ -1139,15 +1153,23 @@ async function streamAgent(
     id: string,
     created: number,
 ): Promise<Response> {
-    const systemMessage = messages
-        .filter((m) => m.role === "system")
-        .map((m) => m.content)
-        .join("\n\n") || undefined;
+    const systemMessage =
+        messages
+            .filter((m) => m.role === "system")
+            .map((m) => m.content)
+            .join("\n\n") || undefined;
     const filteredMessages = messages.filter((m) => m.role !== "system");
-    const { agent, close, toolCallCounts } = await createAgent(runtime, signal, systemMessage);
+    const { agent, close, toolCallCounts } = await createAgent(
+        runtime,
+        signal,
+        systemMessage,
+    );
     let result: Awaited<ReturnType<typeof agent.stream>>;
     try {
-        result = await agent.stream({ messages: filteredMessages, abortSignal: signal });
+        result = await agent.stream({
+            messages: filteredMessages,
+            abortSignal: signal,
+        });
     } catch (error) {
         await close();
         throw error;
@@ -1222,15 +1244,23 @@ async function streamAgentResponses(
     responseId: string,
     createdAt: number,
 ): Promise<Response> {
-    const systemMessage = messages
-        .filter((m) => m.role === "system")
-        .map((m) => m.content)
-        .join("\n\n") || undefined;
+    const systemMessage =
+        messages
+            .filter((m) => m.role === "system")
+            .map((m) => m.content)
+            .join("\n\n") || undefined;
     const filteredMessages = messages.filter((m) => m.role !== "system");
-    const { agent, close, toolCallCounts } = await createAgent(runtime, signal, systemMessage);
+    const { agent, close, toolCallCounts } = await createAgent(
+        runtime,
+        signal,
+        systemMessage,
+    );
     let result: Awaited<ReturnType<typeof agent.stream>>;
     try {
-        result = await agent.stream({ messages: filteredMessages, abortSignal: signal });
+        result = await agent.stream({
+            messages: filteredMessages,
+            abortSignal: signal,
+        });
     } catch (error) {
         await close();
         throw error;

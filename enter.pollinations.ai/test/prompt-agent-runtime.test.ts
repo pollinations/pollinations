@@ -1185,8 +1185,8 @@ describe("prompt-agent runtime", () => {
 // =============================================================================
 
 import {
-    AgentResponsesRequestSchema,
     AgentResponsesInvalidRequestError,
+    AgentResponsesRequestSchema,
     handleAgentResponsesRequest,
 } from "../src/services/prompt-agent-runtime.ts";
 
@@ -1241,7 +1241,12 @@ describe("agent Responses API", () => {
             vi.fn(async () =>
                 Response.json({
                     choices: [
-                        { message: { role: "assistant", content: "hello world" } },
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "hello world",
+                            },
+                        },
                     ],
                     usage: { prompt_tokens: 5, completion_tokens: 3 },
                 }),
@@ -1282,7 +1287,10 @@ describe("agent Responses API", () => {
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const req = new Request(input, init);
                 if (req.url.includes("/mcp/")) {
-                    const body = (await req.json()) as { method: string; id?: string };
+                    const body = (await req.json()) as {
+                        method: string;
+                        id?: string;
+                    };
                     if (body.method === "initialize") {
                         return Response.json({
                             jsonrpc: "2.0",
@@ -1301,7 +1309,14 @@ describe("agent Responses API", () => {
                         return Response.json({
                             jsonrpc: "2.0",
                             id: body.id,
-                            result: { tools: [{ name: "noop", inputSchema: { type: "object" } }] },
+                            result: {
+                                tools: [
+                                    {
+                                        name: "noop",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
                         });
                     }
                     return Response.json({
@@ -1317,7 +1332,15 @@ describe("agent Responses API", () => {
                             message: {
                                 role: "assistant",
                                 content: "",
-                                tool_calls: [{ id: `c${calls}`, function: { name: "mcp__pollinations__noop", arguments: "{}" } }],
+                                tool_calls: [
+                                    {
+                                        id: `c${calls}`,
+                                        function: {
+                                            name: "mcp__pollinations__noop",
+                                            arguments: "{}",
+                                        },
+                                    },
+                                ],
                             },
                             finish_reason: "tool_calls",
                         },
@@ -1329,7 +1352,13 @@ describe("agent Responses API", () => {
 
         const res = await runAgentResponses(
             { input: "keep going" },
-            { ...BASE_RUNTIME, config: { ...BASE_RUNTIME.config, mcpServers: ["pollinations"] } },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: ["pollinations"],
+                },
+            },
         );
         const json = (await res.json()) as { status: string };
         expect(res.status).toBe(200);
@@ -1343,16 +1372,17 @@ describe("agent Responses API", () => {
     it("streams Responses SSE events including response.completed with usage", async () => {
         vi.stubGlobal(
             "fetch",
-            vi.fn(async () =>
-                new Response(
-                    [
-                        `data: ${JSON.stringify({ choices: [{ index: 0, delta: { role: "assistant", content: "hi " }, finish_reason: null }] })}\n\n`,
-                        `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "there" }, finish_reason: null }] })}\n\n`,
-                        `data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 4, completion_tokens: 3, total_tokens: 7 } })}\n\n`,
-                        "data: [DONE]\n\n",
-                    ].join(""),
-                    { headers: { "content-type": "text/event-stream" } },
-                ),
+            vi.fn(
+                async () =>
+                    new Response(
+                        [
+                            `data: ${JSON.stringify({ choices: [{ index: 0, delta: { role: "assistant", content: "hi " }, finish_reason: null }] })}\n\n`,
+                            `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "there" }, finish_reason: null }] })}\n\n`,
+                            `data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 4, completion_tokens: 3, total_tokens: 7 } })}\n\n`,
+                            "data: [DONE]\n\n",
+                        ].join(""),
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
             ),
         );
 
@@ -1383,7 +1413,10 @@ describe("agent Responses API", () => {
         const terminal = events.find((e) => e.event === "response.completed");
         expect(terminal).toBeDefined();
         const terminalData = JSON.parse(terminal?.data ?? "{}") as {
-            response: { usage: { input_tokens: number; output_tokens: number }; status: string };
+            response: {
+                usage: { input_tokens: number; output_tokens: number };
+                status: string;
+            };
         };
         expect(terminalData.response.status).toBe("completed");
         expect(terminalData.response.usage.input_tokens).toBe(4);
@@ -1401,57 +1434,115 @@ describe("agent Responses API", () => {
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const req = new Request(input, init);
                 if (req.url === POLLINATIONS_MCP_PROXY_URL) {
-                    if (req.method === "DELETE") return new Response(null, { status: 200 });
-                    const body = (await req.json()) as { id?: string; method: string };
+                    if (req.method === "DELETE")
+                        return new Response(null, { status: 200 });
+                    const body = (await req.json()) as {
+                        id?: string;
+                        method: string;
+                    };
                     if (body.method === "initialize") {
                         return Response.json({
                             jsonrpc: "2.0",
                             id: body.id,
-                            result: { protocolVersion: "2025-06-18", capabilities: { tools: {} }, serverInfo: { name: "p", version: "1" } },
+                            result: {
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: { name: "p", version: "1" },
+                            },
                         });
                     }
-                    if (body.method === "notifications/initialized") return new Response(null, { status: 202 });
+                    if (body.method === "notifications/initialized")
+                        return new Response(null, { status: 202 });
                     if (body.method === "tools/list") {
                         return Response.json({
                             jsonrpc: "2.0",
                             id: body.id,
-                            result: { tools: [{ name: "lookup", inputSchema: { type: "object" } }] },
+                            result: {
+                                tools: [
+                                    {
+                                        name: "lookup",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
                         });
                     }
                     return Response.json({
                         jsonrpc: "2.0",
                         id: body.id,
-                        result: { content: [{ type: "text", text: "result-text" }] },
+                        result: {
+                            content: [{ type: "text", text: "result-text" }],
+                        },
                     });
                 }
                 // First call: request tool; second: answer.
-                const callCount = (fetchMock.mock.calls.filter((c) => !(c[0] as string).includes("/mcp/")).length);
+                const callCount = fetchMock.mock.calls.filter(
+                    (c) => !(c[0] as string).includes("/mcp/"),
+                ).length;
                 if (callCount === 1) {
                     return Response.json({
-                        choices: [{ message: { role: "assistant", content: "looking up", tool_calls: [{ id: "tc1", function: { name: "mcp__pollinations__lookup", arguments: "{}" } }] } }],
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "looking up",
+                                    tool_calls: [
+                                        {
+                                            id: "tc1",
+                                            function: {
+                                                name: "mcp__pollinations__lookup",
+                                                arguments: "{}",
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
                         usage: { prompt_tokens: 5, completion_tokens: 2 },
                     });
                 }
                 return Response.json({
-                    choices: [{ message: { role: "assistant", content: "done" } }],
+                    choices: [
+                        { message: { role: "assistant", content: "done" } },
+                    ],
                     usage: { prompt_tokens: 3, completion_tokens: 1 },
                 });
             },
         );
         vi.stubGlobal("fetch", fetchMock);
 
-        const runtime = { ...BASE_RUNTIME, config: { ...BASE_RUNTIME.config, mcpServers: ["pollinations"] as any } };
+        const runtime = {
+            ...BASE_RUNTIME,
+            config: {
+                ...BASE_RUNTIME.config,
+                mcpServers: ["pollinations"] as any,
+            },
+        };
 
         // Responses path.
-        const resRes = await runAgentResponses({ input: "lookup something" }, runtime);
+        const resRes = await runAgentResponses(
+            { input: "lookup something" },
+            runtime,
+        );
         expect(resRes.status).toBe(200);
-        const resJson = (await resRes.json()) as { output: Array<{ type: string; content?: Array<{ text?: string }>; output?: string }>; metadata: { tool_call_counts: string } };
+        const resJson = (await resRes.json()) as {
+            output: Array<{
+                type: string;
+                content?: Array<{ text?: string }>;
+                output?: string;
+            }>;
+            metadata: { tool_call_counts: string };
+        };
         // Tool call output item must appear.
-        const toolItem = resJson.output.find((item) => item.type === "function_call");
+        const toolItem = resJson.output.find(
+            (item) => item.type === "function_call",
+        );
         expect(toolItem).toBeDefined();
         expect(toolItem?.output).toBe("result-text");
         // tool_call_counts preserved.
-        const tcc = JSON.parse(resJson.metadata.tool_call_counts) as { mcp_call: number };
+        const tcc = JSON.parse(resJson.metadata.tool_call_counts) as {
+            mcp_call: number;
+        };
         expect(tcc.mcp_call).toBe(1);
 
         // Chat Completions path — reset fetchMock calls.
@@ -1483,7 +1574,13 @@ describe("agent Responses API", () => {
                 return new Response(
                     "data: " +
                         JSON.stringify({
-                            choices: [{ index: 0, delta: { content: "partial" }, finish_reason: null }],
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: { content: "partial" },
+                                    finish_reason: null,
+                                },
+                            ],
                         }) +
                         "\n\ndata: [DONE]\n\n",
                     { headers: { "content-type": "text/event-stream" } },
@@ -1529,7 +1626,10 @@ describe("agent Responses API", () => {
     });
 
     it("rejects request-supplied tools with 400", async () => {
-        vi.stubGlobal("fetch", vi.fn(async () => Response.json({ choices: [], usage: {} })));
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ choices: [], usage: {} })),
+        );
 
         // Pass tools via passthrough — Zod allows it via .passthrough() on the schema.
         const parsed = AgentResponsesRequestSchema.parse({
@@ -1537,24 +1637,34 @@ describe("agent Responses API", () => {
             input: "hello",
         });
         // Manually inject tools to test the runtime guard.
-        const bodyWithTools = { ...parsed, tools: [{ type: "function", function: { name: "bad" } }] } as typeof parsed;
+        const bodyWithTools = {
+            ...parsed,
+            tools: [{ type: "function", function: { name: "bad" } }],
+        } as typeof parsed;
         const res = await handleAgentResponsesRequest(
             bodyWithTools,
             new AbortController().signal,
             BASE_RUNTIME,
         );
         expect(res.status).toBe(400);
-        const json = (await res.json()) as { error: { code: string; param: string } };
+        const json = (await res.json()) as {
+            error: { code: string; param: string };
+        };
         expect(json.error.code).toBe("unsupported_parameter");
         expect(json.error.param).toBe("tools");
     });
 
     it("rejects input containing encrypted_content with 400", async () => {
-        vi.stubGlobal("fetch", vi.fn(async () => Response.json({ choices: [], usage: {} })));
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ choices: [], usage: {} })),
+        );
 
         const parsed = AgentResponsesRequestSchema.parse({
             model: crypto.randomUUID(),
-            input: [{ role: "user", content: "hi", encrypted_content: "enc_xxx" }],
+            input: [
+                { role: "user", content: "hi", encrypted_content: "enc_xxx" },
+            ],
         });
         const res = await handleAgentResponsesRequest(
             parsed,
@@ -1578,7 +1688,9 @@ describe("agent Responses API", () => {
                 const req = new Request(input, init);
                 capturedBody = await req.json();
                 return Response.json({
-                    choices: [{ message: { role: "assistant", content: "ok" } }],
+                    choices: [
+                        { message: { role: "assistant", content: "ok" } },
+                    ],
                     usage: { prompt_tokens: 1, completion_tokens: 1 },
                 });
             }),
@@ -1586,7 +1698,11 @@ describe("agent Responses API", () => {
 
         await runAgentResponses({ input: "hello from responses" });
 
-        const messages = (capturedBody as { messages: Array<{ role: string; content: string }> }).messages;
+        const messages = (
+            capturedBody as {
+                messages: Array<{ role: string; content: string }>;
+            }
+        ).messages;
         expect(messages.at(-1)?.role).toBe("user");
         expect(messages.at(-1)?.content).toBe("hello from responses");
     });
@@ -1599,20 +1715,31 @@ describe("agent Responses API", () => {
                 const req = new Request(input, init);
                 capturedBody = await req.json();
                 return Response.json({
-                    choices: [{ message: { role: "assistant", content: "ok" } }],
+                    choices: [
+                        { message: { role: "assistant", content: "ok" } },
+                    ],
                     usage: { prompt_tokens: 1, completion_tokens: 1 },
                 });
             }),
         );
 
-        const res = await runAgentResponses({ input: "hi", instructions: "You are a pirate." });
+        const res = await runAgentResponses({
+            input: "hi",
+            instructions: "You are a pirate.",
+        });
 
         console.log("res.status:", res.status);
         console.log("res.text:", await res.text());
         console.log("capturedBody:", JSON.stringify(capturedBody, null, 2));
-        const messages = (capturedBody as { messages: Array<{ role: string; content: string }> }).messages;
+        const messages = (
+            capturedBody as {
+                messages: Array<{ role: string; content: string }>;
+            }
+        ).messages;
         expect(messages[0].role).toBe("system");
-        expect(messages[0].content).toBe("You are a test agent.\n\nYou are a pirate.");
+        expect(messages[0].content).toBe(
+            "You are a test agent.\n\nYou are a pirate.",
+        );
     });
 
     // -------------------------------------------------------------------------
@@ -1624,7 +1751,10 @@ describe("agent Responses API", () => {
             new Request("https://enter.example/v1/responses", {
                 method: "POST",
                 headers: { "content-type": "application/json" },
-                body: JSON.stringify({ model: crypto.randomUUID(), input: "hi" }),
+                body: JSON.stringify({
+                    model: crypto.randomUUID(),
+                    input: "hi",
+                }),
             }),
             env,
             createExecutionContext(),
@@ -1642,7 +1772,10 @@ describe("agent Responses API", () => {
                     "content-type": "application/json",
                     authorization: `Bearer ${token}`,
                 },
-                body: JSON.stringify({ model: crypto.randomUUID(), input: "hi" }),
+                body: JSON.stringify({
+                    model: crypto.randomUUID(),
+                    input: "hi",
+                }),
             }),
             env,
             createExecutionContext(),
@@ -1650,4 +1783,3 @@ describe("agent Responses API", () => {
         expect(response.status).toBe(403);
     });
 });
-

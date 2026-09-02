@@ -156,16 +156,46 @@ function parseSSELine(line: string): {
 }
 
 /**
+ * Ensure a parsed SSE payload has a choices array. If not, add an error.
+ * Returns true if the payload was modified.
+ */
+function ensureChoices(parsed: { [key: string]: unknown }): boolean {
+    if (Array.isArray(parsed.choices)) return false;
+    if (!parsed.error) {
+        parsed.choices = [];
+        return true;
+    }
+    return false;
+}
+
+/**
+ * Parse an SSE line and ensure choices are present. Returns the rewritten
+ * line (without trailing newline) if modified, otherwise null.
+ */
+function ensureChoicesInLinePart(part: string): string | null {
+    const parsed = parseSSELine(part);
+    if (!parsed) return null;
+    if (ensureChoices(parsed)) {
+        return `data: ${JSON.stringify(parsed)}`;
+    }
+    return null;
+}
+
+/**
  * Rewrite a `data:` SSE line, injecting pollen cost fields into its `usage`
- * object. Returns null if the line has no usage object to inject into.
+ * object. Also ensures choices are present. Returns null if no rewrite needed.
  */
 function rewriteSSELine(
     line: string,
     fields: PollenCostFields,
 ): string | null {
     const parsed = parseSSELine(line);
-    if (!parsed || !parsed.usage || typeof parsed.usage !== "object") {
-        return null;
+    if (!parsed) return null;
+
+    const modified = ensureChoices(parsed);
+
+    if (!parsed.usage || typeof parsed.usage !== "object") {
+        return modified ? `data: ${JSON.stringify(parsed)}` : null;
     }
     const newUsage = { ...parsed.usage, ...fields };
     const newPayload = { ...parsed, usage: newUsage };
@@ -445,7 +475,14 @@ export function injectPollenCostIntoStream(
                                 }
                             }
                         } else if (lineText.length > 0) {
-                            passThrough += lineText;
+                            const choicesFixed = ensureChoicesInLinePart(part);
+                            if (choicesFixed !== null) {
+                                controller.enqueue(
+                                    encoder.encode(choicesFixed + (isLast ? "" : "\n")),
+                                );
+                            } else {
+                                passThrough += lineText;
+                            }
                         }
                     }
                     if (passThrough.length) {

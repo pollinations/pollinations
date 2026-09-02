@@ -230,25 +230,6 @@
     background-color: var(--polli-color-scrollbar-thumb);
 }
 
-.play-chat-input {
-    overflow: hidden;
-    border: 1px solid var(--polli-color-border);
-    border-radius: 0.5rem;
-    background: var(--polli-color-bg-pale);
-}
-
-.play-chat-input:focus-within {
-    box-shadow: 0 0 0 1px var(--polli-color-border);
-}
-
-.play-chat-input .polli-textarea,
-.play-chat-input .polli-textarea:focus,
-.play-chat-input .polli-textarea:focus-visible {
-    border-color: transparent;
-    background: transparent;
-    box-shadow: none;
-}
-
 .play-chat-message {
     width: fit-content;
     max-width: min(46rem, 88%);

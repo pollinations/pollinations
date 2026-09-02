@@ -12,8 +12,10 @@ describe("ToolCallDetails", () => {
             />,
         );
 
-        expect(html).toContain("Tool executed");
+        expect(html).toContain("Completed");
         expect(html).toContain("SEARCH_WEB");
+        expect(html).toContain("Parameters");
+        expect(html).toContain("Result");
         expect(html).toContain("&quot;query&quot;: &quot;pollinations&quot;");
         expect(html).toContain('href="https://example.test/result"');
     });
@@ -27,8 +29,22 @@ describe("ToolCallDetails", () => {
             />,
         );
 
-        expect(html).toContain("Tool failed");
+        expect(html).toContain("Error");
         expect(html).toContain("&lt;script&gt;");
         expect(html).not.toContain("<script>");
+    });
+
+    it("represents approval states without an AI SDK dependency", () => {
+        const html = renderToStaticMarkup(
+            <ToolCallDetails
+                name="SEND_EMAIL"
+                input={{ to: "hello@example.test" }}
+                status="approval-requested"
+            />,
+        );
+
+        expect(html).toContain("Awaiting approval");
+        expect(html).toContain('data-tool-status="approval-requested"');
+        expect(html).toContain('aria-expanded="false"');
     });
 });

@@ -78,34 +78,51 @@ export function stripePaymentRestrictedResponse() {
     };
 }
 
+export type StripeCheckoutSessionCleanup = {
+    /** False when Stripe failed to list the sessions; some may remain open. */
+    listingComplete: boolean;
+    expired: number;
+    failed: number;
+};
+
 /**
- * Expires every open Checkout session of a customer. Individual expiry
- * failures are logged and counted rather than thrown, so callers that have
- * already stored a restriction can report what actually happened.
+ * Expires every open Checkout session of a customer across all list pages.
+ * Listing and expiry failures are logged and reported rather than thrown, so
+ * callers that have already stored a restriction can say what happened.
  */
 export async function expireOpenStripeCheckoutSessions(
     stripe: Stripe,
     customerId: string,
-): Promise<{ expired: number; failed: number }> {
-    const sessions = await stripe.checkout.sessions.list({
-        customer: customerId,
-        status: "open",
-        limit: 100,
-    });
+): Promise<StripeCheckoutSessionCleanup> {
+    const sessions: Stripe.Checkout.Session[] = [];
+    let listingComplete = true;
+    try {
+        for await (const session of stripe.checkout.sessions.list({
+            customer: customerId,
+            status: "open",
+            limit: 100,
+        })) {
+            sessions.push(session);
+        }
+    } catch (error) {
+        listingComplete = false;
+        console.error(
+            `Failed to list open Stripe Checkout sessions for customer ${customerId}:`,
+            error,
+        );
+    }
 
     const results = await Promise.allSettled(
-        sessions.data.map((session) =>
-            stripe.checkout.sessions.expire(session.id),
-        ),
+        sessions.map((session) => stripe.checkout.sessions.expire(session.id)),
     );
     let failed = 0;
     results.forEach((result, index) => {
         if (result.status !== "rejected") return;
         failed += 1;
         console.error(
-            `Failed to expire Stripe Checkout session ${sessions.data[index]?.id} for customer ${customerId}:`,
+            `Failed to expire Stripe Checkout session ${sessions[index]?.id} for customer ${customerId}:`,
             result.reason,
         );
     });
-    return { expired: results.length - failed, failed };
+    return { listingComplete, expired: results.length - failed, failed };
 }

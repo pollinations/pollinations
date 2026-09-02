@@ -18,6 +18,7 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
+import { restrictStripePayments } from "../../src/utils/stripe-payment-restriction.ts";
 import { test } from "../fixtures.ts";
 import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
 
@@ -637,6 +638,227 @@ test("checkout expires open sessions when it discovers a locked account", async 
     ).toHaveLength(0);
 });
 
+test("checkout retries session cleanup for an already restricted user", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    mocks.stripe.state.customers.push(mockCustomer("cus_retry_cleanup"));
+    await env.DB.prepare(
+        `UPDATE user
+        SET stripe_customer_id = ?
+        WHERE id = ?`,
+    )
+        .bind("cus_retry_cleanup", userId)
+        .run();
+    await restrictStripePayments(env.DB, userId, {
+        reason: "failed_card_velocity",
+        source: "automatic",
+    });
+    // A session that survived because the webhook's Stripe cleanup failed
+    // after the restriction was stored.
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_survivor",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_retry_cleanup",
+        payment_intent: "pi_survivor",
+        status: "open",
+        url: "https://checkout.stripe.test/survivor",
+    });
+
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(403);
+    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
+        id: "cs_survivor",
+        status: "expired",
+        url: null,
+    });
+    expect(
+        mocks.stripe.state.requests.filter(
+            (request) =>
+                request.method === "POST" &&
+                request.path === "/v1/checkout/sessions",
+        ),
+    ).toHaveLength(0);
+});
+
+test("checkout expires a session created while the restriction landed", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    mocks.stripe.state.customers.push(mockCustomer("cus_in_flight"));
+    await env.DB.prepare(
+        `UPDATE user
+        SET stripe_customer_id = ?
+        WHERE id = ?`,
+    )
+        .bind("cus_in_flight", userId)
+        .run();
+    // The webhook restricts the user after this request passed its checks
+    // but before Stripe returns the new session.
+    mocks.stripe.state.onCheckoutSessionCreate = async () => {
+        await restrictStripePayments(env.DB, userId, {
+            reason: "failed_card_velocity",
+            source: "automatic",
+        });
+    };
+
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(403);
+    expect(mocks.stripe.state.checkoutSessions).toHaveLength(1);
+    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
+        customer: "cus_in_flight",
+        status: "expired",
+        url: null,
+    });
+});
+
+test("restriction cleanup expires sessions beyond the first list page", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    mocks.stripe.state.customers.push(mockCustomer("cus_many_sessions"));
+    await env.DB.prepare(
+        `UPDATE user
+        SET stripe_customer_id = ?
+        WHERE id = ?`,
+    )
+        .bind("cus_many_sessions", userId)
+        .run();
+    for (let index = 1; index <= 101; index++) {
+        mocks.stripe.state.checkoutSessions.push({
+            id: `cs_many_${index}`,
+            object: "checkout.session",
+            mode: "payment",
+            customer: "cus_many_sessions",
+            payment_intent: `pi_many_${index}`,
+            status: "open",
+            url: `https://checkout.stripe.test/many-${index}`,
+        });
+    }
+
+    const restrictResponse = await SELF.fetch(
+        "http://localhost:3000/api/admin/stripe-payment-restrictions",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                userId,
+                restricted: true,
+                reason: "manual_review",
+            }),
+        },
+    );
+    expect(restrictResponse.status).toBe(200);
+    await expect(restrictResponse.json()).resolves.toMatchObject({
+        changed: true,
+        checkoutSessionCleanup: {
+            listingComplete: true,
+            expired: 101,
+            failed: 0,
+        },
+    });
+    expect(
+        mocks.stripe.state.checkoutSessions.every(
+            (session) => session.status === "expired",
+        ),
+    ).toBe(true);
+    expect(
+        mocks.stripe.state.requests.filter(
+            (request) =>
+                request.method === "GET" &&
+                request.path === "/v1/checkout/sessions",
+        ),
+    ).toHaveLength(2);
+
+    const checkoutResponse = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(checkoutResponse.status).toBe(403);
+});
+
+test("admin reports incomplete cleanup when Stripe listing fails", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    mocks.stripe.state.customers.push(mockCustomer("cus_list_fails"));
+    await env.DB.prepare(
+        `UPDATE user
+        SET stripe_customer_id = ?
+        WHERE id = ?`,
+    )
+        .bind("cus_list_fails", userId)
+        .run();
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_list_fails_open",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_list_fails",
+        payment_intent: "pi_list_fails",
+        status: "open",
+        url: "https://checkout.stripe.test/list-fails",
+    });
+    mocks.stripe.state.failCheckoutSessionList = true;
+
+    const restrictResponse = await SELF.fetch(
+        "http://localhost:3000/api/admin/stripe-payment-restrictions",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                userId,
+                restricted: true,
+                reason: "manual_review",
+            }),
+        },
+    );
+    expect(restrictResponse.status).toBe(200);
+    await expect(restrictResponse.json()).resolves.toMatchObject({
+        changed: true,
+        checkoutSessionCleanup: {
+            listingComplete: false,
+            expired: 0,
+            failed: 0,
+        },
+    });
+    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
+        id: "cs_list_fails_open",
+        status: "open",
+    });
+
+    // The restriction is stored regardless, so checkout is refused.
+    const checkoutResponse = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(checkoutResponse.status).toBe(403);
+});
+
 test("fifty failed attempts on one card restrict payments", async ({
     sessionToken,
     mocks,
@@ -783,8 +1005,11 @@ test("admin can restrict and restore payment access", async ({
         userId,
         restricted: true,
         changed: true,
-        expiredCheckoutSessions: 1,
-        failedCheckoutSessionExpirations: 0,
+        checkoutSessionCleanup: {
+            listingComplete: true,
+            expired: 1,
+            failed: 0,
+        },
     });
 
     const billingResponse = await SELF.fetch(`${base}/billing`, {

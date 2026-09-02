@@ -7,6 +7,7 @@ import {
     clearStripePaymentRestriction,
     expireOpenStripeCheckoutSessions,
     restrictStripePayments,
+    type StripeCheckoutSessionCleanup,
 } from "../utils/stripe-payment-restriction.ts";
 
 const restrictionSchema = z
@@ -43,7 +44,11 @@ export const stripePaymentRestrictionAdminRoutes = new Hono<Env>().post(
         }
 
         let changed = false;
-        let checkoutSessions = { expired: 0, failed: 0 };
+        let checkoutSessionCleanup: StripeCheckoutSessionCleanup = {
+            listingComplete: true,
+            expired: 0,
+            failed: 0,
+        };
 
         if (input.restricted) {
             changed = await restrictStripePayments(c.env.DB, input.userId, {
@@ -52,7 +57,7 @@ export const stripePaymentRestrictionAdminRoutes = new Hono<Env>().post(
             });
 
             if (user.stripeCustomerId) {
-                checkoutSessions = await expireOpenStripeCheckoutSessions(
+                checkoutSessionCleanup = await expireOpenStripeCheckoutSessions(
                     createStripeClient(c.env),
                     user.stripeCustomerId,
                 );
@@ -68,8 +73,7 @@ export const stripePaymentRestrictionAdminRoutes = new Hono<Env>().post(
             userId: input.userId,
             restricted: input.restricted,
             changed,
-            expiredCheckoutSessions: checkoutSessions.expired,
-            failedCheckoutSessionExpirations: checkoutSessions.failed,
+            checkoutSessionCleanup,
         });
     },
 );

@@ -34,6 +34,23 @@ import {
 } from "../utils/stripe-payment-restriction.ts";
 
 /**
+ * Best-effort cleanup whenever checkout refuses a restricted user, so a
+ * cleanup that failed earlier (e.g. a Stripe error in the webhook) is
+ * retried. A user without a Stripe customer has nothing to expire.
+ */
+async function expireRestrictedUserCheckoutSessions(
+    env: CloudflareBindings,
+    userId: string,
+): Promise<void> {
+    const { stripeCustomerId } = await getUserStripeBillingRow(env.DB, userId);
+    if (!stripeCustomerId) return;
+    await expireOpenStripeCheckoutSessions(
+        createStripeClient(env),
+        stripeCustomerId,
+    );
+}
+
+/**
  * Stripe pack configuration
  * Checkout keeps pack pricing USD-native and lets Stripe Adaptive Pricing
  * localize buyer presentment where supported.
@@ -78,6 +95,7 @@ export const stripeRoutes = new Hono<Env>()
             userId,
         );
         if (paymentRestriction) {
+            await expireRestrictedUserCheckoutSessions(c.env, userId);
             return c.json(stripePaymentRestrictedResponse(), 403);
         }
 
@@ -87,25 +105,8 @@ export const stripeRoutes = new Hono<Env>()
                 reason: "failed_card_velocity",
                 source: "automatic",
             });
-            // Sessions opened before the lock stay usable unless expired. A
-            // user without a Stripe customer has nothing to expire.
-            const { stripeCustomerId } = await getUserStripeBillingRow(
-                c.env.DB,
-                userId,
-            );
-            if (stripeCustomerId) {
-                try {
-                    await expireOpenStripeCheckoutSessions(
-                        createStripeClient(c.env),
-                        stripeCustomerId,
-                    );
-                } catch (error) {
-                    console.error(
-                        `Failed to expire open Stripe Checkout sessions for user ${userId}:`,
-                        error,
-                    );
-                }
-            }
+            // Sessions opened before the lock stay usable unless expired.
+            await expireRestrictedUserCheckoutSessions(c.env, userId);
             return c.json(stripePaymentRestrictedResponse(), 403);
         }
 
@@ -213,6 +214,20 @@ export const stripeRoutes = new Hono<Env>()
                 success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });
+
+            // A restriction stored while this session was being created has
+            // already expired the older sessions; this one must not survive.
+            if (await getStripePaymentRestriction(c.env.DB, userId)) {
+                try {
+                    await stripe.checkout.sessions.expire(checkoutSession.id);
+                } catch (error) {
+                    console.error(
+                        `Failed to expire Stripe Checkout session ${checkoutSession.id} created during restriction:`,
+                        error,
+                    );
+                }
+                return c.json(stripePaymentRestrictedResponse(), 403);
+            }
 
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
             if (checkoutSession.url) {

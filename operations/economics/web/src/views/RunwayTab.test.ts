@@ -91,7 +91,7 @@ describe("RunwayTab labels", () => {
     });
 
     it("uses the same projection rules for labels and calculations", () => {
-        for (const vendor of ["fal", "fireworks", "vast.ai"]) {
+        for (const vendor of ["fal", "fireworks", "vast"]) {
             expect(automaticForecastRule(vendor, "compute")).toMatchObject({
                 method: "last",
                 paymentTiming: "prepaid",

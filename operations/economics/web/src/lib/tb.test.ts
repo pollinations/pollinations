@@ -77,7 +77,7 @@ describe("loadAll", () => {
 
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {
-        expect(canonicalVendor("vast")).toBe("vast.ai");
+        expect(canonicalVendor("vast")).toBe("vast");
     });
 
     it("joins Bedrock usage to AWS billing", () => {
@@ -87,7 +87,7 @@ describe("canonicalVendor", () => {
 
     it("joins account-specific aliases to their provider", () => {
         expect(canonicalVendor("azure-2")).toBe("azure");
-        expect(canonicalVendor("vastai")).toBe("vast.ai");
+        expect(canonicalVendor("vastai")).toBe("vast");
     });
 
     it("leaves canonical vendors unchanged", () => {

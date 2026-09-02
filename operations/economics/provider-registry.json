@@ -1,11 +1,9 @@
 {
-  "version": 14,
+  "version": 15,
   "providers": [
     {
       "id": "airforce",
-      "label": "Airforce",
       "meteringBasis": "internal",
-      "aliases": [],
       "connector": null,
       "monthlyReview": false,
       "balanceTracking": false,
@@ -13,9 +11,7 @@
     },
     {
       "id": "alibaba",
-      "label": "Alibaba",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "alibaba",
       "monthlyReview": true,
       "accounts": [
@@ -38,9 +34,7 @@
     },
     {
       "id": "anthropic",
-      "label": "Anthropic",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "anthropic",
       "monthlyReview": true,
       "balanceTracking": false,
@@ -54,9 +48,7 @@
     },
     {
       "id": "assemblyai",
-      "label": "AssemblyAI",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "assemblyai",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -70,12 +62,7 @@
     },
     {
       "id": "aws",
-      "label": "AWS",
       "meteringBasis": "mixed",
-      "aliases": [
-        "aws-bedrock",
-        "bedrock"
-      ],
       "connector": "aws",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -97,11 +84,7 @@
     },
     {
       "id": "azure",
-      "label": "Azure",
       "meteringBasis": "mixed",
-      "aliases": [
-        "azure-2"
-      ],
       "connector": "azure",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -115,9 +98,7 @@
     },
     {
       "id": "bpai",
-      "label": "BPAI",
       "meteringBasis": "internal",
-      "aliases": [],
       "connector": null,
       "monthlyReview": false,
       "balanceTracking": false,
@@ -125,9 +106,7 @@
     },
     {
       "id": "bytedance",
-      "label": "BytePlus / ByteDance",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "bytedance",
       "monthlyReview": false,
       "accounts": [
@@ -150,9 +129,7 @@
     },
     {
       "id": "cloudflare",
-      "label": "Cloudflare",
       "meteringBasis": "not_applicable",
-      "aliases": [],
       "connector": "cloudflare",
       "monthlyReview": true,
       "accounts": [
@@ -186,19 +163,23 @@
     },
     {
       "id": "community",
-      "label": "Community models",
       "meteringBasis": "internal",
-      "aliases": [],
       "connector": "community",
       "monthlyReview": false,
       "balanceTracking": false,
       "collectionMethod": "internal"
     },
     {
+      "id": "composio",
+      "meteringBasis": "direct",
+      "connector": null,
+      "monthlyReview": true,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "daytona",
-      "label": "Daytona",
       "meteringBasis": "not_applicable",
-      "aliases": [],
       "connector": "daytona",
       "monthlyReview": false,
       "balanceTracking": false,
@@ -206,9 +187,7 @@
     },
     {
       "id": "deepinfra",
-      "label": "DeepInfra",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "deepinfra",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -222,9 +201,7 @@
     },
     {
       "id": "digitalocean",
-      "label": "DigitalOcean",
       "meteringBasis": "capacity",
-      "aliases": [],
       "connector": "digitalocean",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -238,9 +215,7 @@
     },
     {
       "id": "e2b",
-      "label": "E2B",
       "meteringBasis": "capacity",
-      "aliases": [],
       "connector": "e2b",
       "monthlyReview": true,
       "accounts": [
@@ -263,9 +238,7 @@
     },
     {
       "id": "elevenlabs",
-      "label": "ElevenLabs",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "elevenlabs",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -279,9 +252,7 @@
     },
     {
       "id": "exa",
-      "label": "Exa",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "exa",
       "monthlyReview": true,
       "accounts": [
@@ -304,9 +275,7 @@
     },
     {
       "id": "fal",
-      "label": "fal.ai",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "fal",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -320,9 +289,7 @@
     },
     {
       "id": "fireworks",
-      "label": "Fireworks",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "fireworks",
       "monthlyReview": true,
       "accounts": [
@@ -389,9 +356,7 @@
     },
     {
       "id": "google",
-      "label": "Google Cloud",
       "meteringBasis": "mixed",
-      "aliases": [],
       "connector": "google",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -405,9 +370,7 @@
     },
     {
       "id": "github",
-      "label": "GitHub",
       "meteringBasis": "not_applicable",
-      "aliases": [],
       "connector": "github",
       "monthlyReview": true,
       "balanceTracking": false,
@@ -421,9 +384,7 @@
     },
     {
       "id": "inception",
-      "label": "Inception",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "inception",
       "monthlyReview": true,
       "balanceTracking": false,
@@ -437,9 +398,7 @@
     },
     {
       "id": "inferenceport",
-      "label": "InferencePort",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "inferenceport",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -453,9 +412,7 @@
     },
     {
       "id": "io.net",
-      "label": "io.net",
       "meteringBasis": "capacity",
-      "aliases": [],
       "connector": "io-net",
       "monthlyReview": false,
       "balanceTracking": true,
@@ -469,9 +426,7 @@
     },
     {
       "id": "lambda",
-      "label": "Lambda Cloud",
       "meteringBasis": "capacity",
-      "aliases": [],
       "connector": "lambda",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -485,9 +440,7 @@
     },
     {
       "id": "modal",
-      "label": "Modal",
       "meteringBasis": "capacity",
-      "aliases": [],
       "connector": "modal",
       "monthlyReview": true,
       "accounts": [
@@ -532,9 +485,7 @@
     },
     {
       "id": "mistral",
-      "label": "Mistral AI",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "mistral",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -548,9 +499,7 @@
     },
     {
       "id": "nebius",
-      "label": "Nebius",
       "meteringBasis": "capacity",
-      "aliases": [],
       "connector": null,
       "monthlyReview": false,
       "balanceTracking": false,
@@ -558,9 +507,7 @@
     },
     {
       "id": "openai",
-      "label": "OpenAI",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "openai",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -574,9 +521,7 @@
     },
     {
       "id": "openrouter",
-      "label": "OpenRouter",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "openrouter",
       "monthlyReview": true,
       "accounts": [
@@ -610,9 +555,7 @@
     },
     {
       "id": "ovhcloud",
-      "label": "OVHcloud",
       "meteringBasis": "capacity",
-      "aliases": [],
       "connector": "ovhcloud",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -626,9 +569,7 @@
     },
     {
       "id": "perplexity",
-      "label": "Perplexity",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "perplexity",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -642,9 +583,7 @@
     },
     {
       "id": "pointsflyer",
-      "label": "PointsFlyer",
       "meteringBasis": "internal",
-      "aliases": [],
       "connector": null,
       "monthlyReview": false,
       "balanceTracking": false,
@@ -652,9 +591,7 @@
     },
     {
       "id": "pruna",
-      "label": "Pruna AI",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "pruna",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -668,9 +605,7 @@
     },
     {
       "id": "replicate",
-      "label": "Replicate",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "replicate",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -684,9 +619,7 @@
     },
     {
       "id": "regolo",
-      "label": "Regolo.ai",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "regolo",
       "monthlyReview": true,
       "accounts": [
@@ -709,9 +642,7 @@
     },
     {
       "id": "retell",
-      "label": "Retell AI",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "retell",
       "monthlyReview": false,
       "balanceTracking": false,
@@ -719,9 +650,7 @@
     },
     {
       "id": "runpod",
-      "label": "RunPod",
       "meteringBasis": "mixed",
-      "aliases": [],
       "connector": "runpod",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -735,9 +664,7 @@
     },
     {
       "id": "scaleway",
-      "label": "Scaleway",
       "meteringBasis": "mixed",
-      "aliases": [],
       "connector": "scaleway",
       "monthlyReview": false,
       "accounts": [
@@ -771,9 +698,7 @@
     },
     {
       "id": "self-hosted",
-      "label": "Self-hosted",
       "meteringBasis": "internal",
-      "aliases": [],
       "connector": null,
       "monthlyReview": false,
       "balanceTracking": false,
@@ -781,9 +706,7 @@
     },
     {
       "id": "self-issued",
-      "label": "Self-issued",
       "meteringBasis": "not_applicable",
-      "aliases": [],
       "connector": null,
       "monthlyReview": false,
       "balanceTracking": false,
@@ -791,9 +714,7 @@
     },
     {
       "id": "seraphyn",
-      "label": "Seraphyn",
       "meteringBasis": "internal",
-      "aliases": [],
       "connector": null,
       "monthlyReview": false,
       "balanceTracking": false,
@@ -801,9 +722,7 @@
     },
     {
       "id": "stability",
-      "label": "Stability AI",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "stability",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -817,9 +736,7 @@
     },
     {
       "id": "tinybird",
-      "label": "Tinybird",
       "meteringBasis": "not_applicable",
-      "aliases": [],
       "connector": "tinybird",
       "monthlyReview": true,
       "balanceTracking": false,
@@ -832,13 +749,8 @@
       ]
     },
     {
-      "id": "vast.ai",
-      "label": "Vast.ai",
+      "id": "vast",
       "meteringBasis": "capacity",
-      "aliases": [
-        "vast",
-        "vastai"
-      ],
       "connector": "vast-ai",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -852,9 +764,7 @@
     },
     {
       "id": "vercel",
-      "label": "Vercel AI Gateway",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "vercel",
       "monthlyReview": true,
       "balanceTracking": true,
@@ -868,9 +778,7 @@
     },
     {
       "id": "xai",
-      "label": "xAI",
       "meteringBasis": "direct",
-      "aliases": [],
       "connector": "xai",
       "monthlyReview": true,
       "accounts": [

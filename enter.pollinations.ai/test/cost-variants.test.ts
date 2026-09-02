@@ -519,7 +519,7 @@ describe("selection safety and composition", () => {
         overrides: Partial<ModelDefinition>,
     ): ModelDefinition => ({
         aliases: [],
-        provider: "test",
+        provider: "openrouter",
         brand: "Test",
         category: "text",
         cost: { promptTextTokens: 1e-6, completionTextTokens: 2e-6 },

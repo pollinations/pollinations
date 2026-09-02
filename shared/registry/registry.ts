@@ -1,4 +1,5 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
+import type { ProviderId } from "../providers.ts";
 import type { SafetyFeature } from "../schemas/safety.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
 import type { CostVariantContext, PricingInput } from "./cost-variants";
@@ -150,7 +151,7 @@ export type BillingAdjustment = {
 
 export type ModelDefinition = {
     aliases: string[];
-    provider: string;
+    provider: ProviderId;
     /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */

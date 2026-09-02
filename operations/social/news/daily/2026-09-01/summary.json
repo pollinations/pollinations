@@ -1,0 +1,127 @@
+{
+  "date": "2026-09-01",
+  "period_start": "2026-09-01",
+  "period_end": "2026-09-01",
+  "title": "More video routes and a larger model shelf",
+  "summary": "A busy day for builders: broader video and text models, sturdier agent tooling, safer OAuth, and community-model health you can actually see.\n\nWan video models now cover text-to-video, image-to-video, reference-to-video, reference audio, and Wan 3.0 end-frame workflows under their existing model IDs. The text API also gained Mercury 2.5 Preview, DeepSeek V4 Flash Vision, and Claude Fable 5.1, while MiniMax M2.7 was moved onto a working route, Grok 4.6 became available with Quest-earned Pollen, and Claude Sonnet 5's published Bedrock rates were restored.\n\nHosted MCP now has clearer setup guides, canonical endpoints, SDK examples, and an architecture document covering agents, delegated billing, security, and tool boundaries. Nested MCP generation calls can reach Gen reliably, and prompt-agent streams now turn malformed upstream events into usable completions or typed SDK errors instead of mysterious chunks.\n\nReact's PolliProvider moved to OAuth authorization-code flow with PKCE and route restoration, while the canonical browser OAuth demo was pared down and account linking received its own encrypted server-backed example. Polli CLI gained a reversible Prime Agent harness, and its npm publishing path now uses GitHub OIDC so the latest release can ship normally again.",
+  "pr_count": 29,
+  "prs": [
+    {
+      "number": 13675,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14176,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14225,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14229,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14231,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14237,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14240,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14241,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14250,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14260,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14264,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14273,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14274,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14275,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14280,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14282,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14283,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14284,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14291,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14297,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14307,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14308,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14312,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14313,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14317,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14319,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14320,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14321,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14323,
+      "date": "2026-09-01"
+    }
+  ],
+  "generated_at": "2026-09-02T06:35:15.390590+00:00"
+}

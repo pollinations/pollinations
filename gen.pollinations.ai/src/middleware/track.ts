@@ -303,7 +303,7 @@ export const track = (eventType: EventType) =>
                 // loop can supply. So a request emits one row per upstream call.
                 for (const attempt of attempts) {
                     if (attempt.settled) continue;
-                    const model = attempt.candidate.publicId;
+                    const model = attempt.candidate.id;
                     const status = failedAttemptStatus(attempt.error);
                     await emitRow({
                         startTime: attempt.startedAt,
@@ -314,7 +314,9 @@ export const track = (eventType: EventType) =>
                             cacheHit: false,
                             isBilledUsage: false,
                             isFinal: false,
-                            fallbackUsed: attempt.candidate.entry !== undefined,
+                            fallbackUsed:
+                                model !==
+                                requestTracking.resolvedModelRequested,
                             modelUsed: model,
                             modelProviderUsed:
                                 attempt.candidate.definition?.provider ??
@@ -587,7 +589,7 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const modelCalled = candidate.publicId || resolvedModelRequested;
+    const modelCalled = candidate.id || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
@@ -672,7 +674,10 @@ export async function trackResponse(
                 output,
                 input: pricingInput,
             }),
-            modelUsed: modelUsage?.model ?? modelCalled,
+            modelUsed:
+                candidate.publicId === candidate.id
+                    ? (modelUsage?.model ?? modelCalled)
+                    : modelCalled,
             modelProviderUsed,
             usage,
             contentFilterResults,
@@ -755,7 +760,10 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        modelUsed: modelUsage.model,
+        modelUsed:
+            candidate.publicId === candidate.id
+                ? modelUsage.model
+                : modelCalled,
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,

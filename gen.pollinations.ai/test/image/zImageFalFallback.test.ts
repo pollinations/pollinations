@@ -144,7 +144,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "zimage",
+        modelUsed: "zimage-fal",
         modelProviderUsed: "fal",
         responseStatus: 200,
         fallbackUsed: true,

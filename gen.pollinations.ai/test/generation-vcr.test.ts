@@ -1706,7 +1706,7 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         eventType: "generate.image",
         modelRequested: "flux",
         resolvedModelRequested: "flux",
-        modelUsed: "flux",
+        modelUsed: "flux-deepinfra",
         modelProviderUsed: "deepinfra",
         responseStatus: 200,
         fallbackUsed: true,

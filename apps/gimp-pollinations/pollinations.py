@@ -546,7 +546,8 @@ if HAS_GIMP:
             def edit_thread():
                 try:
                     import tempfile
-                    tmp_path = tempfile.mktemp(suffix=".png")
+                    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_f:
+                        tmp_path = tmp_f.name
                     tmp_file = Gio.File.new_for_path(tmp_path)
 
                     # Flatten for export

@@ -239,7 +239,7 @@ test("nova-canvas bills the final dimensions sent to Bedrock", async ({
     expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "nova-canvas",
-        modelUsed: "nova-canvas",
+        modelUsed: "amazon/nova-canvas-v1",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.04,
         totalCost: 0.04,
@@ -248,7 +248,7 @@ test("nova-canvas bills the final dimensions sent to Bedrock", async ({
     expect(mocks.tinybird.state.events[0].costVariant).toBeUndefined();
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelRequested: "nova-canvas",
-        modelUsed: "nova-canvas",
+        modelUsed: "amazon/nova-canvas-v1",
         costVariant: "2048",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.06,

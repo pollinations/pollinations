@@ -31,11 +31,7 @@ import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import {
-    applySafety,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
@@ -2796,7 +2792,7 @@ async function generateAudioFromSpeechRequest(
 
     if (c.var.model.resolved === "elevenlabs/eleven-v3:dialogue") {
         const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToTexts(
+        const safeTexts = await applySafetyToInput(
             c,
             inputs.map((turn) => turn.text),
             safe,
@@ -2815,7 +2811,7 @@ async function generateAudioFromSpeechRequest(
         return withSafetyHeaders(c, response);
     }
 
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     const referenceAudio = reference_audio
         ? await fetchReferenceAudio(reference_audio)
         : undefined;
@@ -2971,7 +2967,7 @@ export async function handleSpeechWithTimestamps(
                 "Timestamped speech supports mp3, opus, aac, wav, and pcm output.",
         });
     }
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     return withAudioFallback(c, (candidate) =>
         generateElevenLabsSpeechWithTimestamps({
             modelName: candidate.id as ElevenLabsTtsModelName,
@@ -3085,8 +3081,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
 
-        const ovhApiKey = c.env.OVHCLOUD_API_KEY;
-        if (!ovhApiKey) {
+        const isDeepInfra = candidate.id === "openai/whisper-large-v3:fallback";
+        const providerApiKey = isDeepInfra
+            ? c.env.DEEPINFRA_API_KEY
+            : c.env.OVHCLOUD_API_KEY;
+        if (!providerApiKey) {
             throw new UpstreamError(500 as ContentfulStatusCode, {
                 message:
                     "Transcription service is not configured (missing API key)",
@@ -3104,15 +3103,24 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         whisperFormData.append("file", file, filename);
         if (language) whisperFormData.append("language", language);
         whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append("model", "whisper-large-v3");
-        whisperFormData.append("timestamp_granularities[]", "word");
+        whisperFormData.append(
+            "model",
+            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+        );
+        whisperFormData.append(
+            isDeepInfra
+                ? "timestamp_granularities"
+                : "timestamp_granularities[]",
+            "word",
+        );
 
-        const whisperUrl =
-            "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+        const whisperUrl = isDeepInfra
+            ? "https://api.deepinfra.com/v1/audio/transcriptions"
+            : "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
         const response = await ensureUpstreamOk(
             await fetch(whisperUrl, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${ovhApiKey}` },
+                headers: { Authorization: `Bearer ${providerApiKey}` },
                 body: whisperFormData,
             }),
             whisperUrl,
@@ -3126,7 +3134,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 message: "Whisper returned an unexpected (non-JSON) response",
             });
         }
-        const billedSeconds = extractWhisperUsage(whisper, log);
+        const billedSeconds = isDeepInfra
+            ? whisper.duration
+            : extractWhisperUsage(whisper, log);
+        if (typeof billedSeconds !== "number" || billedSeconds <= 0) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message:
+                    "Whisper response did not include valid duration metering",
+            });
+        }
         const usageHeaders = buildUsageHeaders(
             candidate.id,
             createAudioSecondsUsage(billedSeconds),
@@ -3705,6 +3721,7 @@ export function parsePositiveInt(
 interface WhisperVerboseJson {
     text: string;
     language?: string;
+    duration?: number;
     usage?: { seconds?: number };
     words?: NormalizedWord[];
     segments?: NormalizedSegment[];

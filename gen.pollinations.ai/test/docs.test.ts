@@ -236,6 +236,7 @@ describe("docs routes", () => {
         expect(resources?.tags).toContain("Community Models");
         expect(resources?.tags).not.toContain("Publish a Model");
         expect(integrations?.tags).toContain("Publish an Agent");
+        expect(integrations?.tags).toContain("Coding Harnesses");
         expect(integrations?.tags).not.toContain("Community Agents");
         expect(resources?.tags).toContain("Community Agents");
         expect(resources?.tags).not.toContain("Publish an Agent");
@@ -253,7 +254,11 @@ describe("docs routes", () => {
             "Community Agents",
         );
         expect(schema.tags.map((tag) => tag.name)).toContain("CLI");
-        expect(schema.tags.map((tag) => tag.name)).toContain("MCP Server");
+        expect(
+            schema.tags.find((tag) => tag.name === "Coding Harnesses")
+                ?.description,
+        ).toContain("polli harness dsh on");
+        expect(schema.tags.map((tag) => tag.name)).toContain("MCP Servers");
         expect(schema.tags.map((tag) => tag.name)).toContain("Quests");
         expect(schema.tags.map((tag) => tag.name)).toContain("Media Storage");
         expect(schema.tags.map((tag) => tag.name)).toContain("Account");
@@ -429,7 +434,7 @@ describe("docs routes", () => {
             ctx,
         );
         expect(mcpRes.status).toBe(301);
-        expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-server");
+        expect(mcpRes.headers.get("Location")).toBe("/docs#tag/mcp-servers");
 
         const agentsRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/guides/agents", {
@@ -533,6 +538,45 @@ describe("docs routes", () => {
         const agentsBody = await agentsRes.text();
         expect(agentsBody).toContain("## Publish an Agent");
         expect(agentsBody).toContain("/account/agents");
+
+        const mcpRes = await worker.fetch(
+            new Request("https://gen.pollinations.ai/docs/llm.txt?section=mcp"),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(mcpRes.status).toBe(200);
+        const mcpBody = await mcpRes.text();
+        expect(mcpBody).toContain("## MCP Servers");
+        expect(mcpBody).toContain(
+            "https://gen.pollinations.ai/mcp/pollinations",
+        );
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ffmpeg");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
+        expect(mcpBody).toContain("### Pollinations MCP");
+        expect(mcpBody).toContain("### FFmpeg MCP");
+        expect(mcpBody).toContain("### Exa Search MCP");
+        expect(mcpBody).toContain("https://enter.pollinations.ai/my-models");
+        expect(mcpBody).not.toContain("## Other built-in MCPs");
+        expect(mcpBody).toContain("`generateImage`");
+        expect(mcpBody).toContain("`runFfmpeg`");
+        expect(mcpBody).toContain("`web_search_exa`");
+        expect(mcpBody).not.toContain("mcp.pollinations.ai");
+        expect(mcpBody).toContain("Streamable HTTP");
+        expect(mcpBody).not.toContain("stdio");
+        expect(mcpBody).not.toContain("npx @pollinations/mcp");
+        expect(mcpBody).not.toContain("## Text");
+
+        const harnessRes = await worker.fetch(
+            new Request(
+                "https://gen.pollinations.ai/docs/llm.txt?section=coding-harnesses",
+            ),
+            envWithEnterSchema({}),
+            ctx,
+        );
+        expect(harnessRes.status).toBe(200);
+        const harnessBody = await harnessRes.text();
+        expect(harnessBody).toContain("## Coding Harnesses");
+        expect(harnessBody).toContain("polli harness dsh on");
 
         const badRes = await worker.fetch(
             new Request("https://gen.pollinations.ai/docs/llm.txt?section=bad"),

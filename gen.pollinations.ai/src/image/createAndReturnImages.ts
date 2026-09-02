@@ -5,7 +5,11 @@ import {
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import {
+    callAzureFlux2,
+    callAzureFluxKontext,
+} from "./models/azureFluxKontextModel.js";
+import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -22,11 +26,13 @@ import {
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
+    callFluxSchnellDeepInfraAPI,
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
@@ -695,6 +701,7 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
+        case "google/gemini-3.1-flash-image:fallback":
         case "google/gemini-3.1-flash-lite-image": {
             logError(
                 "Nano Banana authentication check:",
@@ -717,7 +724,8 @@ const generateImage = async (
             }
         }
 
-        case "google/gemini-3-pro-image": {
+        case "google/gemini-3-pro-image":
+        case "google/gemini-3-pro-image:fallback": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -752,8 +760,22 @@ const generateImage = async (
             }
         }
 
+        case "black-forest-labs/flux.2-pro":
+        case "black-forest-labs/flux.2-flex": {
+            try {
+                return await callAzureFlux2(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError("Azure FLUX.2 generation failed:", error.message);
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "bytedance/seedream-5.0-lite":
             return await callSeedream5API(prompt, safeParams);
+
+        case "bytedance/seedream-5.0-lite:fallback":
+            return await callFalFallbackImage(prompt, safeParams);
 
         case "bytedance/seedream-5.0-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
@@ -816,12 +838,22 @@ const generateImage = async (
         case "qwen/qwen-image-3":
             return await callQwenImage3API(prompt, safeParams);
 
+        case "black-forest-labs/flux.1-kontext-pro:fallback":
+        case "black-forest-labs/flux.2-pro:fallback":
+        case "qwen/qwen-image-3:fallback":
+        case "prunaai/p-image-edit:fallback":
+        case "krea/krea-2-medium:fallback":
+            return await callReplicateFallbackImage(prompt, safeParams);
+
         case "lykon/dreamshaper-8-lcm":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "black-forest-labs/flux.1-schnell":
             return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "black-forest-labs/flux.1-schnell:fallback":
+            return await callFluxSchnellDeepInfraAPI(prompt, safeParams);
 
         case "tongyi-mai/z-image-turbo:fallback":
             return await callZImageFalAPI(prompt, safeParams);

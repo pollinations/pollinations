@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { SAFETY_FEATURES } from "../schemas/safety.ts";
+import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
     type BillingAdjustmentRule,
     getPriceDefinitionForModel,
@@ -9,9 +11,13 @@ import {
     getVisibleModel3dModels,
     getVisibleRealtimeModels,
     getVisibleTextModels,
+    MODEL_CATEGORIES,
+    MODEL_INPUT_MODALITIES,
+    MODEL_OUTPUT_MODALITIES,
     type ModelDefinition,
     type ModelName,
     type PriceDefinition,
+    VIDEO_CAPABILITIES,
 } from "./registry";
 
 export const ModelCapabilitySchema = z.enum([
@@ -32,15 +38,7 @@ export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
-    category: z.enum([
-        "text",
-        "image",
-        "audio",
-        "video",
-        "3d",
-        "embedding",
-        "realtime",
-    ]),
+    category: z.enum(MODEL_CATEGORIES),
     author: z.string(),
     brand_url: z.string().url().optional(),
     community: z.boolean().optional(),
@@ -88,10 +86,11 @@ export const ModelInfoSchema = z.object({
     resolutions: z.array(z.string()).optional(),
     title: z.string(),
     description: z.string().optional(),
-    input_modalities: z.array(z.string()).optional(),
-    output_modalities: z.array(z.string()).optional(),
+    input_modalities: z.array(z.enum(MODEL_INPUT_MODALITIES)).optional(),
+    output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
+    required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
-    video_capabilities: z.array(z.string()).optional(),
+    video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
     max_duration: z.number().positive().optional(),
     default_duration: z.number().positive().optional(),
@@ -121,14 +120,6 @@ export const ModelInfoSchema = z.object({
 });
 
 export type ModelInfo = z.infer<typeof ModelInfoSchema>;
-
-/**
- * Format a number to fixed-point string, avoiding scientific notation (e.g. 1.65e-7 → "0.000000165").
- * Strips trailing zeros for cleaner output.
- */
-function toFixedPoint(n: number): string {
-    return n.toFixed(12).replace(/\.?0+$/, "");
-}
 
 function getCapabilities(service: ModelDefinition): ModelCapability[] {
     const capabilities: ModelCapability[] = [];
@@ -162,18 +153,7 @@ function pricingAdjustmentInfoFromRule(
     rule: BillingAdjustmentRule,
     service: ModelDefinition,
 ) {
-    const { label, quantity, unit, suffix, option } = rule.publicPricing;
-    return {
-        name: rule.id,
-        label,
-        kind: rule.kind,
-        price: toFixedPoint(rule.unitCost * quantity * service.priceMultiplier),
-        currency: "pollen" as const,
-        quantity,
-        unit,
-        suffix,
-        option,
-    };
+    return publicPriceInfo(rule, service.priceMultiplier);
 }
 
 export function modelInfoFromDefinition(
@@ -223,6 +203,7 @@ export function modelInfoFromDefinition(
         description: service.description,
         input_modalities: service.inputModalities,
         output_modalities: service.outputModalities,
+        required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,
         video_capabilities: service.videoCapabilities,
         min_duration: service.minDuration,

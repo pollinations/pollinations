@@ -6,9 +6,9 @@
 
 # Model ID changes
 
-The new publisher-qualified model IDs are available now. On **September 7, 2026 at 14:00 UTC**, they will become the canonical IDs.
+On **September 7, 2026 at 14:00 UTC**, we're standardizing model IDs. They will use the publisher and official model name.
 
-Existing IDs will remain available as aliases, so current integrations do not need to change. New integrations can use the new IDs today.
+You can use the new IDs now. Existing IDs will keep working, so current integrations do not need to change.
 
 Only the names are changing. Model behavior and pricing stay the same.
 
@@ -38,6 +38,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | Claude Fable 5 | `claude-fable-5` | `anthropic/claude-fable-5` |
+| Claude Fable 5.1 | — | `anthropic/claude-fable-5.1` |
 | Claude Haiku 4.5 | `claude-fast` | `anthropic/claude-haiku-4.5` |
 | Claude Opus 4.6 | `claude-opus-4.6` | `anthropic/claude-opus-4.6` |
 | Claude Opus 4.7 | `claude-opus-4.7` | `anthropic/claude-opus-4.7` |
@@ -59,6 +60,8 @@ Only the names are changing. Model behavior and pricing stay the same.
 | FLUX.1 Kontext Pro | `kontext` | `black-forest-labs/flux.1-kontext-pro` |
 | FLUX.1 Schnell | `flux` | `black-forest-labs/flux.1-schnell` |
 | FLUX.2 Klein 4B | `klein` | `black-forest-labs/flux.2-klein-4b` |
+| FLUX.2 Pro | `flux-2-pro` | `black-forest-labs/flux.2-pro` |
+| FLUX.2 Flex | `flux-2-flex` | `black-forest-labs/flux.2-flex` |
 
 ## ByteDance
 
@@ -86,6 +89,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | DeepSeek V4 Flash 0731 | `deepseek` | `deepseek/deepseek-v4-flash` |
+| DeepSeek V4 Flash Vision Exp | — | `deepseek/deepseek-v4-flash-vision-exp` |
 | DeepSeek V4 Pro 0813 | `deepseek-pro` | `deepseek/deepseek-v4-pro` |
 
 ## ElevenLabs
@@ -118,6 +122,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Gemini 3.1 Pro Preview | `gemini-large` | `google/gemini-3.1-pro-preview` |
 | Gemini 3.5 Flash Lite | `gemini-flash-lite-3.5` | `google/gemini-3.5-flash-lite` |
 | Gemini 3.7 Flash | `gemini` | `google/gemini-3.7-flash` |
+| Gemini Omni 1.1 Flash | — | `google/gemini-omni-1.1-flash` |
 | Gemini Embedding 2 | `gemini-2` | `google/gemini-embedding-2` |
 | Gemma 4 26B A4B | `gemma` | `google/gemma-4-26b-a4b-it` |
 | Gemma 4 31B | `gemma-4-31b` | `google/gemma-4-31b-it` |
@@ -154,6 +159,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | Mercury 2 | `mercury` | `inception/mercury-2` |
+| Mercury 2.5 Preview | — | `inception/mercury-2.5-preview` |
 
 ## Krea
 
@@ -230,7 +236,6 @@ Only the names are changing. Model behavior and pricing stay the same.
 | GPT Image 1.5 | `gptimage-large` | `openai/gpt-image-1.5` |
 | GPT Image 2 | `gpt-image-2` | `openai/gpt-image-2` |
 | GPT Live Transcribe | `gpt-live-transcribe` | `openai/gpt-live-transcribe` |
-| GPT Realtime 2 | `gpt-realtime-2` | `openai/gpt-realtime-2` |
 | GPT Realtime 2.1 | `gpt-realtime-2.1` | `openai/gpt-realtime-2.1` |
 | GPT Realtime 2.1 Mini | `gpt-realtime-2.1-mini` | `openai/gpt-realtime-2.1-mini` |
 | GPT Transcribe | `gpt-transcribe` | `openai/gpt-transcribe` |
@@ -247,6 +252,8 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Text Embedding 3 Small | `openai-3-small` | `openai/text-embedding-3-small` |
 | Whisper Large V3 | `whisper` | `openai/whisper-large-v3` |
 
+GPT Realtime 2 retired on August 31, 2026. `gpt-realtime-2` remains a compatibility alias for GPT Realtime 2.1; it will not receive a separate namespaced ID.
+
 ## Perplexity
 
 | Model | Existing ID | New ID |
@@ -260,6 +267,13 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | Laguna S 2.1 | `laguna` | `poolside/laguna-s-2.1` |
+
+## Pollinations
+
+| Model | Existing ID | New ID |
+| --- | --- | --- |
+| MIDIjourney | `midijourney` | `pollinations/midijourney` |
+| MIDIjourney Large | `midijourney-large` | `pollinations/midijourney-large` |
 
 ## Pruna
 
@@ -320,6 +334,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 
 | Model | Existing ID | New ID |
 | --- | --- | --- |
+| Inkling | — | `thinkingmachines/inkling` |
 | Inkling Small | `inkling` | `thinkingmachines/inkling-small` |
 
 ## Tongyi-MAI
@@ -356,3 +371,4 @@ Only the names are changing. Model behavior and pricing stay the same.
 | --- | --- | --- |
 | Z.ai GLM-5.2 | `glm` | `z-ai/glm-5.2` |
 | Z.ai GLM-5.3 | `glm-5.3` | `z-ai/glm-5.3` |
+| Z.ai GLM-5.3 Flash | — | `z-ai/glm-5.3-flash` |

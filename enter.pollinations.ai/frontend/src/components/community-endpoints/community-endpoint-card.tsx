@@ -128,6 +128,8 @@ export function CommunityEndpointCard({
                 </Alert>
             )}
 
+            <PendingChangeNotice endpoint={endpoint} />
+
             <div className="mt-4 grid gap-2">
                 <CommunityDetailRow
                     icon={<TokensIcon className="h-3.5 w-3.5" />}
@@ -152,11 +154,14 @@ export function CommunityEndpointCard({
                                 value={endpoint.modality}
                             />
                         )}
-                        <CommunityDetailRow
-                            icon={<TerminalIcon className="h-3.5 w-3.5" />}
-                            label="Upstream model"
-                            value={endpoint.upstreamModel}
-                        />
+                        {(endpoint.type !== "proxy" ||
+                            endpoint.modality !== "video") && (
+                            <CommunityDetailRow
+                                icon={<TerminalIcon className="h-3.5 w-3.5" />}
+                                label="Upstream model"
+                                value={endpoint.upstreamModel}
+                            />
+                        )}
                         {endpoint.perUserRpm !== null && (
                             <CommunityDetailRow
                                 icon={<TerminalIcon className="h-3.5 w-3.5" />}
@@ -193,6 +198,57 @@ export function CommunityEndpointCard({
                 </Link>
             </div>
         </Surface>
+    );
+}
+
+function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {
+    const pending = endpoint.pending;
+    if (!pending) return null;
+
+    const visibility = pending.visibility ?? endpoint.visibility;
+    const pendingProxy =
+        endpoint.type === "proxy"
+            ? ({
+                  ...endpoint,
+                  ...pending,
+                  visibility,
+                  paidOnly: pending.paidOnly ?? endpoint.paidOnly,
+                  imagePricing: pending.imagePricing ?? endpoint.imagePricing,
+              } satisfies ProxyCommunityEndpoint)
+            : null;
+    const priceGroups = pendingProxy ? communityPriceGroups(pendingProxy) : [];
+
+    return (
+        <Alert intent="info" className="mt-3" title="Changes queued">
+            <div className="flex flex-col gap-1 text-sm">
+                <span>
+                    Effective {new Date(pending.effectiveAt).toLocaleString()}
+                </span>
+                <span>
+                    Visibility: {VISIBILITY_LABELS[visibility]}
+                    {pendingProxy &&
+                        ` · ${pendingProxy.paidOnly ? "Paid Pollen only" : "Quest and Paid Pollen"}`}
+                </span>
+                {pendingProxy && (
+                    <span className="flex flex-wrap items-center gap-1.5">
+                        <span>Pricing:</span>
+                        {priceGroups.length > 0 ? (
+                            priceGroups.map((group) => (
+                                <span
+                                    key={group.key}
+                                    className="inline-flex items-center gap-1"
+                                >
+                                    {group.label}
+                                    <CommunityPriceBadges group={group} />
+                                </span>
+                            ))
+                        ) : (
+                            <span>Free</span>
+                        )}
+                    </span>
+                )}
+            </div>
+        </Alert>
     );
 }
 
@@ -294,7 +350,8 @@ function communityPriceGroups(
                 unit:
                     field.priceUnit === "million"
                         ? "token"
-                        : field.priceUnit === "second"
+                        : field.priceUnit === "second" ||
+                            field.priceUnit === "video_second"
                           ? "second"
                           : "request",
             },
@@ -324,5 +381,6 @@ function communityPriceKind(usageType: string): PriceKind {
     if (usageType === "promptAudioTokens") return "audioIn";
     if (usageType === "completionAudioTokens") return "audioOut";
     if (usageType.includes("Image")) return "image";
+    if (usageType.includes("Video")) return "video";
     return "text";
 }

@@ -1,5 +1,6 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
 import {
+    createAlibabaModelConfig,
     createAzureModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
@@ -139,6 +140,14 @@ export const portkeyConfig: PortkeyConfigMap = {
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
         ),
+    "grok-4.6": () => ({
+        provider: "openai",
+        directEndpoint:
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+        directAuthHeader: "api-key",
+        authKey: process.env.AZURE_MYCELI_PROD_API_KEY,
+        model: "grok-4.6",
+    }),
 
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
@@ -148,30 +157,6 @@ export const portkeyConfig: PortkeyConfigMap = {
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
-    "x-ai/grok-4.6": () =>
-        createOpenRouterModelConfig({
-            model: "x-ai/grok-4.6",
-            defaultOptions: {
-                provider: {
-                    only: ["xai/zdr"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
-    // GLM-5.3 is a mandatory-reasoning model (see registry entry), making it
-    // just as exposed to the blank-answer/billed-tokens bug as the Qwen
-    // models above if z-ai/fp8's own max_tokens default is ever too low.
-    "z-ai/glm-5.3": () =>
-        createOpenRouterModelConfig({
-            model: "z-ai/glm-5.3",
-            defaultOptions: {
-                max_tokens: 64000,
-                provider: {
-                    only: ["z-ai/fp8"],
-                    allow_fallbacks: false,
-                },
-            },
-        }),
     "xiaomi/mimo-v2.5": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5",
         "xiaomi/fp8",
@@ -179,6 +164,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "xiaomi/mimo-v2.5-pro": createPinnedOpenRouterConfig(
         "xiaomi/mimo-v2.5-pro",
         "xiaomi/fp8",
+    ),
+    "minimax/minimax-m2.7": createPinnedOpenRouterConfig(
+        "minimax/minimax-m2.7",
+        "deepinfra/fp8",
     ),
     // Reasoning models: explicit max_tokens default below. Without one, the
     // upstream provider's own default applies (Chutes AI defaults to 1024),
@@ -210,6 +199,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+        "qwen/qwen3.8-27b",
+        "akashml/fp8",
+        64000,
+    ),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -283,6 +277,97 @@ export const portkeyConfig: PortkeyConfigMap = {
         "novita/bf16",
     ),
 
+    // -- Exact-checkpoint text fallbacks -------------------------------------
+    "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+        }),
+    "MiniMaxAI/MiniMax-M2.7": () =>
+        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M2.7" }),
+    "Qwen/Qwen3.8-2.4T-A95B": () =>
+        createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
+    "moonshotai/Kimi-K2.6": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
+        createDeepInfraModelConfig({
+            model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        }),
+    "google/gemma-4-26B-A4B-it": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
+    "google/gemma-4-31B-it": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
+    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
+        "mistralai/mistral-large-2512",
+        "mistral/zdr",
+    ),
+    "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-4.7",
+        "google-vertex/global",
+    ),
+    "llama-scout-openrouter-deepinfra": createPinnedOpenRouterConfig(
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8",
+    ),
+    "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
+        "x-ai/grok-4.20",
+        "xai/zdr",
+    ),
+    "grok-large-openrouter-xai-zdr": createPinnedOpenRouterConfig(
+        "x-ai/grok-4.3",
+        "xai/zdr",
+    ),
+    "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
+        "anthropic/claude-haiku-4.5",
+        "google-vertex/global",
+    ),
+    "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
+        "anthropic/claude-fable-5",
+        "google-vertex/global",
+    ),
+    "muse-glimmer-openrouter-deepinfra": createPinnedOpenRouterConfig(
+        "meta/muse-glimmer-30b",
+        "deepinfra/bf16",
+    ),
+    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
+        "nvidia/nemotron-3.5-lightning",
+        "coreweave/bf16",
+    ),
+    "mistral-openrouter-eu": createPinnedOpenRouterConfig(
+        "mistralai/mistral-small-2603",
+        "mistral/eu",
+    ),
+    "gemini-openrouter-ai-studio-priority": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.7-flash",
+        "google-ai-studio/priority",
+    ),
+    "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
+        "gemini-2.5-flash-lite",
+        "google-ai-studio",
+    ),
+    "gemini-flash-lite-3.5-openrouter-ai-studio-flex":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-3.5-flash-lite",
+            "google-ai-studio/flex",
+        ),
+    "gemini-large-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.1-pro-preview",
+        "google-ai-studio",
+    ),
+    "qwen-vision-pro-openrouter-novita": createPinnedOpenRouterConfig(
+        "qwen/qwen3-vl-235b-a22b-thinking",
+        "novita/bf16",
+    ),
+    "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.3",
+        "friendli",
+    ),
+    "kimi-code-deepinfra": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.7-Code" }),
+    "qwen-coder-large-openrouter-streamlake": createPinnedOpenRouterConfig(
+        "qwen/qwen3-coder-next",
+        "streamlake",
+    ),
+
     // -- OpenRouter (Inception Labs) -----------------------------------------
     "mercury-2": () =>
         createOpenRouterModelConfig({
@@ -294,11 +379,20 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "inception/mercury-2.5-preview": createPinnedOpenRouterConfig(
+        "inception/mercury-2.5-preview",
+        "Inception",
+        64000,
+    ),
 
     // -- Fireworks AI (DeepSeek) ---------------------------------------------
     "accounts/fireworks/models/deepseek-v4-flash-0731": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/deepseek-v4-flash-0731",
+        }),
+    "accounts/fireworks/models/deepseek-v4-flash-vision-exp": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
         }),
     "accounts/fireworks/models/deepseek-v4-pro-0813": () =>
         createFireworksModelConfig({
@@ -384,6 +478,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "global.anthropic.claude-fable-5",
             defaultOptions: { max_tokens: 128000 },
         }),
+    "anthropic/claude-fable-5.1": () =>
+        createBedrockNativeConfig({
+            model: "global.anthropic.claude-fable-5-1",
+            defaultOptions: { max_tokens: 128000 },
+        }),
     "claude-haiku-4-5": () =>
         createBedrockNativeConfig({
             model: "global.anthropic.claude-haiku-4-5-20251001-v1:0",
@@ -442,9 +541,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         createFireworksModelConfig({
             model: "accounts/fireworks/models/glm-5p2",
         }),
-    "accounts/fireworks/models/minimax-m2p7": () =>
+    "accounts/fireworks/models/glm-5p3": () =>
         createFireworksModelConfig({
-            model: "accounts/fireworks/models/minimax-m2p7",
+            model: "accounts/fireworks/models/glm-5p3",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "accounts/fireworks/models/glm-5p3-flash": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/glm-5p3-flash",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "accounts/fireworks/models/minimax-m3": () =>
         createFireworksModelConfig({
@@ -457,6 +562,10 @@ export const portkeyConfig: PortkeyConfigMap = {
     "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b": () =>
         createFireworksModelConfig({
             model: "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        }),
+    "accounts/fireworks/models/inkling": () =>
+        createFireworksModelConfig({
+            model: "accounts/fireworks/models/inkling",
         }),
 
     // -- Vercel AI Gateway (Meta) --------------------------------------------
@@ -494,10 +603,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "qwen/qwen3-vl-30b-a3b-instruct",
         "alibaba",
     ),
-    "qwen/qwen3-vl-235b-a22b-thinking": createPinnedOpenRouterConfig(
-        "qwen/qwen3-vl-235b-a22b-thinking",
-        "alibaba",
-    ),
+    "qwen3-vl-235b-a22b-thinking": () =>
+        createAlibabaModelConfig({
+            model: "qwen3-vl-235b-a22b-thinking",
+        }),
 
     // -- OpenRouter (StepFun) -------------------------------------------------
     "stepfun/step-3.5-flash": () =>

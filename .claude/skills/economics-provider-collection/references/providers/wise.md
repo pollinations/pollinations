@@ -49,26 +49,13 @@ Collection steps:
    evidence needs to become an entry.
 6. For reconciliation, compare against invoice entries and `economics_bank_ledger`.
 
-Repeatable monthly pull:
-
-Run this from `operations/economics/`; every relative path below is anchored to
-that directory.
-
-```bash
-sops exec-env ingest/secrets/env.json \
-  'sops exec-env secrets/web.dev.json "node ingest/scripts/wise-ledger-reconcile.mjs \
-  --from=YYYY-MM-01 --until=YYYY-MM-DD \
-  --archive=ingest/data/inbox/wise/wise-activities-YYYY-MM.json \
-  --statement-dir=/absolute/path/to/wise-statement-csvs \
-  --transactions=ingest/data/reconcile/proposals/wise-YYYY-MM-transactions.ndjson"'
-```
-
-`--until` is exclusive. The script follows every activity cursor, overlaps the
-preceding 35 days, skips cancelled/card-check activity, reuses classifications
-already proven by prior Wise rows, and stops for genuinely new merchants. It
-uses statement dates, amounts, currencies, and fees for every proposal and
-refuses activity-only bookings. Every proposal is a `kind: transaction` bank
-movement.
+For a monthly pull, use the existing encrypted credentials in a task-scoped
+process and call the official Wise APIs directly. Do not add a permanent Wise
+ingest script. Follow every activity cursor, overlap the preceding 35 days,
+skip cancelled and card-check activity, and stop for genuinely new merchants.
+Use statement dates, amounts, currencies, and fees for every proposed
+`kind: transaction` bank movement; activity-only amounts are not settled cash
+evidence. Show the exact proposals before any ledger write.
 
 Runway requires one separate `kind: opening_balance` row per non-zero statement
 currency, all on the same first-of-month anchor date. Derive those anchors only

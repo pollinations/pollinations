@@ -30,7 +30,32 @@ const logCloudflare = debug("pollinations:cloudflare");
 const AZURE_FLUX_KONTEXT_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
 
-type AzureFluxKontextResponse = {
+const AZURE_FLUX_2_CONFIG = {
+    "black-forest-labs/flux.2-pro": {
+        upstreamModel: "FLUX.2-pro",
+        modelPath: "flux-2-pro",
+        title: "FLUX.2 Pro",
+        maxReferenceImages: 8,
+    },
+    "black-forest-labs/flux.2-flex": {
+        upstreamModel: "FLUX.2-flex",
+        modelPath: "flux-2-flex",
+        title: "FLUX.2 Flex",
+        maxReferenceImages: 10,
+    },
+} as const;
+
+type AzureFlux2Model = keyof typeof AZURE_FLUX_2_CONFIG;
+
+const AZURE_FLUX_2_MAX_PIXELS = 2048 * 2048;
+const AZURE_FLUX_2_MIN_SIDE = 256;
+const AZURE_FLUX_2_DIMENSION_STEP = 16;
+
+function flux2Endpoint(modelPath: string): string {
+    return `https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/${modelPath}?api-version=preview`;
+}
+
+type AzureFluxResponse = {
     data?: Array<{
         b64_json?: string;
         content_filter_results?: unknown;
@@ -38,6 +63,12 @@ type AzureFluxKontextResponse = {
         finish_reason?: unknown;
         message?: unknown;
     }>;
+    request_meta?: {
+        cost?: number;
+        input_mp?: number;
+        output_mp?: number;
+        total_pixels?: number;
+    };
     error?: unknown;
     message?: unknown;
 };
@@ -77,7 +108,7 @@ function filteredCategories(value: unknown): string[] {
         .sort();
 }
 
-function summarizeUnexpectedResponse(data: AzureFluxKontextResponse): string {
+function summarizeUnexpectedResponse(data: AzureFluxResponse): string {
     const first = data.data?.[0];
     const root = data as Record<string, unknown>;
     const firstRecord = asRecord(first);
@@ -95,9 +126,7 @@ function summarizeUnexpectedResponse(data: AzureFluxKontextResponse): string {
     return JSON.stringify(summary);
 }
 
-function contentPolicyReason(
-    data: AzureFluxKontextResponse,
-): string | undefined {
+function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     const first = data.data?.[0];
     const categories = filteredCategories(first?.content_filter_results);
     if (categories.length > 0) {
@@ -117,9 +146,12 @@ function contentPolicyReason(
     ]);
 }
 
-async function ensureAzureFluxKontextOk(response: Response): Promise<void> {
+async function ensureAzureFluxOk(
+    response: Response,
+    endpoint: string,
+): Promise<void> {
     try {
-        await ensureUpstreamOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
+        await ensureUpstreamOk(response, endpoint);
     } catch (error) {
         if (!(error instanceof UpstreamError)) throw error;
 
@@ -139,6 +171,10 @@ async function ensureAzureFluxKontextOk(response: Response): Promise<void> {
             cause: error,
         });
     }
+}
+
+async function ensureAzureFluxKontextOk(response: Response): Promise<void> {
+    await ensureAzureFluxOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
 }
 
 function greatestCommonDivisor(a: number, b: number): number {
@@ -242,7 +278,7 @@ export async function callAzureFluxKontext(
 
     await ensureAzureFluxKontextOk(response);
 
-    const data = (await response.json()) as AzureFluxKontextResponse;
+    const data = (await response.json()) as AzureFluxResponse;
 
     if (!data.data?.[0]?.b64_json) {
         const requestUrl = new URL(AZURE_FLUX_KONTEXT_ENDPOINT);
@@ -285,6 +321,178 @@ export async function callAzureFluxKontext(
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
+            },
+        },
+    };
+}
+
+function validateFlux2Dimensions(
+    modelTitle: string,
+    width: number,
+    height: number,
+): void {
+    if (width < AZURE_FLUX_2_MIN_SIDE || height < AZURE_FLUX_2_MIN_SIDE) {
+        throw new HttpError(
+            `${modelTitle} requires width and height of at least ${AZURE_FLUX_2_MIN_SIDE}px`,
+            400,
+        );
+    }
+    if (
+        width % AZURE_FLUX_2_DIMENSION_STEP !== 0 ||
+        height % AZURE_FLUX_2_DIMENSION_STEP !== 0
+    ) {
+        throw new HttpError(
+            `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
+            400,
+        );
+    }
+    if (width * height > AZURE_FLUX_2_MAX_PIXELS) {
+        throw new HttpError(
+            `${modelTitle} supports at most 4,194,304 pixels`,
+            400,
+        );
+    }
+}
+
+function billableMegapixels(value: unknown): number | undefined {
+    return typeof value === "number" && Number.isFinite(value) && value >= 0
+        ? Math.ceil(value)
+        : undefined;
+}
+
+export async function callAzureFlux2(
+    prompt: string,
+    safeParams: ImageParams,
+    userInfo: AuthResult,
+): Promise<ImageGenerationResult> {
+    const model = safeParams.model as AzureFlux2Model;
+    const config = AZURE_FLUX_2_CONFIG[model];
+    if (!config) {
+        throw new HttpError(`Unsupported Azure FLUX.2 model: ${model}`, 400);
+    }
+
+    validateFlux2Dimensions(config.title, safeParams.width, safeParams.height);
+    if (safeParams.image.length > config.maxReferenceImages) {
+        throw new HttpError(
+            `${config.title} supports at most ${config.maxReferenceImages} reference images`,
+            400,
+        );
+    }
+
+    const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
+    if (!apiKey) {
+        throw new Error(
+            "AZURE_MYCELI_PROD_API_KEY not found in environment variables",
+        );
+    }
+
+    await requireSafePrompt(prompt, safeParams, userInfo);
+
+    const requestBody: Record<string, unknown> = {
+        prompt: sanitizeString(prompt),
+        model: config.upstreamModel,
+        width: safeParams.width,
+        height: safeParams.height,
+        seed: safeParams.seed,
+        output_format: "png",
+        num_images: 1,
+    };
+    if (safeParams.guidance_scale !== undefined) {
+        requestBody.guidance = safeParams.guidance_scale;
+    }
+
+    const inputImages = await Promise.all(
+        safeParams.image.map(async (imageUrl) => {
+            const { buffer } = await downloadUserImage(imageUrl);
+            const imageSafetyResult = await analyzeImageSafety(buffer);
+            if (!imageSafetyResult.safe) {
+                const error = new HttpError(
+                    `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
+                    400,
+                );
+                await logGptImageError(
+                    prompt,
+                    safeParams,
+                    userInfo,
+                    error,
+                    imageSafetyResult,
+                );
+                throw error;
+            }
+            return buffer;
+        }),
+    );
+
+    for (const [index, buffer] of inputImages.entries()) {
+        const field = index === 0 ? "input_image" : `input_image_${index + 1}`;
+        requestBody[field] = buffer.toString("base64");
+    }
+
+    const endpoint = flux2Endpoint(config.modelPath);
+    const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify(requestBody),
+    });
+    await ensureAzureFluxOk(response, endpoint);
+
+    const data = (await response.json()) as AzureFluxResponse;
+    const encodedImage = data.data?.[0]?.b64_json;
+    if (!encodedImage) {
+        const requestUrl = new URL(endpoint);
+        const responseBody = summarizeUnexpectedResponse(data);
+        const upstreamHeaders = collectUpstreamHeaders(response.headers);
+        const rejectionReason = contentPolicyReason(data);
+
+        if (rejectionReason) {
+            throw new UpstreamError(CONTENT_POLICY_STATUS, {
+                message: contentPolicyMessage(rejectionReason),
+                errorCode: CONTENT_POLICY_ERROR_CODE,
+                requestUrl,
+                upstreamStatus: response.status,
+                responseBody,
+                upstreamHeaders,
+            });
+        }
+
+        throw new UpstreamError(502, {
+            message: `Azure ${config.title} returned no image`,
+            requestUrl,
+            upstreamStatus: response.status,
+            responseBody,
+            upstreamHeaders,
+        });
+    }
+
+    const promptImageTokens = billableMegapixels(data.request_meta?.input_mp);
+    const completionImageTokens = billableMegapixels(
+        data.request_meta?.output_mp,
+    );
+    if (
+        promptImageTokens === undefined ||
+        completionImageTokens === undefined
+    ) {
+        throw new UpstreamError(502, {
+            message: `Azure ${config.title} returned no billing metadata`,
+            requestUrl: new URL(endpoint),
+            upstreamStatus: response.status,
+            responseBody: summarizeUnexpectedResponse(data),
+            upstreamHeaders: collectUpstreamHeaders(response.headers),
+        });
+    }
+
+    return {
+        buffer: base64ToBuffer(encodedImage),
+        isMature: false,
+        isChild: false,
+        trackingData: {
+            actualModel: model,
+            usage: {
+                ...(promptImageTokens > 0 ? { promptImageTokens } : {}),
+                completionImageTokens: Math.max(1, completionImageTokens),
             },
         },
     };

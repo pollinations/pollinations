@@ -35,6 +35,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 300,
         cost: {
             completionImageTokens: 0.0001, // per image
         },
@@ -60,6 +61,65 @@ const IMAGE_BASE_SERVICES = {
         inputModalities: ["text", "image"],
         outputModalities: ["image"],
         maxReferenceImages: 1, // Azure FLUX.1 Kontext edit route forwards one input image.
+    },
+    "black-forest-labs/flux.2-pro": {
+        aliases: ["flux-2-pro"],
+        provider: "azure",
+        author: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-08-31").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: true,
+        // Azure Global Standard pricing, verified 2026-08-31. Azure rounds
+        // input and output megapixels up to whole billable units.
+        cost: {
+            promptImageTokens: 0.015,
+            completionImageTokens: 0.015,
+        },
+        billing: {
+            adjustments: [
+                {
+                    id: "azure.flux_2_pro.initial_output_megapixel.v1",
+                    description: "FLUX.2 Pro initial output megapixel premium",
+                    kind: "image",
+                    unit: "generation",
+                    unitCost: 0.015,
+                    publicPricing: {
+                        label: "Initial output megapixel premium",
+                        quantity: 1,
+                        unit: "generation",
+                    },
+                    countUnits: () => 1,
+                },
+            ],
+        },
+        title: "FLUX.2 Pro",
+        description:
+            "High-fidelity generation and multi-reference editing with strong prompt adherence",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 8, // Azure FLUX.2 Pro route limit.
+    },
+    "black-forest-labs/flux.2-flex": {
+        aliases: ["flux-2-flex"],
+        provider: "azure",
+        author: "Black Forest Labs",
+        category: "image",
+        addedDate: new Date("2026-08-31").getTime(),
+        priceMultiplier: 0.75,
+        paidOnly: true,
+        // Azure Global Standard pricing, verified 2026-08-31. Azure rounds
+        // input and output megapixels up to whole billable units.
+        cost: {
+            promptImageTokens: 0.05,
+            completionImageTokens: 0.05,
+        },
+        title: "FLUX.2 Flex",
+        description:
+            "Typography-focused generation and multi-reference editing with adjustable prompt guidance",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 10,
     },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
@@ -162,6 +222,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.035, // per image
@@ -358,6 +419,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.002, // per image
         },
@@ -382,6 +444,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.004, // per image
         },
@@ -438,6 +501,34 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 8,
         defaultDuration: 4,
         allowedDurations: [4, 6, 8],
+    },
+    "google/gemini-omni-1.1-flash": {
+        aliases: [],
+        provider: "google",
+        author: "Google",
+        category: "video",
+        addedDate: new Date("2026-08-28").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Vertex AI pricing verified 2026-08-28:
+        // https://cloud.google.com/vertex-ai/generative-ai/pricing
+        cost: {
+            promptTextTokens: perMillion(1.5),
+            promptImageTokens: perMillion(1.5),
+            completionTextTokens: perMillion(9),
+            completionVideoTokens: perMillion(17.5),
+        },
+        resolutions: ["720p", "360p", "1080p", "4k"],
+        title: "Gemini Omni 1.1 Flash",
+        description:
+            "Cinematic video from text or keyframes with synchronized audio at up to 4K",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 3,
+        maxDuration: 10,
+        defaultDuration: 5,
     },
     "bytedance/seedance-1-pro-fast": {
         aliases: ["seedance-pro"],
@@ -661,11 +752,12 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.7. Audio is bundled into the per-second rate. T2V is
-        // $0.10/s at both resolutions; I2V is $0.10/s at 720p and $0.15/s at
-        // 1080p.
+        // Replicate wan-2.7. Audio is bundled into the per-second rate. T2V and
+        // R2V are $0.10/s at both resolutions; I2V is $0.10/s at 720p and
+        // $0.15/s at 1080p. R2V never sets hasImage, so it always lands on the
+        // base or "1080p" sheet and avoids the I2V surcharge.
         cost: {
-            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio; also R2V)
         },
         ...defineCostVariants(
             {
@@ -696,10 +788,17 @@ const IMAGE_BASE_SERVICES = {
         ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
-        description: "Keyframe-controlled video with sound at 720p or 1080p",
-        inputModalities: ["text", "image"],
+        description:
+            "Keyframe-controlled video with sound at 720p or 1080p; also accepts reference images and videos",
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 2,
         maxDuration: 15,
@@ -744,11 +843,18 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
-        inputModalities: ["text", "image"],
+            "Five-second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
+        inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 5,
         maxDuration: 5,
         defaultDuration: 5,
@@ -1216,6 +1322,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.005,
         },

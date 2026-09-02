@@ -15,12 +15,13 @@ import {
 } from "@shared/community-endpoints.ts";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits` when the endpoint test succeeds; "transcription" uses `/v1/audio/transcriptions`.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits`; "video" calls the exact configured URL; "transcription" uses `/v1/audio/transcriptions`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -34,6 +35,12 @@ const InputModalitiesSchema = z
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
     );
+export const RequiredSafetyFeaturesSchema = z
+    .array(z.enum(SAFETY_FEATURES))
+    .max(SAFETY_FEATURES.length)
+    .describe(
+        "Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider.",
+    );
 const AdvertisedSchema = z
     .object(CommunityEndpointAdvertisedSchema.shape)
     .strict()
@@ -46,7 +53,7 @@ const PriceSchema = z
         message: `Price must be 0 (free) or at least ${MIN_COMMUNITY_PRICE_PER_TOKEN} per token (${MIN_COMMUNITY_PRICE_PER_MILLION_TOKENS} per 1M tokens)`,
     })
     .describe(
-        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request".',
+        'Pollen price. Token rates are per token internally (the dashboard displays per 1M); `completionImagePrice` is per generated image when `imagePricing` is "request"; `completionVideoPrice` is per generated second.',
     );
 const UpdatePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [
@@ -106,7 +113,7 @@ const EndpointFieldsSchema = {
         .string()
         .url()
         .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image generation, or image edit URL.",
+            "OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
@@ -124,6 +131,9 @@ const ProxyCreateSchema = z
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
         inputModalities: InputModalitiesSchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
+            [],
+        ),
         advertised: AdvertisedSchema.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
         paidOnly: PaidOnlySchema.optional().default(false),
@@ -142,6 +152,9 @@ export const CreateEndpointAgentSchema = z
         visibility: VisibilitySchema.optional().default("private"),
         baseUrl: EndpointFieldsSchema.baseUrl,
         upstreamModel: EndpointFieldsSchema.upstreamModel,
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
+            [],
+        ),
         perUserRpm: PerUserRpmSchema.optional().default(null),
     })
     .strict();
@@ -151,6 +164,7 @@ const CommonUpdateFieldsSchema = {
     title: EndpointFieldsSchema.title.optional(),
     description: EndpointFieldsSchema.description,
     visibility: VisibilitySchema.optional(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
     hidden: z.boolean().optional(),
 } as const;
 const ProxyUpdateSchema = z
@@ -208,10 +222,19 @@ export const TestEndpointSchema = z
     .object({
         baseUrl: z.string().url(),
         bearerToken: z.string().min(1),
-        model: z.string().trim().min(1).max(253),
+        model: z.string().trim().min(1).max(253).optional(),
         modality: ModalitySchema.optional().default("text"),
     })
-    .strict();
+    .strict()
+    .superRefine((input, ctx) => {
+        if (input.modality !== "video" && !input.model) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["model"],
+                message: "model is required unless modality is video",
+            });
+        }
+    });
 const ResponsePriceFieldsSchema = Object.fromEntries(
     COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => [field.key, z.number()]),
 ) as unknown as Record<CommunityEndpointPriceKey, z.ZodType<number>>;
@@ -239,6 +262,7 @@ const CommunityEndpointResponseFieldsSchema = {
     baseUrl: z.string().url(),
     upstreamModel: z.string().min(1),
     visibility: VisibilitySchema,
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
     pending: PendingCommunityEndpointChangeSchema,
     hidden: z.boolean(),
     hiddenReason: z.string().nullable(),

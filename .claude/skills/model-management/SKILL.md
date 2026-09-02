@@ -113,11 +113,20 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   the inference provider. Keep provider deployment IDs, casing, punctuation,
   and revision suffixes internal when they are routing details rather than the
   publisher's public model identity.
-- Never encode a provider route or fallback in a public canonical ID. Declare
-  routing through the registry's ordered fallback relationship. When that
-  relationship requires a hidden registry target for the same model, name it
-  `<public-canonical-id>:fallback`, mark it hidden, and never expose it in the
-  public catalog.
+- Never encode an inference provider in a public canonical ID. Deduplicate the
+  same publisher model across providers behind one public identity and declare
+  automatic routing through the registry's ordered fallback relationship.
+- Automatic fallback routes are internal registry entries, not public models.
+  Name the only route `<public-canonical-id>:fallback`; if multiple routes are
+  required, append an internal discriminator after `:fallback:`. Mark every
+  route hidden and fallback-only, give it no aliases, and never expose or allow
+  callers to select it. Provider identity and route-specific cost belong on
+  this internal entry; callers retain the requested public model's price.
+- If users must deliberately choose a separately priced or paid-only offering
+  of the exact same publisher model, expose it as
+  `<public-canonical-id>:paid`, never with the inference provider in the slug.
+  Treat it as a separate public contract with its own price, `paidOnly` value,
+  permissions, and aliases. Do not use `:paid` for automatic fallback routing.
 - When multiple entries are only operations or parameter presets of the same
   publisher model, consolidate them under that model identity and select the
   operation through an explicit endpoint or request field. Do not create a
@@ -148,6 +157,9 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   immediately before the Worker deploy. Keep mappings in migrations only; do
   not add a runtime normalization layer.
 - Update every consumer of a changed public ID at once.
+- Add aliases only for existing compatibility contracts or explicit approval.
+- Keep `MODEL_SLUGS.md` complete for every visible first-party model. Use `—`
+  when a model has no historical public ID, and exclude hidden fallback routes.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 

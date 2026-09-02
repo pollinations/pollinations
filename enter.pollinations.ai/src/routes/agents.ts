@@ -23,6 +23,7 @@ import {
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import { RequiredSafetyFeaturesSchema } from "./community-endpoints/schemas.ts";
 
 const ListingFieldsSchema = z.object({
     name: z
@@ -44,20 +45,23 @@ const ListingFieldsSchema = z.object({
 
 // Agent writes are one operation: prompt configuration and catalog identity
 // live in the same community_endpoint row and cannot get out of sync.
-const AgentWriteSchema = PromptAgentInputSchema.extend(
-    ListingFieldsSchema.shape,
-).strict();
+const AgentWriteSchema = PromptAgentInputSchema.extend({
+    ...ListingFieldsSchema.shape,
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
+}).strict();
 const CreateAgentSchema = AgentWriteSchema.extend({
     description: ListingFieldsSchema.shape.description.optional().default(""),
     visibility: ListingFieldsSchema.shape.visibility
         .optional()
         .default("private"),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default([]),
 }).strict();
 const UpdateAgentSchema = PromptAgentInputSchema.extend({
     name: ListingFieldsSchema.shape.name.optional(),
     title: ListingFieldsSchema.shape.title.optional(),
     description: ListingFieldsSchema.shape.description.optional(),
     visibility: ListingFieldsSchema.shape.visibility.optional(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
 }).strict();
 const AgentResponseSchema = z.object({
     id: z.string(),
@@ -69,6 +73,7 @@ const AgentResponseSchema = z.object({
     upstreamModel: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
     mcpServers: z.array(BuiltinMcpServerIdSchema),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -87,12 +92,13 @@ function toResponse(row: AgentRow, baseUrl: string) {
     return {
         id: row.id,
         name: row.name,
-        title: row.title ?? row.name,
+        title: row.title,
         description: row.description,
         visibility: row.visibility,
         baseUrl,
         upstreamModel: row.upstreamModel,
         ...config,
+        requiredSafetyFeatures: row.requiredSafetyFeatures,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -268,6 +274,7 @@ export const agentsRoutes = new Hono<Env>()
                     type: "prompt_agent",
                     baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
                     upstreamModel: id,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: serializePromptAgentConfig(input),
                     visibility: input.visibility,
                     createdAt: new Date(),
@@ -320,6 +327,9 @@ export const agentsRoutes = new Hono<Env>()
                             ? stored.description
                             : input.description || null,
                     visibility,
+                    requiredSafetyFeatures:
+                        input.requiredSafetyFeatures ??
+                        stored.requiredSafetyFeatures,
                     payload: serializePromptAgentConfig(input),
                     updatedAt: new Date(),
                 })

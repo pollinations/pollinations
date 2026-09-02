@@ -150,6 +150,15 @@ describe("provider registry", () => {
             expect.objectContaining({ id: "elliot@myceli.ai" }),
         ]);
 
+        const e2b = resolveProvider("e2b");
+        expect(e2b).toBeDefined();
+        if (!e2b) throw new Error("E2B is not registered");
+        expect(activeProviderAccounts(e2b, "2026-08")).toEqual([
+            expect.objectContaining({
+                id: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+            }),
+        ]);
+
         const regolo = resolveProvider("regolo");
         expect(regolo).toBeDefined();
         if (!regolo) throw new Error("Regolo.ai is not registered");

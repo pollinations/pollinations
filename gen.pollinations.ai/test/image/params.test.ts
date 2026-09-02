@@ -115,6 +115,45 @@ describe("ImageParamsSchema", () => {
         ).toBe(false);
     });
 
+    it("bounds video duration for every public route", () => {
+        for (const duration of [1, 120]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "black-forest-labs/flux.1-schnell",
+                    duration,
+                }).success,
+            ).toBe(true);
+        }
+        for (const duration of [0, 1.5, 121, 1e308]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "black-forest-labs/flux.1-schnell",
+                    duration,
+                }).success,
+                String(duration),
+            ).toBe(false);
+        }
+    });
+
+    it("enforces the public Gemini Omni 1.1 Flash contract", () => {
+        for (const resolution of ["360p", "720p", "1080p", "4k"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "google/gemini-omni-1.1-flash",
+                    resolution,
+                }).success,
+            ).toBe(true);
+        }
+        for (const params of [{ aspectRatio: "1:1" }, { fps: 30 }]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "google/gemini-omni-1.1-flash",
+                    ...params,
+                }).success,
+            ).toBe(false);
+        }
+    });
+
     it("rejects unsupported Grok Imagine Image 2.0 quality", () => {
         const result = ImageParamsSchema.safeParse({
             model: "x-ai/grok-imagine-image-2.0",

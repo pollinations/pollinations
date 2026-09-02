@@ -7,6 +7,8 @@ import { HttpError } from "@shared/http-error.ts";
 import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
+import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
+import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
@@ -64,11 +66,20 @@ export async function createAndReturnVideo(
 
     let result: VideoGenerationResult;
     switch (safeParams.model) {
+        case "google/gemini-omni-1.1-flash":
+            result = await callGeminiOmniAPI(prompt, safeParams);
+            break;
         case "google/veo-3.1-fast":
             result = await callVeoAPI(prompt, safeParams);
             break;
         case "bytedance/seedance-1-pro-fast":
             result = await callSeedanceProAPI(prompt, safeParams);
+            break;
+        case "bytedance/seedance-1-pro-fast:fallback":
+        case "alibaba/wan-2.6:fallback":
+        case "x-ai/grok-imagine-video:fallback":
+        case "x-ai/grok-imagine-video-1.5:fallback":
+            result = await callFalFallbackVideo(prompt, safeParams);
             break;
         case "bytedance/seedance-2.0":
         case "bytedance/seedance-2.0-mini":

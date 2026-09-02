@@ -5,7 +5,7 @@ import {
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 import modelSlugsMarkdown from "../../MODEL_SLUGS.md?raw";
-import migrationSql from "../drizzle/0056_standardize-model-permissions.sql?raw";
+import migrationSql from "../drizzle/0060_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
     ...migrationSql.matchAll(
@@ -17,11 +17,7 @@ const publishedMappings = [
     ...modelSlugsMarkdown.matchAll(/^\|[^\n|]+\| `([^`]+)` \| `([^`]+)` \|$/gm),
 ].map((match) => [match[1], match[2]] as const);
 
-const hiddenMappings = [
-    ["midijourney", "pollinations/midijourney"],
-    ["midijourney-large", "pollinations/midijourney-large"],
-    ["zimage-fal", "tongyi-mai/z-image-turbo:fallback"],
-] as const;
+const hiddenMappings = [["zimage-fal", "tongyi-mai/z-image-turbo"]] as const;
 
 const retiredIds = modelMappings.map(([retired]) => retired);
 const retiredSqlLiterals = retiredIds
@@ -65,23 +61,33 @@ async function runMigrationForTest(): Promise<void> {
 
 describe("standardize model permissions migration", () => {
     it("migrates every promoted canonical ID with bounded statements", async () => {
-        expect(publishedMappings).toHaveLength(155);
+        expect(publishedMappings).toHaveLength(158);
         expect(new Map(modelMappings)).toEqual(
             new Map([...publishedMappings, ...hiddenMappings]),
         );
-        expect(modelMappings).toHaveLength(158);
+        expect(modelMappings).toHaveLength(159);
         expect(new Set(modelMappings.map(([retired]) => retired)).size).toBe(
-            158,
+            159,
         );
         expect(
             new Set(modelMappings.map(([, canonical]) => canonical)).size,
         ).toBe(158);
-        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(158);
+        expect(
+            modelMappings.filter(
+                ([, canonical]) => canonical === "tongyi-mai/z-image-turbo",
+            ),
+        ).toEqual([
+            ["zimage", "tongyi-mai/z-image-turbo"],
+            ["zimage-fal", "tongyi-mai/z-image-turbo"],
+        ]);
+        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(159);
         for (const [retiredId, canonicalId] of modelMappings) {
-            expect(resolveModelName(retiredId)).toBe(canonicalId);
-            expect(getRegistryModelDefinition(canonicalId).aliases).toContain(
-                retiredId,
-            );
+            if (retiredId !== "zimage-fal") {
+                expect(resolveModelName(retiredId)).toBe(canonicalId);
+                expect(
+                    getRegistryModelDefinition(canonicalId).aliases,
+                ).toContain(retiredId);
+            }
             expect(migrationSql).toContain(`model.value = '${retiredId}'`);
             expect(migrationSql).toContain(`THEN '${canonicalId}'`);
             expect(migrationSql).toContain(

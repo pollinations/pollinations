@@ -1,7 +1,7 @@
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
+import { communityOpenAIBaseUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
-    communityOpenAIBaseUrl,
     isFreeCommunityEndpoint,
     normalizeCommunityEndpointBearerToken,
     usesAgentRunToken,

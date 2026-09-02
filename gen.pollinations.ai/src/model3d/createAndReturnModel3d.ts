@@ -1,5 +1,6 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import { callRodinFalAPI } from "./models/rodinModel.ts";
+import { callTrellis2Fal } from "./models/trellis2FalModel.ts";
 import { callTrellis2 } from "./models/trellis2Model.ts";
 import type { Model3dParams } from "./params.ts";
 
@@ -19,6 +20,8 @@ export async function createAndReturnModel3d(
     switch (safeParams.model) {
         case "microsoft/trellis-2":
             return await callTrellis2(safeParams);
+        case "microsoft/trellis-2:fallback":
+            return await callTrellis2Fal(safeParams);
         case "hyper3d/rodin-2.5":
             return await callRodinFalAPI(prompt, safeParams);
         default:

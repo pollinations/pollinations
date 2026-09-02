@@ -1,6 +1,10 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
 import { HttpError } from "@shared/http-error.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
+import {
+    getVisibleImageModels,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
@@ -72,6 +76,23 @@ function communityEntry(
 }
 
 describe("registry fallback linking", () => {
+    it("marks provider routes as hidden, fallback-only registry entries", () => {
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
+            "tongyi-mai/z-image-turbo:fallback",
+        );
+        expect(
+            IMAGE_SERVICES["tongyi-mai/z-image-turbo:fallback"],
+        ).toMatchObject({
+            aliases: [],
+            hidden: true,
+            fallbackOnly: true,
+            provider: "fal",
+        });
+        expect(getVisibleImageModels()).not.toContain(
+            "tongyi-mai/z-image-turbo:fallback",
+        );
+    });
+
     it("uses registry declarations without applying community price rules", () => {
         const primary = registryEntry("primary", ["target-alias", "target"]);
         const target = registryEntry("target", ["primary"], 10);
@@ -246,6 +267,34 @@ describe("registry fallback linking", () => {
 
         expect(primary.fallbackEntries).toBeUndefined();
     });
+
+    it("does not link community fallbacks across modalities", () => {
+        const primary = communityEntry("owner/image", "owner", "public", null, [
+            "owner/video",
+        ]);
+        primary.eventType = "generate.image";
+        primary.communityEndpoint = {
+            ...primary.communityEndpoint,
+            modality: "image",
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const target = communityEntry("owner/video", "owner");
+        // Images and videos share the same event type, so the modality check is
+        // what prevents a stale image fallback from routing into a video model.
+        target.eventType = "generate.image";
+        target.communityEndpoint = {
+            ...target.communityEndpoint,
+            modality: "video",
+        } as GenerationModelEntry["communityEndpoint"];
+
+        const entries = [primary, target];
+        linkFallbackEntries(
+            entries,
+            new Map(entries.map((entry) => [entry.id, entry])),
+        );
+
+        expect(primary.fallbackEntries).toBeUndefined();
+    });
 });
 
 describe("formatFallbackTarget", () => {
@@ -300,37 +349,23 @@ describe("isRetryableFallbackError", () => {
     it("fails over on a rate-limited or broken upstream", () => {
         expect(isRetryableFallbackError(textFailure(429))).toBe(true);
         expect(isRetryableFallbackError(textFailure(503))).toBe(true);
+        expect(isRetryableFallbackError(textFailure(524))).toBe(true);
+        expect(isRetryableFallbackError(textFailure(599))).toBe(true);
         expect(isRetryableFallbackError(new HttpError("down", 500))).toBe(true);
         expect(isRetryableFallbackError(new HttpError("no quota", 402))).toBe(
             true,
         );
     });
 
-    it("honors a model-specific fallback status list", () => {
-        expect(
-            isRetryableFallbackError(new HttpError("queue full", 503), [503]),
-        ).toBe(true);
+    it("uses the wrapper status for a malformed successful response", () => {
         expect(
             isRetryableFallbackError(
-                new HttpError("backend failed", 500),
-                [503],
-            ),
-        ).toBe(false);
-        expect(
-            isRetryableFallbackError(
-                new TypeError("fetch failed: connection refused"),
-                [503],
-            ),
-        ).toBe(true);
-        expect(
-            isRetryableFallbackError(
-                new HttpError("gateway failed", 400, {
-                    status: "failure",
-                    message: "Invalid custom host",
+                Object.assign(new Error("upstream returned no output"), {
+                    status: 502,
+                    upstreamStatus: 200,
                 }),
-                [503],
             ),
-        ).toBe(false);
+        ).toBe(true);
     });
 
     it("does not multiply the owned Portkey timeout across fallbacks", () => {
@@ -517,10 +552,9 @@ describe("withModelFallback", () => {
         expect(seen(attempts)).toEqual(["primary!"]);
     });
 
-    it("uses the primary model's configured fallback status list", async () => {
+    it("tries the next model for any upstream 5xx", async () => {
         const primary = registryEntry("primary", ["second"]);
         const second = registryEntry("second");
-        primary.definition.fallbackOnStatusCodes = [503];
         primary.fallbackEntries = [second];
         const candidates = fallbackCandidates({
             resolved: primary.id,
@@ -528,12 +562,14 @@ describe("withModelFallback", () => {
             fallbackEntries: primary.fallbackEntries,
         });
         const attempt = vi.fn(async () => "served");
-        attempt.mockRejectedValueOnce(new HttpError("backend failed", 500));
+        attempt.mockRejectedValueOnce(new HttpError("gateway timeout", 524));
 
-        await expect(withModelFallback(candidates, attempt)).rejects.toThrow(
-            "backend failed",
-        );
-        expect(attempt).toHaveBeenCalledTimes(1);
+        await expect(withModelFallback(candidates, attempt)).resolves.toEqual({
+            result: "served",
+            candidate: expect.objectContaining({ id: "second" }),
+            index: 1,
+        });
+        expect(attempt).toHaveBeenCalledTimes(2);
     });
 
     it("reports the failed and serving attempts in order", async () => {

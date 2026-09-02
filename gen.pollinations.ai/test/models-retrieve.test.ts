@@ -10,10 +10,12 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
 }
 
 test("retrieves a model by canonical ID", async () => {
-    const response = await fetchWorker("/v1/models/openai-fast");
+    const response = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+    );
     expect(response.status).toBe(200);
     const body = (await response.json()) as Record<string, unknown>;
-    expect(body.id).toBe("openai-fast");
+    expect(body.id).toBe("openai/gpt-5-nano");
     expect(body.object).toBe("model");
     expect(typeof body.created).toBe("number");
     // Stable registry metadata, not the request wall clock
@@ -23,6 +25,20 @@ test("retrieves a model by canonical ID", async () => {
     expect(typeof body.owned_by).toBe("string");
 });
 
+test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {
+    const model = "z-ai/glm-5.3-flash";
+    const response = await fetchWorker(
+        `/v1/models/${encodeURIComponent(model)}`,
+        {
+            headers: { Authorization: `Bearer ${paidApiKey}` },
+        },
+    );
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe(model);
+});
+
 test("resolves an alias to the canonical ID with identical metadata", async () => {
     const byAlias = await fetchWorker("/v1/models/gpt-5-nano");
     expect(byAlias.status).toBe(200);
@@ -30,9 +46,11 @@ test("resolves an alias to the canonical ID with identical metadata", async () =
         id: string;
         created: number;
     };
-    expect(aliasBody.id).toBe("openai-fast");
+    expect(aliasBody.id).toBe("openai/gpt-5-nano");
 
-    const byId = await fetchWorker("/v1/models/openai-fast");
+    const byId = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+    );
     const idBody = (await byId.json()) as { created: number };
     expect(aliasBody.created).toBe(idBody.created);
 });
@@ -43,10 +61,12 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
-    const listed = list.data.find((m) => m.id === "openai-fast");
+    const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed).toBeDefined();
 
-    const retrieveResponse = await fetchWorker("/v1/models/openai-fast");
+    const retrieveResponse = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+    );
     const retrieved = (await retrieveResponse.json()) as Record<
         string,
         unknown
@@ -68,7 +88,7 @@ test("returns 404 when API key permissions exclude the model", async ({
     expect(excluded.status).toBe(404);
 
     const allowed = await fetchWorker(
-        `/v1/models/${RESTRICTED_TEXT_TEST_MODEL}`,
+        `/v1/models/${encodeURIComponent(RESTRICTED_TEXT_TEST_MODEL)}`,
         {
             headers: { Authorization: `Bearer ${restrictedApiKey}` },
         },
@@ -90,7 +110,17 @@ test("hides paid-only models from callers without paid balance", async ({
     });
     expect(withBalance.status).toBe(200);
     const body = (await withBalance.json()) as { id: string };
-    expect(body.id).toBe("krea");
+    expect(body.id).toBe("krea/krea-2-medium");
+});
+
+test("shows Grok 4.6 to callers without paid balance", async ({ apiKey }) => {
+    const response = await fetchWorker("/v1/models/grok-4.6", {
+        headers: { Authorization: `Bearer ${apiKey}` },
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { id: string };
+    expect(body.id).toBe("x-ai/grok-4.6");
 });
 
 test("applies the same 404 rule to aliases of hidden models", async ({

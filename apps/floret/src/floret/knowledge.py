@@ -53,9 +53,9 @@ def models_summary(kind: str | None = None) -> str:
     lines: list[str] = []
     by_mod: dict[str, list[str]] = {}
     for mid, meta in catalog.items():
-        for mod in meta.get("modalities", []) or ["text"]:
+        for mod in meta.get("modalities", []):
             by_mod.setdefault(mod, []).append(mid)
-    order = ["text", "image", "video", "audio", "transcript"]
+    order = ["text", "image", "video", "audio", "audio_transform", "transcript"]
     for mod in order:
         if kind and mod != kind:
             continue
@@ -81,7 +81,7 @@ def build_system_prompt() -> str:
     catalog = get_model_catalog()
     counts: dict[str, int] = {}
     for meta in catalog.values():
-        for mod in meta.get("modalities", []) or ["text"]:
+        for mod in meta.get("modalities", []):
             counts[mod] = counts.get(mod, 0) + 1
     inventory = ", ".join(f"{v} {k}" for k, v in sorted(counts.items())) or "loading"
 
@@ -95,10 +95,14 @@ How to work:
 - Decide what deliverables best answer the request, then produce them. "Explain X" often \
 means a clear text explanation AND supporting images AND optionally narrated audio — use your \
 judgement and be generous; the user wants a complete result, not the minimum.
+- Use `generate_text` to delegate work to any requested text model, especially one that cannot \
+call tools itself. Use canonical model IDs from `list_models`.
 - To create several illustrations (e.g. steps of a process), call `generate_image` with n>1 or \
 make multiple calls in one turn — they run in parallel.
 - For narration: WRITE the script yourself, then pass that exact script to `text_to_speech`. \
 The audio reads your text verbatim, so never pass an instruction — pass the words to be spoken.
+- `text_to_speech` also generates music, sound effects, and dialogue when given the matching \
+audio model. For `eleven-dialogue`, format each line as `voice: text`.
 - Pick models by strength (see below) or omit `model` to auto-select. Retry with a different \
 model if a tool returns an ERROR.
 - Media plumbing: `fetch_media` brings any media into the bash workspace (curl cannot \

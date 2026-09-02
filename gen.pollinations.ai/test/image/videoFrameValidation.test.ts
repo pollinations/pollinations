@@ -12,17 +12,22 @@ import {
 import type { ImageParams } from "../../src/image/params.ts";
 
 const VIDEO_FRAME_LIMITS = [
+    ["google/gemini-omni-1.1-flash", 2],
     ["google/veo-3.1-fast", 2],
     ["bytedance/seedance-1-pro-fast", 1],
+    ["bytedance/seedance-1-pro-fast:fallback", 1],
     ["bytedance/seedance-2.0", 2],
     ["bytedance/seedance-2.0-mini", 2],
     ["bytedance/seedance-2.0-fast", 2],
     ["alibaba/wan-2.6", 1],
-    ["alibaba/wan-3.0", 1],
+    ["alibaba/wan-2.6:fallback", 1],
+    ["alibaba/wan-3.0", 2],
     ["alibaba/wan-2.2-fast", 2],
     ["alibaba/wan-2.7", 2],
     ["x-ai/grok-imagine-video", 1],
+    ["x-ai/grok-imagine-video:fallback", 1],
     ["x-ai/grok-imagine-video-1.5", 1],
+    ["x-ai/grok-imagine-video-1.5:fallback", 1],
     ["bytedance/seedance-2.5", 2],
     ["alibaba/happyhorse-1.1", 1],
     ["minimax/minimax-h3", 0],

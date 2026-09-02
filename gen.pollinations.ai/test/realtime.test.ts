@@ -124,7 +124,7 @@ function mockRealtimeProvider(initialMessage?: string, estimatedCost = 0) {
                         estimatedCost > 0
                             ? [
                                   {
-                                      model: "openai/gpt-realtime-2",
+                                      model: "openai/gpt-realtime-2.1",
                                       avg_cost_usd: estimatedCost,
                                   },
                               ]
@@ -245,7 +245,7 @@ async function waitForTinybirdRequests(
 
 async function openPaidRealtimeSession({
     name,
-    model = "gpt-realtime-2",
+    model = "gpt-realtime-2.1",
     referrer,
     initialProviderMessage,
     byopClientKeyId,
@@ -479,7 +479,7 @@ test("proxies OpenAI-compatible realtime WebSockets on both public routes", asyn
 test("forwards the initial Azure session event after listeners are attached", async () => {
     const initialProviderMessage = JSON.stringify({
         type: "session.created",
-        session: { model: "gpt-realtime-2" },
+        session: { model: "gpt-realtime-2-1" },
     });
     const session = await openPaidRealtimeSession({
         name: "azure-realtime-initial-event-key",
@@ -1293,7 +1293,7 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
-    expect(telemetry.resolvedModelRequested).toBe("openai/gpt-realtime-2");
+    expect(telemetry.resolvedModelRequested).toBe("openai/gpt-realtime-2.1");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptText).toBe(200);
     expect(telemetry.tokenCountPromptCached).toBe(40);
@@ -1387,7 +1387,7 @@ test("does not retry a partially completed realtime deduction", async () => {
 });
 
 test.each([
-    "openai/gpt-realtime-2",
+    "gpt-realtime-2",
     "openai/gpt-realtime-2.1",
 ] as const)("bills %s cached image tokens at $0.50/M", async (model) => {
     const session = await openPaidRealtimeSession({
@@ -1407,7 +1407,7 @@ test.each([
     const expectedCharge = expectedCost * 0.75;
     const user = await waitForPackBalanceBelow(session.userId, 1);
     expect(user?.packBalance).toBeCloseTo(1 - expectedCharge, 8);
-    expect(telemetry.resolvedModelRequested).toBe(model);
+    expect(telemetry.resolvedModelRequested).toBe("openai/gpt-realtime-2.1");
     expect(telemetry.tokenCountPromptText).toBe(60);
     expect(telemetry.tokenCountPromptCached).toBe(60);
     expect(telemetry.tokenCountPromptAudio).toBe(70);
@@ -1628,13 +1628,12 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     };
     const realtimeModels = publicBody.data.filter((model) =>
         [
-            "openai/gpt-realtime-2",
             "openai/gpt-realtime-2.1",
             "openai/gpt-realtime-2.1-mini",
             "openai/gpt-live-transcribe",
         ].includes(model.id),
     );
-    expect(realtimeModels).toHaveLength(4);
+    expect(realtimeModels).toHaveLength(3);
     for (const model of realtimeModels) {
         expect(model.supported_endpoints).toContain("/v1/realtime");
     }
@@ -1663,6 +1662,11 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     const scribeRealtime = richModels.find(
         (model) => model.name === "elevenlabs/scribe-v2-realtime",
     );
+    expect(
+        richModels.find((model) => model.name === "openai/gpt-realtime-2.1"),
+    ).toMatchObject({
+        aliases: ["gpt-realtime-2.1", "gpt-realtime-2"],
+    });
     expect(scribeRealtime).toMatchObject({
         aliases: ["scribe-realtime"],
         author: "ElevenLabs",

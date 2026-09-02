@@ -9,13 +9,12 @@ import type { ModelDefinition } from "./registry";
  * asked for. `provider` is required because it is the one thing a route must
  * not inherit: it is what makes the route a route, and what the spend is
  * attributed to. The omitted fields are owned by the merge — a route is always
- * hidden and never chains further. Aliases are route-owned because a canonical
- * route rename must preserve its previous public ID.
+ * hidden and fallback-only, carries no aliases, and never chains further.
  */
 export type FallbackDefinition = Partial<
     Omit<
         ModelDefinition,
-        "fallbacks" | "fallbackOnStatusCodes" | "hidden" | "provider"
+        "aliases" | "fallbacks" | "fallbackOnly" | "hidden" | "provider"
     >
 > & { provider: string };
 
@@ -29,8 +28,10 @@ export type FallbackDefinition = Partial<
 export type FallbackMap = Record<string, Record<string, FallbackDefinition>>;
 
 /** The ids the merge adds to the catalog. */
-type RouteIds<TFallbacks extends FallbackMap> =
-    keyof TFallbacks[keyof TFallbacks] & string;
+type RouteIds<TFallbacks extends FallbackMap> = {
+    [ParentId in keyof TFallbacks]: keyof TFallbacks[ParentId];
+}[keyof TFallbacks] &
+    string;
 
 /**
  * The catalog as it comes out: routes added as models, and every parent
@@ -66,15 +67,17 @@ export function mergeFallbacks<
         const {
             aliases: _aliases,
             fallbacks: _fallbacks,
-            fallbackOnStatusCodes: _statusCodes,
+            fallbackOnly: _fallbackOnly,
+            hidden: _hidden,
             ...inherited
         } = parent;
         for (const [routeId, overrides] of Object.entries(routes)) {
             merged[routeId] = {
                 ...inherited,
                 ...overrides,
-                aliases: [...(overrides.aliases ?? [])],
+                aliases: [],
                 hidden: true,
+                fallbackOnly: true,
             };
         }
     }

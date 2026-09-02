@@ -115,7 +115,7 @@ When `stream: true` is set, usage info still arrives on the final chunk (`stream
 
 ## 🖼️ Vision: passing images into chat
 
-Models that accept image input (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.6-flash`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
+Models that accept image input (`openai/gpt-5.4-nano`, `anthropic/claude-sonnet-4.6`, `google/gemini-3.7-flash`, …) use the standard OpenAI multimodal `content` shape — an array of typed parts instead of a plain string.
 
 ```bash
 curl "https://gen.pollinations.ai/v1/chat/completions" \

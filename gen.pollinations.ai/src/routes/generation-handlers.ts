@@ -8,18 +8,14 @@ import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
+import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import {
     generateEmbeddings,
     getEmbeddingProviderModelId,
 } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt } from "@/image/handler.ts";
-import {
-    applySafety,
-    applySafetyToChatRequest,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
 import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
@@ -125,7 +121,7 @@ export type SimpleAudioQuery = z.infer<typeof simpleAudioQuerySchema>;
 
 export async function generateImageVideo(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -135,7 +131,7 @@ export async function generateImageVideo(c: Context<Env>): Promise<Response> {
 
 export async function generateModel3d(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -151,8 +147,16 @@ export async function generateEmbeddingsResponse(
     >;
     return withModelFallbackResponse(
         c.var.model,
-        (candidate) =>
-            generateEmbeddings(
+        (candidate) => {
+            if (candidate.communityEndpoint) {
+                return generateCommunityEmbeddings(
+                    candidate.communityEndpoint,
+                    requestBody,
+                    candidate.id,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+            }
+            return generateEmbeddings(
                 c.env,
                 {
                     ...requestBody,
@@ -160,7 +164,8 @@ export async function generateEmbeddingsResponse(
                 },
                 candidate.definition ?? c.var.model.definition,
                 candidate.id,
-            ),
+            );
+        },
         c.var.track?.attempts,
         (candidate) => enforceModelRateLimit(c, candidate),
     );
@@ -169,7 +174,7 @@ export async function generateEmbeddingsResponse(
 export async function generateChatCompletion(
     c: Context<Env>,
 ): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -211,7 +216,7 @@ export async function generateChatCompletion(
 }
 
 export async function generateTextContent(c: Context<Env>): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -228,7 +233,7 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
         typeof query.system === "string"
             ? [c.req.param("prompt"), query.system]
             : [c.req.param("prompt")];
-    const [prompt, system] = await applySafetyToTexts(
+    const [prompt, system] = await applySafetyToInput(
         c,
         textInputs,
         query.safe,

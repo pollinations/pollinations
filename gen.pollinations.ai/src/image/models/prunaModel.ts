@@ -29,6 +29,8 @@ const DEEPINFRA_TIMEOUT_MS = 120_000;
 const DEEPINFRA_IMAGE_MODELS = {
     "prunaai/p-image": "PrunaAI/p-image",
     "prunaai/p-image-edit": "PrunaAI/p-image-Edit",
+    "black-forest-labs/flux.1-schnell:fallback":
+        "black-forest-labs/FLUX-1-schnell",
 } as const;
 
 // p-image-edit / p-video accept up to this many reference images.
@@ -71,6 +73,14 @@ interface PImageEditInput {
     seed?: number;
 }
 
+interface FluxSchnellInput {
+    prompt: string;
+    width: number;
+    height: number;
+    num_images: 1;
+    seed?: number;
+}
+
 interface PVideoInput {
     prompt: string;
     resolution: "720p" | "1080p";
@@ -91,11 +101,14 @@ interface DeepInfraImageOutput {
     inference_status?: DeepInfraInferenceStatus;
 }
 
-async function generatePrunaImage(
+async function generateDeepInfraImage(
     actualModel: keyof typeof DEEPINFRA_IMAGE_MODELS,
-    input: PImageInput | PImageEditInput,
+    input: PImageInput | PImageEditInput | FluxSchnellInput,
 ): Promise<ImageGenerationResult> {
-    const displayName = `Pruna ${actualModel}`;
+    const displayName =
+        actualModel === "black-forest-labs/flux.1-schnell:fallback"
+            ? "FLUX.1 Schnell"
+            : `Pruna ${actualModel}`;
     const apiKey = getImageEnv("DEEPINFRA_API_KEY");
     if (!apiKey) {
         throw new HttpError(
@@ -148,6 +161,24 @@ async function generatePrunaImage(
             },
         },
     };
+}
+
+/** Exact FLUX.1 Schnell fallback served by DeepInfra. */
+export async function callFluxSchnellDeepInfraAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const input: FluxSchnellInput = {
+        prompt,
+        width: safeParams.width,
+        height: safeParams.height,
+        num_images: 1,
+    };
+    if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+    return generateDeepInfraImage(
+        "black-forest-labs/flux.1-schnell:fallback",
+        input,
+    );
 }
 
 /**
@@ -217,7 +248,7 @@ export async function callPrunaImageAPI(
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-    return generatePrunaImage("prunaai/p-image", input);
+    return generateDeepInfraImage("prunaai/p-image", input);
 }
 
 // =============================================================================
@@ -254,7 +285,7 @@ export async function callPrunaImageEditAPI(
         images: `[${images.length} image references]`,
     });
 
-    return generatePrunaImage("prunaai/p-image-edit", input);
+    return generateDeepInfraImage("prunaai/p-image-edit", input);
 }
 
 // =============================================================================

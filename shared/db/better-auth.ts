@@ -6,6 +6,7 @@
 // and re-generating the schema including the indexes.
 
 import { LISTING_TYPES } from "../community-endpoints.ts";
+import type { SafetyFeature } from "../schemas/safety.ts";
 import { relations, sql } from "drizzle-orm";
 import {
   check,
@@ -204,9 +205,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   name: text("name").notNull(),
-  // Nullable: rows predating titles fall back to communityEndpointTitle().
-  // Required on create, so only the pre-existing backlog is null.
-  title: text("title"),
+  title: text("title").notNull(),
   description: text("description"),
   // What this listing IS to callers, and the only thing deciding whether a
   // call is sent a run token that spends the caller's balance.
@@ -219,6 +218,11 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // deployment's AGENT_RUNTIME_BASE_URL.
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
+  // Gateway policy shared by every community model and agent type.
+  requiredSafetyFeatures: text("required_safety_features", { mode: "json" })
+    .$type<SafetyFeature[]>()
+    .default(sql`'[]'`)
+    .notNull(),
   // Everything that belongs to one kind of listing rather than all of them.
   // Shape is selected by `type`; read it with parseListingPayload. Fields a
   // kind does not have simply have nowhere to live, which is what replaced the

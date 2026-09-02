@@ -56,9 +56,112 @@ export interface AgentToolActivity {
     status: "running" | "failed";
 }
 
+type JsonValue =
+    | string
+    | number
+    | boolean
+    | null
+    | JsonValue[]
+    | { [key: string]: JsonValue };
+
+export type AgentMessagePart =
+    | { type: "text"; text: string }
+    | {
+          type: "tool-call";
+          toolCallId: string;
+          toolName: string;
+          args: { [key: string]: JsonValue };
+          argsText: string;
+          result: unknown;
+          isError: boolean;
+      };
+
 export interface AgentResourceCandidate extends RenderedMedia {
     callId: string;
     mediaType?: string;
+}
+
+const TOOL_DETAILS_PATTERN =
+    /<details\b([^>]*)>\s*<summary>([\s\S]*?)<\/summary>\s*([\s\S]*?)<\/details>/gi;
+const DETAILS_ATTRIBUTE_PATTERN = /([\w:-]+)\s*=\s*"([^"]*)"/g;
+
+function decodeAgentHtml(value: string): string {
+    return value.replace(
+        /&(amp|lt|gt|quot|#39);/g,
+        (entity) =>
+            ({
+                "&amp;": "&",
+                "&lt;": "<",
+                "&gt;": ">",
+                "&quot;": '"',
+                "&#39;": "'",
+            })[entity] ?? entity,
+    );
+}
+
+function detailsAttributes(source: string): Record<string, string> {
+    const attributes: Record<string, string> = {};
+    for (const match of source.matchAll(DETAILS_ATTRIBUTE_PATTERN)) {
+        attributes[match[1]] = decodeAgentHtml(match[2]);
+    }
+    return attributes;
+}
+
+function jsonObject(source: string): { [key: string]: JsonValue } {
+    try {
+        const parsed = JSON.parse(source) as JsonValue;
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed))
+            return parsed;
+        return { value: parsed };
+    } catch {
+        return {};
+    }
+}
+
+function toolResult(source: string): unknown {
+    const decoded = decodeAgentHtml(source.trim());
+    try {
+        return JSON.parse(decoded) as unknown;
+    } catch {
+        return decoded;
+    }
+}
+
+/** Convert managed-agent tool markup into assistant-ui compatible parts. */
+export function parseAgentMessage(content: string): AgentMessagePart[] {
+    const parts: AgentMessagePart[] = [];
+    let cursor = 0;
+
+    for (const match of content.matchAll(TOOL_DETAILS_PATTERN)) {
+        const index = match.index;
+        if (index > cursor)
+            parts.push({ type: "text", text: content.slice(cursor, index) });
+
+        const attributes = detailsAttributes(match[1]);
+        if (
+            attributes.type !== "tool_calls" ||
+            !attributes.id ||
+            !attributes.name
+        ) {
+            parts.push({ type: "text", text: match[0] });
+        } else {
+            const argsText = attributes.arguments || "{}";
+            parts.push({
+                type: "tool-call",
+                toolCallId: attributes.id,
+                toolName: attributes.name,
+                args: jsonObject(argsText),
+                argsText,
+                result: toolResult(match[3]),
+                isError: decodeAgentHtml(match[2]) === "Tool Failed",
+            });
+        }
+        cursor = index + match[0].length;
+    }
+
+    if (cursor < content.length)
+        parts.push({ type: "text", text: content.slice(cursor) });
+    return parts.length > 0 ? parts : [{ type: "text", text: content }];
 }
 
 export type ChatMessageStatus =

@@ -42,6 +42,7 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     147928812, // iotserver24
     24752658, // zero2launch
     170070104, // NamanSoni78
+    313017538, // lolyeon2011-oss
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

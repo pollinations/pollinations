@@ -54,8 +54,7 @@ const textCacheAdapter: GenerationCacheAdapter = {
     },
     capture(c, cacheKey, response) {
         const capture = createCaptureStream(c, cacheKey, response);
-        const transformedBody = response.body?.pipeThrough(capture.stream);
-        const captured = new Response(transformedBody, {
+        const captured = new Response(capture.stream, {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,

@@ -31,7 +31,6 @@ import {
 } from "./client.js";
 import {
     ResponsesInvalidRequestError,
-    responsesInvalidRequest,
     validateDirectResponsesRequest,
 } from "./request.js";
 import { applySafetyToResponseRequest } from "./safety.js";
@@ -55,7 +54,7 @@ function directResponsesCandidates(
     const candidates = fallbackCandidates(c.var.model);
     const primary = candidates[0];
     if (!primary || primary.communityEndpoint || primary.entry?.agentConfig) {
-        throw responsesInvalidRequest(
+        throw new ResponsesInvalidRequestError(
             `Model ${request.model} does not support the direct Responses API`,
         );
     }
@@ -65,7 +64,7 @@ function directResponsesCandidates(
         c.env,
     );
     if (!primaryTarget) {
-        throw responsesInvalidRequest(
+        throw new ResponsesInvalidRequestError(
             `Model ${request.model} does not support the direct Responses API`,
         );
     }
@@ -157,16 +156,10 @@ async function handleDirectResponse(
         }
 
         if (!request.stream) {
-            if (!result.usage) {
-                throw new UpstreamError(502, {
-                    message: "Responses provider omitted usage",
-                    requestUrl: result.requestUrl,
-                });
-            }
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
                     candidate.id,
-                    responsesUsageToUsage(result.usage),
+                    responsesUsageToUsage(result.usage as ResponseUsage),
                 ),
             )) {
                 headers.set(name, value);

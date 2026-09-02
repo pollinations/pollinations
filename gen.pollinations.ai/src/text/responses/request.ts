@@ -25,13 +25,6 @@ export class ResponsesInvalidRequestError extends Error {
     }
 }
 
-export function responsesInvalidRequest(
-    message: string,
-    param: string | null = "model",
-): ResponsesInvalidRequestError {
-    return new ResponsesInvalidRequestError(message, param);
-}
-
 export function validateDirectResponsesRequest(
     request: CreateResponseRequest,
 ): void {
@@ -45,7 +38,7 @@ export function validateDirectResponsesRequest(
         if (!value || typeof value !== "object") continue;
         const item = value as Record<string, unknown>;
         if ("encrypted_content" in item || item.type === "item_reference") {
-            throw responsesInvalidRequest(
+            throw new ResponsesInvalidRequestError(
                 "Encrypted or reusable response state is not supported by the stateless Responses endpoint",
                 "input",
             );

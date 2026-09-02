@@ -74,22 +74,47 @@ export function createResponsesStreamUsageValidator() {
 }
 
 /**
- * Preserve upstream SSE bytes while making the client body fail if the
- * provider ends without a terminal Responses event containing valid usage.
+ * Preserve valid upstream SSE bytes and end invalid streams with a Responses
+ * error event when the provider omits terminal usage.
  */
-export function requireResponsesStreamUsage<Chunk extends Uint8Array>(
-    body: ReadableStream<Chunk>,
-): ReadableStream<Chunk> {
+function responsesUsageErrorEvent(
+    error: ResponsesUsageError,
+): Uint8Array<ArrayBuffer> {
+    return new TextEncoder().encode(
+        `event: error\ndata: ${JSON.stringify({
+            type: "error",
+            code: "usage_missing",
+            message: error.message,
+            param: null,
+            sequence_number: 0,
+        })}\n\n`,
+    );
+}
+
+export function requireResponsesStreamUsage(
+    body: ReadableStream<Uint8Array<ArrayBuffer>>,
+): ReadableStream<Uint8Array<ArrayBuffer>> {
     const validator = createResponsesStreamUsageValidator();
 
     return body.pipeThrough(
-        new TransformStream<Chunk, Chunk>({
+        new TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>({
             transform(chunk, controller) {
-                validator.feed(chunk);
-                controller.enqueue(chunk);
+                try {
+                    validator.feed(chunk);
+                    controller.enqueue(chunk);
+                } catch (error) {
+                    if (!(error instanceof ResponsesUsageError)) throw error;
+                    controller.enqueue(responsesUsageErrorEvent(error));
+                    controller.terminate();
+                }
             },
-            flush() {
-                validator.finish();
+            flush(controller) {
+                try {
+                    validator.finish();
+                } catch (error) {
+                    if (!(error instanceof ResponsesUsageError)) throw error;
+                    controller.enqueue(responsesUsageErrorEvent(error));
+                }
             },
         }),
     );

@@ -6,7 +6,6 @@ import { resolveModelConfig } from "../utils/modelResolver.js";
 import { isPlainObject } from "../utils/objectCleaners.js";
 import { buildDirectResponsesRequestBody } from "./request.js";
 
-const REQUEST_TIMEOUT_MS = 290_000;
 type JsonObject = Record<string, unknown>;
 
 export type DirectResponsesTarget = {
@@ -55,14 +54,8 @@ export function resolveDirectResponsesTarget(
             : config.responsesAuthHeader === "api-key"
               ? { "api-key": authKey }
               : { Authorization: `Bearer ${authKey}` };
-    const configuredHeaders = isPlainObject(config.responsesHeaders)
-        ? (config.responsesHeaders as Record<string, string>)
-        : {};
     const chatDefaults = isPlainObject(config.defaultOptions)
         ? config.defaultOptions
-        : {};
-    const responsesDefaults = isPlainObject(config.responsesDefaults)
-        ? config.responsesDefaults
         : {};
     const defaults: JsonObject = {
         ...(chatDefaults.provider === undefined
@@ -71,13 +64,12 @@ export function resolveDirectResponsesTarget(
         ...(chatDefaults.max_tokens === undefined
             ? {}
             : { max_output_tokens: chatDefaults.max_tokens }),
-        ...responsesDefaults,
     };
 
     return {
         authConfigured: typeof authKey === "string" && authKey.length > 0,
         endpoint,
-        headers: { ...authHeader, ...configuredHeaders },
+        headers: authHeader,
         model: String(resolved.model),
         defaults,
     };
@@ -131,7 +123,6 @@ export async function callDirectResponses(
             body: JSON.stringify(
                 buildDirectResponsesRequestBody(request, target),
             ),
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
         });
     } catch (thrown) {
         const error =

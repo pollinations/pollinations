@@ -165,6 +165,7 @@ describe("direct Responses transport", () => {
                 expect(new Headers(init?.headers).get("Authorization")).toBe(
                     "Bearer openrouter-test-key",
                 );
+                expect(init?.signal).toBeUndefined();
                 return Response.json(body);
             },
         );

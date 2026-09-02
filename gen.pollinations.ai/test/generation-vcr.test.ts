@@ -3,6 +3,7 @@ import {
     env,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import {
     test as baseTest,
     createTestApiKey,
@@ -13,6 +14,7 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createMockVcr } from "@shared/test/mocks/vcr.ts";
+import { drizzle } from "drizzle-orm/d1";
 import { afterEach, expect, inject } from "vitest";
 import worker from "../src/index.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
@@ -331,8 +333,11 @@ async function fakePortkeyResponse(request: Request) {
                 ...streamUsageExtras,
             },
         };
+        const usageChunk = prompt.includes("vcr missing chat stream usage")
+            ? ""
+            : `data: ${JSON.stringify(usageEvent)}\n\n`;
         return new Response(
-            `data: ${JSON.stringify(streamEvent)}\n\ndata: ${JSON.stringify(usageEvent)}\n\ndata: [DONE]\n\n`,
+            `data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}data: [DONE]\n\n`,
             {
                 headers: {
                     "content-type": "text/event-stream; charset=utf-8",
@@ -642,6 +647,49 @@ test("chat completions reject a successful envelope without usage", async ({
     });
 });
 
+test("chat streaming without usage fails closed and remains unbilled", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({
+        name: "missing-chat-stream-usage",
+        user: { packBalance: 100 },
+    });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            stream: true,
+            messages: [
+                { role: "user", content: "vcr missing chat stream usage" },
+            ],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain('"code":"usage_missing"');
+    expect(stream).not.toContain("[DONE]");
+    await wait();
+
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
 test("direct Responses JSON preserves protocol and bills once", async ({
     paidApiKey,
     mocks,
@@ -788,6 +836,50 @@ test("direct Responses SSE is unchanged and terminal usage bills once", async ({
         tokenCountCompletionReasoning: 3,
         isBilledUsage: true,
     });
+});
+
+test("Responses streaming without usage fails closed and remains unbilled", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "responsesDirect");
+    mocks.responsesDirect.state.omitUsage = true;
+    const caller = await createTestApiKey({
+        name: "missing-responses-stream-usage",
+        user: { packBalance: 100 },
+    });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+
+    const { response, wait } = await fetchWorker("/v1/responses", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "qwen-large",
+            input: "missing Responses stream usage",
+            stream: true,
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("event: error");
+    expect(stream).toContain('"type":"error"');
+    expect(stream).toContain('"code":"usage_missing"');
+    expect(stream).not.toContain("event: response.completed");
+    await wait();
+
+    expect(mocks.responsesDirect.state.requests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });
 
 test("direct Responses tracks terminal type supplied only by the SSE event field", async ({

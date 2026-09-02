@@ -78,19 +78,42 @@ export function createChatStreamUsageValidator() {
     };
 }
 
-export function requireChatStreamUsage<Chunk extends Uint8Array>(
-    body: ReadableStream<Chunk>,
-): ReadableStream<Chunk> {
+function chatUsageErrorEvent(error: ChatUsageError): Uint8Array<ArrayBuffer> {
+    return new TextEncoder().encode(
+        `data: ${JSON.stringify({
+            error: {
+                message: error.message,
+                type: "upstream_error",
+                code: "usage_missing",
+            },
+        })}\n\n`,
+    );
+}
+
+export function requireChatStreamUsage(
+    body: ReadableStream<Uint8Array<ArrayBuffer>>,
+): ReadableStream<Uint8Array<ArrayBuffer>> {
     const validator = createChatStreamUsageValidator();
 
     return body.pipeThrough(
-        new TransformStream<Chunk, Chunk>({
+        new TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>({
             transform(chunk, controller) {
-                validator.feed(chunk);
-                controller.enqueue(chunk);
+                try {
+                    validator.feed(chunk);
+                    controller.enqueue(chunk);
+                } catch (error) {
+                    if (!(error instanceof ChatUsageError)) throw error;
+                    controller.enqueue(chatUsageErrorEvent(error));
+                    controller.terminate();
+                }
             },
-            flush() {
-                validator.finish();
+            flush(controller) {
+                try {
+                    validator.finish();
+                } catch (error) {
+                    if (!(error instanceof ChatUsageError)) throw error;
+                    controller.enqueue(chatUsageErrorEvent(error));
+                }
             },
         }),
     );

@@ -105,6 +105,9 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 ### 4. Implement the smallest complete change
 
+- Canonical public IDs use lowercase
+  `<publisher-slug>/<official-model-slug>` and preserve the official family
+  and version. Keep provider deployment IDs and routing internal.
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
 - Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
@@ -131,6 +134,8 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   immediately before the Worker deploy. Keep mappings in migrations only; do
   not add a runtime normalization layer.
 - Update every consumer of a changed public ID at once.
+- Add aliases only for existing compatibility contracts or explicit approval.
+- Add models to `MODEL_SLUGS.md` only when renaming a historical public ID.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 

@@ -50,6 +50,8 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
     GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
@@ -76,6 +78,7 @@ import {
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
     generationAccess,
@@ -179,6 +182,18 @@ const chatCompletionHandlers = factory.createHandlers(
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+const responsesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textCache,
+    generationAccess,
+    deduplicateGeneration,
+    apiKeyBudgetReservation,
+    generateCreateResponse,
 );
 
 // Helper to filter models by API key permissions and paid balance.
@@ -617,22 +632,68 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
+                "",
+                "Successful JSON responses contain usage. Streaming responses contain a usage chunk before `[DONE]`; missing provider usage fails the response.",
             ].join("\n"),
             responses: {
                 200: {
-                    description: "Success",
+                    description: "Chat completion JSON or SSE stream",
                     content: {
                         "application/json": {
                             schema: resolver(
                                 CreateChatCompletionResponseSchema,
                             ),
                         },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "OpenAI-compatible Chat Completions SSE events ending with a usage chunk and data: [DONE]",
+                                }),
+                            ),
+                        },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/responses",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Response",
+            description: [
+                "Generate a stateless response through a model whose configured upstream exposes the OpenAI Responses API.",
+                "",
+                "Requests and streaming events are sent directly to that upstream without conversion to Chat Completions. Models without a verified direct Responses route return an unsupported-model error.",
+                "",
+                "Response storage, previous response IDs, conversations, background execution, encrypted reusable state, and hosted tools are not supported.",
+                "",
+                "Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Responses JSON or semantic Responses SSE",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateResponseResponseSchema),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Semantic Responses API SSE events ending with response.completed, response.incomplete, or response.failed containing usage",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...responsesHandlers,
     )
     .post(
         "/v1/embeddings",

@@ -8,7 +8,9 @@ import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import {
@@ -46,6 +48,20 @@ export type ModelVariables = {
     formData?: FormData;
 };
 
+/** Required checks for every provider this request may reach. */
+export function getRequiredSafetyFeatures(
+    model: ModelVariables["model"] | undefined,
+): SafetyFeature[] {
+    const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
+    for (const fallback of model?.fallbackEntries ?? []) {
+        for (const feature of fallback.definition.requiredSafetyFeatures ??
+            []) {
+            features.add(feature);
+        }
+    }
+    return [...features].sort();
+}
+
 type ResolveModelOptions = {
     defaultModel?: string;
     supportedEndpoint?: string;
@@ -75,6 +91,14 @@ export async function resolveModelDefinition(
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
     if (!entry) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    // Provider routes are registry entries so fallback linking and billing can
+    // use them, but callers must select the public model they belong to.
+    if (entry.definition.fallbackOnly === true) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -201,7 +225,7 @@ export function resolveModel(
             c.var.auth?.user?.id,
             options?.supportedEndpoint,
         );
-        // Hidden registry fallbacks are provider implementations of the public
+        // Fallback-only entries are provider implementations of the public
         // model the caller selected, so they inherit that model's permission.
         // Visible and community targets remain independently scoped: a key can
         // never be served — or billed for — a model it could not call directly.
@@ -209,12 +233,13 @@ export function resolveModel(
         if (allowedModels && resolved.fallbackEntries) {
             resolved.fallbackEntries = resolved.fallbackEntries.filter(
                 (entry) =>
-                    (entry.definition.hidden === true &&
+                    (entry.definition.fallbackOnly === true &&
                         !entry.communityEndpoint) ||
                     allowedModels.includes(entry.id),
             );
         }
         c.set("model", resolved);
+        c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();
     });
 }

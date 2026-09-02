@@ -45,6 +45,9 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
   collection skill (`.claude/skills/economics-provider-collection/`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Successful billable text responses must contain valid provider usage. Reject
+  non-stream responses without it; streamed protocols must contain terminal
+  usage and fail the stream otherwise.
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
 
@@ -218,6 +221,7 @@ npx vitest run test/file.test.ts
 
 - Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
 - Delegate to a subagent only for large, genuinely independent tracks of work (e.g. a wide multi-file investigation). Don't delegate what you can finish in a handful of tool calls, and don't use subagents to verify your own work.
+- For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.
 - After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
 - Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
 

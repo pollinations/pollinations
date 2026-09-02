@@ -1,7 +1,7 @@
 # Flux Schnell on Vast.ai
 
 The production Flux pool runs FLUX.1 Schnell with Nunchaku FP4 on two Vast
-workers: an RTX 5090 and a 24 GB RTX PRO 4000 Blackwell. Vast instances are
+workers, each using a 24 GB RTX PRO 4000 Blackwell. Vast instances are
 containers without systemd, so
 [`setup-vast.sh`](./setup-vast.sh) installs the pinned runtime and supervises
 the model server and Cloudflare Tunnel in `screen` restart loops.

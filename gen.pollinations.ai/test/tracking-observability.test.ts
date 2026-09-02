@@ -801,12 +801,51 @@ describe("tracking observability", () => {
                 new URL(request.url).searchParams.get("name") ===
                 "generation_event_v2",
         );
-        expect(tinybirdRequests).toHaveLength(1);
+        const errorRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        expect(tinybirdRequests).toHaveLength(2);
         await expect(generationRequest?.json()).resolves.toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
             errorResponseCode: "upstream_finish_reason_error",
             errorMessage: "Upstream ended generation with finish_reason=error",
+        });
+        const errorEvent = (await errorRequest?.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(errorEvent).toMatchObject({
+            kind: "server_error",
+            status: 502,
+            upstream_status: 200,
+            error_code: "upstream_finish_reason_error",
+            error_class: "UpstreamFinishReasonError",
+            message: "Upstream ended generation with finish_reason=error",
+            model_requested: "openai",
+            resolved_model_requested: "openai",
+            request_inputs: expect.any(String),
+            upstream_body: expect.any(String),
+        });
+        expect(JSON.parse(errorEvent.request_inputs as string)).toMatchObject({
+            body: {
+                model: "openai",
+                stream: true,
+                messages: [{ role: "user", content: "test" }],
+            },
+        });
+        const loggedOutput = JSON.parse(errorEvent.upstream_body as string) as {
+            streamEvents: unknown[];
+        };
+        expect(loggedOutput.streamEvents).toHaveLength(3);
+        expect(loggedOutput.streamEvents[1]).toMatchObject({
+            choices: [
+                {
+                    finish_reason: "error",
+                    native_finish_reason: "UPSTREAM_ERROR",
+                },
+            ],
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });

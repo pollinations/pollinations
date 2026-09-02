@@ -22,7 +22,15 @@ import {
     remapUpstreamStatus,
     UpstreamError,
 } from "@shared/error.ts";
-import { sendToTinybird } from "@shared/events.ts";
+import {
+    getTinybirdDatasourceIngestUrl,
+    sendErrorEventToTinybird,
+    sendToTinybird,
+} from "@shared/events.ts";
+import {
+    collectRequestInputs,
+    stringifyRequestInputs,
+} from "@shared/observability/request-inputs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     type BillingAdjustment,
@@ -135,6 +143,8 @@ type ResponseTrackingData = {
     // A failure the response status cannot show. Replaces the status-derived
     // error data when the settlement row is emitted.
     errorTracking?: ErrorData;
+    // Parsed response/SSE output retained for the private 24-hour error log.
+    errorOutput?: unknown;
 };
 
 export type TrackVariables = {
@@ -438,6 +448,52 @@ export const track = (eventType: EventType) =>
                         collectErrorData(response.status, c.get("error")),
                 });
 
+                if (responseTracking.errorOutput !== undefined) {
+                    const errorTracking = responseTracking.errorTracking;
+                    await sendErrorEventToTinybird(
+                        {
+                            timestamp: endTime.toISOString(),
+                            kind: "server_error",
+                            severity: "error",
+                            request_id: finalEvent.requestId,
+                            environment: finalEvent.environment,
+                            route_path: finalEvent.requestPath,
+                            method: c.req.method,
+                            status: responseTracking.responseStatus,
+                            duration_ms:
+                                endTime.getTime() - startTime.getTime(),
+                            error_code: errorTracking?.errorResponseCode,
+                            error_class: "UpstreamFinishReasonError",
+                            message: errorTracking?.errorMessage,
+                            upstream_status: response.status,
+                            upstream_body: stringifyErrorOutput(
+                                responseTracking.errorOutput,
+                            ),
+                            edge_colo: (
+                                c.req.raw as Request & {
+                                    cf?: { colo?: string };
+                                }
+                            ).cf?.colo,
+                            model_requested:
+                                finalEvent.modelRequested ?? undefined,
+                            resolved_model_requested:
+                                finalEvent.resolvedModelRequested,
+                            request_inputs: stringifyRequestInputs(
+                                await collectRequestInputs(c),
+                            ),
+                            user_id: finalEvent.userId,
+                            user_tier: finalEvent.userTier,
+                            api_key_id: finalEvent.apiKeyId,
+                        },
+                        getTinybirdDatasourceIngestUrl(
+                            c.env.TINYBIRD_INGEST_URL,
+                            "error_event",
+                        ),
+                        c.env.TINYBIRD_INGEST_TOKEN,
+                        log,
+                    );
+                }
+
                 log.trace(
                     [
                         "Tracking event:",
@@ -683,6 +739,7 @@ export async function trackResponse(
                 errorMessage:
                     "Upstream ended generation with finish_reason=error",
             },
+            errorOutput: output,
         };
     }
     if (!modelUsage) {
@@ -781,6 +838,17 @@ function containsFinishReasonError(output: unknown): boolean {
         }
     }
     return false;
+}
+
+function stringifyErrorOutput(output: unknown): string {
+    try {
+        return JSON.stringify(output).slice(0, 16_000);
+    } catch (error) {
+        return JSON.stringify({
+            error: "error_output_json_stringify_failed",
+            message: error instanceof Error ? error.message : String(error),
+        });
+    }
 }
 
 // The fallback loop reports the served candidate as "config.targets[N]" via

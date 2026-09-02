@@ -51,6 +51,12 @@ export const TEXT_FALLBACKS = {
             },
         },
     },
+    "qwen3.7-flash": {
+        "qwen3.7-flash-alibaba": {
+            provider: "alibaba",
+            addedDate: new Date("2026-09-02").getTime(),
+        },
+    },
     kimi: {
         "kimi-deepinfra": {
             provider: "deepinfra",
@@ -77,6 +83,12 @@ export const TEXT_FALLBACKS = {
         "mistral-large-openrouter-zdr": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "mistral-small-3.2": {
+        "mistral-small-3.2-deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-02").getTime(),
         },
     },
     gemma: {

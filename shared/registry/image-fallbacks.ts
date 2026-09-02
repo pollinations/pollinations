@@ -92,6 +92,12 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
+    "wan-fast": {
+        "wan-fast-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-02").getTime(),
+        },
+    },
     "seedance-pro": {
         "seedance-pro-fal": {
             provider: "fal",

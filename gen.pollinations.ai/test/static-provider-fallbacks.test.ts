@@ -214,6 +214,20 @@ describe("static provider fallbacks", () => {
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         });
+        expect(
+            findModelByName("qwen3.7-flash-alibaba")?.config(),
+        ).toMatchObject({
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            model: "qwen3.7-flash",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(
+            findModelByName("mistral-small-3.2-deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+        });
         for (const [route, model, provider] of OPENROUTER_ROUTES) {
             expect(findModelByName(route)?.config()).toMatchObject({
                 model,

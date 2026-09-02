@@ -172,6 +172,18 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
                 : {}),
         }),
     },
+    "wan-fast-fal": {
+        textEndpoint: "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
+        imageEndpoint: "fal-ai/wan/v2.2-a14b/image-to-video/turbo",
+        duration: () => 5,
+        input: (params, _duration, hasImage) => ({
+            resolution: "480p",
+            ...(!hasImage
+                ? { aspect_ratio: aspectRatio(params, WAN_RATIOS) }
+                : {}),
+            ...(params.image[1] ? { end_image_url: params.image[1] } : {}),
+        }),
+    },
     "seedance-pro-fal": {
         textEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
         imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/image-to-video",
@@ -226,7 +238,9 @@ export async function callFalFallbackVideo(
             trackingData: {
                 actualModel: params.model,
                 usage: {
-                    ...(image ? { promptImageTokens: 1 } : {}),
+                    ...(image
+                        ? { promptImageTokens: params.image.length }
+                        : {}),
                     completionVideoSeconds: duration,
                 },
             },

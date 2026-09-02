@@ -9,6 +9,7 @@ import {
     openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { mergeFallbacks } from "./merge-fallbacks";
 import {
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
@@ -16,6 +17,7 @@ import {
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
+import { TEXT_FALLBACKS } from "./text-fallbacks";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -37,7 +39,7 @@ export const AUDIO_VOICES = [
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
-export const TEXT_SERVICES = {
+const TEXT_BASE_SERVICES = {
     "openai": {
         aliases: ["gpt-5.4-nano", "openai/gpt-5.4-nano"],
         provider: "azure",
@@ -499,6 +501,7 @@ export const TEXT_SERVICES = {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
             promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
@@ -790,6 +793,7 @@ export const TEXT_SERVICES = {
         cost: {
             // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
             promptTextTokens: perMillion(0.13),
+            promptImageTokens: perMillion(0.13),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 26B A4B",
@@ -813,6 +817,7 @@ export const TEXT_SERVICES = {
         cost: {
             // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.14),
+            promptImageTokens: perMillion(0.14),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 31B",
@@ -1344,6 +1349,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.16),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.6",
@@ -1374,6 +1380,8 @@ export const TEXT_SERVICES = {
             // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.19),
+            promptCacheWriteTokens: perMillion(0.95),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.7 Code",
@@ -1882,6 +1890,7 @@ export const TEXT_SERVICES = {
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
         title: "Meta Llama 4 Scout",
@@ -1959,6 +1968,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.35),
             promptCachedTokens: perMillion(0.04),
+            promptImageTokens: perMillion(0.35),
             completionTextTokens: perMillion(1.5),
         },
         title: "Muse Glimmer 30B",
@@ -2409,3 +2419,5 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const TEXT_SERVICES = mergeFallbacks(TEXT_BASE_SERVICES, TEXT_FALLBACKS);

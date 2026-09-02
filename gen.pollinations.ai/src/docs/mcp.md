@@ -14,6 +14,7 @@ then choose a server:
 | Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Pollinations models, media generation, model discovery, and account tools |
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content |
+| Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive |
 
 Send the key with every request:
 
@@ -110,6 +111,12 @@ executable and output path from the arguments.
   highlights.
 - `web_fetch_exa` reads one or more known URLs as clean text when the search
   highlights are not enough.
+
+### Composio MCP
+
+The Composio server discovers tools for the apps you ask to use. When an app is
+not connected, the agent can return a sign-in link. You can also manage
+connections from [MCP Connectors](https://enter.pollinations.ai/account#connectors).
 
 ### Billing and permissions
 

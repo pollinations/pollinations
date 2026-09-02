@@ -226,6 +226,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-27b-openrouter-akashml": createPinnedOpenRouterConfig(
+        "qwen/qwen3.8-27b",
+        "akashml/fp8",
+        64000,
+    ),
     "qwen/qwen3.8-max": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.8-max",
@@ -297,6 +302,97 @@ export const portkeyConfig: PortkeyConfigMap = {
     "google/gemma-4-31b-it": createPinnedOpenRouterConfig(
         "google/gemma-4-31b-it",
         "novita/bf16",
+    ),
+
+    // -- Exact-checkpoint text fallbacks -------------------------------------
+    "deepseek-ai/DeepSeek-V4-Flash-0731": () =>
+        createDeepInfraModelConfig({
+            model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+        }),
+    "MiniMaxAI/MiniMax-M2.7": () =>
+        createDeepInfraModelConfig({ model: "MiniMaxAI/MiniMax-M2.7" }),
+    "Qwen/Qwen3.8-2.4T-A95B": () =>
+        createDeepInfraModelConfig({ model: "Qwen/Qwen3.8-2.4T-A95B" }),
+    "moonshotai/Kimi-K2.6": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.6" }),
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo": () =>
+        createDeepInfraModelConfig({
+            model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        }),
+    "google/gemma-4-26B-A4B-it": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-26B-A4B-it" }),
+    "google/gemma-4-31B-it": () =>
+        createDeepInfraModelConfig({ model: "google/gemma-4-31B-it" }),
+    "mistral-large-openrouter-zdr": createPinnedOpenRouterConfig(
+        "mistralai/mistral-large-2512",
+        "mistral/zdr",
+    ),
+    "claude-opus-4.7-openrouter-vertex": createPinnedOpenRouterConfig(
+        "anthropic/claude-opus-4.7",
+        "google-vertex/global",
+    ),
+    "llama-scout-openrouter-deepinfra": createPinnedOpenRouterConfig(
+        "meta-llama/llama-4-scout",
+        "deepinfra/fp8",
+    ),
+    "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
+        "x-ai/grok-4.20",
+        "xai/zdr",
+    ),
+    "grok-large-openrouter-xai-zdr": createPinnedOpenRouterConfig(
+        "x-ai/grok-4.3",
+        "xai/zdr",
+    ),
+    "claude-fast-openrouter-vertex": createPinnedOpenRouterConfig(
+        "anthropic/claude-haiku-4.5",
+        "google-vertex/global",
+    ),
+    "claude-fable-5-openrouter-vertex": createPinnedOpenRouterConfig(
+        "anthropic/claude-fable-5",
+        "google-vertex/global",
+    ),
+    "muse-glimmer-openrouter-deepinfra": createPinnedOpenRouterConfig(
+        "meta/muse-glimmer-30b",
+        "deepinfra/bf16",
+    ),
+    "nemotron-3.5-lightning-openrouter-coreweave": createPinnedOpenRouterConfig(
+        "nvidia/nemotron-3.5-lightning",
+        "coreweave/bf16",
+    ),
+    "mistral-openrouter-eu": createPinnedOpenRouterConfig(
+        "mistralai/mistral-small-2603",
+        "mistral/eu",
+    ),
+    "gemini-openrouter-ai-studio-priority": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.7-flash",
+        "google-ai-studio/priority",
+    ),
+    "gemini-fast-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
+        "gemini-2.5-flash-lite",
+        "google-ai-studio",
+    ),
+    "gemini-flash-lite-3.5-openrouter-ai-studio-flex":
+        createPinnedOpenRouterGeminiConfig(
+            "gemini-3.5-flash-lite",
+            "google-ai-studio/flex",
+        ),
+    "gemini-large-openrouter-ai-studio": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.1-pro-preview",
+        "google-ai-studio",
+    ),
+    "qwen-vision-pro-openrouter-novita": createPinnedOpenRouterConfig(
+        "qwen/qwen3-vl-235b-a22b-thinking",
+        "novita/bf16",
+    ),
+    "glm-5.3-openrouter-friendli": createPinnedOpenRouterConfig(
+        "z-ai/glm-5.3",
+        "friendli",
+    ),
+    "kimi-code-deepinfra": () =>
+        createDeepInfraModelConfig({ model: "moonshotai/Kimi-K2.7-Code" }),
+    "qwen-coder-large-openrouter-streamlake": createPinnedOpenRouterConfig(
+        "qwen/qwen3-coder-next",
+        "streamlake",
     ),
 
     // -- OpenRouter (Inception Labs) -----------------------------------------

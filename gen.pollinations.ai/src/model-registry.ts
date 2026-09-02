@@ -153,7 +153,7 @@ function communityEntryToGenerationEntry(
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
-            entry.definition.hidden !== true &&
+            isVisibleModelDefinition(entry.definition) &&
             entry.communityEndpoint.visibility === "public",
     };
 }
@@ -223,7 +223,7 @@ function buildRegistry(
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
-                    entry.definition.hidden !== true &&
+                    isVisibleModelDefinition(entry.definition) &&
                     endpoint !== undefined &&
                     endpoint.visibility === "private" &&
                     endpoint.ownerUserId === callerUserId

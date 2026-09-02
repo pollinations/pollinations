@@ -100,7 +100,7 @@ export const stripeRoutes = new Hono<Env>()
         }
 
         const newCardGate = await getStripeNewCardGateStatus(c.env.DB, userId);
-        if (newCardGate.gate === "locked") {
+        if (newCardGate.shouldRestrictPayments) {
             await restrictStripePayments(c.env.DB, userId, {
                 reason: "failed_card_velocity",
                 source: "automatic",

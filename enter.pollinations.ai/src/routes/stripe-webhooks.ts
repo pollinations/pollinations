@@ -141,7 +141,7 @@ async function recordFailedCardFingerprintFromCharge({
             userId,
             eventTime,
         );
-        if (gate.gate !== "locked") return;
+        if (!gate.shouldRestrictPayments) return;
 
         await restrictStripePayments(env.DB, userId, {
             reason: "failed_card_velocity",

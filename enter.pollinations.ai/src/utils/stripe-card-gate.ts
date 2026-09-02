@@ -1,4 +1,5 @@
-export const STRIPE_NEW_CARD_LIMIT = 8;
+export const STRIPE_NEW_CARD_LIMIT = 4;
+export const STRIPE_PAYMENT_RESTRICTION_CARD_LIMIT = 8;
 export const STRIPE_FAILED_CARD_ATTEMPT_LIMIT = 50;
 export const STRIPE_NEW_CARD_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -12,6 +13,7 @@ export const STRIPE_NEW_CARD_GATE_METADATA = {
 
 export type StripeNewCardGateStatus = {
     gate: "ok" | "locked";
+    shouldRestrictPayments: boolean;
     distinctFailedCardCount24h: number;
     failedCardAttemptCount24h: number;
     limit: number;
@@ -33,6 +35,7 @@ export async function getStripeNewCardGateStatus(
     if (!userId) {
         return {
             gate: "ok",
+            shouldRestrictPayments: false,
             distinctFailedCardCount24h: 0,
             failedCardAttemptCount24h: 0,
             limit: STRIPE_NEW_CARD_LIMIT,
@@ -61,10 +64,13 @@ export async function getStripeNewCardGateStatus(
 
     return {
         gate:
-            distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT ||
-            failedCardAttemptCount24h >= STRIPE_FAILED_CARD_ATTEMPT_LIMIT
+            distinctFailedCardCount24h >= STRIPE_NEW_CARD_LIMIT
                 ? "locked"
                 : "ok",
+        shouldRestrictPayments:
+            distinctFailedCardCount24h >=
+                STRIPE_PAYMENT_RESTRICTION_CARD_LIMIT ||
+            failedCardAttemptCount24h >= STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
         distinctFailedCardCount24h,
         failedCardAttemptCount24h,
         limit: STRIPE_NEW_CARD_LIMIT,

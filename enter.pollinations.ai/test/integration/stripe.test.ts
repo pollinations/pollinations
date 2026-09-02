@@ -353,7 +353,7 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
         "0",
     );
     expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
-        "8",
+        "4",
     );
     expect(
         body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`],
@@ -375,6 +375,61 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     expect(body?.["payment_method_options[card][request_three_d_secure]"]).toBe(
         undefined,
     );
+});
+
+test("four distinct failed cards trigger Radar without restricting the account", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    const now = Date.now();
+    for (let index = 1; index <= 4; index++) {
+        await env.DB.prepare(
+            `INSERT INTO stripe_card_fingerprint_attempt (
+                event_id,
+                user_id,
+                card_fingerprint,
+                created_at
+            ) VALUES (?, ?, ?, ?)`,
+        )
+            .bind(
+                `evt_radar_${index}`,
+                userId,
+                `fp_radar_${index}`,
+                now - index,
+            )
+            .run();
+    }
+
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(302);
+
+    const checkoutBody = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    expect(
+        checkoutBody?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`],
+    ).toBe("locked");
+    expect(
+        checkoutBody?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`],
+    ).toBe("4");
+    expect(
+        checkoutBody?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`],
+    ).toBe("4");
+
+    const user = await env.DB.prepare(
+        `SELECT stripe_payment_restriction AS restriction
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(userId)
+        .first<{ restriction: string | null }>();
+    expect(user?.restriction).toBeNull();
 });
 
 test("eight distinct failed cards in 24h restrict payments", async ({
@@ -482,7 +537,7 @@ test("eight distinct failed cards in 24h restrict payments", async ({
         preLimitCheckoutBody?.[
             `metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`
         ],
-    ).toBe("ok");
+    ).toBe("locked");
     expect(
         preLimitCheckoutBody?.[
             `metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`
@@ -492,7 +547,7 @@ test("eight distinct failed cards in 24h restrict payments", async ({
         preLimitCheckoutBody?.[
             `metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`
         ],
-    ).toBe("8");
+    ).toBe("4");
     expect(
         preLimitCheckoutBody?.[
             `metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`

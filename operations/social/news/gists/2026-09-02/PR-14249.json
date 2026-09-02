@@ -1,0 +1,35 @@
+{
+  "pr_number": 14249,
+  "title": "feat: add Composio MCP connectors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14249",
+  "merged_at": "2026-09-02T11:28:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds one generic Composio MCP for Gmail, Slack, GitHub, Drive, and hundreds of other apps.\n- Adds searchable **MCP Connectors** controls in Account and links them from the MCP catalog and agent form.\n- Uses each caller’s Composio connections; public agents never receive the owner’s app credentials.\n- Bills executed connector actions at a fixed launch rate through the existing MCP usage-receipt path.\n- Tests the Composio Worker, Gen proxy, Enter API, dashboard build, and typechecks.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive got connectors",
+    "blurb": "One MCP connector now opens the door to Gmail, Slack, GitHub, Drive, and a rather large pile of other useful software. Your agents can bring their own connections, so public agents do not accidentally inherit someone else’s keys.",
+    "summary": "Added a generic Composio MCP connector for Gmail, Slack, GitHub, Drive, and hundreds of other apps, with searchable Account controls, MCP catalog and agent-form links, caller-owned connections, and usage-receipt billing for executed actions.",
+    "impact": "People can connect their own app accounts and let Pollinations agents act through them, while public agents stay isolated from an owner's Composio credentials.",
+    "keywords": [
+      "MCP",
+      "Composio",
+      "connectors",
+      "agents",
+      "Gmail",
+      "Slack",
+      "GitHub"
+    ],
+    "visual_concept": "Depict Polli as a careful little integration gardener connecting a cozy retro agent terminal to labeled app tiles for Gmail, Slack, GitHub, and Drive with soft vine-like cables. A Monitor Robot can eagerly inspect the connections while a tiny lock and separate user key rings communicate that each caller brings their own credentials; code-plants and flowers make the connector hub feel like a growing garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she connects a retro agent terminal to friendly pixel app tiles labeled Gmail, Slack, GitHub, and Drive with flowering vine-cables; a cute chunky CRT Monitor Robot holds a small lock and says “I CAN SEE!”, while code-plants grow from pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14249.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she connects a retro agent terminal to friendly pixel app tiles labeled Gmail, Slack, GitHub, and Drive with flowering vine-cables; a cute chunky CRT Monitor Robot holds a small lock and says “I CAN SEE!”, while code-plants grow from pots nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-02T11:29:11.900374+00:00"
+}

@@ -47,8 +47,6 @@ export function sortModels(
                 return compareKnownValues(a.users7d, b.users7d, "desc");
             case "newest":
                 return compareKnownValues(a.addedDate, b.addedDate, "desc");
-            case "oldest":
-                return compareKnownValues(a.addedDate, b.addedDate, "asc");
             case "price-low":
                 return compareKnownValues(
                     getObservedCost(a),

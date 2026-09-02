@@ -661,7 +661,7 @@ const AUDIO_BASE_SERVICES = {
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        perUserRpm: 30,
+        perUserRpm: 60,
         cost: {
             // DashScope Qwen3-TTS-Flash: $0.10 per 10K characters
             completionAudioTokens: 0.01 / 1000,

@@ -1,5 +1,5 @@
 /**
- * Synchronous key/value store for the user's session token and OAuth state.
+ * Synchronous key/value store for the user's session token and OAuth login.
  * Modeled on `window.localStorage` — implement against any sync backend
  * (cookies, in-memory, sessionStorage). Async backends (IndexedDB, RN
  * AsyncStorage) are out of scope.

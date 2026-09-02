@@ -7,6 +7,7 @@ import { HttpError } from "@shared/http-error.ts";
 import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
+import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
 import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
@@ -73,6 +74,12 @@ export async function createAndReturnVideo(
             break;
         case "seedance-pro":
             result = await callSeedanceProAPI(prompt, safeParams);
+            break;
+        case "seedance-pro-fal":
+        case "wan-fal":
+        case "grok-video-pro-fal":
+        case "grok-imagine-video-1.5-fal":
+            result = await callFalFallbackVideo(prompt, safeParams);
             break;
         case "seedance-2.0":
         case "seedance-2.0-mini":

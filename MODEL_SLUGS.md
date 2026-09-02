@@ -86,6 +86,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | DeepSeek V4 Flash 0731 | `deepseek` | `deepseek/deepseek-v4-flash` |
+| DeepSeek V4 Flash Vision Exp | — | `deepseek/deepseek-v4-flash-vision-exp` |
 | DeepSeek V4 Pro 0813 | `deepseek-pro` | `deepseek/deepseek-v4-pro` |
 
 ## ElevenLabs
@@ -154,6 +155,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | Mercury 2 | `mercury` | `inception/mercury-2` |
+| Mercury 2.5 Preview | — | `inception/mercury-2.5-preview` |
 
 ## Krea
 

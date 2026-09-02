@@ -1,6 +1,6 @@
 # Publish an Agent
 
-Publishing an agent creates a managed agent that turns a system prompt, a Pollinations base model, and optional Pollinations tools into a reusable text model. Pollinations runs the agent for you, so you do not need to host an agent server.
+Publishing an agent creates a managed agent that turns a system prompt, a Pollinations base model, and optional MCP tools into a reusable text model. Pollinations runs the agent for you, so you do not need to host an agent server.
 
 This is different from hosting your own OpenAI-compatible model endpoint. It is also different from [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md), which lets an app ask its users to pay for their own generations.
 
@@ -8,7 +8,7 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Add an agent and choose its name, title, visibility, system prompt, and base model.
-3. Optionally enable Pollinations tools so the agent can generate media, call other models, and inspect the model catalog.
+3. Optionally enable MCP servers for Pollinations tools, web search, media processing, or connected apps.
 4. Save it. The dashboard creates the agent configuration and registers its callable model name.
 
 A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Publishing an agent for everyone requires [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
@@ -25,7 +25,7 @@ An agent combines catalog fields with its runtime configuration:
 | `visibility` | No | `private` by default, or `public` with publisher access. |
 | `systemPrompt` | Yes | Instructions for the agent, from 1 to 8,000 characters. |
 | `baseModel` | Yes | A text model ID from [`GET /v1/models`](https://gen.pollinations.ai/v1/models). |
-| `mcpServers` | No | `[]` or `["pollinations"]` to enable the built-in Pollinations tools. |
+| `mcpServers` | No | Server IDs from [`GET /mcp`](https://gen.pollinations.ai/mcp), such as `pollinations` or `composio`. |
 
 Example `agent.json`:
 
@@ -38,6 +38,8 @@ Example `agent.json`:
 ```
 
 Updates replace the runtime configuration, so include `systemPrompt` and `baseModel`; include `mcpServers` if tools should remain enabled. You can also change the name, title, description, or visibility.
+
+The `composio` server uses each caller's connections from **Account → MCP Connectors**. Public agents never receive or use the agent owner's app credentials.
 
 ## Create with the CLI
 
@@ -66,7 +68,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   }'
 ```
 
-The agent listing itself has no owner-set price. The caller still pays for the selected base model and for any generations performed by tools. The catalog presents the base model's pricing and capabilities, plus the capabilities enabled by the agent's tools.
+The agent listing itself has no owner-set price. The caller still pays for the selected base model and MCP usage at the rates shown in the catalog. The catalog presents the base model's pricing and capabilities, plus the capabilities enabled by the agent's tools.
 
 ## Manage the lifecycle
 

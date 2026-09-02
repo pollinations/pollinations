@@ -281,6 +281,35 @@ export function openaiUsageToUsage(openaiUsage: {
     };
 }
 
+/** Convert OpenAI Responses token accounting into the shared billing shape. */
+export function responsesUsageToUsage(responsesUsage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_tokens_details?: {
+        cached_tokens?: number | null;
+        cache_write_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        video_tokens?: number | null;
+    } | null;
+    output_tokens_details?: {
+        reasoning_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        accepted_prediction_tokens?: number | null;
+        rejected_prediction_tokens?: number | null;
+    } | null;
+}): Usage {
+    return openaiUsageToUsage({
+        prompt_tokens: responsesUsage.input_tokens,
+        completion_tokens: responsesUsage.output_tokens,
+        total_tokens: responsesUsage.total_tokens,
+        prompt_tokens_details: responsesUsage.input_tokens_details,
+        completion_tokens_details: responsesUsage.output_tokens_details,
+    });
+}
+
 export function openaiImageUsageToUsage(usage: OpenAIImageUsage): Usage {
     return {
         promptTextTokens: usage.input_tokens_details.text_tokens,

@@ -12,6 +12,7 @@ import {
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
+    McpIcon,
     SearchIcon,
     Section,
     SparklesIcon,
@@ -19,7 +20,9 @@ import {
     TokensIcon,
     TrendUpIcon,
     UsageIcon,
+    WarningIcon,
 } from "@pollinations/ui";
+import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
@@ -41,11 +44,7 @@ import {
     matchesModelQuery,
     parseModelQuery,
 } from "./model-query.ts";
-import {
-    getAvailableModelSections,
-    type ModelScope,
-    type ModelSort,
-} from "./model-search.ts";
+import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
 import {
     type SectionType,
@@ -55,7 +54,7 @@ import {
 import type { ModelPrice } from "./types.ts";
 import { useModelStats } from "./use-model-stats.ts";
 
-const POLLINATIONS_SECTION_ORDER: SectionType[] = [
+const MODEL_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
     "image",
@@ -64,18 +63,31 @@ const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "audio",
     "realtime",
     "embedding",
-    "mcp",
 ];
 
-const SCOPE_ORDER: ModelScope[] = ["pollinations", "community"];
+type PrimaryTab = "models" | "agent" | "mcp";
+
+const PRIMARY_TABS: Array<{
+    value: PrimaryTab;
+    label: string;
+    Icon: FC<{ className?: string }>;
+}> = [
+    { value: "models", label: "Models", Icon: BeakerIcon },
+    { value: "agent", label: "Agents", Icon: BotIcon },
+    { value: "mcp", label: "MCP", Icon: McpIcon },
+];
+
+const TabCount: FC<{ value: number }> = ({ value }) => (
+    <span
+        aria-hidden="true"
+        className="text-[0.8em] font-normal tabular-nums text-theme-text-muted"
+    >
+        {value}
+    </span>
+);
 
 const MODEL_SLUG_LIST_URL =
     "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
-
-const SCOPE_LABELS: Record<ModelScope, string> = {
-    pollinations: "Official",
-    community: "Community",
-};
 
 const SORT_OPTIONS: Array<{
     value: ModelSort;
@@ -87,8 +99,11 @@ const SORT_OPTIONS: Array<{
         label: "Popular",
         accessibleLabel: "Most popular",
     },
-    { value: "newest", label: "Newest", accessibleLabel: "Newest" },
-    { value: "oldest", label: "Oldest", accessibleLabel: "Oldest" },
+    {
+        value: "newest",
+        label: "Date added",
+        accessibleLabel: "Date added, newest first",
+    },
     {
         value: "price-low",
         label: "Price: Low",
@@ -134,7 +149,7 @@ function categorizeModels(
     models: ModelPrice[],
 ): Record<SectionType, ModelPrice[]> {
     const categorized: Record<SectionType, ModelPrice[]> = {
-        all: models,
+        all: [],
         image: [],
         video: [],
         "3d": [],
@@ -147,7 +162,12 @@ function categorizeModels(
     };
 
     for (const model of models) {
-        categorized[model.agent ? "agent" : model.type].push(model);
+        if (model.agent) {
+            categorized.agent.push(model);
+        } else {
+            categorized.all.push(model);
+            categorized[model.type].push(model);
+        }
     }
     return categorized;
 }
@@ -186,8 +206,15 @@ function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
 export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
-    const activeScope = modelSearch.scope ?? "pollinations";
+    const activeScope = modelSearch.scope ?? "community";
     const activeTab = modelSearch.category ?? "all";
+    const activePrimaryTab: PrimaryTab =
+        activeTab === "agent"
+            ? "agent"
+            : activeTab === "mcp"
+              ? "mcp"
+              : "models";
+    const includeCommunity = activeScope === "community";
     const activeSort = modelSearch.sort ?? "popular";
     const urlSearch = modelSearch.q ?? "";
     const [search, setSearch] = useState(urlSearch);
@@ -201,31 +228,53 @@ export const Models: FC = () => {
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
-    const query = search.trim();
-    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
-    const scopedModels = useMemo(
+    const agentModels = useMemo(
+        () => allModels.filter((model) => model.agent),
+        [allModels],
+    );
+    const communityModels = useMemo(
+        () => allModels.filter((model) => model.community && !model.agent),
+        [allModels],
+    );
+    const modelModels = useMemo(
         () =>
             allModels.filter(
                 (model) =>
-                    Boolean(model.community) === (activeScope === "community"),
+                    !model.agent && (includeCommunity || !model.community),
             ),
-        [activeScope, allModels],
+        [allModels, includeCommunity],
     );
+    const modelSections = useMemo(
+        () => categorizeModels(modelModels),
+        [modelModels],
+    );
+    const primaryTabCounts: Record<PrimaryTab, number> = {
+        models: modelSections.all.length,
+        agent: agentModels.length,
+        mcp: MCP_SERVERS.length,
+    };
+    const query = search.trim();
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
+    const activeTabModels = useMemo(() => {
+        if (activeTab === "mcp") return [];
+        if (activeTab === "agent") return agentModels;
+        return modelSections[activeTab];
+    }, [activeTab, agentModels, modelSections]);
     const filteredModels = useMemo(
         () =>
             query
-                ? scopedModels.filter((model) =>
+                ? activeTabModels.filter((model) =>
                       matchesModelQuery(model, parsedQuery),
                   )
-                : scopedModels,
-        [parsedQuery, query, scopedModels],
+                : activeTabModels,
+        [activeTabModels, parsedQuery, query],
     );
     const searchOptions = useMemo(
         () =>
             activeTab === "mcp"
                 ? []
-                : getModelQuerySuggestions(search, scopedModels),
-        [activeTab, search, scopedModels],
+                : getModelQuerySuggestions(search, activeTabModels),
+        [activeTab, activeTabModels, search],
     );
 
     useEffect(() => {
@@ -255,20 +304,17 @@ export const Models: FC = () => {
         () => categorizeModels(sortModels(filteredModels, activeSort)),
         [activeSort, filteredModels],
     );
-    const sectionOrder =
-        activeScope === "community"
-            ? getAvailableModelSections(scopedModels)
-            : POLLINATIONS_SECTION_ORDER;
-
-    const hasAgents = scopedModels.some((model) => model.agent);
-    const scopeLabel = SCOPE_LABELS[activeScope];
     const searchLabel = SEARCH_LABELS[activeTab];
     const searchTarget =
         activeTab === "mcp"
             ? "MCP servers"
-            : activeTab === "all"
-              ? `${scopeLabel} models`
-              : `${scopeLabel} ${searchLabel} models`;
+            : activeTab === "agent"
+              ? "agents"
+              : activeTab === "all"
+                ? includeCommunity
+                    ? "models"
+                    : "official models"
+                : `${includeCommunity ? "" : "official "}${searchLabel} models`;
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -313,21 +359,20 @@ export const Models: FC = () => {
         });
     };
 
-    const setActiveScope = (scope: ModelScope) => {
+    const setActivePrimaryTab = (primaryTab: PrimaryTab) => {
         void navigate({
             search: (previous) => ({
                 ...previous,
-                scope: scope === "pollinations" ? undefined : scope,
-                category:
-                    scope === "community"
-                        ? getAvailableModelSections(
-                              allModels.filter((model) => model.community),
-                          ).includes(previous.category ?? "all")
-                            ? previous.category
-                            : undefined
-                        : previous.category === "agent"
-                          ? undefined
-                          : previous.category,
+                category: primaryTab === "models" ? undefined : primaryTab,
+            }),
+        });
+    };
+
+    const setIncludeCommunity = (include: boolean) => {
+        void navigate({
+            search: (previous) => ({
+                ...previous,
+                scope: include ? undefined : "pollinations",
             }),
         });
     };
@@ -347,7 +392,6 @@ export const Models: FC = () => {
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
             ?.accessibleLabel ?? "Most popular";
-
     return (
         <div className="flex flex-col gap-6">
             <Section
@@ -403,58 +447,63 @@ export const Models: FC = () => {
                     </a>
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
-                    <div className="flex flex-col gap-2">
+                    <div className="flex w-full flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">
-                            {SCOPE_ORDER.map((scope) => (
-                                <TabButton
-                                    key={scope}
-                                    active={activeScope === scope}
-                                    onClick={() => setActiveScope(scope)}
-                                    size="lg"
-                                    ariaLabel={
-                                        scope === "community"
-                                            ? "Community alpha models"
-                                            : undefined
-                                    }
-                                >
-                                    <span className="inline-flex items-center gap-1.5">
-                                        {SCOPE_LABELS[scope]}
-                                        {scope === "community" && (
-                                            <Chip intent="alpha" size="sm">
-                                                Alpha
-                                            </Chip>
-                                        )}
-                                    </span>
-                                </TabButton>
-                            ))}
-                        </div>
-                        <div className="flex flex-wrap gap-1.5">
-                            {sectionOrder.map((section) => {
-                                const showAgentsNew =
-                                    section === "agent" && hasAgents;
+                            {PRIMARY_TABS.map((tab) => {
+                                const TabIcon = tab.Icon;
                                 return (
                                     <TabButton
-                                        key={section}
-                                        active={activeTab === section}
-                                        onClick={() => setActiveTab(section)}
-                                        ariaLabel={
-                                            showAgentsNew
-                                                ? "Agents, new"
-                                                : undefined
+                                        key={tab.value}
+                                        active={activePrimaryTab === tab.value}
+                                        onClick={() =>
+                                            setActivePrimaryTab(tab.value)
                                         }
+                                        size="lg"
+                                        ariaLabel={`${tab.label}, ${primaryTabCounts[tab.value]} ${tab.value === "mcp" ? "servers" : tab.value === "agent" ? "agents" : "models"}`}
                                     >
                                         <span className="inline-flex items-center gap-1.5">
-                                            {sectionLabels[section]}
-                                            {showAgentsNew && (
-                                                <Chip intent="new" size="sm">
-                                                    New
-                                                </Chip>
-                                            )}
+                                            <TabIcon className="h-4 w-4" />
+                                            {tab.label}
+                                            <TabCount
+                                                value={
+                                                    primaryTabCounts[tab.value]
+                                                }
+                                            />
                                         </span>
                                     </TabButton>
                                 );
                             })}
                         </div>
+                        {activePrimaryTab === "models" && (
+                            <div className="flex w-full flex-wrap items-center justify-between gap-2">
+                                <div className="flex flex-wrap gap-1.5">
+                                    {MODEL_SECTION_ORDER.filter(
+                                        (section) =>
+                                            section === "all" ||
+                                            modelSections[section].length > 0,
+                                    ).map((section) => (
+                                        <TabButton
+                                            key={section}
+                                            active={activeTab === section}
+                                            onClick={() =>
+                                                setActiveTab(section)
+                                            }
+                                            ariaLabel={`${sectionLabels[section]}, ${modelSections[section].length} models`}
+                                        >
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {sectionLabels[section]}
+                                                <TabCount
+                                                    value={
+                                                        modelSections[section]
+                                                            .length
+                                                    }
+                                                />
+                                            </span>
+                                        </TabButton>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0 max-w-md flex-1 basis-[240px]">
@@ -481,91 +530,131 @@ export const Models: FC = () => {
                             </div>
                         </div>
                         {activeTab !== "mcp" && (
-                            <Dropdown
-                                align="end"
-                                className="w-max p-2"
-                                trigger={(open) => (
-                                    <Button
-                                        type="button"
-                                        size="md"
-                                        aria-label={`Sort models by ${activeSortAccessibleLabel}`}
-                                        className="shrink-0 justify-end gap-2"
-                                    >
-                                        <span className="text-right">
-                                            {activeSortLabel}
-                                        </span>
-                                        <ChevronIcon expanded={open} />
-                                    </Button>
-                                )}
-                            >
-                                {(close) => (
-                                    <div
-                                        role="menu"
-                                        aria-label="Sort models"
-                                        onKeyDown={handleSortMenuKeyDown}
-                                        className="flex flex-col gap-1"
-                                    >
-                                        {SORT_OPTIONS.map((option) => (
-                                            <DropdownItem
-                                                key={option.value}
-                                                role="menuitemradio"
-                                                aria-label={
-                                                    option.accessibleLabel
-                                                }
-                                                aria-checked={
-                                                    activeSort === option.value
-                                                }
-                                                onClick={() => {
-                                                    setActiveSort(option.value);
-                                                    close();
-                                                }}
-                                                className={
-                                                    activeSort === option.value
-                                                        ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
-                                                        : "justify-end text-right"
-                                                }
-                                            >
-                                                <span className="flex-1 text-right">
-                                                    {option.label}
-                                                </span>
-                                            </DropdownItem>
-                                        ))}
-                                    </div>
-                                )}
-                            </Dropdown>
+                            <div className="flex flex-wrap items-center gap-2">
+                                <TabButton
+                                    active={
+                                        activePrimaryTab === "agent" ||
+                                        includeCommunity
+                                    }
+                                    onClick={() =>
+                                        setIncludeCommunity(!includeCommunity)
+                                    }
+                                    disabled={activePrimaryTab === "agent"}
+                                    size="md"
+                                    ariaLabel={
+                                        activePrimaryTab === "agent"
+                                            ? `${agentModels.length} community agents; all agents are community models for now`
+                                            : includeCommunity
+                                              ? `Hide ${communityModels.length} community models`
+                                              : `Show ${communityModels.length} community models`
+                                    }
+                                >
+                                    <span className="inline-flex items-center gap-1.5">
+                                        Community
+                                        <TabCount
+                                            value={
+                                                activePrimaryTab === "agent"
+                                                    ? agentModels.length
+                                                    : communityModels.length
+                                            }
+                                        />
+                                        <Chip intent="alpha" size="sm">
+                                            Alpha
+                                        </Chip>
+                                    </span>
+                                </TabButton>
+                                <Dropdown
+                                    align="end"
+                                    className="w-max p-2"
+                                    trigger={(open) => (
+                                        <Button
+                                            type="button"
+                                            size="md"
+                                            aria-label={`Sort models by ${activeSortAccessibleLabel}`}
+                                            className="shrink-0 justify-end gap-2"
+                                        >
+                                            <span className="text-right">
+                                                {activeSortLabel}
+                                            </span>
+                                            <ChevronIcon expanded={open} />
+                                        </Button>
+                                    )}
+                                >
+                                    {(close) => (
+                                        <div
+                                            role="menu"
+                                            aria-label="Sort models"
+                                            onKeyDown={handleSortMenuKeyDown}
+                                            className="flex flex-col gap-1"
+                                        >
+                                            {SORT_OPTIONS.map((option) => (
+                                                <DropdownItem
+                                                    key={option.value}
+                                                    role="menuitemradio"
+                                                    aria-label={
+                                                        option.accessibleLabel
+                                                    }
+                                                    aria-checked={
+                                                        activeSort ===
+                                                        option.value
+                                                    }
+                                                    onClick={() => {
+                                                        setActiveSort(
+                                                            option.value,
+                                                        );
+                                                        close();
+                                                    }}
+                                                    className={
+                                                        activeSort ===
+                                                        option.value
+                                                            ? "justify-end bg-theme-bg-active text-right text-theme-text-strong"
+                                                            : "justify-end text-right"
+                                                    }
+                                                >
+                                                    <span className="flex-1 text-right">
+                                                        {option.label}
+                                                    </span>
+                                                </DropdownItem>
+                                            ))}
+                                        </div>
+                                    )}
+                                </Dropdown>
+                            </div>
                         )}
                     </div>
                 </div>
-                {activeScope === "community" && (
-                    <Alert
-                        intent="warning"
-                        title="Community model privacy"
-                        className="mb-4"
+                {(activePrimaryTab === "agent" || includeCommunity) && (
+                    <aside
+                        aria-label="Community privacy notice"
+                        className="mb-4 flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
                     >
-                        <p>
-                            Requests go to independent providers and configured
-                            fallbacks, which handle your data under their own
-                            policies.
-                        </p>
-                        <p className="mt-2">
-                            <strong>Avoid sensitive data.</strong> For text
-                            input, you can use our optional{" "}
-                            <InlineLink
-                                href="https://gen.pollinations.ai/docs#tag/Safety"
-                                showIcon={false}
-                            >
-                                privacy filter
-                            </InlineLink>
-                            . See our{" "}
-                            <InlineLink
-                                href="https://pollinations.ai/privacy"
-                                showIcon={false}
-                            >
-                                Privacy Policy
-                            </InlineLink>
-                            .
-                        </p>
-                    </Alert>
+                        <WarningIcon className="mt-0.5 h-3.5 w-3.5 shrink-0 text-intent-warning-text" />
+                        <span className="min-w-0">
+                            <strong className="font-semibold text-theme-text-strong">
+                                Community privacy
+                            </strong>{" "}
+                            — Independent providers and configured fallbacks
+                            process requests under their own policies.{" "}
+                            <strong className="font-semibold text-theme-text-strong">
+                                Avoid sensitive data.
+                            </strong>{" "}
+                            <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                <InlineLink
+                                    href="https://gen.pollinations.ai/docs#tag/Safety"
+                                    showIcon={false}
+                                >
+                                    Privacy filter
+                                </InlineLink>
+                                <span aria-hidden="true">·</span>
+                                <InlineLink
+                                    href="https://pollinations.ai/privacy"
+                                    showIcon={false}
+                                >
+                                    Privacy Policy
+                                </InlineLink>
+                            </span>
+                        </span>
+                    </aside>
                 )}
                 {catalogError && activeTab !== "mcp" && (
                     <Alert intent="danger" className="mb-4">

@@ -54,7 +54,6 @@ import {
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import {
-    type CompletionUsage,
     CompletionUsageSchema,
     type ContentFilterResult,
     ContentFilterResultSchema,
@@ -78,6 +77,11 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import {
+    getResponsesEventUsage,
+    isResponsesFailure,
+    normalizeResponsesTerminalEvent,
+} from "@/text/responses/tracking.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -765,6 +769,7 @@ function containsFinishReasonError(output: unknown): boolean {
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
+        if (isResponsesFailure(event)) return true;
         if (!event || typeof event !== "object") continue;
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
@@ -856,7 +861,7 @@ async function* extractResponseStream(
         } catch {
             continue;
         }
-        yield data;
+        yield normalizeResponsesTerminalEvent(data, event.event);
     }
 }
 
@@ -1177,7 +1182,7 @@ async function extractUsageAndContentFilterResultsStream(
     });
 
     let model: string | undefined;
-    let usage: CompletionUsage | undefined;
+    let usage: Usage | undefined;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
@@ -1208,8 +1213,17 @@ async function extractUsageAndContentFilterResultsStream(
             if (usage) {
                 log.warn("Multiple usage objects found in event stream");
             }
-            usage = parseResult.data?.usage;
+            usage = openaiUsageToUsage(parseResult.data.usage);
             model = parseResult.data?.model;
+        }
+
+        const responsesUsage = getResponsesEventUsage(event);
+        if (responsesUsage) {
+            if (usage) {
+                log.warn("Multiple usage objects found in event stream");
+            }
+            usage = responsesUsage.usage;
+            model = responsesUsage.model ?? model;
         }
     }
 
@@ -1235,7 +1249,7 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: servedModel,
-            usage: openaiUsageToUsage(usage),
+            usage,
             output,
         },
         output,

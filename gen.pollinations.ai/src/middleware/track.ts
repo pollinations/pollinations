@@ -643,7 +643,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: resolvedModelRequested });
+        return notBilled({ modelUsed: modelCalled });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -674,10 +674,7 @@ export async function trackResponse(
                 output,
                 input: pricingInput,
             }),
-            modelUsed:
-                candidate.publicId === candidate.id
-                    ? (modelUsage?.model ?? modelCalled)
-                    : modelCalled,
+            modelUsed: modelUsage?.model ?? modelCalled,
             modelProviderUsed,
             usage,
             contentFilterResults,
@@ -760,10 +757,7 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        modelUsed:
-            candidate.publicId === candidate.id
-                ? modelUsage.model
-                : modelCalled,
+        modelUsed: modelUsage.model,
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,

@@ -159,6 +159,9 @@ export const FALLBACK_TARGET_HEADER = "x-fallback-target";
  */
 export const MODEL_USED_HEADER = "x-model-used";
 
+/** The canonical model requested, after alias resolution. */
+export const MODEL_REQUESTED_HEADER = "x-model-requested";
+
 /**
  * Convert OpenAI usage format to Usage format.
  *

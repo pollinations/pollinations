@@ -1677,7 +1677,8 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
     );
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("flux");
+    expect(response.headers.get("x-model-requested")).toBe("flux");
+    expect(response.headers.get("x-model-used")).toBe("flux-deepinfra");
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
     await wait();

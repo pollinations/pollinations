@@ -6,10 +6,7 @@ import {
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import {
-    FALLBACK_TARGET_HEADER,
-    MODEL_USED_HEADER,
-} from "@shared/registry/usage-headers.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
@@ -210,10 +207,7 @@ export function isRetryableFallbackError(error: unknown): boolean {
  * seam below does not depend on how any one handler reaches its provider.
  */
 export type FallbackCandidate = {
-    /** Internal registry route used for dispatch, limits, and provider cost. */
     id: string;
-    /** Public model identity used in response headers and analytics. */
-    publicId: string;
     /** Always present alongside `communityEndpoint`: it is what prices it. */
     definition?: ModelDefinition;
     communityEndpoint?: CommunityEndpointRuntime;
@@ -241,7 +235,6 @@ export function fallbackCandidates(
     const candidates: FallbackCandidate[] = [
         {
             id: model?.resolved ?? "",
-            publicId: model?.resolved ?? "",
             definition: model?.definition,
             communityEndpoint: model?.communityEndpoint,
         },
@@ -249,10 +242,6 @@ export function fallbackCandidates(
     for (const entry of model?.fallbackEntries ?? []) {
         candidates.push({
             id: entry.id,
-            publicId:
-                entry.definition.fallbackOnly && !entry.communityEndpoint
-                    ? (model?.resolved ?? entry.id)
-                    : entry.id,
             definition: entry.definition,
             communityEndpoint: entry.communityEndpoint,
             entry,
@@ -398,7 +387,7 @@ export async function withModelFallbackResponse(
     attempts?: FallbackAttempt[],
     beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<Response> {
-    const { result, candidate, index } = await withModelFallback(
+    const { result, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
         attempts,
@@ -407,6 +396,5 @@ export async function withModelFallbackResponse(
     if (index > 0) {
         result.headers.set(FALLBACK_TARGET_HEADER, formatFallbackTarget(index));
     }
-    result.headers.set(MODEL_USED_HEADER, candidate.publicId);
     return result;
 }

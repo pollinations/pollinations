@@ -1439,7 +1439,6 @@ export async function handleRealtimeWebSocket(
     const userId = await authorizeRealtimeSession(c);
     await enforceModelRateLimit(c, {
         id: c.var.model.resolved,
-        publicId: c.var.model.resolved,
         definition: c.var.model.definition,
         communityEndpoint: c.var.model.communityEndpoint,
     });

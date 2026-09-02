@@ -339,9 +339,9 @@ async function generateTextResponse(
         // R2 cache snapshots never leak the field.
         attachFallbackTarget(completion, index);
 
-        // Provider fallback routes keep their internal dispatch id while the
-        // response reports the public model the caller selected.
-        const servedModelId = candidate.publicId || undefined;
+        // The successful candidate always carries the canonical registry id,
+        // including aliases, community models, and fallback targets.
+        const servedModelId = candidate.id || undefined;
         if (normalizedRequestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);

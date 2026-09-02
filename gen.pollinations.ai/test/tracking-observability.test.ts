@@ -349,7 +349,6 @@ function recordSettledEntry(
     attempts.push({
         candidate: {
             id: entry.id,
-            publicId: entry.id,
             definition: entry.definition,
             communityEndpoint: entry.communityEndpoint,
             entry,
@@ -2270,7 +2269,6 @@ function requestTrackingFixture(
 function candidateFixture(model: ModelName = "openai"): FallbackCandidate {
     return {
         id: model,
-        publicId: model,
         definition: getRegistryModelDefinition(model),
     };
 }
@@ -2291,18 +2289,18 @@ describe("trackResponse modelUsed", () => {
         });
     });
 
-    it("attributes a 200 with an unexpected content-type to the resolved model", async () => {
+    it("attributes an unexpected content-type to the attempted route", async () => {
         const tracking = await trackResponse(
             "generate.image",
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
-            candidateFixture(),
+            { ...candidateFixture(), id: "internal-fallback" },
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "internal-fallback",
         });
     });
 

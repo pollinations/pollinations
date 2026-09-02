@@ -2,7 +2,6 @@ import { AUTO_TOP_UP_THRESHOLD_POLLEN } from "@shared/billing/auto-top-up.ts";
 import { calculateServiceFeeCents } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
-import { STRIPE_PAYMENT_SUPPORT_EMAIL } from "../stripe-payment-restriction.ts";
 import {
     getBillingDetailsSummary,
     isBillingDetailsComplete,
@@ -45,10 +44,7 @@ export async function getBillingOverview(
         user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD;
 
     return {
-        paymentAccess: {
-            restricted: paymentRestricted,
-            supportEmail: STRIPE_PAYMENT_SUPPORT_EMAIL,
-        },
+        paymentsRestricted: paymentRestricted,
         autoTopUp: {
             enabled: autoTopUpEnabled,
             thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,

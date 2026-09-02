@@ -42,10 +42,7 @@ export type AutoTopUpIssue =
       };
 
 export type BillingOverview = {
-    paymentAccess: {
-        restricted: boolean;
-        supportEmail: string;
-    };
+    paymentsRestricted: boolean;
     autoTopUp: {
         enabled: boolean;
         thresholdPollen: number;

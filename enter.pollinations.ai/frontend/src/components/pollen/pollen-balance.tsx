@@ -281,10 +281,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     const chargeLabel = selectedPack
         ? formatUsdCentsCompact(subtotalBeforeTaxCents)
         : "$0";
-    const paymentAccess = initialBillingState?.paymentAccess;
-    const paymentRestricted = paymentAccess?.restricted ?? false;
-    const paymentSupportEmail =
-        paymentAccess?.supportEmail ?? "billing@pollinations.ai";
+    const paymentRestricted = initialBillingState?.paymentsRestricted ?? false;
 
     return (
         <>
@@ -295,11 +292,11 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                         Purchases and automatic top-ups are unavailable for this
                         account. If you believe this is a mistake, email{" "}
                         <CopyButton
-                            value={paymentSupportEmail}
+                            value="billing@pollinations.ai"
                             className="font-semibold underline underline-offset-2"
                         >
                             {(copied) =>
-                                copied ? "Copied!" : paymentSupportEmail
+                                copied ? "Copied!" : "billing@pollinations.ai"
                             }
                         </CopyButton>{" "}
                         from the email address associated with your account.

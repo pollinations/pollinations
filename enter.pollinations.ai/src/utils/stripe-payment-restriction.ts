@@ -25,8 +25,8 @@ export async function restrictStripePayments(
     db: D1Database,
     userId: string,
     restrictedAt = new Date().toISOString(),
-): Promise<boolean> {
-    const result = await db
+): Promise<void> {
+    await db
         .prepare(
             `UPDATE user
             SET stripe_payment_restriction = ?,
@@ -36,8 +36,6 @@ export async function restrictStripePayments(
         )
         .bind(restrictedAt, userId)
         .run();
-
-    return (result.meta.changes ?? 0) === 1;
 }
 
 export function stripePaymentRestrictedResponse() {

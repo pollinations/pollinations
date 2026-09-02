@@ -7,17 +7,13 @@ export const STRIPE_NEW_CARD_GATE_METADATA = {
     gate: "app_new_card_gate",
     count24h: "app_new_card_count_24h",
     limit24h: "app_new_card_limit_24h",
-    attemptCount24h: "app_failed_card_attempt_count_24h",
-    attemptLimit24h: "app_failed_card_attempt_limit_24h",
 } as const;
 
 export type StripeNewCardGateStatus = {
     gate: "ok" | "locked";
     shouldRestrictPayments: boolean;
     distinctFailedCardCount24h: number;
-    failedCardAttemptCount24h: number;
     limit: number;
-    attemptLimit: number;
 };
 
 export type StripeCardFingerprintAttemptInput = {
@@ -37,9 +33,7 @@ export async function getStripeNewCardGateStatus(
             gate: "ok",
             shouldRestrictPayments: false,
             distinctFailedCardCount24h: 0,
-            failedCardAttemptCount24h: 0,
             limit: STRIPE_NEW_CARD_LIMIT,
-            attemptLimit: STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
         };
     }
 
@@ -72,9 +66,7 @@ export async function getStripeNewCardGateStatus(
                 STRIPE_PAYMENT_RESTRICTION_CARD_LIMIT ||
             failedCardAttemptCount24h >= STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
         distinctFailedCardCount24h,
-        failedCardAttemptCount24h,
         limit: STRIPE_NEW_CARD_LIMIT,
-        attemptLimit: STRIPE_FAILED_CARD_ATTEMPT_LIMIT,
     };
 }
 
@@ -87,12 +79,6 @@ export function stripeNewCardGateMetadata(
             status.distinctFailedCardCount24h,
         ),
         [STRIPE_NEW_CARD_GATE_METADATA.limit24h]: String(status.limit),
-        [STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h]: String(
-            status.failedCardAttemptCount24h,
-        ),
-        [STRIPE_NEW_CARD_GATE_METADATA.attemptLimit24h]: String(
-            status.attemptLimit,
-        ),
     };
 }
 

@@ -20,7 +20,11 @@ import { expect } from "vitest";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { restrictStripePayments } from "../../src/utils/stripe-payment-restriction.ts";
 import { test } from "../fixtures.ts";
-import { mockCardPaymentMethod, mockCustomer } from "../mocks/stripe.ts";
+import {
+    type MockStripeState,
+    mockCardPaymentMethod,
+    mockCustomer,
+} from "../mocks/stripe.ts";
 
 const base = "http://localhost:3000/api/stripe";
 const stripeWebhookUrl = "http://localhost:3000/api/webhooks/stripe";
@@ -219,6 +223,74 @@ function createCardPaymentFailedEvent({
     };
 }
 
+async function seedFailedCardAttempts(
+    userId: string,
+    fingerprints: string[],
+): Promise<void> {
+    const now = Date.now();
+    for (const [index, fingerprint] of fingerprints.entries()) {
+        await env.DB.prepare(
+            `INSERT INTO stripe_card_fingerprint_attempt (
+                event_id,
+                user_id,
+                card_fingerprint,
+                created_at
+            ) VALUES (?, ?, ?, ?)`,
+        )
+            .bind(`evt_seed_${index}`, userId, fingerprint, now - index)
+            .run();
+    }
+}
+
+async function recordFailedCardPayment(
+    stripeState: MockStripeState,
+    userId: string,
+    customerId: string,
+    fingerprint: string,
+): Promise<void> {
+    const paymentIntentId = `pi_${fingerprint}`;
+    stripeState.paymentIntents.push({
+        id: paymentIntentId,
+        object: "payment_intent",
+        status: "requires_payment_method",
+        amount: 1000,
+        currency: "usd",
+        metadata: { userId },
+        payment_method_types: ["card"],
+        receipt_email: "buyer@example.com",
+        latest_charge: {
+            id: `ch_${fingerprint}`,
+            object: "charge",
+            amount: 1000,
+            currency: "usd",
+            status: "failed",
+            customer: customerId,
+            payment_intent: paymentIntentId,
+            metadata: { userId },
+            billing_details: { email: "buyer@example.com" },
+            payment_method_details: {
+                type: "card",
+                card: {
+                    fingerprint,
+                    brand: "visa",
+                    country: "US",
+                    network: "visa",
+                },
+            },
+            outcome: { risk_level: "elevated", risk_score: 61 },
+        },
+    });
+
+    const response = await postSignedStripeWebhook(
+        createCardPaymentFailedEvent({
+            eventId: `evt_${fingerprint}`,
+            paymentIntentId,
+            userId,
+        }),
+    );
+    expect(response.status).toBe(200);
+}
+
 test.for(
     checkoutAmounts,
 )("%s should only be accessible when authenticated via session cookie", async (route, {
@@ -355,12 +427,6 @@ test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", asyn
     expect(body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
         "4",
     );
-    expect(
-        body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`],
-    ).toBe("0");
-    expect(
-        body?.[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptLimit24h}]`],
-    ).toBe("50");
 
     // payment_intent metadata mirrors session metadata for Stripe dashboard
     // inspection and reconciliation.
@@ -383,24 +449,10 @@ test("four distinct failed cards trigger Radar without restricting the account",
 }) => {
     await mocks.enable("stripe", "tinybird");
     const userId = await getSeededUserId();
-    const now = Date.now();
-    for (let index = 1; index <= 4; index++) {
-        await env.DB.prepare(
-            `INSERT INTO stripe_card_fingerprint_attempt (
-                event_id,
-                user_id,
-                card_fingerprint,
-                created_at
-            ) VALUES (?, ?, ?, ?)`,
-        )
-            .bind(
-                `evt_radar_${index}`,
-                userId,
-                `fp_radar_${index}`,
-                now - index,
-            )
-            .run();
-    }
+    await seedFailedCardAttempts(
+        userId,
+        Array.from({ length: 4 }, (_, index) => `fp_radar_${index}`),
+    );
 
     const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
@@ -467,50 +519,6 @@ test("eight distinct failed cards in 24h restrict payments", async ({
         },
     );
 
-    const recordFailedCard = async (fingerprint: string) => {
-        const paymentIntentId = `pi_${fingerprint}`;
-        mocks.stripe.state.paymentIntents.push({
-            id: paymentIntentId,
-            object: "payment_intent",
-            status: "requires_payment_method",
-            amount: 1000,
-            currency: "usd",
-            metadata: { userId },
-            payment_method_types: ["card"],
-            receipt_email: "buyer@example.com",
-            latest_charge: {
-                id: `ch_${fingerprint}`,
-                object: "charge",
-                amount: 1000,
-                currency: "usd",
-                status: "failed",
-                customer: "cus_test_card_gate",
-                payment_intent: paymentIntentId,
-                metadata: { userId },
-                billing_details: { email: "buyer@example.com" },
-                payment_method_details: {
-                    type: "card",
-                    card: {
-                        fingerprint,
-                        brand: "visa",
-                        country: "US",
-                        network: "visa",
-                    },
-                },
-                outcome: { risk_level: "elevated", risk_score: 61 },
-            },
-        });
-
-        const response = await postSignedStripeWebhook(
-            createCardPaymentFailedEvent({
-                eventId: `evt_${fingerprint}`,
-                paymentIntentId,
-                userId,
-            }),
-        );
-        expect(response.status).toBe(200);
-    };
-
     for (const fingerprint of [
         "fp_gate_1",
         "fp_gate_2",
@@ -520,7 +528,12 @@ test("eight distinct failed cards in 24h restrict payments", async ({
         "fp_gate_6",
         "fp_gate_7",
     ]) {
-        await recordFailedCard(fingerprint);
+        await recordFailedCardPayment(
+            mocks.stripe.state,
+            userId,
+            "cus_test_card_gate",
+            fingerprint,
+        );
     }
 
     const preLimitResponse = await SELF.fetch(`${base}/checkout/p10`, {
@@ -548,18 +561,13 @@ test("eight distinct failed cards in 24h restrict payments", async ({
             `metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`
         ],
     ).toBe("4");
-    expect(
-        preLimitCheckoutBody?.[
-            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`
-        ],
-    ).toBe("7");
-    expect(
-        preLimitCheckoutBody?.[
-            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptLimit24h}]`
-        ],
-    ).toBe("50");
 
-    await recordFailedCard("fp_gate_8");
+    await recordFailedCardPayment(
+        mocks.stripe.state,
+        userId,
+        "cus_test_card_gate",
+        "fp_gate_8",
+    );
 
     const createdCheckoutCount = mocks.stripe.state.requests.filter(
         (request) =>
@@ -639,24 +647,10 @@ test("checkout expires open sessions when it discovers a locked account", async 
 
     // Eight distinct failed cards recorded without the webhook having
     // enforced the lock (e.g. its Stripe call failed).
-    const now = Date.now();
-    for (let index = 1; index <= 8; index++) {
-        await env.DB.prepare(
-            `INSERT INTO stripe_card_fingerprint_attempt (
-                event_id,
-                user_id,
-                card_fingerprint,
-                created_at
-            ) VALUES (?, ?, ?, ?)`,
-        )
-            .bind(
-                `evt_route_lock_${index}`,
-                userId,
-                `fp_route_lock_${index}`,
-                now - index,
-            )
-            .run();
-    }
+    await seedFailedCardAttempts(
+        userId,
+        Array.from({ length: 8 }, (_, index) => `fp_route_lock_${index}`),
+    );
 
     const response = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
@@ -774,20 +768,7 @@ test("fifty failed attempts on one card restrict payments", async ({
 }) => {
     await mocks.enable("stripe", "tinybird");
     const userId = await getSeededUserId();
-    const now = Date.now();
-
-    for (let index = 1; index < 50; index++) {
-        await env.DB.prepare(
-            `INSERT INTO stripe_card_fingerprint_attempt (
-                event_id,
-                user_id,
-                card_fingerprint,
-                created_at
-            ) VALUES (?, ?, ?, ?)`,
-        )
-            .bind(`evt_retry_seed_${index}`, userId, "fp_retry", now - index)
-            .run();
-    }
+    await seedFailedCardAttempts(userId, Array(49).fill("fp_retry"));
 
     const preLimitResponse = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",
@@ -800,55 +781,16 @@ test("fifty failed attempts on one card restrict payments", async ({
     )?.body;
     expect(
         preLimitCheckoutBody?.[
-            `metadata[${STRIPE_NEW_CARD_GATE_METADATA.attemptCount24h}]`
-        ],
-    ).toBe("49");
-    expect(
-        preLimitCheckoutBody?.[
             `metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`
         ],
     ).toBe("ok");
 
-    mocks.stripe.state.paymentIntents.push({
-        id: "pi_retry_50",
-        object: "payment_intent",
-        status: "requires_payment_method",
-        amount: 1000,
-        currency: "usd",
-        metadata: { userId },
-        payment_method_types: ["card"],
-        receipt_email: "buyer@example.com",
-        latest_charge: {
-            id: "ch_retry_50",
-            object: "charge",
-            amount: 1000,
-            currency: "usd",
-            status: "failed",
-            customer: "cus_test_retry_gate",
-            payment_intent: "pi_retry_50",
-            metadata: { userId },
-            billing_details: { email: "buyer@example.com" },
-            payment_method_details: {
-                type: "card",
-                card: {
-                    fingerprint: "fp_retry",
-                    brand: "visa",
-                    country: "US",
-                    network: "visa",
-                },
-            },
-            outcome: { risk_level: "elevated", risk_score: 61 },
-        },
-    });
-
-    const webhookResponse = await postSignedStripeWebhook(
-        createCardPaymentFailedEvent({
-            eventId: "evt_retry_50",
-            paymentIntentId: "pi_retry_50",
-            userId,
-        }),
+    await recordFailedCardPayment(
+        mocks.stripe.state,
+        userId,
+        "cus_test_retry_gate",
+        "fp_retry",
     );
-    expect(webhookResponse.status).toBe(200);
 
     const checkoutResponse = await SELF.fetch(`${base}/checkout/p10`, {
         method: "GET",

@@ -90,15 +90,6 @@ export async function updateAutoTopUpSettings(
         return { ok: true, overview: await getBillingOverview(env, userId) };
     }
 
-    const user = await getUserStripeBillingRow(env.DB, userId);
-    if (user.stripePaymentRestriction) {
-        return {
-            ok: false,
-            status: 403,
-            error: STRIPE_PAYMENT_RESTRICTED_MESSAGE,
-        };
-    }
-
     const pack =
         typeof input.packAmountUsd === "number"
             ? getPollenPackByAmount(input.packAmountUsd)
@@ -145,8 +136,8 @@ export async function updateAutoTopUpSettings(
         };
     }
 
-    // The restriction check above ran before several Stripe round-trips; a
-    // restriction written in between must not enable auto top-up.
+    // Do not enable auto top-up if the account became restricted during the
+    // Stripe calls above.
     const result = await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = 1,
@@ -172,10 +163,6 @@ export async function processAutoTopUpForUser(
     userId: string,
 ): Promise<AutoTopUpProcessResult> {
     const user = await getUserStripeBillingRow(env.DB, userId);
-
-    if (user.stripePaymentRestriction) {
-        return { status: "skipped", reason: "payments restricted" };
-    }
 
     const eligibility = getAutoTopUpEligibility(user);
     if (!eligibility.eligible) {

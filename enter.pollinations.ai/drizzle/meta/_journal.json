@@ -414,6 +414,13 @@
       "when": 1788203007557,
       "tag": "0058_rekey_issue_rewards",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1788290821008,
+      "tag": "0059_shared-community-safety",
+      "breakpoints": true
     }
   ]
 }

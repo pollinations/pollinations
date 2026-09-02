@@ -1,84 +1,29 @@
 # pollinations.ai MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for generating
-text, images, video, audio, embeddings, and 3D models with Pollinations. It also
-provides live model discovery, health information, and Pollen balance.
+A [Model Context Protocol](https://modelcontextprotocol.io) server that exposes
+Pollinations models and API capabilities as agent tools.
 
-## Quick Start
+## Connect
 
-Connect any Streamable HTTP client to `https://mcp.pollinations.ai` with:
+Connect a Streamable HTTP client to:
+
+```text
+https://gen.pollinations.ai/mcp/pollinations
+```
+
+Send a Pollinations API key with every request:
 
 ```http
 Authorization: Bearer YOUR_KEY
 ```
 
-The server can only use models and account features allowed by that key's
-permissions, and it cannot spend beyond the key's budget. Configure both in
-[API key settings](https://enter.pollinations.ai/keys); see
-[Authentication](https://gen.pollinations.ai/docs#tag/-authentication).
+Get a key from [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Calls use that key's Pollen wallet, permissions, and budget.
 
-## Hosted MCP catalog
+For all Pollinations-hosted MCP servers, see the
+[MCP Servers documentation](https://gen.pollinations.ai/docs#tag/mcp-servers).
 
-Pollinations also hosts other MCP servers. List their Streamable HTTP URLs and
-pricing:
-
-```bash
-curl https://gen.pollinations.ai/mcp
-```
-
-Connect any MCP client directly to a returned `url` with the same bearer
-header. Creating a Pollinations agent is not required, and API keys must not be
-put in the URL. Calls use the same Pollen wallet and key permissions as the
-Pollinations API; generation tools use the selected model's listed rate.
-
-For example, with the official TypeScript client:
-
-```ts
-import {
-  Client,
-  StreamableHTTPClientTransport,
-} from "@modelcontextprotocol/client";
-
-const client = new Client({ name: "my-app", version: "1.0.0" });
-const transport = new StreamableHTTPClientTransport(
-  new URL("https://gen.pollinations.ai/mcp/pollinations"),
-  {
-    requestInit: {
-      headers: {
-        Authorization: `Bearer ${process.env.POLLINATIONS_API_KEY}`,
-      },
-    },
-  },
-);
-
-await client.connect(transport);
-const { tools } = await client.listTools();
-```
-
-The client handles MCP initialization and tool discovery. Other clients use the
-same endpoint and header; only their configuration format differs.
-
-### Claude Code
-
-```bash
-claude mcp add --transport http pollinations https://mcp.pollinations.ai \
-  --header "Authorization: Bearer YOUR_KEY"
-```
-
-Run `/mcp` in Claude Code to verify the connection.
-
-## Authentication
-
-Get a key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or use
-[BYOP](../../BRING_YOUR_OWN_POLLEN.md) to let users connect their own wallet
-through a web or device flow.
-
-**Key types:**
-
-- `pk_` — client-safe and rate-limited to 1 Pollen per IP per hour
-- `sk_` — server-side only and not rate-limited
-
-## Available Tools
+## Tools
 
 | Tool | Purpose | API route |
 | --- | --- | --- |
@@ -94,12 +39,11 @@ through a web or device flow.
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
-an MCP resource link, so binary data does not consume model context. Links are
-public to anyone who has them and expire after 30 days. Pass an image's HTTPS
-URL to edit it, and use separate tool calls for multiple images.
+an MCP resource link, so binary data does not consume model context. Anyone
+with the link can access it, and it expires after 30 days.
 
-Models, voices, capabilities, and pricing come from the live registry rather
-than hardcoded lists. Use `listModels` before selecting a model or voice.
+Models, voices, capabilities, and pricing come from the live registry. Use
+`listModels` before selecting a model or voice.
 
 ## Development
 
@@ -109,16 +53,11 @@ Requires Node.js 20 or newer. Run the tests with:
 npm test
 ```
 
-Set `POLLINATIONS_API_KEY` to add live model, auth, text, image, and balance
-checks.
+Set `POLLINATIONS_API_KEY` to add live model, authentication, generation, and
+balance checks.
 
 The hosted Cloudflare Worker lives in [`apps/mcp/`](../../apps/mcp/) and is
-deployed from `production` by
-[`Deploy / Applications`](../../.github/workflows/deploy-applications.yml)
-whenever `apps/mcp/` or `packages/mcp/` changes. It has no separate staging
-deployment because it is a thin Gen proxy. Use the workflow's `mcp` target for
-a manual redeploy.
+routed through Gen.
 
-API reference: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs) ·
 Issues: [GitHub](https://github.com/pollinations/pollinations/issues) · License:
 MIT

@@ -3,6 +3,7 @@ import {
     buildUsageHeaders,
     openaiUsageToUsage,
     parseUsageHeaders,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { describe, expect, it } from "vitest";
 
@@ -429,5 +430,28 @@ describe("buildUsageHeaders + parseUsageHeaders round-trip", () => {
         expect(parsedUsage.completionAudioSeconds).toBe(
             originalUsage.completionAudioSeconds,
         );
+    });
+});
+
+describe("responsesUsageToUsage", () => {
+    it("splits cached and reasoning tokens from inclusive totals", () => {
+        expect(
+            responsesUsageToUsage({
+                input_tokens: 12,
+                input_tokens_details: {
+                    cached_tokens: 2,
+                    cache_write_tokens: 1,
+                },
+                output_tokens: 7,
+                output_tokens_details: { reasoning_tokens: 3 },
+                total_tokens: 19,
+            }),
+        ).toMatchObject({
+            promptTextTokens: 9,
+            promptCachedTokens: 2,
+            promptCacheWriteTokens: 1,
+            completionTextTokens: 4,
+            completionReasoningTokens: 3,
+        });
     });
 });

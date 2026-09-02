@@ -1,0 +1,34 @@
+{
+  "pr_number": 14350,
+  "title": "fix: log upstream terminal response errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14350",
+  "merged_at": "2026-09-02T14:30:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `finish_reason: \"error\"` responses to the private 24-hour `error_event` datasource.\n- Records credential-redacted request inputs and parsed JSON/SSE output.\n- Preserves the client response and existing unbilled 502 health classification.\n- Extends tracking coverage for the detailed error event.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The error jar got labels",
+    "blurb": "When an upstream request ends with an error, the hive now keeps a careful, redacted record of what happened. Same client response, much better trail of breadcrumbs.",
+    "summary": "Added 24-hour private error-event tracking for upstream responses with `finish_reason: \"error\"`, including credential-redacted request inputs and parsed JSON or SSE output while preserving existing client responses and unbilled 502 classification.",
+    "impact": "Maintainers can diagnose terminal upstream failures with the original request context and parsed response data, without exposing credentials or changing what clients receive.",
+    "keywords": [
+      "observability",
+      "error-tracking",
+      "upstream",
+      "SSE",
+      "gen-api",
+      "middleware"
+    ],
+    "visual_concept": "Polli acts as a careful incident librarian in a cozy server-garden, placing a redacted error scroll and a glowing JSON/SSE printout into a clearly labeled 24-hour archive jar. A friendly CRT monitor robot helps inspect the trail while code-plants and small flowers make the internal debugging work feel warm rather than alarming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and tiny librarian glasses, carefully filing a redacted error scroll and glowing JSON/SSE printout into a lime green (#ecf874) archive jar labeled \"24H\" beside a helpful CRT monitor robot. Code-plants sprout around a warm retro terminal, with soft pastel mint, lavender, peach, and cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14350.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and tiny librarian glasses, carefully filing a redacted error scroll and glowing JSON/SSE printout into a lime green (#ecf874) archive jar labeled \"24H\" beside a helpful CRT monitor robot. Code-plants sprout around a warm retro terminal, with soft pastel mint, lavender, peach, and cream gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T14:31:46.903520+00:00"
+}

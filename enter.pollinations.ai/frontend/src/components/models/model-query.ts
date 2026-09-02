@@ -106,7 +106,14 @@ function getFilterValues(key: string, models: ModelPrice[]): string[] {
         case "id":
             return models.map((model) => model.name.toLowerCase());
         case "type":
-            return models.map((model) => (model.agent ? "agent" : model.type));
+            return models
+                .map((model) => (model.agent ? "agent" : model.type))
+                .filter(
+                    (
+                        value,
+                    ): value is NonNullable<ModelPrice["type"]> | "agent" =>
+                        value !== undefined,
+                );
         case "capability":
             return models
                 .flatMap(getSearchableCapabilities)

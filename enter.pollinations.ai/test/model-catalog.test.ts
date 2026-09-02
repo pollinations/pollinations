@@ -121,6 +121,20 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
     });
 });
 
+it("accepts agents without inventing a model category", () => {
+    const [agent] = getModelPricesFromCatalog([
+        {
+            name: "agent",
+            agent: true,
+            output_modalities: ["image"],
+            pricing: { currency: "pollen" },
+        },
+    ]);
+
+    expect(agent).toMatchObject({ name: "agent", agent: true });
+    expect(agent.type).toBeUndefined();
+});
+
 it("adds rolling user counts from public model stats", () => {
     const [model] = getModelPricesFromCatalog(
         [{ name: "popular-model", category: "text" }],

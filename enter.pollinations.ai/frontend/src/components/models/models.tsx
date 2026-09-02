@@ -58,6 +58,7 @@ import { useModelStats } from "./use-model-stats.ts";
 const POLLINATIONS_SECTION_ORDER: SectionType[] = [
     "all",
     "text",
+    "agent",
     "image",
     "video",
     "3d",
@@ -73,7 +74,7 @@ const MODEL_SLUG_LIST_URL =
     "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
 
 const SCOPE_LABELS: Record<ModelScope, string> = {
-    pollinations: "Official",
+    pollinations: "Pollinations",
     community: "Community",
 };
 
@@ -147,7 +148,11 @@ function categorizeModels(
     };
 
     for (const model of models) {
-        categorized[model.agent ? "agent" : model.type].push(model);
+        if (model.agent) {
+            categorized.agent.push(model);
+        } else if (model.type) {
+            categorized[model.type].push(model);
+        }
     }
     return categorized;
 }
@@ -325,9 +330,7 @@ export const Models: FC = () => {
                           ).includes(previous.category ?? "all")
                             ? previous.category
                             : undefined
-                        : previous.category === "agent"
-                          ? undefined
-                          : previous.category,
+                        : previous.category,
             }),
         });
     };

@@ -37,7 +37,7 @@ export type ModelSearch = {
 };
 
 type ModelSectionInput = {
-    type: Exclude<ModelCategory, "all" | "agent">;
+    type?: Exclude<ModelCategory, "all" | "agent">;
     agent?: boolean;
 };
 
@@ -87,8 +87,7 @@ export function validateModelSearch(
     return {
         scope: scope === "community" ? scope : undefined,
         category:
-            category !== "all" &&
-            category !== (scope === "community" ? "mcp" : "agent")
+            category !== "all" && (scope !== "community" || category !== "mcp")
                 ? category
                 : undefined,
         q: query || undefined,

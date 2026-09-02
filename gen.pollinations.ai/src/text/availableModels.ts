@@ -1,6 +1,6 @@
 import { resolveModelName } from "@shared/registry/registry.ts";
+import { midijourneyAgentTransform } from "./agents/midijourney.js";
 import { portkeyConfig } from "./configs/modelConfigs.js";
-import midijourneyPrompt from "./personas/midijourney.js";
 import { BASE_PROMPTS } from "./prompts/systemPrompts.js";
 import { createClaudeThinkingTransform } from "./transforms/createClaudeThinkingTransform.ts";
 import { createGeminiThinkingTransform } from "./transforms/createGeminiThinkingTransform.ts";
@@ -9,7 +9,6 @@ import {
     adaptGoogleSearchToolForVertex,
     createGeminiToolsTransform,
 } from "./transforms/createGeminiToolsTransform.ts";
-import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
@@ -317,13 +316,9 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-5.4-mini"],
-        transform: createMessageTransform(midijourneyPrompt),
-    },
-    {
-        name: "midijourney-large",
-        config: portkeyConfig["gpt-5.5"],
-        transform: createMessageTransform(midijourneyPrompt),
+        config: portkeyConfig["gpt-5.6-sol"],
+        transform: midijourneyAgentTransform,
+        useResponsesApi: true,
     },
     {
         name: "perplexity-fast",

@@ -22,6 +22,7 @@ import {
     type GenerationCacheAdapter,
     hashGenerationCacheIdentity,
 } from "./generation-cache.ts";
+import { getRequiredSafetyFeatures, type ModelVariables } from "./model.ts";
 
 type MediaCacheConfig = {
     /** Content types to cache, e.g. ["image/", "video/"] or ["audio/"] */
@@ -37,6 +38,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
         storage: "media",
         label: config.label,
         async getKey(c) {
+            const variables = c.var as typeof c.var & Partial<ModelVariables>;
             const cacheUrl = c.var.generationCacheUrl ?? new URL(c.req.url);
             if (!c.var.generationCacheUrl && c.var.generationCacheBody) {
                 cacheUrl.searchParams.set(
@@ -52,6 +54,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 c.var.generationCacheUrl
                     ? undefined
                     : c.req.header(SAFETY_HEADER_NAME),
+                getRequiredSafetyFeatures(variables.model),
             );
         },
         async get(c, cacheKey) {

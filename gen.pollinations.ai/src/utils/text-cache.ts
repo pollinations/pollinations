@@ -10,6 +10,7 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
+    type SafetyFeature,
 } from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
@@ -37,6 +38,7 @@ export async function generateCacheKey(
     request: Request,
     bodyText?: string,
     partition?: string,
+    requiredSafetyFeatures: readonly SafetyFeature[] = [],
 ): Promise<string> {
     const url = new URL(request.url);
 
@@ -89,6 +91,12 @@ export async function generateCacheKey(
     if (safeHeader !== null && !hasQuerySafe && !hasBodySafe) {
         parts.push(`${SAFETY_HEADER_NAME}:${safeHeader}`);
         usesSafety ||= hasActiveSafety(safeHeader);
+    }
+    if (requiredSafetyFeatures.length > 0) {
+        parts.push(
+            `required-safety:${[...new Set(requiredSafetyFeatures)].sort().join(",")}`,
+        );
+        usesSafety = true;
     }
     if (usesSafety) {
         parts.push(SAFETY_CACHE_VERSION);

@@ -65,6 +65,7 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            requiredSafetyFeatures: ["sexual"],
         });
 
         expect(created).toMatchObject({
@@ -74,8 +75,9 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             visibility: "private",
-            baseUrl: "https://agent.example.com/v1",
+            baseUrl: "https://agent.example.com/v1/?ignored=yes",
             upstreamModel: "external-agent",
+            requiredSafetyFeatures: ["sexual"],
             perUserRpm: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
@@ -89,13 +91,21 @@ describe("community endpoint configuration policy", () => {
         });
         expect(stored).toMatchObject({
             type: "endpoint_agent",
-            baseUrl: "https://agent.example.com/v1",
+            baseUrl: "https://agent.example.com/v1/?ignored=yes",
             upstreamModel: "external-agent",
+            requiredSafetyFeatures: ["sexual"],
             visibility: "private",
         });
         expect(
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
         ).toEqual({ perUserRpm: null });
+
+        const updated = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { requiredSafetyFeatures: ["violence"] },
+        );
+        expect(updated.requiredSafetyFeatures).toEqual(["violence"]);
     });
 
     test("rejects proxy-only fields and unapproved public endpoint agents", async ({
@@ -140,6 +150,7 @@ describe("community endpoint configuration policy", () => {
                 modality: "image",
                 imagePricing: "request",
                 inputModalities: ["audio"],
+                requiredSafetyFeatures: [],
                 advertised: { contextLength: 32000 },
                 paidOnly: false,
             }),
@@ -159,6 +170,7 @@ describe("community endpoint configuration policy", () => {
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
@@ -172,6 +184,7 @@ describe("community endpoint configuration policy", () => {
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
@@ -191,12 +204,20 @@ describe("community endpoint configuration policy", () => {
             promptImagePrice: 0,
             completionImagePrice: 0.2,
             paidOnly: true,
+            requiredSafetyFeatures: ["sexual", "violence"],
             pending: {
                 imagePricing: "tokens",
                 promptImagePrice: 0.000001,
                 completionImagePrice: 0,
             },
         });
+
+        const safetyDisabled = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { requiredSafetyFeatures: [] },
+        );
+        expect(safetyDisabled.requiredSafetyFeatures).toEqual([]);
 
         const privateModel = await postModel(
             sessionToken,

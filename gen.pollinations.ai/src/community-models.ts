@@ -1,13 +1,11 @@
 import {
-    applyPendingProxyPricing,
-    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     type CommunityEndpointRuntime,
     communityEndpointPrices,
     communityModelDefinition,
     communityModelId,
     effectiveCommunityEndpointVisibility,
     parseListingPayload,
-    pendingCommunityEndpointChangeIsReady,
+    resolveEffectiveProxyListing,
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
@@ -15,36 +13,10 @@ import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
-import type {
-    ModelDefinition,
-    ModelInputModality,
-} from "@shared/registry/registry.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { eq, isNotNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { AgentCatalogConfig } from "./agent-catalog.ts";
-
-const COMMUNITY_TEXT_ENDPOINTS = [
-    "/v1/chat/completions",
-    "/text",
-    "/text/{prompt}",
-];
-export function communityTextSupportedEndpoints(): string[] {
-    return COMMUNITY_TEXT_ENDPOINTS;
-}
-
-export function communityTranscriptionSupportedEndpoints(): string[] {
-    return ["/v1/audio/transcriptions"];
-}
-
-export function communityImageSupportedEndpoints(
-    inputModalities: readonly ModelInputModality[] = ["text"],
-): string[] {
-    return [
-        "/v1/images/generations",
-        ...(inputModalities.includes("image") ? ["/v1/images/edits"] : []),
-        "/image/{prompt}",
-    ];
-}
 
 export type CommunityModelRegistryEntry = {
     id: string;
@@ -79,6 +51,8 @@ export async function getCommunityModelRegistryEntries(
             type: schema.communityEndpoint.type,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
+            requiredSafetyFeatures:
+                schema.communityEndpoint.requiredSafetyFeatures,
             payload: schema.communityEndpoint.payload,
             pendingPayload: schema.communityEndpoint.pendingPayload,
             pendingVisibility: schema.communityEndpoint.pendingVisibility,
@@ -97,20 +71,35 @@ export async function getCommunityModelRegistryEntries(
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
-        const pendingReady = pendingCommunityEndpointChangeIsReady(
-            row.pendingAt,
-        );
-        const effectiveVisibility = effectiveCommunityEndpointVisibility(
-            row.visibility,
-            row.pendingVisibility,
-            row.pendingAt,
-        );
         const baseUrl =
             row.type === "prompt_agent"
                 ? env.AGENT_RUNTIME_BASE_URL
                 : row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
+        let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
+            null;
+        if (row.type === "proxy") {
+            const currentPayload = parseListingPayload("proxy", row.payload);
+            if (!currentPayload) return [];
+            proxyState = resolveEffectiveProxyListing({
+                visibility: row.visibility,
+                payload: currentPayload,
+                pendingVisibility: row.pendingVisibility,
+                pendingPayload: parseListingPayload(
+                    "proxy",
+                    row.pendingPayload,
+                ),
+                pendingAt: row.pendingAt,
+            });
+        }
+        const effectiveVisibility =
+            proxyState?.visibility ??
+            effectiveCommunityEndpointVisibility(
+                row.visibility,
+                row.pendingVisibility,
+                row.pendingAt,
+            );
         const identity = {
             id: row.id,
             ownerUserId: row.ownerUserId,
@@ -122,6 +111,7 @@ export async function getCommunityModelRegistryEntries(
             providerUrl: row.providerUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
+            requiredSafetyFeatures: row.requiredSafetyFeatures,
             visibility: effectiveVisibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,
@@ -178,18 +168,8 @@ export async function getCommunityModelRegistryEntries(
                 break;
             }
             case "proxy": {
-                const currentPayload = parseListingPayload(
-                    "proxy",
-                    row.payload,
-                );
-                if (!currentPayload) return [];
-                const pendingPayload = parseListingPayload(
-                    "proxy",
-                    row.pendingPayload,
-                );
-                const payload = pendingReady
-                    ? applyPendingProxyPricing(currentPayload, pendingPayload)
-                    : currentPayload;
+                if (!proxyState) return [];
+                const payload = proxyState.payload;
                 communityEndpoint = {
                     ...identity,
                     type: "proxy",
@@ -214,10 +194,9 @@ export async function getCommunityModelRegistryEntries(
             community: true,
             agent: usesAgentRunToken(communityEndpoint),
         });
-        const pendingPayload = parseListingPayload("proxy", row.pendingPayload);
+        const pendingPayload = proxyState?.pending?.payload ?? null;
         if (
-            !pendingReady &&
-            row.pendingAt &&
+            proxyState?.pending &&
             row.visibility === "public" &&
             pendingPayload
         ) {
@@ -228,10 +207,7 @@ export async function getCommunityModelRegistryEntries(
                 ...pendingPayload.prices,
             });
             info.pending_change = {
-                effective_at: new Date(
-                    row.pendingAt.getTime() +
-                        COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
-                ).toISOString(),
+                effective_at: proxyState.pending.effectiveAt.toISOString(),
                 paid_only: pendingPayload.paidOnly,
                 pricing: modelInfoFromDefinition(modelId, pendingDefinition)
                     .pricing,

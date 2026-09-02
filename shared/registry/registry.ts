@@ -1,4 +1,5 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
+import type { SafetyFeature } from "../schemas/safety.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
 import type { CostVariantContext, PricingInput } from "./cost-variants";
 
@@ -17,17 +18,21 @@ export {
 import { EMBEDDING_SERVICES, type EmbeddingServiceId } from "./embeddings";
 import { IMAGE_SERVICES, type ImageModelName } from "./image";
 import { MODEL3D_SERVICES, type Model3dName } from "./model3d";
+import type { BillingRateDefinition } from "./public-pricing";
 import { REALTIME_SERVICES, type RealtimeModelName } from "./realtime";
 import { TEXT_SERVICES, type TextModelName } from "./text";
 
-export type Category =
-    | "text"
-    | "image"
-    | "audio"
-    | "video"
-    | "3d"
-    | "embedding"
-    | "realtime";
+export const MODEL_CATEGORIES = [
+    "text",
+    "image",
+    "audio",
+    "video",
+    "3d",
+    "embedding",
+    "realtime",
+] as const;
+
+export type Category = (typeof MODEL_CATEGORIES)[number];
 
 export const MODEL_INPUT_MODALITIES = [
     "text",
@@ -37,6 +42,17 @@ export const MODEL_INPUT_MODALITIES = [
 ] as const;
 
 export type ModelInputModality = (typeof MODEL_INPUT_MODALITIES)[number];
+
+export const MODEL_OUTPUT_MODALITIES = [
+    "text",
+    "image",
+    "audio",
+    "video",
+    "embedding",
+    "3d",
+] as const;
+
+export type ModelOutputModality = (typeof MODEL_OUTPUT_MODALITIES)[number];
 
 export type UsageType =
     | "promptTextTokens"
@@ -86,33 +102,19 @@ export type ModelName =
     | RealtimeModelName
     | Model3dName;
 
-export type VideoCapability =
-    | "start_frame"
-    | "end_frame"
-    | "keyframes"
-    | "reference_images"
-    | "reference_videos"
-    | "reference_audios"
-    | "audio_output";
+export const VIDEO_CAPABILITIES = [
+    "start_frame",
+    "end_frame",
+    "keyframes",
+    "reference_images",
+    "reference_videos",
+    "reference_audios",
+    "audio_output",
+] as const;
 
-export type BillingAdjustmentRule = {
-    id: string;
-    description: string;
-    kind: string;
-    unit: string;
-    unitCost: number;
-    publicPricing: {
-        label: string;
-        quantity: number;
-        unit: string;
-        suffix?: string;
-        option?: {
-            group: string;
-            value: string;
-            label: string;
-            default?: boolean;
-        };
-    };
+export type VideoCapability = (typeof VIDEO_CAPABILITIES)[number];
+
+export type BillingAdjustmentRule = BillingRateDefinition & {
     // Counts billable units from the response output (stream outputs carry a
     // `streamEvents` array). Returning 0 skips the rule for this request.
     // Provider-specific parsing lives with the rule's provider module
@@ -153,8 +155,8 @@ export type ModelDefinition = {
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
-    /** Override the shared fallback status list for this model. Network failures always retry. */
-    fallbackOnStatusCodes?: number[];
+    /** Input safety features callers cannot disable for this model. */
+    requiredSafetyFeatures?: SafetyFeature[];
     brand: string;
     category: Category;
     cost: CostDefinition;
@@ -188,7 +190,7 @@ export type ModelDefinition = {
     // prefix ("Title - description"). Prefer `title` for display names.
     description?: string;
     inputModalities?: ModelInputModality[];
-    outputModalities?: string[];
+    outputModalities?: ModelOutputModality[];
     tools?: boolean;
     reasoning?: boolean;
     search?: boolean;
@@ -207,6 +209,8 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
+    fallbackOnly?: boolean;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
@@ -531,7 +535,7 @@ export function resolveModelName(model: string): ModelName {
 }
 
 /**
- * Get all public model names
+ * Get all bundled registry model names, including hidden provider routes.
  */
 export function getModels(): ModelName[] {
     return Object.keys(MODEL_REGISTRY) as ModelName[];
@@ -568,8 +572,14 @@ function getModel3dModels(): Model3dName[] {
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
-    return ids.filter((id) => !MODEL_REGISTRY[id]?.hidden);
+    return ids.filter((id) =>
+        isVisibleModelDefinition(MODEL_REGISTRY[id] as ModelDefinition),
+    );
 }
+
+export const isVisibleModelDefinition = (
+    definition: ModelDefinition,
+): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
 
 export const getVisibleTextModels = () => filterVisible(getTextModels());
 export const getVisibleImageModels = () => filterVisible(getImageModels());

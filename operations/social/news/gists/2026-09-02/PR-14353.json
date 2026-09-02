@@ -1,0 +1,34 @@
+{
+  "pr_number": 14353,
+  "title": "docs: add quest solution review rubric",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14353",
+  "merged_at": "2026-09-02T14:45:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a focused skill for comparing competing community quest PRs\n- Treats correctness as a gate before simplicity and code-quality comparisons\n- Keeps branch age neutral and requires complete candidate discovery\n- Links the skill from AGENTS.md for discoverability",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The quest judge gets glasses",
+    "blurb": "A small review rubric now helps the hive compare competing Quest solutions without mistaking the oldest branch for the best one.",
+    "summary": "Added a Quest-solution review skill that requires complete candidate discovery, gates comparisons on correctness, then evaluates simplicity and code quality, with a discoverability link in AGENTS.md.",
+    "impact": "Contributors and maintainers get a consistent way to select the strongest merged Quest PR based on working solutions rather than branch age.",
+    "keywords": [
+      "quests",
+      "contributions",
+      "review",
+      "rubric",
+      "documentation",
+      "agents"
+    ],
+    "visual_concept": "Polli wears tiny judge glasses and reviews several flowering code-plants on equal-sized pots, checking each with a clipboard before awarding a small Pollen badge to the healthiest correct bloom; branch-age labels are deliberately ignored, while a cozy terminal and garden establish the technical review setting.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny judge glasses and holding a clipboard as she compares several code-plants blooming from identical lime green (#ecf874) pots; the healthiest plant receives a small Pollen badge while a retro terminal glows nearby, with soft flowers and vines around the garden shed. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'CORRECT FIRST', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14353.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing tiny judge glasses and holding a clipboard as she compares several code-plants blooming from identical lime green (#ecf874) pots; the healthiest plant receives a small Pollen badge while a retro terminal glows nearby, with soft flowers and vines around the garden shed. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: 'CORRECT FIRST', nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T14:46:32.491851+00:00"
+}

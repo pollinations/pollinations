@@ -1,0 +1,33 @@
+{
+  "pr_number": 14365,
+  "title": "refactor: simplify auto top-up eligibility",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14365",
+  "merged_at": "2026-09-02T20:05:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Inline the three eligibility checks where they are used\n- Remove the one-use eligibility union and helper\n- Preserve the same skip reasons and pack validation\n\nChecks:\n- `npm run typecheck`\n- `npx vitest run test/integration/stripe.test.ts` (70 tests)",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Top-ups, less ceremony",
+    "blurb": "The auto top-up path shed a small amount of paperwork without changing its judgment. Same guardrails, fewer places for them to hide.",
+    "summary": "Refactored auto top-up eligibility by inlining its three existing checks and removing a one-use union/helper while preserving skip reasons and pack validation.",
+    "impact": "Auto top-up behavior remains the same, with the eligibility logic now easier for maintainers to trace and update.",
+    "keywords": [
+      "billing",
+      "stripe",
+      "auto-top-up",
+      "refactor",
+      "validation"
+    ],
+    "visual_concept": "Depict Polli as a meticulous beekeeper at a cozy billing garden, replacing a tangled three-branch paper checklist with three clear signposts leading to a validated Pollen jar. A small CRT monitor robot can inspect the checklist, while code-plants and flowers show that the rules remain intact despite the tidier path.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny accountant visor, tidying three paper eligibility checklists into three clear garden signposts beside a glowing validated Pollen jar; a friendly CRT monitor robot watches from a retro terminal among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14365.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny accountant visor, tidying three paper eligibility checklists into three clear garden signposts beside a glowing validated Pollen jar; a friendly CRT monitor robot watches from a retro terminal among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T20:06:10.895021+00:00"
+}

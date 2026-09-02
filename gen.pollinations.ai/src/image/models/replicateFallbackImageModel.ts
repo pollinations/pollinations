@@ -14,11 +14,11 @@ import {
 } from "../utils/replicateClient.ts";
 
 type ReplicateFallbackModel =
-    | "kontext-replicate"
-    | "flux-2-pro-replicate"
-    | "qwen-image-3-replicate"
-    | "p-image-edit-replicate"
-    | "krea-replicate";
+    | "black-forest-labs/flux.1-kontext-pro:fallback"
+    | "black-forest-labs/flux.2-pro:fallback"
+    | "qwen/qwen-image-3:fallback"
+    | "prunaai/p-image-edit:fallback"
+    | "krea/krea-2-medium:fallback";
 
 const COMMON_RATIOS = [
     "1:1",
@@ -108,7 +108,7 @@ export async function callReplicateFallbackImage(
     let completionImageTokens = 1;
 
     switch (model) {
-        case "flux-2-pro-replicate": {
+        case "black-forest-labs/flux.2-pro:fallback": {
             if (params.image.length > 8) {
                 throw new HttpError(
                     "FLUX.2 Pro supports at most 8 reference images",
@@ -133,7 +133,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "kontext-replicate": {
+        case "black-forest-labs/flux.1-kontext-pro:fallback": {
             const images = await prepareFluxImages(params.image.slice(0, 1));
             buffer = await runReplicateImage(
                 "black-forest-labs/flux-kontext-pro",
@@ -153,7 +153,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "qwen-image-3-replicate": {
+        case "qwen/qwen-image-3:fallback": {
             const image = params.image[0]
                 ? await toDataUri(params.image[0])
                 : undefined;
@@ -172,7 +172,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "p-image-edit-replicate": {
+        case "prunaai/p-image-edit:fallback": {
             if (params.image.length === 0) {
                 throw new HttpError(
                     "p-image-edit requires at least one input image",
@@ -197,7 +197,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "krea-replicate": {
+        case "krea/krea-2-medium:fallback": {
             if (params.image.length > 0) {
                 throw new HttpError("Krea does not accept image input", 400);
             }

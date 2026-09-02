@@ -11,10 +11,14 @@ import type { CommunityModelRateLimiter } from "../src/durable-objects/Community
 
 describe("model rate limiting", () => {
     it("limits the self-hosted image models", () => {
-        expect(IMAGE_SERVICES.flux.perUserRpm).toBe(60);
-        expect(IMAGE_SERVICES.zimage.perUserRpm).toBe(60);
-        expect(IMAGE_SERVICES.klein.perUserRpm).toBe(60);
-        expect(IMAGE_SERVICES.dreamshaper.perUserRpm).toBe(300);
+        expect(
+            IMAGE_SERVICES["black-forest-labs/flux.1-schnell"].perUserRpm,
+        ).toBe(60);
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].perUserRpm).toBe(60);
+        expect(
+            IMAGE_SERVICES["black-forest-labs/flux.2-klein-4b"].perUserRpm,
+        ).toBe(60);
+        expect(IMAGE_SERVICES["lykon/dreamshaper-8-lcm"].perUserRpm).toBe(300);
     });
 
     it("keeps configured catalog model limits at 60 RPM or higher", () => {
@@ -29,7 +33,7 @@ describe("model rate limiting", () => {
             aliases: [],
             provider: "test",
             perUserRpm: 0.5,
-            brand: "Test",
+            author: "Test",
             category: "text",
             cost: {},
             priceMultiplier: 1,

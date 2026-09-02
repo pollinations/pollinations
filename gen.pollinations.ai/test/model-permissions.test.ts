@@ -66,7 +66,9 @@ test("canonicalizes aliases in new model permissions", async () => {
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as { name: string }[];
-    expect(body.map((model) => model.name)).toEqual(["nanobanana-2"]);
+    expect(body.map((model) => model.name)).toEqual([
+        "google/gemini-3.1-flash-image",
+    ]);
 });
 
 test("empty model permissions deny access and return an empty catalog", async () => {
@@ -198,12 +200,16 @@ test("filters paid-only audio models by paid balance", async ({
     );
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);
-    expect(freeModels.some((model) => model.name === "universal-3.5-pro")).toBe(
-        true,
-    );
-    expect(paidModels.some((model) => model.name === "universal-3.5-pro")).toBe(
-        true,
-    );
+    expect(
+        freeModels.some(
+            (model) => model.name === "assemblyai/universal-3.5-pro",
+        ),
+    ).toBe(true);
+    expect(
+        paidModels.some(
+            (model) => model.name === "assemblyai/universal-3.5-pro",
+        ),
+    ).toBe(true);
 });
 
 test("requires paid balance for Recraft vector", async ({
@@ -220,10 +226,14 @@ test("requires paid balance for Recraft vector", async ({
     const paidModels = (await paidCatalog.json()) as { name: string }[];
 
     expect(
-        freeModels.some((model) => model.name === "recraft-v4.1-vector"),
+        freeModels.some(
+            (model) => model.name === "recraft/recraft-v4.1-vector",
+        ),
     ).toBe(false);
     expect(
-        paidModels.some((model) => model.name === "recraft-v4.1-vector"),
+        paidModels.some(
+            (model) => model.name === "recraft/recraft-v4.1-vector",
+        ),
     ).toBe(true);
 
     const generation = await fetchWorker(

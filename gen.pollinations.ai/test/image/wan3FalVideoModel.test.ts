@@ -19,7 +19,7 @@ const REF_VIDEO_URL = "https://media.pollinations.ai/ref-motion.mp4";
 const REF_AUDIO_URL = "https://media.pollinations.ai/ref-sound.mp3";
 
 const baseParams: ImageParams = {
-    model: "wan-3.0",
+    model: "alibaba/wan-3.0",
     width: 1280,
     height: 720,
     dimensionsExplicit: false,
@@ -140,7 +140,7 @@ describe("Wan 3.0 Prime via Fal", () => {
             mimeType: "video/mp4",
             durationSeconds: 5,
             trackingData: {
-                actualModel: "wan-3.0",
+                actualModel: "alibaba/wan-3.0",
                 usage: { completionVideoSeconds: 5 },
             },
         });
@@ -216,7 +216,7 @@ describe("Wan 3.0 Prime via Fal", () => {
         expect(requests[0].body).not.toHaveProperty("reference_videos");
         expect(requests[0].body).not.toHaveProperty("reference_audios");
         expect(result.trackingData).toEqual({
-            actualModel: "wan-3.0",
+            actualModel: "alibaba/wan-3.0",
             usage: { completionVideoSeconds: 5 },
         });
     });

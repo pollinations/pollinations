@@ -6,7 +6,7 @@ import { SENTINEL_SEED } from "../../src/util.ts";
 describe("ImageParamsSchema", () => {
     it("normalizes seed -1 to the sentinel seed", () => {
         const result = ImageParamsSchema.parse({
-            model: "flux",
+            model: "black-forest-labs/flux.1-schnell",
             seed: -1,
         });
 
@@ -15,7 +15,7 @@ describe("ImageParamsSchema", () => {
 
     it("rejects transparent backgrounds for gpt-image-2", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "gpt-image-2",
+            model: "openai/gpt-image-2",
             transparent: true,
         });
 
@@ -32,7 +32,7 @@ describe("ImageParamsSchema", () => {
     it("keeps transparent backgrounds available for gptimage models", () => {
         expect(
             ImageParamsSchema.safeParse({
-                model: "gptimage",
+                model: "openai/gpt-image-1-mini",
                 transparent: true,
             }).success,
         ).toBe(true);
@@ -40,18 +40,20 @@ describe("ImageParamsSchema", () => {
 
     it("accepts resolutions declared by the model", () => {
         expect(
-            ImageParamsSchema.safeParse({ model: "veo", resolution: "1080p" })
-                .success,
+            ImageParamsSchema.safeParse({
+                model: "google/veo-3.1-fast",
+                resolution: "1080p",
+            }).success,
         ).toBe(true);
         expect(
             ImageParamsSchema.safeParse({
-                model: "seedance-pro",
+                model: "bytedance/seedance-1-pro-fast",
                 resolution: "480p",
             }).success,
         ).toBe(true);
         expect(
             ImageParamsSchema.safeParse({
-                model: "grok-imagine-image-2.0",
+                model: "x-ai/grok-imagine-image-2.0",
                 resolution: "2k",
                 quality: "low",
             }).success,
@@ -59,7 +61,7 @@ describe("ImageParamsSchema", () => {
         for (const resolution of ["480p", "768p", "2k"] as const) {
             expect(
                 ImageParamsSchema.safeParse({
-                    model: "minimax-h3",
+                    model: "minimax/minimax-h3",
                     resolution,
                 }).success,
             ).toBe(true);
@@ -69,7 +71,7 @@ describe("ImageParamsSchema", () => {
     it("accepts 768p on the OpenAI-compatible image route", () => {
         expect(
             CreateImageRequestSchema.safeParse({
-                model: "minimax-h3",
+                model: "minimax/minimax-h3",
                 prompt: "a red wind-up robot",
                 resolution: "768p",
             }).success,
@@ -95,19 +97,19 @@ describe("ImageParamsSchema", () => {
     it("enforces the public minimax-h3 contract", () => {
         expect(
             ImageParamsSchema.safeParse({
-                model: "minimax-h3",
+                model: "minimax/minimax-h3",
                 duration: 6,
             }).success,
         ).toBe(false);
         expect(
             ImageParamsSchema.safeParse({
-                model: "minimax-h3",
+                model: "minimax/minimax-h3",
                 aspectRatio: "9:16",
             }).success,
         ).toBe(false);
         expect(
             ImageParamsSchema.safeParse({
-                model: "minimax-h3",
+                model: "minimax/minimax-h3",
                 fps: 30,
             }).success,
         ).toBe(false);
@@ -116,14 +118,18 @@ describe("ImageParamsSchema", () => {
     it("bounds video duration for every public route", () => {
         for (const duration of [1, 120]) {
             expect(
-                ImageParamsSchema.safeParse({ model: "flux", duration })
-                    .success,
+                ImageParamsSchema.safeParse({
+                    model: "black-forest-labs/flux.1-schnell",
+                    duration,
+                }).success,
             ).toBe(true);
         }
         for (const duration of [0, 1.5, 121, 1e308]) {
             expect(
-                ImageParamsSchema.safeParse({ model: "flux", duration })
-                    .success,
+                ImageParamsSchema.safeParse({
+                    model: "black-forest-labs/flux.1-schnell",
+                    duration,
+                }).success,
                 String(duration),
             ).toBe(false);
         }
@@ -150,7 +156,7 @@ describe("ImageParamsSchema", () => {
 
     it("rejects unsupported Grok Imagine Image 2.0 quality", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "grok-imagine-image-2.0",
+            model: "x-ai/grok-imagine-image-2.0",
             quality: "high",
         });
 
@@ -167,18 +173,21 @@ describe("ImageParamsSchema", () => {
     it("does not silently upgrade invalid Grok Imagine Image 2.0 quality", () => {
         expect(
             ImageParamsSchema.safeParse({
-                model: "grok-imagine-image-2.0",
+                model: "x-ai/grok-imagine-image-2.0",
                 quality: "LOW",
             }).success,
         ).toBe(false);
         expect(
-            ImageParamsSchema.parse({ model: "flux", quality: "LOW" }).quality,
+            ImageParamsSchema.parse({
+                model: "black-forest-labs/flux.1-schnell",
+                quality: "LOW",
+            }).quality,
         ).toBe("medium");
     });
 
     it("rejects an unsupported resolution", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "veo",
+            model: "google/veo-3.1-fast",
             resolution: "480p",
         });
 
@@ -187,14 +196,14 @@ describe("ImageParamsSchema", () => {
             expect(result.error.issues[0]).toMatchObject({
                 path: ["resolution"],
                 message:
-                    'Resolution "480p" is not supported by veo. Supported: 720p, 1080p.',
+                    'Resolution "480p" is not supported by google/veo-3.1-fast. Supported: 720p, 1080p.',
             });
         }
     });
 
     it("rejects resolution on models without resolution tiers", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "flux",
+            model: "black-forest-labs/flux.1-schnell",
             resolution: "720p",
         });
 
@@ -202,14 +211,15 @@ describe("ImageParamsSchema", () => {
         if (!result.success) {
             expect(result.error.issues[0]).toMatchObject({
                 path: ["resolution"],
-                message: "flux does not accept a resolution parameter.",
+                message:
+                    "black-forest-labs/flux.1-schnell does not accept a resolution parameter.",
             });
         }
     });
 
     it("parses and validates reference media independently from frame images", () => {
         const result = ImageParamsSchema.safeParse({
-            model: "seedance-2.0",
+            model: "bytedance/seedance-2.0",
             reference_images:
                 "https://media.example/image,a.png| |https://media.example/image-b.png|",
             reference_videos: "https://media.example/video.mp4",
@@ -231,7 +241,7 @@ describe("ImageParamsSchema", () => {
     it("rejects reference media on unsupported models", () => {
         expect(
             ImageParamsSchema.safeParse({
-                model: "seedance-2.0-mini",
+                model: "bytedance/seedance-2.0-mini",
                 reference_images: "https://media.example/image.png",
             }).success,
         ).toBe(false);
@@ -240,14 +250,14 @@ describe("ImageParamsSchema", () => {
     it("passes provider-specific reference combinations through", () => {
         expect(
             ImageParamsSchema.safeParse({
-                model: "seedance-2.0",
+                model: "bytedance/seedance-2.0",
                 image: "https://media.example/frame.png",
                 reference_images: "https://media.example/image.png",
             }).success,
         ).toBe(true);
         expect(
             ImageParamsSchema.safeParse({
-                model: "seedance-2.0",
+                model: "bytedance/seedance-2.0",
                 reference_audios: "https://media.example/audio.mp3",
             }).success,
         ).toBe(true);
@@ -255,7 +265,7 @@ describe("ImageParamsSchema", () => {
 
     it("rejects unsafe reference media URLs", () => {
         const invalidUrl = ImageParamsSchema.safeParse({
-            model: "seedance-2.5",
+            model: "bytedance/seedance-2.5",
             reference_images: "http://127.0.0.1/image.png",
         });
         expect(invalidUrl.success).toBe(false);

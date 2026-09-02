@@ -846,7 +846,7 @@ describe("community endpoint helpers", () => {
         );
     });
 
-    it("projects a provider profile onto the community model brand", () => {
+    it("projects a provider profile onto the community model author", () => {
         const modelDefinition = communityModelDefinition({
             modelId: "voodoohop/openai",
             title: "OpenAI Fast",
@@ -856,7 +856,7 @@ describe("community endpoint helpers", () => {
             ...communityEndpointPrices({}),
         });
 
-        expect(modelDefinition.brand).toBe("Example AI");
+        expect(modelDefinition.author).toBe("Example AI");
         expect(modelDefinition.brandUrl).toBe("https://example.com/");
     });
 
@@ -5369,7 +5369,7 @@ fixtureTest(
             await getCommunityModelRegistryEntries(env)
         ).find((entry) => entry.id === `${ownerGithubUsername}/my-test-model`);
         expect(registryEntry?.info).toMatchObject({
-            brand: "Example AI",
+            author: "Example AI",
             brand_url: "https://example.com/",
         });
         expect(registryEntry?.communityEndpoint.perUserRpm).toBe(0.5);
@@ -5689,7 +5689,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
-        baseModel: "openai-fast",
+        baseModel: "openai/gpt-5-nano",
         requiredSafetyFeatures: ["sexual"],
         mcpServers: ["pollinations"],
     };
@@ -5718,7 +5718,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     };
     expect(agent).toMatchObject({
         systemPrompt: "You are a terse SQL tutor.",
-        baseModel: "openai-fast",
+        baseModel: "openai/gpt-5-nano",
         mcpServers: ["pollinations"],
     });
     expect(agent).not.toHaveProperty("apiKeyId");
@@ -6615,7 +6615,9 @@ fixtureTest(
             updatedAt: new Date(),
         });
 
-        const source = getRegistryModelDefinition("qwen-coder");
+        const source = getRegistryModelDefinition(
+            "qwen/qwen3-coder-30b-a3b-instruct",
+        );
         const previousFallbacks = source.fallbacks;
         try {
             source.fallbacks = [fallbackModelId];

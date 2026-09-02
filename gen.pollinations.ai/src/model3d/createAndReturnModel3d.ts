@@ -18,11 +18,11 @@ export async function createAndReturnModel3d(
     safeParams: Model3dParams,
 ): Promise<Model3dGenerationResult> {
     switch (safeParams.model) {
-        case "trellis-2":
+        case "microsoft/trellis-2":
             return await callTrellis2(safeParams);
-        case "trellis-2-fal":
+        case "microsoft/trellis-2:fallback":
             return await callTrellis2Fal(safeParams);
-        case "hyper3d-rodin":
+        case "hyper3d/rodin-2.5":
             return await callRodinFalAPI(prompt, safeParams);
         default:
             throw new Error(

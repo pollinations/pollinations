@@ -499,7 +499,7 @@ describe("docs routes", () => {
             apiBody.indexOf("## Realtime"),
             apiBody.indexOf("## 3D Generation"),
         );
-        expect(realtimeSection).toContain("scribe-realtime");
+        expect(realtimeSection).toContain("elevenlabs/scribe-v2-realtime");
         expect(realtimeSection).toContain("`GET /realtime`");
         expect(realtimeSection).toContain("`GET /v1/realtime`");
         expect(apiBody).not.toContain("/v1/audio/transcriptions/realtime");

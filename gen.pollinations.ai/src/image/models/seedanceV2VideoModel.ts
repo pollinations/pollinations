@@ -23,15 +23,15 @@ const logOps = debug("pollinations:seedance2:ops");
 const logError = debug("pollinations:seedance2:error");
 
 const MODELS = {
-    "seedance-2.0": {
+    "bytedance/seedance-2.0": {
         upstream: "bytedance/seedance-2.0",
         maxDuration: 15,
     },
-    "seedance-2.0-mini": {
+    "bytedance/seedance-2.0-mini": {
         upstream: "bytedance/seedance-2.0-mini",
         maxDuration: 10,
     },
-    "seedance-2.0-fast": {
+    "bytedance/seedance-2.0-fast": {
         upstream: "bytedance/seedance-2.0-fast",
         maxDuration: 5,
     },

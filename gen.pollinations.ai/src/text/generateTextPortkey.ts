@@ -120,7 +120,7 @@ export async function generateTextPortkey(
         state.options,
         requestConfig,
     );
-    return modelDef?.name === "command-a-plus"
+    return modelDef?.name === "cohere/command-a-plus"
         ? sanitizeCohereResponse(completion)
         : completion;
 }

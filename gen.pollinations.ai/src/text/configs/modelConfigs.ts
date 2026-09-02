@@ -589,7 +589,7 @@ export const portkeyConfig: PortkeyConfigMap = {
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
     // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
     "Llama-4-Scout-17B-16E-Instruct": createPinnedOpenRouterConfig(
-        "meta-llama/llama-4-scout",
+        "meta/llama-4-scout",
         "deepinfra/fp8",
     ),
 

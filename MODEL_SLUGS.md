@@ -38,6 +38,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | Claude Fable 5 | `claude-fable-5` | `anthropic/claude-fable-5` |
+| Claude Fable 5.1 | — | `anthropic/claude-fable-5.1` |
 | Claude Haiku 4.5 | `claude-fast` | `anthropic/claude-haiku-4.5` |
 | Claude Opus 4.6 | `claude-opus-4.6` | `anthropic/claude-opus-4.6` |
 | Claude Opus 4.7 | `claude-opus-4.7` | `anthropic/claude-opus-4.7` |
@@ -59,6 +60,8 @@ Only the names are changing. Model behavior and pricing stay the same.
 | FLUX.1 Kontext Pro | `kontext` | `black-forest-labs/flux.1-kontext-pro` |
 | FLUX.1 Schnell | `flux` | `black-forest-labs/flux.1-schnell` |
 | FLUX.2 Klein 4B | `klein` | `black-forest-labs/flux.2-klein-4b` |
+| FLUX.2 Pro | `flux-2-pro` | `black-forest-labs/flux.2-pro` |
+| FLUX.2 Flex | `flux-2-flex` | `black-forest-labs/flux.2-flex` |
 
 ## ByteDance
 
@@ -119,6 +122,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Gemini 3.1 Pro Preview | `gemini-large` | `google/gemini-3.1-pro-preview` |
 | Gemini 3.5 Flash Lite | `gemini-flash-lite-3.5` | `google/gemini-3.5-flash-lite` |
 | Gemini 3.7 Flash | `gemini` | `google/gemini-3.7-flash` |
+| Gemini Omni 1.1 Flash | — | `google/gemini-omni-1.1-flash` |
 | Gemini Embedding 2 | `gemini-2` | `google/gemini-embedding-2` |
 | Gemma 4 26B A4B | `gemma` | `google/gemma-4-26b-a4b-it` |
 | Gemma 4 31B | `gemma-4-31b` | `google/gemma-4-31b-it` |
@@ -264,6 +268,13 @@ GPT Realtime 2 retired on August 31, 2026. `gpt-realtime-2` remains a compatibil
 | --- | --- | --- |
 | Laguna S 2.1 | `laguna` | `poolside/laguna-s-2.1` |
 
+## Pollinations
+
+| Model | Existing ID | New ID |
+| --- | --- | --- |
+| MIDIjourney | `midijourney` | `pollinations/midijourney` |
+| MIDIjourney Large | `midijourney-large` | `pollinations/midijourney-large` |
+
 ## Pruna
 
 | Model | Existing ID | New ID |
@@ -323,6 +334,7 @@ GPT Realtime 2 retired on August 31, 2026. `gpt-realtime-2` remains a compatibil
 
 | Model | Existing ID | New ID |
 | --- | --- | --- |
+| Inkling | — | `thinkingmachines/inkling` |
 | Inkling Small | `inkling` | `thinkingmachines/inkling-small` |
 
 ## Tongyi-MAI

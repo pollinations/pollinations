@@ -9,7 +9,7 @@ const LAST_FRAME_URL = "https://image.example.com/last.png";
 const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
 
 const baseParams: ImageParams = {
-    model: "veo",
+    model: "google/veo-3.1-fast",
     width: 1280,
     height: 720,
     dimensionsExplicit: true,
@@ -91,7 +91,7 @@ describe("veoVideoModel resolution selection", () => {
             generateAudio: false,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: { completionVideoSeconds: 4 },
         });
     });
@@ -114,7 +114,7 @@ describe("veoVideoModel resolution selection", () => {
             generateAudio: true,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "veo",
+            actualModel: "google/veo-3.1-fast",
             usage: {
                 completionVideoSeconds: 4,
                 completionAudioSeconds: 4,

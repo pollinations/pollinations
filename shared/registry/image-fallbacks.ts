@@ -8,20 +8,20 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
-    kontext: {
-        "kontext-replicate": {
+    "black-forest-labs/flux.1-kontext-pro": {
+        "black-forest-labs/flux.1-kontext-pro:fallback": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "flux-2-pro": {
-        "flux-2-pro-replicate": {
+    "black-forest-labs/flux.2-pro": {
+        "black-forest-labs/flux.2-pro:fallback": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "qwen-image-3": {
-        "qwen-image-3-replicate": {
+    "qwen/qwen-image-3": {
+        "qwen/qwen-image-3:fallback": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {
@@ -36,64 +36,64 @@ export const IMAGE_FALLBACKS = {
             },
         },
     },
-    "p-image-edit": {
-        "p-image-edit-replicate": {
+    "prunaai/p-image-edit": {
+        "prunaai/p-image-edit:fallback": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "nanobanana-2": {
-        "nanobanana-2-openrouter-ai-studio": {
+    "google/gemini-3.1-flash-image": {
+        "google/gemini-3.1-flash-image:fallback": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "nanobanana-pro": {
-        "nanobanana-pro-openrouter-vertex": {
+    "google/gemini-3-pro-image": {
+        "google/gemini-3-pro-image:fallback": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    flux: {
-        "flux-deepinfra": {
+    "black-forest-labs/flux.1-schnell": {
+        "black-forest-labs/flux.1-schnell:fallback": {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: { completionImageTokens: 0.0005 },
         },
     },
-    krea: {
-        "krea-replicate": {
+    "krea/krea-2-medium": {
+        "krea/krea-2-medium:fallback": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    seedream5: {
-        "seedream5-fal": {
+    "bytedance/seedream-5.0-lite": {
+        "bytedance/seedream-5.0-lite:fallback": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
             maxReferenceImages: 10,
         },
     },
-    "grok-video-pro": {
-        "grok-video-pro-fal": {
+    "x-ai/grok-imagine-video": {
+        "x-ai/grok-imagine-video:fallback": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "grok-imagine-video-1.5": {
-        "grok-imagine-video-1.5-fal": {
+    "x-ai/grok-imagine-video-1.5": {
+        "x-ai/grok-imagine-video-1.5:fallback": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    wan: {
-        "wan-fal": {
+    "alibaba/wan-2.6": {
+        "alibaba/wan-2.6:fallback": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
-    "seedance-pro": {
-        "seedance-pro-fal": {
+    "bytedance/seedance-1-pro-fast": {
+        "bytedance/seedance-1-pro-fast:fallback": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
             cost: { completionVideoSeconds: 0.0216 },
@@ -119,8 +119,8 @@ export const IMAGE_FALLBACKS = {
             ),
         },
     },
-    zimage: {
-        "zimage-fal": {
+    "tongyi-mai/z-image-turbo": {
+        "tongyi-mai/z-image-turbo:fallback": {
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
             // Fal bills $0.005 per output megapixel. The token line stays at

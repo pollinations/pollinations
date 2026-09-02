@@ -42,7 +42,7 @@ export const CODE_SAMPLES: Record<
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "model": "openai",
+    "model": "openai/gpt-5.4-nano",
     "messages": [{"role": "user", "content": "Hello!"}]
   }'`,
         },
@@ -57,7 +57,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="openai",
+    model="openai/gpt-5.4-nano",
     messages=[{"role": "user", "content": "Hello!"}]
 )
 print(response.choices[0].message.content)`,
@@ -73,7 +73,7 @@ const client = new OpenAI({
 });
 
 const response = await client.chat.completions.create({
-  model: "openai",
+  model: "openai/gpt-5.4-nano",
   messages: [{ role: "user", content: "Hello!" }],
 });
 console.log(response.choices[0].message.content);`,
@@ -93,7 +93,7 @@ console.log(response.choices[0].message.content);`,
 
 response = requests.get(
     "https://gen.pollinations.ai/text/Write a haiku",
-    params={"model": "openai"},
+    params={"model": "openai/gpt-5.4-nano"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 print(response.text)`,
@@ -133,7 +133,7 @@ curl "https://gen.pollinations.ai/image/a%20sunset%20timelapse?model=veo&duratio
 
 response = requests.get(
     "https://gen.pollinations.ai/image/a cat in space",
-    params={"model": "flux"},
+    params={"model": "black-forest-labs/flux.1-schnell"},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 with open("image.jpg", "wb") as f:
@@ -163,7 +163,7 @@ const blob = await response.blob();`,
 
 response = requests.get(
     "https://gen.pollinations.ai/video/a sunset timelapse",
-    params={"model": "veo", "duration": 4},
+    params={"model": "google/veo-3.1-fast", "duration": 4},
     headers={"Authorization": "Bearer YOUR_API_KEY"},
 )
 with open("video.mp4", "wb") as f:
@@ -235,7 +235,7 @@ client = OpenAI(
 )
 
 response = client.audio.speech.create(
-    model="tts-1",
+    model="elevenlabs/eleven-v3",
     voice="nova",
     input="Hello world",
 )
@@ -252,7 +252,7 @@ const client = new OpenAI({
 });
 
 const response = await client.audio.speech.create({
-  model: "tts-1",
+  model: "elevenlabs/eleven-v3",
   voice: "nova",
   input: "Hello world",
 });
@@ -266,7 +266,7 @@ const buffer = Buffer.from(await response.arrayBuffer());`,
             source: `curl https://gen.pollinations.ai/v1/audio/transcriptions \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -F file=@audio.mp3 \\
-  -F model=whisper-large-v3`,
+  -F model=openai/whisper-large-v3`,
         },
         {
             label: "Python",
@@ -280,7 +280,7 @@ client = OpenAI(
 
 with open("audio.mp3", "rb") as f:
     transcript = client.audio.transcriptions.create(
-        model="whisper-large-v3", file=f
+        model="openai/whisper-large-v3", file=f
     )
 print(transcript.text)`,
         },
@@ -296,7 +296,7 @@ const client = new OpenAI({
 });
 
 const transcript = await client.audio.transcriptions.create({
-  model: "whisper-large-v3",
+  model: "openai/whisper-large-v3",
   file: fs.createReadStream("audio.mp3"),
 });
 console.log(transcript.text);`,
@@ -511,7 +511,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
         id: "chatcmpl-abc123",
         object: "chat.completion",
         created: 1700000000,
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
         choices: [
             {
                 index: 0,
@@ -532,19 +532,19 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
         object: "list",
         data: [
             {
-                id: "openai",
+                id: "openai/gpt-5.4-nano",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
             },
             {
-                id: "claude",
+                id: "anthropic/claude-sonnet-4.6",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
             },
             {
-                id: "gemini",
+                id: "google/gemini-3.6-flash",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",

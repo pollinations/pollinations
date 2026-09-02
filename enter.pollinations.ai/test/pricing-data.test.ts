@@ -185,10 +185,18 @@ test("catalog prices format token rates through formatPricePer1M", () => {
 test("catalog distinguishes flat image rates from image-token rates", () => {
     const models = getCatalogModels();
     const prices = getCatalogModelPrices();
-    const grokInfo = models.find(({ name }) => name === "grok-imagine");
-    const nanoInfo = models.find(({ name }) => name === "nanobanana-pro");
-    const grokPrice = prices.find(({ name }) => name === "grok-imagine");
-    const nanoPrice = prices.find(({ name }) => name === "nanobanana-pro");
+    const grokInfo = models.find(
+        ({ name }) => name === "x-ai/grok-imagine-image",
+    );
+    const nanoInfo = models.find(
+        ({ name }) => name === "google/gemini-3-pro-image",
+    );
+    const grokPrice = prices.find(
+        ({ name }) => name === "x-ai/grok-imagine-image",
+    );
+    const nanoPrice = prices.find(
+        ({ name }) => name === "google/gemini-3-pro-image",
+    );
 
     expect(grokInfo?.flat_rate).toBe(true);
     expect(nanoInfo?.flat_rate).toBe(false);
@@ -211,7 +219,7 @@ test("catalog prices keep community text models flagged for display", () => {
             aliases: ["community/voodoohop/openai"],
             category: "text",
             community: true,
-            brand: "Example AI",
+            author: "Example AI",
             brand_url: "https://example.com/",
             title: "OpenAI relay",
             description: "OpenAI relay",
@@ -231,7 +239,7 @@ test("catalog prices keep community text models flagged for display", () => {
         type: "text",
         community: true,
         displayName: "OpenAI relay",
-        brand: "Example AI",
+        author: "Example AI",
         brandUrl: "https://example.com/",
         capabilities: [],
     });
@@ -280,14 +288,14 @@ test("catalog prices expose 3D flat output generation rates", () => {
 test("Trellis 2 prices selectable resolution tiers", () => {
     const usage = { completionImageTokens: 1 };
 
-    expect(calculateCost("trellis-2", usage).totalCost).toBe(0.24);
+    expect(calculateCost("microsoft/trellis-2", usage).totalCost).toBe(0.24);
     expect(
-        calculateCost("trellis-2", usage, undefined, {
+        calculateCost("microsoft/trellis-2", usage, undefined, {
             resolution: "medium",
         }).totalCost,
     ).toBe(0.29);
     expect(
-        calculateCost("trellis-2", usage, undefined, {
+        calculateCost("microsoft/trellis-2", usage, undefined, {
             resolution: "high",
         }).totalCost,
     ).toBe(0.35);
@@ -303,7 +311,7 @@ test("catalog models resolve brand logo SVG assets", () => {
         const logoPath = getModelBrandLogoPath(model);
         return logoPath && logoAssets.has(logoPath)
             ? []
-            : [{ name: model.name, brand: model.brand, logoPath }];
+            : [{ name: model.name, author: model.author, logoPath }];
     });
 
     expect(missingLogos).toEqual([]);
@@ -314,7 +322,7 @@ test("community models use their model type icon instead of a provider logo", ()
         name: "owner/model",
         type: "text" as const,
         community: true,
-        brand: "Custom Provider",
+        author: "Custom Provider",
         capabilities: [],
         prices: [],
     };
@@ -519,18 +527,18 @@ test("Gemini Omni bills exact Vertex modality usage", () => {
 });
 
 test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
-    const definition = getRegistryModelDefinition("claude-fable-5");
+    const definition = getRegistryModelDefinition("anthropic/claude-fable-5");
 
     expect(definition.paidOnly).toBe(true);
     expect(definition.priceMultiplier).toBe(1);
-    expect(getCostDefinition("claude-fable-5")).toEqual({
+    expect(getCostDefinition("anthropic/claude-fable-5")).toEqual({
         promptTextTokens: 0.00001,
         promptCachedTokens: 0.000001,
         promptCacheWriteTokens: 0.0000125,
         completionTextTokens: 0.00005,
     });
-    expect(getPriceDefinition("claude-fable-5")).toEqual(
-        getCostDefinition("claude-fable-5"),
+    expect(getPriceDefinition("anthropic/claude-fable-5")).toEqual(
+        getCostDefinition("anthropic/claude-fable-5"),
     );
 });
 
@@ -552,13 +560,13 @@ test("Claude Fable 5.1 is paid-only and billed at current standard rates", () =>
 
 test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     expect(
-        calculatePrice("qwen-image-3", {
+        calculatePrice("qwen/qwen-image-3", {
             completionImageTokens: 1,
         }).totalPrice,
     ).toBeCloseTo(0.04, 8);
     expect(
         calculatePrice(
-            "qwen-image-3",
+            "qwen/qwen-image-3",
             { completionImageTokens: 1 },
             undefined,
             { megapixels: (1536 * 1536) / 1_000_000 },
@@ -566,7 +574,7 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     ).toBeCloseTo(0.04, 8);
     expect(
         calculatePrice(
-            "qwen-image-3",
+            "qwen/qwen-image-3",
             { completionImageTokens: 1 },
             undefined,
             { megapixels: 2.4 },
@@ -574,7 +582,7 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     ).toBeCloseTo(0.075, 8);
     expect(
         calculatePrice(
-            "qwen-image-3",
+            "qwen/qwen-image-3",
             { promptImageTokens: 3, completionImageTokens: 1 },
             undefined,
             { megapixels: 4.194304 },
@@ -583,36 +591,33 @@ test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
 });
 
 test("updated provider prices are reflected for xAI media and OpenRouter text", () => {
-    expect(getCostDefinition("llama-scout").promptTextTokens).toBeCloseTo(
-        0.0000001,
-        12,
-    );
-    expect(getCostDefinition("step-3.5-flash").promptTextTokens).toBeCloseTo(
-        0.0000001,
-        12,
-    );
-    expect(getCostDefinition("mistral").promptCachedTokens).toBeCloseTo(
-        0.000000015,
-        12,
-    );
     expect(
-        getCostDefinition("qwen-coder-large").promptCachedTokens,
+        getCostDefinition("meta/llama-4-scout").promptTextTokens,
+    ).toBeCloseTo(0.0000001, 12);
+    expect(
+        getCostDefinition("stepfun/step-3.5-flash").promptTextTokens,
+    ).toBeCloseTo(0.0000001, 12);
+    expect(
+        getCostDefinition("mistralai/mistral-small-4").promptCachedTokens,
+    ).toBeCloseTo(0.000000015, 12);
+    expect(
+        getCostDefinition("qwen/qwen3-coder-next").promptCachedTokens,
     ).toBeCloseTo(0.00000007, 12);
     expect(
-        getCostDefinition("mistral-small-3.2").promptCachedTokens,
+        getCostDefinition("mistralai/mistral-small-3.2").promptCachedTokens,
     ).toBeUndefined();
     expect(
-        getCostDefinition("step-3.5-flash").promptCachedTokens,
+        getCostDefinition("stepfun/step-3.5-flash").promptCachedTokens,
     ).toBeUndefined();
 
     expect(
-        calculateCost("grok-imagine", {
+        calculateCost("x-ai/grok-imagine-image", {
             promptImageTokens: 1,
             completionImageTokens: 1,
         }).totalCost,
     ).toBeCloseTo(0.022, 8);
     expect(
-        calculateCost("grok-imagine-pro", {
+        calculateCost("x-ai/grok-imagine-image-quality", {
             promptImageTokens: 1,
             completionImageTokens: 1,
         }).totalCost,
@@ -625,7 +630,7 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
     ] as const) {
         expect(
             calculatePrice(
-                "grok-imagine-image-2.0",
+                "x-ai/grok-imagine-image-2.0",
                 { promptImageTokens: 1, completionImageTokens: 1 },
                 undefined,
                 { quality, resolution },
@@ -633,13 +638,13 @@ test("updated provider prices are reflected for xAI media and OpenRouter text", 
         ).toBeCloseTo(expected, 8);
     }
     expect(
-        calculateCost("grok-video-pro", {
+        calculateCost("x-ai/grok-imagine-video", {
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
     ).toBeCloseTo(0.352, 8);
     expect(
-        calculateCost("grok-imagine-video-1.5", {
+        calculateCost("x-ai/grok-imagine-video-1.5", {
             promptImageTokens: 1,
             completionVideoSeconds: 5,
         }).totalCost,
@@ -666,32 +671,32 @@ test("Gemini search cost follows each route's provider metadata", () => {
         ],
     };
     const geminiSearchCost = calculateCost(
-        "gemini-search",
+        "google/gemini-2.5-flash-lite:search",
         usage,
         vertex25SearchOutput,
     );
     const geminiSearchPrice = calculatePrice(
-        "gemini-search",
+        "google/gemini-2.5-flash-lite:search",
         usage,
         vertex25SearchOutput,
     );
     const gemini3FlashCost = calculateCost(
-        "gemini-3-flash",
+        "google/gemini-3-flash-preview",
         usage,
         openRouterSearchOutput,
     );
     const geminiSearchFastCost = calculateCost(
-        "gemini-flash-lite-3.5",
+        "google/gemini-3.5-flash-lite",
         usage,
         openRouterSearchOutput,
     );
     const geminiSearchLargeCost = calculateCost(
-        "gemini",
+        "google/gemini-3.7-flash",
         usage,
         openRouterSearchOutput,
     );
     const ungroundedGeminiSearchFastCost = calculateCost(
-        "gemini-flash-lite-3.5",
+        "google/gemini-3.5-flash-lite",
         usage,
         { choices: [] },
     );
@@ -709,10 +714,10 @@ test("Gemini search cost follows each route's provider metadata", () => {
 
 test("public model catalog exposes Gemini billing prices without internals", () => {
     const geminiSearchFast = getTextModelsInfo().find(
-        (model) => model.name === "gemini-flash-lite-3.5",
+        (model) => model.name === "google/gemini-3.5-flash-lite",
     );
     const geminiLarge = getTextModelsInfo().find(
-        (model) => model.name === "gemini-large",
+        (model) => model.name === "google/gemini-3.1-pro-preview",
     );
 
     expect(geminiSearchFast).toBeDefined();
@@ -738,10 +743,10 @@ test("Perplexity request search fees are added by declarative billing rules", ()
         completionTextTokens: 1_000_000,
     };
     const cases = [
-        ["perplexity-fast", 2.005, undefined],
-        ["perplexity-fast", 2.012, { searchContextSize: "high" as const }],
-        ["perplexity", 18.014, undefined],
-        ["perplexity-reasoning", 10.014, undefined],
+        ["perplexity/sonar", 2.005, undefined],
+        ["perplexity/sonar", 2.012, { searchContextSize: "high" as const }],
+        ["perplexity/sonar-pro", 18.014, undefined],
+        ["perplexity/sonar-reasoning-pro", 10.014, undefined],
     ] as const;
 
     for (const [model, total, input] of cases) {
@@ -782,13 +787,13 @@ test("Perplexity request search fee prefers provider-reported request cost", () 
     };
 
     expect(
-        calculateCost("perplexity-fast", usage, responseOutput).totalCost,
+        calculateCost("perplexity/sonar", usage, responseOutput).totalCost,
     ).toBeCloseTo(2.006, 8);
     expect(
-        calculatePrice("perplexity-fast", usage, responseOutput).totalPrice,
+        calculatePrice("perplexity/sonar", usage, responseOutput).totalPrice,
     ).toBeCloseTo(2.006, 8);
     expect(
-        calculateCost("perplexity-fast", usage, streamOutput).totalCost,
+        calculateCost("perplexity/sonar", usage, streamOutput).totalCost,
     ).toBeCloseTo(2.012, 8);
 });
 
@@ -797,7 +802,7 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    // perplexity-fast token cost = 2.0; static request fee = 0.005 → total 2.005.
+    // perplexity/sonar token cost = 2.0; static request fee = 0.005 → total 2.005.
 
     // Malformed cost data is NOT a request-failing fault: fall back to the
     // static registry fee (no throw) and alert.
@@ -805,33 +810,33 @@ test("Perplexity provider-reported request cost clamps-and-alerts, never throws"
     for (const requestCost of malformed) {
         const output = { usage: { cost: { request_cost: requestCost } } };
         expect(
-            calculateCost("perplexity-fast", usage, output).totalCost,
+            calculateCost("perplexity/sonar", usage, output).totalCost,
         ).toBeCloseTo(2.005, 8);
         expect(
-            calculatePrice("perplexity-fast", usage, output).totalPrice,
+            calculatePrice("perplexity/sonar", usage, output).totalPrice,
         ).toBeCloseTo(2.005, 8);
     }
 
     // A finite non-negative value within 10× the static fee is billed verbatim.
     const reasonable = { usage: { cost: { request_cost: 0.04 } } };
     expect(
-        calculateCost("perplexity-fast", usage, reasonable).totalCost,
+        calculateCost("perplexity/sonar", usage, reasonable).totalCost,
     ).toBeCloseTo(2.04, 8);
 
     // A value above 10× the static fee is clamped down to the static fee.
     const runaway = { usage: { cost: { request_cost: 9.99 } } };
     expect(
-        calculateCost("perplexity-fast", usage, runaway).totalCost,
+        calculateCost("perplexity/sonar", usage, runaway).totalCost,
     ).toBeCloseTo(2.005, 8);
 
     // Absent cost data falls back to the static registry fee.
-    expect(calculateCost("perplexity-fast", usage, {}).totalCost).toBeCloseTo(
+    expect(calculateCost("perplexity/sonar", usage, {}).totalCost).toBeCloseTo(
         2.005,
         8,
     );
 });
 
-test("independent Vertex Gemini Search detects streamed grounding", () => {
+test("dedicated Vertex Gemini Search detects streamed grounding", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
@@ -853,10 +858,18 @@ test("independent Vertex Gemini Search detects streamed grounding", () => {
 
     // Vertex reports grounding metadata on a streamed response event.
     expect(
-        calculateCost("gemini-search", usage, vertexStreamOutput).totalCost,
+        calculateCost(
+            "google/gemini-2.5-flash-lite:search",
+            usage,
+            vertexStreamOutput,
+        ).totalCost,
     ).toBeCloseTo(0.535, 8);
     expect(
-        calculatePrice("gemini-search", usage, vertexStreamOutput).totalPrice,
+        calculatePrice(
+            "google/gemini-2.5-flash-lite:search",
+            usage,
+            vertexStreamOutput,
+        ).totalPrice,
     ).toBeCloseTo(0.535, 8);
 });
 
@@ -865,19 +878,19 @@ test("independent Vertex Gemini Search detects streamed grounding", () => {
 test("Perplexity billing keeps executable rules private", () => {
     const perplexityFees = [
         [
-            "perplexity",
+            "perplexity/sonar-pro",
             "perplexity.sonar_pro_high.search_request.v1",
             14 / 1000,
         ],
         [
-            "perplexity-reasoning",
+            "perplexity/sonar-reasoning-pro",
             "perplexity.sonar_reasoning_high.search_request.v1",
             14 / 1000,
         ],
     ] as const;
 
     expect(
-        getRegistryModelDefinition("perplexity-fast").billing?.adjustments,
+        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments,
     ).toMatchObject([
         {
             id: "perplexity.sonar_low.search_request.v1",
@@ -889,7 +902,7 @@ test("Perplexity billing keeps executable rules private", () => {
         },
     ]);
     const sonarRules =
-        getRegistryModelDefinition("perplexity-fast").billing?.adjustments;
+        getRegistryModelDefinition("perplexity/sonar").billing?.adjustments;
     expect(sonarRules?.[0]?.countUnits({}, { searchContextSize: "low" })).toBe(
         1,
     );
@@ -956,14 +969,16 @@ test("every billing adjustment has public catalog metadata", () => {
 
 test("Gemini models use their endpoint's advertised cache-write rate", () => {
     const models = [
-        "gemini-3-flash",
-        "gemini",
-        "gemini-openrouter-ai-studio-priority",
-        "gemini-flash-lite-3.5",
-        "gemini-flash-lite-3.5-openrouter-ai-studio-flex",
-        "gemini-fast",
-        "gemini-large",
-        "gemini-search",
+        "google/gemini-3-flash-preview",
+        "google/gemini-3.7-flash",
+        "google/gemini-3.7-flash:fallback",
+        "google/gemini-3.5-flash-lite",
+        "google/gemini-3.5-flash-lite:fallback",
+        "google/gemini-2.5-flash-lite",
+        "google/gemini-2.5-flash-lite:fallback",
+        "google/gemini-3.1-pro-preview",
+        "google/gemini-3.1-pro-preview:fallback",
+        "google/gemini-2.5-flash-lite:search",
     ] as const;
     for (const model of models) {
         // getRegistryModelDefinition throws on unknown names, so a renamed
@@ -979,12 +994,12 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
 
 test("Gemini routes price separately reported media input tokens", () => {
     for (const model of [
-        "gemini-3-flash",
-        "gemini",
-        "gemini-flash-lite-3.5",
-        "gemini-fast",
-        "gemini-large",
-        "gemini-search",
+        "google/gemini-3-flash-preview",
+        "google/gemini-3.7-flash",
+        "google/gemini-3.5-flash-lite",
+        "google/gemini-2.5-flash-lite",
+        "google/gemini-3.1-pro-preview",
+        "google/gemini-2.5-flash-lite:search",
     ] as const) {
         const cost = getRegistryModelDefinition(model).cost;
         expect(
@@ -1000,13 +1015,13 @@ test("Gemini routes price separately reported media input tokens", () => {
 
 test("Google text model providers match their configured routes", () => {
     const openRouterModels = [
-        "gemini-3-flash",
-        "gemini",
-        "gemini-flash-lite-3.5",
-        "gemini-fast",
-        "gemini-large",
+        "google/gemini-3-flash-preview",
+        "google/gemini-3.7-flash",
+        "google/gemini-3.5-flash-lite",
+        "google/gemini-2.5-flash-lite",
+        "google/gemini-3.1-pro-preview",
     ] as const;
-    const vertexModels = ["gemini-search"] as const;
+    const vertexModels = ["google/gemini-2.5-flash-lite:search"] as const;
     const publicModels = new Map(
         getTextModelsInfo().map((model) => [model.name, model]),
     );
@@ -1046,7 +1061,7 @@ test("caller-selectable OpenRouter models require paid balance", () => {
 });
 
 test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
-    const definition = getRegistryModelDefinition("minimax-m2.7");
+    const definition = getRegistryModelDefinition("minimax/minimax-m2.7");
 
     expect(definition.provider).toBe("openrouter");
     expect(definition.paidOnly).toBe(true);
@@ -1059,7 +1074,7 @@ test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
 });
 
 test("Step Flash uses DeepInfra's standard and cached token rates", () => {
-    const definition = getRegistryModelDefinition("step-flash");
+    const definition = getRegistryModelDefinition("stepfun/step-3.7-flash");
 
     expect(definition.provider).toBe("deepinfra");
     expect(definition.priceMultiplier).toBe(1);
@@ -1073,8 +1088,8 @@ test("Step Flash uses DeepInfra's standard and cached token rates", () => {
 
 test("Pruna image models retain DeepInfra's flat per-image rates", () => {
     for (const [model, expectedCost] of [
-        ["p-image", 0.005],
-        ["p-image-edit", 0.01],
+        ["prunaai/p-image", 0.005],
+        ["prunaai/p-image-edit", 0.01],
     ] as const) {
         const definition = getRegistryModelDefinition(model);
 
@@ -1091,7 +1106,10 @@ test("Pruna image models retain DeepInfra's flat per-image rates", () => {
 test("bedrock nova models price cache writes free and reads at 25% of input", () => {
     // AWS Price List API (verified 2026-07-05): Nova cache writes are a $0
     // SKU; cache reads bill at 25% of the standard input rate.
-    for (const model of ["nova", "nova-fast"] as const) {
+    for (const model of [
+        "amazon/nova-2-lite-v1",
+        "amazon/nova-micro-v1",
+    ] as const) {
         const cost = getRegistryModelDefinition(model).cost;
         expect(cost.promptCacheWriteTokens).toBe(0);
         expect(cost.promptCachedTokens).toBeCloseTo(
@@ -1103,13 +1121,13 @@ test("bedrock nova models price cache writes free and reads at 25% of input", ()
 
 test("OpenRouter Gemini adjustments use provider-reported cache and search usage", () => {
     const cacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-fast"),
+        getRegistryModelDefinition("google/gemini-2.5-flash-lite"),
         {
             usage: {
                 prompt_tokens_details: { cache_write_tokens: 1_000_000 },
             },
         },
-        "gemini-fast",
+        "google/gemini-2.5-flash-lite",
     );
     expect(cacheWrite).toHaveLength(1);
     expect(cacheWrite[0]).toMatchObject({
@@ -1123,36 +1141,36 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     expect(cacheWrite[0].price).toBeCloseTo(1 / 12, 15);
 
     const proCacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-large"),
+        getRegistryModelDefinition("google/gemini-3.1-pro-preview"),
         {
             usage: {
                 prompt_tokens_details: { cache_write_tokens: 1_000_000 },
             },
         },
-        "gemini-large",
+        "google/gemini-3.1-pro-preview",
     );
     expect(proCacheWrite).toHaveLength(1);
     expect(proCacheWrite[0].unitCost).toBeCloseTo(4.5 / 12_000_000, 15);
     expect(proCacheWrite[0].cost).toBeCloseTo(0.375, 15);
 
     const geminiCacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini"),
+        getRegistryModelDefinition("google/gemini-3.7-flash"),
         {
             usage: {
                 prompt_tokens_details: { cache_write_tokens: 1_000_000 },
             },
         },
-        "gemini",
+        "google/gemini-3.7-flash",
     );
     expect(geminiCacheWrite).toHaveLength(1);
     expect(geminiCacheWrite[0].unitCost).toBeCloseTo(0.5 / 12_000_000, 15);
     expect(geminiCacheWrite[0].cost).toBeCloseTo(0.5 / 12, 15);
 
     for (const model of [
-        "gemini-3-flash",
-        "gemini-flash-lite-3.5",
-        "gemini-fast",
-        "gemini-large",
+        "google/gemini-3-flash-preview",
+        "google/gemini-3.5-flash-lite",
+        "google/gemini-2.5-flash-lite",
+        "google/gemini-3.1-pro-preview",
     ] as const) {
         expect(
             calculateBillingAdjustments(
@@ -1188,13 +1206,13 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
 
     expect(
         calculateBillingAdjustments(
-            getRegistryModelDefinition("gemini"),
+            getRegistryModelDefinition("google/gemini-3.7-flash"),
             {
                 usage: {
                     server_tool_use_details: { web_search_requests: 1 },
                 },
             },
-            "gemini",
+            "google/gemini-3.7-flash",
         ),
     ).toContainEqual({
         ruleId: "openrouter.google.web_search.v1",
@@ -1207,7 +1225,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     });
 
     const streamedSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-3-flash"),
+        getRegistryModelDefinition("google/gemini-3-flash-preview"),
         {
             streamEvents: [
                 { choices: [{}] },
@@ -1218,7 +1236,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                 },
             ],
         },
-        "gemini-3-flash",
+        "google/gemini-3-flash-preview",
     );
     expect(streamedSearch).toEqual([
         {
@@ -1235,7 +1253,7 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
     for (const bad of [-5, "2", null, true, {}]) {
         expect(
             calculateBillingAdjustments(
-                getRegistryModelDefinition("gemini-fast"),
+                getRegistryModelDefinition("google/gemini-2.5-flash-lite"),
                 {
                     usage: {
                         prompt_tokens_details: { cache_write_tokens: bad },
@@ -1244,15 +1262,16 @@ test("OpenRouter Gemini adjustments use provider-reported cache and search usage
                         },
                     },
                 },
-                "gemini-fast",
+                "google/gemini-2.5-flash-lite",
             ),
         ).toEqual([]);
     }
 });
 
 test("Vertex Gemini Search adjustments use grounding metadata", () => {
+    const model = "google/gemini-2.5-flash-lite:search";
     const groundedPrompt = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition(model),
         {
             choices: [
                 {
@@ -1262,7 +1281,7 @@ test("Vertex Gemini Search adjustments use grounding metadata", () => {
                 },
             ],
         },
-        "gemini-search",
+        model,
     );
     expect(groundedPrompt).toEqual([
         {
@@ -1277,11 +1296,11 @@ test("Vertex Gemini Search adjustments use grounding metadata", () => {
     ]);
 
     const cacheWrite = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition(model),
         {
             usage: { cache_creation_input_tokens: 1_000_000 },
         },
-        "gemini-search",
+        model,
     );
     expect(cacheWrite).toEqual([
         {
@@ -1298,13 +1317,13 @@ test("Vertex Gemini Search adjustments use grounding metadata", () => {
 
 test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     const gemini3 = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-3-flash"),
+        getRegistryModelDefinition("google/gemini-3-flash-preview"),
         {
             usage: {
                 server_tool_use_details: { web_search_requests: 3 },
             },
         },
-        "gemini-3-flash",
+        "google/gemini-3-flash-preview",
     );
     expect(gemini3).toEqual([
         {
@@ -1318,8 +1337,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
         },
     ]);
 
+    const vertexModel = "google/gemini-2.5-flash-lite:search";
     const vertexGeminiSearch = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-search"),
+        getRegistryModelDefinition(vertexModel),
         {
             choices: [
                 {
@@ -1329,7 +1349,7 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
                 },
             ],
         },
-        "gemini-search",
+        vertexModel,
     );
     expect(vertexGeminiSearch).toEqual([
         {
@@ -1345,9 +1365,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
 
     // Perplexity: request fee prefers provider-reported cost when present.
     const perplexity = calculateBillingAdjustments(
-        getRegistryModelDefinition("perplexity-fast"),
+        getRegistryModelDefinition("perplexity/sonar"),
         { usage: { cost: { request_cost: 0.006 } } },
-        "perplexity-fast",
+        "perplexity/sonar",
     );
     expect(perplexity).toEqual([
         {
@@ -1364,11 +1384,9 @@ test("calculateBillingAdjustments returns per-rule breakdown entries", () => {
     // No grounding evidence → no adjustment entries.
     expect(
         calculateBillingAdjustments(
-            getRegistryModelDefinition("gemini-search"),
-            {
-                choices: [],
-            },
-            "gemini-search",
+            getRegistryModelDefinition(vertexModel),
+            { choices: [] },
+            vertexModel,
         ),
     ).toEqual([]);
 });
@@ -1402,13 +1420,13 @@ test("calculateBillingAdjustments only emits keys present in the breakdown", () 
     // assert every emitted breakdown entry carries a versioned rule id so the
     // drift guard above fully covers the keys that ever reach the datasource.
     const breakdown = calculateBillingAdjustments(
-        getRegistryModelDefinition("gemini-3-flash"),
+        getRegistryModelDefinition("google/gemini-3-flash-preview"),
         {
             usage: {
                 server_tool_use_details: { web_search_requests: 2 },
             },
         },
-        "gemini-3-flash",
+        "google/gemini-3-flash-preview",
     );
     expect(breakdown.length).toBeGreaterThan(0);
     for (const entry of breakdown) {

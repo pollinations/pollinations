@@ -57,7 +57,7 @@ describe("matchesModelQuery", () => {
         ["canonical model ID", { name: "alice/quick-coder" }, "quick-coder"],
         ["title", { displayName: "Rapid Illustrator" }, "illustrator"],
         ["description", { description: "Great at restoration" }, "restoration"],
-        ["publisher", { brand: "Acme Labs" }, "acme"],
+        ["publisher", { author: "Acme Labs" }, "acme"],
         ["base model", { baseModel: "openai-fast" }, "openai-fast"],
         ["input modality", { inputModalities: ["audio"] }, "audio"],
         ["output modality", { outputModalities: ["video"] }, "video"],
@@ -71,7 +71,7 @@ describe("matchesModelQuery", () => {
     it("requires every free-text term to match", () => {
         const candidate = model({
             displayName: "Quick Coder",
-            brand: "Alice AI",
+            author: "Alice AI",
         });
 
         expect(matches(candidate, "alice quick")).toBe(true);
@@ -94,15 +94,15 @@ describe("matchesModelQuery", () => {
         const community = model({
             name: "PublicOwner/image-model",
             community: true,
-            brand: "internal-user-123",
+            author: "internal-user-123",
         });
 
         expect(matches(community, "publisher:publicowner")).toBe(true);
         expect(matches(community, "publisher:public")).toBe(false);
         expect(
-            matches(model({ brand: "Moonshot AI" }), "publisher:moonshot-ai"),
+            matches(model({ author: "Moonshot AI" }), "publisher:moonshot-ai"),
         ).toBe(true);
-        expect(matches(model({ brand: "NVIDIA" }), "publisher:nvidia")).toBe(
+        expect(matches(model({ author: "NVIDIA" }), "publisher:nvidia")).toBe(
             true,
         );
     });
@@ -161,7 +161,7 @@ describe("matchesModelQuery", () => {
 
 describe("getModelQuerySuggestions", () => {
     const models = [
-        model({ name: "openai/gpt", type: "text", brand: "OpenAI" }),
+        model({ name: "openai/gpt", type: "text", author: "OpenAI" }),
         model({
             name: "Alice/quick-coder",
             community: true,

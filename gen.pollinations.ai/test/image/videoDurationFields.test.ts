@@ -37,19 +37,25 @@ describe("video duration registry fields", () => {
     });
 
     it("veo exposes allowed_durations", () => {
-        const info = modelInfoFromDefinition("veo", IMAGE_SERVICES.veo);
+        const info = modelInfoFromDefinition(
+            "google/veo-3.1-fast",
+            IMAGE_SERVICES["google/veo-3.1-fast"],
+        );
         expect(info.allowed_durations).toEqual([4, 6, 8]);
     });
 
     it("wan exposes allowed_durations", () => {
-        const info = modelInfoFromDefinition("wan", IMAGE_SERVICES.wan);
+        const info = modelInfoFromDefinition(
+            "alibaba/wan-2.6",
+            IMAGE_SERVICES["alibaba/wan-2.6"],
+        );
         expect(info.allowed_durations).toEqual([5, 10, 15]);
     });
 
     it("nova-reel exposes duration_step", () => {
         const info = modelInfoFromDefinition(
-            "nova-reel",
-            IMAGE_SERVICES["nova-reel"],
+            "amazon/nova-reel-v1",
+            IMAGE_SERVICES["amazon/nova-reel-v1"],
         );
         expect(info.duration_step).toBe(6);
     });

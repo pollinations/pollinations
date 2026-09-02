@@ -13,7 +13,7 @@ interface XaiRequest {
 }
 
 const baseParams: ImageParams = {
-    model: "grok-imagine",
+    model: "x-ai/grok-imagine-image",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,

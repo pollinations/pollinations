@@ -308,7 +308,7 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 // are per-resource, so sharing one resource across models turns a block into a
 // multi-model outage (issue #12446). Keep it one model per resource.
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
-    gptimage: [
+    "openai/gpt-image-1-mini": [
         {
             baseUrl:
                 "https://myceli-prod-img-mini-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
@@ -324,7 +324,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "westus3",
         },
     ],
-    "gptimage-large": [
+    "openai/gpt-image-1.5": [
         {
             baseUrl:
                 "https://myceli-prod-img-15-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
@@ -340,7 +340,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "westus3",
         },
     ],
-    "gpt-image-2": [
+    "openai/gpt-image-2": [
         {
             baseUrl:
                 "https://myceli-prod-img-2-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
@@ -362,7 +362,8 @@ let gptImageEndpointIndex = 0;
 
 /** Round robins the Azure regions to spread load. One region per request. */
 function nextGPTImageConfig(model: string): GPTImageConfig {
-    const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
+    const configs =
+        GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"];
     const config = configs[gptImageEndpointIndex % configs.length];
     gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
     return config;
@@ -372,7 +373,7 @@ const callGPTImageWithEndpoint = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    config: GPTImageConfig = GPTIMAGE_CONFIGS.gptimage[0],
+    config: GPTImageConfig = GPTIMAGE_CONFIGS["openai/gpt-image-1-mini"][0],
 ): Promise<ImageGenerationResult> => {
     const apiKey = getImageEnv(config.apiKeyEnv);
 
@@ -634,7 +635,7 @@ export const callGPTImage = async (
     prompt: string,
     safeParams: ImageParams,
     userInfo: AuthResult,
-    model: string = "gptimage",
+    model: string = "openai/gpt-image-1-mini",
 ): Promise<ImageGenerationResult> => {
     // One region, one attempt. Azure bills a generation it completed even when
     // we never saw the response, so a second region would pay for a second
@@ -671,9 +672,9 @@ const generateImage = async (
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> => {
     switch (safeParams.model) {
-        case "gptimage":
-        case "gptimage-large":
-        case "gpt-image-2": {
+        case "openai/gpt-image-1-mini":
+        case "openai/gpt-image-1.5":
+        case "openai/gpt-image-2": {
             const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,
@@ -698,10 +699,10 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana":
-        case "nanobanana-2":
-        case "nanobanana-2-openrouter-ai-studio":
-        case "nanobanana-2-lite": {
+        case "google/gemini-2.5-flash-image":
+        case "google/gemini-3.1-flash-image":
+        case "google/gemini-3.1-flash-image:fallback":
+        case "google/gemini-3.1-flash-lite-image": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -723,8 +724,8 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana-pro":
-        case "nanobanana-pro-openrouter-vertex": {
+        case "google/gemini-3-pro-image":
+        case "google/gemini-3-pro-image:fallback": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -746,7 +747,7 @@ const generateImage = async (
             }
         }
 
-        case "kontext": {
+        case "black-forest-labs/flux.1-kontext-pro": {
             try {
                 return await callAzureFluxKontext(prompt, safeParams, userInfo);
             } catch (error) {
@@ -759,8 +760,8 @@ const generateImage = async (
             }
         }
 
-        case "flux-2-pro":
-        case "flux-2-flex": {
+        case "black-forest-labs/flux.2-pro":
+        case "black-forest-labs/flux.2-flex": {
             try {
                 return await callAzureFlux2(prompt, safeParams, userInfo);
             } catch (error) {
@@ -770,95 +771,95 @@ const generateImage = async (
             }
         }
 
-        case "seedream5":
+        case "bytedance/seedream-5.0-lite":
             return await callSeedream5API(prompt, safeParams);
 
-        case "seedream5-fal":
+        case "bytedance/seedream-5.0-lite:fallback":
             return await callFalFallbackImage(prompt, safeParams);
 
-        case "seedream5-pro":
+        case "bytedance/seedream-5.0-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
 
-        case "seedream":
+        case "bytedance/seedream-4.0":
             return await callSeedreamAPI(prompt, safeParams);
 
-        case "seedream-pro":
+        case "bytedance/seedream-4.5":
             return await callOpenRouterSeedreamProAPI(prompt, safeParams);
 
-        case "ideogram-v4-turbo":
+        case "ideogram-ai/ideogram-v4-turbo":
             return await callIdeogramTurboAPI(prompt, safeParams);
 
-        case "ideogram-v4-balanced":
+        case "ideogram-ai/ideogram-v4-balanced":
             return await callIdeogramBalancedAPI(prompt, safeParams);
 
-        case "ideogram-v4-quality":
+        case "ideogram-ai/ideogram-v4-quality":
             return await callIdeogramQualityAPI(prompt, safeParams);
 
-        case "klein":
+        case "black-forest-labs/flux.2-klein-4b":
             return await callFluxKleinAPI(prompt, safeParams);
 
-        case "krea":
+        case "krea/krea-2-medium":
             return await callKreaImageAPI(prompt, safeParams);
 
-        case "p-image":
+        case "prunaai/p-image":
             return await callPrunaImageAPI(prompt, safeParams);
 
-        case "grok-imagine":
+        case "x-ai/grok-imagine-image":
             return await callXaiImageAPI(
                 prompt,
                 safeParams,
                 "grok-imagine-image",
             );
 
-        case "grok-imagine-pro":
+        case "x-ai/grok-imagine-image-quality":
             return await callOpenRouterGrokImagineProAPI(prompt, safeParams);
 
-        case "grok-imagine-image-2.0":
+        case "x-ai/grok-imagine-image-2.0":
             return await callOpenRouterGrokImagineImage2API(prompt, safeParams);
 
-        case "recraft-v4.1-vector":
+        case "recraft/recraft-v4.1-vector":
             return await callOpenRouterRecraftVectorAPI(prompt, safeParams);
 
-        case "p-image-edit":
+        case "prunaai/p-image-edit":
             return await callPrunaImageEditAPI(prompt, safeParams);
 
-        case "nova-canvas":
+        case "amazon/nova-canvas-v1":
             return await callNovaCanvasAPI(prompt, safeParams);
 
-        case "wan-image":
+        case "alibaba/wan-2.7-image":
             return await callWanImageAPI(prompt, safeParams, false);
 
-        case "wan-image-pro":
+        case "alibaba/wan-2.7-image-pro":
             return await callWanImageAPI(prompt, safeParams, true);
 
-        case "qwen-image":
+        case "qwen/qwen-image":
             return await callQwenImageAPI(prompt, safeParams);
 
-        case "qwen-image-3":
+        case "qwen/qwen-image-3":
             return await callQwenImage3API(prompt, safeParams);
 
-        case "kontext-replicate":
-        case "flux-2-pro-replicate":
-        case "qwen-image-3-replicate":
-        case "p-image-edit-replicate":
-        case "krea-replicate":
+        case "black-forest-labs/flux.1-kontext-pro:fallback":
+        case "black-forest-labs/flux.2-pro:fallback":
+        case "qwen/qwen-image-3:fallback":
+        case "prunaai/p-image-edit:fallback":
+        case "krea/krea-2-medium:fallback":
             return await callReplicateFallbackImage(prompt, safeParams);
 
-        case "dreamshaper":
+        case "lykon/dreamshaper-8-lcm":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
-        case "flux":
+        case "black-forest-labs/flux.1-schnell":
             return await callSelfHostedServer(prompt, safeParams, "flux");
 
-        case "flux-deepinfra":
+        case "black-forest-labs/flux.1-schnell:fallback":
             return await callFluxSchnellDeepInfraAPI(prompt, safeParams);
 
-        case "zimage-fal":
+        case "tongyi-mai/z-image-turbo:fallback":
             return await callZImageFalAPI(prompt, safeParams);
 
         default:
-            // zimage is the only model that reaches the default branch
+            // Z-Image Turbo is the only model that reaches the default branch
             // (the model enum is closed and every other model is dispatched above)
             return await callSelfHostedServer(prompt, safeParams);
     }

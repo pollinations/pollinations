@@ -92,7 +92,7 @@ function getModelPublisher(model: ModelPrice): string | null {
             ? model.name.slice(0, separator).toLowerCase()
             : null;
     }
-    return model.brand?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
+    return model.author?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
 }
 
 function getFilterValues(key: string, models: ModelPrice[]): string[] {
@@ -166,7 +166,7 @@ function getSearchableText(model: ModelPrice): string {
         model.name,
         getModelDisplayName(model),
         model.description,
-        model.brand,
+        model.author,
         model.baseModel,
         ...(model.inputModalities ?? []),
         ...(model.outputModalities ?? []),

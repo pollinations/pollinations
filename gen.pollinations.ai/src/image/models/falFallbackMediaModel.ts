@@ -63,7 +63,7 @@ export async function callFalFallbackImage(
     prompt: string,
     params: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (params.model !== "seedream5-fal") {
+    if (params.model !== "bytedance/seedream-5.0-lite:fallback") {
         throw new HttpError(
             `Unsupported Fal image fallback: ${params.model}`,
             400,
@@ -138,7 +138,7 @@ type FalVideoConfig = {
 };
 
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
-    "grok-video-pro-fal": {
+    "x-ai/grok-imagine-video:fallback": {
         textEndpoint: "xai/grok-imagine-video/text-to-video",
         imageEndpoint: "xai/grok-imagine-video/image-to-video",
         duration: (params) =>
@@ -149,7 +149,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             aspect_ratio: aspectRatio(params),
         }),
     },
-    "grok-imagine-video-1.5-fal": {
+    "x-ai/grok-imagine-video-1.5:fallback": {
         textEndpoint: "xai/grok-imagine-video/v1.5/text-to-video",
         imageEndpoint: "xai/grok-imagine-video/v1.5/image-to-video",
         duration: (params) =>
@@ -160,7 +160,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             ...(!hasImage ? { aspect_ratio: aspectRatio(params) } : {}),
         }),
     },
-    "wan-fal": {
+    "alibaba/wan-2.6:fallback": {
         textEndpoint: "wan/v2.6/text-to-video",
         imageEndpoint: "wan/v2.6/image-to-video",
         duration: (params) => snapDuration(params.duration, [5, 10, 15]),
@@ -172,7 +172,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
                 : {}),
         }),
     },
-    "seedance-pro-fal": {
+    "bytedance/seedance-1-pro-fast:fallback": {
         textEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
         imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/image-to-video",
         duration: (params) =>

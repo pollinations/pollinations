@@ -155,9 +155,12 @@ export type ModelDefinition = {
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
+    /** Override the shared fallback status list for this model. Network failures always retry. */
+    fallbackOnStatusCodes?: number[];
     /** Input safety features callers cannot disable for this model. */
     requiredSafetyFeatures?: SafetyFeature[];
-    brand: string;
+    /** Human-readable model publisher, e.g. "OpenAI" or "Anthropic". */
+    author: string;
     category: Category;
     cost: CostDefinition;
     // Named alternate rate sheets, merged over `cost` when selectCostVariant

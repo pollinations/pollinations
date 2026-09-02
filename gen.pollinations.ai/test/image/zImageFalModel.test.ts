@@ -8,7 +8,7 @@ const IMAGE_URL = "https://fal.media/zimage-output.jpg";
 const JPEG_BYTES = new Uint8Array([0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10]);
 
 const params: ImageParams = {
-    model: "zimage-fal",
+    model: "tongyi-mai/z-image-turbo:fallback",
     width: 1024,
     height: 768,
     dimensionsExplicit: true,
@@ -80,7 +80,7 @@ describe("callZImageFalAPI", () => {
         expect(result.buffer).toEqual(Buffer.from(JPEG_BYTES));
         expect(result.mimeType).toBe("image/jpeg");
         expect(result.trackingData).toEqual({
-            actualModel: "zimage-fal",
+            actualModel: "tongyi-mai/z-image-turbo:fallback",
             usage: { completionImageTokens: 1 },
         });
     });

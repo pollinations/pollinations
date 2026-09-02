@@ -31,13 +31,13 @@ const AZURE_FLUX_KONTEXT_ENDPOINT =
     "https://myceli-prod-eastus.cognitiveservices.azure.com/providers/blackforestlabs/v1/flux-kontext-pro?api-version=preview";
 
 const AZURE_FLUX_2_CONFIG = {
-    "flux-2-pro": {
+    "black-forest-labs/flux.2-pro": {
         upstreamModel: "FLUX.2-pro",
         modelPath: "flux-2-pro",
         title: "FLUX.2 Pro",
         maxReferenceImages: 8,
     },
-    "flux-2-flex": {
+    "black-forest-labs/flux.2-flex": {
         upstreamModel: "FLUX.2-flex",
         modelPath: "flux-2-flex",
         title: "FLUX.2 Flex",
@@ -317,7 +317,7 @@ export async function callAzureFluxKontext(
                 ?.filtered === true,
         isChild: false, // Azure doesn't provide child detection
         trackingData: {
-            actualModel: "kontext",
+            actualModel: "black-forest-labs/flux.1-kontext-pro",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,

@@ -12,7 +12,7 @@ afterEach(() => vi.restoreAllMocks());
 describe("getChatRequestData", () => {
     it("preserves validated OpenAI and provider fields", () => {
         const body = CreateChatCompletionRequestSchema.parse({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [
                 {
                     role: "user",
@@ -27,7 +27,7 @@ describe("getChatRequestData", () => {
         });
 
         expect(getChatRequestData(body)).toMatchObject({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [
                 {
                     role: "user",
@@ -45,7 +45,7 @@ describe("getChatRequestData", () => {
     it("applies aliases without forwarding SDK-owned controls", () => {
         const request = getChatRequestData(
             CreateChatCompletionRequestSchema.parse({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "hello" }],
                 safe: "privacy",
                 system: "Be concise",
@@ -78,7 +78,7 @@ describe("getChatRequestData", () => {
     it("prefers the standard response_format over the json alias", () => {
         const request = getChatRequestData(
             CreateChatCompletionRequestSchema.parse({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "hello" }],
                 json: true,
                 response_format: { type: "text" },
@@ -91,7 +91,7 @@ describe("getChatRequestData", () => {
 describe("getSimpleTextRequestData", () => {
     it("uses the validated GET query without reparsing it", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             seed: "12",
             system: "Be concise",
             json: "true",

@@ -277,7 +277,7 @@ describe("community endpoint OpenAI service", () => {
             testCommunityImageEndpoint({
                 baseUrl: "https://api.example.com/v1",
                 bearerToken: "sk_saved_token",
-                model: "flux",
+                model: "black-forest-labs/flux.1-schnell",
             }),
         ).resolves.toEqual({
             usage: { images: 1 },
@@ -301,7 +301,7 @@ describe("community endpoint OpenAI service", () => {
             testCommunityImageEndpoint({
                 baseUrl: "https://api.example.com/v1",
                 bearerToken: "sk_saved_token",
-                model: "flux",
+                model: "black-forest-labs/flux.1-schnell",
             }),
         ).rejects.toThrow("unsafe image URL");
     });

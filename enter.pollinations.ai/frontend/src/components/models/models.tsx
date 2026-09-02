@@ -121,12 +121,12 @@ const SORT_OPTIONS: Array<{
         accessibleLabel: "Name: Z to A",
     },
     {
-        value: "brand",
+        value: "author",
         label: "Publisher: A–Z",
         accessibleLabel: "Publisher: A to Z",
     },
     {
-        value: "brand-desc",
+        value: "author-desc",
         label: "Publisher: Z–A",
         accessibleLabel: "Publisher: Z to A",
     },

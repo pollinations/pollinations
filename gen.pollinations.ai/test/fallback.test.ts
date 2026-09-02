@@ -29,7 +29,7 @@ function registryEntry(
         aliases: [],
         provider: "test",
         fallbacks,
-        brand: "Test",
+        author: "Test",
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
@@ -77,14 +77,20 @@ function communityEntry(
 
 describe("registry fallback linking", () => {
     it("marks provider routes as hidden, fallback-only registry entries", () => {
-        expect(IMAGE_SERVICES.zimage.fallbacks).toContain("zimage-fal");
-        expect(IMAGE_SERVICES["zimage-fal"]).toMatchObject({
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
+            "tongyi-mai/z-image-turbo:fallback",
+        );
+        expect(
+            IMAGE_SERVICES["tongyi-mai/z-image-turbo:fallback"],
+        ).toMatchObject({
             aliases: [],
             hidden: true,
             fallbackOnly: true,
             provider: "fal",
         });
-        expect(getVisibleImageModels()).not.toContain("zimage-fal");
+        expect(getVisibleImageModels()).not.toContain(
+            "tongyi-mai/z-image-turbo:fallback",
+        );
     });
 
     it("uses registry declarations without applying community price rules", () => {

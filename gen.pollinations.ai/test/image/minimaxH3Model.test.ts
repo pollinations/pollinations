@@ -10,7 +10,7 @@ const VIDEO_URL = "https://fal.media/minimax-h3-test.mp4";
 const VIDEO_BYTES = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
 
 const baseParams: ImageParams = {
-    model: "minimax-h3",
+    model: "minimax/minimax-h3",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -112,7 +112,7 @@ describe("callMinimaxH3API", () => {
         expect(result.mimeType).toBe("video/mp4");
         expect(result.durationSeconds).toBe(5);
         expect(result.trackingData).toEqual({
-            actualModel: "minimax-h3",
+            actualModel: "minimax/minimax-h3",
             usage: { completionVideoSeconds: 5 },
         });
     });

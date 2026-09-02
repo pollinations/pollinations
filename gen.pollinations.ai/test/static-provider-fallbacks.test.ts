@@ -15,76 +15,76 @@ import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
 
 const OPENROUTER_ROUTES = [
-    ["qwen3.8-27b-openrouter-akashml", "qwen/qwen3.8-27b", "akashml/fp8"],
+    ["qwen/qwen3.8-27b:fallback", "qwen/qwen3.8-27b", "akashml/fp8"],
     [
-        "mistral-large-openrouter-zdr",
+        "mistralai/mistral-large-3:fallback",
         "mistralai/mistral-large-2512",
         "mistral/zdr",
     ],
     [
-        "claude-opus-4.7-openrouter-vertex",
+        "anthropic/claude-opus-4.7:fallback",
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ],
     [
-        "llama-scout-openrouter-deepinfra",
+        "meta/llama-4-scout:fallback",
         "meta-llama/llama-4-scout",
         "deepinfra/fp8",
     ],
-    ["grok-openrouter-xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
-    ["grok-large-openrouter-xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
+    ["x-ai/grok-4.20:fallback", "x-ai/grok-4.20", "xai/zdr"],
+    ["x-ai/grok-4.3:fallback", "x-ai/grok-4.3", "xai/zdr"],
     [
-        "claude-fast-openrouter-vertex",
+        "anthropic/claude-haiku-4.5:fallback",
         "anthropic/claude-haiku-4.5",
         "google-vertex/global",
     ],
     [
-        "claude-fable-5-openrouter-vertex",
+        "anthropic/claude-fable-5:fallback",
         "anthropic/claude-fable-5",
         "google-vertex/global",
     ],
     [
-        "muse-glimmer-openrouter-deepinfra",
+        "meta/muse-glimmer-30b:fallback",
         "meta/muse-glimmer-30b",
         "deepinfra/bf16",
     ],
     [
-        "nemotron-3.5-lightning-openrouter-coreweave",
+        "nvidia/nemotron-3.5-lightning:fallback",
         "nvidia/nemotron-3.5-lightning",
         "coreweave/bf16",
     ],
-    ["mistral-openrouter-eu", "mistralai/mistral-small-2603", "mistral/eu"],
     [
-        "gemini-openrouter-ai-studio-priority",
+        "mistralai/mistral-small-4:fallback",
+        "mistralai/mistral-small-2603",
+        "mistral/eu",
+    ],
+    [
+        "google/gemini-3.7-flash:fallback",
         "google/gemini-3.7-flash",
         "google-ai-studio/priority",
     ],
     [
-        "gemini-fast-openrouter-ai-studio",
+        "google/gemini-2.5-flash-lite:fallback",
         "google/gemini-2.5-flash-lite",
         "google-ai-studio",
     ],
     [
-        "gemini-flash-lite-3.5-openrouter-ai-studio-flex",
+        "google/gemini-3.5-flash-lite:fallback",
         "google/gemini-3.5-flash-lite",
         "google-ai-studio/flex",
     ],
     [
-        "gemini-large-openrouter-ai-studio",
+        "google/gemini-3.1-pro-preview:fallback",
         "google/gemini-3.1-pro-preview",
         "google-ai-studio",
     ],
     [
-        "qwen-vision-pro-openrouter-novita",
+        "qwen/qwen3-vl-235b-a22b-thinking:fallback",
         "qwen/qwen3-vl-235b-a22b-thinking",
         "novita/bf16",
     ],
-    ["glm-5.3-openrouter-friendli", "z-ai/glm-5.3", "friendli"],
-    [
-        "qwen-coder-large-openrouter-streamlake",
-        "qwen/qwen3-coder-next",
-        "streamlake",
-    ],
+    ["z-ai/glm-5.3:fallback", "z-ai/glm-5.3", "friendli"],
+    ["qwen/qwen3-coder-next:fallback", "qwen/qwen3-coder-next", "streamlake"],
 ] as const;
 
 function fallbackRoutes(fallbacks: Record<string, Record<string, unknown>>) {
@@ -108,7 +108,7 @@ function expectInheritedRoute(
         aliases: [],
         hidden: true,
         fallbackOnly: true,
-        brand: parent.brand,
+        author: parent.author,
         category: parent.category,
         title: parent.title,
         inputModalities: parent.inputModalities,
@@ -155,7 +155,11 @@ describe("static provider fallbacks", () => {
                 expectInheritedRoute(AUDIO_SERVICES, parent, route);
             }
         }
-        expectInheritedRoute(MODEL3D_SERVICES, "trellis-2", "trellis-2-fal");
+        expectInheritedRoute(
+            MODEL3D_SERVICES,
+            "microsoft/trellis-2",
+            "microsoft/trellis-2:fallback",
+        );
     });
 
     it("keeps provider routes out of public model lists", () => {
@@ -177,40 +181,45 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps provider-specific fallback costs", () => {
-        expect(TEXT_SERVICES["deepseek-deepinfra"].cost).toMatchObject({
+        expect(
+            TEXT_SERVICES["deepseek/deepseek-v4-flash:fallback"].cost,
+        ).toMatchObject({
             promptTextTokens: 0.08 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
         });
-        expect(IMAGE_SERVICES["qwen-image-3-replicate"].cost).toMatchObject({
-            promptImageTokens: 0,
-            completionImageTokens: 0.03,
-        });
-        expect(
-            TEXT_SERVICES["qwen3.8-27b-openrouter-akashml"].cost,
-        ).toMatchObject({
+        expect(IMAGE_SERVICES["qwen/qwen-image-3:fallback"].cost).toMatchObject(
+            {
+                promptImageTokens: 0,
+                completionImageTokens: 0.03,
+            },
+        );
+        expect(TEXT_SERVICES["qwen/qwen3.8-27b:fallback"].cost).toMatchObject({
             promptCachedTokens: 0.05 / 1_000_000,
         });
         expect(
-            TEXT_SERVICES["gemini-openrouter-ai-studio-priority"].cost,
+            TEXT_SERVICES["google/gemini-3.7-flash:fallback"].cost,
         ).toMatchObject({
             promptCacheWriteTokens: 1.35 / 1_000_000,
         });
         expect(
-            TEXT_SERVICES["gemini-flash-lite-3.5-openrouter-ai-studio-flex"]
-                .cost,
+            TEXT_SERVICES["google/gemini-3.5-flash-lite:fallback"].cost,
         ).toMatchObject({
             promptCacheWriteTokens: 0.15 / 1_000_000,
         });
-        expect(TEXT_SERVICES["kimi-code-deepinfra"].cost).toMatchObject({
+        expect(
+            TEXT_SERVICES["moonshotai/kimi-k2.7-code:fallback"].cost,
+        ).toMatchObject({
             promptCacheWriteTokens: 0.85 / 1_000_000,
         });
-        expect(MODEL3D_SERVICES["trellis-2-fal"].cost).toEqual({
+        expect(MODEL3D_SERVICES["microsoft/trellis-2:fallback"].cost).toEqual({
             completionImageTokens: 0.25,
         });
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
-        expect(findModelByName("deepseek-deepinfra")?.config()).toMatchObject({
+        expect(
+            findModelByName("deepseek/deepseek-v4-flash:fallback")?.config(),
+        ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
         });

@@ -180,7 +180,7 @@ export async function callWan3FalAPI(
             "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: "wan-3.0",
+            actualModel: "alibaba/wan-3.0",
             usage: { completionVideoSeconds: duration },
         },
     };

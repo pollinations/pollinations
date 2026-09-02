@@ -126,7 +126,7 @@ export async function callSeedance25API(
         mimeType: "video/mp4",
         durationSeconds: billedDuration,
         trackingData: {
-            actualModel: "seedance-2.5",
+            actualModel: "bytedance/seedance-2.5",
             usage: { completionVideoSeconds: billedDuration },
         },
     };

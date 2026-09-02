@@ -133,7 +133,7 @@ export async function callMinimaxH3API(
             "video/mp4",
         durationSeconds: H3_DURATION_SECONDS,
         trackingData: {
-            actualModel: "minimax-h3",
+            actualModel: "minimax/minimax-h3",
             usage: {
                 completionVideoSeconds: H3_DURATION_SECONDS,
             },

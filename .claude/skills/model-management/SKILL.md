@@ -105,9 +105,32 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 ### 4. Implement the smallest complete change
 
-- Canonical public IDs use lowercase
-  `<publisher-slug>/<official-model-slug>` and preserve the official family
-  and version. Keep provider deployment IDs and routing internal.
+- Canonical public IDs use `<author-slug>/<official-model-slug>`. Keep both
+  components lowercase, preserve the publisher's model family and version,
+  and follow the publisher's public slug when one exists. Never invent, drop,
+  or silently advance a version.
+- `author` is the human-readable publisher (`OpenAI`, `Anthropic`, `xAI`), not
+  the inference provider. Keep provider deployment IDs, casing, punctuation,
+  and revision suffixes internal when they are routing details rather than the
+  publisher's public model identity.
+- Never encode an inference provider in a public canonical ID. Deduplicate the
+  same publisher model across providers behind one public identity and declare
+  automatic routing through the registry's ordered fallback relationship.
+- Automatic fallback routes are internal registry entries, not public models.
+  Name the only route `<public-canonical-id>:fallback`; if multiple routes are
+  required, append an internal discriminator after `:fallback:`. Mark every
+  route hidden and fallback-only, give it no aliases, and never expose or allow
+  callers to select it. Provider identity and route-specific cost belong on
+  this internal entry; callers retain the requested public model's price.
+- If users must deliberately choose a separately priced or paid-only offering
+  of the exact same publisher model, expose it as
+  `<public-canonical-id>:paid`, never with the inference provider in the slug.
+  Treat it as a separate public contract with its own price, `paidOnly` value,
+  permissions, and aliases. Do not use `:paid` for automatic fallback routing.
+- When multiple entries are only operations or parameter presets of the same
+  publisher model, consolidate them under that model identity and select the
+  operation through an explicit endpoint or request field. Do not create a
+  second canonical model or make an alias select behavior.
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
 - Do not add speculative abstractions, compatibility shims, or fallbacks.
 - Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
@@ -135,7 +158,8 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   not add a runtime normalization layer.
 - Update every consumer of a changed public ID at once.
 - Add aliases only for existing compatibility contracts or explicit approval.
-- Add models to `MODEL_SLUGS.md` only when renaming a historical public ID.
+- Keep `MODEL_SLUGS.md` complete for every visible first-party model. Use `—`
+  when a model has no historical public ID, and exclude hidden fallback routes.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 
@@ -167,7 +191,7 @@ A model change is not complete until all applicable statements are true:
 - Every non-zero usage field is accounted for and billed at the confirmed rate.
 - Malformed or rejected requests return useful 4xx responses rather than opaque 5xx responses.
 - Capacity and media latency fit the expected production load.
-- The catalog description is developer-facing, does not repeat the title, and the brand logo resolves.
+- The catalog description is developer-facing, does not repeat the title, and the author logo resolves.
 - No public API surface was added or changed without its separate explicit confirmation.
 - No unapproved secret or deployment mutation occurred.
 - The PR contains only this model or tightly coupled family.

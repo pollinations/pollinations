@@ -555,7 +555,7 @@ export async function generateImageOrVideoResponse(
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
     const pricingDimensions =
-        c.var.model.resolved === "nova-canvas"
+        c.var.model.resolved === "amazon/nova-canvas-v1"
             ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
             : safeParams;
     c.var.track.setPricingInput({

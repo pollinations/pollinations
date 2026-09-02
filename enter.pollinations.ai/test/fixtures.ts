@@ -44,7 +44,7 @@ type Fixtures = {
     /** API key for a user with pack balance (can use paidOnly models) */
     paidApiKey: string;
     pubApiKey: string;
-    /** API key restricted to only ["openai-fast", "flux"] models */
+    /** API key restricted to only ["openai/gpt-5-nano", "black-forest-labs/flux.1-schnell"] models */
     restrictedApiKey: string;
     /** API key with zero pollen budget (should be rejected with 402) */
     exhaustedBudgetApiKey: string;
@@ -191,7 +191,7 @@ export const test = base.extend<Fixtures>({
         await use(pubApiKey);
     },
     /**
-     * Creates an API key restricted to only ["openai-fast", "flux"] models.
+     * Creates an API key restricted to only ["openai/gpt-5-nano", "black-forest-labs/flux.1-schnell"] models.
      * Uses the /api/api-keys/:id/update endpoint to set permissions.
      */
     restrictedApiKey: async ({ sessionToken }, use) => {
@@ -209,7 +209,10 @@ export const test = base.extend<Fixtures>({
                     "Cookie": `better-auth.session_token=${sessionToken}`,
                 },
                 body: JSON.stringify({
-                    allowedModels: ["openai-fast", "flux"],
+                    allowedModels: [
+                        "openai/gpt-5-nano",
+                        "black-forest-labs/flux.1-schnell",
+                    ],
                 }),
             },
         );

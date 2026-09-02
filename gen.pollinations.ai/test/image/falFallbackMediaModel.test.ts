@@ -12,7 +12,7 @@ const MEDIA_URL = "https://fal.media/output";
 const MEDIA_BYTES = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
 
 const baseParams: ImageParams = {
-    model: "seedream5-fal",
+    model: "bytedance/seedream-5.0-lite:fallback",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -85,24 +85,24 @@ describe("Fal fallback media models", () => {
             },
         });
         expect(result.trackingData).toEqual({
-            actualModel: "seedream5-fal",
+            actualModel: "bytedance/seedream-5.0-lite:fallback",
             usage: { completionImageTokens: 1 },
         });
     });
 
     it.each([
         [
-            "grok-video-pro-fal",
+            "x-ai/grok-imagine-video:fallback",
             "xai/grok-imagine-video/text-to-video",
             { duration: 1, resolution: "720p", aspect_ratio: "1:1" },
         ],
         [
-            "wan-fal",
+            "alibaba/wan-2.6:fallback",
             "wan/v2.6/text-to-video",
             { duration: 10, resolution: "720p", aspect_ratio: "1:1" },
         ],
         [
-            "seedance-pro-fal",
+            "bytedance/seedance-1-pro-fast:fallback",
             "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
             {
                 duration: 5,
@@ -119,7 +119,10 @@ describe("Fal fallback media models", () => {
             ...baseParams,
             model,
             duration: input.duration,
-            resolution: model === "seedance-pro-fal" ? "480p" : undefined,
+            resolution:
+                model === "bytedance/seedance-1-pro-fast:fallback"
+                    ? "480p"
+                    : undefined,
         });
         await vi.advanceTimersByTimeAsync(5_000);
         const result = await resultPromise;
@@ -140,7 +143,7 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("move", {
             ...baseParams,
-            model: "grok-imagine-video-1.5-fal",
+            model: "x-ai/grok-imagine-video-1.5:fallback",
             duration: 5,
             resolution: "720p",
             image: ["https://example.com/input.png"],

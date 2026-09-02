@@ -7,20 +7,22 @@ const messages = [{ role: "user" as const, content: "Hello" }];
 describe("resolveModelConfig", () => {
     it("sets Anthropic max_tokens defaults", () => {
         expect(
-            resolveModelConfig(messages, { model: "claude" }).options
-                .max_tokens,
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-sonnet-4.6",
+            }).options.max_tokens,
         ).toBe(64000);
         expect(
-            resolveModelConfig(messages, { model: "claude-fast" }).options
-                .max_tokens,
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-haiku-4.5",
+            }).options.max_tokens,
         ).toBe(64000);
         expect(
-            resolveModelConfig(messages, { model: "claude-large" }).options
-                .max_tokens,
+            resolveModelConfig(messages, { model: "anthropic/claude-opus-5" })
+                .options.max_tokens,
         ).toBe(128000);
         expect(
-            resolveModelConfig(messages, { model: "claude-fable-5" }).options
-                .max_tokens,
+            resolveModelConfig(messages, { model: "anthropic/claude-fable-5" })
+                .options.max_tokens,
         ).toBe(128000);
         expect(
             resolveModelConfig(messages, {
@@ -31,7 +33,7 @@ describe("resolveModelConfig", () => {
 
     it("lets callers override Anthropic max_tokens", () => {
         const result = resolveModelConfig(messages, {
-            model: "claude",
+            model: "anthropic/claude-sonnet-4.6",
             max_tokens: 1024,
         });
 
@@ -40,7 +42,7 @@ describe("resolveModelConfig", () => {
 
     it("routes claude-large to the global Opus 5 profile", () => {
         const result = resolveModelConfig(messages, {
-            model: "claude-large",
+            model: "anthropic/claude-opus-5",
         });
 
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
@@ -55,19 +57,25 @@ describe("resolveModelConfig", () => {
     });
 
     it("does not set max_tokens for non-Anthropic models", () => {
-        const result = resolveModelConfig(messages, { model: "openai" });
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-5.4-nano",
+        });
 
         expect(result.options.max_tokens).toBeUndefined();
     });
 
     it("resolves nova-fast to us.amazon.nova-micro-v1:0", () => {
-        const result = resolveModelConfig(messages, { model: "nova-fast" });
+        const result = resolveModelConfig(messages, {
+            model: "amazon/nova-micro-v1",
+        });
 
         expect(result.options.model).toBe("us.amazon.nova-micro-v1:0");
     });
 
     it("pins longcat to the exact OpenRouter endpoint without fallback", () => {
-        const result = resolveModelConfig(messages, { model: "longcat" });
+        const result = resolveModelConfig(messages, {
+            model: "meituan/longcat-2.0",
+        });
 
         expect(result.options.model).toBe("meituan/longcat-2.0");
         expect(result.options.provider).toEqual({
@@ -77,7 +85,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Inkling to Together on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, { model: "inkling" });
+        const result = resolveModelConfig(messages, {
+            model: "thinkingmachines/inkling-small",
+        });
 
         expect(result.options.model).toBe("thinkingmachines/inkling-small");
         expect(result.options.provider).toEqual({
@@ -87,7 +97,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("pins Mercury to Inception on OpenRouter without fallback", () => {
-        const result = resolveModelConfig(messages, { model: "mercury" });
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-2",
+        });
 
         expect(result.options.model).toBe("inception/mercury-2");
         expect(result.options.provider).toEqual({
@@ -110,7 +122,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("routes Nemotron directly to DeepInfra without fallback", () => {
-        const result = resolveModelConfig(messages, { model: "nemotron" });
+        const result = resolveModelConfig(messages, {
+            model: "nvidia/nemotron-3-ultra",
+        });
 
         expect(result.options.model).toBe(
             "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B",
@@ -138,7 +152,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("routes Step Flash directly to DeepInfra without fallback", () => {
-        const result = resolveModelConfig(messages, { model: "step-flash" });
+        const result = resolveModelConfig(messages, {
+            model: "stepfun/step-3.7-flash",
+        });
 
         expect(result.options.model).toBe("stepfun-ai/Step-3.7-Flash");
         expect(result.options.modelConfig).toMatchObject({
@@ -150,7 +166,7 @@ describe("resolveModelConfig", () => {
 
     it("pins Qwen3.7 Flash to Alibaba on OpenRouter without fallback", () => {
         const result = resolveModelConfig(messages, {
-            model: "qwen3.7-flash",
+            model: "qwen/qwen3.7-flash",
         });
 
         expect(result.options.model).toBe("qwen/qwen3.7-flash");
@@ -165,7 +181,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("routes Qwen3.8 Max to Alibaba without fallback", () => {
-        const result = resolveModelConfig(messages, { model: "qwen3.8-max" });
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-max",
+        });
 
         expect(result.options.model).toBe("qwen/qwen3.8-max");
         expect(result.options.modelConfig).toMatchObject({
@@ -210,7 +228,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
-        const result = resolveModelConfig(messages, { model: "kimi-k3" });
+        const result = resolveModelConfig(messages, {
+            model: "moonshotai/kimi-k3",
+        });
 
         expect(result.options.model).toBe("accounts/fireworks/models/kimi-k3");
         expect(result.options.modelConfig).toMatchObject({
@@ -313,8 +333,11 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
-        ["minimax-m2.7", "minimax/minimax-m2.7", "deepinfra/fp8"],
-        ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
+        [
+            "meta/llama-4-scout:fallback",
+            "meta-llama/llama-4-scout",
+            "deepinfra/fp8",
+        ],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });
 
@@ -322,6 +345,18 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toEqual({
             only: [provider],
             allow_fallbacks: false,
+        });
+    });
+
+    it("routes the MiniMax M2.7 fallback directly to DeepInfra", () => {
+        const result = resolveModelConfig(messages, {
+            model: "minimax/minimax-m2.7:fallback",
+        });
+
+        expect(result.options.model).toBe("MiniMaxAI/MiniMax-M2.7");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.deepinfra.com/v1/openai",
         });
     });
 
@@ -351,7 +386,9 @@ describe("resolveModelConfig", () => {
     });
 
     it("routes DeepSeek to the exact Fireworks 0731 checkpoint", () => {
-        const result = resolveModelConfig(messages, { model: "deepseek" });
+        const result = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4-flash",
+        });
 
         expect(result.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4-flash-0731",
@@ -393,7 +430,7 @@ describe("resolveModelConfig", () => {
 
     it("routes Command A+ to the exact Azure deployment without fallback", () => {
         const result = resolveModelConfig(messages, {
-            model: "command-a-plus",
+            model: "command-a-plus-05-2026",
         });
 
         expect(result.options.model).toBe("Cohere-command-a-plus-05-2026");
@@ -413,7 +450,7 @@ describe("resolveModelConfig", () => {
     ])("resolves %s to Sonar and forwards an explicit context", async (modelName) => {
         const model = findModelByName(modelName);
 
-        expect(model?.name).toBe("perplexity-fast");
+        expect(model?.name).toBe("perplexity/sonar");
         const result = resolveModelConfig(messages, {
             model: modelName,
             web_search_options: { search_context_size: "high" },

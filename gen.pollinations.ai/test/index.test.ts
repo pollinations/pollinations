@@ -12,11 +12,11 @@ import googleCloudAuth from "../src/text/auth/googleCloudAuth.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const TRANSCRIPTION_MODEL_IDS = [
-    "whisper",
-    "gpt-transcribe",
-    "scribe",
-    "universal-2",
-    "universal-3.5-pro",
+    "openai/whisper-large-v3",
+    "openai/gpt-transcribe",
+    "elevenlabs/scribe-v2",
+    "assemblyai/universal-2",
+    "assemblyai/universal-3.5-pro",
 ] as const;
 
 afterEach(() => {
@@ -330,7 +330,7 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists DreamShaper with its aliases and flat per-image pricing", async () => {
+    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -340,10 +340,10 @@ describe("gen worker routing", () => {
             pricing: Record<string, string>;
         }[];
         expect(
-            models.find((model) => model.name === "dreamshaper"),
+            models.find((model) => model.name === "lykon/dreamshaper-8-lcm"),
         ).toMatchObject({
-            name: "dreamshaper",
-            aliases: ["sana", "lykon/dreamshaper-8-lcm"],
+            name: "lykon/dreamshaper-8-lcm",
+            aliases: ["sana", "dreamshaper"],
             pricing: {
                 completionImageTokens: "0.0001",
                 currency: "pollen",
@@ -363,14 +363,16 @@ describe("gen worker routing", () => {
             pricing: Record<string, string>;
         }[];
         expect(
-            models.find((model) => model.name === "recraft-v4.1-vector"),
+            models.find(
+                (model) => model.name === "recraft/recraft-v4.1-vector",
+            ),
         ).toMatchObject({
-            name: "recraft-v4.1-vector",
+            name: "recraft/recraft-v4.1-vector",
             aliases: [
                 "recraft-vector",
                 "recraft-svg",
                 "recraft-v4.1-svg",
-                "recraft/recraft-v4.1-vector",
+                "recraft-v4.1-vector",
             ],
             input_modalities: ["text", "image"],
             output_modalities: ["image"],
@@ -453,7 +455,7 @@ describe("gen worker routing", () => {
             pricing_adjustments?: unknown[];
         }[];
         expect(
-            models.find((model) => model.name === "perplexity-fast")
+            models.find((model) => model.name === "perplexity/sonar")
                 ?.pricing_adjustments,
         ).toEqual(
             expect.arrayContaining([
@@ -493,10 +495,12 @@ describe("gen worker routing", () => {
             flat_rate?: boolean;
         }[];
         expect(
-            models.find(({ name }) => name === "grok-imagine")?.flat_rate,
+            models.find(({ name }) => name === "x-ai/grok-imagine-image")
+                ?.flat_rate,
         ).toBe(true);
         expect(
-            models.find(({ name }) => name === "nanobanana-pro")?.flat_rate,
+            models.find(({ name }) => name === "google/gemini-3-pro-image")
+                ?.flat_rate,
         ).toBe(false);
     });
 
@@ -534,7 +538,7 @@ describe("gen worker routing", () => {
         }
     });
 
-    it("advertises audio input support for gemini-fast", async () => {
+    it("advertises audio input support for Gemini Flash Lite", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -543,7 +547,7 @@ describe("gen worker routing", () => {
             input_modalities?: string[];
         }[];
         const model = models.find(
-            (candidate) => candidate.name === "gemini-fast",
+            (candidate) => candidate.name === "google/gemini-2.5-flash-lite",
         );
 
         expect(model?.input_modalities).toEqual([
@@ -565,7 +569,7 @@ describe("gen worker routing", () => {
         }[];
 
         expect(
-            models.find((model) => model.name === "perplexity-fast"),
+            models.find((model) => model.name === "perplexity/sonar"),
         ).toMatchObject({
             title: "Perplexity Sonar Fast Search",
             description:
@@ -575,13 +579,15 @@ describe("gen worker routing", () => {
             models.find((model) => model.name === "perplexity-high"),
         ).toBeUndefined();
         expect(
-            models.find((model) => model.name === "perplexity"),
+            models.find((model) => model.name === "perplexity/sonar-pro"),
         ).toMatchObject({
             description:
                 "Advanced web search that synthesizes multiple sources with citations",
         });
         expect(
-            models.find((model) => model.name === "perplexity-reasoning"),
+            models.find(
+                (model) => model.name === "perplexity/sonar-reasoning-pro",
+            ),
         ).toMatchObject({
             description:
                 "Thinks step by step while searching the web; slower but more rigorous",
@@ -804,7 +810,7 @@ fixtureTest(
             "nosniff",
         );
         expect(getResponse.headers.get("x-model-used")).toBe(
-            "recraft-v4.1-vector",
+            "recraft/recraft-v4.1-vector",
         );
         expect(getResponse.headers.get("x-usage-completion-image-tokens")).toBe(
             "1",
@@ -1024,7 +1030,9 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
-        expect(response.headers.get("x-model-used")).toBe("qwen-tts-instruct");
+        expect(response.headers.get("x-model-used")).toBe(
+            "qwen/qwen3-tts-instruct-flash",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
         );
@@ -1103,7 +1111,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
-        expect(response.headers.get("x-model-used")).toBe("csm-1b");
+        expect(response.headers.get("x-model-used")).toBe("sesame/csm-1b");
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "9",
         );
@@ -1154,13 +1162,13 @@ fixtureTest(
                 input: "Hello",
                 voice: "unknown_voice",
                 response_format: "mp3",
-                message: "Invalid voice for csm-1b",
+                message: "Invalid voice for sesame/csm-1b",
             },
             {
                 input: "Hello",
                 voice: "conversational_a",
                 response_format: "aac",
-                message: "Unsupported response_format for csm-1b",
+                message: "Unsupported response_format for sesame/csm-1b",
             },
         ];
 
@@ -1262,7 +1270,9 @@ fixtureTest(
 
         expect(postResponse.status).toBe(200);
         expect(postResponse.headers.get("content-type")).toBe("audio/wav");
-        expect(postResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(postResponse.headers.get("x-model-used")).toBe(
+            "hexgrad/kokoro-82m",
+        );
         expect(
             postResponse.headers.get("x-usage-completion-audio-tokens"),
         ).toBe("4");
@@ -1286,7 +1296,9 @@ fixtureTest(
         );
 
         expect(getResponse.status).toBe(200);
-        expect(getResponse.headers.get("x-model-used")).toBe("kokoro");
+        expect(getResponse.headers.get("x-model-used")).toBe(
+            "hexgrad/kokoro-82m",
+        );
         expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
         await getResponse.arrayBuffer();
         await waitOnExecutionContext(getContext);
@@ -1439,7 +1451,9 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
-        expect(response.headers.get("x-model-used")).toBe("lyria-3-clip");
+        expect(response.headers.get("x-model-used")).toBe(
+            "google/lyria-3-clip-preview",
+        );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
         );
@@ -1543,12 +1557,10 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
         input_modalities?: string[];
         output_modalities?: string[];
     }[];
-    const model = models.find((candidate) => candidate.name === "lyria-3-clip");
-    expect(model?.aliases).toEqual([
-        "lyria",
-        "lyria-3",
-        "google/lyria-3-clip-preview",
-    ]);
+    const model = models.find(
+        (candidate) => candidate.name === "google/lyria-3-clip-preview",
+    );
+    expect(model?.aliases).toEqual(["lyria", "lyria-3", "lyria-3-clip"]);
     expect(model?.input_modalities).toEqual(["text"]);
     expect(model?.output_modalities).toEqual(["audio"]);
 });
@@ -1982,7 +1994,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-medium",
+            "stability-ai/stable-audio-3-medium",
         );
         // text-to-audio bills 1 output audio unit ($0.0376 per generation).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -2080,7 +2092,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-medium",
+            "stability-ai/stable-audio-3-medium",
         );
         // audio-to-audio bills 1 output unit + 1 input unit
         // ($0.0376 + $0.0041 = $0.0417 per generation).
@@ -2109,7 +2121,7 @@ it("lists stable-audio-3-medium in audio models", async () => {
         input_modalities?: string[];
     }[];
     const model = models.find(
-        (candidate) => candidate.name === "stable-audio-3-medium",
+        (candidate) => candidate.name === "stability-ai/stable-audio-3-medium",
     );
     expect(model?.input_modalities).toEqual(["text", "audio"]);
 });
@@ -2195,7 +2207,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-large",
+            "stability-ai/stable-audio-3",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
@@ -2300,7 +2312,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stable-audio-3-large",
+            "stability-ai/stable-audio-3",
         );
         // a2a bills the same flat fee as text-to-audio ($0.26 = 1 unit).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -2329,7 +2341,7 @@ it("lists stable-audio-3-large in audio models", async () => {
         input_modalities?: string[];
     }[];
     const model = models.find(
-        (candidate) => candidate.name === "stable-audio-3-large",
+        (candidate) => candidate.name === "stability-ai/stable-audio-3",
     );
     expect(model?.aliases).toContain("stable-audio-3");
     expect(model?.input_modalities).toEqual(["text", "audio"]);

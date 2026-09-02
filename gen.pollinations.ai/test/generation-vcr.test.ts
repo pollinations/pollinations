@@ -21,6 +21,7 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
+const deepInfraHost = "api.deepinfra.com";
 const replicateHost = "api.replicate.com";
 const replicateDeliveryHost = "replicate.delivery";
 
@@ -40,6 +41,7 @@ const test = baseTest.extend<{
 
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
+    env.DEEPINFRA_API_KEY = "deepinfra-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     const portkeyState: { requests: Record<string, unknown>[] } = {
@@ -52,6 +54,9 @@ function createGenerationMocks() {
             url: string;
         }>;
     } = { requests: [] };
+    const deepInfraState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
@@ -77,6 +82,23 @@ function createGenerationMocks() {
                 [imageBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
+        },
+        deepInfra: {
+            state: deepInfraState,
+            handlerMap: {
+                [deepInfraHost]: async (request) => {
+                    deepInfraState.requests.push(
+                        (await request.json()) as Record<string, unknown>,
+                    );
+                    return Response.json({
+                        images: [png1x1Base64],
+                        inference_status: { cost: 0.0005, runtime_ms: 100 },
+                    });
+                },
+            },
+            reset: () => {
+                deepInfraState.requests = [];
+            },
         },
         replicate: {
             state: replicateState,
@@ -1142,12 +1164,12 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("flux returns 503 without Replicate when the Vast pool is empty", async ({
+test("flux falls back to DeepInfra when the Vast pool is empty", async ({
     mocks,
 }) => {
     const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
     await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
-    await mocks.enable("tinybird", "replicate");
+    await mocks.enable("tinybird", "deepInfra");
     const { key } = await createTestApiKey({
         allowedModels: ["flux"],
         user: { tierBalance: 100 },
@@ -1160,19 +1182,22 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
         },
     );
 
-    expect(response.status).toBe(503);
-    expect(response.headers.get("x-fallback-target")).toBeNull();
-    await expect(response.json()).resolves.toMatchObject({
-        success: false,
-        error: {
-            code: "SERVICE_UNAVAILABLE",
-            message: "No active flux servers available",
-        },
-    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("flux-deepinfra");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.arrayBuffer();
     await wait();
 
-    expect(mocks.replicate.state.requests).toHaveLength(0);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.deepInfra.state.requests).toEqual([
+        {
+            prompt: "vcr red square",
+            width: 1280,
+            height: 720,
+            num_images: 1,
+            seed: 42,
+        },
+    ]);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
@@ -1180,19 +1205,29 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
         modelUsed: "flux",
         modelProviderUsed: "vast",
         responseStatus: 503,
-        fallbackUsed: false,
-        isFinal: true,
+        isFinal: false,
         isBilledUsage: false,
+    });
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "flux",
+        resolvedModelRequested: "flux",
+        modelUsed: "flux-deepinfra",
+        modelProviderUsed: "deepinfra",
+        responseStatus: 200,
+        fallbackUsed: true,
+        isFinal: true,
+        isBilledUsage: true,
     });
 });
 
-test("removed flux-replicate model returns invalid model", async ({
+test("fallback-only provider routes cannot be called directly", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "replicate");
+    await mocks.enable("tinybird", "deepInfra");
     const { response, wait } = await fetchWorker(
-        "/image/test?model=flux-replicate",
+        "/image/test?model=flux-deepinfra",
         {
             headers: { authorization: `Bearer ${paidApiKey}` },
         },
@@ -1204,12 +1239,12 @@ test("removed flux-replicate model returns invalid model", async ({
         error: {
             code: "BAD_REQUEST",
             message:
-                'Invalid model or alias: "flux-replicate". Must be a valid model name or alias.',
+                'Invalid model or alias: "flux-deepinfra". Must be a valid model name or alias.',
         },
     });
     await wait();
 
-    expect(mocks.replicate.state.requests).toHaveLength(0);
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
 });
 
 test("OpenAI image generation returns token usage", async ({

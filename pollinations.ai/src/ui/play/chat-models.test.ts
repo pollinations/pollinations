@@ -13,6 +13,7 @@ import {
     conversationForRequest,
     extractStreamedMedia,
     fileKind,
+    parseAgentMessage,
     routingChoices,
     supportsRoutingField,
 } from "./chat-models";
@@ -231,6 +232,60 @@ describe("chat conversation history", () => {
             { role: "assistant", content: "hi" },
             { role: "user", content: "continue" },
             { role: "assistant", content: "partial" },
+        ]);
+    });
+});
+
+describe("agent tool-call rendering", () => {
+    it("converts completed tool details into a structured message part", () => {
+        const content =
+            'I found it.\n\n<details type="tool_calls" done="true" id="call-1" ' +
+            'name="SEARCH_WEB" arguments="{&quot;query&quot;:&quot;pollinations&quot;}">\n' +
+            "<summary>Tool Executed</summary>\n" +
+            "{&quot;results&quot;:[{&quot;title&quot;:&quot;Pollinations &amp; friends&quot;}]}\n" +
+            "</details>\n\nDone.";
+
+        expect(parseAgentMessage(content)).toEqual([
+            { type: "text", text: "I found it.\n\n" },
+            {
+                type: "tool-call",
+                toolCallId: "call-1",
+                toolName: "SEARCH_WEB",
+                args: { query: "pollinations" },
+                argsText: '{"query":"pollinations"}',
+                result: {
+                    results: [{ title: "Pollinations & friends" }],
+                },
+                isError: false,
+            },
+            { type: "text", text: "\n\nDone." },
+        ]);
+    });
+
+    it("marks failed tools and keeps their readable error", () => {
+        const content =
+            '<details type="tool_calls" done="true" id="call-2" ' +
+            'name="SEND_EMAIL" arguments="{}">\n' +
+            "<summary>Tool Failed</summary>\nMailbox unavailable\n</details>";
+
+        expect(parseAgentMessage(content)).toEqual([
+            {
+                type: "tool-call",
+                toolCallId: "call-2",
+                toolName: "SEND_EMAIL",
+                args: {},
+                argsText: "{}",
+                result: "Mailbox unavailable",
+                isError: true,
+            },
+        ]);
+    });
+
+    it("leaves malformed or unrelated details as text", () => {
+        const content =
+            "<details><summary>More</summary>Not a tool call</details>";
+        expect(parseAgentMessage(content)).toEqual([
+            { type: "text", text: content },
         ]);
     });
 });

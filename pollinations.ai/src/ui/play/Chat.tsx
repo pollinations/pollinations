@@ -1,4 +1,13 @@
 import {
+    AssistantRuntimeProvider,
+    MessagePrimitive,
+    type TextMessagePartProps,
+    type ThreadMessageLike,
+    ThreadPrimitive,
+    type ToolCallMessagePartProps,
+    useExternalStoreRuntime,
+} from "@assistant-ui/react";
+import {
     type AudioFormat,
     type ChatRoutingCapability,
     type MessageContentPart,
@@ -51,6 +60,7 @@ import {
 } from "react";
 import {
     type AgentChoice,
+    type AgentMessagePart,
     AUTO_ROUTING,
     agentActivity,
     agentChoices,
@@ -65,6 +75,7 @@ import {
     conversationForRequest,
     extractStreamedMedia,
     fileKind,
+    parseAgentMessage,
     type RenderedMedia,
     type RoutingChoice,
     type RoutingSelection,
@@ -238,6 +249,58 @@ function textContent(message: ConversationMessage): string {
         .filter((part) => part.type === "text")
         .map((part) => part.text)
         .join("\n");
+}
+
+function renderedAssistantMessage(message: ConversationMessage) {
+    const rawText = textContent(message);
+    const extracted = extractStreamedMedia(rawText);
+    const media = message.media?.length ? message.media : extracted.media;
+    const content =
+        message.status === "streaming"
+            ? []
+            : parseAgentMessage(rawText).reduce<AgentMessagePart[]>(
+                  (parts, part) => {
+                      if (part.type === "tool-call") {
+                          parts.push(part);
+                          return parts;
+                      }
+                      const markdown = extractStreamedMedia(part.text).markdown;
+                      if (markdown) parts.push({ ...part, text: markdown });
+                      return parts;
+                  },
+                  [],
+              );
+    return { content, media };
+}
+
+function toAssistantUiMessage(message: ConversationMessage): ThreadMessageLike {
+    if (message.role === "user") {
+        return {
+            id: message.id,
+            role: "user",
+            content: textContent(message),
+        };
+    }
+
+    const status =
+        message.status === "streaming"
+            ? ({ type: "running" } as const)
+            : message.status === "cancelled"
+              ? ({ type: "incomplete", reason: "cancelled" } as const)
+              : message.status === "error"
+                ? ({
+                      type: "incomplete",
+                      reason: "error",
+                      error: message.error || "Response interrupted",
+                  } as const)
+                : ({ type: "complete", reason: "stop" } as const);
+
+    return {
+        id: message.id,
+        role: "assistant",
+        content: renderedAssistantMessage(message).content,
+        status,
+    };
 }
 
 function AttachmentView({ attachment }: { attachment: PreparedAttachment }) {
@@ -578,6 +641,87 @@ function VideoPlayer({
     );
 }
 
+function UserTextPart({ text }: TextMessagePartProps) {
+    return <p className="whitespace-pre-wrap break-words">{text}</p>;
+}
+
+function AssistantTextPart({ text }: TextMessagePartProps) {
+    return <Markdown>{text}</Markdown>;
+}
+
+function ToolValue({ value }: { value: unknown }) {
+    const formatted =
+        typeof value === "string"
+            ? value
+            : (() => {
+                  try {
+                      return JSON.stringify(value, null, 2) ?? String(value);
+                  } catch {
+                      return String(value);
+                  }
+              })();
+    const segments = formatted.split(/(https?:\/\/[^\s"\\]+)/g);
+    let offset = 0;
+    const linkedSegments = segments.map((segment) => {
+        const key = `${offset}:${segment}`;
+        offset += segment.length;
+        return /^https?:\/\//.test(segment) ? (
+            <a
+                key={key}
+                href={segment}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+            >
+                {segment}
+            </a>
+        ) : (
+            segment
+        );
+    });
+
+    return (
+        <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-theme-bg-pale p-3 text-xs">
+            {linkedSegments}
+        </pre>
+    );
+}
+
+function AgentToolCall({
+    toolName,
+    args,
+    result,
+    isError,
+}: ToolCallMessagePartProps) {
+    return (
+        <details className="group overflow-hidden rounded-lg border border-theme-border/40 bg-theme-bg-pale">
+            <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                <ChevronIcon className="size-4 transition-transform group-open:rotate-180" />
+                <span>{isError ? "Tool failed" : "Tool executed"}</span>
+                <code className="min-w-0 truncate text-xs font-normal">
+                    {toolName}
+                </code>
+            </summary>
+            <div className="flex flex-col gap-3 border-theme-border/40 border-t px-3 py-3">
+                <div className="flex flex-col gap-1">
+                    <Text size="xs" tone="muted" weight="bold">
+                        Input
+                    </Text>
+                    <ToolValue value={args} />
+                </div>
+                {result !== undefined && (
+                    <div className="flex flex-col gap-1">
+                        <Text size="xs" tone="muted" weight="bold">
+                            {isError ? "Error" : "Output"}
+                        </Text>
+                        <ToolValue value={result} />
+                    </div>
+                )}
+            </div>
+        </details>
+    );
+}
+
 function MessageCard({
     message,
     assistantName,
@@ -590,25 +734,23 @@ function MessageCard({
     onRetry: () => void;
 }) {
     const rawText = textContent(message);
-    const rendered =
-        message.role === "assistant"
-            ? message.media?.length
-                ? { markdown: "", media: message.media }
-                : extractStreamedMedia(rawText)
-            : { markdown: rawText, media: [] };
     const isUser = message.role === "user";
+    const rendered = isUser
+        ? {
+              content: rawText ? [{ type: "text", text: rawText }] : [],
+              media: [],
+          }
+        : renderedAssistantMessage(message);
     const activity = agentActivity(message);
-    const displayedMarkdown =
-        message.status === "streaming" && !isUser ? "" : rendered.markdown;
     const showArticle =
         isUser ||
-        Boolean(displayedMarkdown) ||
+        rendered.content.length > 0 ||
         message.attachments.length > 0 ||
         message.status !== "complete" ||
         canRetry;
 
     return (
-        <div
+        <MessagePrimitive.Root
             className={cn(
                 "play-chat-message flex min-w-0 flex-col gap-3",
                 isUser ? "ml-auto items-end" : "mr-auto items-start",
@@ -637,15 +779,12 @@ function MessageCard({
                     ) : (
                         <RobotIcon className="h-4 w-4 text-theme-text-strong" />
                     )}
-                    {isUser
-                        ? displayedMarkdown && (
-                              <p className="whitespace-pre-wrap break-words">
-                                  {displayedMarkdown}
-                              </p>
-                          )
-                        : displayedMarkdown && (
-                              <Markdown>{displayedMarkdown}</Markdown>
-                          )}
+                    <MessagePrimitive.Parts
+                        components={{
+                            Text: isUser ? UserTextPart : AssistantTextPart,
+                            tools: { Fallback: AgentToolCall },
+                        }}
+                    />
                     {message.attachments.length > 0 && (
                         <div className="grid gap-3 sm:grid-cols-2">
                             {message.attachments.map((attachment) => (
@@ -694,7 +833,7 @@ function MessageCard({
                     ))}
                 </div>
             )}
-        </div>
+        </MessagePrimitive.Root>
     );
 }
 
@@ -916,6 +1055,25 @@ export function Chat() {
         () => (selectedAgent ? welcomeMessage(selectedAgent) : null),
         [selectedAgent],
     );
+    const runtimeMessages = useMemo(
+        () => (selectedWelcome ? [selectedWelcome, ...messages] : messages),
+        [messages, selectedWelcome],
+    );
+    const assistantRuntime = useExternalStoreRuntime<ConversationMessage>({
+        messages: runtimeMessages,
+        convertMessage: toAssistantUiMessage,
+        isRunning: sending,
+        // Pollinations keeps ownership of uploads and routing while
+        // assistant-ui owns thread/message/tool presentation.
+        onNew: async (message) => {
+            const text = message.content
+                .filter((part) => part.type === "text")
+                .map((part) => part.text)
+                .join("\n");
+            await send(text);
+        },
+        onCancel: async () => abortRef.current?.abort(),
+    });
     const acceptedAttachmentKinds = attachmentKinds(selectedAgent);
     const attachmentAccept = [...acceptedAttachmentKinds]
         .map((kind) => ATTACHMENT_ACCEPT[kind])
@@ -1097,7 +1255,7 @@ export function Chat() {
         }
     }
 
-    async function send() {
+    async function send(messageText = draft) {
         if (sending || !isHydrated) return;
         if (!isLoggedIn || !client) {
             login();
@@ -1107,7 +1265,7 @@ export function Chat() {
             setError("Select an agent first.");
             return;
         }
-        if (!draft.trim() && files.length === 0) return;
+        if (!messageText.trim() && files.length === 0) return;
         const controller = new AbortController();
         abortRef.current = controller;
         setSending(true);
@@ -1122,7 +1280,7 @@ export function Chat() {
                 id: crypto.randomUUID(),
                 role: "user",
                 content: buildUserContent(
-                    draft,
+                    messageText,
                     attachments.map((attachment) => attachment.contentPart),
                 ),
                 status: "complete",
@@ -1294,45 +1452,54 @@ export function Chat() {
                         onSelectAgent={selectAgent}
                     />
                 </div>
-                <ScrollArea
-                    ref={transcriptRef}
-                    className="play-chat-transcript min-h-0 flex-1 py-3"
-                    aria-label="Conversation"
-                    aria-live="polite"
-                    aria-busy={sending}
-                    onScroll={(event) => {
-                        const target = event.currentTarget;
-                        followOutputRef.current =
-                            target.scrollHeight -
-                                target.scrollTop -
-                                target.clientHeight <
-                            96;
-                    }}
-                >
-                    <div className="flex flex-col gap-5">
-                        {selectedWelcome && (
-                            <MessageCard
-                                message={selectedWelcome}
-                                assistantName={assistantName}
-                                canRetry={false}
-                                onRetry={() => undefined}
-                            />
-                        )}
-                        {messages.map((message) => (
-                            <MessageCard
-                                key={message.id}
-                                message={message}
-                                assistantName={assistantName}
-                                canRetry={
-                                    canRetryLast(message.id) &&
-                                    (message.status === "error" ||
-                                        message.status === "cancelled")
-                                }
-                                onRetry={() => void retry(message.id)}
-                            />
-                        ))}
-                    </div>
-                </ScrollArea>
+                <AssistantRuntimeProvider runtime={assistantRuntime}>
+                    <ThreadPrimitive.Root className="contents">
+                        <ScrollArea
+                            ref={transcriptRef}
+                            className="play-chat-transcript min-h-0 flex-1 py-3"
+                            aria-label="Conversation"
+                            aria-live="polite"
+                            aria-busy={sending}
+                            onScroll={(event) => {
+                                const target = event.currentTarget;
+                                followOutputRef.current =
+                                    target.scrollHeight -
+                                        target.scrollTop -
+                                        target.clientHeight <
+                                    96;
+                            }}
+                        >
+                            <div className="flex flex-col gap-5">
+                                <ThreadPrimitive.Messages>
+                                    {({ message: runtimeMessage }) => {
+                                        const message = runtimeMessages.find(
+                                            (candidate) =>
+                                                candidate.id ===
+                                                runtimeMessage.id,
+                                        );
+                                        if (!message) return null;
+                                        return (
+                                            <MessageCard
+                                                message={message}
+                                                assistantName={assistantName}
+                                                canRetry={
+                                                    canRetryLast(message.id) &&
+                                                    (message.status ===
+                                                        "error" ||
+                                                        message.status ===
+                                                            "cancelled")
+                                                }
+                                                onRetry={() =>
+                                                    void retry(message.id)
+                                                }
+                                            />
+                                        );
+                                    }}
+                                </ThreadPrimitive.Messages>
+                            </div>
+                        </ScrollArea>
+                    </ThreadPrimitive.Root>
+                </AssistantRuntimeProvider>
                 <form
                     onSubmit={submit}
                     className="relative flex shrink-0 flex-col gap-3 pt-3"

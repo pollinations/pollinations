@@ -9,6 +9,7 @@ describe("ToolCallDetails", () => {
                 name="SEARCH_WEB"
                 input={{ query: "pollinations" }}
                 output="Open https://example.test/result"
+                defaultOpen
             />,
         );
 
@@ -26,6 +27,7 @@ describe("ToolCallDetails", () => {
                 name="SEND_EMAIL"
                 input={{}}
                 error={'<script>alert("no")</script>'}
+                defaultOpen
             />,
         );
 

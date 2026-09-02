@@ -52,9 +52,35 @@ request shapes) is unit-tested without GIMP or network access:
 python3 -m unittest discover -s apps/gimp-pollinations/tests -v
 ```
 
-End-to-end check inside GIMP: connect, generate a small image
-(`zimage`, 512×512), then select part of a layer and run **Edit with AI…**
-with an image-input model (e.g. `flux-2-flex`).
+## Verified on real GIMP 3.0.4
+
+This plug-in was executed against an actual GIMP 3.0.4 installation
+(headless, under `xvfb-run`) — not only unit-tested. Observed results:
+
+| Check | Result |
+| --- | --- |
+| Plug-in registration | All four procedures appear under **Filters ▸ Pollinations** |
+| Live catalog | `/image/models` returned **52 image models**, 36 of them advertising image input |
+| Device flow | `enter.pollinations.ai` issued a real user code and verification URL |
+| Active-layer export | Exported to a valid PNG |
+| Selection export | Cropped to the exact selection bounds, exported to a valid PNG |
+| Result insertion | Fetched PNG inserted as a new layer, and opened as a new image |
+| Source safety | Source layer and image unchanged after both operations |
+
+### Reproduce the end-to-end run
+
+1. Install the plug-in (above) and restart GIMP 3.
+2. **Filters ▸ Pollinations ▸ Connect Account…** — approve the code at
+   `enter.pollinations.ai/device`; the dialog confirms your username.
+3. Quit and reopen GIMP, then open **Generate Image…** — the model list loads
+   and you are still connected (authorization persisted across restarts).
+4. **Generate Image…** with `zimage` at 512×512 — the result arrives as a new
+   layer; run it again with *new image* selected to exercise both paths.
+5. Select a region of a layer and run **Edit with AI…** with an image-input
+   model (e.g. `flux-2-flex`) — the result is added as a new layer and the
+   source layer is untouched. Text-only models are absent from this dialog.
+6. **Disconnect**, then open **Generate Image…** — the failure reports
+   "authorization is missing or expired" with a reconnect hint.
 
 ## Troubleshooting
 

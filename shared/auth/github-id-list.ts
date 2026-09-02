@@ -43,6 +43,7 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     24752658, // zero2launch
     170070104, // NamanSoni78
     293260324, // tatianawallace772-arch
+    63298614, // xiaotian1171
 ] as const;
 
 const COMMUNITY_MODEL_ALLOWED_GITHUB_ID_SET = new Set<number>(

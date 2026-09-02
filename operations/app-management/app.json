@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "¿Y si…? — Alternate History Scene Generator",
+    "url": "https://jecxolab.github.io/y-si-historia",
+    "description": "Type a historical \"what if\" and get the scene illustrated. Built for the Spanish-language history channel El Efecto Historia. Uses the Pollinations image API with four visual presets (epic oil paintin",
+    "language": "es",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "jecxolab",
+    "githubUserId": "311613928",
+    "repositoryUrl": "https://github.com/jecxolab/y-si-historia",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-01",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14311",
+    "approvedDate": "2026-09-02",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Genie AI",
     "url": "https://play.google.com/store/apps/details?id=com.genie.aiassistant",

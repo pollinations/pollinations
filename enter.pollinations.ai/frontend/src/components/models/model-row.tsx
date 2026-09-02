@@ -354,10 +354,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0 ||
+                            model.perUserRpm != null ||
                             pricing.dropdowns.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 {(inputModalities.length > 0 ||
-                                    capabilities.length > 0) && (
+                                    capabilities.length > 0 ||
+                                    model.perUserRpm != null) && (
                                     <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
                                         {inputModalities.length > 0 && (
                                             <Tooltip
@@ -424,17 +426,20 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 </span>
                                             </Tooltip>
                                         )}
+                                        {(inputModalities.length > 0 ||
+                                            capabilities.length > 0) &&
+                                            model.perUserRpm != null && (
+                                                <span className="h-3.5 w-px bg-current opacity-30" />
+                                            )}
+                                        <PerUserRateLimit
+                                            value={model.perUserRpm}
+                                        />
                                     </div>
                                 )}
                                 <ModelPricingControls
                                     model={model}
                                     pricing={pricing}
                                 />
-                            </div>
-                        )}
-                        {model.perUserRpm != null && (
-                            <div className="flex min-w-0 items-center">
-                                <PerUserRateLimit value={model.perUserRpm} />
                             </div>
                         )}
                     </div>

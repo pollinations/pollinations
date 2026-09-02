@@ -35,6 +35,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 300,
         cost: {
             completionImageTokens: 0.0001, // per image
         },
@@ -221,6 +222,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 20,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.035, // per image
@@ -411,6 +413,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.002, // per image
         },
@@ -422,14 +425,11 @@ const IMAGE_BASE_SERVICES = {
     "zimage": {
         aliases: ["z-image", "z-image-turbo", "tongyi-mai/z-image-turbo"],
         provider: "vast",
-        // Routes live in image-fallbacks.ts. Narrower than the default
-        // status list: only a 503 (no capacity) overflows to Fal, so every
-        // other Vast failure surfaces instead of being served elsewhere.
-        fallbackOnStatusCodes: [503],
         brand: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.004, // per image
         },
@@ -737,11 +737,12 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // Replicate wan-2.7. Audio is bundled into the per-second rate. T2V is
-        // $0.10/s at both resolutions; I2V is $0.10/s at 720p and $0.15/s at
-        // 1080p.
+        // Replicate wan-2.7. Audio is bundled into the per-second rate. T2V and
+        // R2V are $0.10/s at both resolutions; I2V is $0.10/s at 720p and
+        // $0.15/s at 1080p. R2V never sets hasImage, so it always lands on the
+        // base or "1080p" sheet and avoids the I2V surcharge.
         cost: {
-            completionVideoSeconds: 0.1, // per sec (720p, includes audio)
+            completionVideoSeconds: 0.1, // per sec (720p, includes audio; also R2V)
         },
         ...defineCostVariants(
             {
@@ -772,10 +773,17 @@ const IMAGE_BASE_SERVICES = {
         ),
         resolutions: ["720p", "1080p"],
         title: "Wan 2.7",
-        description: "Keyframe-controlled video with sound at 720p or 1080p",
-        inputModalities: ["text", "image"],
+        description:
+            "Keyframe-controlled video with sound at 720p or 1080p; also accepts reference images and videos",
+        inputModalities: ["text", "image", "video"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+        ],
         maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 2,
         maxDuration: 15,
@@ -820,11 +828,18 @@ const IMAGE_BASE_SERVICES = {
         resolutions: ["480p", "720p", "1080p"],
         title: "Wan 3.0",
         description:
-            "Five-second video from text or a start image with optional audio at 480p, 720p, or 1080p",
-        inputModalities: ["text", "image"],
+            "Five-second video from text, start/end frames, or reference media with optional audio at 480p, 720p, or 1080p",
+        inputModalities: ["text", "image", "video", "audio"],
         outputModalities: ["video", "audio"],
-        videoCapabilities: ["start_frame", "audio_output"],
-        maxReferenceImages: 1, // Video keyframe slots: start only.
+        videoCapabilities: [
+            "start_frame",
+            "end_frame",
+            "audio_output",
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ],
+        maxReferenceImages: 2, // Video keyframe slots: start + end.
         minDuration: 5,
         maxDuration: 5,
         defaultDuration: 5,
@@ -1286,6 +1301,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             completionImageTokens: 0.005,
         },

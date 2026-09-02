@@ -230,21 +230,33 @@ export const Models: FC = () => {
             ),
         [activePrimaryTab, allModels, includeCommunity],
     );
+    const activeTabModels = useMemo(() => {
+        if (activeTab === "mcp") return [];
+        if (activeTab === "agent") {
+            return visibleModels.filter((model) => model.agent);
+        }
+        if (activeTab === "all") {
+            return visibleModels.filter((model) => !model.agent);
+        }
+        return visibleModels.filter(
+            (model) => !model.agent && model.type === activeTab,
+        );
+    }, [activeTab, visibleModels]);
     const filteredModels = useMemo(
         () =>
             query
-                ? visibleModels.filter((model) =>
+                ? activeTabModels.filter((model) =>
                       matchesModelQuery(model, parsedQuery),
                   )
-                : visibleModels,
-        [parsedQuery, query, visibleModels],
+                : activeTabModels,
+        [activeTabModels, parsedQuery, query],
     );
     const searchOptions = useMemo(
         () =>
             activeTab === "mcp"
                 ? []
-                : getModelQuerySuggestions(search, visibleModels),
-        [activeTab, search, visibleModels],
+                : getModelQuerySuggestions(search, activeTabModels),
+        [activeTab, activeTabModels, search],
     );
 
     useEffect(() => {

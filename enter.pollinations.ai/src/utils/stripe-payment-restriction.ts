@@ -1,6 +1,8 @@
 import type Stripe from "stripe";
 
 export const STRIPE_PAYMENT_RESTRICTED_CODE = "PAYMENTS_RESTRICTED";
+export const STRIPE_PAYMENT_RESTRICTED_MESSAGE =
+    "Payments are unavailable for this account.";
 export const STRIPE_PAYMENT_SUPPORT_EMAIL = "billing@pollinations.ai";
 
 export type StripePaymentRestriction = {
@@ -71,28 +73,39 @@ export async function clearStripePaymentRestriction(
 export function stripePaymentRestrictedResponse() {
     return {
         code: STRIPE_PAYMENT_RESTRICTED_CODE,
-        error: "Payments are unavailable for this account.",
+        error: STRIPE_PAYMENT_RESTRICTED_MESSAGE,
         supportEmail: STRIPE_PAYMENT_SUPPORT_EMAIL,
     };
 }
 
+/**
+ * Expires every open Checkout session of a customer. Individual expiry
+ * failures are logged and counted rather than thrown, so callers that have
+ * already stored a restriction can report what actually happened.
+ */
 export async function expireOpenStripeCheckoutSessions(
     stripe: Stripe,
-    filter: { customer?: string; paymentIntent?: string },
-): Promise<number> {
+    customerId: string,
+): Promise<{ expired: number; failed: number }> {
     const sessions = await stripe.checkout.sessions.list({
-        ...(filter.customer ? { customer: filter.customer } : {}),
-        ...(filter.paymentIntent
-            ? { payment_intent: filter.paymentIntent }
-            : {}),
+        customer: customerId,
         status: "open",
         limit: 100,
     });
 
-    await Promise.all(
+    const results = await Promise.allSettled(
         sessions.data.map((session) =>
             stripe.checkout.sessions.expire(session.id),
         ),
     );
-    return sessions.data.length;
+    let failed = 0;
+    results.forEach((result, index) => {
+        if (result.status !== "rejected") return;
+        failed += 1;
+        console.error(
+            `Failed to expire Stripe Checkout session ${sessions.data[index]?.id} for customer ${customerId}:`,
+            result.reason,
+        );
+    });
+    return { expired: results.length - failed, failed };
 }

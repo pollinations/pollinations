@@ -14,6 +14,7 @@ import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
     createBillingPortalSession,
     getBillingOverview,
@@ -26,6 +27,7 @@ import {
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
 import {
+    expireOpenStripeCheckoutSessions,
     getStripePaymentRestriction,
     restrictStripePayments,
     stripePaymentRestrictedResponse,
@@ -85,6 +87,25 @@ export const stripeRoutes = new Hono<Env>()
                 reason: "failed_card_velocity",
                 source: "automatic",
             });
+            // Sessions opened before the lock stay usable unless expired. A
+            // user without a Stripe customer has nothing to expire.
+            const { stripeCustomerId } = await getUserStripeBillingRow(
+                c.env.DB,
+                userId,
+            );
+            if (stripeCustomerId) {
+                try {
+                    await expireOpenStripeCheckoutSessions(
+                        createStripeClient(c.env),
+                        stripeCustomerId,
+                    );
+                } catch (error) {
+                    console.error(
+                        `Failed to expire open Stripe Checkout sessions for user ${userId}:`,
+                        error,
+                    );
+                }
+            }
             return c.json(stripePaymentRestrictedResponse(), 403);
         }
 

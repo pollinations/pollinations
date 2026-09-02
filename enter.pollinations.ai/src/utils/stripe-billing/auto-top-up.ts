@@ -15,6 +15,7 @@ import {
 } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
+import { STRIPE_PAYMENT_RESTRICTED_MESSAGE } from "../stripe-payment-restriction.ts";
 import { isBillingDetailsComplete } from "./billing-details.ts";
 import { getBillingOverview } from "./billing-overview.ts";
 import {
@@ -94,7 +95,7 @@ export async function updateAutoTopUpSettings(
         return {
             ok: false,
             status: 403,
-            error: "Payments are unavailable for this account.",
+            error: STRIPE_PAYMENT_RESTRICTED_MESSAGE,
         };
     }
 
@@ -144,14 +145,24 @@ export async function updateAutoTopUpSettings(
         };
     }
 
-    await env.DB.prepare(
+    // The restriction check above ran before several Stripe round-trips; a
+    // restriction written in between must not enable auto top-up.
+    const result = await env.DB.prepare(
         `UPDATE user
             SET auto_top_up_enabled = 1,
                 auto_top_up_amount_usd = ?
-            WHERE id = ?`,
+            WHERE id = ?
+                AND stripe_payment_restriction IS NULL`,
     )
         .bind(packAmountUsd, userId)
         .run();
+    if ((result.meta.changes ?? 0) === 0) {
+        return {
+            ok: false,
+            status: 403,
+            error: STRIPE_PAYMENT_RESTRICTED_MESSAGE,
+        };
+    }
 
     return { ok: true, overview: await getBillingOverview(env, userId) };
 }

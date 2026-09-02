@@ -7,6 +7,7 @@ import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import { getStripeId } from "../utils/stripe-billing/customer.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
@@ -148,14 +149,13 @@ async function recordFailedCardFingerprintFromCharge({
             restrictedAt: new Date(eventTime).toISOString(),
         });
 
-        const paymentIntentId =
-            typeof charge.payment_intent === "string"
-                ? charge.payment_intent
-                : charge.payment_intent?.id;
-        if (paymentIntentId) {
-            await expireOpenStripeCheckoutSessions(stripe, {
-                paymentIntent: paymentIntentId,
-            });
+        // Expire every open session of the customer, not only the one behind
+        // this charge, so sessions opened in other tabs cannot keep testing
+        // cards. Runs on every locked failure so an earlier expiry failure is
+        // retried.
+        const customerId = getStripeId(charge.customer);
+        if (customerId) {
+            await expireOpenStripeCheckoutSessions(stripe, customerId);
         }
     } catch (err) {
         console.error(

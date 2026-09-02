@@ -43,7 +43,7 @@ export const stripePaymentRestrictionAdminRoutes = new Hono<Env>().post(
         }
 
         let changed = false;
-        let expiredCheckoutSessions = 0;
+        let checkoutSessions = { expired: 0, failed: 0 };
 
         if (input.restricted) {
             changed = await restrictStripePayments(c.env.DB, input.userId, {
@@ -52,11 +52,10 @@ export const stripePaymentRestrictionAdminRoutes = new Hono<Env>().post(
             });
 
             if (user.stripeCustomerId) {
-                expiredCheckoutSessions =
-                    await expireOpenStripeCheckoutSessions(
-                        createStripeClient(c.env),
-                        { customer: user.stripeCustomerId },
-                    );
+                checkoutSessions = await expireOpenStripeCheckoutSessions(
+                    createStripeClient(c.env),
+                    user.stripeCustomerId,
+                );
             }
         } else {
             changed = await clearStripePaymentRestriction(
@@ -69,7 +68,8 @@ export const stripePaymentRestrictionAdminRoutes = new Hono<Env>().post(
             userId: input.userId,
             restricted: input.restricted,
             changed,
-            expiredCheckoutSessions,
+            expiredCheckoutSessions: checkoutSessions.expired,
+            failedCheckoutSessionExpirations: checkoutSessions.failed,
         });
     },
 );

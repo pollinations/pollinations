@@ -382,15 +382,34 @@ test("eight distinct failed cards in 24h restrict payments", async ({
 }) => {
     await mocks.enable("stripe", "tinybird");
     const userId = await getSeededUserId();
-    mocks.stripe.state.checkoutSessions.push({
-        id: "cs_gate_open",
-        object: "checkout.session",
-        mode: "payment",
-        customer: "cus_test_card_gate",
-        payment_intent: "pi_fp_gate_8",
-        status: "open",
-        url: "https://checkout.stripe.test/gate-open",
-    });
+    mocks.stripe.state.customers.push(mockCustomer("cus_test_card_gate"));
+    await env.DB.prepare(
+        `UPDATE user
+        SET stripe_customer_id = ?
+        WHERE id = ?`,
+    )
+        .bind("cus_test_card_gate", userId)
+        .run();
+    mocks.stripe.state.checkoutSessions.push(
+        {
+            id: "cs_gate_open",
+            object: "checkout.session",
+            mode: "payment",
+            customer: "cus_test_card_gate",
+            payment_intent: "pi_fp_gate_8",
+            status: "open",
+            url: "https://checkout.stripe.test/gate-open",
+        },
+        {
+            id: "cs_gate_other_tab",
+            object: "checkout.session",
+            mode: "payment",
+            customer: "cus_test_card_gate",
+            payment_intent: "pi_other_tab",
+            status: "open",
+            url: "https://checkout.stripe.test/gate-other-tab",
+        },
+    );
 
     const recordFailedCard = async (fingerprint: string) => {
         const paymentIntentId = `pi_${fingerprint}`;
@@ -519,8 +538,93 @@ test("eight distinct failed cards in 24h restrict payments", async ({
         source: "automatic",
     });
     expect(user?.autoTopUpEnabled).toBe(0);
+    // Every open session of the customer is expired, including the one the
+    // pre-limit checkout above created, not only the one behind the charge.
+    const customerSessions = mocks.stripe.state.checkoutSessions.filter(
+        (session) => session.customer === "cus_test_card_gate",
+    );
+    expect(customerSessions.map((session) => session.id)).toEqual([
+        "cs_gate_open",
+        "cs_gate_other_tab",
+        expect.any(String),
+    ]);
+    for (const session of customerSessions) {
+        expect(session).toMatchObject({ status: "expired", url: null });
+    }
+    expect(
+        mocks.stripe.state.requests.filter(
+            (request) =>
+                request.method === "POST" &&
+                request.path === "/v1/checkout/sessions",
+        ),
+    ).toHaveLength(createdCheckoutCount);
+});
+
+test("checkout expires open sessions when it discovers a locked account", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    mocks.stripe.state.customers.push(mockCustomer("cus_route_lock"));
+    await env.DB.prepare(
+        `UPDATE user
+        SET stripe_customer_id = ?
+        WHERE id = ?`,
+    )
+        .bind("cus_route_lock", userId)
+        .run();
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_route_lock_open",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_route_lock",
+        payment_intent: "pi_route_lock",
+        status: "open",
+        url: "https://checkout.stripe.test/route-lock",
+    });
+
+    // Eight distinct failed cards recorded without the webhook having
+    // enforced the lock (e.g. its Stripe call failed).
+    const now = Date.now();
+    for (let index = 1; index <= 8; index++) {
+        await env.DB.prepare(
+            `INSERT INTO stripe_card_fingerprint_attempt (
+                event_id,
+                user_id,
+                card_fingerprint,
+                created_at
+            ) VALUES (?, ?, ?, ?)`,
+        )
+            .bind(
+                `evt_route_lock_${index}`,
+                userId,
+                `fp_route_lock_${index}`,
+                now - index,
+            )
+            .run();
+    }
+
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(response.status).toBe(403);
+
+    const user = await env.DB.prepare(
+        `SELECT stripe_payment_restriction AS restriction
+        FROM user
+        WHERE id = ?`,
+    )
+        .bind(userId)
+        .first<{ restriction: string | null }>();
+    expect(JSON.parse(user?.restriction ?? "null")).toMatchObject({
+        reason: "failed_card_velocity",
+        source: "automatic",
+    });
     expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
-        id: "cs_gate_open",
+        id: "cs_route_lock_open",
         status: "expired",
         url: null,
     });
@@ -530,7 +634,7 @@ test("eight distinct failed cards in 24h restrict payments", async ({
                 request.method === "POST" &&
                 request.path === "/v1/checkout/sessions",
         ),
-    ).toHaveLength(createdCheckoutCount);
+    ).toHaveLength(0);
 });
 
 test("fifty failed attempts on one card restrict payments", async ({
@@ -680,6 +784,7 @@ test("admin can restrict and restore payment access", async ({
         restricted: true,
         changed: true,
         expiredCheckoutSessions: 1,
+        failedCheckoutSessionExpirations: 0,
     });
 
     const billingResponse = await SELF.fetch(`${base}/billing`, {

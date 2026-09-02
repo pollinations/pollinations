@@ -1,0 +1,35 @@
+{
+  "pr_number": 14324,
+  "title": "ci: speed up pull request checks",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14324",
+  "merged_at": "2026-09-02T09:35:22Z",
+  "labels": [],
+  "pr_body_excerpt": "Model PRs spent 6–7 min in one serial job, and ~70% of that was two vitest suites whose time was mostly not tests.\n\n- Apply D1 test migrations once per run instead of importing `cloudflare:test` on every setup-file execution. That import loads the Worker main module, which vitest-pool-workers re-evaluates after every test file: 102s of \"setup\" in gen (115 files) and 23s in enter (56 files). On this PR's run: gen setup 4s, enter setup 3s.\n- Fix the `seedreamModel` mock, which lacked `toDataUri` and only passed because the preloaded module graph made the mock ineffective.\n- Split lint, enter tests, and gen tests into parallel jobs. A `gate` job keeps the `Check formatting and linting` name the main ruleset requires, so no ruleset change is needed.\n- Checkout with `fetch-depth: 2` and diff `HEAD^1 HEAD` (the merge commit's first parent is the base tip) instead of fetching the full 2 GB history: 36–44s → 3s.\n- Cache `node_modules` keyed on the lockfile plus every workspace `package.json`, so `npm ci` (35s) is skipped on a hit but still runs, and reports drift, whenever a manifest changes.\n- enter `pretest` builds sdk+ui only; an empty `dist/client` satisfies wrangler's assets check. The lint job builds the enter frontend (change-filtered, in parallel with the test jobs) so bundling is still verified on pull requests.\n\nMeasured on this PR (cold node_modules cache): 3m21s total, was 6–7 min. Gen test step 150s → 91s, enter 149s → 134s. Enter is now the long pole and its remaining time is real test work (96s of tests across 56 files).\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The checks found a shortcut",
+    "blurb": "Pull request checks stopped hauling the entire garden shed uphill. Migrations now bloom once, jobs run side by side, and the hive gets results in about half the time.",
+    "summary": "Pull request CI now applies D1 migrations once per test run, parallelizes lint plus enter/gen test jobs, uses shallow two-commit diffs, and caches node_modules by lockfile and workspace manifests, cutting cold-cache checks from 6–7 minutes to 3m21s.",
+    "impact": "Contributors get substantially faster PR feedback while retaining migration coverage, frontend build verification, and manifest-drift detection.",
+    "keywords": [
+      "ci",
+      "pull-requests",
+      "vitest",
+      "d1",
+      "caching",
+      "github-actions",
+      "testing"
+    ],
+    "visual_concept": "A cozy garden-workshop assembly line where Polli helps a CRT robot send three checklists down parallel paths instead of one long trail; a single watering can applies migrations to a code-plant garden once, while a small cache crate and a tiny shallow map represent faster setup and checkout.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, guiding a cheerful CRT-monitor robot as three parallel garden paths carry lint and test checklists past a single watering can feeding code-plants. A prominent lime green (#ecf874) glow lights a cache crate and a tiny two-page map, with warm cream, mint, and lavender pastels; pixel text reads \"3m21s\". Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14324.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny mechanic tool belt, guiding a cheerful CRT-monitor robot as three parallel garden paths carry lint and test checklists past a single watering can feeding code-plants. A prominent lime green (#ecf874) glow lights a cache crate and a tiny two-page map, with warm cream, mint, and lavender pastels; pixel text reads \"3m21s\". Cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T09:36:24.969393+00:00"
+}

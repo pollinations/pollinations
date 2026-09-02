@@ -1,0 +1,34 @@
+{
+  "pr_number": 14318,
+  "title": "feat: improve model catalog navigation and MCP UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14318",
+  "merged_at": "2026-09-02T08:40:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds top-level Models, Agents, and MCP navigation with matching icons and stable quantity counts; model categories contain only models and search stays within the active slice.\n- Adds a Community toggle enabled by default that preserves its state across tabs; Agents remains visibly on and disabled, with a compact privacy disclosure covering providers and configured fallbacks.\n- Redesigns MCP cards to match model pricing, typography, copy interactions, and responsive two-column layout; removes redundant Built-in and billing labels.\n- Aligns MCP price values and units, clips model-ledger separators correctly, and removes repeated values from copy tooltips.\n- Simplifies sorting by removing Oldest and labeling newest-first catalog order as Date added.\n\nTests: `npm run build:frontend`; `npx tsc --noEmit`; `npx biome check`; `npx vitest run test/model-categories.test.ts test/model-sort.test.ts`.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The catalog found its shelves",
+    "blurb": "The model catalog grew proper rooms for Models, Agents, and MCP. Fewer repeated labels, sturdier counts, and much less rummaging through the same drawer.",
+    "summary": "Redesigned the catalog with top-level Models, Agents, and MCP tabs, stable item counts, active-slice search, a persistent Community toggle, refreshed responsive MCP cards, and a simplified newest-first “Date added” sort.",
+    "impact": "People browsing models and MCP servers can now stay within the catalog section they chose, compare MCP pricing more clearly, and keep their Community preference while moving between tabs.",
+    "keywords": [
+      "model catalog",
+      "MCP",
+      "navigation",
+      "search",
+      "pricing",
+      "frontend"
+    ],
+    "visual_concept": "Depict the catalog as a cozy garden library with three clearly labeled shelves—Models, Agents, and MCP—each holding glowing seed packets or tiny tools. Polli, wearing a librarian visor, guides the eager CRT Monitor Robot toward the MCP shelf while code-plants and flowers grow around a neat two-column display; a small Community toggle is visibly switched on.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny librarian visor, organizing a warm garden library with three pixel shelves labeled “MODELS”, “AGENTS”, and “MCP”; a cheerful CRT monitor robot points at neatly aligned MCP tool cards while code-plants bloom beside them and a small “COMMUNITY: ON” toggle glows. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14318.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink rectangular blush, light blue wings, and a tiny librarian visor, organizing a warm garden library with three pixel shelves labeled “MODELS”, “AGENTS”, and “MCP”; a cheerful CRT monitor robot points at neatly aligned MCP tool cards while code-plants bloom beside them and a small “COMMUNITY: ON” toggle glows. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T08:42:03.711573+00:00"
+}

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-01",
+  "period_start": "2026-09-01",
+  "period_end": "2026-09-01",
+  "generated_at": "2026-09-02T06:35:15.390590+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-01/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 29 PRs: Wan video now routes T2V/I2V/R2V upstreams; Play shows community-model uptime; agents/MCP got docs and tougher plumbing; and Mercury 2.5, DeepSeek V4 Flash Vision, Claude Fable 5.1 joined the shelf. software continues to need maps."
+}

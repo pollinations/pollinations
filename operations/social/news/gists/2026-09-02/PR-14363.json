@@ -1,0 +1,34 @@
+{
+  "pr_number": 14363,
+  "title": "fix: retry embedded upstream rate limits",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14363",
+  "merged_at": "2026-09-02T19:41:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Normalizes explicit embedded 429 completion errors into the existing upstream error shape\n- Preserves the original provider error details for observability\n- Leaves other finish errors and streaming behavior unchanged\n- Adds focused regression coverage",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The 429 learned to buzz",
+    "blurb": "Some providers tucked their rate-limit notices inside otherwise normal-looking replies. The hive now recognizes those hidden 429s and gives the existing retry machinery a chance to do its patient little dance.",
+    "summary": "Normalized embedded 429 completion errors in the generic OpenAI client into the existing upstream-error shape, preserving provider details so eligible requests can retry while streaming and other finish errors remain unchanged.",
+    "impact": "Text and chat requests that receive an explicitly embedded provider 429 can now benefit from the platform's existing upstream retry handling instead of failing immediately.",
+    "keywords": [
+      "text-api",
+      "openai-compatible",
+      "rate-limits",
+      "retries",
+      "reliability",
+      "providers"
+    ],
+    "visual_concept": "Polli is a careful postal bee in a cozy terminal garden, spotting a tiny \"429\" note hidden inside a provider-response envelope and routing it onto a clearly marked retry loop. A friendly CRT monitor robot can watch the response path, while code-plants and flowers make the retry feel like patient regrowth rather than an error scene.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny postmaster cap, gently finding a small pixel-font \"429\" note inside an API-response envelope and placing it onto a looping retry conveyor beside a smiling CRT monitor robot. Lime green (#ecf874) glows prominently from a retro terminal amid flowering code-plants and warm cream, mint, lavender, and peach pastel gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14363.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, light blue translucent wings, and a tiny postmaster cap, gently finding a small pixel-font \"429\" note inside an API-response envelope and placing it onto a looping retry conveyor beside a smiling CRT monitor robot. Lime green (#ecf874) glows prominently from a retro terminal amid flowering code-plants and warm cream, mint, lavender, and peach pastel gradients; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T19:42:43.995092+00:00"
+}

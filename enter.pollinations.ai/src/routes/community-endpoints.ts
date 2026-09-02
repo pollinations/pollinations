@@ -477,6 +477,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     type: "endpoint_agent",
                     baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -560,6 +561,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     type: "proxy",
                     baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
                     pendingPayload: queuesPublication
                         ? JSON.stringify({
@@ -778,6 +780,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.title !== undefined) update.title = input.title;
             if (input.description !== undefined) {
                 update.description = input.description || null;
+            }
+            if (input.requiredSafetyFeatures !== undefined) {
+                update.requiredSafetyFeatures = input.requiredSafetyFeatures;
             }
             if (input.hidden !== undefined) {
                 if (

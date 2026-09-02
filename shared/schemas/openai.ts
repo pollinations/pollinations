@@ -125,9 +125,7 @@ const ChatCompletionRequestMessageContentPartSchema = z
         ChatCompletionRequestMessageContentPartAudioSchema,
         ChatCompletionRequestMessageContentPartFileSchema,
         // Allow any other content types for provider-specific extensions
-        z
-            .object({ type: z.string() })
-            .passthrough(),
+        z.object({ type: z.string() }).passthrough(),
     ])
     .meta({ $id: "MessageContentPart" });
 
@@ -508,9 +506,7 @@ const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionMessageContentPartThinkingSchema,
     ChatCompletionMessageContentPartRedactedThinkingSchema,
     // Allow any other content types for provider-specific extensions (video, audio, file, etc.)
-    z
-        .object({ type: z.string() })
-        .passthrough(),
+    z.object({ type: z.string() }).passthrough(),
 ]);
 
 const ChatCompletionResponseMessageSchema = z.object({
@@ -581,6 +577,7 @@ export const CompletionUsageSchema = z
         prompt_tokens_details: z
             .object({
                 audio_tokens: z.number().int().nonnegative().nullish(),
+                cache_write_tokens: z.number().int().nonnegative().nullish(),
                 cached_tokens: z.number().int().nonnegative().nullish(),
                 image_tokens: z.number().int().nonnegative().nullish(),
             })

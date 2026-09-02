@@ -1,0 +1,35 @@
+{
+  "pr_number": 14362,
+  "title": "feat: add Gemini 3.8 Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14362",
+  "merged_at": "2026-09-02T19:02:49Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical `google/gemini-3.8-flash` as a separate paid-only model; the existing `gemini` service is unchanged.\n- Pins OpenRouter to `google-vertex/global` with fallback disabled.\n- Prices text/image/audio/video input at $0.75/M, cached input at $0.075/M, output at $3.75/M, plus exact search and cache-storage adjustments; multiplier is 1.\n- Adds the canonical slug, resolver/reasoning/search coverage, and the effective-price snapshot.\n\nVerified with direct-provider and authenticated local E2E for catalogs, chat/Responses/simple routes, streaming, structured output, tools, all reasoning levels, image/audio/video, search, caching, permissions, paid-only rejection, a 5-request burst, wallet debit, and staging Tinybird settlement.\n\nSources: [Google model docs](https://ai.google.dev/gemini-api/docs/models/gemini-3.8-flash) · [OpenRouter model](https://openrouter.ai/google/gemini-3.8-flash)",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A flash in the hive",
+    "blurb": "Gemini 3.8 Flash has landed as its own paid-only model, with the old `gemini` service left peacefully where it was. Fast little brain, very particular address.",
+    "summary": "Added the canonical paid-only `google/gemini-3.8-flash` model, routed directly through `google-vertex/global` without fallback, with support across chat, Responses, streaming, structured output, tools, reasoning, multimodal input, search, and caching.",
+    "impact": "Developers can now call `google/gemini-3.8-flash` for text, image, audio, and video inputs at $0.75/M input tokens ($0.075/M cached) and $3.75/M output tokens, while existing `gemini` integrations remain unchanged.",
+    "keywords": [
+      "gemini-3.8-flash",
+      "google-vertex",
+      "text-models",
+      "openrouter",
+      "streaming",
+      "multimodal",
+      "paid-models"
+    ],
+    "visual_concept": "Depict Gemini 3.8 Flash as a small, friendly pastel lightning-flower blooming from a code plant beside a retro terminal labeled `google/gemini-3.8-flash`. Polli, wearing tiny wizard glasses and carrying a routing map, guides a bright direct path from the terminal to a soft cloud labeled `google-vertex/global`; subtle icons for chat bubbles, images, music notes, video frames, tools, and search sprouts show the model's broad API coverage.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; wearing tiny wizard glasses, she points a little routing map toward a glowing pastel lightning-flower code plant beside a retro terminal reading `google/gemini-3.8-flash`, with a neat direct path leading to a small cloud labeled `google-vertex/global`. Lime green (#ecf874) appears boldly in the terminal glow, flower pots, and garden vines, with tiny pixel icons for chat, image, audio, video, tools, search, and cache among the flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14362.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: Polli is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings; wearing tiny wizard glasses, she points a little routing map toward a glowing pastel lightning-flower code plant beside a retro terminal reading `google/gemini-3.8-flash`, with a neat direct path leading to a small cloud labeled `google-vertex/global`. Lime green (#ecf874) appears boldly in the terminal glow, flower pots, and garden vines, with tiny pixel icons for chat, image, audio, video, tools, search, and cache among the flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T19:03:56.838664+00:00"
+}

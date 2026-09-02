@@ -1556,15 +1556,15 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000035,
     },
   },
-  "muse-glimmer-openrouter-parasail": {
+  "muse-glimmer-openrouter-deepinfra": {
     "cost": {
-      "completionTextTokens": 0.0000011,
+      "completionTextTokens": 0.0000012,
       "promptCachedTokens": 0.00000004,
       "promptImageTokens": 0.0000003,
       "promptTextTokens": 0.0000003,
     },
     "price": {
-      "completionTextTokens": 0.0000011,
+      "completionTextTokens": 0.0000012,
       "promptCachedTokens": 0.00000004,
       "promptImageTokens": 0.0000003,
       "promptTextTokens": 0.0000003,

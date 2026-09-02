@@ -6,7 +6,9 @@ import asyncio
 import hmac
 import json
 import logging
+import os
 import re
+import sys
 import time
 from functools import cache
 from pathlib import Path
@@ -80,6 +82,8 @@ class DiscordHumanGateway:
             )
         if last_prompt is None:
             raise RuntimeError("Human model prompt is empty")
+
+        await notify_local_request(messages)
 
         def eligible(message: discord.Message) -> bool:
             return (
@@ -282,6 +286,20 @@ def format_transcript(messages: list[dict]) -> list[str]:
         f"{message['role'].upper()}: {harden_content(discord_preview(message['content']))}" for message in messages
     )
     return [text[offset : offset + _MAX_DISCORD_CONTENT] for offset in range(0, len(text), _MAX_DISCORD_CONTENT)]
+
+
+async def notify_local_request(messages: list[dict]) -> None:
+    """Show a native notification when the adapter is running on macOS."""
+    if sys.platform != "darwin":
+        return
+    environment = {**os.environ, "HUMANS_API_NOTIFICATION": conversation_thread_name(messages)}
+    process = await asyncio.create_subprocess_exec(
+        "/usr/bin/osascript",
+        "-e",
+        'display notification (system attribute "HUMANS_API_NOTIFICATION") with title "Humans API request"',
+        env=environment,
+    )
+    await process.wait()
 
 
 def count_prompt_tokens(messages: list[dict]) -> int:

@@ -222,7 +222,7 @@ const IMAGE_BASE_SERVICES = {
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
-        perUserRpm: 20,
+        perUserRpm: 60,
         paidOnly: true,
         cost: {
             completionImageTokens: 0.035, // per image

@@ -81,6 +81,7 @@ describe("/openapi.json", () => {
         expect(Object.keys(schema.paths).length).toBeGreaterThan(0);
         // Gen-owned merged paths prove the real merge ran (not a stub/404).
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/v1/responses"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
@@ -99,6 +100,24 @@ describe("/openapi.json", () => {
         for (const properties of chatRequestPropertySets) {
             expect(properties.thinking).toBeUndefined();
             expect(properties.thinking_budget).toBeUndefined();
+        }
+
+        for (const path of ["/v1/chat/completions", "/v1/responses"]) {
+            const operation = schema.paths[path] as {
+                post?: {
+                    responses?: Record<
+                        string,
+                        { content?: Record<string, unknown> }
+                    >;
+                };
+            };
+            expect(operation.post?.responses?.["200"]?.content).toHaveProperty(
+                "application/json",
+            );
+            expect(operation.post?.responses?.["200"]?.content).toHaveProperty(
+                "text/event-stream",
+            );
+            expect(operation.post?.responses?.["502"]).toBeDefined();
         }
 
         const embeddingRequestPropertySets = collectPropertySets(schema).filter(

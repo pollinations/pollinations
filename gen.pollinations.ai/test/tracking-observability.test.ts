@@ -167,9 +167,8 @@ function createCommunityEntry(
     };
 }
 
-// App that returns a wrong content-type for the given event type, exercising
-// the not-billed content-type guards in trackResponse.
-function createWrongContentTypeApp(
+// Minimal tracked app for exercising response parsing and billing directly.
+function createTrackedResponseApp(
     consumePollen: (amount: number) => Promise<void>,
     eventType: "generate.image" | "generate.text" | "generate.audio",
     response: Response,
@@ -766,7 +765,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
             upstream,
@@ -838,7 +837,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
             upstream,
@@ -1672,7 +1671,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.image",
             upstream,
@@ -1732,7 +1731,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
@@ -1791,7 +1790,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
@@ -1849,7 +1848,7 @@ describe("tracking observability", () => {
         );
 
         const ctx = createExecutionContext();
-        await createWrongContentTypeApp(
+        await createTrackedResponseApp(
             consumePollen,
             "generate.audio",
             upstream,
@@ -1904,7 +1903,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.image",
             upstream,
@@ -1959,7 +1958,7 @@ describe("tracking observability", () => {
         });
 
         const ctx = createExecutionContext();
-        const response = await createWrongContentTypeApp(
+        const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
             upstream,
@@ -2052,6 +2051,83 @@ describe("tracking observability", () => {
         expect(event.tokenCountCompletionText).toBe(500);
         expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
         expect(event.isBilledUsage).toBe(true);
+    });
+
+    it("bills direct Responses stream terminal usage exactly once", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const upstreamResponse = {
+            object: "response",
+            model: "upstream-model",
+            status: "completed",
+            usage: {
+                input_tokens: 1000,
+                input_tokens_details: { cached_tokens: 200 },
+                output_tokens: 500,
+                output_tokens_details: { reasoning_tokens: 100 },
+                total_tokens: 1500,
+            },
+        };
+        const upstream = new Response(
+            `event: response.completed\ndata: ${JSON.stringify({
+                type: "response.completed",
+                response: upstreamResponse,
+            })}\n\n`,
+            {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": "openai",
+                },
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    input: "test",
+                    stream: true,
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            eventType: "generate.text",
+            modelUsed: "openai",
+            tokenCountPromptText: 800,
+            tokenCountPromptCached: 200,
+            tokenCountCompletionText: 400,
+            tokenCountCompletionReasoning: 100,
+            isBilledUsage: true,
+        });
+        expect(consumePollen).toHaveBeenCalledTimes(1);
+        expect(consumePollen.mock.calls[0][0]).toBeGreaterThan(0);
     });
 
     it("marks a community endpoint stream that ended without usage", async () => {

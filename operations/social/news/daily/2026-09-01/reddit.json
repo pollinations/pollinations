@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-01",
+  "period_start": "2026-09-01",
+  "period_end": "2026-09-01",
+  "generated_at": "2026-09-02T06:35:15.390590+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-01/images/reddit.jpg"
+    }
+  ],
+  "title": "29 PRs: model routing, MCP, and Play",
+  "text": "29 PRs merged today. The larger changes were mostly routing, observability, and removing a few sharp edges that had survived longer than they deserved.\n\nVideo now routes Wan inputs across text-to-video, image-to-video, and reference-to-video upstreams. The model shelf gained Mercury 2.5 Preview, DeepSeek V4 Flash Vision, and Claude Fable 5.1; MiniMax M2.7 now goes through OpenRouter, Claude Sonnet 5 AWS pricing was restored, and Grok 4.6 is Quest-accessible.\n\nPlay now shows community-model uptime, parses chat content arrays correctly, and model fallback routing/health thresholds got tightened. Community models should recover more gracefully instead of disappearing or returning from the dead too early.\n\nAgents and MCP got a proper documentation pass: hosted MCP setup, public generation fetches, malformed agent-stream handling, and an architecture explanation. There is also a Prime Agent harness in the CLI, PKCE in PolliProvider, and npm OIDC publishing for the Polli CLI.\n\nThe smaller cleanup pass included the Enter footer/dashboard, API docs regeneration, and removing the stale GimpToPolli listing.\n\nCode and PR history: https://github.com/pollinations/pollinations\nDocs: https://docs.pollinations.ai"
+}

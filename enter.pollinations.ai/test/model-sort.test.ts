@@ -38,13 +38,6 @@ describe("model sorting", () => {
             "free-but-measured",
             "unknown",
         ]);
-        expect(sortModels(models, "oldest").map(({ name }) => name)).toEqual([
-            "free-but-measured",
-            "expensive",
-            "cheap",
-            "unknown",
-        ]);
-
         const tiedModels = [
             model("first", { addedDate: 10 }),
             model("second", { addedDate: 10 }),

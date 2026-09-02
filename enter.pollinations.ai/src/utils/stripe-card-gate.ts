@@ -85,12 +85,12 @@ export function stripeNewCardGateMetadata(
 export async function recordStripeCardFingerprintAttempt(
     db: D1Database,
     input: StripeCardFingerprintAttemptInput,
-): Promise<boolean> {
+): Promise<void> {
     if (!input.eventId || !input.userId || !input.cardFingerprint) {
-        return false;
+        return;
     }
 
-    const result = await db
+    await db
         .prepare(
             `INSERT OR IGNORE INTO stripe_card_fingerprint_attempt (
                 event_id,
@@ -106,6 +106,4 @@ export async function recordStripeCardFingerprintAttempt(
             input.createdAt ?? Date.now(),
         )
         .run();
-
-    return (result.meta.changes ?? 0) > 0;
 }

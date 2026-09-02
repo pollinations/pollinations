@@ -56,7 +56,6 @@ type StripeCheckoutSession = {
     mode: string;
     customer: string | null;
     url: string | null;
-    payment_intent?: string | null;
     status?: "open" | "complete" | "expired";
 };
 
@@ -171,12 +170,6 @@ export type MockStripeState = {
     requests: StripeRequest[];
     customerCreateByIdempotencyKey: Record<string, string>;
     /**
-     * Runs while `/v1/checkout/sessions` creation is in flight, before the
-     * session is stored. Lets a test interleave a restriction with an
-     * in-progress checkout request.
-     */
-    onCheckoutSessionCreate?: () => Promise<void> | void;
-    /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
      * When set, the mock returns the configured failure (HTTP 4xx with the
      * given Stripe error shape) instead of the default success behavior.
@@ -266,14 +259,12 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .post("/v1/checkout/sessions", async (c) => {
             const form = await parseForm(c.req.raw);
             recordRequest(c, state, form);
-            await state.onCheckoutSessionCreate?.();
             const session: StripeCheckoutSession = {
                 id: `cs_mock_${state.checkoutSessions.length + 1}`,
                 object: "checkout.session",
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
                 url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
-                payment_intent: null,
                 status: "open",
             };
             state.checkoutSessions.push(session);
@@ -282,29 +273,17 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         .get("/v1/checkout/sessions", (c) => {
             recordRequest(c, state);
             const customer = c.req.query("customer");
-            const paymentIntent = c.req.query("payment_intent");
             const status = c.req.query("status");
-            const matching = state.checkoutSessions.filter(
+            const data = state.checkoutSessions.filter(
                 (session) =>
                     (!customer || session.customer === customer) &&
-                    (!paymentIntent ||
-                        session.payment_intent === paymentIntent) &&
                     (!status || session.status === status),
             );
-            // Cursor pagination as Stripe does it: `starting_after` is the
-            // last id of the previous page, `limit` defaults to 10.
-            const startingAfter = c.req.query("starting_after");
-            const start = startingAfter
-                ? matching.findIndex(
-                      (session) => session.id === startingAfter,
-                  ) + 1
-                : 0;
-            const limit = Number(c.req.query("limit") ?? 10);
             return c.json({
                 object: "list",
                 url: "/v1/checkout/sessions",
-                has_more: start + limit < matching.length,
-                data: matching.slice(start, start + limit),
+                has_more: false,
+                data,
             });
         })
         .post("/v1/checkout/sessions/:id/expire", (c) => {

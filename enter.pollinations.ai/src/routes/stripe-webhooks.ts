@@ -127,13 +127,12 @@ async function recordFailedCardFingerprintFromCharge({
     const userId = readUserIdFromMetadata(charge.metadata) || fallbackUserId;
 
     try {
-        const recorded = await recordStripeCardFingerprintAttempt(env.DB, {
+        await recordStripeCardFingerprintAttempt(env.DB, {
             eventId: event.id,
             userId,
             cardFingerprint: snapshot.cardFingerprint,
             createdAt: event.created ? event.created * 1000 : Date.now(),
         });
-        if (!recorded) return;
 
         const eventTime = event.created ? event.created * 1000 : Date.now();
         const gate = await getStripeNewCardGateStatus(
@@ -143,16 +142,14 @@ async function recordFailedCardFingerprintFromCharge({
         );
         if (!gate.shouldRestrictPayments) return;
 
-        await restrictStripePayments(
+        const newlyRestricted = await restrictStripePayments(
             env.DB,
             userId,
             new Date(eventTime).toISOString(),
         );
+        if (!newlyRestricted) return;
 
-        // Expire every open session of the customer, not only the one behind
-        // this charge, so sessions opened in other tabs cannot keep testing
-        // cards. Runs on every locked failure so an earlier expiry failure is
-        // retried.
+        // Close sessions opened before the account was restricted.
         const customerId = getStripeId(charge.customer);
         if (customerId) {
             await expireOpenStripeCheckoutSessions(stripe, customerId);

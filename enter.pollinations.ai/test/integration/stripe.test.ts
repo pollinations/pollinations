@@ -18,7 +18,6 @@ import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
-import { restrictStripePayments } from "../../src/utils/stripe-payment-restriction.ts";
 import { test } from "../fixtures.ts";
 import {
     type MockStripeState,
@@ -504,7 +503,6 @@ test("eight distinct failed cards in 24h restrict payments", async ({
             object: "checkout.session",
             mode: "payment",
             customer: "cus_test_card_gate",
-            payment_intent: "pi_fp_gate_8",
             status: "open",
             url: "https://checkout.stripe.test/gate-open",
         },
@@ -513,7 +511,6 @@ test("eight distinct failed cards in 24h restrict payments", async ({
             object: "checkout.session",
             mode: "payment",
             customer: "cus_test_card_gate",
-            payment_intent: "pi_other_tab",
             status: "open",
             url: "https://checkout.stripe.test/gate-other-tab",
         },
@@ -562,6 +559,17 @@ test("eight distinct failed cards in 24h restrict payments", async ({
         ],
     ).toBe("4");
 
+    // Simulate a retry after the event was recorded but enforcement failed.
+    await env.DB.prepare(
+        `INSERT INTO stripe_card_fingerprint_attempt (
+            event_id,
+            user_id,
+            card_fingerprint,
+            created_at
+        ) VALUES (?, ?, ?, ?)`,
+    )
+        .bind("evt_fp_gate_8", userId, "fp_gate_8", Date.now())
+        .run();
     await recordFailedCardPayment(
         mocks.stripe.state,
         userId,
@@ -581,9 +589,7 @@ test("eight distinct failed cards in 24h restrict payments", async ({
     });
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-        code: "PAYMENTS_RESTRICTED",
         error: "Payments are unavailable for this account.",
-        supportEmail: "billing@pollinations.ai",
     });
 
     const user = await env.DB.prepare(
@@ -619,147 +625,6 @@ test("eight distinct failed cards in 24h restrict payments", async ({
                 request.path === "/v1/checkout/sessions",
         ),
     ).toHaveLength(createdCheckoutCount);
-});
-
-test("checkout expires open sessions when it discovers a locked account", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const userId = await getSeededUserId();
-    mocks.stripe.state.customers.push(mockCustomer("cus_route_lock"));
-    await env.DB.prepare(
-        `UPDATE user
-        SET stripe_customer_id = ?
-        WHERE id = ?`,
-    )
-        .bind("cus_route_lock", userId)
-        .run();
-    mocks.stripe.state.checkoutSessions.push({
-        id: "cs_route_lock_open",
-        object: "checkout.session",
-        mode: "payment",
-        customer: "cus_route_lock",
-        payment_intent: "pi_route_lock",
-        status: "open",
-        url: "https://checkout.stripe.test/route-lock",
-    });
-
-    // Eight distinct failed cards recorded without the webhook having
-    // enforced the lock (e.g. its Stripe call failed).
-    await seedFailedCardAttempts(
-        userId,
-        Array.from({ length: 8 }, (_, index) => `fp_route_lock_${index}`),
-    );
-
-    const response = await SELF.fetch(`${base}/checkout/p10`, {
-        method: "GET",
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-        redirect: "manual",
-    });
-    expect(response.status).toBe(403);
-
-    const user = await env.DB.prepare(
-        `SELECT stripe_payment_restriction AS restriction
-        FROM user
-        WHERE id = ?`,
-    )
-        .bind(userId)
-        .first<{ restriction: string | null }>();
-    expect(user?.restriction).not.toBeNull();
-    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
-        id: "cs_route_lock_open",
-        status: "expired",
-        url: null,
-    });
-    expect(
-        mocks.stripe.state.requests.filter(
-            (request) =>
-                request.method === "POST" &&
-                request.path === "/v1/checkout/sessions",
-        ),
-    ).toHaveLength(0);
-});
-
-test("checkout retries session cleanup for an already restricted user", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const userId = await getSeededUserId();
-    mocks.stripe.state.customers.push(mockCustomer("cus_retry_cleanup"));
-    await env.DB.prepare(
-        `UPDATE user
-        SET stripe_customer_id = ?
-        WHERE id = ?`,
-    )
-        .bind("cus_retry_cleanup", userId)
-        .run();
-    await restrictStripePayments(env.DB, userId);
-    // A session that survived because the webhook's Stripe cleanup failed
-    // after the restriction was stored.
-    mocks.stripe.state.checkoutSessions.push({
-        id: "cs_survivor",
-        object: "checkout.session",
-        mode: "payment",
-        customer: "cus_retry_cleanup",
-        payment_intent: "pi_survivor",
-        status: "open",
-        url: "https://checkout.stripe.test/survivor",
-    });
-
-    const response = await SELF.fetch(`${base}/checkout/p10`, {
-        method: "GET",
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-        redirect: "manual",
-    });
-    expect(response.status).toBe(403);
-    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
-        id: "cs_survivor",
-        status: "expired",
-        url: null,
-    });
-    expect(
-        mocks.stripe.state.requests.filter(
-            (request) =>
-                request.method === "POST" &&
-                request.path === "/v1/checkout/sessions",
-        ),
-    ).toHaveLength(0);
-});
-
-test("checkout expires a session created while the restriction landed", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const userId = await getSeededUserId();
-    mocks.stripe.state.customers.push(mockCustomer("cus_in_flight"));
-    await env.DB.prepare(
-        `UPDATE user
-        SET stripe_customer_id = ?
-        WHERE id = ?`,
-    )
-        .bind("cus_in_flight", userId)
-        .run();
-    // The webhook restricts the user after this request passed its checks
-    // but before Stripe returns the new session.
-    mocks.stripe.state.onCheckoutSessionCreate = async () => {
-        await restrictStripePayments(env.DB, userId);
-    };
-
-    const response = await SELF.fetch(`${base}/checkout/p10`, {
-        method: "GET",
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-        redirect: "manual",
-    });
-    expect(response.status).toBe(403);
-    expect(mocks.stripe.state.checkoutSessions).toHaveLength(1);
-    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
-        customer: "cus_in_flight",
-        status: "expired",
-        url: null,
-    });
 });
 
 test("fifty failed attempts on one card restrict payments", async ({

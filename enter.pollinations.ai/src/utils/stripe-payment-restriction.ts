@@ -1,32 +1,14 @@
 import type Stripe from "stripe";
 
-export const STRIPE_PAYMENT_RESTRICTED_CODE = "PAYMENTS_RESTRICTED";
 export const STRIPE_PAYMENT_RESTRICTED_MESSAGE =
     "Payments are unavailable for this account.";
-export const STRIPE_PAYMENT_SUPPORT_EMAIL = "billing@pollinations.ai";
-
-export async function getStripePaymentRestriction(
-    db: D1Database,
-    userId: string,
-): Promise<string | null> {
-    const row = await db
-        .prepare(
-            `SELECT stripe_payment_restriction AS restriction
-            FROM user
-            WHERE id = ?`,
-        )
-        .bind(userId)
-        .first<{ restriction: string | null }>();
-
-    return row?.restriction ?? null;
-}
 
 export async function restrictStripePayments(
     db: D1Database,
     userId: string,
     restrictedAt = new Date().toISOString(),
-): Promise<void> {
-    await db
+): Promise<boolean> {
+    const result = await db
         .prepare(
             `UPDATE user
             SET stripe_payment_restriction = ?,
@@ -36,14 +18,8 @@ export async function restrictStripePayments(
         )
         .bind(restrictedAt, userId)
         .run();
-}
 
-export function stripePaymentRestrictedResponse() {
-    return {
-        code: STRIPE_PAYMENT_RESTRICTED_CODE,
-        error: STRIPE_PAYMENT_RESTRICTED_MESSAGE,
-        supportEmail: STRIPE_PAYMENT_SUPPORT_EMAIL,
-    };
+    return (result.meta.changes ?? 0) === 1;
 }
 
 /**

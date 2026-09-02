@@ -268,6 +268,20 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
 }) => {
+    if (initialBillingState?.paymentsRestricted) {
+        return (
+            <Surface>
+                <p className="text-sm text-intent-danger-text">
+                    Payments are unavailable for this account. Contact{" "}
+                    <InlineLink href="mailto:billing@pollinations.ai">
+                        billing@pollinations.ai
+                    </InlineLink>
+                    .
+                </p>
+            </Surface>
+        );
+    }
+
     const selectedPackIndex = Math.max(
         0,
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
@@ -281,28 +295,9 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     const chargeLabel = selectedPack
         ? formatUsdCentsCompact(subtotalBeforeTaxCents)
         : "$0";
-    const paymentRestricted = initialBillingState?.paymentsRestricted ?? false;
 
     return (
         <>
-            {paymentRestricted && (
-                <output className="mb-4 rounded-xl border border-intent-danger-border bg-intent-danger-bg-light p-4 text-sm text-intent-danger-text">
-                    <p className="font-bold">Payments restricted</p>
-                    <p className="mt-1">
-                        Purchases and automatic top-ups are unavailable for this
-                        account. If you believe this is a mistake, email{" "}
-                        <CopyButton
-                            value="billing@pollinations.ai"
-                            className="font-semibold underline underline-offset-2"
-                        >
-                            {(copied) =>
-                                copied ? "Copied!" : "billing@pollinations.ai"
-                            }
-                        </CopyButton>{" "}
-                        from the email address associated with your account.
-                    </p>
-                </output>
-            )}
             <Surface>
                 {selectedPack && (
                     <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
@@ -312,7 +307,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                 onChange={onSelectedPackAmountChange}
                                 selectedBadgeLabel={chargeLabel}
                                 selectedBadgeDetail={`incl. ${formatUsdCentsCompact(serviceFeeCents)} fee`}
-                                disabled={paymentRestricted}
                             />
                         </div>
                         <Tooltip
@@ -331,15 +325,11 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                                     </span>
                                 </span>
                             }
-                            triggerAs="span"
+                            displayContents
                         >
                             <ExternalLinkButton
-                                {...(paymentRestricted
-                                    ? { disabled: true }
-                                    : {
-                                          href: `/api/stripe/checkout/${selectedPack.packKey}`,
-                                          target: "_self" as const,
-                                      })}
+                                href={`/api/stripe/checkout/${selectedPack.packKey}`}
+                                target="_self"
                                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >
                                 <span className="inline-flex items-center gap-1.5">
@@ -352,23 +342,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 )}
             </Surface>
             <Surface>
-                {paymentRestricted ? (
-                    <div className="flex items-center justify-between gap-4 py-1">
-                        <div>
-                            <p className="font-bold text-theme-text-strong">
-                                Auto top-up
-                            </p>
-                            <p className="mt-1 text-sm text-theme-text-muted">
-                                Unavailable while payments are restricted.
-                            </p>
-                        </div>
-                        <span className="text-sm font-semibold text-theme-text-muted">
-                            Off
-                        </span>
-                    </div>
-                ) : (
-                    <AutoTopUpPanel initialBillingState={initialBillingState} />
-                )}
+                <AutoTopUpPanel initialBillingState={initialBillingState} />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />

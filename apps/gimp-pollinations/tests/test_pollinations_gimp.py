@@ -1,0 +1,106 @@
+import base64
+import json
+import tempfile
+import unittest
+from io import BytesIO
+from pathlib import Path
+from unittest.mock import patch
+from urllib.error import HTTPError
+from urllib.request import Request
+
+import sys
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from pollinations_gimp import ImageModel, PollinationsClient, PollinationsError, _multipart_body
+
+
+class FakeTransport:
+    def __init__(self, responses):
+        self.responses = list(responses)
+        self.requests = []
+
+    def __call__(self, request: Request) -> bytes:
+        self.requests.append(request)
+        return json.dumps(self.responses.pop(0)).encode()
+
+
+class PollinationsClientTest(unittest.TestCase):
+    def test_device_flow_uses_app_key_and_waits_for_approval(self):
+        transport = FakeTransport(
+            [
+                {
+                    "device_code": "device-secret",
+                    "user_code": "ABCD-1234",
+                    "verification_uri": "/device",
+                    "verification_uri_complete": "/device?user_code=ABCD-1234",
+                    "interval": 7,
+                },
+                {"error": "authorization_pending"},
+                {"access_token": "sk_authorized"},
+            ]
+        )
+        client = PollinationsClient(request=transport)
+        device = client.start_device_authorization("pk_gimp_app")
+        self.assertEqual(device.verification_uri, "https://enter.pollinations.ai/device")
+        self.assertEqual(device.interval, 7)
+        self.assertIsNone(client.poll_device_authorization(device.device_code))
+        self.assertEqual(client.poll_device_authorization(device.device_code), "sk_authorized")
+        self.assertEqual(client.token, "sk_authorized")
+        self.assertIn(b'"client_id": "pk_gimp_app"', transport.requests[0].data)
+
+    def test_catalog_is_authenticated_and_keeps_only_image_output_models(self):
+        transport = FakeTransport(
+            [
+                [
+                    {
+                        "name": "community-paint",
+                        "title": "Community Paint",
+                        "output_modalities": ["image"],
+                        "input_modalities": ["text", "image"],
+                        "resolutions": ["1k", "2k"],
+                        "community": True,
+                    },
+                    {"name": "video", "output_modalities": ["video"]},
+                ]
+            ]
+        )
+        client = PollinationsClient("sk_authorized", transport)
+        models = client.list_image_models()
+        self.assertEqual([model.id for model in models], ["community-paint"])
+        self.assertTrue(models[0].accepts_image)
+        self.assertEqual(transport.requests[0].get_header("Authorization"), "Bearer sk_authorized")
+
+    def test_edit_multipart_sends_the_active_layer_file(self):
+        encoded = base64.b64encode(b"png-bytes").decode()
+        transport = FakeTransport([{"data": [{"b64_json": encoded}]}])
+        client = PollinationsClient("sk_authorized", transport)
+        with tempfile.NamedTemporaryFile(suffix=".png") as image:
+            image.write(b"source-png")
+            image.flush()
+            result = client.edit("turn it blue", ImageModel("edit", "Edit", ("text", "image"), ()), Path(image.name), None)
+        self.assertEqual(result, b"png-bytes")
+        body = transport.requests[0].data
+        self.assertIn(b'name="image"; filename="gimp-layer.png"', body)
+        self.assertIn(b"source-png", body)
+
+    def test_invalid_app_key_is_not_sent(self):
+        with self.assertRaises(PollinationsError):
+            PollinationsClient(request=FakeTransport([])).start_device_authorization("sk_not_an_app_key")
+
+    def test_pending_device_http_400_remains_in_the_polling_loop(self):
+        pending = HTTPError(
+            "https://enter.pollinations.ai/api/device/token",
+            400,
+            "Bad Request",
+            None,
+            BytesIO(b'{"error":"authorization_pending"}'),
+        )
+        with patch("pollinations_gimp.urlopen", side_effect=pending):
+            body = PollinationsClient._urlopen(
+                Request("https://enter.pollinations.ai/api/device/token", data=b"{}", method="POST")
+            )
+        self.assertEqual(json.loads(body), {"error": "authorization_pending"})
+
+
+if __name__ == "__main__":
+    unittest.main()

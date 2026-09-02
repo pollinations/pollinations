@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { OpPollenRow } from "../types";
 import {
+    canonicalModel,
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
@@ -95,6 +96,20 @@ describe("canonicalVendor", () => {
     });
 });
 
+describe("canonicalModel", () => {
+    it("joins legacy and promoted model IDs through the shared registry", () => {
+        expect(canonicalModel("nova")).toBe(
+            canonicalModel("amazon/nova-2-lite-v1"),
+        );
+    });
+
+    it("leaves unknown and community model IDs visible", () => {
+        expect(canonicalModel(" Alice/Private-Model ")).toBe(
+            "Alice/Private-Model",
+        );
+    });
+});
+
 describe("canonicalPollenRows", () => {
     const pollen = (
         vendor: string,
@@ -129,6 +144,23 @@ describe("canonicalPollenRows", () => {
             cost_quests: 4,
             requests_paid: 25,
             requests_quests: 12,
+        });
+    });
+
+    it("aggregates model aliases after canonicalization", () => {
+        const rows = canonicalPollenRows([
+            pollen("aws", { model: "nova" }),
+            pollen("aws", {
+                model: "amazon/nova-2-lite-v1",
+                requests_paid: 20,
+            }),
+        ]);
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            model: canonicalModel("nova"),
+            cost_paid: 2,
+            requests_paid: 25,
         });
     });
 

@@ -134,12 +134,6 @@ const EXTERNAL_LINKS = [
     },
 ];
 
-function isAdminPath() {
-    if (typeof window === "undefined") return false;
-    const path = window.location.pathname.replace(/\/+$/, "");
-    return path === "/debug" || path.endsWith("/debug");
-}
-
 function statusSeverity(model) {
     const health = computeHealthStatus(model.stats);
     if (health === "off") return 6;
@@ -464,7 +458,6 @@ function WindowTabs({ value, onChange }) {
 
 function App() {
     const [aggregationWindow, setAggregationWindow] = useState("60m");
-    const [adminMode] = useState(isAdminPath);
     const { models, lastUpdated, error, endpointStatus } =
         useModelMonitor(aggregationWindow);
 
@@ -615,8 +608,6 @@ function App() {
             }
             case "status":
                 return dir * (statusSeverity(a) - statusSeverity(b));
-            case "provider":
-                return dir * (a.provider || "").localeCompare(b.provider || "");
             default:
                 return 0;
         }
@@ -751,14 +742,6 @@ function App() {
                                     currentSort={sort}
                                     onSort={handleSort}
                                 />
-                                {adminMode && (
-                                    <SortableTh
-                                        label="Provider"
-                                        sortKey="provider"
-                                        currentSort={sort}
-                                        onSort={handleSort}
-                                    />
-                                )}
                                 <SortableTh
                                     label={
                                         <span title="Requests excluding client errors (4xx)">
@@ -822,7 +805,7 @@ function App() {
                             {filteredModels.length === 0 ? (
                                 <TableRow>
                                     <TableCell
-                                        colSpan={adminMode ? 12 : 11}
+                                        colSpan={11}
                                         align="center"
                                         className="py-8 text-theme-text-muted"
                                     >
@@ -922,11 +905,6 @@ function App() {
                                                     />
                                                 </div>
                                             </TableCell>
-                                            {adminMode && (
-                                                <TableCell muted>
-                                                    {model.provider || "-"}
-                                                </TableCell>
-                                            )}
                                             <TableCell
                                                 align="right"
                                                 numeric

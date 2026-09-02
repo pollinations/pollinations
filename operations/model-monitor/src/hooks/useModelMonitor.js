@@ -150,7 +150,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
             ) ?? null;
         return {
             ...model,
-            provider: model.provider || stats?.provider,
             stats,
         };
     });
@@ -176,7 +175,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
                 community: s.model?.includes("/") || false,
                 type: statsType,
                 endpointType: statsType,
-                provider: s.provider,
                 description: "Unknown model while live catalog is unavailable",
                 catalogStatus: "catalog-unavailable",
             };
@@ -189,7 +187,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
                 community: sameNameMatches.some((m) => m.community),
                 type: statsType,
                 endpointType: statsType,
-                provider: s.provider,
                 description: `Unexpected ${statsType} traffic; registered as ${registeredTypes.join("/")}`,
                 catalogStatus: "anomaly",
             };
@@ -199,7 +196,6 @@ export function useModelMonitor(aggregationWindow = "60m") {
                 community: s.model?.includes("/") || false,
                 type: statsType,
                 endpointType: statsType,
-                provider: s.provider,
                 description: "Unregistered model",
                 catalogStatus: "unregistered",
             };

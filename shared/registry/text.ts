@@ -648,6 +648,41 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-3.8-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Standard OpenRouter rates for the pinned google-vertex/global route.
+        // Google's introductory pricing ends 2026-12-31.
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
+        },
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 0.5,
+        }),
+        title: "Gemini 3.8 Flash",
+        description:
+            "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemini-flash-lite-3.5": {
         aliases: [
             "gemini-flash-lite-3.1",

@@ -8,7 +8,6 @@ import {
     calculateServiceFeeCents,
     getPollenPackByAmount,
     POLLEN_PACK_LINE_TYPE,
-    type PollenPack,
     SERVICE_FEE_LINE_TYPE,
     SERVICE_FEE_NAME,
     SERVICE_FEE_TAX_CODE,
@@ -39,36 +38,7 @@ import type {
     AutoTopUpProcessResult,
     BillingOverview,
     PendingAutoTopUpAttempt,
-    UserStripeBillingRow,
 } from "./types.ts";
-
-type AutoTopUpEligibilityInput = Pick<
-    UserStripeBillingRow,
-    "autoTopUpEnabled" | "packBalance" | "autoTopUpAmountUsd"
->;
-
-type AutoTopUpEligibility =
-    | { eligible: false; reason: "auto top-up disabled" }
-    | { eligible: false; reason: "paid balance above threshold" }
-    | { eligible: false; reason: "auto top-up pack invalid" }
-    | { eligible: true; pack: PollenPack };
-
-function getAutoTopUpEligibility(
-    user: AutoTopUpEligibilityInput,
-): AutoTopUpEligibility {
-    if (!user.autoTopUpEnabled) {
-        return { eligible: false, reason: "auto top-up disabled" };
-    }
-
-    if ((user.packBalance ?? 0) > AUTO_TOP_UP_THRESHOLD_POLLEN) {
-        return { eligible: false, reason: "paid balance above threshold" };
-    }
-
-    const pack = getPollenPackByAmount(user.autoTopUpAmountUsd);
-    return pack
-        ? { eligible: true, pack }
-        : { eligible: false, reason: "auto top-up pack invalid" };
-}
 
 export async function updateAutoTopUpSettings(
     env: CloudflareBindings,
@@ -164,12 +134,18 @@ export async function processAutoTopUpForUser(
 ): Promise<AutoTopUpProcessResult> {
     const user = await getUserStripeBillingRow(env.DB, userId);
 
-    const eligibility = getAutoTopUpEligibility(user);
-    if (!eligibility.eligible) {
-        return { status: "skipped", reason: eligibility.reason };
+    if (!user.autoTopUpEnabled) {
+        return { status: "skipped", reason: "auto top-up disabled" };
     }
 
-    const { pack } = eligibility;
+    if ((user.packBalance ?? 0) > AUTO_TOP_UP_THRESHOLD_POLLEN) {
+        return { status: "skipped", reason: "paid balance above threshold" };
+    }
+
+    const pack = getPollenPackByAmount(user.autoTopUpAmountUsd);
+    if (!pack) {
+        return { status: "skipped", reason: "auto top-up pack invalid" };
+    }
 
     await expireStaleClaimedAttempts(env.DB, userId);
 

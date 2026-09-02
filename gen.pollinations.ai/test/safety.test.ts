@@ -17,6 +17,7 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getRequiredSafetyFeatures } from "@/middleware/model.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
+import { applySafetyToResponseRequest } from "@/text/responses/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 import {
     generateCacheKey as generateMediaCacheKey,
@@ -81,6 +82,14 @@ function safetyApp(
             const safeBody = await applySafetyToInput(
                 c,
                 body as CreateChatCompletionRequest & Record<string, unknown>,
+            );
+            return withSafetyHeaders(c, Response.json(safeBody));
+        })
+        .post("/responses", async (c) => {
+            const body = await c.req.json();
+            const safeBody = await applySafetyToResponseRequest(
+                c,
+                body as Parameters<typeof applySafetyToResponseRequest>[1],
             );
             return withSafetyHeaders(c, Response.json(safeBody));
         });
@@ -526,6 +535,57 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
                         },
                         { type: "text", text: "phone {PHONE}" },
                     ],
+                },
+            ],
+        });
+    });
+
+    it("checks array-form function outputs in Responses requests", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/responses",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "privacy",
+                    input: [
+                        {
+                            type: "function_call_output",
+                            call_id: "call_123",
+                            output: [
+                                {
+                                    type: "input_text",
+                                    text: "email a@example.com",
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        await expect(response.json()).resolves.toMatchObject({
+            input: [
+                {
+                    output: [{ type: "input_text", text: "email {EMAIL}" }],
                 },
             ],
         });

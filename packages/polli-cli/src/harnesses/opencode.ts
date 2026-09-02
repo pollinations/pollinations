@@ -1,5 +1,5 @@
-import { join, resolve } from "node:path";
 import { execSync } from "node:child_process";
+import { join, resolve } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
@@ -34,7 +34,8 @@ const isOpencodeInstalled = (): boolean => {
     }
 };
 
-const configPath = (ctx: HarnessContext) => join(ctx.home, CONFIG_DIR, CONFIG_FILE);
+const configPath = (ctx: HarnessContext) =>
+    join(ctx.home, CONFIG_DIR, CONFIG_FILE);
 const skillPath = (ctx: HarnessContext) =>
     join(ctx.home, CONFIG_DIR, "skills", "polli", "SKILL.md");
 
@@ -53,7 +54,11 @@ const readConfig = (ctx: HarnessContext): Record<string, unknown> => {
 };
 
 const writeConfig = (config: Record<string, unknown>, ctx: HarnessContext) => {
-    writeTextAtomic(configPath(ctx), `${JSON.stringify(config, null, 2)}\n`, 0o600);
+    writeTextAtomic(
+        configPath(ctx),
+        `${JSON.stringify(config, null, 2)}\n`,
+        0o600,
+    );
 };
 
 const ensureOpencodeInstalled = () => {
@@ -89,13 +94,18 @@ interface OpencodeSettings {
     models: HarnessModel[];
 }
 
-const writeOpencodeConfig = (ctx: HarnessContext, settings: OpencodeSettings) => {
+const writeOpencodeConfig = (
+    ctx: HarnessContext,
+    settings: OpencodeSettings,
+) => {
     const config = readConfig(ctx);
     const provider = providerConfig(settings.models, settings.apiKey);
 
     // Preserve unrelated config — only touch our provider and plugin.
     const existingProvider = (config.provider ?? {}) as Record<string, unknown>;
-    const existingPlugins = Array.isArray(config.plugin) ? [...(config.plugin as unknown[])] : [];
+    const existingPlugins = Array.isArray(config.plugin)
+        ? [...(config.plugin as unknown[])]
+        : [];
 
     // Merge provider.pollinations
     config.provider = {
@@ -154,7 +164,10 @@ const stripOpencodeConfig = (ctx: HarnessContext): boolean => {
         if ((config.plugin as unknown[]).length === 0) delete config.plugin;
     }
 
-    if (typeof config.model === "string" && String(config.model).startsWith(`${PROVIDER}/`)) {
+    if (
+        typeof config.model === "string" &&
+        String(config.model).startsWith(`${PROVIDER}/`)
+    ) {
         delete config.model;
         changed = true;
     }
@@ -175,20 +188,31 @@ const stripOpencodeConfig = (ctx: HarnessContext): boolean => {
 
 const result = (ctx: HarnessContext): HarnessResult => {
     const config = readConfig(ctx);
-    const provider = (config.provider as Record<string, unknown> | undefined)?.[PROVIDER] as
-        | Record<string, unknown>
-        | undefined;
+    const provider = (config.provider as Record<string, unknown> | undefined)?.[
+        PROVIDER
+    ] as Record<string, unknown> | undefined;
     const options = provider?.options as Record<string, unknown> | undefined;
-    const hasProvider = !!provider && options?.baseURL === `${BASE_URL}/v1` && typeof options?.apiKey === "string" && String(options.apiKey).length > 10;
-    const model = typeof config.model === "string" ? String(config.model) : undefined;
-    const hasPlugin = Array.isArray(config.plugin) && (config.plugin as unknown[]).some((p) => p === PLUGIN_ID || (Array.isArray(p) && p[0] === PLUGIN_ID));
+    const hasProvider =
+        !!provider &&
+        options?.baseURL === `${BASE_URL}/v1` &&
+        typeof options?.apiKey === "string" &&
+        String(options.apiKey).length > 10;
+    const model =
+        typeof config.model === "string" ? String(config.model) : undefined;
+    const hasPlugin =
+        Array.isArray(config.plugin) &&
+        (config.plugin as unknown[]).some(
+            (p) => p === PLUGIN_ID || (Array.isArray(p) && p[0] === PLUGIN_ID),
+        );
     const hasSkill = readTextIfExists(skillPath(ctx)) !== null;
 
     return {
         harness: ID,
         label: LABEL,
         configured: hasProvider && hasPlugin && hasSkill,
-        model: model?.startsWith(`${PROVIDER}/`) ? model.slice(PROVIDER.length + 1) : model,
+        model: model?.startsWith(`${PROVIDER}/`)
+            ? model.slice(PROVIDER.length + 1)
+            : model,
         files: files(ctx),
     };
 };
@@ -198,7 +222,9 @@ export const configureOpencode = (
     settings: OpencodeSettings,
 ): HarnessResult => {
     ensureOpencodeInstalled();
-    applyWithSnapshot(ctx, ID, files(ctx), () => writeOpencodeConfig(ctx, settings));
+    applyWithSnapshot(ctx, ID, files(ctx), () =>
+        writeOpencodeConfig(ctx, settings),
+    );
     return result(ctx);
 };
 
@@ -223,13 +249,21 @@ export const opencode: HarnessAdapter = {
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((m) => m.id === model)) {
-            throw new Error(`Model "${model}" is not a tool-calling text model. Run: polli models`);
+            throw new Error(
+                `Model "${model}" is not a tool-calling text model. Run: polli models`,
+            );
         }
         const existingKey = (() => {
             const cfg = readConfig(ctx);
-            const provider = (cfg.provider as Record<string, unknown> | undefined)?.[PROVIDER] as Record<string, unknown> | undefined;
-            const opts = provider?.options as Record<string, unknown> | undefined;
-            return typeof opts?.apiKey === "string" ? String(opts.apiKey) : null;
+            const provider = (
+                cfg.provider as Record<string, unknown> | undefined
+            )?.[PROVIDER] as Record<string, unknown> | undefined;
+            const opts = provider?.options as
+                | Record<string, unknown>
+                | undefined;
+            return typeof opts?.apiKey === "string"
+                ? String(opts.apiKey)
+                : null;
         })();
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey },

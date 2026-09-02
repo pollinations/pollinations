@@ -28,16 +28,16 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ ¿Y si…? — Alternate History Scene Generator](https://jecxolab.github.io/y-si-historia) | Type a historical "what if" and get the scene illustrated. Built for the Spanish-language history channel El Efecto Historia. Uses the Pollinations image API with four visual presets (epic oil paintin | [@jecxolab](https://github.com/jecxolab) |
+| [💬 Genie AI](https://play.google.com/store/apps/details?id=com.genie.aiassistant) | Genie AI Companion is a powerful multi-modal AI super app designed to bring everything you need into one place. You can chat and get live answers from the internet, analyze and summarize docs, recogni | [@lankafoaz](https://github.com/lankafoaz) |
 | [🖼️ AI Story & Image Studio](https://adventuretreehouse.com) | A minimal interactive studio that generates short stories and matching illustrations simultaneously using Pollinations text and image APIs with seamless PKCE OAuth authentication. | [@tlandcoder](https://github.com/tlandcoder) |
-| [🎬 Automated Video App](https://automatedvideoapp.com) | **Resubmission of #13411, with the callback issue fixed.** That submission was closed because the app sent a redirect_uri that was not registered on the App Key. The cause: the connect page built the | [@ackhmez](https://github.com/ackhmez) |
+| [🎬 Automated Video App](https://automatedvideoapp.com) | Turn any topic or script into a narrated, captioned video, then edit it scene by scene or drive the whole thing from Claude. AI stills and AI video are generated through Pollinations on the user's own key. | [@ackhmez](https://github.com/ackhmez) |
 | [🖼️ Pixel Forge](https://b3b41020.github.io/pixel-forge) | AI image generation studio powered by Pollinations. Users enter a prompt, select a model (Flux, Dreamshaper, Klein, GPT Image 2, Zimage, Nanobanana) and image size, then generate. Built with the Polli | [@b3b41020](https://github.com/b3b41020) |
 | [🛠️ DemoWeaver](https://mebularts.github.io/DemoWeaver) | DemoWeaver is an open-source AI-powered product walkthrough generator that turns a running web application into a browser-verified, professionally narrated product video. Instead of manually recording | [@mebularts](https://github.com/mebularts) |
 | [🖼️ AI STUDIO — RealTime AUDIO & VIDEO CREATOR](https://noanswers.website/WebAnimation) | Creates collaborative images using the Pollinations image API integration. Thereby, allowing users to add generated content or uploaded from the local machines and create slide/videos adaptive to FPS | [@noanswers-website](https://github.com/noanswers-website) |
 | [💬 Pollinations Studio](https://sankezhiyyds.github.io/pollinations-app) | A pure HTML/JavaScript AI generation studio with no framework dependencies. It supports image, text, audio, and video generation via the Pollinations API. Users bring their own API key (sk_ or pk_) fo | [@sankezhiyyds](https://github.com/sankezhiyyds) |
 | [🖼️ Dery AI](https://dery-ai.my.id) | Create collaborative images using the Pollinations image API | [@derymegana](https://github.com/derymegana) |
 | [🖼️ Pollinations App](https://sohaib7838.github.io/pollinations-app) | A simple web app that lets users connect their Pollinations account and generate AI images using their own Pollen. | [@Sohaib7838](https://github.com/Sohaib7838) |
-| [✍️ Descriptly](https://github.com/g33ky00/descriptly) | ## Descriptly v1.0.0 First public release. Descriptly scans images added or modified in a pull request and generates accessible alt-text suggestions using Pollinations vision models — posted directly | [@g33ky00](https://github.com/g33ky00) |
-| [🖼️ EAS AI STUDIO](https://www.ekin-ai-studio.my.id) | Create collaborative images using the Pollinations image API | [@EkinLiu](https://github.com/EkinLiu) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-08-31** – **🎨 Community video models** Community model publishers can now offer OpenAI-compatible video generation, with prompts, reference media, frame URLs, duration controls, and MP4 results.
+- **2026-08-31** – **🚀 FLUX.2 Pro and Flex** Paid users can generate with Azure-hosted `flux-2-pro` and `flux-2-flex`, including wide formats up to 4,096×1,024 and up to eight Pro reference images. [Try it](https://pollinations.ai/play)
+- **2026-08-31** – **🤖 Inkling joins the model roster** `thinkingmachines/inkling` is now available for paid API use with text, image, and audio inputs, tool calling, JSON, streaming, and reasoning. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-08-31** – **🔗 MCP servers get a catalog** Browse available MCP servers, connection endpoints, and Pollen rates in the official catalog or through `GET /mcp` before letting tools near your agent. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-08-30** – **🚀 Community Embeddings** Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open.
 - **2026-08-30** – **✨ Floret Media Tools** Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress.
 - **2026-08-30** – **🎨 AI Story & Image Studio** Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com) <!-- app -->
 - **2026-08-28** – **🚀 Every model gets a playground** Open any supported Image, Text, Audio, or Video model directly in a preconfigured [Play session](https://pollinations.ai/play).
 - **2026-08-28** – **🎯 The quest garden has rankings** The Community page now shows the top Quest contributors, completed quests, and Pollen earned. Useful motivation, mildly dangerous for your sleep schedule.
 - **2026-08-28** – **🎨 Two frames, then cinema** Generate 3–10 second, audio-synced video clips with `google/gemini-omni-1.1-flash`: text or two keyframes in, 360p to 4K video out. [Check the API docs](https://gen.pollinations.ai/docs).
-- **2026-08-28** – **✨ Pixels enter the forge** Pixel Forge is a focused image studio for comparing Flux, Dreamshaper, Klein, GPT Image 2, Zimage, and Nanobanana at the dimensions you choose. [Try it](https://b3b41020.github.io/pixel-forge) <!-- app -->
-- **2026-08-27** – **🚀 GLM-5.3 Flash** is now available for paid API users: multimodal input, tool use, mandatory reasoning, and a frankly unnecessary-but-useful 1M-token context window. [Browse models](https://gen.pollinations.ai/v1/models)
-- **2026-08-27** – **🎨 Seedance reference media** lets Seedance 2.0 and 2.5 use public image, video, and audio URLs as creative references for image and video generation. [Check the API docs](https://gen.pollinations.ai/docs)
-- **2026-08-27** – **✨ Model search filters** make the model browser substantially less like rummaging through a seed drawer: search by publisher, modality, capability, ID, and access level.
 ---
 
 ## 🌱 Introduction
@@ -112,7 +112,7 @@ See [Publish an Agent](./BUILD_YOUR_OWN_AGENT.md) for setup and billing behavior
 
 ## 🛠️ Coding Harnesses
 
-Run agentic coding tools such as DeepSeek Harness on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
+Run agentic coding tools such as DeepSeek Harness, OpenCode, Pi, and Prime Agent on Pollinations models. `polli harness` edits the harness's own config so it calls `gen.pollinations.ai/v1` with a dedicated key, and restores it on `off`.
 
 ```bash
 npx @pollinations/cli harness dsh on

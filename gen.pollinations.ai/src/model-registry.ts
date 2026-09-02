@@ -1,4 +1,7 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    communityEndpointSupportedEndpoints,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
@@ -12,6 +15,7 @@ import {
     type Category,
     getModels,
     getRegistryModelDefinition,
+    isVisibleModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -23,14 +27,10 @@ import {
 import {
     type CommunityModelEnv,
     type CommunityModelRegistryEntry,
-    communityEmbeddingSupportedEndpoints,
-    communityImageSupportedEndpoints,
-    communityTextSupportedEndpoints,
-    communityTranscriptionSupportedEndpoints,
-    communityVideoSupportedEndpoints,
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
+import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
 // A static-only registry is cached briefly so the community models come back
@@ -115,16 +115,22 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
 const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const definition = getRegistryModelDefinition(modelName);
     const eventType = eventTypeForCategory(definition.category);
+    const baseEndpoints =
+        definition.supportedEndpoints ??
+        supportedEndpointsForEventType(eventType);
+    const supportedEndpoints =
+        eventType === "generate.text" && supportsDirectResponses(modelName)
+            ? [...baseEndpoints, "/v1/responses"]
+            : baseEndpoints;
+    const info = modelInfoFromDefinition(modelName, definition);
     return {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints:
-            definition.supportedEndpoints ??
-            supportedEndpointsForEventType(eventType),
+        supportedEndpoints,
         definition,
-        info: modelInfoFromDefinition(modelName, definition),
-        visible: definition.hidden !== true,
+        info: { ...info, supported_endpoints: supportedEndpoints },
+        visible: isVisibleModelDefinition(definition),
     };
 });
 
@@ -136,18 +142,10 @@ function communityEntryToGenerationEntry(
         id: entry.id,
         aliases: entry.aliases,
         eventType,
-        supportedEndpoints:
-            entry.definition.category === "video"
-                ? communityVideoSupportedEndpoints()
-                : eventType === "generate.image"
-                  ? communityImageSupportedEndpoints(
-                        entry.definition.inputModalities,
-                    )
-                  : eventType === "generate.audio"
-                    ? communityTranscriptionSupportedEndpoints()
-                    : eventType === "generate.embedding"
-                      ? communityEmbeddingSupportedEndpoints()
-                      : communityTextSupportedEndpoints(),
+        supportedEndpoints: communityEndpointSupportedEndpoints(
+            entry.communityEndpoint.modality,
+            entry.definition.inputModalities ?? [],
+        ),
         definition: entry.definition,
         info: entry.info,
         communityEndpoint: entry.communityEndpoint,
@@ -155,7 +153,7 @@ function communityEntryToGenerationEntry(
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
-            entry.definition.hidden !== true &&
+            isVisibleModelDefinition(entry.definition) &&
             entry.communityEndpoint.visibility === "public",
     };
 }
@@ -225,7 +223,7 @@ function buildRegistry(
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
-                    entry.definition.hidden !== true &&
+                    isVisibleModelDefinition(entry.definition) &&
                     endpoint !== undefined &&
                     endpoint.visibility === "private" &&
                     endpoint.ownerUserId === callerUserId

@@ -1,6 +1,6 @@
 import {
-    COMMUNITY_ENDPOINT_INPUT_MODALITIES,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
+    COMMUNITY_MODALITY_SPEC,
     type CommunityEndpointAdvertised,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -76,7 +76,7 @@ function assertInputModalities(
     modality: CommunityEndpointModality,
     inputModalities: readonly string[],
 ): void {
-    const permitted = COMMUNITY_ENDPOINT_INPUT_MODALITIES[modality];
+    const permitted = COMMUNITY_MODALITY_SPEC[modality].inputModalities;
     const unsupported = inputModalities.find(
         (input) => !(permitted as readonly string[]).includes(input),
     );

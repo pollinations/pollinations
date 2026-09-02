@@ -117,8 +117,8 @@ export const ImageParamsSchema = z
             })
             .catch("balanced"),
         guidance_scale: z.coerce.number().optional().catch(undefined),
-        // Video-specific parameters - pass through to backend, let provider validate
-        duration: z.coerce.number().finite().positive().optional(),
+        // Shared public bound; individual providers can narrow it further below.
+        duration: z.coerce.number().int().min(1).max(120).optional(),
         fps: z.coerce.number().optional(),
         resolution: z
             .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])

@@ -1,10 +1,11 @@
 import { env } from "cloudflare:test";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { CommunityModelEnv } from "./community-models.ts";
+import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
     getGenerationModelRegistry,
     resetGenerationModelRegistryCache,
-} from "./model-registry.ts";
+} from "../src/model-registry.ts";
+import { availableModels } from "../src/text/availableModels.ts";
 
 afterEach(() => {
     resetGenerationModelRegistryCache();
@@ -40,6 +41,38 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 }
 
 describe("getGenerationModelRegistry", () => {
+    it("advertises every configured direct Responses model", async () => {
+        const registry = await getGenerationModelRegistry(env);
+        const configured = availableModels
+            .filter(
+                (model) =>
+                    registry.resolve(model.name)?.visible &&
+                    typeof model.config({ model: model.name })
+                        .responsesEndpoint === "string",
+            )
+            .map((model) => model.name)
+            .sort();
+
+        const advertised = registry
+            .visibleEntries()
+            .filter(
+                (entry) =>
+                    !entry.communityEndpoint &&
+                    entry.supportedEndpoints.includes("/v1/responses"),
+            )
+            .map((entry) => entry.id)
+            .sort();
+
+        expect(advertised).toEqual(configured);
+        for (const model of advertised) {
+            expect(registry.resolve(model)?.info.supported_endpoints).toContain(
+                "/v1/responses",
+            );
+        }
+        expect(advertised).not.toContain("midijourney");
+        expect(advertised).not.toContain("midijourney-large");
+    });
+
     it("serves static models when the community catalog query fails", async () => {
         const consoleError = vi
             .spyOn(console, "error")

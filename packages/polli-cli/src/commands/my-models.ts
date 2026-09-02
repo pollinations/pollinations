@@ -66,6 +66,7 @@ interface ProxyMyModel extends MyModelBase {
     completionVideoPrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
     inputModalities: string[];
+    requiredSafetyFeatures: string[];
     fallbacks: string[];
 }
 
@@ -100,6 +101,13 @@ function readPriceOptions(opts: Record<string, unknown>) {
         prices[key] = value;
     }
     return prices;
+}
+
+function commaSeparatedList(value: unknown): string[] {
+    return String(value)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
 }
 
 export function modelBody(
@@ -155,17 +163,18 @@ export function modelBody(
     // An empty string clears the list, which is why this checks for the flag
     // being present rather than for a truthy value.
     if (opts.fallbacks !== undefined) {
-        body.fallbacks = String(opts.fallbacks)
-            .split(",")
-            .map((id) => id.trim())
-            .filter((id) => id.length > 0);
+        body.fallbacks = commaSeparatedList(opts.fallbacks);
     }
 
     if (opts.inputModalities !== undefined) {
-        body.inputModalities = String(opts.inputModalities)
-            .split(",")
-            .map((modality) => modality.trim())
-            .filter((modality) => modality.length > 0);
+        body.inputModalities = commaSeparatedList(opts.inputModalities);
+    }
+
+    if (opts.requiredSafety !== undefined) {
+        body.requiredSafetyFeatures =
+            String(opts.requiredSafety).trim() === "none"
+                ? []
+                : commaSeparatedList(opts.requiredSafety);
     }
 
     if (includeRequired) {
@@ -289,6 +298,10 @@ const create = addPriceOptions(
             "Comma-separated accepted inputs: text,image,audio,video",
         )
         .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
+        )
+        .option(
             "--modality <modality>",
             "Model family: text (default), image, video, transcription, or embedding",
         )
@@ -346,6 +359,10 @@ const update = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
         )
         // No --modality here on purpose: UpdateEndpointSchema has no modality
         // field, so a registered model's family is fixed at creation.

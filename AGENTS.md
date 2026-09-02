@@ -45,6 +45,9 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
   collection skill (`.claude/skills/economics-provider-collection/`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Successful billable text responses must contain valid provider usage. Reject
+  non-stream responses without it; streamed protocols must contain terminal
+  usage and fail the stream otherwise.
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
 
@@ -71,13 +74,11 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 ## Durable Media Requests
 
-- Media generation uses the durable generation coordinator and supports request
-  lifetimes up to 300 seconds. Do not reject a route solely because it exceeds
-  120 seconds or polls an asynchronous provider internally.
+- Media generation uses the durable generation coordinator so callers can
+  disconnect and rejoin long-running generations. Add a request-wide deadline
+  only when a concrete provider or product contract requires one.
 - Prove identical-request disconnect/rejoin, one upstream execution, completed
   R2 cache retrieval, one wallet debit, and one billed Tinybird event.
-- Test behavior just below, at, and above 300 seconds. A route expected to exceed
-  300 seconds requires a separately approved asynchronous public contract.
 
 ## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
 

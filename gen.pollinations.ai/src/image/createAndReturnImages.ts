@@ -5,7 +5,11 @@ import {
     type ServerType,
 } from "./availableServers.ts";
 import { getImageEnv } from "./env.ts";
-import { callAzureFluxKontext } from "./models/azureFluxKontextModel.js";
+import {
+    callAzureFlux2,
+    callAzureFluxKontext,
+} from "./models/azureFluxKontextModel.js";
+import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -22,11 +26,13 @@ import {
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
+    callFluxSchnellDeepInfraAPI,
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
@@ -694,6 +700,7 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
+        case "nanobanana-2-openrouter-ai-studio":
         case "nanobanana-2-lite": {
             logError(
                 "Nano Banana authentication check:",
@@ -716,7 +723,8 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana-pro": {
+        case "nanobanana-pro":
+        case "nanobanana-pro-openrouter-vertex": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -751,8 +759,22 @@ const generateImage = async (
             }
         }
 
+        case "flux-2-pro":
+        case "flux-2-flex": {
+            try {
+                return await callAzureFlux2(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError("Azure FLUX.2 generation failed:", error.message);
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
         case "seedream5":
             return await callSeedream5API(prompt, safeParams);
+
+        case "seedream5-fal":
+            return await callFalFallbackImage(prompt, safeParams);
 
         case "seedream5-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
@@ -815,12 +837,22 @@ const generateImage = async (
         case "qwen-image-3":
             return await callQwenImage3API(prompt, safeParams);
 
+        case "kontext-replicate":
+        case "flux-2-pro-replicate":
+        case "qwen-image-3-replicate":
+        case "p-image-edit-replicate":
+        case "krea-replicate":
+            return await callReplicateFallbackImage(prompt, safeParams);
+
         case "dreamshaper":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":
             return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "flux-deepinfra":
+            return await callFluxSchnellDeepInfraAPI(prompt, safeParams);
 
         case "zimage-fal":
             return await callZImageFalAPI(prompt, safeParams);

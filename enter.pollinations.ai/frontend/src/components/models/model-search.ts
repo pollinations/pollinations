@@ -8,6 +8,7 @@ export const MODEL_CATEGORIES = [
     "text",
     "embedding",
     "agent",
+    "mcp",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
@@ -18,7 +19,6 @@ export type ModelScope = (typeof MODEL_SCOPES)[number];
 export const MODEL_SORTS = [
     "popular",
     "newest",
-    "oldest",
     "price-low",
     "price-high",
     "title",
@@ -35,35 +35,6 @@ export type ModelSearch = {
     sort?: ModelSort;
 };
 
-type ModelSectionInput = {
-    type: Exclude<ModelCategory, "all" | "agent">;
-    agent?: boolean;
-};
-
-const MODEL_SECTION_ORDER: ModelCategory[] = [
-    "all",
-    "text",
-    "image",
-    "video",
-    "3d",
-    "audio",
-    "realtime",
-    "embedding",
-    "agent",
-];
-
-/** Model tabs in display order, limited to categories present in the catalog. */
-export function getAvailableModelSections(
-    models: readonly ModelSectionInput[],
-): ModelCategory[] {
-    const present = new Set(
-        models.map((model) => (model.agent ? "agent" : model.type)),
-    );
-    return MODEL_SECTION_ORDER.filter(
-        (category) => category === "all" || present.has(category),
-    );
-}
-
 function includes<T extends string>(
     values: readonly T[],
     value: unknown,
@@ -76,7 +47,7 @@ export function validateModelSearch(
 ): ModelSearch {
     const scope = includes(MODEL_SCOPES, search.scope)
         ? search.scope
-        : "pollinations";
+        : "community";
     const category = includes(MODEL_CATEGORIES, search.category)
         ? search.category
         : "all";
@@ -84,12 +55,8 @@ export function validateModelSearch(
     const query = typeof search.q === "string" ? search.q.trim() : "";
 
     return {
-        scope: scope === "community" ? scope : undefined,
-        category:
-            category !== "all" &&
-            (scope === "community" || category !== "agent")
-                ? category
-                : undefined,
+        scope: scope === "pollinations" ? scope : undefined,
+        category: category === "all" ? undefined : category,
         q: query || undefined,
         sort: sort === "popular" ? undefined : sort,
     };

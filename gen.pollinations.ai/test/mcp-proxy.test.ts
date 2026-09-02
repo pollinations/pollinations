@@ -26,6 +26,11 @@ test("lists the MCP servers exposed through Gen", async () => {
                 description:
                     "Access Pollinations models and API capabilities through agent tools.",
                 url: "https://gen.pollinations.ai/mcp/pollinations",
+                pricing: {
+                    description:
+                        "Generation tools use each selected model's listed rate. Discovery and account tools are free.",
+                    rates: [],
+                },
             },
             {
                 id: "ffmpeg",
@@ -33,6 +38,19 @@ test("lists the MCP servers exposed through Gen", async () => {
                 description:
                     "Trim, convert, resize, compress, and remix audio and video.",
                 url: "https://gen.pollinations.ai/mcp/ffmpeg",
+                pricing: {
+                    rates: [
+                        {
+                            name: "cloudflare.container.basic_runtime.v1",
+                            label: "Runtime",
+                            kind: "compute",
+                            price: "0.00000778",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "second",
+                        },
+                    ],
+                },
             },
             {
                 id: "exa",
@@ -40,6 +58,50 @@ test("lists the MCP servers exposed through Gen", async () => {
                 description:
                     "Search the live web and fetch clean content from source pages.",
                 url: "https://gen.pollinations.ai/mcp/exa",
+                pricing: {
+                    rates: [
+                        {
+                            name: "exa.search.v1",
+                            label: "Search",
+                            kind: "search_request",
+                            price: "0.007",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                            suffix: "up to 10 results",
+                        },
+                        {
+                            name: "exa.contents.text.v1",
+                            label: "Fetch",
+                            kind: "page",
+                            price: "0.001",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "page",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "composio",
+                name: "Composio",
+                description:
+                    "Use Gmail, Slack, GitHub, Drive, and hundreds of other apps. Agents ask you to connect when needed.",
+                url: "https://gen.pollinations.ai/mcp/composio",
+                pricing: {
+                    description: "Launch price",
+                    rates: [
+                        {
+                            name: "composio.tool_call.v1",
+                            label: "Tool call",
+                            kind: "tool_call",
+                            price: "0.0002",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "call",
+                        },
+                    ],
+                },
             },
         ],
     });
@@ -150,6 +212,30 @@ test("proxies Exa without caller credentials and bills reported usage", async ()
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual({
         tierBalance: 0.993,
         packBalance: 0,
+    });
+});
+
+test("routes Composio with the authenticated user", async () => {
+    const { key, userId } = await createTestApiKey();
+    const response = await SELF.fetch(
+        "https://gen.pollinations.ai/mcp/composio",
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "x-pollinations-user-id": "spoofed-user",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(MCP_REQUEST),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: { content: [{ type: "text", text: userId }] },
     });
 });
 

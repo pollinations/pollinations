@@ -31,11 +31,7 @@ import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import {
-    applySafety,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
@@ -2789,7 +2785,7 @@ async function generateAudioFromSpeechRequest(
 
     if (c.var.model.resolved === "eleven-dialogue") {
         const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToTexts(
+        const safeTexts = await applySafetyToInput(
             c,
             inputs.map((turn) => turn.text),
             safe,
@@ -2808,7 +2804,7 @@ async function generateAudioFromSpeechRequest(
         return withSafetyHeaders(c, response);
     }
 
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     const referenceAudio = reference_audio
         ? await fetchReferenceAudio(reference_audio)
         : undefined;
@@ -2964,7 +2960,7 @@ export async function handleSpeechWithTimestamps(
                 "Timestamped speech supports mp3, opus, aac, wav, and pcm output.",
         });
     }
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     return withAudioFallback(c, (candidate) =>
         generateElevenLabsSpeechWithTimestamps({
             modelName: candidate.id as ElevenLabsTtsModelName,

@@ -11,6 +11,11 @@ import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
+import {
+    getVisibleAudioModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
@@ -241,12 +246,17 @@ const ALL_ALIASES = new Set([
     ...AUDIO_ALIASES,
     ...EMBEDDING_ALIASES,
 ]);
-const imageModelDisplayNames = getImageModelIds().join(", ");
+const visibleImageIds = new Set<string>(getVisibleImageModels());
+const imageModelDisplayNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
+    .join(", ");
 
-const videoModelDisplayNames = getVideoModelIds().join(", ");
+const videoModelDisplayNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
+    .join(", ");
 
-const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
-const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
+const textModelDisplayNames = getVisibleTextModels().join(", ");
+const audioModelDisplayNames = getVisibleAudioModels().join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
 const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()

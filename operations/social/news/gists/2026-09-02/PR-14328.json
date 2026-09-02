@@ -1,0 +1,32 @@
+{
+  "pr_number": 14328,
+  "title": "feat: allow xiaotian1171 to publish community models",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14328",
+  "merged_at": "2026-09-02T09:59:59Z",
+  "labels": [],
+  "pr_body_excerpt": "Closes #14299",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A new gardener gets keys",
+    "blurb": "A community model publisher has been added to the hive’s trusted garden crew. More open-model pollen can now make its way into the catalog.",
+    "summary": "Added xiaotian1171 to the GitHub authorization list for publishing community models.",
+    "impact": "This lets xiaotian1171 publish community models through the existing contribution flow, expanding the pool of models the community can share.",
+    "keywords": [
+      "community-models",
+      "github-auth",
+      "model-publishing",
+      "contributors"
+    ],
+    "visual_concept": "Polli welcomes a new community gardener at a cozy model garden: a GitHub-shaped access key opens a small greenhouse where labeled model-seed packets can be published. Use code-plants and a retro terminal to make the authorization and publishing flow visible, with Polli offering the key rather than dominating the scene.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, handing a GitHub-shaped key to a friendly new gardener beside a small greenhouse full of model-seed packets and code-plants; a retro terminal glows lime green (#ecf874) with simple pixel text: 'PUBLISH'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14328.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, handing a GitHub-shaped key to a friendly new gardener beside a small greenhouse full of model-seed packets and code-plants; a retro terminal glows lime green (#ecf874) with simple pixel text: 'PUBLISH'. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T10:01:00.818308+00:00"
+}

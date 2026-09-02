@@ -38,9 +38,9 @@ def main():
             pass
         print("Polling for approval (5s interval, 5 min timeout)…")
         private_key = api.poll_for_token(dc.device_code, interval=dc.interval, timeout=dc.expires_in)
-        print(f"Got private key: {private_key[:8]}...")
+        print("Got private key — authorized.")
 
-    print(f"Listing models with key {private_key[:8]}…")
+    print("Listing models…")
     models = api.list_image_models(private_key)
     print(f"Available models: {len(models)} — e.g. {', '.join(m.id for m in models[:3])}")
     # Check if requested model exists

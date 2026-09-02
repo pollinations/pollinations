@@ -26,6 +26,7 @@ import {
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { assertStreamContentType } from "../utils/upstream-response.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -245,23 +246,6 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
             system,
         }),
     );
-}
-
-function assertStreamContentType(
-    c: Context<Env>,
-    response: Response,
-    upstreamRequestUrl: URL | undefined,
-): void {
-    if (c.var.track.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            throw new UpstreamError(502, {
-                message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: upstreamRequestUrl,
-                responseBody: contentType,
-            });
-        }
-    }
 }
 
 export function contentFilterResultsToHeaders(

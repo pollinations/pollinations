@@ -1,0 +1,34 @@
+{
+  "pr_number": 14346,
+  "title": "docs: reconcile live Vast GPU fleet",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14346",
+  "merged_at": "2026-09-02T13:33:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Updates the live Vast inventory to FLUX instance `49145048` and DreamShaper instance `49063196`.\n- Corrects current fleet burn to `$1.117222/hour` and `$804.40` per 30-day month.\n- Aligns the FLUX and DreamShaper deployment documentation with the six active production workers.\n- Adds the replacement instance IDs to the economics workload attribution registry.\n\nValidation:\n- Live Vast inventory: six running production instances, no spare canary or stopped storage.\n- Production heartbeat registry and worker health routes passed.\n- `jq empty` and `git diff --check` passed.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Fleet map matches the bees",
+    "blurb": "The Vast GPU garden got its labels checked against reality. Six production workers, their current homes, and the burn meter now agree with each other.",
+    "summary": "Reconciled the live Vast fleet documentation and workload registry with FLUX instance 49145048, DreamShaper instance 49063196, six active production workers, and a recorded burn rate of $1.117222 per hour ($804.40 per 30-day month).",
+    "impact": "Operators now have current instance IDs, deployment references, health-checked worker inventory, and economics attribution for the active FLUX and DreamShaper fleet.",
+    "keywords": [
+      "vast-ai",
+      "gpu-fleet",
+      "flux",
+      "dreamshaper",
+      "operations",
+      "documentation"
+    ],
+    "visual_concept": "A cozy server-garden inventory scene: Polli, wearing a tiny operations headset and clipboard, checks six glowing pixel server pots with clear FLUX and DreamShaper labels while a friendly CRT monitor robot verifies the fleet map. Vines, flowers, and code-plants connect the servers to an updated registry board, representing documentation and workload attribution being brought into sync.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny operations headset, checking a clipboard beside six small glowing production server pots labeled FLUX and DreamShaper; a chunky CRT monitor robot happily points at a matching fleet registry board, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"6 WORKERS ONLINE\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14346.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny operations headset, checking a clipboard beside six small glowing production server pots labeled FLUX and DreamShaper; a chunky CRT monitor robot happily points at a matching fleet registry board, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"6 WORKERS ONLINE\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-02T13:35:08.041519+00:00"
+}

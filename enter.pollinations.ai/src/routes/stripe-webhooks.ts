@@ -143,11 +143,11 @@ async function recordFailedCardFingerprintFromCharge({
         );
         if (!gate.shouldRestrictPayments) return;
 
-        await restrictStripePayments(env.DB, userId, {
-            reason: "failed_card_velocity",
-            source: "automatic",
-            restrictedAt: new Date(eventTime).toISOString(),
-        });
+        await restrictStripePayments(
+            env.DB,
+            userId,
+            new Date(eventTime).toISOString(),
+        );
 
         // Expire every open session of the customer, not only the one behind
         // this charge, so sessions opened in other tabs cannot keep testing

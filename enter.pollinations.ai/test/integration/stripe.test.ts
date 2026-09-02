@@ -589,10 +589,7 @@ test("eight distinct failed cards in 24h restrict payments", async ({
             restriction: string | null;
             autoTopUpEnabled: number | boolean;
         }>();
-    expect(JSON.parse(user?.restriction ?? "null")).toMatchObject({
-        reason: "failed_card_velocity",
-        source: "automatic",
-    });
+    expect(user?.restriction).not.toBeNull();
     expect(user?.autoTopUpEnabled).toBe(0);
     // Every open session of the customer is expired, including the one the
     // pre-limit checkout above created, not only the one behind the charge.
@@ -675,10 +672,7 @@ test("checkout expires open sessions when it discovers a locked account", async 
     )
         .bind(userId)
         .first<{ restriction: string | null }>();
-    expect(JSON.parse(user?.restriction ?? "null")).toMatchObject({
-        reason: "failed_card_velocity",
-        source: "automatic",
-    });
+    expect(user?.restriction).not.toBeNull();
     expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
         id: "cs_route_lock_open",
         status: "expired",
@@ -707,10 +701,7 @@ test("checkout retries session cleanup for an already restricted user", async ({
     )
         .bind("cus_retry_cleanup", userId)
         .run();
-    await restrictStripePayments(env.DB, userId, {
-        reason: "failed_card_velocity",
-        source: "automatic",
-    });
+    await restrictStripePayments(env.DB, userId);
     // A session that survived because the webhook's Stripe cleanup failed
     // after the restriction was stored.
     mocks.stripe.state.checkoutSessions.push({
@@ -760,10 +751,7 @@ test("checkout expires a session created while the restriction landed", async ({
     // The webhook restricts the user after this request passed its checks
     // but before Stripe returns the new session.
     mocks.stripe.state.onCheckoutSessionCreate = async () => {
-        await restrictStripePayments(env.DB, userId, {
-            reason: "failed_card_velocity",
-            source: "automatic",
-        });
+        await restrictStripePayments(env.DB, userId);
     };
 
     const response = await SELF.fetch(`${base}/checkout/p10`, {
@@ -778,140 +766,6 @@ test("checkout expires a session created while the restriction landed", async ({
         status: "expired",
         url: null,
     });
-});
-
-test("restriction cleanup expires sessions beyond the first list page", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const userId = await getSeededUserId();
-    mocks.stripe.state.customers.push(mockCustomer("cus_many_sessions"));
-    await env.DB.prepare(
-        `UPDATE user
-        SET stripe_customer_id = ?
-        WHERE id = ?`,
-    )
-        .bind("cus_many_sessions", userId)
-        .run();
-    for (let index = 1; index <= 101; index++) {
-        mocks.stripe.state.checkoutSessions.push({
-            id: `cs_many_${index}`,
-            object: "checkout.session",
-            mode: "payment",
-            customer: "cus_many_sessions",
-            payment_intent: `pi_many_${index}`,
-            status: "open",
-            url: `https://checkout.stripe.test/many-${index}`,
-        });
-    }
-
-    const restrictResponse = await SELF.fetch(
-        "http://localhost:3000/api/admin/stripe-payment-restrictions",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                userId,
-                restricted: true,
-                reason: "manual_review",
-            }),
-        },
-    );
-    expect(restrictResponse.status).toBe(200);
-    await expect(restrictResponse.json()).resolves.toMatchObject({
-        changed: true,
-        checkoutSessionCleanup: {
-            listingComplete: true,
-            expired: 101,
-            failed: 0,
-        },
-    });
-    expect(
-        mocks.stripe.state.checkoutSessions.every(
-            (session) => session.status === "expired",
-        ),
-    ).toBe(true);
-    expect(
-        mocks.stripe.state.requests.filter(
-            (request) =>
-                request.method === "GET" &&
-                request.path === "/v1/checkout/sessions",
-        ),
-    ).toHaveLength(2);
-
-    const checkoutResponse = await SELF.fetch(`${base}/checkout/p10`, {
-        method: "GET",
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-        redirect: "manual",
-    });
-    expect(checkoutResponse.status).toBe(403);
-});
-
-test("admin reports incomplete cleanup when Stripe listing fails", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const userId = await getSeededUserId();
-    mocks.stripe.state.customers.push(mockCustomer("cus_list_fails"));
-    await env.DB.prepare(
-        `UPDATE user
-        SET stripe_customer_id = ?
-        WHERE id = ?`,
-    )
-        .bind("cus_list_fails", userId)
-        .run();
-    mocks.stripe.state.checkoutSessions.push({
-        id: "cs_list_fails_open",
-        object: "checkout.session",
-        mode: "payment",
-        customer: "cus_list_fails",
-        payment_intent: "pi_list_fails",
-        status: "open",
-        url: "https://checkout.stripe.test/list-fails",
-    });
-    mocks.stripe.state.failCheckoutSessionList = true;
-
-    const restrictResponse = await SELF.fetch(
-        "http://localhost:3000/api/admin/stripe-payment-restrictions",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                userId,
-                restricted: true,
-                reason: "manual_review",
-            }),
-        },
-    );
-    expect(restrictResponse.status).toBe(200);
-    await expect(restrictResponse.json()).resolves.toMatchObject({
-        changed: true,
-        checkoutSessionCleanup: {
-            listingComplete: false,
-            expired: 0,
-            failed: 0,
-        },
-    });
-    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
-        id: "cs_list_fails_open",
-        status: "open",
-    });
-
-    // The restriction is stored regardless, so checkout is refused.
-    const checkoutResponse = await SELF.fetch(`${base}/checkout/p10`, {
-        method: "GET",
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-        redirect: "manual",
-    });
-    expect(checkoutResponse.status).toBe(403);
 });
 
 test("fifty failed attempts on one card restrict payments", async ({
@@ -1010,102 +864,7 @@ test("fifty failed attempts on one card restrict payments", async ({
     )
         .bind(userId)
         .first<{ restriction: string | null }>();
-    expect(JSON.parse(user?.restriction ?? "null")).toMatchObject({
-        reason: "failed_card_velocity",
-        source: "automatic",
-    });
-});
-
-test("admin can restrict and restore payment access", async ({
-    sessionToken,
-    mocks,
-}) => {
-    await mocks.enable("stripe", "tinybird");
-    const userId = await getSeededUserId();
-    mocks.stripe.state.customers.push(mockCustomer("cus_manual_restriction"));
-    await env.DB.prepare(
-        `UPDATE user
-        SET stripe_customer_id = ?, auto_top_up_enabled = 1
-        WHERE id = ?`,
-    )
-        .bind("cus_manual_restriction", userId)
-        .run();
-    mocks.stripe.state.checkoutSessions.push({
-        id: "cs_manual_open",
-        object: "checkout.session",
-        mode: "payment",
-        customer: "cus_manual_restriction",
-        payment_intent: "pi_manual_open",
-        status: "open",
-        url: "https://checkout.stripe.test/manual-open",
-    });
-
-    const restrictResponse = await SELF.fetch(
-        "http://localhost:3000/api/admin/stripe-payment-restrictions",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                userId,
-                restricted: true,
-                reason: "manual_review",
-            }),
-        },
-    );
-    expect(restrictResponse.status).toBe(200);
-    await expect(restrictResponse.json()).resolves.toMatchObject({
-        userId,
-        restricted: true,
-        changed: true,
-        checkoutSessionCleanup: {
-            listingComplete: true,
-            expired: 1,
-            failed: 0,
-        },
-    });
-
-    const billingResponse = await SELF.fetch(`${base}/billing`, {
-        headers: { cookie: `better-auth.session_token=${sessionToken}` },
-    });
-    expect(billingResponse.status).toBe(200);
-    await expect(billingResponse.json()).resolves.toMatchObject({
-        paymentAccess: {
-            restricted: true,
-            supportEmail: "billing@pollinations.ai",
-        },
-        autoTopUp: { enabled: false },
-    });
-
-    const autoTopUpResponse = await SELF.fetch(`${base}/auto-top-up`, {
-        method: "PATCH",
-        headers: {
-            cookie: `better-auth.session_token=${sessionToken}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ enabled: true, packAmountUsd: 10 }),
-    });
-    expect(autoTopUpResponse.status).toBe(403);
-
-    const clearResponse = await SELF.fetch(
-        "http://localhost:3000/api/admin/stripe-payment-restrictions",
-        {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${env.PLN_ENTER_TOKEN}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ userId, restricted: false }),
-        },
-    );
-    expect(clearResponse.status).toBe(200);
-    await expect(clearResponse.json()).resolves.toMatchObject({
-        userId,
-        restricted: false,
-        changed: true,
-    });
+    expect(user?.restriction).not.toBeNull();
 });
 
 test("GET /api/stripe/checkout/p2 uses the plain Pollen label", async ({

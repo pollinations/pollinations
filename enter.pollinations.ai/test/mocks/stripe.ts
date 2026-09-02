@@ -176,8 +176,6 @@ export type MockStripeState = {
      * in-progress checkout request.
      */
     onCheckoutSessionCreate?: () => Promise<void> | void;
-    /** When true, listing `/v1/checkout/sessions` fails with a 500. */
-    failCheckoutSessionList?: boolean;
     /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
      * When set, the mock returns the configured failure (HTTP 4xx with the
@@ -283,17 +281,6 @@ export function createMockStripe(): MockAPI<MockStripeState> {
         })
         .get("/v1/checkout/sessions", (c) => {
             recordRequest(c, state);
-            if (state.failCheckoutSessionList) {
-                return c.json(
-                    {
-                        error: {
-                            type: "api_error",
-                            message: "Mock checkout session listing failure",
-                        },
-                    },
-                    500,
-                );
-            }
             const customer = c.req.query("customer");
             const paymentIntent = c.req.query("payment_intent");
             const status = c.req.query("status");

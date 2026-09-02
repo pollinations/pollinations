@@ -101,10 +101,7 @@ export const stripeRoutes = new Hono<Env>()
 
         const newCardGate = await getStripeNewCardGateStatus(c.env.DB, userId);
         if (newCardGate.shouldRestrictPayments) {
-            await restrictStripePayments(c.env.DB, userId, {
-                reason: "failed_card_velocity",
-                source: "automatic",
-            });
+            await restrictStripePayments(c.env.DB, userId);
             // Sessions opened before the lock stay usable unless expired.
             await expireRestrictedUserCheckoutSessions(c.env, userId);
             return c.json(stripePaymentRestrictedResponse(), 403);

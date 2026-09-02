@@ -1,5 +1,5 @@
-import { join } from "node:path";
 import { execSync } from "node:child_process";
+import { join } from "node:path";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
@@ -33,7 +33,8 @@ const isOpenClawInstalled = (): boolean => {
     }
 };
 
-const configPath = (ctx: HarnessContext) => join(ctx.home, CONFIG_DIR, CONFIG_FILE);
+const configPath = (ctx: HarnessContext) =>
+    join(ctx.home, CONFIG_DIR, CONFIG_FILE);
 const skillPath = (ctx: HarnessContext) =>
     join(ctx.home, ".openclaw", "skills", "polli", "SKILL.md");
 
@@ -62,7 +63,11 @@ const readConfig = (ctx: HarnessContext): OpenClawConfig => {
 };
 
 const writeConfig = (config: OpenClawConfig, ctx: HarnessContext) => {
-    writeTextAtomic(configPath(ctx), `${JSON.stringify(config, null, 2)}\n`, 0o600);
+    writeTextAtomic(
+        configPath(ctx),
+        `${JSON.stringify(config, null, 2)}\n`,
+        0o600,
+    );
 };
 
 const ensureOpenClawInstalled = () => {
@@ -97,9 +102,15 @@ interface OpenClawSettings {
     models: HarnessModel[];
 }
 
-const writeOpenClawConfig = (ctx: HarnessContext, settings: OpenClawSettings) => {
+const writeOpenClawConfig = (
+    ctx: HarnessContext,
+    settings: OpenClawSettings,
+) => {
     const config = readConfig(ctx);
-    const pollinationsProvider = providerConfig(settings.models, settings.apiKey);
+    const pollinationsProvider = providerConfig(
+        settings.models,
+        settings.apiKey,
+    );
 
     config.models = config.models ?? {};
     config.models.providers = {
@@ -137,15 +148,21 @@ const stripOpenClawConfig = (ctx: HarnessContext): boolean => {
     }
     let changed = false;
 
-    const providers = config.models?.providers as Record<string, unknown> | undefined;
+    const providers = config.models?.providers as
+        | Record<string, unknown>
+        | undefined;
     if (providers && PROVIDER in providers) {
         delete providers[PROVIDER];
         changed = true;
-        if (Object.keys(providers).length === 0) delete config.models?.providers;
-        if (config.models && Object.keys(config.models).length === 0) delete config.models;
+        if (Object.keys(providers).length === 0)
+            delete config.models?.providers;
+        if (config.models && Object.keys(config.models).length === 0)
+            delete config.models;
     }
 
-    const defaults = config.agents?.defaults as Record<string, unknown> | undefined;
+    const defaults = config.agents?.defaults as
+        | Record<string, unknown>
+        | undefined;
     if (
         defaults &&
         typeof defaults.model === "string" &&
@@ -155,7 +172,8 @@ const stripOpenClawConfig = (ctx: HarnessContext): boolean => {
         changed = true;
         if (Object.keys(defaults).length === 0) {
             if (config.agents) delete config.agents.defaults;
-            if (config.agents && Object.keys(config.agents).length === 0) delete config.agents;
+            if (config.agents && Object.keys(config.agents).length === 0)
+                delete config.agents;
         }
     }
 
@@ -175,8 +193,12 @@ const stripOpenClawConfig = (ctx: HarnessContext): boolean => {
 
 const result = (ctx: HarnessContext): HarnessResult => {
     const config = readConfig(ctx);
-    const providers = config.models?.providers as Record<string, unknown> | undefined;
-    const pollinations = providers?.[PROVIDER] as Record<string, unknown> | undefined;
+    const providers = config.models?.providers as
+        | Record<string, unknown>
+        | undefined;
+    const pollinations = providers?.[PROVIDER] as
+        | Record<string, unknown>
+        | undefined;
     const optionsOk =
         !!pollinations &&
         typeof pollinations.baseUrl === "string" &&
@@ -184,13 +206,17 @@ const result = (ctx: HarnessContext): HarnessResult => {
         typeof pollinations.apiKey === "string" &&
         String(pollinations.apiKey).length > 10;
     const hasSkill = readTextIfExists(skillPath(ctx)) !== null;
-    const model = (config.agents?.defaults as Record<string, unknown> | undefined)?.model as string | undefined;
+    const model = (
+        config.agents?.defaults as Record<string, unknown> | undefined
+    )?.model as string | undefined;
 
     return {
         harness: ID,
         label: LABEL,
         configured: !!optionsOk && hasSkill,
-        model: model?.startsWith(`${PROVIDER}/`) ? model.slice(PROVIDER.length + 1) : model,
+        model: model?.startsWith(`${PROVIDER}/`)
+            ? model.slice(PROVIDER.length + 1)
+            : model,
         files: files(ctx),
     };
 };
@@ -200,7 +226,9 @@ export const configureOpenClaw = (
     settings: OpenClawSettings,
 ): HarnessResult => {
     ensureOpenClawInstalled();
-    applyWithSnapshot(ctx, ID, files(ctx), () => writeOpenClawConfig(ctx, settings));
+    applyWithSnapshot(ctx, ID, files(ctx), () =>
+        writeOpenClawConfig(ctx, settings),
+    );
     return result(ctx);
 };
 
@@ -218,19 +246,26 @@ export const openclaw: HarnessAdapter = {
     id: ID,
     label: LABEL,
     description: "Configure OpenClaw to use Pollinations",
-    restartHint: "Run openclaw again — the Pollinations provider is ready. Try /model pollinations/kimi",
+    restartHint:
+        "Run openclaw again — the Pollinations provider is ready. Try /model pollinations/kimi",
 
     async on(ctx, options) {
         ensureOpenClawInstalled();
         const model = options.model ?? DEFAULT_MODEL;
         const models = await fetchHarnessModels();
         if (!models.some((m) => m.id === model)) {
-            throw new Error(`Model "${model}" is not a tool-calling text model. Run: polli models`);
+            throw new Error(
+                `Model "${model}" is not a tool-calling text model. Run: polli models`,
+            );
         }
         const existingKey = (() => {
             const cfg = readConfig(ctx);
-            const prov = (cfg.models?.providers as Record<string, unknown> | undefined)?.[PROVIDER] as Record<string, unknown> | undefined;
-            return typeof prov?.apiKey === "string" ? String(prov.apiKey) : null;
+            const prov = (
+                cfg.models?.providers as Record<string, unknown> | undefined
+            )?.[PROVIDER] as Record<string, unknown> | undefined;
+            return typeof prov?.apiKey === "string"
+                ? String(prov.apiKey)
+                : null;
         })();
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey },

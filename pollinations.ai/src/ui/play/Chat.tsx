@@ -15,10 +15,22 @@ import {
     Alert,
     BeakerIcon,
     Button,
+    ChatConversation,
+    ChatConversationContent,
     ChatIcon,
+    ChatMessage,
+    ChatMessageActions,
+    ChatMessageContent,
+    ChatMessageHeader,
+    ChatPromptInput,
+    ChatPromptInputFooter,
+    ChatPromptTextarea,
+    CheckIcon,
     ChevronIcon,
     Chip,
+    ClipboardIcon,
     CloudUploadIcon,
+    CopyButton,
     cn,
     Dialog,
     DownloadIcon,
@@ -28,14 +40,13 @@ import {
     ImageIcon,
     PauseIcon,
     PlayIcon,
-    RobotIcon,
     RocketIcon,
     ScrollArea,
     Slider,
     TabButton,
     Text,
-    Textarea,
     ToolCallDetails,
+    type ToolCallStatus,
     TrashIcon,
     XIcon,
 } from "@pollinations/ui";
@@ -566,11 +577,20 @@ function ToolPart({ part }: { part: DynamicToolUIPart }) {
     const isError = part.state === "output-error";
     const output = part.state === "output-available" ? part.output : undefined;
     const error = isError ? part.errorText : undefined;
-    const status = isError
-        ? "error"
-        : part.state === "output-available"
-          ? "complete"
-          : "running";
+    const status: ToolCallStatus =
+        part.state === "input-streaming"
+            ? "pending"
+            : part.state === "input-available"
+              ? "running"
+              : part.state === "approval-requested"
+                ? "approval-requested"
+                : part.state === "approval-responded"
+                  ? "approval-responded"
+                  : part.state === "output-available"
+                    ? "complete"
+                    : part.state === "output-denied"
+                      ? "denied"
+                      : "error";
     return (
         <ToolCallDetails
             name={part.toolName}
@@ -622,6 +642,9 @@ function MessageCard({
         (part) => part.type === "data-responseStatus",
     );
     const activity = activeTool(message);
+    const copyText = message.parts
+        .flatMap((part) => (part.type === "text" ? [part.text] : []))
+        .join("\n\n");
     const showArticle =
         isUser ||
         contentParts.length > 0 ||
@@ -640,82 +663,96 @@ function MessageCard({
             aria-busy={isStreaming}
         >
             {showArticle && (
-                <article
-                    className={cn(
-                        "flex max-w-full min-w-0 flex-col gap-3 rounded-xl px-4 py-3",
-                        isUser
-                            ? "bg-theme-bg-active text-theme-text-strong"
-                            : "bg-surface-opaque text-theme-text-base shadow-well",
-                    )}
+                <ChatMessage
+                    from={isUser ? "user" : "assistant"}
+                    className="max-w-full"
                 >
-                    {isUser ? (
-                        <Text
-                            as="div"
-                            size="xs"
-                            tone="muted"
-                            weight="bold"
-                            className="uppercase tracking-wide"
-                        >
-                            You
-                        </Text>
-                    ) : (
-                        <RobotIcon className="h-4 w-4 text-theme-text-strong" />
-                    )}
-                    {contentParts.map((part, index) =>
-                        part.type === "text" ? (
-                            isUser ? (
-                                <p
-                                    key={`text:${index}`}
-                                    className="whitespace-pre-wrap break-words"
-                                >
-                                    {part.text}
-                                </p>
+                    <ChatMessageHeader
+                        from={isUser ? "user" : "assistant"}
+                        label={isUser ? "You" : assistantName}
+                    />
+                    <ChatMessageContent className="flex flex-col gap-3">
+                        {contentParts.map((part, index) =>
+                            part.type === "text" ? (
+                                isUser ? (
+                                    <p
+                                        key={`text:${index}`}
+                                        className="whitespace-pre-wrap break-words"
+                                    >
+                                        {part.text}
+                                    </p>
+                                ) : (
+                                    <Markdown key={`text:${index}`}>
+                                        {part.text}
+                                    </Markdown>
+                                )
                             ) : (
-                                <Markdown key={`text:${index}`}>
-                                    {part.text}
-                                </Markdown>
-                            )
-                        ) : (
-                            <ToolPart key={part.toolCallId} part={part} />
-                        ),
+                                <ToolPart key={part.toolCallId} part={part} />
+                            ),
+                        )}
+                        {attachments.length > 0 && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {attachments.map((attachment) => (
+                                    <AttachmentView
+                                        key={attachment.id}
+                                        attachment={attachment}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        {isStreaming && (
+                            <Text
+                                size="sm"
+                                tone="muted"
+                                className="animate-pulse"
+                            >
+                                {activity || "Working…"}
+                            </Text>
+                        )}
+                        {cancelled && (
+                            <Text size="xs" tone="muted">
+                                Stopped
+                            </Text>
+                        )}
+                        {responseError && (
+                            <Alert intent="danger" title="Response interrupted">
+                                {responseError.message ||
+                                    `${assistantName} could not finish this response.`}
+                            </Alert>
+                        )}
+                    </ChatMessageContent>
+                    {!isUser && (copyText || canRetry) && (
+                        <ChatMessageActions>
+                            {copyText && (
+                                <CopyButton
+                                    value={copyText}
+                                    aria-label="Copy response"
+                                    className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-xs text-theme-text-soft hover:bg-theme-bg-hover hover:text-theme-text-strong"
+                                >
+                                    {(copied) => (
+                                        <>
+                                            {copied ? (
+                                                <CheckIcon className="size-3.5" />
+                                            ) : (
+                                                <ClipboardIcon className="size-3.5" />
+                                            )}
+                                            {copied ? "Copied" : "Copy"}
+                                        </>
+                                    )}
+                                </CopyButton>
+                            )}
+                            {canRetry && (
+                                <Button
+                                    type="button"
+                                    size="xs"
+                                    onClick={onRetry}
+                                >
+                                    Retry
+                                </Button>
+                            )}
+                        </ChatMessageActions>
                     )}
-                    {attachments.length > 0 && (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            {attachments.map((attachment) => (
-                                <AttachmentView
-                                    key={attachment.id}
-                                    attachment={attachment}
-                                />
-                            ))}
-                        </div>
-                    )}
-                    {isStreaming && (
-                        <Text size="sm" tone="muted" className="animate-pulse">
-                            {activity || "Working…"}
-                        </Text>
-                    )}
-                    {cancelled && (
-                        <Text size="xs" tone="muted">
-                            Stopped
-                        </Text>
-                    )}
-                    {responseError && (
-                        <Alert intent="danger" title="Response interrupted">
-                            {responseError.message ||
-                                `${assistantName} could not finish this response.`}
-                        </Alert>
-                    )}
-                    {canRetry && (
-                        <Button
-                            type="button"
-                            size="sm"
-                            onClick={onRetry}
-                            className="self-start"
-                        >
-                            Retry
-                        </Button>
-                    )}
-                </article>
+                </ChatMessage>
             )}
             {media.length > 0 && (
                 <div className="flex flex-col gap-3">
@@ -935,6 +972,7 @@ export function Chat() {
     const [advancedOpen, setAdvancedOpen] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
     const uploadAbortRef = useRef<AbortController | null>(null);
     const activeAgentRef = useRef<string | null>(null);
     const transcriptRef = useRef<HTMLDivElement | null>(null);
@@ -1028,8 +1066,10 @@ export function Chat() {
     useEffect(() => {
         if (messages.length === 0) return;
         const transcript = transcriptRef.current;
-        if (transcript && followOutputRef.current)
+        if (transcript && followOutputRef.current) {
             transcript.scrollTop = transcript.scrollHeight;
+            setShowScrollButton(false);
+        }
     }, [messages, status]);
     useEffect(() => {
         if (isLoggedIn) return;
@@ -1220,22 +1260,36 @@ export function Chat() {
                         onSelectAgent={selectAgent}
                     />
                 </div>
-                <ScrollArea
+                <ChatConversation
                     ref={transcriptRef}
-                    className="play-chat-transcript min-h-0 flex-1 py-3"
+                    className="min-h-0 flex-1"
+                    viewportClassName="play-chat-transcript py-3"
                     aria-label="Conversation"
                     aria-live="polite"
                     aria-busy={sending}
+                    showScrollButton={showScrollButton}
+                    onScrollToBottom={() => {
+                        const transcript = transcriptRef.current;
+                        if (!transcript) return;
+                        transcript.scrollTo({
+                            top: transcript.scrollHeight,
+                            behavior: "smooth",
+                        });
+                        followOutputRef.current = true;
+                        setShowScrollButton(false);
+                    }}
                     onScroll={(event) => {
                         const target = event.currentTarget;
-                        followOutputRef.current =
+                        const followsOutput =
                             target.scrollHeight -
                                 target.scrollTop -
                                 target.clientHeight <
                             96;
+                        followOutputRef.current = followsOutput;
+                        setShowScrollButton(!followsOutput);
                     }}
                 >
-                    <div className="flex flex-col gap-5">
+                    <ChatConversationContent>
                         {messages.map((message, index) => {
                             const isLast = index === messages.length - 1;
                             const cancelled = message.parts.some(
@@ -1265,8 +1319,8 @@ export function Chat() {
                                 />
                             );
                         })}
-                    </div>
-                </ScrollArea>
+                    </ChatConversationContent>
+                </ChatConversation>
                 <form
                     onSubmit={submit}
                     className="relative flex shrink-0 flex-col gap-3 pt-3"
@@ -1293,8 +1347,7 @@ export function Chat() {
                         </Alert>
                     )}
 
-                    <fieldset
-                        className="play-chat-input m-0 min-w-0 p-0"
+                    <ChatPromptInput
                         aria-label="Message and attachments"
                         onDragOver={(event) => {
                             event.preventDefault();
@@ -1326,7 +1379,7 @@ export function Chat() {
                             className="px-3 pt-3"
                             previewIcon={<ImageIcon className="h-5 w-5" />}
                         />
-                        <Textarea
+                        <ChatPromptTextarea
                             aria-label="Message"
                             ref={composerRef}
                             value={draft}
@@ -1336,154 +1389,158 @@ export function Chat() {
                             disabled={!isHydrated || sending}
                             placeholder={`Message ${assistantName}…`}
                             rows={3}
-                            className="resize-none"
                         />
-                    </fieldset>
-                    <div className="flex flex-wrap items-end gap-2">
-                        {selectedAgent?.id === FLORET_MODEL_ID && (
-                            <TabButton
-                                type="button"
-                                active={advancedOpen}
-                                intent="neutral"
-                                size="lg"
-                                disabled={sending}
-                                aria-expanded={advancedOpen}
-                                aria-controls="play-chat-routing"
-                                ariaLabel={`Routing, ${routingOverrideCount > 0 ? `${routingOverrideCount} customized` : "Auto"}`}
-                                onClick={() => setAdvancedOpen((open) => !open)}
-                                className="play-routing-toggle h-12 gap-2"
-                            >
-                                <BeakerIcon className="h-5 w-5" />
-                                <Chip
-                                    size="sm"
-                                    aria-label={
-                                        routingOverrideCount > 0
-                                            ? `${routingOverrideCount} routes customized`
-                                            : "Automatic routing"
+                        <ChatPromptInputFooter>
+                            {selectedAgent?.id === FLORET_MODEL_ID && (
+                                <TabButton
+                                    type="button"
+                                    active={advancedOpen}
+                                    intent="neutral"
+                                    size="lg"
+                                    disabled={sending}
+                                    aria-expanded={advancedOpen}
+                                    aria-controls="play-chat-routing"
+                                    ariaLabel={`Routing, ${routingOverrideCount > 0 ? `${routingOverrideCount} customized` : "Auto"}`}
+                                    onClick={() =>
+                                        setAdvancedOpen((open) => !open)
                                     }
-                                    className="play-routing-badge min-w-6 justify-center px-1.5"
+                                    className="play-routing-toggle h-12 gap-2"
                                 >
-                                    {routingOverrideCount > 0
-                                        ? routingOverrideCount
-                                        : "Auto"}
-                                </Chip>
-                                <ChevronIcon
-                                    expanded={advancedOpen}
-                                    className="h-4 w-4"
+                                    <BeakerIcon className="h-5 w-5" />
+                                    <Chip
+                                        size="sm"
+                                        aria-label={
+                                            routingOverrideCount > 0
+                                                ? `${routingOverrideCount} routes customized`
+                                                : "Automatic routing"
+                                        }
+                                        className="play-routing-badge min-w-6 justify-center px-1.5"
+                                    >
+                                        {routingOverrideCount > 0
+                                            ? routingOverrideCount
+                                            : "Auto"}
+                                    </Chip>
+                                    <ChevronIcon
+                                        expanded={advancedOpen}
+                                        className="h-4 w-4"
+                                    />
+                                </TabButton>
+                            )}
+                            <span className="inline-flex">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept={attachmentAccept}
+                                    multiple
+                                    hidden
+                                    onChange={(event) => {
+                                        addFiles(
+                                            Array.from(
+                                                event.currentTarget.files ?? [],
+                                            ),
+                                        );
+                                        event.currentTarget.value = "";
+                                    }}
                                 />
-                            </TabButton>
-                        )}
-                        <span className="inline-flex">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept={attachmentAccept}
-                                multiple
-                                hidden
-                                onChange={(event) => {
-                                    addFiles(
-                                        Array.from(
-                                            event.currentTarget.files ?? [],
-                                        ),
-                                    );
-                                    event.currentTarget.value = "";
-                                }}
-                            />
-                            <Button
-                                type="button"
-                                size="lg"
-                                intent="info"
-                                aria-label="Add media"
-                                title={
-                                    !supportsAttachments
-                                        ? `${assistantName} accepts text only`
-                                        : isLoggedIn
-                                          ? "Add media"
-                                          : "Connect to add media"
-                                }
-                                disabled={
-                                    !canAttach ||
-                                    files.length >= MAX_ATTACHMENTS
-                                }
-                                className="h-12 w-12 shrink-0 p-0"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <CloudUploadIcon className="h-5 w-5 text-theme-text-strong" />
-                            </Button>
-                        </span>
-                        <div className="ml-auto flex items-center gap-2">
-                            {messages.some(
-                                (message) => !message.metadata?.localOnly,
-                            ) && (
                                 <Button
-                                    intent="danger"
-                                    size="lg"
-                                    aria-label="New chat"
-                                    title="New chat"
-                                    className="h-12 w-12 shrink-0 p-0"
-                                    onClick={() => {
-                                        uploadAbortRef.current?.abort();
-                                        void stop();
-                                        setMessages([
-                                            welcomeMessage(selectedAgent),
-                                        ]);
-                                        setDraft("");
-                                        setFiles([]);
-                                        setLocalError(null);
-                                        clearError();
-                                        composerRef.current?.focus();
-                                    }}
-                                >
-                                    <TrashIcon className="h-5 w-5" />
-                                </Button>
-                            )}
-                            {sending ? (
-                                <Button
-                                    intent="danger"
-                                    size="lg"
                                     type="button"
-                                    aria-label="Stop generation"
-                                    title="Stop generation"
-                                    className="h-12 w-12 shrink-0 p-0"
-                                    onClick={() => {
-                                        uploadAbortRef.current?.abort();
-                                        void stop();
-                                    }}
-                                >
-                                    <XIcon className="h-5 w-5" />
-                                </Button>
-                            ) : !isHydrated ? (
-                                <Button
                                     size="lg"
-                                    disabled
-                                    aria-label="Loading account"
-                                >
-                                    Checking…
-                                </Button>
-                            ) : !isLoggedIn ? (
-                                <Button
-                                    size="lg"
-                                    type="button"
-                                    onClick={() => login()}
-                                >
-                                    <ChatIcon className="mr-2 h-4 w-4" />
-                                    Connect to chat
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="lg"
-                                    type="submit"
+                                    intent="info"
+                                    aria-label="Add media"
+                                    title={
+                                        !supportsAttachments
+                                            ? `${assistantName} accepts text only`
+                                            : isLoggedIn
+                                              ? "Add media"
+                                              : "Connect to add media"
+                                    }
                                     disabled={
-                                        !selectedAgent ||
-                                        (!draft.trim() && files.length === 0)
+                                        !canAttach ||
+                                        files.length >= MAX_ATTACHMENTS
+                                    }
+                                    className="h-12 w-12 shrink-0 p-0"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
                                     }
                                 >
-                                    <RocketIcon className="mr-2 h-4 w-4" />
-                                    Send
+                                    <CloudUploadIcon className="h-5 w-5 text-theme-text-strong" />
                                 </Button>
-                            )}
-                        </div>
-                    </div>
+                            </span>
+                            <div className="ml-auto flex items-center gap-2">
+                                {messages.some(
+                                    (message) => !message.metadata?.localOnly,
+                                ) && (
+                                    <Button
+                                        intent="danger"
+                                        size="lg"
+                                        aria-label="New chat"
+                                        title="New chat"
+                                        className="h-12 w-12 shrink-0 p-0"
+                                        onClick={() => {
+                                            uploadAbortRef.current?.abort();
+                                            void stop();
+                                            setMessages([
+                                                welcomeMessage(selectedAgent),
+                                            ]);
+                                            setDraft("");
+                                            setFiles([]);
+                                            setLocalError(null);
+                                            clearError();
+                                            composerRef.current?.focus();
+                                        }}
+                                    >
+                                        <TrashIcon className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                {sending ? (
+                                    <Button
+                                        intent="danger"
+                                        size="lg"
+                                        type="button"
+                                        aria-label="Stop generation"
+                                        title="Stop generation"
+                                        className="h-12 w-12 shrink-0 p-0"
+                                        onClick={() => {
+                                            uploadAbortRef.current?.abort();
+                                            void stop();
+                                        }}
+                                    >
+                                        <XIcon className="h-5 w-5" />
+                                    </Button>
+                                ) : !isHydrated ? (
+                                    <Button
+                                        size="lg"
+                                        disabled
+                                        aria-label="Loading account"
+                                    >
+                                        Checking…
+                                    </Button>
+                                ) : !isLoggedIn ? (
+                                    <Button
+                                        size="lg"
+                                        type="button"
+                                        onClick={() => login()}
+                                    >
+                                        <ChatIcon className="mr-2 h-4 w-4" />
+                                        Connect to chat
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="lg"
+                                        type="submit"
+                                        disabled={
+                                            !selectedAgent ||
+                                            (!draft.trim() &&
+                                                files.length === 0)
+                                        }
+                                    >
+                                        <RocketIcon className="mr-2 h-4 w-4" />
+                                        Send
+                                    </Button>
+                                )}
+                            </div>
+                        </ChatPromptInputFooter>
+                    </ChatPromptInput>
                 </form>
             </div>
             {advancedOpen && selectedAgent?.id === FLORET_MODEL_ID && (

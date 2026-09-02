@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import {
@@ -130,21 +130,11 @@ export function ToolCallDetails({
     output,
     error,
     status = error === undefined ? "complete" : "error",
-    defaultOpen,
+    defaultOpen = false,
     className,
 }: ToolCallDetailsProps) {
     const result = error === undefined ? output : error;
-    const [open, setOpen] = useState(
-        defaultOpen ?? (status === "complete" || status === "error"),
-    );
-    useEffect(() => {
-        if (
-            defaultOpen === undefined &&
-            (status === "complete" || status === "error")
-        ) {
-            setOpen(true);
-        }
-    }, [defaultOpen, status]);
+    const [open, setOpen] = useState(defaultOpen);
     return (
         <div
             data-tool-status={status}

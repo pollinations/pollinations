@@ -22,6 +22,7 @@ import {
     UsageIcon,
     WarningIcon,
 } from "@pollinations/ui";
+import { MCP_SERVERS } from "@shared/registry/mcp.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import {
     type FC,
@@ -75,6 +76,15 @@ const PRIMARY_TABS: Array<{
     { value: "agent", label: "Agents", Icon: BotIcon },
     { value: "mcp", label: "MCP", Icon: McpIcon },
 ];
+
+const TabCount: FC<{ value: number }> = ({ value }) => (
+    <span
+        aria-hidden="true"
+        className="text-[0.8em] font-normal tabular-nums text-theme-text-muted"
+    >
+        {value}
+    </span>
+);
 
 const MODEL_SLUG_LIST_URL =
     "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
@@ -218,30 +228,38 @@ export const Models: FC = () => {
         () => getModelPricesFromCatalog(catalogModels, stats),
         [catalogModels, stats],
     );
-    const query = search.trim();
-    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
-    const visibleModels = useMemo(
+    const agentModels = useMemo(
+        () => allModels.filter((model) => model.agent),
+        [allModels],
+    );
+    const communityModels = useMemo(
+        () => allModels.filter((model) => model.community && !model.agent),
+        [allModels],
+    );
+    const modelModels = useMemo(
         () =>
             allModels.filter(
                 (model) =>
-                    activePrimaryTab === "agent" ||
-                    includeCommunity ||
-                    !model.community,
+                    !model.agent && (includeCommunity || !model.community),
             ),
-        [activePrimaryTab, allModels, includeCommunity],
+        [allModels, includeCommunity],
     );
+    const modelSections = useMemo(
+        () => categorizeModels(modelModels),
+        [modelModels],
+    );
+    const primaryTabCounts: Record<PrimaryTab, number> = {
+        models: modelSections.all.length,
+        agent: agentModels.length,
+        mcp: MCP_SERVERS.length,
+    };
+    const query = search.trim();
+    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const activeTabModels = useMemo(() => {
         if (activeTab === "mcp") return [];
-        if (activeTab === "agent") {
-            return visibleModels.filter((model) => model.agent);
-        }
-        if (activeTab === "all") {
-            return visibleModels.filter((model) => !model.agent);
-        }
-        return visibleModels.filter(
-            (model) => !model.agent && model.type === activeTab,
-        );
-    }, [activeTab, visibleModels]);
+        if (activeTab === "agent") return agentModels;
+        return modelSections[activeTab];
+    }, [activeTab, agentModels, modelSections]);
     const filteredModels = useMemo(
         () =>
             query
@@ -441,10 +459,16 @@ export const Models: FC = () => {
                                             setActivePrimaryTab(tab.value)
                                         }
                                         size="lg"
+                                        ariaLabel={`${tab.label}, ${primaryTabCounts[tab.value]} ${tab.value === "mcp" ? "servers" : tab.value === "agent" ? "agents" : "models"}`}
                                     >
                                         <span className="inline-flex items-center gap-1.5">
                                             <TabIcon className="h-4 w-4" />
                                             {tab.label}
+                                            <TabCount
+                                                value={
+                                                    primaryTabCounts[tab.value]
+                                                }
+                                            />
                                         </span>
                                     </TabButton>
                                 );
@@ -453,15 +477,28 @@ export const Models: FC = () => {
                         {activePrimaryTab === "models" && (
                             <div className="flex w-full flex-wrap items-center justify-between gap-2">
                                 <div className="flex flex-wrap gap-1.5">
-                                    {MODEL_SECTION_ORDER.map((section) => (
+                                    {MODEL_SECTION_ORDER.filter(
+                                        (section) =>
+                                            section === "all" ||
+                                            modelSections[section].length > 0,
+                                    ).map((section) => (
                                         <TabButton
                                             key={section}
                                             active={activeTab === section}
                                             onClick={() =>
                                                 setActiveTab(section)
                                             }
+                                            ariaLabel={`${sectionLabels[section]}, ${modelSections[section].length} models`}
                                         >
-                                            {sectionLabels[section]}
+                                            <span className="inline-flex items-center gap-1.5">
+                                                {sectionLabels[section]}
+                                                <TabCount
+                                                    value={
+                                                        modelSections[section]
+                                                            .length
+                                                    }
+                                                />
+                                            </span>
                                         </TabButton>
                                     ))}
                                 </div>
@@ -506,14 +543,21 @@ export const Models: FC = () => {
                                     size="md"
                                     ariaLabel={
                                         activePrimaryTab === "agent"
-                                            ? "All agents are community models for now"
+                                            ? `${agentModels.length} community agents; all agents are community models for now`
                                             : includeCommunity
-                                              ? "Hide community models"
-                                              : "Show community models"
+                                              ? `Hide ${communityModels.length} community models`
+                                              : `Show ${communityModels.length} community models`
                                     }
                                 >
                                     <span className="inline-flex items-center gap-1.5">
                                         Community
+                                        <TabCount
+                                            value={
+                                                activePrimaryTab === "agent"
+                                                    ? agentModels.length
+                                                    : communityModels.length
+                                            }
+                                        />
                                         <Chip intent="alpha" size="sm">
                                             Alpha
                                         </Chip>

@@ -2,12 +2,9 @@ import type {
     AudioFormat,
     ChatRouting,
     ChatRoutingCapability,
-    ChatStreamChunk,
-    Message,
     MessageContent,
     MessageContentPart,
     ModelInfo,
-    PollinationsAgentEvent,
 } from "@pollinations/sdk";
 
 export const ROUTING_FIELDS = [
@@ -50,12 +47,6 @@ export interface RenderedMedia {
     label?: string;
 }
 
-export interface AgentToolActivity {
-    callId: string;
-    name: string;
-    status: "running" | "failed";
-}
-
 type JsonValue =
     | string
     | number
@@ -75,11 +66,6 @@ export type AgentMessagePart =
           result: unknown;
           isError: boolean;
       };
-
-export interface AgentResourceCandidate extends RenderedMedia {
-    callId: string;
-    mediaType?: string;
-}
 
 const TOOL_DETAILS_PATTERN =
     /<details\b([^>]*)>\s*<summary>([\s\S]*?)<\/summary>\s*([\s\S]*?)<\/details>/gi;
@@ -127,7 +113,7 @@ function toolResult(source: string): unknown {
     }
 }
 
-/** Convert managed-agent tool markup into assistant-ui compatible parts. */
+/** Convert managed-agent tool markup into structured text and tool parts. */
 export function parseAgentMessage(content: string): AgentMessagePart[] {
     const parts: AgentMessagePart[] = [];
     let cursor = 0;
@@ -162,137 +148,6 @@ export function parseAgentMessage(content: string): AgentMessagePart[] {
     if (cursor < content.length)
         parts.push({ type: "text", text: content.slice(cursor) });
     return parts.length > 0 ? parts : [{ type: "text", text: content }];
-}
-
-export type ChatMessageStatus =
-    | "complete"
-    | "streaming"
-    | "cancelled"
-    | "error";
-
-export interface ChatMessageState {
-    id: string;
-    role: "user" | "assistant";
-    content: MessageContent;
-    status: ChatMessageStatus;
-    error?: string;
-    activities?: AgentToolActivity[];
-    resourceCandidates?: AgentResourceCandidate[];
-    media?: RenderedMedia[];
-}
-
-function safeAgentResource(
-    event: Extract<
-        PollinationsAgentEvent,
-        { type: "resource.created" | "resource.finalized" }
-    >,
-): AgentResourceCandidate | null {
-    try {
-        const url = new URL(event.url);
-        if (url.protocol !== "https:") return null;
-        return {
-            callId: event.call_id,
-            kind: event.kind,
-            url: url.href,
-            ...(event.name ? { label: event.name } : {}),
-            ...(event.media_type ? { mediaType: event.media_type } : {}),
-        };
-    } catch {
-        return null;
-    }
-}
-
-/** Apply one typed managed-agent event without reparsing assistant prose. */
-export function applyAgentEvent(
-    message: ChatMessageState,
-    event: PollinationsAgentEvent,
-): ChatMessageState {
-    if (
-        event.type === "resource.created" ||
-        event.type === "resource.finalized"
-    ) {
-        const resource = safeAgentResource(event);
-        if (!resource) return message;
-        if (event.type === "resource.created") {
-            if (
-                message.resourceCandidates?.some(
-                    (item) =>
-                        item.callId === resource.callId &&
-                        item.url === resource.url,
-                )
-            )
-                return message;
-            return {
-                ...message,
-                resourceCandidates: [
-                    ...(message.resourceCandidates ?? []),
-                    resource,
-                ],
-            };
-        }
-        if (message.media?.some((item) => item.url === resource.url))
-            return message;
-        const { callId: _callId, mediaType: _mediaType, ...media } = resource;
-        return { ...message, media: [...(message.media ?? []), media] };
-    }
-
-    const current = (message.activities ?? []).filter(
-        (activity) =>
-            activity.callId !== event.call_id &&
-            (event.type !== "tool.started" || activity.status === "running"),
-    );
-    if (event.type === "tool.completed") {
-        return { ...message, activities: current };
-    }
-    return {
-        ...message,
-        activities: [
-            ...current,
-            {
-                callId: event.call_id,
-                name: event.name,
-                status: event.type === "tool.failed" ? "failed" : "running",
-            },
-        ],
-    };
-}
-
-/** Track standard OpenAI tool-call deltas as a compatibility activity source. */
-export function applyOpenAIToolCallDelta(
-    message: ChatMessageState,
-    toolCall: NonNullable<
-        ChatStreamChunk["choices"][number]["delta"]["tool_calls"]
-    >[number],
-): ChatMessageState {
-    const name = toolCall.function?.name?.trim();
-    if (!name) return message;
-    const callId = toolCall.id?.trim() || `openai-tool-${toolCall.index}`;
-    const activities = message.activities ?? [];
-    if (
-        activities.some(
-            (activity) =>
-                activity.callId === callId &&
-                activity.name === name &&
-                activity.status === "running",
-        )
-    )
-        return message;
-    return {
-        ...message,
-        activities: [
-            ...activities.filter((activity) => activity.callId !== callId),
-            { callId, name, status: "running" },
-        ],
-    };
-}
-
-export function agentActivity(message: ChatMessageState): string | undefined {
-    const activities = message.activities;
-    const activity = activities?.[activities.length - 1];
-    if (!activity) return undefined;
-    return activity.status === "failed"
-        ? `${activity.name} failed`
-        : activity.name;
 }
 
 interface FileDescriptor {
@@ -481,21 +336,6 @@ export function buildUserContent(
         ...(trimmedText ? [{ type: "text" as const, text: trimmedText }] : []),
         ...parts,
     ];
-}
-
-export function conversationForRequest(
-    messages: ChatMessageState[],
-): Message[] {
-    return messages.flatMap((message): Message[] => {
-        const text =
-            typeof message.content === "string" ? message.content.trim() : "";
-        const include =
-            message.status === "complete" ||
-            (message.status === "cancelled" && text.length > 0);
-        return include
-            ? [{ role: message.role, content: message.content }]
-            : [];
-    });
 }
 
 function mediaKind(

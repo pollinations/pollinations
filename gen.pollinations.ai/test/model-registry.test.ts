@@ -42,16 +42,17 @@ function skewedDbBinding(): CloudflareBindings["DB"] {
 
 describe("getGenerationModelRegistry", () => {
     it("advertises every configured direct Responses model", async () => {
+        const registry = await getGenerationModelRegistry(env);
         const configured = availableModels
             .filter(
                 (model) =>
+                    registry.resolve(model.name)?.visible &&
                     typeof model.config({ model: model.name })
                         .responsesEndpoint === "string",
             )
             .map((model) => model.name)
             .sort();
 
-        const registry = await getGenerationModelRegistry(env);
         const advertised = registry
             .visibleEntries()
             .filter(

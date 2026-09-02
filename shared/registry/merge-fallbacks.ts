@@ -28,8 +28,10 @@ export type FallbackDefinition = Partial<
 export type FallbackMap = Record<string, Record<string, FallbackDefinition>>;
 
 /** The ids the merge adds to the catalog. */
-type RouteIds<TFallbacks extends FallbackMap> =
-    keyof TFallbacks[keyof TFallbacks] & string;
+type RouteIds<TFallbacks extends FallbackMap> = {
+    [ParentId in keyof TFallbacks]: keyof TFallbacks[ParentId];
+}[keyof TFallbacks] &
+    string;
 
 /**
  * The catalog as it comes out: routes added as models, and every parent

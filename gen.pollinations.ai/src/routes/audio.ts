@@ -3074,8 +3074,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
 
-        const ovhApiKey = c.env.OVHCLOUD_API_KEY;
-        if (!ovhApiKey) {
+        const isDeepInfra = candidate.id === "whisper-deepinfra";
+        const providerApiKey = isDeepInfra
+            ? c.env.DEEPINFRA_API_KEY
+            : c.env.OVHCLOUD_API_KEY;
+        if (!providerApiKey) {
             throw new UpstreamError(500 as ContentfulStatusCode, {
                 message:
                     "Transcription service is not configured (missing API key)",
@@ -3093,15 +3096,24 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         whisperFormData.append("file", file, filename);
         if (language) whisperFormData.append("language", language);
         whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append("model", "whisper-large-v3");
-        whisperFormData.append("timestamp_granularities[]", "word");
+        whisperFormData.append(
+            "model",
+            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+        );
+        whisperFormData.append(
+            isDeepInfra
+                ? "timestamp_granularities"
+                : "timestamp_granularities[]",
+            "word",
+        );
 
-        const whisperUrl =
-            "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+        const whisperUrl = isDeepInfra
+            ? "https://api.deepinfra.com/v1/audio/transcriptions"
+            : "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
         const response = await ensureUpstreamOk(
             await fetch(whisperUrl, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${ovhApiKey}` },
+                headers: { Authorization: `Bearer ${providerApiKey}` },
                 body: whisperFormData,
             }),
             whisperUrl,
@@ -3115,7 +3127,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 message: "Whisper returned an unexpected (non-JSON) response",
             });
         }
-        const billedSeconds = extractWhisperUsage(whisper, log);
+        const billedSeconds = isDeepInfra
+            ? whisper.duration
+            : extractWhisperUsage(whisper, log);
+        if (typeof billedSeconds !== "number" || billedSeconds <= 0) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message:
+                    "Whisper response did not include valid duration metering",
+            });
+        }
         const usageHeaders = buildUsageHeaders(
             candidate.id,
             createAudioSecondsUsage(billedSeconds),
@@ -3693,6 +3713,7 @@ export function parsePositiveInt(
 interface WhisperVerboseJson {
     text: string;
     language?: string;
+    duration?: number;
     usage?: { seconds?: number };
     words?: NormalizedWord[];
     segments?: NormalizedSegment[];

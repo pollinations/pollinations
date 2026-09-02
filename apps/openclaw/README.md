@@ -24,9 +24,9 @@ polli harness openclaw on
 ```
 
 This opens a browser login on first run (or use `--no-browser`), creates a
-dedicated key, and writes the provider into `~/.openclaw/openclaw.json`. Choose
-a different default model with `--model <id>` (any tool-calling text model from
-`polli models`):
+dedicated key, initializes OpenClaw when needed, and writes the provider into
+`~/.openclaw/openclaw.json`. Choose a different default model with `--model
+<id>` (any tool-calling text model from `polli models`):
 
 ```bash
 polli harness openclaw on --model deepseek

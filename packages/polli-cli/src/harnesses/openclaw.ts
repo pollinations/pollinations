@@ -1,4 +1,6 @@
+import { spawnSync } from "node:child_process";
 import { join, resolve } from "node:path";
+import JSON5 from "json5";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
 import {
@@ -36,17 +38,19 @@ const expandTilde = (ctx: HarnessContext, value: string) =>
           ? join(ctx.home, value.slice(2))
           : value;
 
-/** Mutable state dir; OpenClaw expands a leading `~` in OPENCLAW_STATE_DIR. */
+/** OPENCLAW_STATE_DIR wins; otherwise OPENCLAW_HOME relocates the home. */
 export const openclawStateDir = (ctx: HarnessContext) => {
-    const configured = ctx.env.OPENCLAW_STATE_DIR?.trim();
-    return configured ? expandTilde(ctx, configured) : join(ctx.home, ".openclaw");
+    const stateDir = ctx.env.OPENCLAW_STATE_DIR?.trim();
+    if (stateDir) return resolve(expandTilde(ctx, stateDir));
+    const home = ctx.env.OPENCLAW_HOME?.trim();
+    return join(home ? resolve(expandTilde(ctx, home)) : ctx.home, ".openclaw");
 };
 
 // The active config path: OPENCLAW_CONFIG_PATH wins, else $STATE_DIR/openclaw.json.
 const configPath = (ctx: HarnessContext) => {
     const override = ctx.env.OPENCLAW_CONFIG_PATH?.trim();
     return override
-        ? expandTilde(ctx, override)
+        ? resolve(expandTilde(ctx, override))
         : join(openclawStateDir(ctx), "openclaw.json");
 };
 
@@ -59,7 +63,7 @@ const files = (ctx: HarnessContext) => [configPath(ctx), skillFile(ctx)];
 const loadJson = (path: string): Record<string, unknown> => {
     const text = readTextIfExists(path);
     if (!text?.trim()) return {};
-    return JSON.parse(text) as Record<string, unknown>;
+    return JSON5.parse(text) as Record<string, unknown>;
 };
 
 const saveJson = (path: string, data: Record<string, unknown>) => {
@@ -99,7 +103,9 @@ interface OpenClawConfig {
 }
 
 const asRecord = (value: unknown): Record<string, unknown> =>
-    value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+    value && typeof value === "object"
+        ? (value as Record<string, unknown>)
+        : {};
 
 const writeConfig = (
     ctx: HarnessContext,
@@ -116,8 +122,6 @@ const writeConfig = (
     doc.env = env;
 
     const modelsConfig = asRecord(doc.models);
-    // Never override an explicit merge strategy the user already chose.
-    if (modelsConfig.mode === undefined) modelsConfig.mode = "merge";
     const providers = asRecord(modelsConfig.providers);
     providers[PROVIDER] = providerEntry(models);
     modelsConfig.providers = providers;
@@ -154,7 +158,7 @@ const stripConfig = (ctx: HarnessContext): boolean => {
     if (PROVIDER in providers) {
         delete providers[PROVIDER];
         if (Object.keys(providers).length === 0)
-            delete (asRecord(doc.models)).providers;
+            delete asRecord(doc.models).providers;
         saveJson(configPath(ctx), doc);
         changed = true;
     }
@@ -162,7 +166,7 @@ const stripConfig = (ctx: HarnessContext): boolean => {
     const primary = asRecord(doc.agents?.defaults?.model).primary;
     // Only drop a default we set; a user-chosen model like openai/gpt-5 stays.
     if (typeof primary === "string" && primary.startsWith(`${PROVIDER}/`)) {
-        delete (asRecord(asRecord(doc.agents).defaults).model).primary;
+        delete asRecord(asRecord(doc.agents).defaults).model.primary;
         saveJson(configPath(ctx), doc);
         changed = true;
     }
@@ -220,9 +224,19 @@ export const disableOpenClaw = (ctx: HarnessContext): HarnessResult => {
 };
 
 const openclawInstalled = (ctx: HarnessContext) =>
-    commandExists("openclaw", ctx.env, [
-        join(openclawStateDir(ctx), "bin", "openclaw"),
-    ]);
+    commandExists("openclaw", ctx.env);
+
+export const initializeOpenClaw = (ctx: HarnessContext) => {
+    if (readTextIfExists(configPath(ctx)) !== null) return;
+    const setup = spawnSync("openclaw", ["setup", "--baseline"], {
+        env: ctx.env,
+        stdio: "ignore",
+    });
+    if (setup.error) throw setup.error;
+    if (setup.status !== 0 || readTextIfExists(configPath(ctx)) === null) {
+        throw new Error("OpenClaw baseline setup failed");
+    }
+};
 
 export const openclaw: HarnessAdapter = {
     id: ID,
@@ -244,6 +258,7 @@ export const openclaw: HarnessAdapter = {
                 `Model "${model}" is not a tool-calling text model. Run: polli models`,
             );
         }
+        initializeOpenClaw(ctx);
 
         const apiKey = await resolveHarnessKey(
             { id: ID, label: LABEL, existingKey: readKey(ctx) },

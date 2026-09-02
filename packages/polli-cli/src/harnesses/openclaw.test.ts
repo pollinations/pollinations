@@ -1,4 +1,5 @@
 import {
+    chmodSync,
     existsSync,
     mkdirSync,
     mkdtempSync,
@@ -8,9 +9,14 @@ import {
     writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { delimiter, join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { configureOpenClaw, disableOpenClaw, openclaw } from "./openclaw.js";
+import {
+    configureOpenClaw,
+    disableOpenClaw,
+    initializeOpenClaw,
+    openclaw,
+} from "./openclaw.js";
 import type { HarnessContext } from "./types.js";
 
 const models = [
@@ -33,6 +39,32 @@ const configFile = () => join(stateDir(), "openclaw.json");
 const skillFile = () => join(stateDir(), "skills", "polli", "SKILL.md");
 const read = (path: string) => readFileSync(path, "utf-8");
 
+const installFakeOpenClaw = () => {
+    const binDir = join(home, "bin");
+    const binary = join(binDir, "openclaw");
+    mkdirSync(binDir, { recursive: true });
+    writeFileSync(
+        binary,
+        `#!/usr/bin/env node
+const { dirname, join } = require("node:path");
+const { mkdirSync, writeFileSync } = require("node:fs");
+if (process.argv[2] === "--version") process.exit(0);
+if (process.argv[2] !== "setup" || process.argv[3] !== "--baseline") process.exit(1);
+const home = process.env.OPENCLAW_HOME || process.env.HOME;
+const state = process.env.OPENCLAW_STATE_DIR || join(home, ".openclaw");
+const config = process.env.OPENCLAW_CONFIG_PATH || join(state, "openclaw.json");
+mkdirSync(dirname(config), { recursive: true });
+writeFileSync(config, JSON.stringify({ workspace: join(state, "workspace") }));
+`,
+    );
+    chmodSync(binary, 0o755);
+    ctx.env = {
+        ...process.env,
+        HOME: home,
+        PATH: `${binDir}${delimiter}${process.env.PATH ?? ""}`,
+    };
+};
+
 describe("openclaw harness", () => {
     it("writes the provider, key, default model, and skill from scratch", () => {
         const result = configureOpenClaw(ctx, models, "sk_test_key", "kimi");
@@ -43,14 +75,16 @@ describe("openclaw harness", () => {
         });
 
         const doc = JSON.parse(read(configFile()));
-        expect(doc.models.mode).toBe("merge");
+        expect(doc.models.mode).toBeUndefined();
         expect(doc.models.providers.pollinations).toMatchObject({
             baseUrl: "https://gen.pollinations.ai/v1",
             api: "openai-completions",
             apiKey: "${POLLI_OPENCLAW_API_KEY}",
         });
         expect(
-            doc.models.providers.pollinations.models.map((m: { id: string }) => m.id),
+            doc.models.providers.pollinations.models.map(
+                (m: { id: string }) => m.id,
+            ),
         ).toEqual(["kimi", "deepseek"]);
         expect(doc.agents.defaults.model.primary).toBe("pollinations/kimi");
         expect(doc.env.vars.POLLI_OPENCLAW_API_KEY).toBe("sk_test_key");
@@ -104,10 +138,29 @@ describe("openclaw harness", () => {
         expect(JSON.parse(read(configFile())).models.mode).toBe("replace");
     });
 
+    it("accepts JSON5 config and restores it byte-for-byte", () => {
+        mkdirSync(stateDir(), { recursive: true });
+        const original = `{
+            // OpenClaw accepts comments and trailing commas.
+            channels: { discord: { enabled: true }, },
+        }`;
+        writeFileSync(configFile(), original);
+
+        configureOpenClaw(ctx, models, "sk_test_key", "kimi");
+        expect(JSON.parse(read(configFile())).channels.discord.enabled).toBe(
+            true,
+        );
+
+        disableOpenClaw(ctx);
+        expect(read(configFile())).toBe(original);
+    });
+
     it("restores the original config byte-for-byte on off", () => {
         mkdirSync(stateDir(), { recursive: true });
         const original = JSON.stringify({
-            agents: { defaults: { model: { primary: "anthropic/claude-sonnet" } } },
+            agents: {
+                defaults: { model: { primary: "anthropic/claude-sonnet" } },
+            },
         });
         writeFileSync(configFile(), original);
 
@@ -185,6 +238,30 @@ describe("openclaw harness", () => {
             true,
         );
         expect(existsSync(configFile())).toBe(false);
+    });
+
+    it("honors OPENCLAW_HOME", () => {
+        const customHome = join(home, "custom-home");
+        configureOpenClaw(
+            { home, env: { OPENCLAW_HOME: customHome } },
+            models,
+            "sk_test_key",
+            "kimi",
+        );
+        expect(existsSync(join(customHome, ".openclaw", "openclaw.json"))).toBe(
+            true,
+        );
+        expect(existsSync(configFile())).toBe(false);
+    });
+
+    it("keeps a fresh OpenClaw baseline when the integration is removed", () => {
+        installFakeOpenClaw();
+        initializeOpenClaw(ctx);
+        const baseline = read(configFile());
+
+        configureOpenClaw(ctx, models, "sk_test_key", "kimi");
+        expect(disableOpenClaw(ctx).outcome).toBe("restored");
+        expect(read(configFile())).toBe(baseline);
     });
 
     it("reports unconfigured when the credential is missing", () => {

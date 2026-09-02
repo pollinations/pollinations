@@ -143,8 +143,8 @@ polli harness <harness> off
 
 The DSH adapter configures the Pollinations provider, hosted Pollinations MCP,
 and Polli CLI skill globally under `$DSH_HOME` (default `~/.dsh`). OpenCode uses
-its official plugin; OpenClaw, Pi, and Prime Agent use their native `models.json`
-provider support.
+its official plugin; OpenClaw uses `openclaw.json`, while Pi and Prime Agent use
+their native `models.json` provider support.
 
 See [Coding Harnesses](https://github.com/pollinations/pollinations/blob/main/CODING_HARNESSES.md) for what each profile changes and how to add one.
 

@@ -20,27 +20,12 @@ jobs:
           fetch-depth: 2
 
       - name: Setup Node.js
-        id: node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Restore node_modules
-        id: node-modules
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            */node_modules
-            packages/*/node_modules
-            operations/economics/web/node_modules
-          # Every workspace manifest is part of the key so a cache hit never skips the
-          # `npm ci` that would report package.json / lockfile drift.
-          key: node-modules-${{ runner.os }}-node${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'package.json', '*/package.json', 'packages/*/package.json', 'apps/*/package.json', 'operations/*/*/package.json') }}
-
       - name: Install dependencies
-        if: steps.node-modules.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Validate app catalog
@@ -138,29 +123,14 @@ jobs:
           fi
 
       - name: Setup Node.js
-        id: node
         if: steps.enter-ts-files.outputs.any_changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Restore node_modules
-        id: node-modules
-        if: steps.enter-ts-files.outputs.any_changed == 'true'
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            */node_modules
-            packages/*/node_modules
-            operations/economics/web/node_modules
-          # Every workspace manifest is part of the key so a cache hit never skips the
-          # `npm ci` that would report package.json / lockfile drift.
-          key: node-modules-${{ runner.os }}-node${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'package.json', '*/package.json', 'packages/*/package.json', 'apps/*/package.json', 'operations/*/*/package.json') }}
-
       - name: Install dependencies
-        if: steps.enter-ts-files.outputs.any_changed == 'true' && steps.node-modules.outputs.cache-hit != 'true'
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
         run: npm ci
 
       - name: Test enter.pollinations.ai
@@ -226,29 +196,14 @@ jobs:
           fi
 
       - name: Setup Node.js
-        id: node
         if: steps.gen-files.outputs.any_changed == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      - name: Restore node_modules
-        id: node-modules
-        if: steps.gen-files.outputs.any_changed == 'true'
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            */node_modules
-            packages/*/node_modules
-            operations/economics/web/node_modules
-          # Every workspace manifest is part of the key so a cache hit never skips the
-          # `npm ci` that would report package.json / lockfile drift.
-          key: node-modules-${{ runner.os }}-node${{ steps.node.outputs.node-version }}-${{ hashFiles('package-lock.json', 'package.json', '*/package.json', 'packages/*/package.json', 'apps/*/package.json', 'operations/*/*/package.json') }}
-
       - name: Install dependencies
-        if: steps.gen-files.outputs.any_changed == 'true' && steps.node-modules.outputs.cache-hit != 'true'
+        if: steps.gen-files.outputs.any_changed == 'true'
         run: npm ci
 
       - name: Test gen.pollinations.ai

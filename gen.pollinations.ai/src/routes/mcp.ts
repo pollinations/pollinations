@@ -11,6 +11,7 @@ import {
     getMcpServerDefinition,
     MCP_SERVERS,
     MCP_USAGE_HEADERS,
+    MCP_USER_ID_HEADER,
     type McpServerDefinition,
 } from "@shared/registry/mcp.ts";
 import {
@@ -27,12 +28,18 @@ import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { requestIdentity } from "@/middleware/track.ts";
 
-function requestForMcp(request: Request, server: McpServerDefinition): Request {
+function requestForMcp(
+    request: Request,
+    server: McpServerDefinition,
+    userId: string,
+): Request {
     const headers = new Headers(request.headers);
     if (server.billing === "usage_receipt") {
         headers.delete("authorization");
     }
     headers.delete("cookie");
+    headers.delete(MCP_USER_ID_HEADER);
+    if (server.userScoped) headers.set(MCP_USER_ID_HEADER, userId);
     for (const header of Object.values(MCP_USAGE_HEADERS)) {
         headers.delete(header);
     }
@@ -155,7 +162,7 @@ export const mcpRoutes = new Hono<Env>()
     )
     .use("/mcp/:serverId", auth(), frontendKeyRateLimit)
     .all("/mcp/:serverId", async (c) => {
-        c.var.auth.requireUser();
+        const user = c.var.auth.requireUser();
         if (
             c.req.method === "POST" &&
             Array.isArray(
@@ -177,7 +184,9 @@ export const mcpRoutes = new Hono<Env>()
         const binding = c.env[server.binding] as Fetcher;
 
         const startedAt = new Date();
-        const response = await binding.fetch(requestForMcp(c.req.raw, server));
+        const response = await binding.fetch(
+            requestForMcp(c.req.raw, server, user.id),
+        );
         if (server.billing === "usage_receipt") {
             const usage = parseMcpUsageHeaders(response.headers);
             if (usage) {

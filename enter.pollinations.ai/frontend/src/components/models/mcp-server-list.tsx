@@ -55,7 +55,14 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                         {server.name} MCP
                                     </span>
                                     <p className="text-sm text-theme-text-muted">
-                                        {server.description}
+                                        {server.description}{" "}
+                                        {"accountPath" in server && (
+                                            <InlineLink
+                                                href={`${config.baseUrl}${server.accountPath}`}
+                                            >
+                                                Manage connectors
+                                            </InlineLink>
+                                        )}
                                     </p>
                                     <CopyButton
                                         value={endpoint}

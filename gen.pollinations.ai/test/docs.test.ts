@@ -552,9 +552,11 @@ describe("docs routes", () => {
         );
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/ffmpeg");
         expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/exa");
+        expect(mcpBody).toContain("https://gen.pollinations.ai/mcp/composio");
         expect(mcpBody).toContain("### Pollinations MCP");
         expect(mcpBody).toContain("### FFmpeg MCP");
         expect(mcpBody).toContain("### Exa Search MCP");
+        expect(mcpBody).toContain("### Composio MCP");
         expect(mcpBody).toContain("https://enter.pollinations.ai/my-models");
         expect(mcpBody).not.toContain("## Other built-in MCPs");
         expect(mcpBody).toContain("`generateImage`");

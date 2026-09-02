@@ -13,12 +13,18 @@ export const MCP_USAGE_HEADERS = {
     error: "x-pollinations-mcp-error",
 } as const;
 
+// Gen overwrites this header before forwarding a user-scoped MCP request.
+// Private MCP Workers use it to select the caller's connected accounts.
+export const MCP_USER_ID_HEADER = "x-pollinations-user-id";
+
 type McpServerDefinitionBase = {
     id: string;
     name: string;
     description: string;
     binding: McpBindingName;
     pricing: McpPricingDefinition;
+    userScoped?: boolean;
+    accountPath?: string;
 };
 
 type McpPricingDefinition = {
@@ -31,7 +37,11 @@ export type McpPricingInfo = {
     rates: PublicPriceInfo[];
 };
 
-export type McpBindingName = "POLLINATIONS_MCP" | "FFMPEG_MCP" | "EXA_MCP";
+export type McpBindingName =
+    | "POLLINATIONS_MCP"
+    | "FFMPEG_MCP"
+    | "EXA_MCP"
+    | "COMPOSIO_MCP";
 
 export type McpServerDefinition = McpServerDefinitionBase &
     (
@@ -47,6 +57,24 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
 
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
+export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
+const COMPOSIO_MCP_PRICING = {
+    description: "Launch price",
+    rates: [
+        {
+            id: "composio.tool_call.v1",
+            description: "Connected app tool call",
+            kind: "tool_call",
+            unit: "call",
+            unitCost: COMPOSIO_TOOL_CALL_PRICE,
+            publicPricing: {
+                label: "Tool call",
+                quantity: 1,
+                unit: "call",
+            },
+        },
+    ],
+} as const;
 
 export const MCP_SERVERS = [
     {
@@ -124,6 +152,18 @@ export const MCP_SERVERS = [
                 },
             ],
         },
+    },
+    {
+        id: "composio",
+        name: "Composio",
+        description:
+            "Use Gmail, Slack, GitHub, Drive, and hundreds of other apps. Agents ask you to connect when needed.",
+        binding: "COMPOSIO_MCP",
+        billing: "usage_receipt",
+        provider: "composio",
+        userScoped: true,
+        accountPath: "/account#connectors",
+        pricing: COMPOSIO_MCP_PRICING,
     },
 ] as const satisfies readonly McpServerDefinition[];
 

@@ -146,7 +146,7 @@ async function handleDirectResponse(
                 ? "text/event-stream; charset=utf-8"
                 : "application/json; charset=utf-8",
             "Cache-Control": request.stream ? "no-cache" : "no-store",
-            [MODEL_USED_HEADER]: candidate.id,
+            [MODEL_USED_HEADER]: candidate.publicId,
         });
         if (candidate.originalIndex > 0) {
             headers.set(
@@ -158,7 +158,7 @@ async function handleDirectResponse(
         if (!request.stream) {
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
-                    candidate.id,
+                    candidate.publicId,
                     responsesUsageToUsage(result.usage as ResponseUsage),
                 ),
             )) {

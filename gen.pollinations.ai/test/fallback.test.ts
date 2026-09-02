@@ -92,6 +92,7 @@ describe("registry fallback linking", () => {
         const target = registryEntry("target", ["primary"], 10);
         target.aliases = ["target-alias"];
         target.visible = false;
+        target.definition.fallbackOnly = true;
         const entries = [primary, target];
         const byIdOrAlias = new Map<string, GenerationModelEntry>([
             [primary.id, primary],
@@ -114,14 +115,20 @@ describe("registry fallback linking", () => {
                 resolved: primary.id,
                 definition: primary.definition,
                 fallbackEntries: primary.fallbackEntries,
-            }).map((candidate) => candidate.id),
-        ).toEqual(["primary", "target"]);
+            }).map(({ id, publicId }) => ({ id, publicId })),
+        ).toEqual([
+            { id: "primary", publicId: "primary" },
+            { id: "target", publicId: "primary" },
+        ]);
     });
 
     it("does not apply the community fallback cap to registry declarations", () => {
         const targetIds = ["one", "two", "three", "four"];
         const primary = registryEntry("primary", targetIds);
         const targets = targetIds.map((id) => registryEntry(id));
+        for (const target of targets) {
+            target.definition.fallbackOnly = true;
+        }
         const entries = [primary, ...targets];
 
         linkFallbackEntries(
@@ -132,6 +139,13 @@ describe("registry fallback linking", () => {
         expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual(
             targetIds,
         );
+        expect(
+            fallbackCandidates({
+                resolved: primary.id,
+                definition: primary.definition,
+                fallbackEntries: primary.fallbackEntries,
+            }).map((candidate) => candidate.publicId),
+        ).toEqual(["primary", "primary", "primary", "primary", "primary"]);
     });
     it("guards community declarations but trusts registry declarations", () => {
         const ownPrimary = communityEntry(
@@ -176,6 +190,14 @@ describe("registry fallback linking", () => {
         expect(ownPrimary.fallbackEntries?.map((entry) => entry.id)).toEqual([
             "owner/private",
         ]);
+        expect(
+            fallbackCandidates({
+                resolved: ownPrimary.id,
+                definition: ownPrimary.definition,
+                communityEndpoint: ownPrimary.communityEndpoint,
+                fallbackEntries: ownPrimary.fallbackEntries,
+            }).map((candidate) => candidate.publicId),
+        ).toEqual(["owner/primary", "owner/private"]);
         expect(
             registryPrimary.fallbackEntries?.map((entry) => entry.id),
         ).toEqual(["public", "owner/private", "owner/disabled"]);
@@ -473,7 +495,10 @@ describe("isRetryableFallbackError", () => {
 });
 
 describe("withModelFallback", () => {
-    const candidate = (id: string): FallbackCandidate => ({ id });
+    const candidate = (id: string): FallbackCandidate => ({
+        id,
+        publicId: id,
+    });
     const rateLimited = () =>
         Object.assign(new Error("429 upstream"), {
             status: 502,
@@ -619,6 +644,7 @@ describe("withModelFallbackResponse", () => {
     it("marks a response served by the shared fallback loop", async () => {
         const primary = registryEntry("primary", ["target"]);
         const target = registryEntry("target");
+        target.definition.fallbackOnly = true;
         primary.fallbackEntries = [target];
         const beforeAttempt = vi.fn(
             async (_candidate: FallbackCandidate) => {},
@@ -650,6 +676,7 @@ describe("withModelFallbackResponse", () => {
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             "config.targets[1]",
         );
+        expect(response.headers.get("x-model-used")).toBe("primary");
         await expect(response.json()).resolves.toEqual({ model: "target" });
     });
 });

@@ -349,6 +349,7 @@ function recordSettledEntry(
     attempts.push({
         candidate: {
             id: entry.id,
+            publicId: entry.id,
             definition: entry.definition,
             communityEndpoint: entry.communityEndpoint,
             entry,
@@ -2269,6 +2270,7 @@ function requestTrackingFixture(
 function candidateFixture(model: ModelName = "openai"): FallbackCandidate {
     return {
         id: model,
+        publicId: model,
         definition: getRegistryModelDefinition(model),
     };
 }

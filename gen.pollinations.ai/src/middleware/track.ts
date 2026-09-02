@@ -303,7 +303,7 @@ export const track = (eventType: EventType) =>
                 // loop can supply. So a request emits one row per upstream call.
                 for (const attempt of attempts) {
                     if (attempt.settled) continue;
-                    const model = attempt.candidate.id;
+                    const model = attempt.candidate.publicId;
                     const status = failedAttemptStatus(attempt.error);
                     await emitRow({
                         startTime: attempt.startedAt,
@@ -314,9 +314,7 @@ export const track = (eventType: EventType) =>
                             cacheHit: false,
                             isBilledUsage: false,
                             isFinal: false,
-                            fallbackUsed:
-                                model !==
-                                requestTracking.resolvedModelRequested,
+                            fallbackUsed: attempt.candidate.entry !== undefined,
                             modelUsed: model,
                             modelProviderUsed:
                                 attempt.candidate.definition?.provider ??
@@ -589,7 +587,7 @@ export async function trackResponse(
 ): Promise<ResponseTrackingData> {
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
-    const modelCalled = candidate.id || resolvedModelRequested;
+    const modelCalled = candidate.publicId || resolvedModelRequested;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";

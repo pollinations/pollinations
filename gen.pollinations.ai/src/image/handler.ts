@@ -188,6 +188,7 @@ function mediaHeaders(
     safeParams: RuntimeImageParams,
     result: ImageGenerationResult | VideoGenerationResult,
     contentType: string,
+    modelUsedOverride?: string,
 ): Headers {
     const headers = new Headers({
         "Content-Type": contentType,
@@ -209,7 +210,9 @@ function mediaHeaders(
 
     const trackingHeaders = buildTrackingHeaders(
         safeParams.model,
-        result.trackingData,
+        modelUsedOverride
+            ? { ...result.trackingData, actualModel: modelUsedOverride }
+            : result.trackingData,
     );
     for (const [key, value] of Object.entries(trackingHeaders)) {
         headers.set(key, value);
@@ -443,8 +446,9 @@ async function generateMediaWithFallback(
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
     servedIndex: number;
+    publicModelOverride?: string;
 }> {
-    const { result, index } = await withModelFallback(
+    const { result, candidate, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
@@ -486,6 +490,10 @@ async function generateMediaWithFallback(
     return {
         ...result,
         servedIndex: index,
+        publicModelOverride:
+            candidate.publicId === candidate.id
+                ? undefined
+                : candidate.publicId,
     };
 }
 
@@ -571,16 +579,14 @@ export async function generateImageOrVideoResponse(
     });
 
     try {
-        const { result, params, servedIndex } = await generateMediaWithFallback(
-            c,
-            originalPrompt,
-            safeParams,
-        );
+        const { result, params, servedIndex, publicModelOverride } =
+            await generateMediaWithFallback(c, originalPrompt, safeParams);
         const headers = mediaHeaders(
             originalPrompt,
             params,
             result,
             result.mimeType || detectMimeType(result.buffer),
+            publicModelOverride,
         );
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.

@@ -117,7 +117,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     const failureBody =
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("zimage-fal");
+    expect(response.headers.get("x-model-used")).toBe("zimage");
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
     expect(mocks.fal.state.falRequests).toEqual([
@@ -144,7 +144,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "zimage-fal",
+        modelUsed: "zimage",
         modelProviderUsed: "fal",
         responseStatus: 200,
         fallbackUsed: true,

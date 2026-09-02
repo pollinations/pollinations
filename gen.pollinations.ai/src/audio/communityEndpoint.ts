@@ -1,7 +1,7 @@
+import { communityAudioTranscriptionsUrl } from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
-    communityAudioTranscriptionsUrl,
     communityTranscriptionSeconds,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
@@ -34,7 +34,7 @@ export async function callCommunityTranscriptionEndpoint(
     secret: string,
 ): Promise<Response> {
     // Managed agents are text-only, so a transcription endpoint is always external.
-    if (endpoint.kind !== "external") {
+    if (endpoint.type !== "proxy") {
         throw new Error(
             `Community transcription endpoint '${endpoint.modelId}' is a managed agent`,
         );

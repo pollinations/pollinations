@@ -24,11 +24,11 @@ if [ -f "$STATE" ]; then
 fi
 state_age_seconds=$(( now - state_mtime ))
 
-# A fresh process starts 15 minutes after the previous cycle completes. Some
-# full-catalog probes take longer than usual, so allow one hour without a state
-# write before declaring a running service stalled.
+# A fresh process starts 60 minutes after the previous cycle completes. A cycle
+# may run for 45 minutes, so allow 120 minutes without a state write before
+# declaring the service stalled.
 stalled=false
-if [ "$service_healthy" = false ] || [ "$state_mtime" -eq 0 ] || [ "$state_age_seconds" -gt 3600 ]; then
+if [ "$service_healthy" = false ] || [ "$state_mtime" -eq 0 ] || [ "$state_age_seconds" -gt 7200 ]; then
     stalled=true
 fi
 

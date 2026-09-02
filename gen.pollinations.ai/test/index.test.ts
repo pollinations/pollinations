@@ -13,6 +13,7 @@ import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coo
 
 const TRANSCRIPTION_MODEL_IDS = [
     "whisper",
+    "gpt-transcribe",
     "scribe",
     "universal-2",
     "universal-3.5-pro",
@@ -329,7 +330,7 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
+    it("lists DreamShaper with its aliases and flat per-image pricing", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -342,7 +343,7 @@ describe("gen worker routing", () => {
             models.find((model) => model.name === "dreamshaper"),
         ).toMatchObject({
             name: "dreamshaper",
-            aliases: ["sana"],
+            aliases: ["sana", "lykon/dreamshaper-8-lcm"],
             pricing: {
                 completionImageTokens: "0.0001",
                 currency: "pollen",
@@ -365,7 +366,12 @@ describe("gen worker routing", () => {
             models.find((model) => model.name === "recraft-v4.1-vector"),
         ).toMatchObject({
             name: "recraft-v4.1-vector",
-            aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+            aliases: [
+                "recraft-vector",
+                "recraft-svg",
+                "recraft-v4.1-svg",
+                "recraft/recraft-v4.1-vector",
+            ],
             input_modalities: ["text", "image"],
             output_modalities: ["image"],
             pricing: {
@@ -844,6 +850,7 @@ fixtureTest(
         expect(generation.usage.total_tokens).toBe(1);
         await waitOnExecutionContext(generationContext);
 
+        // Completed media stays public when the caller retries without a key.
         const urlContext = createExecutionContext();
         const urlResponse = await worker.fetch(
             new Request(
@@ -851,7 +858,6 @@ fixtureTest(
                 {
                     method: "POST",
                     headers: {
-                        Authorization: `Bearer ${paidApiKey}`,
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({
@@ -1538,7 +1544,11 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
         output_modalities?: string[];
     }[];
     const model = models.find((candidate) => candidate.name === "lyria-3-clip");
-    expect(model?.aliases).toEqual(["lyria", "lyria-3"]);
+    expect(model?.aliases).toEqual([
+        "lyria",
+        "lyria-3",
+        "google/lyria-3-clip-preview",
+    ]);
     expect(model?.input_modalities).toEqual(["text"]);
     expect(model?.output_modalities).toEqual(["audio"]);
 });
@@ -2444,5 +2454,81 @@ fixtureTest(
                     'Model "elevenlabs" cannot be used on /v1/audio/transcriptions. Supported endpoints: /audio/{text}, /v1/audio/speech, /v1/audio/speech/with-timestamps.',
             },
         });
+    },
+);
+
+fixtureTest(
+    "routes GPT Transcribe through Azure with duration usage",
+    async ({ apiKey }) => {
+        const endpoint =
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/test-gpt-transcribe/audio/transcriptions?api-version=2025-04-01-preview";
+        const calls: string[] = [];
+
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                calls.push(request.url);
+                if (request.url === endpoint) {
+                    expect(request.headers.get("api-key")).toBe(
+                        "test-azure-key",
+                    );
+                    const form = await request.formData();
+                    expect(form.get("model")).toBe("gpt-transcribe");
+                    expect(form.get("language")).toBe("en");
+                    expect(form.get("prompt")).toBe("Pollinations");
+                    expect(form.get("file")).toBeInstanceOf(File);
+                    return Response.json({
+                        text: "hello from Azure",
+                        usage: { type: "duration", seconds: 4 },
+                    });
+                }
+                if (
+                    request.url.startsWith(
+                        "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json",
+                    ) ||
+                    request.url.startsWith("http://localhost:7181/")
+                ) {
+                    return Response.json({ data: [] });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            },
+        );
+
+        const form = new FormData();
+        form.set("model", "gpt-transcribe");
+        form.set("language", "en");
+        form.set("prompt", "Pollinations");
+        form.set(
+            "file",
+            new File(["route-test-audio"], "route-test.wav", {
+                type: "audio/wav",
+            }),
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request(
+                "https://staging.gen.pollinations.ai/v1/audio/transcriptions",
+                {
+                    method: "POST",
+                    headers: { Authorization: `Bearer ${apiKey}` },
+                    body: form,
+                },
+            ),
+            withInlineGenerationCoordinator({
+                ...env,
+                AZURE_MYCELI_PROD_SWEDEN_API_KEY: "test-azure-key",
+            } as unknown as CloudflareBindings),
+            ctx,
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe("gpt-transcribe");
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("4");
+        await expect(response.json()).resolves.toEqual({
+            text: "hello from Azure",
+            usage: { type: "duration", seconds: 4 },
+        });
+        await waitOnExecutionContext(ctx);
+        expect(calls).toContain(endpoint);
     },
 );

@@ -8,26 +8,24 @@ import { SafeSchema, type SafeValue } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
+import { generateCommunityEmbeddings } from "@/embeddings/communityEndpoint.ts";
 import {
     generateEmbeddings,
     getEmbeddingProviderModelId,
 } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt } from "@/image/handler.ts";
-import {
-    applySafety,
-    applySafetyToChatRequest,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
 import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
+import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
 import {
     handleChatCompletionLocal,
     handleSimpleTextLocal,
     handleTextContentLocal,
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -44,7 +42,7 @@ export const simpleAudioQuerySchema = z.object({
         .default("mp3")
         .meta({
             description:
-                "Audio output format. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                "Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
             example: "mp3",
         }),
     model: z.string().optional().meta({
@@ -122,7 +120,7 @@ export type SimpleAudioQuery = z.infer<typeof simpleAudioQuerySchema>;
 
 export async function generateImageVideo(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -132,7 +130,7 @@ export async function generateImageVideo(c: Context<Env>): Promise<Response> {
 
 export async function generateModel3d(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -146,10 +144,18 @@ export async function generateEmbeddingsResponse(
     const requestBody = c.req.valid("json" as never) as z.infer<
         typeof CreateEmbeddingRequestSchema
     >;
-    const { response, servedEntry } = await withModelFallbackResponse(
+    return withModelFallbackResponse(
         c.var.model,
-        (candidate) =>
-            generateEmbeddings(
+        (candidate) => {
+            if (candidate.communityEndpoint) {
+                return generateCommunityEmbeddings(
+                    candidate.communityEndpoint,
+                    requestBody,
+                    candidate.id,
+                    c.env.BETTER_AUTH_SECRET,
+                );
+            }
+            return generateEmbeddings(
                 c.env,
                 {
                     ...requestBody,
@@ -157,17 +163,17 @@ export async function generateEmbeddingsResponse(
                 },
                 candidate.definition ?? c.var.model.definition,
                 candidate.id,
-            ),
-        c.var.track?.failedCalls,
+            );
+        },
+        c.var.track?.attempts,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
-    if (servedEntry) c.set("servedModelEntry", servedEntry);
-    return response;
 }
 
 export async function generateChatCompletion(
     c: Context<Env>,
 ): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -209,7 +215,7 @@ export async function generateChatCompletion(
 }
 
 export async function generateTextContent(c: Context<Env>): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -219,15 +225,14 @@ export async function generateTextContent(c: Context<Env>): Promise<Response> {
 }
 
 export async function generateSimpleText(c: Context<Env>): Promise<Response> {
-    const query = c.req.valid("query" as never) as {
-        safe?: SafeValue;
-        system?: string;
-    };
+    const query = c.req.valid(
+        "query" as never,
+    ) as GenerateTextRequestQueryParams;
     const textInputs =
         typeof query.system === "string"
             ? [c.req.param("prompt"), query.system]
             : [c.req.param("prompt")];
-    const [prompt, system] = await applySafetyToTexts(
+    const [prompt, system] = await applySafetyToInput(
         c,
         textInputs,
         query.safe,
@@ -235,12 +240,10 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
 
     return withSafetyHeaders(
         c,
-        await handleSimpleTextLocal(
-            c,
-            prompt,
-            c.var.model.resolved,
-            system ? { system } : undefined,
-        ),
+        await handleSimpleTextLocal(c, prompt, c.var.model.resolved, {
+            ...query,
+            system,
+        }),
     );
 }
 

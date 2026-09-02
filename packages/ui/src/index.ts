@@ -70,13 +70,18 @@ export {
     type DialogProps,
     DialogTitle,
 } from "./primitives/Dialog.tsx";
+export { Drawer, type DrawerProps } from "./primitives/Drawer.tsx";
 export { Dropdown, type DropdownProps } from "./primitives/Dropdown.tsx";
 export {
     DropdownItem,
     type DropdownItemProps,
 } from "./primitives/DropdownItem.tsx";
 export { Field } from "./primitives/Field.tsx";
-export { IconButton } from "./primitives/IconButton.tsx";
+export {
+    IconButton,
+    type IconButtonIntent,
+    type IconButtonProps,
+} from "./primitives/IconButton.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
@@ -106,6 +111,10 @@ export {
     TableRow,
     type TableRowProps,
 } from "./primitives/Table.tsx";
+export {
+    TableDisclosureButton,
+    type TableDisclosureButtonProps,
+} from "./primitives/TableDisclosureButton.tsx";
 export { Textarea, type TextareaProps } from "./primitives/Textarea.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
 export {

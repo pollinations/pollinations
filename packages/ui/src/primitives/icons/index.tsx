@@ -17,6 +17,23 @@ export function AppIcon(props: IconProps) {
     );
 }
 
+export function AccountIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+        </svg>
+    );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+    );
+}
+
 export function BeakerIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -271,6 +288,14 @@ export function TerminalIcon(props: IconProps) {
     );
 }
 
+export function ToolIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M14.7 6.3a4 4 0 0 0-5-5l2.1 2.1-2.4 2.4-2.1-2.1a4 4 0 0 0 5 5l7.4 7.4a2 2 0 0 1-2.8 2.8l-7.4-7.4" />
+        </svg>
+    );
+}
+
 export function TargetIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -297,6 +322,15 @@ export function UsageIcon(props: IconProps) {
             <path d="M7 18h10" />
             <path d="M7.5 12.5 6 11" />
             <path d="M16.5 12.5 18 11" />
+        </svg>
+    );
+}
+
+export function WarningIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M10.3 3.1 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.1a2 2 0 0 0-3.4 0Z" />
+            <path d="M12 9v4M12 17h.01" />
         </svg>
     );
 }
@@ -430,6 +464,16 @@ export function SearchIcon(props: IconProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <circle cx="11" cy="11" r="7" />
             <path d="m21 21-4.3-4.3" />
+        </svg>
+    );
+}
+
+export function SignOutIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="m16 17 5-5-5-5" />
+            <path d="M21 12H9" />
         </svg>
     );
 }

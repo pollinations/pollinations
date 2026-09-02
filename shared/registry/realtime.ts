@@ -31,6 +31,7 @@ const OPENAI_REALTIME_COST = {
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["openai/gpt-realtime-2.1", "gpt-realtime-2"],
         addedDate: new Date("2026-07-16").getTime(),
         cost: OPENAI_REALTIME_COST,
         billing: OPENAI_REALTIME_CACHE_BILLING,
@@ -41,6 +42,7 @@ export const REALTIME_SERVICES = {
     },
     "gpt-realtime-2.1-mini": {
         ...OPENAI_REALTIME_BASE,
+        aliases: ["openai/gpt-realtime-2.1-mini"],
         addedDate: new Date("2026-07-26").getTime(),
         paidOnly: false,
         cost: {
@@ -69,17 +71,8 @@ export const REALTIME_SERVICES = {
             "cedar",
         ],
     },
-    "gpt-realtime-2": {
-        ...OPENAI_REALTIME_BASE,
-        addedDate: new Date("2026-05-23").getTime(),
-        cost: OPENAI_REALTIME_COST,
-        billing: OPENAI_REALTIME_CACHE_BILLING,
-        title: "GPT Realtime 2",
-        description: "Live voice conversations with instant, reasoned replies",
-        contextLength: 128000,
-    },
     "scribe-realtime": {
-        aliases: [],
+        aliases: ["elevenlabs/scribe-v2-realtime"],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "realtime",
@@ -93,6 +86,26 @@ export const REALTIME_SERVICES = {
         title: "Scribe v2 Realtime",
         description:
             "Live transcription in 90+ languages with incremental and final results",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/realtime", "/v1/realtime"],
+    },
+    "gpt-live-transcribe": {
+        aliases: ["openai/gpt-live-transcribe"],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "realtime",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            // Provisional OpenAI list price: $0.017 per streamed input minute.
+            // Azure's exact meter was not yet visible when this route launched.
+            promptAudioSeconds: 0.017 / 60,
+        },
+        title: "GPT Live Transcribe",
+        description:
+            "Low-latency streaming speech recognition through the OpenAI Realtime protocol",
         inputModalities: ["audio"],
         outputModalities: ["text"],
         supportedEndpoints: ["/realtime", "/v1/realtime"],

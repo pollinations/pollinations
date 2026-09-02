@@ -21,6 +21,7 @@ const snapshotServerUrl = inject("snapshotServerUrl");
 const png1x1Base64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAFgwJ/lPFCAAAAAABJRU5ErkJggg==";
 const imageBackendHost = "image-backend.test";
+const deepInfraHost = "api.deepinfra.com";
 const replicateHost = "api.replicate.com";
 const replicateDeliveryHost = "replicate.delivery";
 
@@ -40,6 +41,7 @@ const test = baseTest.extend<{
 
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
+    env.DEEPINFRA_API_KEY = "deepinfra-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
     const portkeyHost = new URL(env.PORTKEY_GATEWAY_URL).host;
     const portkeyState: { requests: Record<string, unknown>[] } = {
@@ -52,6 +54,9 @@ function createGenerationMocks() {
             url: string;
         }>;
     } = { requests: [] };
+    const deepInfraState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     return createFetchMock({
         tinybird: createMockTinybird(),
         portkeyDirect: {
@@ -77,6 +82,23 @@ function createGenerationMocks() {
                 [imageBackendHost]: fakeImageBackendResponse,
             },
             reset: () => {},
+        },
+        deepInfra: {
+            state: deepInfraState,
+            handlerMap: {
+                [deepInfraHost]: async (request) => {
+                    deepInfraState.requests.push(
+                        (await request.json()) as Record<string, unknown>,
+                    );
+                    return Response.json({
+                        images: [png1x1Base64],
+                        inference_status: { cost: 0.0005, runtime_ms: 100 },
+                    });
+                },
+            },
+            reset: () => {
+                deepInfraState.requests = [];
+            },
         },
         replicate: {
             state: replicateState,
@@ -327,6 +349,34 @@ async function fakePortkeyResponse(request: Request) {
     const selectedCase = cases.find((candidate) => candidate.matches);
     const isAudio =
         model === "openai-audio" || prompt.includes("vcr audio text");
+
+    if (prompt.includes("vcr response extensions")) {
+        return Response.json({
+            provider_response_option: { trace: "kept" },
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "first" },
+                    finish_reason: "stop",
+                    provider_choice_option: "first-kept",
+                },
+                {
+                    index: 1,
+                    message: { role: "assistant", content: "second" },
+                    finish_reason: "stop",
+                    provider_choice_option: "second-kept",
+                },
+            ],
+            usage: {
+                prompt_tokens: 4,
+                completion_tokens: 2,
+                total_tokens: 6,
+                provider_usage_option: { cached: 1 },
+                search_context_size: "low",
+                cost: { total_cost: 0.000006 },
+            },
+        });
+    }
 
     if (isAudio) {
         return Response.json(
@@ -881,6 +931,75 @@ test("simple text generation uses local text generation with VCR-backed Portkey"
     });
 });
 
+test("simple text forwards options through provider transforms once", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+
+    const { response, wait } = await fetchWorker(
+        "/text/vcr%20simple%20text?model=openai-fast&seed=-1&temperature=0.5&top_p=0.8&presence_penalty=0.2&frequency_penalty=-0.2&max_tokens=16&reasoning_effort=medium",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status).toBe(200);
+    await response.text();
+    await wait();
+    expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
+    expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
+        model: "gpt-5-nano",
+        seed: 42,
+        temperature: 1,
+        max_completion_tokens: 16,
+        reasoning_effort: "medium",
+        messages: [{ role: "user", content: "vcr simple text" }],
+    });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("top_p");
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "presence_penalty",
+    );
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "frequency_penalty",
+    );
+});
+
+test("chat responses preserve choices and extensions but hide private usage", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const before = Math.floor(Date.now() / 1000);
+
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${paidApiKey}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            messages: [{ role: "user", content: "vcr response extensions" }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as Record<string, unknown> & {
+        choices: Array<Record<string, unknown>>;
+        usage: Record<string, unknown>;
+        created: number;
+    };
+    expect(body.created).toBeGreaterThanOrEqual(before);
+    expect(body.created).toBeLessThanOrEqual(Math.floor(Date.now() / 1000));
+    expect(body.provider_response_option).toEqual({ trace: "kept" });
+    expect(body.choices).toHaveLength(2);
+    expect(body.choices[0].provider_choice_option).toBe("first-kept");
+    expect(body.choices[1].provider_choice_option).toBe("second-kept");
+    expect(body.usage.provider_usage_option).toEqual({ cached: 1 });
+    expect(body.usage).not.toHaveProperty("cost");
+    expect(body.usage).not.toHaveProperty("search_context_size");
+    await wait();
+});
+
 test("POST /text returns assistant content directly", async ({
     paidApiKey,
     mocks,
@@ -1045,12 +1164,12 @@ test("simple text prompts can include slashes", async ({
     await expect(response.text()).resolves.toBe("snapshot slash response");
 });
 
-test("flux returns 503 without Replicate when the Vast pool is empty", async ({
+test("flux falls back to DeepInfra when the Vast pool is empty", async ({
     mocks,
 }) => {
     const existing = await env.KV.list({ prefix: "image:server:test:flux:" });
     await Promise.all(existing.keys.map((k) => env.KV.delete(k.name)));
-    await mocks.enable("tinybird", "replicate");
+    await mocks.enable("tinybird", "deepInfra");
     const { key } = await createTestApiKey({
         allowedModels: ["flux"],
         user: { tierBalance: 100 },
@@ -1063,19 +1182,22 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
         },
     );
 
-    expect(response.status).toBe(503);
-    expect(response.headers.get("x-fallback-target")).toBeNull();
-    await expect(response.json()).resolves.toMatchObject({
-        success: false,
-        error: {
-            code: "SERVICE_UNAVAILABLE",
-            message: "No active flux servers available",
-        },
-    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("flux-deepinfra");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.arrayBuffer();
     await wait();
 
-    expect(mocks.replicate.state.requests).toHaveLength(0);
-    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.deepInfra.state.requests).toEqual([
+        {
+            prompt: "vcr red square",
+            width: 1280,
+            height: 720,
+            num_images: 1,
+            seed: 42,
+        },
+    ]);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.image",
         modelRequested: "flux",
@@ -1083,19 +1205,29 @@ test("flux returns 503 without Replicate when the Vast pool is empty", async ({
         modelUsed: "flux",
         modelProviderUsed: "vast",
         responseStatus: 503,
-        fallbackUsed: false,
-        isFinal: true,
+        isFinal: false,
         isBilledUsage: false,
+    });
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        eventType: "generate.image",
+        modelRequested: "flux",
+        resolvedModelRequested: "flux",
+        modelUsed: "flux-deepinfra",
+        modelProviderUsed: "deepinfra",
+        responseStatus: 200,
+        fallbackUsed: true,
+        isFinal: true,
+        isBilledUsage: true,
     });
 });
 
-test("removed flux-replicate model returns invalid model", async ({
+test("fallback-only provider routes cannot be called directly", async ({
     paidApiKey,
     mocks,
 }) => {
-    await mocks.enable("tinybird", "replicate");
+    await mocks.enable("tinybird", "deepInfra");
     const { response, wait } = await fetchWorker(
-        "/image/test?model=flux-replicate",
+        "/image/test?model=flux-deepinfra",
         {
             headers: { authorization: `Bearer ${paidApiKey}` },
         },
@@ -1107,12 +1239,12 @@ test("removed flux-replicate model returns invalid model", async ({
         error: {
             code: "BAD_REQUEST",
             message:
-                'Invalid model or alias: "flux-replicate". Must be a valid model name or alias.',
+                'Invalid model or alias: "flux-deepinfra". Must be a valid model name or alias.',
         },
     });
     await wait();
 
-    expect(mocks.replicate.state.requests).toHaveLength(0);
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
 });
 
 test("OpenAI image generation returns token usage", async ({

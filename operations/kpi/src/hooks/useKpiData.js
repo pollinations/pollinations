@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import * as api from "../lib/api";
 import { currentWeekStart } from "../lib/format";
+import { DEFAULT_WEEKS } from "../lib/range";
 
-const WEEKS = 12;
 const RETENTION_WEEKS = 8;
 
 /**
@@ -12,17 +12,17 @@ const RETENTION_WEEKS = 8;
 const SOURCES = [
     { label: "GitHub stars", key: "github", load: api.github },
     { label: "Registrations", key: "registrations", load: api.registrations },
-    { label: "Revenue", key: "revenue", load: () => api.revenue(WEEKS) },
+    { label: "Revenue", key: "revenue", load: api.revenue },
     {
         label: "Health stats",
         key: "health",
-        load: () => api.weekly("health", WEEKS),
+        load: (weeks) => api.weekly("health", weeks),
     },
-    { label: "WAU", key: "wau", load: () => api.weekly("wau", WEEKS) },
+    { label: "WAU", key: "wau", load: (weeks) => api.weekly("wau", weeks) },
     {
         label: "Usage stats",
         key: "usage",
-        load: () => api.weekly("usage", WEEKS),
+        load: (weeks) => api.weekly("usage", weeks),
     },
     {
         label: "Retention",
@@ -32,7 +32,7 @@ const SOURCES = [
     {
         label: "User segments",
         key: "segments",
-        load: () => api.weekly("user-segments", WEEKS),
+        load: (weeks) => api.weekly("user-segments", weeks),
     },
     { label: "Activations", key: "activations", load: api.activations },
     {
@@ -66,7 +66,7 @@ function mergeInto(weekMap, rows, project) {
     }
 }
 
-export function useKpiData() {
+export function useKpiData(weeks = DEFAULT_WEEKS) {
     const [state, setState] = useState({
         loading: true,
         done: [],
@@ -82,11 +82,17 @@ export function useKpiData() {
         let cancelled = false;
 
         async function load() {
+            setState((prev) => ({
+                ...prev,
+                loading: true,
+                done: [],
+                active: SOURCES[0].label,
+            }));
             const raw = {};
             for (const source of SOURCES) {
                 if (cancelled) return;
                 setState((prev) => ({ ...prev, active: source.label }));
-                raw[source.key] = await source.load().catch(() => null);
+                raw[source.key] = await source.load(weeks).catch(() => null);
                 if (cancelled) return;
                 setState((prev) => ({
                     ...prev,
@@ -102,18 +108,31 @@ export function useKpiData() {
             mergeInto(weekMap, raw.registrations, (row) => ({
                 registrations: row.registrations,
             }));
+            // WAU counts users we actually served. A 402 is an out-of-Pollen
+            // rejection — no provider ran, nothing was billed — so counting it
+            // as an active user overstated WAU by roughly half and hid the
+            // served base shrinking. The raw figure stays as wauAll, and
+            // wauAll − wau is the number of people turned away.
             mergeInto(weekMap, raw.wau, (row) => ({
-                wau: row.active_users,
+                wau: row.served_users,
+                wauAll: row.active_users,
                 payingUsers: row.paying_users,
-                totalRequests: row.total_requests,
+                totalRequests: row.served_requests,
+                totalRequestsAll: row.total_requests,
             }));
             mergeInto(weekMap, raw.usage, (row) => ({
                 tokens: row.total_tokens,
                 tokensPerUser: row.tokens_per_user,
-                textRequests: row.text_requests,
-                imageRequests: row.image_requests,
+                textRequests: row.served_text_requests,
+                imageRequests: row.served_image_requests,
                 costUsd: row.cost_usd,
-                communityUserPct: row.community_user_pct,
+                // Pollen actually spent, in USD. Unlike Stripe cash this is
+                // matched to the week's traffic, so it is the revenue side of
+                // gross margin.
+                pollenRevenue: row.revenue_usd,
+                paidPollenPct: row.paid_pollen_pct,
+                communityUserPct: row.served_community_user_pct,
+                communityUserPctAll: row.community_user_pct,
                 communityRequestPct: row.community_request_pct,
                 communityAvailability: row.community_availability,
             }));
@@ -132,7 +151,8 @@ export function useKpiData() {
                 byopPollen: row.byop_pollen,
                 otherUsers: row.other_users,
                 otherPollen: row.other_pollen,
-                byopUserPct: row.byop_user_pct,
+                byopUserPct: row.byop_served_user_pct,
+                byopUserPctAll: row.byop_user_pct,
                 byopPollenPct: row.byop_pollen_pct,
             }));
             mergeInto(weekMap, raw.appSubmissions, (row) => ({
@@ -146,12 +166,12 @@ export function useKpiData() {
 
             // Pipes disagree on how far back they reach — registrations and
             // activations run to Oct 2025, the Tinybird pipes only cover the
-            // last WEEKS. The table needs the window every source can fill;
-            // the acquisition chart keeps the whole history.
+            // last selected range. The table needs the window every source
+            // can fill; the acquisition chart keeps the whole history.
             const allWeeks = [...weekMap.values()].sort((a, b) =>
                 a.week.localeCompare(b.week),
             );
-            const weeklyData = allWeeks.slice(-(WEEKS + 1));
+            const weeklyData = allWeeks.slice(-(weeks + 1));
 
             if (cancelled) return;
             setState((prev) => ({
@@ -176,7 +196,7 @@ export function useKpiData() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [weeks]);
 
     const partialWeekStart = currentWeekStart();
     const fullWeeks = state.weeklyData.filter(

@@ -1,4 +1,6 @@
 import { defineCostVariants, matchResolution } from "./cost-variants";
+import { mergeFallbacks } from "./merge-fallbacks";
+import { MODEL3D_FALLBACKS } from "./model3d-fallbacks";
 import type { ModelDefinition } from "./registry";
 
 export const DEFAULT_3D_MODEL = "trellis-2" as const;
@@ -9,9 +11,14 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // literal tokens) — same convention as image models — to avoid introducing a
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
-export const MODEL3D_SERVICES = {
+const MODEL3D_BASE_SERVICES = {
     "trellis-2": {
-        aliases: ["trellis-2-low", "trellis-2-medium", "trellis-2-high"],
+        aliases: [
+            "trellis-2-low",
+            "trellis-2-medium",
+            "trellis-2-high",
+            "microsoft/trellis-2",
+        ],
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -48,7 +55,7 @@ export const MODEL3D_SERVICES = {
         resolutions: ["low", "medium", "high"],
     },
     "hyper3d-rodin": {
-        aliases: ["rodin"],
+        aliases: ["rodin", "hyper3d/rodin-2.5"],
         provider: "fal",
         brand: "Deemos",
         category: "3d",
@@ -67,5 +74,10 @@ export const MODEL3D_SERVICES = {
         maxReferenceImages: 1,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const MODEL3D_SERVICES = mergeFallbacks(
+    MODEL3D_BASE_SERVICES,
+    MODEL3D_FALLBACKS,
+);
 
 export const getModel3dModelIds = (): string[] => Object.keys(MODEL3D_SERVICES);

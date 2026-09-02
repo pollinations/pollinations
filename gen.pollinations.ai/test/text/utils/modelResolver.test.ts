@@ -22,6 +22,11 @@ describe("resolveModelConfig", () => {
             resolveModelConfig(messages, { model: "claude-fable-5" }).options
                 .max_tokens,
         ).toBe(128000);
+        expect(
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-fable-5.1",
+            }).options.max_tokens,
+        ).toBe(128000);
     });
 
     it("lets callers override Anthropic max_tokens", () => {
@@ -39,6 +44,14 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
+    it("routes Claude Fable 5.1 to its global profile", () => {
+        expect(
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-fable-5.1",
+            }).options.model,
+        ).toBe("global.anthropic.claude-fable-5-1");
     });
 
     it("does not set max_tokens for non-Anthropic models", () => {
@@ -83,6 +96,19 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-2.5-preview",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-2.5-preview");
+        expect(result.options.max_tokens).toBe(64000);
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
     it("routes Nemotron directly to DeepInfra without fallback", () => {
         const result = resolveModelConfig(messages, { model: "nemotron" });
 
@@ -92,6 +118,21 @@ describe("resolveModelConfig", () => {
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
             "custom-host": "https://api.deepinfra.com/v1/openai",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes Nemotron 3.5 Lightning directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "nemotron-3.5-lightning",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
         });
         expect(result.options.provider).toBeUndefined();
     });
@@ -114,8 +155,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.7-flash");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -128,8 +169,8 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe("qwen/qwen3.8-max");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         });
         expect(result.options.provider).toEqual({
             only: ["Alibaba"],
@@ -150,6 +191,22 @@ describe("resolveModelConfig", () => {
             "custom-host": "https://api.fireworks.ai/inference/v1",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("pins Qwen3.8 27B to Chutes on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen3.8-27b",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-27b");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Chutes"],
+            allow_fallbacks: false,
+        });
     });
 
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
@@ -189,16 +246,106 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("pins Grok 4.6 to xAI ZDR on OpenRouter without fallback", () => {
+    it("routes Grok 4.6 directly to its Azure deployment", () => {
         const result = resolveModelConfig(messages, { model: "grok-4.6" });
 
-        expect(result.options.model).toBe("x-ai/grok-4.6");
+        expect(result.options.model).toBe("grok-4.6");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
-            "custom-host": "https://openrouter.ai/api/v1",
+            directEndpoint:
+                "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+            directAuthHeader: "api-key",
+            model: "grok-4.6",
         });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes GLM-5.3 directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, { model: "glm-5.3" });
+
+        expect(result.options.model).toBe("accounts/fireworks/models/glm-5p3");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.max_tokens).toBe(64000);
+    });
+
+    it("routes full Inkling directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "thinkingmachines/inkling",
+        });
+
+        expect(result.options.model).toBe("accounts/fireworks/models/inkling");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes GLM-5.3 Flash directly to Fireworks without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "z-ai/glm-5.3-flash",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/glm-5p3-flash",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+        expect(result.options.max_tokens).toBe(64000);
+    });
+
+    it.each([
+        ["qwen-coder-large", "qwen/qwen3-coder-next", "parasail/bf16"],
+        ["qwen-vision", "qwen/qwen3-vl-30b-a3b-instruct", "alibaba"],
+        [
+            "mistral-small-3.2",
+            "mistralai/mistral-small-3.2-24b-instruct",
+            "deepinfra/fp8",
+        ],
+        ["gemma", "google/gemma-4-26b-a4b-it", "novita/bf16"],
+        ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
+        ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
+        ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["minimax-m2.7", "minimax/minimax-m2.7", "deepinfra/fp8"],
+        ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
+    ])("pins %s to %s through %s without fallback", (model, route, provider) => {
+        const result = resolveModelConfig(messages, { model });
+
+        expect(result.options.model).toBe(route);
         expect(result.options.provider).toEqual({
-            only: ["xai/zdr"],
+            only: [provider],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Qwen Vision Pro directly to Alibaba without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen-vision-pro",
+        });
+
+        expect(result.options.model).toBe("qwen3-vl-235b-a22b-thinking");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("excludes Mistral's non-standard endpoint variants", () => {
+        const result = resolveModelConfig(messages, { model: "mistral" });
+
+        expect(result.options.model).toBe("mistralai/mistral-small-2603");
+        expect(result.options.provider).toEqual({
+            only: ["mistral"],
+            ignore: ["mistral/zdr", "mistral/us", "mistral/eu"],
             allow_fallbacks: false,
         });
     });
@@ -208,6 +355,21 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4-flash-0731",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes DeepSeek Vision to the exact Fireworks vision checkpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4-flash-vision-exp",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
         );
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",

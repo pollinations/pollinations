@@ -1,0 +1,30 @@
+DESCRIPTION >
+    Versioned, finalized production Pollen economics copied into staging for
+    the Economics dashboard. Each stable entry_id is replaced logically by its
+    latest recorded_at value; zero-valued updates remove obsolete rows from the
+    snapshot endpoint without deleting stored evidence.
+
+TOKEN "operations_ingest" APPEND
+TOKEN "operations_ingest" READ
+
+SCHEMA >
+    `entry_id` String `json:$.entry_id`,
+    `month` LowCardinality(String) `json:$.month`,
+    `vendor` LowCardinality(String) `json:$.vendor`,
+    `model` LowCardinality(String) `json:$.model`,
+    `currency` LowCardinality(String) `json:$.currency`,
+    `cost_paid` Float64 `json:$.cost_paid`,
+    `cost_quests` Float64 `json:$.cost_quests`,
+    `price_paid` Float64 `json:$.price_paid`,
+    `price_quests` Float64 `json:$.price_quests`,
+    `requests_paid` UInt64 `json:$.requests_paid`,
+    `requests_quests` UInt64 `json:$.requests_quests`,
+    `byop_paid` Float64 `json:$.byop_paid`,
+    `byop_quests` Float64 `json:$.byop_quests`,
+    `model_paid` Float64 `json:$.model_paid`,
+    `model_quests` Float64 `json:$.model_quests`,
+    `source` String `json:$.source`,
+    `recorded_at` DateTime64(3) `json:$.recorded_at`
+
+ENGINE MergeTree
+ENGINE_SORTING_KEY entry_id, recorded_at

@@ -1,3 +1,20 @@
+// Pollen revenue against compute cost: same traffic, same week, so the ratio is
+// a unit economic. Stripe cash is a different question — see coverage().
+const margin = (week) =>
+    week.pollenRevenue > 0
+        ? ((week.pollenRevenue - week.costUsd) / week.pollenRevenue) * 100
+        : null;
+
+// Cash in against cost incurred. The two are not matched — packs are bought in
+// one week and burned over later ones — so this is a coverage ratio, not margin.
+const coverage = (week) =>
+    week.costUsd > 0 && Number.isFinite(week.revenue)
+        ? (week.revenue / week.costUsd) * 100
+        : null;
+
+const failuresPerThousand = (availability) =>
+    Number.isFinite(availability) ? (100 - availability) * 10 : null;
+
 // The KPI catalogue. Rows with `views` are the same measure in another
 // unit and cycle in place; the rest have a single definition.
 export const KPIS = [
@@ -28,10 +45,28 @@ export const KPIS = [
     },
     {
         key: "wau",
-        name: "WAU",
         category: "Usage",
+        views: [
+            {
+                name: "WAU",
+                tooltip:
+                    "Unique users we served this week — at least one request that was not rejected for insufficient Pollen. A 402 never reaches a provider and is never billed, so it does not make someone an active user. Source: Tinybird (weekly_active_users).",
+            },
+            {
+                key: "wauAll",
+                name: "WAU · incl. rejected",
+                tooltip:
+                    "Every unique user who sent a request, including those whose only requests came back 402 for insufficient Pollen. This is the figure the dashboard showed before; it runs roughly twice the served count and has stayed flat while the served base halved.",
+            },
+        ],
+    },
+    {
+        key: "turnedAway",
+        name: "Turned away",
+        category: "Usage",
+        calc: (w) => w.wauAll - w.wau,
         tooltip:
-            "Weekly active users: unique users with at least one API request this week. Source: Tinybird (generation_event_v2)",
+            "Users whose every request this week was rejected for insufficient Pollen (WAU incl. rejected − WAU). Demand that reached the Pollen wall and got nothing.",
     },
     {
         key: "tokens",
@@ -62,6 +97,12 @@ export const KPIS = [
                     "Gross USD from Pollen pack purchases. Source: Stripe checkout events in Tinybird.",
             },
             {
+                key: "pollenRevenue",
+                name: "Pollen spent",
+                tooltip:
+                    "USD value of Pollen consumed by generation requests this week, across Paid and Quest balances. Source: Tinybird (weekly_usage_stats).",
+            },
+            {
                 name: "ARPA",
                 calc: (w) => w.revenue / w.wau,
                 tooltip:
@@ -88,42 +129,75 @@ export const KPIS = [
         ],
     },
     {
+        key: "paidPollenPct",
+        name: "Paid Pollen share",
+        category: "Revenue",
+        format: "percentPrecise",
+        tooltip:
+            "Paid Pollen spent / (Paid + Quest Pollen spent) × 100. Tracks how much generation consumption is funded by purchased credit. Source: Tinybird (weekly_usage_stats).",
+    },
+    {
         key: "grossMargin",
         name: "Gross margin",
         category: "Efficiency",
         format: "percent",
-        calc: (w) =>
-            w.revenue > 0
-                ? ((w.revenue - (w.costUsd || 0)) / w.revenue) * 100
-                : null,
+        calc: margin,
         tooltip:
-            "(Revenue − COGS) / revenue × 100. COGS is compute cost from generation_event_v2.total_cost (GPU, tokens, providers).",
+            "(Pollen revenue − compute cost) / Pollen revenue × 100. Pollen revenue is the USD value of Pollen actually spent this week — Quest and Paid buckets alike — so it covers the same traffic the cost does. Cost is modelled from the registry rate cards, not from invoices, and vendor credits are ignored: a provider we are billed for in grant dollars still counts at list price. Self-hosted GPU is charged per request, so idle fleet capacity is not in it.",
+    },
+    {
+        key: "cashCoverage",
+        name: "Cash coverage",
+        category: "Efficiency",
+        format: "percent",
+        calc: coverage,
+        tooltip:
+            "Stripe pack revenue / compute cost × 100. Above 100%, the packs sold this week pay for the week's compute. Not a margin: packs are bought once and burned over later weeks, so this bounces with purchase timing. Stripe fees are not deducted.",
     },
     {
         key: "availability",
         category: "Health",
         views: [
             {
-                name: "Service availability",
-                format: "percent",
+                name: "Server errors / 1K",
+                format: "perThousand",
+                lowerIsBetter: true,
+                calc: (w) => failuresPerThousand(w.availability),
                 tooltip:
-                    "(Total − 5xx) / total × 100. User errors (4xx) do not count as downtime.",
+                    "Non-community 5xx / (2xx + 5xx) × 1,000. A normalized failure rate that stays comparable as traffic changes. Community models have a separate KPI; user errors (4xx) are excluded.",
+            },
+            {
+                name: "Service availability",
+                format: "percentPrecise",
+                tooltip:
+                    "Non-community 2xx / (2xx + 5xx) × 100. Community models have a separate availability KPI; user errors (4xx) are excluded because they do not indicate service downtime.",
             },
             {
                 name: "5xx errors",
+                lowerIsBetter: true,
                 calc: (w) => w.serverErrors5xx,
                 tooltip:
-                    "Server errors behind the availability figure. 90% availability reads mild; the same week in raw failed requests does not.",
+                    "Non-community server errors behind the availability figure. Community-model errors are excluded and reported separately.",
             },
         ],
     },
     {
         key: "byopUserPct",
-        name: "BYOP user %",
         category: "Segments",
         format: "percent",
-        tooltip:
-            "Share of active users from BYOP apps (app key attribution or hostname heuristic).",
+        views: [
+            {
+                name: "BYOP user %",
+                tooltip:
+                    "Share of served users on BYOP keys. Users whose only requests were rejected for insufficient Pollen are excluded from both sides.",
+            },
+            {
+                key: "byopUserPctAll",
+                name: "BYOP user % · incl. rejected",
+                tooltip:
+                    "The same share counting users whose every request came back 402. BYOP keys hit the Pollen wall more often than others, so this reads several points higher.",
+            },
+        ],
     },
     {
         key: "byopPollenPct",
@@ -142,7 +216,7 @@ export const KPIS = [
                 key: "communityUserPct",
                 name: "Community models · users",
                 tooltip:
-                    "Unique users making at least one final community-model request / weekly active users × 100. Status is ignored on the numerator, so a user whose only community call returned 4xx or 5xx still counts. Managed agents are community endpoints too, so their callers are included until agent attribution exists.",
+                    "Unique users making at least one final community-model request / WAU × 100. Both sides exclude users rejected for insufficient Pollen, so this is a share of people we served. Other 4xx and 5xx still count on the numerator. Managed agents are community endpoints too, so their callers are included until agent attribution exists.",
             },
             {
                 key: "communityRequestPct",
@@ -153,6 +227,7 @@ export const KPIS = [
             {
                 key: "communityAvailability",
                 name: "Community models · availability",
+                format: "percentPrecise",
                 tooltip:
                     "Community-model 2xx / (2xx + 5xx) × 100. 4xx is excluded from the denominator — auth, balance, rate-limit and bad-input errors are the caller's, not an endpoint being down. Includes top-level managed-agent runs until agent attribution exists.",
             },
@@ -174,4 +249,23 @@ export function kpiValue(kpi, week) {
 /** The active definition of a row, given how many times it has been cycled. */
 export function kpiView(row, index = 0) {
     return row.views ? { ...row, ...row.views[index % row.views.length] } : row;
+}
+
+/** The id the explorer uses to name one specific view of one row. */
+export function kpiViewId(row, index = 0) {
+    return `${row.key}:${row.views ? index % row.views.length : 0}`;
+}
+
+// Every view of every row as its own entry. The table cycles units in place to
+// stay compact; the graph has room to list them all, so a variant is reachable
+// there without cycling the table to it first.
+export const KPI_VIEWS = KPIS.flatMap((row) =>
+    (row.views ?? [null]).map((_, index) => ({
+        id: kpiViewId(row, index),
+        ...kpiView(row, index),
+    })),
+);
+
+export function kpiViewById(id) {
+    return KPI_VIEWS.find((view) => view.id === id) ?? KPI_VIEWS[0];
 }

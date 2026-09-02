@@ -1,5 +1,6 @@
 import {
     getModelPricesFromCatalog,
+    mergeModelCatalogs,
     parseModelCatalogResponse,
 } from "@frontend/components/models/model-catalog.ts";
 import { describe, expect, it } from "vitest";
@@ -24,6 +25,37 @@ describe("parseModelCatalogResponse", () => {
         expect(() =>
             parseModelCatalogResponse([{ title: "Mystery" }, {}]),
         ).toThrow();
+    });
+});
+
+describe("mergeModelCatalogs", () => {
+    it("adds community models while preserving the first catalog entry", () => {
+        const localModel = { name: "local-model", title: "Local" };
+        const localCommunityModel = {
+            name: "owner/community-model",
+            title: "Local community model",
+            community: true,
+        };
+
+        expect(
+            mergeModelCatalogs([
+                [localModel, localCommunityModel],
+                [
+                    {
+                        ...localCommunityModel,
+                        title: "Production community model",
+                    },
+                    {
+                        name: "another/community-model",
+                        community: true,
+                    },
+                ],
+            ]),
+        ).toEqual([
+            localModel,
+            localCommunityModel,
+            { name: "another/community-model", community: true },
+        ]);
     });
 });
 
@@ -87,4 +119,23 @@ it("carries arbitrary public pricing variants and adjustments into the UI", () =
             },
         ],
     });
+});
+
+it("adds rolling user counts from public model stats", () => {
+    const [model] = getModelPricesFromCatalog(
+        [{ name: "popular-model", category: "text" }],
+        {
+            "popular-model": {
+                avgCost: 0,
+                requestCount: 100,
+                userCount: 12,
+            },
+        },
+    );
+
+    expect(model).toMatchObject({
+        name: "popular-model",
+        users7d: 12,
+    });
+    expect(model.realAvgCost).toBeUndefined();
 });

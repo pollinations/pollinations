@@ -16,7 +16,7 @@ import {
     formatValue,
     weekLabel,
 } from "../lib/format";
-import { KPIS, kpiValue, kpiView } from "../lib/kpis";
+import { KPIS, kpiValue, kpiView, kpiViewId } from "../lib/kpis";
 
 /** Three rising bars — marks the row you can send to the explorer chart. */
 function ChartIcon() {
@@ -88,10 +88,13 @@ export function KPITrendTable({ weeklyData, viewIndex, onCycle, onGraph }) {
                                     ? kpiValue(kpi, previousFull)
                                     : null,
                             );
+                            const improving = kpi.lowerIsBetter
+                                ? change < 0
+                                : change > 0;
                             const tone =
                                 change == null || Math.abs(change) <= 5
                                     ? "text-theme-text-muted"
-                                    : change > 0
+                                    : improving
                                       ? "text-intent-success-text"
                                       : "text-intent-danger-text";
                             return (
@@ -120,7 +123,11 @@ export function KPITrendTable({ weeklyData, viewIndex, onCycle, onGraph }) {
                                                 type="button"
                                                 aria-label={`Graph ${kpi.name}`}
                                                 title={`Graph ${kpi.name}`}
-                                                onClick={() => onGraph(row.key)}
+                                                onClick={() =>
+                                                    onGraph(
+                                                        kpiViewId(row, index),
+                                                    )
+                                                }
                                                 className="ml-1 text-theme-text-muted hover:text-theme-text-link"
                                             >
                                                 <ChartIcon />

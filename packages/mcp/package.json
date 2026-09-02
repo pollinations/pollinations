@@ -1,6 +1,6 @@
 {
     "name": "@pollinations/mcp",
-    "version": "2.4.0",
+    "version": "2.5.0",
     "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
     "type": "module",
     "bin": {
@@ -13,7 +13,7 @@
         "LICENSE"
     ],
     "scripts": {
-        "test": "node test-mcp-client.js",
+        "test": "node --test test/*.test.js && node test-mcp-client.js",
         "start": "node src/index.js"
     },
     "keywords": [

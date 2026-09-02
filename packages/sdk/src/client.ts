@@ -3,6 +3,7 @@ import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -14,9 +15,11 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -138,6 +141,19 @@ interface SSEParseResult<T> {
     remainingBuffer: string;
 }
 
+function chatStreamError(chunk: unknown): PollinationsError | null {
+    if (!chunk || typeof chunk !== "object" || !("error" in chunk)) return null;
+
+    const error = (chunk as { error: unknown }).error;
+    let message = "Streaming request failed";
+    if (typeof error === "string") message = error;
+    else if (error && typeof error === "object" && "message" in error) {
+        const errorMessage = (error as { message: unknown }).message;
+        if (typeof errorMessage === "string") message = errorMessage;
+    }
+    return new PollinationsError(message, "STREAM_ERROR", 502);
+}
+
 // Parse SSE lines from buffer and extract data
 function parseSSEBuffer<T>(
     buffer: string,
@@ -146,18 +162,13 @@ function parseSSEBuffer<T>(
     const lines = buffer.split("\n");
     const remainingBuffer = lines.pop() || "";
     const chunks: T[] = [];
-
     for (const line of lines) {
         const trimmed = line.trim();
         if (!trimmed || trimmed === "data: [DONE]") continue;
         if (trimmed.startsWith("data: ")) {
-            try {
-                const parsed = parseChunk(trimmed.slice(6));
-                if (parsed !== null) {
-                    chunks.push(parsed);
-                }
-            } catch {
-                // Skip invalid JSON
+            const parsed = parseChunk(trimmed.slice(6));
+            if (parsed !== null) {
+                chunks.push(parsed);
             }
         }
     }
@@ -679,51 +690,43 @@ export class Pollinations {
             );
         }
 
-        const messages: Message[] = [];
+        const response = await this.chat(
+            this.buildTextMessages(prompt, options.systemPrompt),
+            {
+                ...this.buildTextChatOptions(options),
+                signal: options.signal,
+            },
+        );
+        return response.choices[0]?.message?.content || "";
+    }
 
-        if (options.systemPrompt) {
-            messages.push({
-                role: "system",
-                content: options.systemPrompt,
-            });
-        }
-        messages.push({ role: "user", content: prompt });
+    /** Adapt the simple text facade to the canonical chat-completions request. */
+    private buildTextMessages(
+        prompt: string,
+        systemPrompt?: string,
+    ): Message[] {
+        return [
+            ...(systemPrompt
+                ? [{ role: "system" as const, content: systemPrompt }]
+                : []),
+            { role: "user", content: prompt },
+        ];
+    }
 
-        const body: Record<string, unknown> = {
-            messages,
+    /** Map simple text options without introducing SDK-owned defaults. */
+    private buildTextChatOptions(
+        options: Omit<TextGenerateOptions, "stream">,
+    ): Omit<ChatOptions, "stream" | "signal"> {
+        return {
             model: options.model,
             temperature: options.temperature,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
+            maxTokens: options.maxTokens,
+            frequencyPenalty: options.frequencyPenalty,
+            presencePenalty: options.presencePenalty,
             seed: options.seed,
-            stream: false,
             private: options.private,
+            responseFormat: options.json ? { type: "json_object" } : undefined,
         };
-
-        if (options.json) {
-            body.response_format = { type: "json_object" };
-        }
-
-        this.stripUndefined(body);
-
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/chat/completions`,
-            {
-                method: "POST",
-                headers: this.getHeaders("application/json"),
-                body: JSON.stringify(body),
-            },
-            this.textTimeout,
-            options.signal,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const data = (await response.json()) as ChatResponse;
-        return data.choices[0]?.message?.content || "";
     }
 
     /**
@@ -748,72 +751,16 @@ export class Pollinations {
             );
         }
 
-        const messages: Message[] = [];
-
-        if (options.systemPrompt) {
-            messages.push({ role: "system", content: options.systemPrompt });
-        }
-        messages.push({ role: "user", content: prompt });
-
-        const body: Record<string, unknown> = {
-            messages,
-            model: options.model,
-            temperature: options.temperature,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
-            seed: options.seed,
-            stream: true,
-            private: options.private,
-        };
-
-        if (options.json) {
-            body.response_format = { type: "json_object" };
-        }
-
-        this.stripUndefined(body);
-
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/chat/completions`,
+        const chunks = this.chatStream(
+            this.buildTextMessages(prompt, options.systemPrompt),
             {
-                method: "POST",
-                headers: this.getHeaders("application/json"),
-                body: JSON.stringify(body),
+                ...this.buildTextChatOptions(options),
+                signal: options.signal,
             },
-            this.textTimeout,
-            options.signal,
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const reader = response.body?.getReader();
-        if (!reader) {
-            throw new PollinationsError("No response body", "NO_BODY", 500);
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<string>(buffer, (data) => {
-                    const json = JSON.parse(data) as ChatStreamChunk;
-                    return json.choices[0]?.delta?.content || null;
-                });
-
-                buffer = result.remainingBuffer;
-                for (const content of result.chunks) {
-                    yield content;
-                }
-            }
-        } finally {
-            reader.releaseLock();
+        for await (const chunk of chunks) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) yield content;
         }
     }
 
@@ -838,6 +785,7 @@ export class Pollinations {
             repetition_penalty: options.repetitionPenalty,
             stop: options.stop,
             seed: options.seed,
+            private: options.private,
             stream,
             stream_options: options.streamOptions,
             response_format: options.responseFormat,
@@ -953,14 +901,35 @@ export class Pollinations {
                 if (done) break;
 
                 buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<ChatStreamChunk>(
-                    buffer,
-                    (data) => JSON.parse(data) as ChatStreamChunk,
-                );
+                const result = parseSSEBuffer<unknown>(buffer, (data) => {
+                    try {
+                        return JSON.parse(data) as unknown;
+                    } catch {
+                        throw new PollinationsError(
+                            "Invalid JSON in chat completion stream",
+                            "MALFORMED_STREAM",
+                            502,
+                        );
+                    }
+                });
 
                 buffer = result.remainingBuffer;
                 for (const chunk of result.chunks) {
-                    yield chunk;
+                    const error = chatStreamError(chunk);
+                    if (error) throw error;
+                    if (
+                        !chunk ||
+                        typeof chunk !== "object" ||
+                        !("choices" in chunk) ||
+                        !Array.isArray((chunk as { choices: unknown }).choices)
+                    ) {
+                        throw new PollinationsError(
+                            "Invalid chat completion stream event",
+                            "MALFORMED_STREAM",
+                            502,
+                        );
+                    }
+                    yield chunk as ChatStreamChunk;
                 }
             }
         } finally {
@@ -1462,6 +1431,21 @@ export class Pollinations {
     }
 
     /**
+     * Get quest catalog with the authenticated account's status
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status));
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+        );
+    }
+
+    /**
      * Get usage history
      *
      * @example
@@ -1547,6 +1531,30 @@ export class Pollinations {
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
         return this.getJson<UsageResponse>(url);
+    }
+
+    /**
+     * Get developer earnings from BYOP apps and community models
+     *
+     * @example
+     * ```ts
+     * const { daily, perEntity } = await pollinations.accountEarnings({ days: 30 });
+     * perEntity.forEach(e => console.log(e.entity_name, e.pollen_earned));
+     * ```
+     */
+    async accountEarnings(
+        options: EarningsOptions = {},
+    ): Promise<DeveloperEarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.days !== undefined)
+            params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
+
+        return this.getJson<DeveloperEarningsResponse>(url);
     }
 
     // ============================================================================

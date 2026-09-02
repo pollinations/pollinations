@@ -6,6 +6,7 @@ import {
     CSM_VOICES,
     KOKORO_VOICES,
     resolveElevenLabsVoiceId,
+    XAI_TTS_VOICES,
 } from "@shared/registry/audio.ts";
 import {
     buildUsageHeaders,
@@ -15,6 +16,7 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
+import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -29,22 +31,21 @@ import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import {
-    applySafety,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { arrayBufferToBase64, normalizeSeed } from "@/util.ts";
-import { generationAccess } from "@/utils/generation-access.ts";
+import {
+    apiKeyBudgetReservation,
+    generationAccess,
+} from "@/utils/generation-access.ts";
 import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
-import { validateUserMediaUrl } from "../utils/user-media-url.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
@@ -77,7 +78,7 @@ const CreateSpeechRequestSchema = z
             .default("mp3")
             .meta({
                 description:
-                    "The audio format for the output. CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                    "The audio format for the output. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
                 example: "mp3",
             }),
         duration: z.number().min(0.5).max(300).optional().meta({
@@ -153,13 +154,12 @@ async function withAudioFallback(
     c: AudioContext,
     attempt: (candidate: FallbackCandidate) => Promise<Response>,
 ): Promise<Response> {
-    const { response, servedEntry } = await withModelFallbackResponse(
+    return withModelFallbackResponse(
         c.var.model,
         attempt,
-        c.var.track?.failedCalls,
+        c.var.track?.attempts,
+        (candidate) => enforceModelRateLimit(c, candidate),
     );
-    if (servedEntry) c.set("servedModelEntry", servedEntry);
-    return response;
 }
 type AudioRefChunk = {
     song_id: string;
@@ -796,6 +796,94 @@ interface ElevenLabsTranscriptionResponse {
         speaker_id?: string | null;
         type?: string;
     }[];
+}
+
+interface AzureTranscriptionResponse {
+    text: string;
+    usage: {
+        type: "duration";
+        seconds: number;
+    };
+}
+
+const AZURE_GPT_TRANSCRIBE_ENDPOINT =
+    "https://myceli-prod-swedencentral.openai.azure.com/openai/deployments/test-gpt-transcribe/audio/transcriptions?api-version=2025-04-01-preview";
+
+export async function transcribeWithAzure(opts: {
+    file: File;
+    language?: string;
+    prompt?: string;
+    responseFormat?: string;
+    temperature?: number;
+    apiKey: string;
+}): Promise<Response> {
+    const {
+        file,
+        language,
+        prompt,
+        responseFormat = "json",
+        temperature,
+        apiKey,
+    } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Azure transcription service is not configured",
+        });
+    }
+    assertTranscriptionResponseFormat(responseFormat, "gpt-transcribe", [
+        "json",
+    ]);
+
+    const formData = new FormData();
+    formData.append("model", "gpt-transcribe");
+    if (language) formData.append("language", language);
+    if (prompt) formData.append("prompt", prompt);
+    formData.append("response_format", responseFormat);
+    if (temperature !== undefined) {
+        formData.append("temperature", String(temperature));
+    }
+    formData.append("file", file, file.name || "audio");
+
+    const response = await ensureUpstreamOk(
+        await fetch(AZURE_GPT_TRANSCRIBE_ENDPOINT, {
+            method: "POST",
+            headers: { "api-key": apiKey },
+            body: formData,
+        }),
+        AZURE_GPT_TRANSCRIBE_ENDPOINT,
+    );
+    const transcript = (await response
+        .json()
+        .catch(() => null)) as AzureTranscriptionResponse | null;
+    if (
+        !transcript ||
+        typeof transcript.text !== "string" ||
+        transcript.usage?.type !== "duration" ||
+        typeof transcript.usage.seconds !== "number" ||
+        !Number.isFinite(transcript.usage.seconds) ||
+        transcript.usage.seconds <= 0
+    ) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Azure transcription response did not include valid input-duration metering.",
+        });
+    }
+
+    return buildTranscriptionResponse({
+        normalized: {
+            text: transcript.text,
+            duration: transcript.usage.seconds,
+            words: [],
+            segments: [],
+            diarizedSegments: [],
+        },
+        responseFormat,
+        usageHeaders: buildUsageHeaders(
+            "gpt-transcribe",
+            createAudioSecondsUsage(transcript.usage.seconds),
+        ),
+    });
 }
 
 const ELEVENLABS_SCRIBE_SECONDS_PER_CREDIT = 2.5;
@@ -1478,6 +1566,9 @@ export async function generateSoundEffect(opts: {
 const QWEN_TTS_ENDPOINT =
     "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation";
 
+const XAI_TTS_ENDPOINT = "https://api.x.ai/v1/tts";
+const XAI_TTS_FORMATS = ["mp3", "wav", "pcm"] as const;
+
 const DEEPINFRA_TTS_ENDPOINT =
     "https://api.deepinfra.com/v1/openai/audio/speech";
 const LYRIA_3_CLIP_MODEL_ID = "lyria-3-clip-preview";
@@ -1884,6 +1975,168 @@ export async function generateQwenTts(opts: {
     return new Response(audioBuffer, {
         status: 200,
         headers: { "Content-Type": "audio/wav", ...usageHeaders },
+    });
+}
+
+const OPENROUTER_FISH_TTS_ENDPOINT =
+    "https://openrouter.ai/api/v1/audio/speech";
+const OPENROUTER_FISH_TTS_MODEL = "fish-audio/s2.1-pro";
+const OPENROUTER_FISH_TTS_FORMATS = ["mp3", "pcm"] as const;
+
+export async function generateOpenRouterFishSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, voice, responseFormat, apiKey, log } = opts;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "OpenRouter is not configured (missing API key)",
+        });
+    }
+
+    if (
+        !OPENROUTER_FISH_TTS_FORMATS.includes(
+            responseFormat as (typeof OPENROUTER_FISH_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for fish-audio-s2.1-pro: ${responseFormat}. Supported formats: ${OPENROUTER_FISH_TTS_FORMATS.join(", ")}.`,
+        });
+    }
+
+    const inputBytes = new TextEncoder().encode(text).byteLength;
+    log.info(
+        "Fish Audio request: voice={voice}, format={format}, utf8Bytes={utf8Bytes}",
+        { voice, format: responseFormat, utf8Bytes: inputBytes },
+    );
+
+    const response = await ensureUpstreamOk(
+        await fetch(OPENROUTER_FISH_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: OPENROUTER_FISH_TTS_MODEL,
+                input: text,
+                voice,
+                response_format: responseFormat,
+                provider: {
+                    only: ["Fish Audio"],
+                    allow_fallbacks: false,
+                },
+            }),
+        }),
+        OPENROUTER_FISH_TTS_ENDPOINT,
+    );
+
+    const generationId = response.headers.get("x-generation-id");
+    log.info("Fish Audio success: {utf8Bytes} UTF-8 bytes", {
+        utf8Bytes: inputBytes,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") ||
+                (responseFormat === "pcm" ? "audio/pcm" : "audio/mpeg"),
+            ...buildUsageHeaders(
+                "fish-audio-s2.1-pro",
+                createAudioTokenUsage(inputBytes),
+            ),
+            "x-tts-voice": voice,
+            ...(generationId ? { "x-generation-id": generationId } : {}),
+        },
+    });
+}
+
+export async function generateXaiSpeech(opts: {
+    text: string;
+    voice: string;
+    responseFormat: string;
+    apiKey: string;
+    log: Logger;
+}): Promise<Response> {
+    const { text, responseFormat, apiKey, log } = opts;
+    const inputCharacters = [...text].length;
+
+    if (!apiKey) {
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: "Grok TTS is not configured (missing API key)",
+        });
+    }
+
+    const voice = opts.voice === "alloy" ? "eve" : opts.voice;
+    if (!(XAI_TTS_VOICES as readonly string[]).includes(voice)) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Invalid voice for grok-tts: ${opts.voice}. Supported voices: ${XAI_TTS_VOICES.join(", ")}.`,
+        });
+    }
+
+    if (
+        !XAI_TTS_FORMATS.includes(
+            responseFormat as (typeof XAI_TTS_FORMATS)[number],
+        )
+    ) {
+        throw new UpstreamError(400 as ContentfulStatusCode, {
+            message: `Unsupported response_format for grok-tts: ${responseFormat}. Supported formats: ${XAI_TTS_FORMATS.join(", ")}.`,
+        });
+    }
+
+    log.info("xAI TTS request: voice={voice}, format={format}, chars={chars}", {
+        voice,
+        format: responseFormat,
+        chars: inputCharacters,
+    });
+
+    const response = await ensureUpstreamOk(
+        await fetch(XAI_TTS_ENDPOINT, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                text,
+                voice_id: voice,
+                language: "auto",
+                output_format: {
+                    codec: responseFormat,
+                    sample_rate: 24000,
+                    ...(responseFormat === "mp3" ? { bit_rate: 128000 } : {}),
+                },
+            }),
+        }),
+        XAI_TTS_ENDPOINT,
+    );
+
+    log.info("xAI TTS success: voice={voice}, chars={chars}", {
+        voice,
+        chars: inputCharacters,
+    });
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type":
+                response.headers.get("content-type") ||
+                (responseFormat === "wav"
+                    ? "audio/wav"
+                    : responseFormat === "pcm"
+                      ? "audio/pcm"
+                      : "audio/mpeg"),
+            ...buildUsageHeaders(
+                "grok-tts",
+                createAudioTokenUsage(inputCharacters),
+            ),
+            "x-tts-voice": voice,
+        },
     });
 }
 
@@ -2303,6 +2556,8 @@ async function dispatchAudioGeneration(
         apiKey: string;
         dashScopeApiKey: string;
         deepInfraApiKey: string;
+        xaiApiKey: string;
+        openRouterApiKey: string;
         falKey?: string;
         stabilityApiKey?: string;
         log: Logger;
@@ -2328,6 +2583,8 @@ async function dispatchAudioGeneration(
         apiKey,
         dashScopeApiKey,
         deepInfraApiKey,
+        xaiApiKey,
+        openRouterApiKey,
         falKey,
         stabilityApiKey,
         log,
@@ -2452,6 +2709,28 @@ async function dispatchAudioGeneration(
                     log,
                 }),
             );
+        case "grok-tts":
+            return withSafetyHeaders(
+                c,
+                await generateXaiSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: xaiApiKey,
+                    log,
+                }),
+            );
+        case "fish-audio-s2.1-pro":
+            return withSafetyHeaders(
+                c,
+                await generateOpenRouterFishSpeech({
+                    text,
+                    voice,
+                    responseFormat,
+                    apiKey: openRouterApiKey,
+                    log,
+                }),
+            );
         case "csm-1b":
         case "kokoro":
             return withSafetyHeaders(
@@ -2506,7 +2785,7 @@ async function generateAudioFromSpeechRequest(
 
     if (c.var.model.resolved === "eleven-dialogue") {
         const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToTexts(
+        const safeTexts = await applySafetyToInput(
             c,
             inputs.map((turn) => turn.text),
             safe,
@@ -2525,7 +2804,7 @@ async function generateAudioFromSpeechRequest(
         return withSafetyHeaders(c, response);
     }
 
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     const referenceAudio = reference_audio
         ? await fetchReferenceAudio(reference_audio)
         : undefined;
@@ -2551,6 +2830,8 @@ async function generateAudioFromSpeechRequest(
             apiKey: c.env.ELEVENLABS_API_KEY,
             dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
             deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+            xaiApiKey: c.env.XAI_API_KEY,
+            openRouterApiKey: c.env.OPENROUTER_API_KEY,
             falKey: c.env.FAL_KEY,
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
@@ -2679,7 +2960,7 @@ export async function handleSpeechWithTimestamps(
                 "Timestamped speech supports mp3, opus, aac, wav, and pcm output.",
         });
     }
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     return withAudioFallback(c, (candidate) =>
         generateElevenLabsSpeechWithTimestamps({
             modelName: candidate.id as ElevenLabsTtsModelName,
@@ -2727,6 +3008,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         });
     }
 
+    c.var.track.setPricingInput({
+        hasDiarization: responseFormat === "diarized_json",
+        hasPrompt: Boolean(prompt),
+    });
+
     const result = await withAudioFallback(c, async (candidate) => {
         if (candidate.communityEndpoint) {
             return callCommunityTranscriptionEndpoint(
@@ -2748,6 +3034,16 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 responseFormat: responseFormat || undefined,
                 apiKey: c.env.XAI_API_KEY,
                 log,
+            });
+        }
+        if (candidate.id === "gpt-transcribe") {
+            return transcribeWithAzure({
+                file,
+                language: language || undefined,
+                prompt: prompt || undefined,
+                responseFormat: responseFormat || undefined,
+                temperature,
+                apiKey: c.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             });
         }
         if (candidate.id === "scribe") {
@@ -2778,8 +3074,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
 
-        const ovhApiKey = c.env.OVHCLOUD_API_KEY;
-        if (!ovhApiKey) {
+        const isDeepInfra = candidate.id === "whisper-deepinfra";
+        const providerApiKey = isDeepInfra
+            ? c.env.DEEPINFRA_API_KEY
+            : c.env.OVHCLOUD_API_KEY;
+        if (!providerApiKey) {
             throw new UpstreamError(500 as ContentfulStatusCode, {
                 message:
                     "Transcription service is not configured (missing API key)",
@@ -2797,15 +3096,24 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         whisperFormData.append("file", file, filename);
         if (language) whisperFormData.append("language", language);
         whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append("model", "whisper-large-v3");
-        whisperFormData.append("timestamp_granularities[]", "word");
+        whisperFormData.append(
+            "model",
+            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+        );
+        whisperFormData.append(
+            isDeepInfra
+                ? "timestamp_granularities"
+                : "timestamp_granularities[]",
+            "word",
+        );
 
-        const whisperUrl =
-            "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+        const whisperUrl = isDeepInfra
+            ? "https://api.deepinfra.com/v1/audio/transcriptions"
+            : "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
         const response = await ensureUpstreamOk(
             await fetch(whisperUrl, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${ovhApiKey}` },
+                headers: { Authorization: `Bearer ${providerApiKey}` },
                 body: whisperFormData,
             }),
             whisperUrl,
@@ -2819,7 +3127,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 message: "Whisper returned an unexpected (non-JSON) response",
             });
         }
-        const billedSeconds = extractWhisperUsage(whisper, log);
+        const billedSeconds = isDeepInfra
+            ? whisper.duration
+            : extractWhisperUsage(whisper, log);
+        if (typeof billedSeconds !== "number" || billedSeconds <= 0) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message:
+                    "Whisper response did not include valid duration metering",
+            });
+        }
         const usageHeaders = buildUsageHeaders(
             candidate.id,
             createAudioSecondsUsage(billedSeconds),
@@ -2924,6 +3240,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleVoiceChanger,
     )
     .post(
@@ -2978,6 +3295,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleVoiceIsolator,
     )
     .post(
@@ -3122,6 +3440,7 @@ export const audioRoutes = new Hono<Env>()
         audioCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleSpeech,
     )
     .post(
@@ -3243,6 +3562,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleSpeechWithTimestamps,
     )
     .post(
@@ -3258,6 +3578,7 @@ export const audioRoutes = new Hono<Env>()
                 "**Models:**",
                 "- `whisper-large-v3` (default) — OpenAI Whisper via OVHcloud",
                 "- `whisper-1` — Alias for whisper-large-v3",
+                "- `gpt-transcribe` — Fast multilingual speech recognition with prompt context",
                 "- `scribe` — ElevenLabs Scribe (90+ languages, word-level timestamps)",
                 "- `grok-transcribe` — xAI speech recognition with word timestamps, speaker labels, and text formatting",
                 "- `universal-2` — AssemblyAI Universal-2 (99 languages)",
@@ -3281,7 +3602,7 @@ export const audioRoutes = new Hono<Env>()
                                     type: "string",
                                     default: "whisper-large-v3",
                                     description:
-                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`.",
+                                        "The model to use. Options: `whisper-large-v3`, `whisper-1`, `gpt-transcribe`, `scribe`, `grok-transcribe`, `universal-2`, `universal-3.5-pro`.",
                                 },
                                 language: {
                                     type: "string",
@@ -3370,6 +3691,7 @@ export const audioRoutes = new Hono<Env>()
         textCache,
         generationAccess,
         deduplicateGeneration,
+        apiKeyBudgetReservation,
         handleTranscription,
     );
 
@@ -3391,6 +3713,7 @@ export function parsePositiveInt(
 interface WhisperVerboseJson {
     text: string;
     language?: string;
+    duration?: number;
     usage?: { seconds?: number };
     words?: NormalizedWord[];
     segments?: NormalizedSegment[];

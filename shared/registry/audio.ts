@@ -1,3 +1,6 @@
+import { AUDIO_FALLBACKS } from "./audio-fallbacks";
+import { defineCostVariants } from "./cost-variants";
+import { mergeFallbacks } from "./merge-fallbacks";
 import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
@@ -111,18 +114,56 @@ export const KOKORO_VOICES = [
     "zm_yunyang",
 ] as const;
 
+export const XAI_TTS_VOICES = [
+    "altair",
+    "ara",
+    "atlas",
+    "aurora",
+    "carina",
+    "castor",
+    "celeste",
+    "cosmo",
+    "eve",
+    "helios",
+    "helix",
+    "iris",
+    "kepler",
+    "leo",
+    "liora",
+    "lumen",
+    "luna",
+    "lux",
+    "naksh",
+    "orion",
+    "perseus",
+    "rex",
+    "rigel",
+    "sal",
+    "sirius",
+    "ursa",
+    "zagan",
+    "zenith",
+] as const;
+
 export const AUDIO_VOICES = [
     ...ELEVENLABS_VOICES,
     ...CSM_VOICES,
     ...KOKORO_VOICES,
+    ...XAI_TTS_VOICES,
 ];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
-export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
-export const AUDIO_SERVICES = {
+const AUDIO_BASE_SERVICES = {
     elevenlabs: {
-        aliases: ["tts", "text-to-speech", "eleven", "tts-1", "tts-1-hd"],
+        aliases: [
+            "tts",
+            "text-to-speech",
+            "eleven",
+            "tts-1",
+            "tts-1-hd",
+            "elevenlabs/eleven-v3",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -148,7 +189,12 @@ export const AUDIO_SERVICES = {
         ],
     },
     elevenflash: {
-        aliases: ["tts-flash", "eleven-flash", "flash"],
+        aliases: [
+            "tts-flash",
+            "eleven-flash",
+            "flash",
+            "elevenlabs/eleven-flash-v2.5",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -174,7 +220,12 @@ export const AUDIO_SERVICES = {
         ],
     },
     "eleven-multilingual-v2": {
-        aliases: ["multilingual-v2", "eleven-v2", "tts-multilingual"],
+        aliases: [
+            "multilingual-v2",
+            "eleven-v2",
+            "tts-multilingual",
+            "elevenlabs/eleven-multilingual-v2",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -200,7 +251,11 @@ export const AUDIO_SERVICES = {
         ],
     },
     "eleven-dialogue": {
-        aliases: ["dialogue", "text-to-dialogue"],
+        aliases: [
+            "dialogue",
+            "text-to-dialogue",
+            "elevenlabs/eleven-v3:dialogue",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -219,7 +274,11 @@ export const AUDIO_SERVICES = {
         voices: ELEVENLABS_VOICES as string[],
     },
     "eleven-voice-changer": {
-        aliases: ["voice-changer", "speech-to-speech"],
+        aliases: [
+            "voice-changer",
+            "speech-to-speech",
+            "elevenlabs/eleven-multilingual-sts-v2",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -239,7 +298,11 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/voice-changer"],
     },
     "eleven-voice-isolator": {
-        aliases: ["voice-isolator", "audio-cleanup"],
+        aliases: [
+            "voice-isolator",
+            "audio-cleanup",
+            "elevenlabs/voice-isolator",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -258,7 +321,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
     elevenmusic: {
-        aliases: ["music"],
+        aliases: ["music", "elevenlabs/music-v2"],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -279,7 +342,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "lyria-3-clip": {
-        aliases: ["lyria", "lyria-3"],
+        aliases: ["lyria", "lyria-3", "google/lyria-3-clip-preview"],
         provider: "google",
         brand: "Google",
         category: "audio",
@@ -297,7 +360,12 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "eleven-sfx": {
-        aliases: ["sfx", "sound-effects", "eleven-sound-effects"],
+        aliases: [
+            "sfx",
+            "sound-effects",
+            "eleven-sound-effects",
+            "elevenlabs/eleven-text-to-sound-v2",
+        ],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -314,15 +382,15 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     whisper: {
-        aliases: ["whisper-1", "whisper-large-v3"],
+        aliases: ["whisper-1", "whisper-large-v3", "openai/whisper-large-v3"],
         provider: "ovhcloud",
         brand: "OpenAI",
         category: "audio",
         addedDate: new Date("2026-02-08").getTime(),
         priceMultiplier: 1,
         cost: {
-            // OVH Whisper: €0.00004083/sec ≈ $0.0000445/sec
-            promptAudioSeconds: 0.0000445,
+            // OVHcloud USD list price: $0.163/hour.
+            promptAudioSeconds: 0.163 / 3600,
         },
         title: "Whisper Large V3",
         description: "Accurate, affordable speech-to-text transcription",
@@ -330,8 +398,28 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "gpt-transcribe": {
+        aliases: ["openai/gpt-transcribe"],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        cost: {
+            // Provisional OpenAI list price: $0.0045 per input minute. Azure's
+            // exact meter was not yet visible when this route launched.
+            promptAudioSeconds: 0.0045 / 60,
+        },
+        title: "GPT Transcribe",
+        description:
+            "Fast multilingual speech recognition with optional language and prompt context",
+        inputModalities: ["audio"],
+        outputModalities: ["text"],
+        supportedEndpoints: ["/v1/audio/transcriptions"],
+    },
     scribe: {
-        aliases: ["scribe_v2", "scribe-v2"],
+        aliases: ["scribe_v2", "scribe-v2", "elevenlabs/scribe-v2"],
         provider: "elevenlabs",
         brand: "ElevenLabs",
         category: "audio",
@@ -349,7 +437,7 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "grok-transcribe": {
-        aliases: [],
+        aliases: ["x-ai/grok-transcribe"],
         provider: "xai",
         brand: "xAI",
         category: "audio",
@@ -367,8 +455,32 @@ export const AUDIO_SERVICES = {
         outputModalities: ["text"],
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
+    "grok-tts": {
+        aliases: ["x-ai/grok-tts"],
+        provider: "xai",
+        brand: "xAI",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // xAI REST text-to-speech: $15 per 1M input characters.
+            completionAudioTokens: 15 / 1_000_000,
+        },
+        title: "Grok TTS",
+        description:
+            "Expressive multilingual speech across 28 built-in voices with inline style controls",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        voices: [...XAI_TTS_VOICES],
+        supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
+    },
     "universal-2": {
-        aliases: ["assemblyai-universal-2", "assemblyai-u2"],
+        aliases: [
+            "assemblyai-universal-2",
+            "assemblyai-u2",
+            "assemblyai/universal-2",
+        ],
         provider: "assemblyai",
         brand: "AssemblyAI",
         category: "audio",
@@ -378,6 +490,22 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-2: $0.15/hour
             promptAudioSeconds: 0.15 / 3600,
         },
+        ...defineCostVariants(
+            {
+                diarization: {
+                    promptAudioSeconds: 0.17 / 3600,
+                },
+            },
+            ({ input }) => (input?.hasDiarization ? "diarization" : undefined),
+            {
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-2",
         description: "Fast transcription with support for 99 languages",
         inputModalities: ["audio"],
@@ -394,6 +522,7 @@ export const AUDIO_SERVICES = {
             "assemblyai-universal-3-pro",
             "assemblyai-u3-pro",
             "assemblyai-pro",
+            "assemblyai/universal-3.5-pro",
         ],
         provider: "assemblyai",
         brand: "AssemblyAI",
@@ -404,6 +533,44 @@ export const AUDIO_SERVICES = {
             // AssemblyAI Universal-3.5 Pro async: $0.21/hour
             promptAudioSeconds: 0.21 / 3600,
         },
+        ...defineCostVariants(
+            {
+                prompting: {
+                    promptAudioSeconds: 0.26 / 3600,
+                },
+                diarization: {
+                    promptAudioSeconds: 0.23 / 3600,
+                },
+                prompting_diarization: {
+                    promptAudioSeconds: 0.28 / 3600,
+                },
+            },
+            ({ input }) => {
+                if (input?.hasPrompt) {
+                    return input.hasDiarization
+                        ? "prompting_diarization"
+                        : "prompting";
+                }
+                return input?.hasDiarization ? "diarization" : undefined;
+            },
+            {
+                prompting: {
+                    label: "Prompting",
+                    description: "Applies when a prompt is provided.",
+                },
+                diarization: {
+                    label: "Speaker diarization",
+                    description:
+                        "Applies when response_format is diarized_json.",
+                },
+                prompting_diarization: {
+                    label: "Prompting and speaker diarization",
+                    description:
+                        "Applies when a prompt is provided and response_format is diarized_json.",
+                },
+            },
+            "Standard transcription",
+        ),
         title: "AssemblyAI Universal-3.5 Pro",
         description:
             "High-accuracy transcription with multilingual code switching and prompts",
@@ -412,7 +579,12 @@ export const AUDIO_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "stable-audio-3-medium": {
-        aliases: ["stable-audio", "stability-audio", "stable-audio-2.5"],
+        aliases: [
+            "stable-audio",
+            "stability-audio",
+            "stable-audio-2.5",
+            "stability-ai/stable-audio-3-medium",
+        ],
         provider: "fal",
         brand: "Stability AI",
         category: "audio",
@@ -438,7 +610,11 @@ export const AUDIO_SERVICES = {
         // Distinct from stable-audio-3-medium (fal): this is the larger
         // API-only model served by Stability's direct API. Keep aliases
         // non-overlapping with the medium entry.
-        aliases: ["stable-audio-3", "stable-audio-large"],
+        aliases: [
+            "stable-audio-3",
+            "stable-audio-large",
+            "stability-ai/stable-audio-3",
+        ],
         provider: "stability",
         brand: "Stability AI",
         category: "audio",
@@ -459,14 +635,33 @@ export const AUDIO_SERVICES = {
         inputModalities: ["text", "audio"],
         outputModalities: ["audio"],
     },
+    "fish-audio-s2.1-pro": {
+        aliases: ["fish-audio/s2.1-pro"],
+        provider: "openrouter",
+        brand: "Fish Audio",
+        category: "audio",
+        addedDate: new Date("2026-08-19").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // OpenRouter, verified 2026-08-19: $15 per 1M UTF-8 input bytes.
+            completionAudioTokens: 15 / 1_000_000,
+        },
+        title: "Fish Audio S2.1 Pro",
+        description:
+            "Multilingual expressive speech with natural-language emotion and delivery control",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+    },
     "qwen-tts": {
-        aliases: ["qwen3-tts", "qwen3-tts-flash"],
+        aliases: ["qwen3-tts", "qwen3-tts-flash", "qwen/qwen3-tts-flash"],
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // DashScope Qwen3-TTS-Flash: $0.10 per 10K characters
             completionAudioTokens: 0.01 / 1000,
@@ -477,7 +672,11 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "qwen-tts-instruct": {
-        aliases: ["qwen3-tts-instruct", "qwen3-tts-instruct-flash"],
+        aliases: [
+            "qwen3-tts-instruct",
+            "qwen3-tts-instruct-flash",
+            "qwen/qwen3-tts-instruct-flash",
+        ],
         provider: "alibaba",
         brand: "Qwen",
         category: "audio",
@@ -495,7 +694,7 @@ export const AUDIO_SERVICES = {
         outputModalities: ["audio"],
     },
     "csm-1b": {
-        aliases: ["csm", "sesame-csm", "sesame-csm-1b"],
+        aliases: ["csm", "sesame-csm", "sesame-csm-1b", "sesame/csm-1b"],
         provider: "deepinfra",
         brand: "Sesame",
         category: "audio",
@@ -514,7 +713,12 @@ export const AUDIO_SERVICES = {
         voices: [...CSM_VOICES],
     },
     kokoro: {
-        aliases: ["kokoro-82m", "kokoro-tts", "hexgrad-kokoro-82m"],
+        aliases: [
+            "kokoro-82m",
+            "kokoro-tts",
+            "hexgrad-kokoro-82m",
+            "hexgrad/kokoro-82m",
+        ],
         provider: "deepinfra",
         brand: "Hexgrad",
         category: "audio",
@@ -533,6 +737,12 @@ export const AUDIO_SERVICES = {
         voices: [...KOKORO_VOICES],
     },
 } satisfies Record<string, ModelDefinition>;
+
+export const AUDIO_SERVICES = mergeFallbacks(
+    AUDIO_BASE_SERVICES,
+    AUDIO_FALLBACKS,
+);
+export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

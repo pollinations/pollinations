@@ -4,6 +4,10 @@ compatibility_date = "2025-11-01"
 compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
+[[services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
+
 [dev]
 port = 3000
 
@@ -43,6 +47,10 @@ STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.local]
 
+[[env.local.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
+
 [env.local.triggers]
 crons = []
 
@@ -75,6 +83,10 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.production]
+
+[[env.production.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
 
 # Explicitly detach cron schedules. Deleting the [triggers] block leaves
 # previously-deployed crons attached (crons undefined = unchanged); only
@@ -129,6 +141,10 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 [env.staging]
 
+[[env.staging.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp-staging"
+
 # See production note above: explicit empty crons detaches the schedule.
 [env.staging.triggers]
 crons = []
@@ -178,6 +194,10 @@ STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.dev]
 
+[[env.dev.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
+
 [[env.dev.routes]]
 pattern = "dev.enter.myceli.ai"
 zone_name = "myceli.ai"
@@ -215,6 +235,10 @@ STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 [env.test]
 
+[[env.test.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
+
 [[env.test.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -234,6 +258,9 @@ LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
+DISCORD_CLIENT_ID = "test_discord_client_id"
+DISCORD_CLIENT_SECRET = "test_discord_client_secret"
+DISCORD_BOT_TOKEN = "test_discord_bot_token"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
 # isInternalRequest() rejects tokens shorter than 32 characters, so a shorter
 # placeholder 401s every internal route instead of exercising it.

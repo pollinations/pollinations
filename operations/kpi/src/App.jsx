@@ -18,12 +18,14 @@ import { RetentionTable } from "./components/RetentionTable";
 import { Trend } from "./components/Trend";
 import { SOURCE_LABELS, useKpiData } from "./hooks/useKpiData";
 import { calcChange, formatValue, weekLabel } from "./lib/format";
+import { DEFAULT_WEEKS, WEEK_RANGES, weeksFromSearch } from "./lib/range";
 
 const EXPORT_COLUMNS = [
     ["week", "Week"],
     ["registrations", "Registrations"],
     ["activations", "Activations"],
     ["wau", "WAU"],
+    ["wauAll", "WAU incl. rejected"],
     ["tokens", "Tokens"],
     ["revenue", "Revenue"],
     ["packPurchases", "Pack purchases"],
@@ -101,7 +103,19 @@ export default function App() {
     // Which unit each cycling row is showing, and which row the explorer plots.
     // Both live here so the chart follows the table.
     const [viewIndex, setViewIndex] = useState({});
-    const [explored, setExplored] = useState("registrations");
+    const [explored, setExplored] = useState("registrations:0");
+    const [weeks, setWeeks] = useState(() =>
+        weeksFromSearch(window.location.search),
+    );
+
+    const changeWeeks = (event) => {
+        const next = Number(event.target.value);
+        setWeeks(next);
+        const url = new URL(window.location.href);
+        if (next === DEFAULT_WEEKS) url.searchParams.delete("weeks");
+        else url.searchParams.set("weeks", String(next));
+        window.history.replaceState(null, "", url);
+    };
 
     const cycleView = (key) =>
         setViewIndex((prev) => ({ ...prev, [key]: (prev[key] ?? 0) + 1 }));
@@ -125,7 +139,7 @@ export default function App() {
         github,
         currentWeek,
         previousWeek,
-    } = useKpiData();
+    } = useKpiData(weeks);
 
     if (loading) return <LoadingScreen done={done} active={active} />;
 
@@ -170,15 +184,32 @@ export default function App() {
             </AppHeader>
 
             <main className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-4 py-5 sm:px-6 md:py-7">
-                <div className="flex flex-col gap-1">
-                    <Heading as="h1" size="title">
-                        KPI Dashboard
-                    </Heading>
-                    <Text as="p" tone="base">
-                        Weekly KPIs for pollinations.ai. Figures are the last
-                        full week ({weekLabel(currentWeek?.week)}) against the
-                        one before it.
-                    </Text>
+                <div className="flex flex-wrap items-end justify-between gap-3">
+                    <div className="flex flex-col gap-1">
+                        <Heading as="h1" size="title">
+                            KPI Dashboard
+                        </Heading>
+                        <Text as="p" tone="base">
+                            Weekly KPIs for pollinations.ai. Figures are the
+                            last full week ({weekLabel(currentWeek?.week)})
+                            against the one before it.
+                        </Text>
+                    </div>
+                    <label className="flex items-center gap-2 text-sm text-theme-text-muted">
+                        Range
+                        <select
+                            aria-label="KPI time range"
+                            value={weeks}
+                            onChange={changeWeeks}
+                            className="rounded-lg bg-theme-bg-subtle px-2.5 py-1.5 font-medium text-theme-text-strong hover:bg-theme-bg-hover"
+                        >
+                            {WEEK_RANGES.map((range) => (
+                                <option key={range} value={range}>
+                                    {range} weeks
+                                </option>
+                            ))}
+                        </select>
+                    </label>
                 </div>
 
                 {missing.length > 0 && (
@@ -300,7 +331,6 @@ export default function App() {
                         id={EXPLORER_ID}
                         weeks={historyWeeks}
                         selected={explored}
-                        viewIndex={viewIndex}
                         onSelect={setExplored}
                     />
                     <FunnelBars

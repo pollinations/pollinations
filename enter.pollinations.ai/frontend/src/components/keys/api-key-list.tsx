@@ -1,5 +1,4 @@
 import {
-    Alert,
     AppIcon,
     Chip,
     GlobeIcon,
@@ -47,17 +46,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     const now = Date.now();
     const visibleKeys = apiKeys.filter(
         (k) => !k.expiresAt || new Date(k.expiresAt).getTime() > now,
-    );
-    const leakedPublishableKeys = visibleKeys.filter(
-        (key) =>
-            isPublishableKey(key) &&
-            key.metadata?.directUseDisabledDueToLeak === true,
-    );
-    const disabledPublishableKeys = leakedPublishableKeys.filter(
-        (key) => !isAppKey(key) && key.enabled === false,
-    );
-    const protectedAppKeys = leakedPublishableKeys.filter(
-        (key) => isAppKey(key) && key.enabled !== false,
     );
     const sortedKeys = [...visibleKeys].sort(
         (a, b) =>
@@ -240,47 +228,6 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
     return (
         <>
             <div className="flex flex-col gap-6">
-                {(disabledPublishableKeys.length > 0 ||
-                    protectedAppKeys.length > 0) && (
-                    <Alert intent="warning">
-                        {disabledPublishableKeys.length > 0 && (
-                            <p className="font-medium">
-                                We disabled {disabledPublishableKeys.length}{" "}
-                                publishable{" "}
-                                {disabledPublishableKeys.length === 1
-                                    ? "key"
-                                    : "keys"}{" "}
-                                after detecting suspicious direct use:{" "}
-                                {disabledPublishableKeys
-                                    .map((key) => key.name || "Unnamed key")
-                                    .join(", ")}
-                                .
-                            </p>
-                        )}
-                        {protectedAppKeys.length > 0 && (
-                            <p className="font-medium">
-                                We blocked direct Pollen spending on{" "}
-                                {protectedAppKeys.length} app{" "}
-                                {protectedAppKeys.length === 1 ? "key" : "keys"}{" "}
-                                after detecting suspicious direct use:{" "}
-                                {protectedAppKeys
-                                    .map((key) => key.name || "Unnamed key")
-                                    .join(", ")}
-                                . Pollinations Auth (BYOP) remains available.
-                            </p>
-                        )}
-                        <p className="mt-1 text-sm">
-                            Raw publishable keys (<code>pk_</code>) are legacy
-                            for direct API requests. Use Pollinations Auth
-                            (BYOP), where users sign in and spend their own
-                            Pollen.{" "}
-                            <InlineLink href={genDocsUrl("#tag/byop")}>
-                                Read the migration guide
-                            </InlineLink>
-                            .
-                        </p>
-                    </Alert>
-                )}
                 <Section
                     title="API"
                     framed
@@ -365,7 +312,11 @@ export const ApiKeyList: FC<ApiKeyManagerProps> = ({
                             <span>
                                 Turn on earnings to receive a share of pollen
                                 users spend in your app.{" "}
-                                <InlineLink href={genDocsUrl("#tag/byop")}>
+                                <InlineLink
+                                    href={genDocsUrl(
+                                        "#tag/connect-user-wallets",
+                                    )}
+                                >
                                     Read the guide
                                 </InlineLink>
                             </span>

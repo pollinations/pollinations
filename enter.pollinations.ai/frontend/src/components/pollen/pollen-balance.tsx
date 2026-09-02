@@ -310,7 +310,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
             )}
             <Surface>
                 {selectedPack && (
-                    <div className="flex w-full flex-col items-start gap-4 pb-10 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
+                    <div className="flex w-full flex-col items-start gap-4 sm:flex-row sm:items-center sm:gap-4 sm:pb-20">
                         <div className="w-full min-w-0 flex-1 pb-20 sm:pb-0">
                             <PollenPackSlider
                                 value={selectedPack.amountUsd}

@@ -20,7 +20,7 @@ import {
     getOrCreateStripeCustomerId,
     processAutoTopUpForUser,
     updateAutoTopUpSettings,
-} from "../utils/stripe-billing.ts";
+} from "../utils/stripe-billing/index.ts";
 import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,

@@ -9,6 +9,7 @@ export default defineConfig({
     dts: true,
     sourcemap: true,
     splitting: false,
+    loader: { ".md": "text" },
     noExternal: [],
     external: ["@modelcontextprotocol/sdk", "zod"],
 });

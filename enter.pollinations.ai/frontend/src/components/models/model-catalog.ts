@@ -1,68 +1,16 @@
+import type { ModelInfo } from "@shared/registry/model-info.ts";
 import {
     formatPrice,
     formatPriceFlat,
     formatPricePer1M,
 } from "./formatters.ts";
-import type {
-    ModelCapability,
-    ModelCategory,
-    ModelPrice,
-    ModelPriceLine,
-} from "./types.ts";
+import type { ModelCategory, ModelPrice, ModelPriceLine } from "./types.ts";
 import type { ModelStats } from "./use-model-stats.ts";
 
-type ApiPricing = Partial<Record<PriceField, string>> & {
-    currency?: string;
-};
+type ApiPricing = ModelInfo["pricing"];
 
-export type ApiModelInfo = {
-    name?: string;
+export type ApiModelInfo = Partial<ModelInfo> & {
     id?: string;
-    category?: ModelCategory;
-    brand?: string;
-    brand_url?: string;
-    community?: boolean;
-    agent?: boolean;
-    base_model?: string;
-    per_user_rpm?: number | null;
-    pricing?: ApiPricing;
-    pricing_variants?: Array<{
-        name: string;
-        label: string;
-        description: string;
-        pricing: ApiPricing;
-    }>;
-    pricing_default_label?: string;
-    pricing_adjustments?: Array<{
-        name: string;
-        label: string;
-        kind: string;
-        price: string;
-        currency: "pollen";
-        quantity: number;
-        unit: string;
-        suffix?: string;
-        option?: {
-            group: string;
-            value: string;
-            label: string;
-            default?: boolean;
-        };
-    }>;
-    title?: string;
-    description?: string;
-    input_modalities?: string[];
-    output_modalities?: string[];
-    capabilities?: ModelCapability[];
-    tools?: boolean;
-    reasoning?: boolean;
-    context_length?: number;
-    voices?: string[];
-    is_specialized?: boolean;
-    paid_only?: boolean;
-    alpha?: boolean;
-    flat_rate?: boolean;
-    added_date?: number;
 };
 
 type PriceField =
@@ -129,26 +77,44 @@ export function parseModelCatalogResponse(data: unknown): ApiModelInfo[] {
 
 let modelCatalogPromise: Promise<ApiModelInfo[]> | null = null;
 
+export function mergeModelCatalogs(
+    catalogs: readonly ApiModelInfo[][],
+): ApiModelInfo[] {
+    const modelsById = new Map<string, ApiModelInfo>();
+    for (const catalog of catalogs) {
+        for (const model of catalog) {
+            const id = getCatalogModelId(model);
+            if (id && !modelsById.has(id)) modelsById.set(id, model);
+        }
+    }
+    return [...modelsById.values()];
+}
+
+async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
+    const response = await fetch(url, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch models (${response.status})`);
+    }
+    return parseModelCatalogResponse(await response.json());
+}
+
 export async function fetchModelCatalog(
     options: { refresh?: boolean } = {},
 ): Promise<ApiModelInfo[]> {
     if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
-        .then(({ config }) =>
-            // Without a timeout a stalled edge leaves this promise pending
-            // forever, which renders as an empty table with no error.
-            fetch(`${config.genBaseUrl}/models`, {
-                cache: "no-store",
-                signal: AbortSignal.timeout(15_000),
-            }),
-        )
-        .then((response) => {
-            if (!response.ok) {
-                throw new Error(`Failed to fetch models (${response.status})`);
-            }
-            return response.json();
+        .then(async ({ config }) => {
+            const catalogs = await Promise.all([
+                fetchCatalog(`${config.genBaseUrl}/models`),
+                ...(config.communityCatalogUrl
+                    ? [fetchCatalog(config.communityCatalogUrl)]
+                    : []),
+            ]);
+            return mergeModelCatalogs(catalogs);
         })
-        .then(parseModelCatalogResponse)
         .catch((error) => {
             modelCatalogPromise = null;
             throw error;
@@ -249,6 +215,12 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         outputSortPrice,
         prices: [],
         priceAdjustments: model.pricing_adjustments,
+        contextLength: model.context_length,
+        minDuration: model.min_duration,
+        maxDuration: model.max_duration,
+        allowedDurations: model.allowed_durations
+            ? [...model.allowed_durations]
+            : undefined,
     };
 }
 
@@ -578,8 +550,11 @@ export function getModelPricesFromCatalog(
 
     return prices.map((price) => {
         const stats = modelStats[price.name];
-        return stats?.avgCost
-            ? { ...price, realAvgCost: stats.avgCost }
-            : price;
+        if (!stats) return price;
+        return {
+            ...price,
+            ...(stats.avgCost > 0 ? { realAvgCost: stats.avgCost } : {}),
+            users7d: stats.userCount,
+        };
     });
 }

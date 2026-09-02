@@ -1,16 +1,11 @@
-# Ingest Secrets
+# Economics Collection Secrets
 
-Local connector credentials live here.
+Local provider-collection credentials live here.
 
 Files:
 
-- `env.json`: SOPS-encrypted real local secrets for AI-operated collection.
-  Also holds the admin credentials the `secret` mode needs to rotate a
-  provider's runtime key (e.g. `TINYBIRD_ADMIN_TOKEN`, `XAI_MANAGEMENT_KEY` +
-  `XAI_TEAM_ID`, `FIREWORKS_ACCOUNT_ID` + `FIREWORKS_USER_ID`,
-  `ELEVENLABS_ADMIN_API_KEY` + `ELEVENLABS_SERVICE_ACCOUNT_ID`) — see each
-  connector's `## Rotation` section and `connectors/INTERNAL.md`.
-- `env.example.json`: same keys with empty values.
+- `env.json`: SOPS-encrypted real local secrets for provider collection.
+  Runtime-key rotation is outside the Economics provider-collection skill.
 
 Rules:
 
@@ -20,6 +15,7 @@ Rules:
   env.json '<cmd>'` so values stay in that subprocess's environment only, never
   in stdout, logs, or a file.
 - Do not pass encrypted `ENC[...]` values to providers.
-- Do not write API tokens into connector guides, entries, or reconciliation notes.
+- Do not write API tokens into provider guides, entries, or reconciliation notes.
 - Prefer checking key presence by name only.
-- Keep this directory inside `operations/economics/ingest/` so the ingest workspace is self-contained.
+- Keep this path stable for the SOPS rule and the provider guides. Do not add
+  permanent collection scripts or generated evidence here.

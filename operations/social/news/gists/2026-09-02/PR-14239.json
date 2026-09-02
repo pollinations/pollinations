@@ -1,0 +1,35 @@
+{
+  "pr_number": 14239,
+  "title": "feat: add direct stateless Responses API",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14239",
+  "merged_at": "2026-09-02T12:06:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds POST /v1/responses as a stateless direct-provider pass-through; no Chat adapter and no Portkey path.\n- Enables 56 explicit targets: 24 OpenRouter, 14 Fireworks, 15 Azure, 2 OVH, and 1 Vercel; unsupported models, agents, community endpoints, state, and hosted tools return 400.\n- Advertises /v1/responses from the same provider configuration used for routing, while keeping persona-backed midijourney aliases Chat-only.\n- Requires valid usage for JSON and terminal SSE, validates upstream response/content types before billing, preserves semantic SSE, and reuses auth, safety, fallback accounting, caching, billing, and Tinybird tracking exactly once.\n- Keeps provider metadata, request policy, direct client, safety, streaming, and tracking adapters isolated under src/text/responses.\n- Reworks the direct-only design from ElliotEtag historical #11433 and preserves co-author attribution.\n\nTests: 120 focused Responses/registry/billing/safety/docs/observability tests; 35 generation integration tests; 59 Chat transport/usage regression tests; TypeScript and Biome. Exact OVH and Azure JSON/SSE routes were live-probed with required usage.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Responses, straight from the flower",
+    "blurb": "The OpenAI-compatible Responses API now has a direct route through the hive. Send a request to /v1/responses and get provider-native JSON or semantic SSE back, without a Chat adapter taking the scenic route.",
+    "summary": "Added a stateless POST /v1/responses direct-provider pass-through for 56 explicitly supported models across OpenRouter (24), Fireworks (14), Azure (15), OVH (2), and Vercel (1), with JSON and SSE usage validation integrated into existing auth, safety, caching, billing, fallback, and Tinybird tracking.",
+    "impact": "Developers can use the Responses API with supported direct providers while retaining provider-native streaming semantics and the same Pollinations usage, safety, cache, and billing behavior as existing text generation routes.",
+    "keywords": [
+      "responses-api",
+      "openai-compatibility",
+      "streaming",
+      "providers",
+      "text-generation",
+      "billing",
+      "models"
+    ],
+    "visual_concept": "Depict the new direct route as a cozy garden irrigation pipe running straight from a retro API terminal to five labeled provider flowerbeds, with 56 small glowing blossoms. Polli, wearing a tiny courier cap and holding a route map, guides clean JSON parcels and SSE sparkle-streams through the direct pipe while a CRT monitor robot watches the data arrive; code-plants and flowers make the routing system feel alive rather than infrastructural.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap and guiding glowing JSON parcels through a direct garden pipe from a retro terminal labeled '/v1/responses' to five pastel provider flowerbeds; a chunky CRT monitor robot watches semantic SSE sparkles flow past, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'DIRECT ROUTE', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14239.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny courier cap and guiding glowing JSON parcels through a direct garden pipe from a retro terminal labeled '/v1/responses' to five pastel provider flowerbeds; a chunky CRT monitor robot watches semantic SSE sparkles flow past, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, prominent soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: 'DIRECT ROUTE', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-02T12:07:16.229375+00:00"
+}

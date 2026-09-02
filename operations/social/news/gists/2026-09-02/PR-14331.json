@@ -1,0 +1,36 @@
+{
+  "pr_number": 14331,
+  "title": "Add ¿Y si…? — Alternate History Scene Generator to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14331",
+  "merged_at": "2026-09-02T04:31:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [¿Y si…? — Alternate History Scene Generator](https://jecxolab.github.io/y-si-historia) to image\n- Type a historical \"what if\" and get the scene illustrated. Built for the Spanish-language history channel El Efecto Historia. Uses the Pollinations image API with four visual presets (epic oil paintin\n\nFixes #14311",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "History takes the scenic route",
+    "blurb": "¿Y si…? plants a historical what-if in the image API and lets it grow into an illustrated alternate timeline. Built for El Efecto Historia, where one small counterfactual can apparently require an entire painting.",
+    "summary": "Added ¿Y si…?, a Spanish-language alternate-history scene generator for El Efecto Historia that turns historical “what if” prompts into Pollinations image generations with four visual presets.",
+    "impact": "Spanish-speaking history creators can now turn counterfactual scenarios into illustrated scenes directly through a purpose-built community app.",
+    "keywords": [
+      "community-app",
+      "image-api",
+      "alternate-history",
+      "Spanish",
+      "El Efecto Historia",
+      "image-generation"
+    ],
+    "visual_concept": "Depict a cozy alternate-history artist's studio where timelines branch like flowering vines from an open history book into four small framed illustrated scenes. Polli, wearing a tiny historian's cap and painter's smock, holds a brush beside the book while a retro terminal helps render the imagined past.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny historian’s cap and painter’s smock, painting an alternate-history timeline sprouting as flowering vines from an open book into four framed historical scenes; a retro computer nearby glows lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-plants and tiny flowers, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: '¿Y SI…?'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14331.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny historian’s cap and painter’s smock, painting an alternate-history timeline sprouting as flowering vines from an open book into four framed historical scenes; a retro computer nearby glows lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, code-plants and tiny flowers, retro gaming vibes like Stardew Valley or A Short Hike, with simple pixel-font text: '¿Y SI…?'."
+  },
+  "generated_at": "2026-09-02T04:33:31.367279+00:00",
+  "app_name": "¿Y si…? — Alternate History Scene Generator",
+  "app_url": "https://jecxolab.github.io/y-si-historia"
+}

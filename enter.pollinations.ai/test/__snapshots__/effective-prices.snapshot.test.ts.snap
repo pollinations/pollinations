@@ -680,6 +680,26 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000126,
     },
   },
+  "google/gemini-3.8-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000375,
+      "promptAudioTokens": 0.00000075,
+      "promptCacheWriteTokens": 0.00000075,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.00000075,
+    },
+    "price": {
+      "completionTextTokens": 0.00000375,
+      "promptAudioTokens": 0.00000075,
+      "promptCacheWriteTokens": 0.00000075,
+      "promptCachedTokens": 0.000000075,
+      "promptImageTokens": 0.00000075,
+      "promptTextTokens": 0.00000075,
+      "promptVideoTokens": 0.00000075,
+    },
+  },
   "google/gemini-omni-1.1-flash": {
     "cost": {
       "completionTextTokens": 0.000009,

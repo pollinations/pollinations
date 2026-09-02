@@ -544,6 +544,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.7-flash",
         "google-vertex/global",
     ),
+    "google/gemini-3.8-flash": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.8-flash",
+        "google-vertex/global",
+    ),
 
     // -- Google Vertex AI (dedicated Gemini Search services) -----------------
     "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(

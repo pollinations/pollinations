@@ -17,6 +17,11 @@ describe("OpenRouter Gemini routing", () => {
         ],
         ["gemini", "google/gemini-3.7-flash", "google-vertex/global"],
         [
+            "google/gemini-3.8-flash",
+            "google/gemini-3.8-flash",
+            "google-vertex/global",
+        ],
+        [
             "gemini-flash-lite-3.5",
             "google/gemini-3.5-flash-lite",
             "google-vertex/global",
@@ -42,6 +47,7 @@ describe("OpenRouter Gemini routing", () => {
     it.each([
         "gemini-3-flash",
         "gemini",
+        "google/gemini-3.8-flash",
         "gemini-flash-lite-3.5",
         "gemini-fast",
         "gemini-large",

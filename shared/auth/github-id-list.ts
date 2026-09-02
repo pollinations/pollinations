@@ -42,7 +42,6 @@ export const COMMUNITY_MODEL_ALLOWED_GITHUB_IDS = [
     147928812, // iotserver24
     24752658, // zero2launch
     170070104, // NamanSoni78
-    293260324, // tatianawallace772-arch
     63298614, // xiaotian1171
 ] as const;
 

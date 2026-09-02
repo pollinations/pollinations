@@ -254,7 +254,7 @@ Generate text responses using AI models. Fully compatible with the OpenAI Chat C
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
-**Available models:** openai, openai-fast, gpt-oss, gpt-5.4, gpt-5.4-mini, openai-large, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, mercury, command-a-plus, qwen-coder, mistral-small-3.2, mistral, openai-audio, openai-audio-large, gemini-3-flash, gemini, gemini-flash-lite-3.5, gemini-fast, deepseek, gemma, gemma-4-31b, deepseek-pro, grok, grok-large, grok-4.6, gemini-search, midijourney, midijourney-large, claude-fast, claude, claude-sonnet-5, claude-opus-4.6, claude-opus-4.7, claude-large, claude-fable-5, perplexity-fast, perplexity, perplexity-reasoning, kimi, kimi-code, kimi-k3, laguna, longcat, inkling, thinkingmachines/inkling, nemotron, nemotron-3.5-lightning, mimo-v2.5, mimo-v2.5-pro, gemini-large, nova-fast, nova, glm, glm-5.3, z-ai/glm-5.3-flash, llama, llama-maverick, llama-scout, minimax-m2.7, minimax, muse-glimmer, muse-spark-1.2, mistral-large, qwen-coder-large, qwen-large, qwen3.7-max, qwen3.8-2.4t-a95b, qwen3.8-27b, qwen3.8-max, qwen3.7-flash, qwen-vision, qwen-vision-pro, step-flash, step-3.5-flash, qwen-safety
+**Available models:** openai, openai-fast, gpt-oss, gpt-5.4, gpt-5.4-mini, openai-large, gpt-5.6-sol, gpt-5.6-terra, gpt-5.6-luna, mercury, inception/mercury-2.5-preview, command-a-plus, qwen-coder, mistral-small-3.2, mistral, openai-audio, openai-audio-large, gemini-3-flash, gemini, gemini-flash-lite-3.5, gemini-fast, deepseek, deepseek/deepseek-v4-flash-vision-exp, gemma, gemma-4-31b, deepseek-pro, grok, grok-large, grok-4.6, gemini-search, midijourney, midijourney-large, claude-fast, claude, claude-sonnet-5, claude-opus-4.6, claude-opus-4.7, claude-large, claude-fable-5, anthropic/claude-fable-5.1, perplexity-fast, perplexity, perplexity-reasoning, kimi, kimi-code, kimi-k3, laguna, longcat, inkling, thinkingmachines/inkling, nemotron, nemotron-3.5-lightning, mimo-v2.5, mimo-v2.5-pro, gemini-large, nova-fast, nova, glm, glm-5.3, z-ai/glm-5.3-flash, llama, llama-maverick, llama-scout, minimax-m2.7, minimax, muse-glimmer, muse-spark-1.2, mistral-large, qwen-coder-large, qwen-large, qwen3.7-max, qwen3.8-2.4t-a95b, qwen3.8-27b, qwen3.8-max, qwen3.7-flash, qwen-vision, qwen-vision-pro, step-flash, step-3.5-flash, qwen-safety
 
 ### Reasoning
 
@@ -313,7 +313,7 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 **Gemini** — the prefix must be at least ~2,048 tokens (~4,096 on Gemini 3 models). Requests with tools are not cached — including built-in tools, so `gemini`, `gemini-3-flash`, `gemini-large`, and the search variants only cache when tools are disabled (`"tools": []`) or a JSON `response_format` is set; `gemini-fast` and `gemini-flash-lite-3.5` cache by default. Cache creates bill at the standard input rate plus a storage fee for the 1-hour TTL ($1 per 1M cached tokens on Flash models, $4.50 on Pro); hits bill at ~10% of input. The storage fee means caching pays off only when the prefix is reused often — roughly a dozen reuses per hour on the cheapest models.
 
-**Claude** — all Claude models cache. The prefix must be at least 4,096 tokens (1,024 on `claude` and `claude-fable-5`); tools are fine. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input. The cache lives ~5 minutes, refreshed on each hit.
+**Claude** — all Claude models cache. The prefix minimum varies by model: 512 tokens on `claude-fable-5`, `anthropic/claude-fable-5.1`, and `claude-opus-5`, and 1,024 on `claude`; other models have higher minimums. Tool definitions are cacheable. `anthropic/claude-fable-5.1` accepts only automatic or disabled tool choice; forcing any or a named tool returns a 400. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input, or 2.5% on `anthropic/claude-fable-5.1`. The cache lives ~5 minutes, refreshed on each hit.
 
 **Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
 
@@ -524,7 +524,7 @@ Generate images from text prompts via a simple GET request. Returns JPEG, PNG, o
 https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 ```
 
-**Available models:** krea, dreamshaper, kontext, flux-2-pro, flux-2-flex, nanobanana, nanobanana-2, nanobanana-2-lite, nanobanana-pro, seedream5, seedream5-pro, seedream, seedream-pro, ideogram-v4-turbo, ideogram-v4-balanced, ideogram-v4-quality, gptimage, gptimage-large, gpt-image-2, flux, zimage, zimage-fal, wan-image, wan-image-pro, qwen-image, qwen-image-3, grok-imagine, grok-imagine-pro, grok-imagine-image-2.0, recraft-v4.1-vector, klein, p-image, p-image-edit, nova-canvas
+**Available models:** krea, dreamshaper, kontext, flux-2-pro, flux-2-flex, nanobanana, nanobanana-2, nanobanana-2-lite, nanobanana-pro, seedream5, seedream5-pro, seedream, seedream-pro, ideogram-v4-turbo, ideogram-v4-balanced, ideogram-v4-quality, gptimage, gptimage-large, gpt-image-2, flux, zimage, wan-image, wan-image-pro, qwen-image, qwen-image-3, grok-imagine, grok-imagine-pro, grok-imagine-image-2.0, recraft-v4.1-vector, klein, p-image, p-image-edit, nova-canvas
 
 ### Community image models
 
@@ -549,10 +549,10 @@ Browse all available models and their capabilities at [`/image/models`](https://
 | `seed` | `query` | `integer` | Seed for reproducible results. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
 | `quality` | `query` | `"low"` \| `"medium"` \| `"high"` \| `"hd"` | Image quality level. Supported by `gptimage`, `gptimage-large`, `gpt-image-2`, and `grok-imagine-image-2.0`. · default: `"medium"` |
-| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, flux-2-pro, flux-2-flex, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5. |
-| `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5. |
-| `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5. |
+| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support. |
+| `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `transparent` | `query` | `boolean` | Generate image with transparent background. Only supported by `gptimage` and `gptimage-large`. · default: `false` |
 | `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
 
@@ -674,10 +674,10 @@ Browse all available models and their `video_capabilities` at [`/image/models`](
 | `height` | `query` | `integer` | Height in pixels. For images, exact pixels; `flux-2-pro` and `flux-2-flex` require multiples of 16. For video models, used for aspect ratio; use `resolution` to select a resolution tier. · default: `1024` |
 | `seed` | `query` | `integer` | Seed for reproducible results. Supported by: flux, zimage, seedream, klein, seedance, nova-reel. Other models ignore this parameter. · default: `0` · range: `-1…2147483647` |
 | `safe` | `query` | `string` \| `boolean` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
-| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing/style reference (kontext, flux-2-pro, flux-2-flex, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
-| `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5. |
-| `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5. |
-| `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5. |
+| `image` | `query` | `string` | Reference image URL(s) for image editing or video generation. Separate multiple URLs with `\|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support. |
+| `reference_images` | `query` | `string` | Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_videos` | `query` | `string` | Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
+| `reference_audios` | `query` | `string` | Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `\|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support. |
 | `resolution` | `query` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for image and video models that advertise `resolutions` in `/models`. The first advertised resolution is the default; requested tiers bill at their listed rate. |
 | `duration` | `query` | `integer` | Video duration in seconds. Only applies to video models. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6). · range: `1…120` |
 | `aspectRatio` | `query` | `string` | Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash` and `seedance-2.5` otherwise default to `16:9`. `minimax-h3` supports only `16:9`. |
@@ -1549,6 +1549,7 @@ Register a private or public community text, image, video, transcription, or emb
 | `modality` | `"text"` \| `"image"` \| `"transcription"` | Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits`; "video" calls the exact configured URL; "transcription" uses `/v1/audio/transcriptions`. · default: `"text"` |
 | `imagePricing` | `"request"` \| `"tokens"` | Image models only. "request": the generated-image price is charged once per generation. "tokens": provider-returned OpenAI image token usage is charged against per-token prices. Detected by the endpoint test. · default: `"request"` |
 | `inputModalities` | `"text"` \| `"image"` \| `"audio"`[] | Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately. |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. · default: `[]` |
 | `advertised` | `object` | Owner-declared catalog metadata for text models. |
 | `advertised.capabilities` | `"tool_calling"` \| `"reasoning"`[] | — |
 | `advertised.contextLength` | `integer` | max: `10000000` |
@@ -1582,6 +1583,9 @@ curl -X POST "https://gen.pollinations.ai/account/my-models" \
 ```json
 {
   "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
   "pending": {
     "effectiveAt": "2026-01-01T00:00:00Z"
   },
@@ -1748,6 +1752,7 @@ Update a community model owned by the authenticated account. Changing visibility
 | `title` | `string` | Display name shown in the model catalog. · length: `1…42` |
 | `description` | `string` | max length: `160` |
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `hidden` | `boolean` | — |
 | `baseUrl` | `string · uri` | OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL. |
 | `upstreamModel` | `string` | length: `1…253` |
@@ -1787,6 +1792,9 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/key_abc123/update" \
 ```json
 {
   "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
   "pending": {
     "effectiveAt": "2026-01-01T00:00:00Z"
   },
@@ -1849,6 +1857,7 @@ List prompt agents owned by the authenticated account. API keys require `account
 | `data[].upstreamModel` * | `string` | — |
 | `data[].systemPrompt` * | `string` | — |
 | `data[].baseModel` * | `string` | — |
+| `data[].requiredSafetyFeatures` * | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `data[].mcpServers` * | `"pollinations"` \| `"ffmpeg"` \| `"exa"`[] | — |
 | `data[].createdAt` * | `string` | — |
 | `data[].updatedAt` * | `string` | — |
@@ -1879,6 +1888,7 @@ Create and list a prompt agent in one operation. API keys require `account:keys`
 | `title` * | `string` | length: `1…42` |
 | `description` | `string` | default: `""` · max length: `160` |
 | `visibility` | `"private"` \| `"public"` | default: `"private"` |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. · default: `[]` |
 
 <sub>`*` = required field</sub>
 
@@ -1895,6 +1905,7 @@ Create and list a prompt agent in one operation. API keys require `account:keys`
 | `upstreamModel` * | `string` | — |
 | `systemPrompt` * | `string` | — |
 | `baseModel` * | `string` | — |
+| `requiredSafetyFeatures` * | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `mcpServers` * | `"pollinations"` \| `"ffmpeg"` \| `"exa"`[] | — |
 | `createdAt` * | `string` | — |
 | `updatedAt` * | `string` | — |
@@ -1913,6 +1924,9 @@ curl -X POST "https://gen.pollinations.ai/account/agents" \
 ```json
 {
   "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
   "mcpServers": [
     "pollinations"
   ]
@@ -1946,6 +1960,7 @@ Get an agent owned by the authenticated account. API keys require `account:keys`
 | `upstreamModel` * | `string` | — |
 | `systemPrompt` * | `string` | — |
 | `baseModel` * | `string` | — |
+| `requiredSafetyFeatures` * | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `mcpServers` * | `"pollinations"` \| `"ffmpeg"` \| `"exa"`[] | — |
 | `createdAt` * | `string` | — |
 | `updatedAt` * | `string` | — |
@@ -1962,6 +1977,9 @@ curl "https://gen.pollinations.ai/account/agents/key_abc123" \
 ```json
 {
   "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
   "mcpServers": [
     "pollinations"
   ]
@@ -1993,6 +2011,7 @@ Replace an agent configuration and listing in one operation. API keys require `a
 | `title` | `string` | length: `1…42` |
 | `description` | `string` | max length: `160` |
 | `visibility` | `"private"` \| `"public"` | — |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 
 <sub>`*` = required field</sub>
 
@@ -2009,6 +2028,7 @@ Replace an agent configuration and listing in one operation. API keys require `a
 | `upstreamModel` * | `string` | — |
 | `systemPrompt` * | `string` | — |
 | `baseModel` * | `string` | — |
+| `requiredSafetyFeatures` * | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `mcpServers` * | `"pollinations"` \| `"ffmpeg"` \| `"exa"`[] | — |
 | `createdAt` * | `string` | — |
 | `updatedAt` * | `string` | — |
@@ -2027,6 +2047,9 @@ curl -X PATCH "https://gen.pollinations.ai/account/agents/key_abc123" \
 ```json
 {
   "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
   "mcpServers": [
     "pollinations"
   ]
@@ -2078,6 +2101,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `visibility` | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. · default: `"private"` |
 | `baseUrl` * | `string · uri` | OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL. |
 | `upstreamModel` | `string` | length: `1…253` |
+| `requiredSafetyFeatures` | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. · default: `[]` |
 | `perUserRpm` | `number` \| `null` | Maximum requests per minute for each Pollinations user. Decimals are supported; 0.5 means one request every two minutes. Null means no Pollinations-side limit. · default: `null` |
 
 <sub>`*` = required field</sub>
@@ -2094,6 +2118,7 @@ Register an agent running on an external OpenAI-compatible endpoint. Pollination
 | `baseUrl` * | `string · uri` | — |
 | `upstreamModel` * | `string` | — |
 | `visibility` * | `"private"` \| `"public"` | "private": owner-only, shown only to the owner, with no owner-set price. "public": anyone and listed in the catalog; it may be free or priced. Publishing requires an allowlisted account. |
+| `requiredSafetyFeatures` * | `"privacy"` \| `"secrets"` \| `"sexual"` \| `"violence"` \| `"shield"`[] | Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider. |
 | `pending` * | `object` \| `null` | — |
 | `hidden` * | `boolean` | — |
 | `hiddenReason` * | `string` \| `null` | — |
@@ -2117,6 +2142,9 @@ curl -X POST "https://gen.pollinations.ai/account/my-models/endpoint-agents" \
 ```json
 {
   "visibility": "private",
+  "requiredSafetyFeatures": [
+    "privacy"
+  ],
   "pending": {
     "effectiveAt": "2026-01-01T00:00:00Z"
   }

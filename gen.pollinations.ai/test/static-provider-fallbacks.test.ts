@@ -27,9 +27,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "llama-scout-openrouter-deepinfra",
+        "llama-scout-openrouter-novita",
         "meta-llama/llama-4-scout",
-        "deepinfra/fp8",
+        "novita/bf16",
     ],
     ["grok-openrouter-xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
     ["grok-large-openrouter-xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
@@ -180,6 +180,13 @@ describe("static provider fallbacks", () => {
         expect(TEXT_SERVICES["deepseek-deepinfra"].cost).toMatchObject({
             promptTextTokens: 0.08 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
+        });
+        expect(
+            TEXT_SERVICES["llama-scout-openrouter-novita"].cost,
+        ).toMatchObject({
+            promptTextTokens: 0.18 / 1_000_000,
+            promptImageTokens: 0.18 / 1_000_000,
+            completionTextTokens: 0.59 / 1_000_000,
         });
         expect(IMAGE_SERVICES["qwen-image-3-replicate"].cost).toMatchObject({
             promptImageTokens: 0,

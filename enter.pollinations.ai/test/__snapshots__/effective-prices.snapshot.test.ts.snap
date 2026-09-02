@@ -1349,16 +1349,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
-  "llama-scout-openrouter-deepinfra": {
+  "llama-scout-openrouter-novita": {
     "cost": {
-      "completionTextTokens": 0.0000003,
-      "promptImageTokens": 0.0000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.00000059,
+      "promptImageTokens": 0.00000018,
+      "promptTextTokens": 0.00000018,
     },
     "price": {
-      "completionTextTokens": 0.0000003,
-      "promptImageTokens": 0.0000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.00000059,
+      "promptImageTokens": 0.00000018,
+      "promptTextTokens": 0.00000018,
     },
   },
   "longcat": {

@@ -98,7 +98,7 @@ describe("model categories", () => {
     it("accepts categories independently of the model query", () => {
         expect(validateModelSearch({})).toEqual({
             category: undefined,
-            q: "source:official",
+            q: undefined,
             sort: undefined,
         });
         for (const category of [
@@ -113,17 +113,23 @@ describe("model categories", () => {
         }
         expect(validateModelSearch({ category: "image" })).toEqual({
             category: "image",
-            q: "source:official",
+            q: undefined,
             sort: undefined,
         });
         expect(validateModelSearch({ category: "agent" }).q).toBeUndefined();
         expect(validateModelSearch({ category: "mcp" }).q).toBeUndefined();
+        expect(
+            validateModelSearch({
+                category: "agent",
+                q: "source:official capability:tool-calling",
+            }).q,
+        ).toBe("capability:tool-calling");
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
         expect(validateModelSearch({ sort: "brand" })).toEqual({
             category: undefined,
-            q: "source:official",
+            q: undefined,
             sort: "brand",
         });
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
@@ -135,21 +141,19 @@ describe("model categories", () => {
         );
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
             category: undefined,
-            q: "source:official",
+            q: undefined,
             sort: undefined,
         });
         expect(validateModelSearch({ sort: "newest" })).toEqual({
             category: undefined,
-            q: "source:official",
+            q: undefined,
             sort: "newest",
         });
     });
 
     it("trims model search queries and drops whitespace-only values", () => {
-        expect(validateModelSearch({ q: "  flux  " }).q).toBe(
-            "source:official flux",
-        );
-        expect(validateModelSearch({ q: "   " }).q).toBe("source:official");
+        expect(validateModelSearch({ q: "  flux  " }).q).toBe("flux");
+        expect(validateModelSearch({ q: "   " }).q).toBeUndefined();
         expect(validateModelSearch({ q: " source:community " }).q).toBe(
             "source:community",
         );

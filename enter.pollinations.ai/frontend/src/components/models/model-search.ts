@@ -1,4 +1,4 @@
-import { ensureModelQuerySource } from "./model-query.ts";
+import { removeModelQuerySource } from "./model-query.ts";
 
 export const MODEL_CATEGORIES = [
     "all",
@@ -52,7 +52,9 @@ export function validateModelSearch(
 
     return {
         category: category === "all" ? undefined : category,
-        q: supportsSource ? ensureModelQuerySource(query) : query || undefined,
+        q: supportsSource
+            ? query || undefined
+            : removeModelQuerySource(query) || undefined,
         sort: sort === "popular" ? undefined : sort,
     };
 }

@@ -75,7 +75,7 @@ export function EditableCombobox({
                 className={cn(
                     "polli:relative polli:w-full",
                     hasStartContent &&
-                        "polli-input-shell polli:flex polli:min-h-10 polli:flex-wrap polli:items-center polli:gap-1 polli:border polli:rounded-lg polli:px-2 polli:py-1 polli:pr-10",
+                        "polli-input-shell polli:flex polli:min-h-10 polli:flex-wrap polli:items-center polli:gap-2 polli:border polli:rounded-lg polli:px-2 polli:py-1",
                 )}
             >
                 {startContent}
@@ -92,7 +92,7 @@ export function EditableCombobox({
                         )}
                     />
                 </Combobox.Input>
-                {hasOptions && (
+                {hasOptions && !hasStartContent && (
                     <Combobox.Trigger
                         aria-label="Show options"
                         className="polli-control polli:absolute polli:right-0 polli:top-0 polli:flex polli:h-full polli:w-10 polli:cursor-pointer polli:items-center polli:justify-center polli:rounded-r-lg polli:text-theme-text-muted polli:hover:text-theme-text-strong"

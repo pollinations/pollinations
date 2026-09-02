@@ -10,7 +10,6 @@ import {
     parseModelQuery,
     removeModelQueryFilterToken,
     removeModelQuerySource,
-    replaceModelQueryFilterToken,
 } from "../frontend/src/components/models/model-query.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
@@ -89,72 +88,42 @@ describe("getModelQuerySource", () => {
         expect(ensureModelQuerySource("source:community")).toBe(
             "source:community",
         );
+        expect(ensureModelQuerySource("source:")).toBe("source:");
     });
 });
 
 describe("model query filter tokens", () => {
-    const query =
-        "fast access:quest source:community capability:tool-calling type:text";
-
-    it("returns every completed filter in query order", () => {
-        expect(getModelQueryFilterTokens(query)).toEqual([
+    it("finds completed and in-progress filters", () => {
+        expect(
+            getModelQueryFilterTokens(
+                "source:official capability:tool-calling flux",
+            ),
+        ).toEqual([
             {
-                filter: { key: "access", value: "quest" },
-                index: 1,
-                token: "access:quest",
-            },
-            {
-                filter: { key: "source", value: "community" },
-                index: 2,
-                token: "source:community",
+                filter: { key: "source", value: "official" },
+                index: 0,
+                token: "source:official",
             },
             {
                 filter: { key: "capability", value: "tool-calling" },
-                index: 3,
+                index: 1,
                 token: "capability:tool-calling",
             },
-            {
-                filter: { key: "type", value: "text" },
-                index: 4,
-                token: "type:text",
-            },
         ]);
-    });
-
-    it("identifies a selected filter while its value is being entered", () => {
-        expect(
-            getModelQueryDraftFilter("source:official fast capability:"),
-        ).toEqual({
-            index: 2,
-            key: "capability",
-            token: "capability:",
+        expect(getModelQueryDraftFilter("source:official access:")).toEqual({
+            index: 1,
+            key: "access",
             value: "",
         });
-        expect(
-            getModelQueryDraftFilter("source:official capability:tool", true),
-        ).toEqual({
-            index: 1,
-            key: "capability",
-            token: "capability:tool",
-            value: "tool",
-        });
-        expect(
-            getModelQueryDraftFilter("source:official capability:tool"),
-        ).toBeUndefined();
     });
 
-    it("removes or replaces one filter without changing the others", () => {
-        expect(removeModelQueryFilterToken(query, 3)).toBe(
-            "fast access:quest source:community type:text",
-        );
+    it("removes any selected filter by position", () => {
         expect(
-            replaceModelQueryFilterToken(query, 2, {
-                key: "source",
-                value: "official",
-            }),
-        ).toBe(
-            "fast access:quest source:official capability:tool-calling type:text",
-        );
+            removeModelQueryFilterToken(
+                "source:official capability:tool-calling",
+                0,
+            ),
+        ).toBe("capability:tool-calling");
     });
 });
 

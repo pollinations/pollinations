@@ -11,8 +11,6 @@ export type ModelQueryFilter =
           key: "publisher" | "id" | "type" | "capability";
           value: string;
       };
-export type ModelQueryFilterKey = ModelQueryFilter["key"];
-
 export type ParsedModelQuery = {
     terms: string[];
     filters: ModelQueryFilter[];
@@ -26,8 +24,7 @@ export type ModelQueryFilterToken = {
 
 export type ModelQueryDraftFilter = {
     index: number;
-    key: ModelQueryFilterKey;
-    token: string;
+    key: ModelQueryFilter["key"];
     value: string;
 };
 
@@ -41,9 +38,6 @@ const FILTER_KEYS = [
     "type",
     "capability",
 ] as const;
-
-const isModelQueryFilterKey = (value: string): value is ModelQueryFilterKey =>
-    FILTER_KEYS.includes(value as ModelQueryFilterKey);
 
 const isModelAccess = (value: string): value is ModelAccess =>
     ACCESS_VALUES.includes(value as ModelAccess);
@@ -114,12 +108,14 @@ export function getExplicitModelQuerySource(
 /** Ensure model catalog queries always show their selected source scope. */
 export function ensureModelQuerySource(query: string): string {
     const normalizedQuery = query.trim();
-    return getExplicitModelQuerySource(parseModelQuery(normalizedQuery))
+    const hasSourceToken = normalizedQuery
+        .split(/\s+/)
+        .some((token) => token.toLowerCase().startsWith("source:"));
+    return hasSourceToken
         ? normalizedQuery
         : ["source:official", normalizedQuery].filter(Boolean).join(" ");
 }
 
-/** Return completed filter tokens in their query order. */
 export function getModelQueryFilterTokens(
     query: string,
 ): ModelQueryFilterToken[] {
@@ -140,7 +136,6 @@ export function getModelQueryFilterTokens(
         );
 }
 
-/** Return the final filter token while its value is being entered. */
 export function getModelQueryDraftFilter(
     query: string,
     includeCompleted = false,
@@ -154,18 +149,16 @@ export function getModelQueryDraftFilter(
     if (separator <= 0) return undefined;
 
     const key = token.slice(0, separator).toLowerCase();
-    if (!isModelQueryFilterKey(key)) return undefined;
+    if (!FILTER_KEYS.includes(key as ModelQueryFilter["key"])) return undefined;
     if (!includeCompleted && parseModelQueryFilter(token)) return undefined;
 
     return {
         index,
-        key,
-        token,
+        key: key as ModelQueryFilter["key"],
         value: token.slice(separator + 1),
     };
 }
 
-/** Remove one completed filter while retaining every other query token. */
 export function removeModelQueryFilterToken(
     query: string,
     index: number,
@@ -174,21 +167,6 @@ export function removeModelQueryFilterToken(
         .split(/\s+/)
         .filter(Boolean)
         .filter((_token, tokenIndex) => tokenIndex !== index)
-        .join(" ");
-}
-
-/** Replace one completed filter while retaining every other query token. */
-export function replaceModelQueryFilterToken(
-    query: string,
-    index: number,
-    filter: ModelQueryFilter,
-): string {
-    return query
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((token, tokenIndex) =>
-            tokenIndex === index ? `${filter.key}:${filter.value}` : token,
-        )
         .join(" ");
 }
 

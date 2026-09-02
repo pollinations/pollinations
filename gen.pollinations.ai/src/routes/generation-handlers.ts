@@ -15,12 +15,7 @@ import {
 } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt } from "@/image/handler.ts";
-import {
-    applySafety,
-    applySafetyToChatRequest,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
 import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
@@ -31,6 +26,7 @@ import {
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { assertStreamContentType } from "../utils/upstream-response.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -125,7 +121,7 @@ export type SimpleAudioQuery = z.infer<typeof simpleAudioQuerySchema>;
 
 export async function generateImageVideo(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -135,7 +131,7 @@ export async function generateImageVideo(c: Context<Env>): Promise<Response> {
 
 export async function generateModel3d(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -178,7 +174,7 @@ export async function generateEmbeddingsResponse(
 export async function generateChatCompletion(
     c: Context<Env>,
 ): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -220,7 +216,7 @@ export async function generateChatCompletion(
 }
 
 export async function generateTextContent(c: Context<Env>): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -237,7 +233,7 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
         typeof query.system === "string"
             ? [c.req.param("prompt"), query.system]
             : [c.req.param("prompt")];
-    const [prompt, system] = await applySafetyToTexts(
+    const [prompt, system] = await applySafetyToInput(
         c,
         textInputs,
         query.safe,
@@ -250,23 +246,6 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
             system,
         }),
     );
-}
-
-function assertStreamContentType(
-    c: Context<Env>,
-    response: Response,
-    upstreamRequestUrl: URL | undefined,
-): void {
-    if (c.var.track.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            throw new UpstreamError(502, {
-                message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: upstreamRequestUrl,
-                responseBody: contentType,
-            });
-        }
-    }
 }
 
 export function contentFilterResultsToHeaders(

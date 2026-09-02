@@ -9,6 +9,7 @@ import {
     openRouterGeminiBilling,
     withVertexCacheStorage,
 } from "./gemini-billing";
+import { mergeFallbacks } from "./merge-fallbacks";
 import {
     PERPLEXITY_PRO_BILLING,
     PERPLEXITY_REASONING_BILLING,
@@ -16,6 +17,7 @@ import {
 } from "./perplexity-billing";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
+import { TEXT_FALLBACKS } from "./text-fallbacks";
 
 // Voices available for openai-audio model - exported for schema validation
 export const AUDIO_VOICES = [
@@ -37,7 +39,7 @@ export const AUDIO_VOICES = [
 export const DEFAULT_TEXT_MODEL = "openai" as const;
 export type TextModelName = keyof typeof TEXT_SERVICES;
 
-export const TEXT_SERVICES = {
+const TEXT_BASE_SERVICES = {
     "openai": {
         aliases: ["gpt-5.4-nano", "openai/gpt-5.4-nano"],
         provider: "azure",
@@ -379,6 +381,30 @@ export const TEXT_SERVICES = {
         contextLength: 128000,
         isSpecialized: false,
     },
+    "inception/mercury-2.5-preview": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Inception",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter's exact Inception route rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.04),
+            promptCachedTokens: perMillion(0.004),
+            completionTextTokens: perMillion(0.15),
+        },
+        title: "Mercury 2.5 Preview",
+        description:
+            "Ultra-fast diffusion reasoning for coding, tool use, and structured outputs",
+        inputModalities: ["text"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 260000,
+        isSpecialized: false,
+    },
     "command-a-plus": {
         aliases: [
             "cohere-command-a-plus",
@@ -470,10 +496,12 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-15").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // OpenRouter Mistral endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.15),
             promptCachedTokens: perMillion(0.015),
+            promptImageTokens: perMillion(0.15),
             completionTextTokens: perMillion(0.6),
         },
         title: "Mistral Small 4",
@@ -620,6 +648,41 @@ export const TEXT_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-3.8-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Standard OpenRouter rates for the pinned google-vertex/global route.
+        // Google's introductory pricing ends 2026-12-31.
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
+        },
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 0.5,
+        }),
+        title: "Gemini 3.8 Flash",
+        description:
+            "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemini-flash-lite-3.5": {
         aliases: [
             "gemini-flash-lite-3.1",
@@ -707,6 +770,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.22),
             promptCachedTokens: perMillion(0.007),
@@ -716,6 +780,32 @@ export const TEXT_SERVICES = {
         description: "Fast reasoning and coding at bargain prices",
         inputModalities: ["text"],
         outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "deepseek/deepseek-v4-flash-vision-exp": {
+        aliases: [],
+        provider: "fireworks",
+        brand: "DeepSeek",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        paidOnly: false,
+        priceMultiplier: 1,
+        // Fireworks standard serverless rates (2026-09-01).
+        cost: {
+            promptTextTokens: perMillion(0.22),
+            promptCachedTokens: perMillion(0.007),
+            promptImageTokens: perMillion(0.22),
+            completionTextTokens: perMillion(0.66),
+        },
+        title: "DeepSeek V4 Flash Vision Exp",
+        description:
+            "Low-cost multimodal reasoning for coding, agents and visual analysis",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 30,
         tools: true,
         reasoning: true,
         contextLength: 1048576,
@@ -738,6 +828,7 @@ export const TEXT_SERVICES = {
         cost: {
             // OpenRouter Novita BF16 preserves remote image URLs; verified 2026-08-22.
             promptTextTokens: perMillion(0.13),
+            promptImageTokens: perMillion(0.13),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 26B A4B",
@@ -761,6 +852,7 @@ export const TEXT_SERVICES = {
         cost: {
             // OpenRouter Novita BF16 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.14),
+            promptImageTokens: perMillion(0.14),
             completionTextTokens: perMillion(0.4),
         },
         title: "Gemma 4 31B",
@@ -860,7 +952,7 @@ export const TEXT_SERVICES = {
         brand: "xAI",
         category: "text",
         addedDate: new Date("2026-07-18").getTime(),
-        paidOnly: true,
+        paidOnly: false,
         priceMultiplier: 0.75,
         // Provisional Azure sheet pending an exact public or account meter.
         // The direct route reports image tokens separately from text tokens.
@@ -1047,12 +1139,11 @@ export const TEXT_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // Bedrock global.anthropic.claude-sonnet-5 standard rates effective 2026-09-01.
-            // Cache meters remain at AWS's currently published rates pending post-promo evidence.
-            promptTextTokens: perMillion(3),
+            // AWS Price List global standard meters, published 2026-09-01T18:36:49Z.
+            promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.2),
             promptCacheWriteTokens: perMillion(2.5),
-            completionTextTokens: perMillion(15),
+            completionTextTokens: perMillion(10),
         },
         title: "Claude Sonnet 5",
         description:
@@ -1169,6 +1260,32 @@ export const TEXT_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "anthropic/claude-fable-5.1": {
+        aliases: [],
+        provider: "bedrock",
+        brand: "Anthropic",
+        category: "text",
+        addedDate: new Date("2026-09-01").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Bedrock global.anthropic.claude-fable-5-1 global standard rates.
+            promptTextTokens: perMillion(10),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50),
+        },
+        title: "Claude Fable 5.1",
+        description:
+            "Frontier intelligence for complex reasoning, coding and long-running agents",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 20, // Bedrock Converse image limit.
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "perplexity-fast": {
         aliases: [
             "sonar",
@@ -1267,6 +1384,7 @@ export const TEXT_SERVICES = {
         cost: {
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.16),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.6",
@@ -1297,6 +1415,8 @@ export const TEXT_SERVICES = {
             // prompt $0.95/M, completion $4.00/M, cache read $0.19/M.
             promptTextTokens: perMillion(0.95),
             promptCachedTokens: perMillion(0.19),
+            promptCacheWriteTokens: perMillion(0.95),
+            promptImageTokens: perMillion(0.95),
             completionTextTokens: perMillion(4.0),
         },
         title: "Moonshot Kimi K2.7 Code",
@@ -1481,6 +1601,7 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // Fireworks, verified 2026-08-19: $0.05/$0.01/$0.20 per million.
             promptTextTokens: perMillion(0.05),
@@ -1800,9 +1921,11 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-05-04").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // OpenRouter DeepInfra FP8 endpoint, verified 2026-08-22.
             promptTextTokens: perMillion(0.1),
+            promptImageTokens: perMillion(0.1),
             completionTextTokens: perMillion(0.3),
         },
         title: "Meta Llama 4 Scout",
@@ -1822,15 +1945,16 @@ export const TEXT_SERVICES = {
             "minimax-m2p5",
             "minimax/minimax-m2.7",
         ],
-        provider: "fireworks",
+        provider: "openrouter",
         brand: "MiniMax",
         category: "text",
         addedDate: new Date("2026-01-06").getTime(),
+        paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            promptTextTokens: perMillion(0.3),
-            promptCachedTokens: perMillion(0.06),
-            completionTextTokens: perMillion(1.2),
+            promptTextTokens: perMillion(0.25),
+            promptCachedTokens: perMillion(0.05),
+            completionTextTokens: perMillion(1),
         },
         title: "MiniMax M2.7",
         description: "Multilingual coding and agent tasks at a friendly price",
@@ -1848,6 +1972,7 @@ export const TEXT_SERVICES = {
         category: "text",
         addedDate: new Date("2026-06-02").getTime(),
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             // Fireworks accounts/fireworks/models/minimax-m3 rates (2026-06-14):
             // prompt $0.30/M, completion $1.20/M, cache read $0.06/M.
@@ -1874,9 +1999,11 @@ export const TEXT_SERVICES = {
         addedDate: new Date("2026-08-14").getTime(),
         paidOnly: false,
         priceMultiplier: 1,
+        perUserRpm: 60,
         cost: {
             promptTextTokens: perMillion(0.35),
             promptCachedTokens: perMillion(0.04),
+            promptImageTokens: perMillion(0.35),
             completionTextTokens: perMillion(1.5),
         },
         title: "Muse Glimmer 30B",
@@ -2327,3 +2454,5 @@ export const TEXT_SERVICES = {
         isSpecialized: true,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const TEXT_SERVICES = mergeFallbacks(TEXT_BASE_SERVICES, TEXT_FALLBACKS);

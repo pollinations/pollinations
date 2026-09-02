@@ -186,7 +186,7 @@ test("Grok 4.6 uses the public Azure route contract", () => {
     const definition = getRegistryModelDefinition("grok-4.6");
 
     expect(definition.provider).toBe("azure");
-    expect(definition.paidOnly).toBe(true);
+    expect(definition.paidOnly).toBe(false);
     expect(definition.priceMultiplier).toBe(0.75);
     expect(definition.contextLength).toBe(200000);
     expect(definition.cost).toMatchObject({

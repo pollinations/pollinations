@@ -1,0 +1,35 @@
+{
+  "pr_number": 14293,
+  "title": "feat: add provider fallbacks for official models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14293",
+  "merged_at": "2026-09-02T10:53:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds one provider fallback to 42 public text, image, video, audio, and 3D models\n- Pins OpenRouter routes to one provider and keeps routing inside Pollinations\n- Records provider-specific fallback costs while callers retain the requested model price\n- Builds on #14317 for fallback-only routes and universal upstream 5xx handling\n- Verifies every route with fresh direct-provider probes, focused tests, typechecking, and staging failover tests",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive grows backup wings",
+    "blurb": "Forty-two official models now have a second nectar route when their usual provider is unavailable. You keep asking for the same model; the hive quietly finds another way to make it happen.",
+    "summary": "Added provider fallbacks for 42 public text, image, video, audio, and 3D models, with Pollinations retaining model routing and charging callers the requested model price while recording provider-specific fallback costs internally.",
+    "impact": "Users get more resilient generations across official models: when a primary upstream provider returns a 5xx error, Pollinations can continue the request through a verified fallback provider without changing the model they asked for.",
+    "keywords": [
+      "provider-fallbacks",
+      "model-routing",
+      "reliability",
+      "text",
+      "image",
+      "audio",
+      "video"
+    ],
+    "visual_concept": "Depict Polli as a tiny routekeeper in a cozy garden of 42 labeled code-plants representing text, image, video, audio, and 3D models. Several pastel paths lead from a glowing retro terminal to alternate provider flower gates, showing that one request can safely take a backup route while retaining its original model label and price; the eager monitor robot can hold a small route map.",
+    "image_prompt": "A cozy pixel art garden routing station where Polli, a cute yellow-and-dark-brown striped bee with black antennae, oval eyes, pink rectangular blush, light-blue rounded wings, and a tiny mail carrier cap, guides glowing request-pollen from a retro terminal through two gentle paths to pastel provider flower gates; a chunky CRT monitor robot happily holds a map marked \"42 MODELS\" while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14293.jpg",
+    "prompt": "A cozy pixel art garden routing station where Polli, a cute yellow-and-dark-brown striped bee with black antennae, oval eyes, pink rectangular blush, light-blue rounded wings, and a tiny mail carrier cap, guides glowing request-pollen from a retro terminal through two gentle paths to pastel provider flower gates; a chunky CRT monitor robot happily holds a map marked \"42 MODELS\" while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, chunky retro sprites, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-02T10:55:38.813330+00:00"
+}

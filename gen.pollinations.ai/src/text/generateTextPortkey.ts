@@ -6,6 +6,7 @@ import { genericOpenAIClient } from "./genericOpenAIClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
+import { optimizeRequestTransform } from "./transforms/optimizeRequestTransform.js";
 import { processParameters } from "./transforms/parameterProcessor.js";
 import type {
     ChatCompletion,
@@ -39,6 +40,14 @@ export async function generateTextPortkey(
         messages,
         options: normalizeOptions(options),
     };
+
+    // Global request optimization: condense system prompts, dedup messages,
+    // strip reasoning echoes, collapse whitespace, truncate tool results,
+    // trim old turns, and condense tool descriptions — all to reduce the
+    // token budget before the model-specific transform and upstream call.
+    state = await optimizeRequestTransform(state.messages, state.options);
+    const optimizationSaved = state.saved ?? 0;
+
     const modelDef = state.options.model
         ? findModelByName(state.options.model)
         : null;
@@ -108,7 +117,17 @@ export async function generateTextPortkey(
                 "Ignoring seed because Azure Responses is required for tools/reasoning",
             );
         }
-        return callAzureResponses(state.messages, state.options);
+        const azureCompletion = await callAzureResponses(
+            state.messages,
+            state.options,
+        );
+        if (optimizationSaved > 0) {
+            azureCompletion.usage = {
+                ...(azureCompletion.usage ?? {}),
+                saved: optimizationSaved,
+            };
+        }
+        return azureCompletion;
     }
 
     // Only the Responses adapter owns this parameter. Keep generic provider
@@ -120,6 +139,15 @@ export async function generateTextPortkey(
         state.options,
         requestConfig,
     );
+
+    // Attach optimization savings to usage for downstream reporting.
+    if (optimizationSaved > 0) {
+        completion.usage = {
+            ...(completion.usage ?? {}),
+            saved: optimizationSaved,
+        };
+    }
+
     return modelDef?.name === "command-a-plus"
         ? sanitizeCohereResponse(completion)
         : completion;

@@ -13,6 +13,7 @@ import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
+import { kimiK3Transform } from "./transforms/kimiK3Transform.js";
 import { pipe } from "./transforms/pipe.js";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import type { TransformFn, TransformOptions } from "./types.js";
@@ -447,7 +448,7 @@ const models: ModelDefinition[] = [
     {
         name: "kimi-k3",
         config: portkeyConfig["accounts/fireworks/models/kimi-k3"],
-        transform: fireworksThinking,
+        transform: pipe(fireworksThinking, kimiK3Transform),
     },
     {
         name: "laguna",

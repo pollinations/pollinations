@@ -1,0 +1,35 @@
+{
+  "pr_number": 14330,
+  "title": "Add Genie AI to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14330",
+  "merged_at": "2026-09-02T04:26:37Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Genie AI](https://play.google.com/store/apps/details?id=com.genie.aiassistant) to chat\n- Genie AI Companion is a powerful multi-modal AI super app designed to bring everything you need into one place. You can chat and get live answers from the internet, analyze and summarize docs, recogni\n\nFixes #14035",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Genie joins the garden",
+    "blurb": "Genie AI has landed in the pollinations app garden. One more multimodal companion can now chat, search, summarize, and generally keep several tabs open at once.",
+    "summary": "Added Genie AI Companion to the app directory, highlighting its multimodal chat, live web-answer, document-analysis, and summarization capabilities.",
+    "impact": "People browsing pollinations-powered apps can now discover Genie AI as a single place for chat, internet answers, and document help.",
+    "keywords": [
+      "genie-ai",
+      "community-app",
+      "chat",
+      "multimodal",
+      "app-directory"
+    ],
+    "visual_concept": "Depict Polli welcoming a friendly genie-themed app companion into a cozy garden hackerspace: a small glowing lamp releases pastel speech bubbles, document pages, and tiny web-search stars toward a retro terminal. Include blooming code-plants to represent the newly listed community app and make Polli feel like a host, wearing a tiny curator scarf.",
+    "image_prompt": "Cozy pixel art scene of the pollinations bee mascot, with a tiny curator scarf, welcoming a friendly pastel genie lamp beside a retro terminal in a blooming code garden; soft speech bubbles, document pages, and little web-search stars float from the lamp while flowers and vines grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and inviting."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-02/PR-14330.jpg",
+    "prompt": "Cozy pixel art scene of the pollinations bee mascot, with a tiny curator scarf, welcoming a friendly pastel genie lamp beside a retro terminal in a blooming code garden; soft speech bubbles, document pages, and little web-search stars float from the lamp while flowers and vines grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm and inviting."
+  },
+  "generated_at": "2026-09-02T04:27:36.141548+00:00",
+  "app_name": "Genie AI",
+  "app_url": "https://play.google.com/store/apps/details?id=com.genie.aiassistant"
+}

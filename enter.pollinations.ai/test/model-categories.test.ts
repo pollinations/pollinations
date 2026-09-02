@@ -3,10 +3,7 @@ import {
     computeCategoryModalities,
     getModelCategoriesFromCatalog,
 } from "../frontend/src/components/models/model-categories.ts";
-import {
-    getAvailableModelSections,
-    validateModelSearch,
-} from "../frontend/src/components/models/model-search.ts";
+import { validateModelSearch } from "../frontend/src/components/models/model-search.ts";
 
 const catalog = [
     { name: "official-text", category: "text" as const },
@@ -98,94 +95,28 @@ describe("model categories", () => {
         ]);
     });
 
-    it("derives community sections from the model categories in the catalog", () => {
-        expect(
-            getAvailableModelSections([
-                { type: "text" },
-                { type: "image" },
-                { type: "video" },
-                { type: "audio" },
-                { type: "embedding" },
-                { type: "text", agent: true },
-            ]),
-        ).toEqual([
-            "all",
-            "text",
+    it("defaults to community models and accepts categories independently", () => {
+        expect(validateModelSearch({ scope: "community" })).toEqual({
+            scope: undefined,
+            category: undefined,
+            q: undefined,
+            sort: undefined,
+        });
+        for (const category of [
             "image",
             "video",
             "audio",
             "embedding",
             "agent",
-        ]);
-    });
-
-    it("accepts every model category in the community scope", () => {
-        expect(validateModelSearch({ scope: "community" })).toEqual({
-            scope: "community",
-            category: undefined,
-            q: undefined,
-            sort: undefined,
-        });
+            "mcp",
+        ] as const) {
+            expect(validateModelSearch({ category }).category).toBe(category);
+        }
         expect(
-            validateModelSearch({ scope: "community", category: "image" }),
+            validateModelSearch({ scope: "pollinations", category: "image" }),
         ).toEqual({
-            scope: "community",
+            scope: "pollinations",
             category: "image",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "agent" }),
-        ).toEqual({
-            scope: "community",
-            category: "agent",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "video" }),
-        ).toEqual({
-            scope: "community",
-            category: "video",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "audio" }),
-        ).toEqual({
-            scope: "community",
-            category: "audio",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({
-                scope: "community",
-                category: "embedding",
-            }),
-        ).toEqual({
-            scope: "community",
-            category: "embedding",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(validateModelSearch({ category: "agent" })).toEqual({
-            scope: undefined,
-            category: undefined,
-            q: undefined,
-            sort: undefined,
-        });
-        expect(validateModelSearch({ category: "mcp" })).toEqual({
-            scope: undefined,
-            category: "mcp",
-            q: undefined,
-            sort: undefined,
-        });
-        expect(
-            validateModelSearch({ scope: "community", category: "mcp" }),
-        ).toEqual({
-            scope: "community",
-            category: undefined,
             q: undefined,
             sort: undefined,
         });
@@ -201,7 +132,7 @@ describe("model categories", () => {
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
             "title-desc",
         );
-        expect(validateModelSearch({ sort: "oldest" }).sort).toBe("oldest");
+        expect(validateModelSearch({ sort: "oldest" }).sort).toBeUndefined();
         expect(validateModelSearch({ sort: "brand-desc" }).sort).toBe(
             "brand-desc",
         );

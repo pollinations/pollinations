@@ -2,6 +2,20 @@
 
 exports[`effective cost and price per model — snapshot 1`] = `
 {
+  "anthropic/claude-fable-5.1": {
+    "cost": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.00001,
+    },
+    "price": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.00000025,
+      "promptTextTokens": 0.00001,
+    },
+  },
   "claude": {
     "cost": {
       "completionTextTokens": 0.000015,
@@ -130,16 +144,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "claude-sonnet-5": {
     "cost": {
-      "completionTextTokens": 0.000015,
+      "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000003,
+      "promptTextTokens": 0.000002,
     },
     "price": {
-      "completionTextTokens": 0.000015,
+      "completionTextTokens": 0.00001,
       "promptCacheWriteTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
-      "promptTextTokens": 0.000003,
+      "promptTextTokens": 0.000002,
     },
   },
   "cohere-embed-v4": {
@@ -204,6 +218,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.00000396,
       "promptCachedTokens": 0.000000044,
       "promptTextTokens": 0.00000132,
+    },
+  },
+  "deepseek/deepseek-v4-flash-vision-exp": {
+    "cost": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptImageTokens": 0.00000022,
+      "promptTextTokens": 0.00000022,
+    },
+    "price": {
+      "completionTextTokens": 0.00000066,
+      "promptCachedTokens": 0.000000007,
+      "promptImageTokens": 0.00000022,
+      "promptTextTokens": 0.00000022,
     },
   },
   "dreamshaper": {
@@ -1103,6 +1131,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
+  "inception/mercury-2.5-preview": {
+    "cost": {
+      "completionTextTokens": 0.00000015,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.00000004,
+    },
+    "price": {
+      "completionTextTokens": 0.00000015,
+      "promptCachedTokens": 0.000000004,
+      "promptTextTokens": 0.00000004,
+    },
+  },
   "inkling": {
     "cost": {
       "completionTextTokens": 0.0000012,
@@ -1418,14 +1458,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "minimax-m2.7": {
     "cost": {
-      "completionTextTokens": 0.0000012,
-      "promptCachedTokens": 0.00000006,
-      "promptTextTokens": 0.0000003,
+      "completionTextTokens": 0.000001,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.00000025,
     },
     "price": {
-      "completionTextTokens": 0.0000012,
-      "promptCachedTokens": 0.00000006,
-      "promptTextTokens": 0.0000003,
+      "completionTextTokens": 0.000001,
+      "promptCachedTokens": 0.00000005,
+      "promptTextTokens": 0.00000025,
     },
   },
   "minimax-m2.7-deepinfra": {

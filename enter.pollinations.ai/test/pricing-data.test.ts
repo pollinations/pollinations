@@ -534,6 +534,22 @@ test("Claude Fable 5 is paid-only and billed at current standard rates", () => {
     );
 });
 
+test("Claude Fable 5.1 is paid-only and billed at current standard rates", () => {
+    const definition = getRegistryModelDefinition("anthropic/claude-fable-5.1");
+
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(1);
+    expect(getCostDefinition("anthropic/claude-fable-5.1")).toEqual({
+        promptTextTokens: 0.00001,
+        promptCachedTokens: 0.00000025,
+        promptCacheWriteTokens: 0.0000125,
+        completionTextTokens: 0.00005,
+    });
+    expect(getPriceDefinition("anthropic/claude-fable-5.1")).toEqual(
+        getCostDefinition("anthropic/claude-fable-5.1"),
+    );
+});
+
 test("Qwen Image 3 uses Fal's output tier and reference-image rates", () => {
     expect(
         calculatePrice("qwen-image-3", {
@@ -1027,6 +1043,19 @@ test("caller-selectable OpenRouter models require paid balance", () => {
             expect(definition.paidOnly, `${model} paid-only status`).toBe(true);
         }
     }
+});
+
+test("MiniMax M2.7 uses the pinned DeepInfra OpenRouter rates", () => {
+    const definition = getRegistryModelDefinition("minimax-m2.7");
+
+    expect(definition.provider).toBe("openrouter");
+    expect(definition.paidOnly).toBe(true);
+    expect(definition.priceMultiplier).toBe(1);
+    expect(definition.cost).toMatchObject({
+        promptTextTokens: 0.25 / 1e6,
+        promptCachedTokens: 0.05 / 1e6,
+        completionTextTokens: 1 / 1e6,
+    });
 });
 
 test("Step Flash uses DeepInfra's standard and cached token rates", () => {

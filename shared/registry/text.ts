@@ -2248,6 +2248,36 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1000000,
         isSpecialized: false,
     },
+    "qwen/qwen3.8-max-0902": {
+        aliases: [],
+        provider: "alibaba",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
+        // hits (2026-09-03).
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
+        },
+        title: "Qwen3.8 Max 0902",
+        description:
+            "Pinned September checkpoint with stronger coding and long-horizon agent performance",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
     "qwen3.7-flash": {
         aliases: ["qwen/qwen3.7-flash"],
         provider: "openrouter",

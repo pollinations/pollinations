@@ -242,6 +242,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-max-0902": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-max-0902",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "qwen/qwen3.7-flash": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-flash",

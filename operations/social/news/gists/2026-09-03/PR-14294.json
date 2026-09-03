@@ -1,0 +1,34 @@
+{
+  "pr_number": 14294,
+  "title": "fix: derive prompt agent catalog metadata",
+  "author": "Circuit-Overtime",
+  "url": "https://github.com/pollinations/pollinations/pull/14294",
+  "merged_at": "2026-09-03T21:37:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Inherits base-model input modalities for managed prompt agents while reporting chat text output.\n- Derives `pollinations_models` and `web_search` capabilities from enabled MCP servers.\n- Deduplicates inherited and agent-specific capabilities.\n- Adds the Pollinations tools capability and icon to the Models UI.\n\nFloret content-array compatibility was split into #14308.\n\nAddresses #14162.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The agents found their labels",
+    "blurb": "Managed prompt agents now inherit the useful bits from their base models instead of arriving at the catalog wearing a blank name tag. Their tools, search powers, and chat output are finally visible where people look for them.",
+    "summary": "Managed prompt agents now inherit base-model input modalities, report chat text output, derive pollinations_models and web_search capabilities from enabled MCP servers, deduplicate capabilities, and show the Pollinations tools icon in the Models UI.",
+    "impact": "Users browsing models can now see the correct modalities and available Pollinations tools, web search, and model-access capabilities for managed prompt agents before using them.",
+    "keywords": [
+      "agent catalog",
+      "managed prompt agents",
+      "MCP",
+      "models UI",
+      "capabilities",
+      "web search"
+    ],
+    "visual_concept": "Depict Polli as a careful catalog librarian adding clear capability badges to a cozy shelf of managed prompt-agent seed packets. A friendly CRT monitor robot can hold glowing tool, search, and model icons while small code-plants connect the agents to their inherited base-model roots, making the metadata relationship visible.",
+    "image_prompt": "A cozy pixel art model catalog garden where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully attaches glowing capability badges to prompt-agent seed packets growing from shared base-model roots; a cheerful CRT monitor robot holds little tool, magnifying-glass, and model icons beside a lime green (#ecf874) terminal. Cozy 8-bit pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel flowers and code-plants, subtle CRT glow, and pixel-font text reading “TOOLS + SEARCH”. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14294.jpg",
+    "prompt": "A cozy pixel art model catalog garden where Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, carefully attaches glowing capability badges to prompt-agent seed packets growing from shared base-model roots; a cheerful CRT monitor robot holds little tool, magnifying-glass, and model icons beside a lime green (#ecf874) terminal. Cozy 8-bit pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel flowers and code-plants, subtle CRT glow, and pixel-font text reading “TOOLS + SEARCH”. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-03T21:38:23.546644+00:00"
+}

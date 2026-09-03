@@ -23,7 +23,7 @@ import {
     POLLEN_PACKS,
 } from "@shared/pollen-packs.ts";
 import { Link } from "@tanstack/react-router";
-import type { FC, ReactNode } from "react";
+import type { FC, MouseEvent, ReactNode } from "react";
 import { AutoTopUpPanel, type BillingState } from "./auto-top-up-panel.tsx";
 import { PaymentTrustBadge } from "./payment-trust-badge.tsx";
 import { PollenPackSlider } from "./pollen-pack-controls.tsx";
@@ -268,6 +268,7 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
 }) => {
+    const accountRestricted = initialBillingState?.accountRestricted ?? false;
     const selectedPackIndex = Math.max(
         0,
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
@@ -316,6 +317,15 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                             <ExternalLinkButton
                                 href={`/api/stripe/checkout/${selectedPack.packKey}`}
                                 target="_self"
+                                disabled={accountRestricted}
+                                aria-disabled={accountRestricted}
+                                onClick={
+                                    accountRestricted
+                                        ? (
+                                              event: MouseEvent<HTMLAnchorElement>,
+                                          ) => event.preventDefault()
+                                        : undefined
+                                }
                                 className="w-28 min-w-0 gap-1.5 self-start text-center shadow-none sm:shrink-0 sm:self-center"
                             >
                                 <span className="inline-flex items-center gap-1.5">

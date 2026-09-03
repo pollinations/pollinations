@@ -53,6 +53,7 @@ function createTextCacheApp() {
                             "x-fallback-target": "openai",
                             "x-pollinations-response-format":
                                 "audio-with-timestamps",
+                            "x-tts-voice": "nova",
                             "x-usage-prompt-text-tokens": "12",
                             "x-moderation-hate-severity": "safe",
                         },
@@ -264,6 +265,7 @@ describe("text cache", () => {
         expect(second.headers.get("x-pollinations-response-format")).toBe(
             "audio-with-timestamps",
         );
+        expect(second.headers.get("x-tts-voice")).toBe("nova");
         expect(second.headers.get("x-usage-prompt-text-tokens")).toBe("12");
         expect(second.headers.get("x-moderation-hate-severity")).toBe("safe");
         expect(await second.json()).toMatchObject({ originHits: 1 });

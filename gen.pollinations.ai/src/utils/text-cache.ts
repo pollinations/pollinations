@@ -21,6 +21,7 @@ const CACHED_HEADER_NAMES = new Set([
     "x-fallback-target",
     "x-model-used",
     "x-pollinations-response-format",
+    "x-tts-voice",
 ]);
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";

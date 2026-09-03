@@ -1,0 +1,34 @@
+{
+  "pr_number": 14402,
+  "title": "fix: use community model metadata",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14402",
+  "merged_at": "2026-09-03T14:44:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses the generation event provider field for community leaderboards\n- Uses catalog/provider metadata in model monitoring and CLI filtering\n- Keeps official publisher-qualified model IDs from being mistaken for community models\n\nTests: `npm test --prefix packages/polli-cli -- src/harnesses/keys.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden labels are fixed",
+    "blurb": "The community leaderboard is reading the right pollen tags again. Official publisher-qualified models can now keep their proper nameplates instead of wandering into the community patch.",
+    "summary": "Community leaderboards now use each generation event's provider field, while model monitoring and the Polli CLI use catalog/provider metadata so official publisher-qualified model IDs are classified correctly.",
+    "impact": "Leaderboard rankings, model-monitor views, and CLI filtering now distinguish community models from official publisher-qualified models using their actual provider metadata.",
+    "keywords": [
+      "community",
+      "leaderboards",
+      "model metadata",
+      "provider",
+      "polli-cli",
+      "model monitoring"
+    ],
+    "visual_concept": "A cozy model garden has two clearly labeled flower beds: a community bed and an official publisher bed. Polli acts as a careful gardener with a tiny label-maker, sorting model seed packets by their provider tags while a friendly CRT monitor robot checks the leaderboard sign; code-plants and flowers make the metadata correction feel like putting plants in their proper plots.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat and carefully placing provider-labeled model seed packets into the correct community and official flower beds. A cute chunky CRT monitor robot updates a lime green (#ecf874) leaderboard sign beside blooming code-plants and warm cream garden paths; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'RIGHT PROVIDER'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14402.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded light blue translucent wings, wearing a tiny gardener hat and carefully placing provider-labeled model seed packets into the correct community and official flower beds. A cute chunky CRT monitor robot updates a lime green (#ecf874) leaderboard sign beside blooming code-plants and warm cream garden paths; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'RIGHT PROVIDER'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-03T14:46:08.432658+00:00"
+}

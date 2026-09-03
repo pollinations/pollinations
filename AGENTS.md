@@ -231,11 +231,10 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
-- Stay on the current user-approved branch and its single PR. Never create,
-  checkout, switch to, or work from another branch or worktree unless the user
-  explicitly approves that branch change first.
-- Integrate follow-up work directly on the active branch. If continuing would
-  require a new branch or PR, stop and ask before creating it.
+- Creating branches and worktrees needs no approval. Branch off the current
+  `origin/main` for new work rather than piling onto an unrelated branch.
+- Keep related follow-up work on the active branch and its PR instead of
+  scattering it across new ones.
 - Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).

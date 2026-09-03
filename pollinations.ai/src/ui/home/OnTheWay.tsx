@@ -17,6 +17,10 @@ const UPCOMING = [
         title: "App hosting",
         body: "Deploy Pollinations-powered apps with domains, logs, usage, and billing.",
     },
+    {
+        title: "Flexible markups",
+        body: "Set the margin on app and agent usage—from the default 25% to premium pricing for higher-value products.",
+    },
 ];
 
 export function OnTheWay() {
@@ -27,7 +31,7 @@ export function OnTheWay() {
                 title={`${UPCOMING.length} things we’re building.`}
             />
             {/* Dashed and unlifted on purpose: nothing here is clickable yet. */}
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
                 {UPCOMING.map((item) => (
                     <div
                         key={item.title}

@@ -193,3 +193,63 @@ test("creates a hosted connection link with the current session contract", async
         redirectUrl: "https://connect.example",
     });
 });
+
+test("includes toolkit names and logos with connected accounts", async () => {
+    const requests = [];
+    const worker = createWorker({
+        fetchImpl: async (url, init) => {
+            const parsed = new URL(url);
+            requests.push({ url: parsed, init });
+            if (parsed.pathname.endsWith("/connected_accounts")) {
+                return Response.json({
+                    items: [
+                        {
+                            id: "ca_github",
+                            toolkit: { slug: "github" },
+                            alias: "octocat",
+                            status: "ACTIVE",
+                        },
+                    ],
+                });
+            }
+            if (parsed.pathname.endsWith("/toolkits/multi")) {
+                return Response.json({
+                    items: [
+                        {
+                            slug: "github",
+                            name: "GitHub",
+                            meta: {
+                                logo: "https://logos.composio.test/github",
+                            },
+                        },
+                    ],
+                });
+            }
+            return new Response("Not found", { status: 404 });
+        },
+    });
+
+    const response = await worker.fetch(
+        new Request("https://composio.internal/connections", {
+            headers: { [MCP_USER_ID_HEADER]: "user-1" },
+        }),
+        { COMPOSIO_API_KEY: "test-key" },
+    );
+
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+        data: [
+            {
+                id: "ca_github",
+                toolkit: "github",
+                name: "GitHub",
+                logo: "https://logos.composio.test/github",
+                alias: "octocat",
+                status: "ACTIVE",
+            },
+        ],
+    });
+    assert.deepEqual(JSON.parse(requests[1].init.body), {
+        toolkits: ["github"],
+    });
+});

@@ -10,6 +10,7 @@ type JsonObject = Record<string, unknown>;
 
 export type DirectResponsesTarget = {
     authConfigured: boolean;
+    disableReasoningForForcedTools?: true;
     endpoint: string;
     headers: Record<string, string>;
     model: string;
@@ -68,6 +69,9 @@ export function resolveDirectResponsesTarget(
 
     return {
         authConfigured: typeof authKey === "string" && authKey.length > 0,
+        ...(config.responsesDisableReasoningForForcedTools === true
+            ? { disableReasoningForForcedTools: true as const }
+            : {}),
         endpoint,
         headers: authHeader,
         model: String(resolved.model),

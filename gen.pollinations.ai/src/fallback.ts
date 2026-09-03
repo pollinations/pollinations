@@ -343,6 +343,10 @@ export async function withModelFallback<
     attempt: (candidate: Candidate) => Promise<T>,
     attempts?: FallbackAttempt[],
     beforeAttempt?: (candidate: Candidate) => Promise<void>,
+    shouldFallback: (
+        error: unknown,
+        candidate: Candidate,
+    ) => boolean = isRetryableFallbackError,
 ): Promise<{ result: T; candidate: Candidate; index: number }> {
     for (const [index, candidate] of candidates.entries()) {
         // Local gates are not upstream failures and must not trigger or be
@@ -364,7 +368,7 @@ export async function withModelFallback<
         } catch (error) {
             const terminal =
                 index === candidates.length - 1 ||
-                !isRetryableFallbackError(error);
+                !shouldFallback(error, candidate);
             attempts?.push({
                 candidate,
                 error,

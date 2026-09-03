@@ -1,27 +1,28 @@
 # GPU Instances
 
-Last updated: 2026-09-02
+Last updated: 2026-09-03
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 2 | 2x RTX PRO 4000 Blackwell | Vast.ai | $0.446667/hr all-in | **ACTIVE — two production, Vast-only** |
+| Flux (FP4) | 1 | RTX PRO 4000 Blackwell | Vast.ai + DeepInfra fallback | $0.230000/hr Vast fixed cost | **ACTIVE — one production GPU with metered spillover** |
 | Z-Image | 1 | RTX 5090 | Vast.ai | $0.351111/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | RTX 4070 + RTX 3060 | Vast.ai | $0.169444/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the six running Vast instances cost **$1.117222/hr** in total
-(**$804.40 per 30-day month**).
-All six are production workers; there is no isolated canary left running.
+At capture time, the five running Vast instances cost **$0.900556/hr** in total
+(**$648.40 per 30-day month**).
+All five are production workers; there is no isolated canary left running.
 
-Live verification on 2026-09-02 confirmed that all six instances are in both
-`actual_status=running` and `intended_status=running`, every model server and
-named tunnel is healthy, and the registry contains both Flux hostnames, the
-shared Z-Image hostname, and both DreamShaper hostnames. Klein is not in the
-heartbeat registry because production reaches it through the `KLEIN_VPC`
-Workers VPC binding.
+The Vast API on 2026-09-03 confirmed that all five instances are in both
+`actual_status=running` and `intended_status=running`. The surviving Flux
+hostname passed public health and direct generation and is the sole `flux`
+registry entry. The other model endpoints were last fully verified on
+2026-09-02: the registry contained the shared Z-Image hostname and both
+DreamShaper hostnames, while Klein remained reachable through the `KLEIN_VPC`
+Workers VPC binding instead of the heartbeat registry.
 
 The `zimage-vast-canary` dashboard label on `46003779` is historical; the
 instance is the production Z-Image worker, not a spare canary. Vast labels do
@@ -106,29 +107,46 @@ is the source of truth for scheduled offer scouting, candidate qualification,
 isolated canaries, the human promotion gate, cutover, instance cleanup, and the
 post-cutover documentation PR.
 
-## Provider: Vast.ai — Flux (2x RTX PRO 4000 Blackwell, FP4)
+## Provider: Vast.ai — Flux (RTX PRO 4000 Blackwell, FP4)
 
-Two single-GPU instances, each fronted by a named Cloudflare Tunnel. Flux is
-Vast-only and has no external provider fallback. The gen worker dispatches to
-the registered `flux` pool through `callSelfHostedServer`.
+One GPU instance is fronted by a named Cloudflare Tunnel. The gen worker first
+dispatches to the registered `flux` pool through `callSelfHostedServer`; retryable
+failures spill to the hidden `flux-deepinfra` fallback at $0.0005 per successful
+image.
 
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
 | flux-vast-04 | 47389078 | 59339 / France, FR | RTX PRO 4000 Blackwell 24 GB | $0.230000/hr | ACTIVE (promoted 2026-08-10) — registered hostname `flux-vast-04.pollinations.ai` |
-| flux-vast-06 | 49145048 | 140800 / Illinois, US | RTX PRO 4000 Blackwell 24 GB | $0.216667/hr | ACTIVE — registered hostname `flux-maintenance-canary-49145048.myceli.ai` |
 
 Instance `47389078` replaced `46491202` on 2026-08-10. The France host is
 machine `59339`, has Vast reliability `0.998`, and costs **$165.60 per 30-day
 month** in Vast credits. It saves **$0.131111/hr**, or **$94.40 per 30-day
-month**, compared with the replaced RTX 5090 slot. The two-worker FLUX pool now
-costs `$0.446667/hr` all-in.
+month**, compared with the replaced RTX 5090 slot. After the later cost-first
+downsize, the single-GPU Flux route costs `$0.230000/hr` in fixed Vast spend.
 
-Instance `49145048` replaced maintenance-bound instance `47259458` before its
+Instance `49145048` had replaced maintenance-bound instance `47259458` before its
 scheduled 2026-08-30 downtime. The Illinois host is machine `140800`, had Vast
 reliability `0.9965586` at the 2026-09-02 audit, and costs **$156.00 per
 30-day month** in Vast credits. It saves **$0.013333/hr**, or **$9.60 per
-30-day month**, compared with the replaced slot. Its named tunnel is healthy,
-and the worker is actively heartbeating in the production `flux` registry.
+30-day month**, compared with the replaced slot while running.
+
+On 2026-09-03, `49145048` stopped after its host lost the Docker daemon. Its
+public tunnel returned HTTP 530 and the worker expired from the production
+registry, leaving `47389078` as the sole Vast backend. The stopped contract was
+retaining 60 GB of storage at $0.016667/hr but no longer served traffic, so it
+was destroyed after confirming the remaining worker's registry heartbeat,
+public health, and a valid direct 512x512 generation.
+
+During the preceding 24 hours, DeepInfra completed 1,243 of 12,729 successful
+Flux requests (9.77%) for $0.6215 of tracked provider cost and $2.486 of
+customer charges. The provider usage API independently reported the same
+$0.0005/image rate, with 1,034 images and $0.52 posted when checked; its usage
+feed lagged Tinybird. Spillover was concentrated in one burst and produced 62
+terminal 5xx responses with 45.4-second p95 latency over the full day. The last
+six hours had 106 fallback successes, $0.053 cost, and zero fallback 5xx.
+Running one Vast worker plus DeepInfra is therefore the current cost-first
+topology; the fallback remains a safety net rather than a latency-equivalent
+replacement GPU.
 
 Instance `47259458` had previously replaced `47018211`. The retired Quebec
 host was machine `102863`, cost `$0.230000/hr`, and saved **$0.057778/hr**, or
@@ -146,9 +164,9 @@ behavior rather than a host regression.
 
 The replacement reconfirmed a queue caveat: the synchronous inference call
 blocks the FastAPI event loop, so `QUEUE_LIMIT=3` does not currently guarantee
-fast 503 shedding under concurrent load. Treat the two-worker Vast pool as the
-capacity guard. Queue admission must be hardened separately; there is no
-Replicate fallback.
+fast 503 shedding under concurrent load. DeepInfra handles retryable capacity
+failures from the single Vast worker; queue admission must still be hardened
+separately. There is no Replicate fallback.
 
 A previous post-promotion audit found that `47259458` still had
 `HEARTBEAT_ENABLED=false` even though its named tunnel was healthy. That made
@@ -164,7 +182,8 @@ exact new hostname in `/register` and an attributed request in that worker's
 > authoritative Pollinations account. The gen Worker cannot fetch a Vast
 > raw-IP/non-standard-port origin, and a successful registry heartbeat alone
 > does not prove the data path works. Historical external fallbacks could hide
-> either failure, but the current FLUX route is Vast-only.
+> either failure. The current external fallback reduces outage impact but does
+> not prove that the Vast data path is healthy.
 
 **The quick-tunnel warning above is not theoretical — it caused the #12254
 outage.** flux-vast-03 was left on a `trycloudflare.com` quick tunnel (free,
@@ -229,7 +248,8 @@ POLLINATIONS_API_KEY=... bash operations/infrastructure/gpu/flux/verify-vast.sh 
 **Key behavior:** FP4 nunchaku, 4 steps, full 1024x1024
 (`MAX_PIXELS=1048576`). `QUEUE_LIMIT=3` is configured, but the synchronous
 inference path currently prevents it from reliably shedding concurrent load.
-FLUX is Vast-only, so both production workers must remain healthy.
+The single production worker must remain healthy; retryable failures spill to
+DeepInfra.
 
 ## Provider: Vast.ai — Z-Image Turbo (RTX 5090)
 
@@ -585,6 +605,6 @@ Non-SOPS keys:
 
 | Key | Provider | Location |
 |-----|----------|----------|
-| `~/.ssh/id_ed25519` | Vast.ai | All six active Vast workers; query the current proxy host/port with `vastai show instance` |
+| `~/.ssh/id_ed25519` | Vast.ai | All five active Vast workers; query the current proxy host/port with `vastai show instance` |
 | `~/.ssh/enter-services-shared` | EC2 prod | enter services |
 | `~/.ssh/enter-services-staging` | EC2 staging | enter services |

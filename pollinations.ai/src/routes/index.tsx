@@ -54,13 +54,7 @@ function HelloPage() {
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
                     title="Every model, one wallet."
-                    subtitle={
-                        <>
-                            <strong>Start for free</strong> with Pollen earned
-                            through Quests. Then build across text, image, audio
-                            and video with one API and one wallet.
-                        </>
-                    }
+                    subtitle="Complete small Quests to earn Pollen—the platform credit, where 1 Pollen = $1. Use it across text, image, audio and video through one API, then publish what you build and earn more when people use it."
                     variant="page"
                 />
                 <div className="flex flex-wrap gap-3">

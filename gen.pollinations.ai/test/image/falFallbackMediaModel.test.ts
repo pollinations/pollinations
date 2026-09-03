@@ -158,6 +158,22 @@ describe("Fal fallback media models", () => {
         expect(result.trackingData.usage.completionVideoSeconds).toBe(5);
     });
 
+    it("maps unsupported 4:3 input to a Wan 2.2 Turbo ratio", async () => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("a blue circle", {
+            ...baseParams,
+            model: "wan-fast-fal",
+            width: 1024,
+            height: 768,
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        await resultPromise;
+
+        expect(requests[0].body?.aspect_ratio).toBe("1:1");
+    });
+
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },

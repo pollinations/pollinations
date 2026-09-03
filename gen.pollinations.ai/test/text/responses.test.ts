@@ -269,6 +269,7 @@ describe("direct Responses transport", () => {
 
         expect(getResponsesEventUsage(event)).toEqual({
             model: "qwen/qwen3.7-plus",
+            hasExplicitCacheHit: false,
             usage: expect.objectContaining({
                 promptTextTokens: 2,
                 completionTextTokens: 1,

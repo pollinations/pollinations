@@ -1,6 +1,7 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
+    hasExplicitPromptCacheHit,
     openaiUsageToUsage,
     parseUsageHeaders,
     responsesUsageToUsage,
@@ -70,6 +71,30 @@ describe("buildUsageHeaders", () => {
         expect(headers["x-usage-prompt-audio-tokens"]).toBe("500");
         expect(headers["x-usage-completion-audio-seconds"]).toBe("3.5");
         expect(headers["x-usage-completion-video-seconds"]).toBe("10.2");
+    });
+});
+
+describe("hasExplicitPromptCacheHit", () => {
+    it("recognizes Alibaba chat and Responses explicit-cache hits", () => {
+        expect(
+            hasExplicitPromptCacheHit({
+                prompt_tokens_details: { cache_type: "ephemeral" },
+            }),
+        ).toBe(true);
+        expect(
+            hasExplicitPromptCacheHit({
+                input_tokens_details: { cache_type: "ephemeral" },
+            }),
+        ).toBe(true);
+    });
+
+    it("does not treat an explicit-cache request or implicit hit as a hit", () => {
+        expect(
+            hasExplicitPromptCacheHit({
+                prompt_tokens_details: { cache_type: "implicit" },
+            }),
+        ).toBe(false);
+        expect(hasExplicitPromptCacheHit({ cached_tokens: 100 })).toBe(false);
     });
 });
 

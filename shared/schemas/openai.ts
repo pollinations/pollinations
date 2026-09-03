@@ -582,6 +582,12 @@ export const CompletionUsageSchema = z
             .object({
                 audio_tokens: z.number().int().nonnegative().nullish(),
                 cached_tokens: z.number().int().nonnegative().nullish(),
+                cache_creation_input_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                cache_type: z.string().nullish(),
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),

@@ -2374,6 +2374,84 @@ describe("trackResponse modelUsed", () => {
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.modelUsed).toBeUndefined();
     });
+
+    it("prices an Alibaba explicit-cache hit from response metadata", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "qwen3.7-flash"),
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": "qwen3.7-flash-alibaba",
+                        "x-usage-prompt-cached-tokens": "1000000",
+                        "x-usage-prompt-cache-type": "ephemeral",
+                    },
+                },
+            ),
+            candidateFixture("qwen3.7-flash-alibaba"),
+        );
+
+        // The reported variant is the caller's unchanged public tier; the
+        // served cost independently uses Alibaba's explicit-cache rate.
+        expect(tracking.costVariant).toBe("context_256k");
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+    });
+
+    it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "qwen3.7-flash"),
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": "qwen3.7-flash-alibaba",
+                        "x-usage-prompt-cached-tokens": "1000000",
+                    },
+                },
+            ),
+            candidateFixture("qwen3.7-flash-alibaba"),
+            // Even a stale request-side hint must not override what the
+            // provider actually reported on the response.
+            { hasExplicitCacheHit: true },
+        );
+
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+    });
+
+    it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
+        const usageEvent = JSON.stringify({
+            model: "qwen3.7-flash",
+            choices: [],
+            usage: {
+                prompt_tokens: 1_000_000,
+                completion_tokens: 0,
+                total_tokens: 1_000_000,
+                prompt_tokens_details: {
+                    cached_tokens: 1_000_000,
+                    cache_type: "ephemeral",
+                },
+            },
+        });
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true, "qwen3.7-flash"),
+            new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": "qwen3.7-flash-alibaba",
+                },
+            }),
+            candidateFixture("qwen3.7-flash-alibaba"),
+        );
+
+        expect(tracking.costVariant).toBe("context_256k");
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+    });
 });
 
 describe("trackResponse missing usage", () => {

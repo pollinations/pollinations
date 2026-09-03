@@ -203,7 +203,7 @@ describe("long-context cost variants", () => {
             "qwen3.7-flash",
             "qwen3.7-flash-alibaba",
             { promptCachedTokens: 10_000 },
-            { hasExplicitCache: true },
+            { hasExplicitCacheHit: true },
         );
 
         expect(billing.cost.totalCost).toBeCloseTo(0.00003, 12);

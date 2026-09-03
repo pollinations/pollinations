@@ -2,7 +2,9 @@ import { UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
+    PROMPT_CACHE_TYPE_HEADER,
     responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import {
@@ -167,6 +169,9 @@ async function handleDirectResponse(
                 ),
             )) {
                 headers.set(name, value);
+            }
+            if (hasExplicitPromptCacheHit(result.usage)) {
+                headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
             }
         }
 

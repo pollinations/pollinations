@@ -4,8 +4,10 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
@@ -136,6 +138,9 @@ function usageHeaders(
             buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
+        }
+        if (hasExplicitPromptCacheHit(usage)) {
+            headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
         }
     }
     if (completion?.fallbackTarget) {
@@ -305,20 +310,6 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
-        c.var.track?.setPricingInput({
-            hasExplicitCache: requestData.messages.some((message) => {
-                if (message.cache_control !== undefined) return true;
-                return (
-                    Array.isArray(message.content) &&
-                    message.content.some(
-                        (part) =>
-                            part !== null &&
-                            typeof part === "object" &&
-                            "cache_control" in part,
-                    )
-                );
-            }),
-        });
         const normalization = normalizeSearchContext(c, requestData);
         if ("errorResponse" in normalization) {
             return normalization.errorResponse;

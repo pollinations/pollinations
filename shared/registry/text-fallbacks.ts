@@ -59,6 +59,9 @@ export const TEXT_FALLBACKS = {
         "qwen3.7-flash-alibaba": {
             provider: "alibaba",
             addedDate: new Date("2026-09-02").getTime(),
+            // This bypasses OpenRouter but deliberately keeps Alibaba as the
+            // inference provider, so it covers gateway/transport failures, not
+            // an Alibaba-wide outage or rate limit.
             // The caller keeps the public OpenRouter quote. Direct Alibaba has
             // the same token rates except explicit cache reads cost 10% of
             // input instead of 20%; cache creation costs 125% on both routes.
@@ -112,7 +115,7 @@ export const TEXT_FALLBACKS = {
                             : promptTokens > 32_000
                               ? "context_32k"
                               : undefined;
-                    if (!input?.hasExplicitCache) return tier;
+                    if (!input?.hasExplicitCacheHit) return tier;
                     if (tier === "context_256k") {
                         return "context_256k_explicit_cache";
                     }
@@ -184,6 +187,9 @@ export const TEXT_FALLBACKS = {
         "mistral-small-3.2-deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-09-02").getTime(),
+            // This bypasses OpenRouter but deliberately keeps DeepInfra as the
+            // inference provider, so it covers gateway/transport failures, not
+            // a DeepInfra-wide outage or rate limit.
             // Direct DeepInfra is $0.075/M input and $0.20/M output, exactly
             // matching the caller's public quote: no fallback loss.
         },
@@ -233,7 +239,9 @@ export const TEXT_FALLBACKS = {
             // selection for this checkpoint; those calls stay on the primary.
             supportsForcedToolChoice: false,
             // Live probes accept up to five images; OpenRouter reports an
-            // 8,192-token output cap. Larger requests stay on the primary.
+            // 8,192-token output cap. Explicitly larger requests stay on the
+            // primary. If no limit is supplied, a rescued response may finish
+            // at Vertex's lower cap with the provider's `length` finish reason.
             maxReferenceImages: 5,
             maxCompletionTokens: 8192,
         },

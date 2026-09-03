@@ -1,6 +1,30 @@
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { Callout, type CalloutProps } from "./compositions/Callout.tsx";
+export {
+    ChatConversation,
+    ChatConversationContent,
+    type ChatConversationContentProps,
+    type ChatConversationProps,
+} from "./compositions/ChatConversation.tsx";
+export {
+    ChatMessage,
+    ChatMessageActions,
+    type ChatMessageActionsProps,
+    ChatMessageContent,
+    type ChatMessageContentProps,
+    ChatMessageHeader,
+    type ChatMessageHeaderProps,
+    type ChatMessageProps,
+    type ChatMessageRole,
+} from "./compositions/ChatMessage.tsx";
+export {
+    ChatPromptInput,
+    ChatPromptInputFooter,
+    type ChatPromptInputFooterProps,
+    type ChatPromptInputProps,
+    ChatPromptTextarea,
+} from "./compositions/ChatPromptInput.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
 export {
     Collapsible,
@@ -48,6 +72,11 @@ export {
 } from "./compositions/PeriodPicker.tsx";
 export { Section, type SectionProps } from "./compositions/Section.tsx";
 export { StatCard, type StatCardProps } from "./compositions/StatCard.tsx";
+export {
+    ToolCallDetails,
+    type ToolCallDetailsProps,
+    type ToolCallStatus,
+} from "./compositions/ToolCallDetails.tsx";
 export { cn } from "./lib/cn-app.ts";
 export {
     currentPeriod,

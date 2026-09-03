@@ -19,10 +19,11 @@
         "deploy:production": "npm run build:production && wrangler deploy --config dist/pollinations_ai/wrangler.json"
     },
     "dependencies": {
-        "@assistant-ui/react": "^0.15.17",
+        "@ai-sdk/react": "^4.0.93",
         "@pollinations/sdk": "file:../packages/sdk",
         "@pollinations/ui": "file:../packages/ui",
         "@tanstack/react-router": "^1.139.3",
+        "ai": "^7.0.90",
         "react": "^19.2.0",
         "react-dom": "^19.2.0"
     },
@@ -39,6 +40,7 @@
         "typescript": "^5.9.3",
         "vite": "^7.2.4",
         "vite-tsconfig-paths": "^5.1.4",
+        "vitest": "^3.2.4",
         "wrangler": "^4.49.0"
     }
 }

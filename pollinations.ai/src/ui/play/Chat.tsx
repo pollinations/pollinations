@@ -1,12 +1,4 @@
-import {
-    AssistantRuntimeProvider,
-    MessagePrimitive,
-    type TextMessagePartProps,
-    type ThreadMessageLike,
-    ThreadPrimitive,
-    type ToolCallMessagePartProps,
-    useExternalStoreRuntime,
-} from "@assistant-ui/react";
+import { useChat } from "@ai-sdk/react";
 import {
     type AudioFormat,
     type ChatRoutingCapability,
@@ -23,10 +15,22 @@ import {
     Alert,
     BeakerIcon,
     Button,
+    ChatConversation,
+    ChatConversationContent,
     ChatIcon,
+    ChatMessage,
+    ChatMessageActions,
+    ChatMessageContent,
+    ChatMessageHeader,
+    ChatPromptInput,
+    ChatPromptInputFooter,
+    ChatPromptTextarea,
+    CheckIcon,
     ChevronIcon,
     Chip,
+    ClipboardIcon,
     CloudUploadIcon,
+    CopyButton,
     cn,
     Dialog,
     DownloadIcon,
@@ -36,17 +40,18 @@ import {
     ImageIcon,
     PauseIcon,
     PlayIcon,
-    RobotIcon,
     RocketIcon,
     ScrollArea,
     Slider,
     TabButton,
     Text,
-    Textarea,
+    ToolCallDetails,
+    type ToolCallStatus,
     TrashIcon,
     XIcon,
 } from "@pollinations/ui";
 import { Markdown } from "@pollinations/ui/markdown";
+import type { DynamicToolUIPart } from "ai";
 import {
     type ClipboardEvent,
     type CSSProperties,
@@ -60,27 +65,23 @@ import {
 } from "react";
 import {
     type AgentChoice,
-    type AgentMessagePart,
     AUTO_ROUTING,
-    agentActivity,
     agentChoices,
-    applyAgentEvent,
-    applyOpenAIToolCallDelta,
     arrayBufferToBase64,
     audioFormat,
-    buildUserContent,
     type ChatAttachmentKind,
-    type ChatMessageState,
     compactRouting,
-    conversationForRequest,
-    extractStreamedMedia,
     fileKind,
-    parseAgentMessage,
     type RenderedMedia,
     type RoutingChoice,
     type RoutingSelection,
     routingChoices,
 } from "./chat-models";
+import {
+    PollinationsChatTransport,
+    type PollinationsUIMessage,
+    type PreparedAttachment,
+} from "./pollinations-chat-transport";
 
 // @pollinations/ui does not export this website-local ordering.
 const CHAT_ROUTING_FIELDS = [
@@ -126,29 +127,20 @@ const API_BASE_URL = (
     "https://gen.pollinations.ai"
 ).replace(/\/$/, "");
 
-interface PreparedAttachment {
-    id: string;
-    name: string;
-    mimeType: string;
-    kind: ChatAttachmentKind;
-    url: string;
-    contentPart: MessageContentPart;
-}
-
-interface ConversationMessage extends ChatMessageState {
-    attachments: PreparedAttachment[];
-}
-
-function welcomeMessage(agent: AgentChoice): ConversationMessage {
+function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
     return {
         id: `${agent.id}-welcome`,
         role: "assistant",
-        content:
-            agent.id === FLORET_MODEL_ID
-                ? "👋 Hi, I’m Floret — an AI agent. That means I can combine several tasks in one conversation: chat, search, and create text, images, video, or audio. What would you like to make? ✨"
-                : `👋 You’re chatting with ${agent.title}. What would you like help with?`,
-        status: "complete",
-        attachments: [],
+        metadata: { localOnly: true },
+        parts: [
+            {
+                type: "text",
+                text:
+                    agent.id === FLORET_MODEL_ID
+                        ? "👋 Hi, I’m Floret — an AI agent. That means I can combine several tasks in one conversation: chat, search, and create text, images, video, or audio. What would you like to make? ✨"
+                        : `👋 You’re chatting with ${agent.title}. What would you like help with?`,
+            },
+        ],
     };
 }
 
@@ -240,66 +232,6 @@ function attachmentPart(
     return {
         type: "file",
         file: { file_url: url, file_name: file.name, mime_type: mimeType },
-    };
-}
-
-function textContent(message: ConversationMessage): string {
-    if (typeof message.content === "string") return message.content;
-    return message.content
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
-        .join("\n");
-}
-
-function renderedAssistantMessage(message: ConversationMessage) {
-    const rawText = textContent(message);
-    const extracted = extractStreamedMedia(rawText);
-    const media = message.media?.length ? message.media : extracted.media;
-    const content =
-        message.status === "streaming"
-            ? []
-            : parseAgentMessage(rawText).reduce<AgentMessagePart[]>(
-                  (parts, part) => {
-                      if (part.type === "tool-call") {
-                          parts.push(part);
-                          return parts;
-                      }
-                      const markdown = extractStreamedMedia(part.text).markdown;
-                      if (markdown) parts.push({ ...part, text: markdown });
-                      return parts;
-                  },
-                  [],
-              );
-    return { content, media };
-}
-
-function toAssistantUiMessage(message: ConversationMessage): ThreadMessageLike {
-    if (message.role === "user") {
-        return {
-            id: message.id,
-            role: "user",
-            content: textContent(message),
-        };
-    }
-
-    const status =
-        message.status === "streaming"
-            ? ({ type: "running" } as const)
-            : message.status === "cancelled"
-              ? ({ type: "incomplete", reason: "cancelled" } as const)
-              : message.status === "error"
-                ? ({
-                      type: "incomplete",
-                      reason: "error",
-                      error: message.error || "Response interrupted",
-                  } as const)
-                : ({ type: "complete", reason: "stop" } as const);
-
-    return {
-        id: message.id,
-        role: "assistant",
-        content: renderedAssistantMessage(message).content,
-        status,
     };
 }
 
@@ -641,199 +573,198 @@ function VideoPlayer({
     );
 }
 
-function UserTextPart({ text }: TextMessagePartProps) {
-    return <p className="whitespace-pre-wrap break-words">{text}</p>;
-}
-
-function AssistantTextPart({ text }: TextMessagePartProps) {
-    return <Markdown>{text}</Markdown>;
-}
-
-function ToolValue({ value }: { value: unknown }) {
-    const formatted =
-        typeof value === "string"
-            ? value
-            : (() => {
-                  try {
-                      return JSON.stringify(value, null, 2) ?? String(value);
-                  } catch {
-                      return String(value);
-                  }
-              })();
-    const segments = formatted.split(/(https:\/\/[^\s"\\]+)/g);
-    let offset = 0;
-    const linkedSegments = segments.map((segment) => {
-        const key = `${offset}:${segment}`;
-        offset += segment.length;
-        return segment.startsWith("https://") ? (
-            <a
-                key={key}
-                href={segment}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-            >
-                {segment}
-            </a>
-        ) : (
-            segment
-        );
-    });
-
+function ToolPart({ part }: { part: DynamicToolUIPart }) {
+    const isError = part.state === "output-error";
+    const output = part.state === "output-available" ? part.output : undefined;
+    const error = isError ? part.errorText : undefined;
+    const status: ToolCallStatus =
+        part.state === "input-streaming"
+            ? "pending"
+            : part.state === "input-available"
+              ? "running"
+              : part.state === "approval-requested"
+                ? "approval-requested"
+                : part.state === "approval-responded"
+                  ? "approval-responded"
+                  : part.state === "output-available"
+                    ? "complete"
+                    : part.state === "output-denied"
+                      ? "denied"
+                      : "error";
     return (
-        <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-words rounded-lg bg-theme-bg-pale p-3 text-xs">
-            {linkedSegments}
-        </pre>
+        <ToolCallDetails
+            name={part.toolName}
+            input={"input" in part ? part.input : undefined}
+            output={output}
+            error={error}
+            status={status}
+        />
     );
 }
 
-function AgentToolCall({
-    toolName,
-    args,
-    result,
-    isError,
-}: ToolCallMessagePartProps) {
-    return (
-        <details className="group overflow-hidden rounded-lg border border-theme-border/40 bg-theme-bg-pale">
-            <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-sm font-semibold [&::-webkit-details-marker]:hidden">
-                <ChevronIcon className="size-4 transition-transform group-open:rotate-180" />
-                <span>{isError ? "Tool failed" : "Tool executed"}</span>
-                <code className="min-w-0 truncate text-xs font-normal">
-                    {toolName}
-                </code>
-            </summary>
-            <div className="flex flex-col gap-3 border-theme-border/40 border-t px-3 py-3">
-                <div className="flex flex-col gap-1">
-                    <Text size="xs" tone="muted" weight="bold">
-                        Input
-                    </Text>
-                    <ToolValue value={args} />
-                </div>
-                {result !== undefined && (
-                    <div className="flex flex-col gap-1">
-                        <Text size="xs" tone="muted" weight="bold">
-                            {isError ? "Error" : "Output"}
-                        </Text>
-                        <ToolValue value={result} />
-                    </div>
-                )}
-            </div>
-        </details>
+function activeTool(message: PollinationsUIMessage): string | undefined {
+    const activities = message.parts.flatMap((part) =>
+        part.type === "data-activity" && part.data.status !== "complete"
+            ? [part.data]
+            : [],
     );
+    const activity = activities[activities.length - 1];
+    if (!activity) return undefined;
+    return activity.status === "failed"
+        ? `${activity.name} failed`
+        : activity.name;
 }
 
 function MessageCard({
     message,
     assistantName,
+    isStreaming,
+    responseError,
     canRetry,
     onRetry,
 }: {
-    message: ConversationMessage;
+    message: PollinationsUIMessage;
     assistantName: string;
+    isStreaming: boolean;
+    responseError?: Error;
     canRetry: boolean;
     onRetry: () => void;
 }) {
-    const rawText = textContent(message);
     const isUser = message.role === "user";
-    const rendered = isUser
-        ? {
-              content: rawText ? [{ type: "text", text: rawText }] : [],
-              media: [],
-          }
-        : renderedAssistantMessage(message);
-    const activity = agentActivity(message);
+    const attachments = message.metadata?.attachments ?? [];
+    const contentParts = message.parts.filter(
+        (part) => part.type === "text" || part.type === "dynamic-tool",
+    );
+    const media = message.parts.flatMap((part) =>
+        part.type === "data-media" ? [part.data] : [],
+    );
+    const cancelled = message.parts.some(
+        (part) => part.type === "data-responseStatus",
+    );
+    const activity = activeTool(message);
+    const copyText = message.parts
+        .flatMap((part) => (part.type === "text" ? [part.text] : []))
+        .join("\n\n");
     const showArticle =
         isUser ||
-        rendered.content.length > 0 ||
-        message.attachments.length > 0 ||
-        message.status !== "complete" ||
+        contentParts.length > 0 ||
+        attachments.length > 0 ||
+        isStreaming ||
+        cancelled ||
+        responseError ||
         canRetry;
 
     return (
-        <MessagePrimitive.Root
+        <div
             className={cn(
                 "play-chat-message flex min-w-0 flex-col gap-3",
                 isUser ? "ml-auto items-end" : "mr-auto items-start",
             )}
-            aria-busy={message.status === "streaming"}
+            aria-busy={isStreaming}
         >
             {showArticle && (
-                <article
-                    className={cn(
-                        "flex max-w-full min-w-0 flex-col gap-3 rounded-xl px-4 py-3",
-                        isUser
-                            ? "bg-theme-bg-active text-theme-text-strong"
-                            : "bg-surface-opaque text-theme-text-base shadow-well",
-                    )}
+                <ChatMessage
+                    from={isUser ? "user" : "assistant"}
+                    className="max-w-full"
                 >
-                    {isUser ? (
-                        <Text
-                            as="div"
-                            size="xs"
-                            tone="muted"
-                            weight="bold"
-                            className="uppercase tracking-wide"
-                        >
-                            You
-                        </Text>
-                    ) : (
-                        <RobotIcon className="h-4 w-4 text-theme-text-strong" />
-                    )}
-                    <MessagePrimitive.Parts
-                        components={{
-                            Text: isUser ? UserTextPart : AssistantTextPart,
-                            tools: { Fallback: AgentToolCall },
-                        }}
+                    <ChatMessageHeader
+                        from={isUser ? "user" : "assistant"}
+                        label={isUser ? "You" : assistantName}
                     />
-                    {message.attachments.length > 0 && (
-                        <div className="grid gap-3 sm:grid-cols-2">
-                            {message.attachments.map((attachment) => (
-                                <AttachmentView
-                                    key={attachment.id}
-                                    attachment={attachment}
-                                />
-                            ))}
-                        </div>
+                    <ChatMessageContent className="flex flex-col gap-3">
+                        {contentParts.map((part, index) =>
+                            part.type === "text" ? (
+                                isUser ? (
+                                    <p
+                                        key={`text:${index}`}
+                                        className="whitespace-pre-wrap break-words"
+                                    >
+                                        {part.text}
+                                    </p>
+                                ) : (
+                                    <Markdown key={`text:${index}`}>
+                                        {part.text}
+                                    </Markdown>
+                                )
+                            ) : (
+                                <ToolPart key={part.toolCallId} part={part} />
+                            ),
+                        )}
+                        {attachments.length > 0 && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                                {attachments.map((attachment) => (
+                                    <AttachmentView
+                                        key={attachment.id}
+                                        attachment={attachment}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                        {isStreaming && (
+                            <Text
+                                size="sm"
+                                tone="muted"
+                                className="animate-pulse"
+                            >
+                                {activity || "Working…"}
+                            </Text>
+                        )}
+                        {cancelled && (
+                            <Text size="xs" tone="muted">
+                                Stopped
+                            </Text>
+                        )}
+                        {responseError && (
+                            <Alert intent="danger" title="Response interrupted">
+                                {responseError.message ||
+                                    `${assistantName} could not finish this response.`}
+                            </Alert>
+                        )}
+                    </ChatMessageContent>
+                    {!isUser && (copyText || canRetry) && (
+                        <ChatMessageActions>
+                            {copyText && (
+                                <CopyButton
+                                    value={copyText}
+                                    aria-label="Copy response"
+                                    className="flex cursor-pointer items-center gap-1.5 rounded-full px-2 py-1 text-xs text-theme-text-soft hover:bg-theme-bg-hover hover:text-theme-text-strong"
+                                >
+                                    {(copied) => (
+                                        <>
+                                            {copied ? (
+                                                <CheckIcon className="size-3.5" />
+                                            ) : (
+                                                <ClipboardIcon className="size-3.5" />
+                                            )}
+                                            {copied ? "Copied" : "Copy"}
+                                        </>
+                                    )}
+                                </CopyButton>
+                            )}
+                            {canRetry && (
+                                <Button
+                                    type="button"
+                                    size="xs"
+                                    onClick={onRetry}
+                                >
+                                    Retry
+                                </Button>
+                            )}
+                        </ChatMessageActions>
                     )}
-                    {message.status === "streaming" && (
-                        <Text size="sm" tone="muted" className="animate-pulse">
-                            {activity || "Working…"}
-                        </Text>
-                    )}
-                    {message.status === "cancelled" && (
-                        <Text size="xs" tone="muted">
-                            Stopped
-                        </Text>
-                    )}
-                    {message.status === "error" && (
-                        <Alert intent="danger" title="Response interrupted">
-                            {message.error ||
-                                `${assistantName} could not finish this response.`}
-                        </Alert>
-                    )}
-                    {canRetry && (
-                        <Button
-                            type="button"
-                            size="sm"
-                            onClick={onRetry}
-                            className="self-start"
-                        >
-                            Retry
-                        </Button>
-                    )}
-                </article>
+                </ChatMessage>
             )}
-            {rendered.media.length > 0 && (
+            {media.length > 0 && (
                 <div className="flex flex-col gap-3">
-                    {rendered.media.map((media) => (
+                    {media.map((item) => (
                         <MediaView
-                            key={`${media.kind}:${media.url}`}
-                            media={media}
+                            key={`${item.kind}:${item.url}`}
+                            media={item}
                         />
                     ))}
                 </div>
             )}
-        </MessagePrimitive.Root>
+        </div>
     );
 }
 
@@ -1035,15 +966,15 @@ export function Chat() {
         [catalog.models],
     );
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
-    const [messages, setMessages] = useState<ConversationMessage[]>([]);
     const [draft, setDraft] = useState("");
     const [files, setFiles] = useState<File[]>([]);
     const [routing, setRouting] = useState<RoutingSelection>(AUTO_ROUTING);
     const [advancedOpen, setAdvancedOpen] = useState(false);
-    const [sending, setSending] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const abortRef = useRef<AbortController | null>(null);
-    const requestIdRef = useRef<string | null>(null);
+    const [uploading, setUploading] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
+    const uploadAbortRef = useRef<AbortController | null>(null);
+    const activeAgentRef = useRef<string | null>(null);
     const transcriptRef = useRef<HTMLDivElement | null>(null);
     const followOutputRef = useRef(true);
     const composerRef = useRef<HTMLTextAreaElement | null>(null);
@@ -1051,29 +982,6 @@ export function Chat() {
     const selectedAgent =
         agents.find((agent) => agent.id === selectedAgentId) ?? agents[0];
     const assistantName = selectedAgent?.title ?? "Agent";
-    const selectedWelcome = useMemo(
-        () => (selectedAgent ? welcomeMessage(selectedAgent) : null),
-        [selectedAgent],
-    );
-    const runtimeMessages = useMemo(
-        () => (selectedWelcome ? [selectedWelcome, ...messages] : messages),
-        [messages, selectedWelcome],
-    );
-    const assistantRuntime = useExternalStoreRuntime<ConversationMessage>({
-        messages: runtimeMessages,
-        convertMessage: toAssistantUiMessage,
-        isRunning: sending,
-        // Pollinations keeps ownership of uploads and routing while
-        // assistant-ui owns thread/message/tool presentation.
-        onNew: async (message) => {
-            const text = message.content
-                .filter((part) => part.type === "text")
-                .map((part) => part.text)
-                .join("\n");
-            await send(text);
-        },
-        onCancel: async () => abortRef.current?.abort(),
-    });
     const acceptedAttachmentKinds = attachmentKinds(selectedAgent);
     const attachmentAccept = [...acceptedAttachmentKinds]
         .map((kind) => ATTACHMENT_ACCEPT[kind])
@@ -1085,6 +993,33 @@ export function Chat() {
             apiKey ? new Pollinations({ apiKey, baseUrl: API_BASE_URL }) : null,
         [apiKey],
     );
+    const transport = useMemo(
+        () =>
+            new PollinationsChatTransport({
+                client,
+                model: selectedAgent?.id ?? null,
+                routing:
+                    selectedAgent?.id === FLORET_MODEL_ID
+                        ? compactRouting(routing)
+                        : undefined,
+            }),
+        [client, selectedAgent?.id, routing],
+    );
+    const {
+        messages,
+        setMessages,
+        sendMessage,
+        regenerate,
+        stop,
+        status,
+        error: responseError,
+        clearError,
+    } = useChat<PollinationsUIMessage>({
+        id: "pollinations-play-agent-chat",
+        transport,
+    });
+    const streaming = status === "submitted" || status === "streaming";
+    const sending = uploading || streaming;
     const modelChoices = useMemo(
         () =>
             Object.fromEntries(
@@ -1100,7 +1035,19 @@ export function Chat() {
         [catalog.models, catalog.allowedModelIds],
     );
 
-    useEffect(() => () => abortRef.current?.abort(), []);
+    useEffect(() => () => uploadAbortRef.current?.abort(), []);
+    useEffect(() => {
+        if (!selectedAgent || activeAgentRef.current === selectedAgent.id)
+            return;
+        activeAgentRef.current = selectedAgent.id;
+        uploadAbortRef.current?.abort();
+        void stop();
+        setMessages([welcomeMessage(selectedAgent)]);
+        setDraft("");
+        setFiles([]);
+        setLocalError(null);
+        clearError();
+    }, [selectedAgent, setMessages, stop, clearError]);
     useEffect(() => {
         setRouting((current) => {
             const next = { ...current };
@@ -1119,12 +1066,16 @@ export function Chat() {
     useEffect(() => {
         if (messages.length === 0) return;
         const transcript = transcriptRef.current;
-        if (transcript && followOutputRef.current)
+        if (transcript && followOutputRef.current) {
             transcript.scrollTop = transcript.scrollHeight;
-    }, [messages]);
+            setShowScrollButton(false);
+        }
+    }, [messages, status]);
     useEffect(() => {
-        if (!isLoggedIn) abortRef.current?.abort();
-    }, [isLoggedIn]);
+        if (isLoggedIn) return;
+        uploadAbortRef.current?.abort();
+        void stop();
+    }, [isLoggedIn, stop]);
     useEffect(() => {
         if (!advancedOpen) return;
         const closeOnEscape = (event: KeyboardEvent) => {
@@ -1134,127 +1085,6 @@ export function Chat() {
         return () => window.removeEventListener("keydown", closeOnEscape);
     }, [advancedOpen]);
 
-    async function streamAssistant(
-        history: ConversationMessage[],
-        assistantId: string,
-        controller: AbortController,
-    ) {
-        if (!client || !selectedAgent) return;
-        let accumulated = "";
-        try {
-            for await (const streamEvent of client.chatEventStream(
-                conversationForRequest(history),
-                {
-                    model: selectedAgent.id,
-                    routing:
-                        selectedAgent.id === FLORET_MODEL_ID
-                            ? compactRouting(routing)
-                            : undefined,
-                    signal: controller.signal,
-                },
-            )) {
-                if (requestIdRef.current !== assistantId) continue;
-                if (streamEvent.type === "agent") {
-                    setMessages((current) =>
-                        current.map((message) =>
-                            message.id === assistantId
-                                ? {
-                                      ...message,
-                                      ...applyAgentEvent(
-                                          message,
-                                          streamEvent.event,
-                                      ),
-                                  }
-                                : message,
-                        ),
-                    );
-                    continue;
-                }
-                const chunk = streamEvent.chunk;
-                const delta = chunk.choices[0]?.delta;
-                if (!delta) continue;
-                if (delta.tool_calls?.length) {
-                    setMessages((current) =>
-                        current.map((message) => {
-                            if (message.id !== assistantId) return message;
-                            const activityState = delta.tool_calls?.reduce(
-                                applyOpenAIToolCallDelta,
-                                message,
-                            );
-                            return activityState
-                                ? {
-                                      ...message,
-                                      activities: activityState.activities,
-                                  }
-                                : message;
-                        }),
-                    );
-                }
-                if (delta.content) accumulated += delta.content;
-                if (!delta.content) continue;
-                setMessages((current) =>
-                    current.map((message) =>
-                        message.id === assistantId
-                            ? {
-                                  ...message,
-                                  content: accumulated,
-                              }
-                            : message,
-                    ),
-                );
-            }
-            setMessages((current) =>
-                current.map((message) =>
-                    message.id === assistantId
-                        ? {
-                              ...message,
-                              status: "complete",
-                              activities: [],
-                          }
-                        : message,
-                ),
-            );
-        } catch (caught) {
-            const cancelled = isCancellation(caught);
-            setMessages((current) =>
-                current.flatMap((message) => {
-                    if (message.id !== assistantId) return [message];
-                    if (
-                        cancelled &&
-                        !textContent(message) &&
-                        !message.media?.length
-                    )
-                        return [];
-                    return [
-                        {
-                            ...message,
-                            status: cancelled ? "cancelled" : "error",
-                            error: cancelled ? undefined : errorMessage(caught),
-                            activities: [],
-                        },
-                    ];
-                }),
-            );
-        }
-    }
-
-    async function runHistory(
-        history: ConversationMessage[],
-        assistantId: string,
-    ) {
-        const controller = new AbortController();
-        abortRef.current = controller;
-        requestIdRef.current = assistantId;
-        setSending(true);
-        await streamAssistant(history, assistantId, controller);
-        if (requestIdRef.current === assistantId) {
-            abortRef.current = null;
-            requestIdRef.current = null;
-            setSending(false);
-            composerRef.current?.focus();
-        }
-    }
-
     async function send(messageText = draft) {
         if (sending || !isHydrated) return;
         if (!isLoggedIn || !client) {
@@ -1262,68 +1092,49 @@ export function Chat() {
             return;
         }
         if (!selectedAgent) {
-            setError("Select an agent first.");
+            setLocalError("Select an agent first.");
             return;
         }
         if (!messageText.trim() && files.length === 0) return;
         const controller = new AbortController();
-        abortRef.current = controller;
-        setSending(true);
-        setError(null);
+        uploadAbortRef.current = controller;
+        setUploading(true);
+        setLocalError(null);
+        clearError();
         try {
             const attachments = await Promise.all(
                 files.map((file) =>
                     prepareAttachment(client, file, controller.signal),
                 ),
             );
-            const userMessage: ConversationMessage = {
-                id: crypto.randomUUID(),
-                role: "user",
-                content: buildUserContent(
-                    messageText,
-                    attachments.map((attachment) => attachment.contentPart),
-                ),
-                status: "complete",
-                attachments,
-            };
-            const assistant: ConversationMessage = {
-                id: crypto.randomUUID(),
-                role: "assistant",
-                content: "",
-                status: "streaming",
-                attachments: [],
-            };
-            const history = [...messages, userMessage];
-            setMessages([...history, assistant]);
             setDraft("");
             setFiles([]);
             followOutputRef.current = true;
-            await runHistory(history, assistant.id);
+            setUploading(false);
+            uploadAbortRef.current = null;
+            await sendMessage({
+                role: "user",
+                metadata: { attachments },
+                parts: messageText.trim()
+                    ? [{ type: "text", text: messageText.trim() }]
+                    : [],
+            });
+            composerRef.current?.focus();
         } catch (caught) {
-            if (!isCancellation(caught)) setError(errorMessage(caught));
-            setSending(false);
-            abortRef.current = null;
-            requestIdRef.current = null;
+            if (!isCancellation(caught)) setLocalError(errorMessage(caught));
+        } finally {
+            if (uploadAbortRef.current === controller)
+                uploadAbortRef.current = null;
+            setUploading(false);
         }
     }
 
     async function retry(assistantId: string) {
         if (sending) return;
-        const assistantIndex = messages.findIndex(
-            (message) => message.id === assistantId,
-        );
-        if (assistantIndex < 1) return;
-        const history = messages.slice(0, assistantIndex);
-        const replacement: ConversationMessage = {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            content: "",
-            status: "streaming",
-            attachments: [],
-        };
-        setMessages([...history, replacement]);
+        clearError();
         followOutputRef.current = true;
-        await runHistory(history, replacement.id);
+        await regenerate({ messageId: assistantId });
+        composerRef.current?.focus();
     }
 
     const canAttach =
@@ -1351,7 +1162,7 @@ export function Chat() {
         }
 
         setFiles(accepted);
-        setError(problems.length > 0 ? problems.join(" ") : null);
+        setLocalError(problems.length > 0 ? problems.join(" ") : null);
     }
 
     function addFiles(nextFiles: File[]) {
@@ -1396,9 +1207,6 @@ export function Chat() {
     function selectAgent(agentId: string) {
         if (agentId === selectedAgentId) return;
         setSelectedAgentId(agentId);
-        setMessages([]);
-        setFiles([]);
-        setError(null);
         setAdvancedOpen(false);
         composerRef.current?.focus();
     }
@@ -1452,54 +1260,67 @@ export function Chat() {
                         onSelectAgent={selectAgent}
                     />
                 </div>
-                <AssistantRuntimeProvider runtime={assistantRuntime}>
-                    <ThreadPrimitive.Root className="contents">
-                        <ScrollArea
-                            ref={transcriptRef}
-                            className="play-chat-transcript min-h-0 flex-1 py-3"
-                            aria-label="Conversation"
-                            aria-live="polite"
-                            aria-busy={sending}
-                            onScroll={(event) => {
-                                const target = event.currentTarget;
-                                followOutputRef.current =
-                                    target.scrollHeight -
-                                        target.scrollTop -
-                                        target.clientHeight <
-                                    96;
-                            }}
-                        >
-                            <div className="flex flex-col gap-5">
-                                <ThreadPrimitive.Messages>
-                                    {({ message: runtimeMessage }) => {
-                                        const message = runtimeMessages.find(
-                                            (candidate) =>
-                                                candidate.id ===
-                                                runtimeMessage.id,
-                                        );
-                                        if (!message) return null;
-                                        return (
-                                            <MessageCard
-                                                message={message}
-                                                assistantName={assistantName}
-                                                canRetry={
-                                                    canRetryLast(message.id) &&
-                                                    (message.status ===
-                                                        "error" ||
-                                                        message.status ===
-                                                            "cancelled")
-                                                }
-                                                onRetry={() =>
-                                                    void retry(message.id)
-                                                }
-                                            />
-                                        );
-                                    }}
-                                </ThreadPrimitive.Messages>
-                            </div>
-                        </ScrollArea>
-                    </ThreadPrimitive.Root>
-                </AssistantRuntimeProvider>
+                <ChatConversation
+                    ref={transcriptRef}
+                    className="min-h-0 flex-1"
+                    viewportClassName="play-chat-transcript py-3"
+                    aria-label="Conversation"
+                    aria-live="polite"
+                    aria-busy={sending}
+                    showScrollButton={showScrollButton}
+                    onScrollToBottom={() => {
+                        const transcript = transcriptRef.current;
+                        if (!transcript) return;
+                        transcript.scrollTo({
+                            top: transcript.scrollHeight,
+                            behavior: "smooth",
+                        });
+                        followOutputRef.current = true;
+                        setShowScrollButton(false);
+                    }}
+                    onScroll={(event) => {
+                        const target = event.currentTarget;
+                        const followsOutput =
+                            target.scrollHeight -
+                                target.scrollTop -
+                                target.clientHeight <
+                            96;
+                        followOutputRef.current = followsOutput;
+                        setShowScrollButton(!followsOutput);
+                    }}
+                >
+                    <ChatConversationContent>
+                        {messages.map((message, index) => {
+                            const isLast = index === messages.length - 1;
+                            const cancelled = message.parts.some(
+                                (part) => part.type === "data-responseStatus",
+                            );
+                            return (
+                                <MessageCard
+                                    key={message.id}
+                                    message={message}
+                                    assistantName={assistantName}
+                                    isStreaming={
+                                        isLast &&
+                                        message.role === "assistant" &&
+                                        streaming
+                                    }
+                                    responseError={
+                                        isLast && message.role === "assistant"
+                                            ? responseError
+                                            : undefined
+                                    }
+                                    canRetry={
+                                        canRetryLast(message.id) &&
+                                        message.role === "assistant" &&
+                                        (cancelled || Boolean(responseError))
+                                    }
+                                    onRetry={() => void retry(message.id)}
+                                />
+                            );
+                        })}
+                    </ChatConversationContent>
+                </ChatConversation>
                 <form
                     onSubmit={submit}
                     className="relative flex shrink-0 flex-col gap-3 pt-3"
@@ -1520,14 +1341,13 @@ export function Chat() {
                             </div>
                         </Alert>
                     )}
-                    {error && (
+                    {localError && (
                         <Alert intent="danger" title="Could not send">
-                            {error}
+                            {localError}
                         </Alert>
                     )}
 
-                    <fieldset
-                        className="play-chat-input m-0 min-w-0 p-0"
+                    <ChatPromptInput
                         aria-label="Message and attachments"
                         onDragOver={(event) => {
                             event.preventDefault();
@@ -1549,7 +1369,7 @@ export function Chat() {
                                         return `${file.name} is not a supported file type.`;
                                     }),
                                 );
-                                setError([...problems].join(" "));
+                                setLocalError([...problems].join(" "));
                             }}
                             maxFiles={MAX_ATTACHMENTS}
                             maxSizeBytes={MAX_ATTACHMENT_BYTES}
@@ -1559,7 +1379,7 @@ export function Chat() {
                             className="px-3 pt-3"
                             previewIcon={<ImageIcon className="h-5 w-5" />}
                         />
-                        <Textarea
+                        <ChatPromptTextarea
                             aria-label="Message"
                             ref={composerRef}
                             value={draft}
@@ -1569,145 +1389,158 @@ export function Chat() {
                             disabled={!isHydrated || sending}
                             placeholder={`Message ${assistantName}…`}
                             rows={3}
-                            className="resize-none"
                         />
-                    </fieldset>
-                    <div className="flex flex-wrap items-end gap-2">
-                        {selectedAgent?.id === FLORET_MODEL_ID && (
-                            <TabButton
-                                type="button"
-                                active={advancedOpen}
-                                intent="neutral"
-                                size="lg"
-                                disabled={sending}
-                                aria-expanded={advancedOpen}
-                                aria-controls="play-chat-routing"
-                                ariaLabel={`Routing, ${routingOverrideCount > 0 ? `${routingOverrideCount} customized` : "Auto"}`}
-                                onClick={() => setAdvancedOpen((open) => !open)}
-                                className="play-routing-toggle h-12 gap-2"
-                            >
-                                <BeakerIcon className="h-5 w-5" />
-                                <Chip
-                                    size="sm"
-                                    aria-label={
-                                        routingOverrideCount > 0
-                                            ? `${routingOverrideCount} routes customized`
-                                            : "Automatic routing"
-                                    }
-                                    className="play-routing-badge min-w-6 justify-center px-1.5"
-                                >
-                                    {routingOverrideCount > 0
-                                        ? routingOverrideCount
-                                        : "Auto"}
-                                </Chip>
-                                <ChevronIcon
-                                    expanded={advancedOpen}
-                                    className="h-4 w-4"
-                                />
-                            </TabButton>
-                        )}
-                        <span className="inline-flex">
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept={attachmentAccept}
-                                multiple
-                                hidden
-                                onChange={(event) => {
-                                    addFiles(
-                                        Array.from(
-                                            event.currentTarget.files ?? [],
-                                        ),
-                                    );
-                                    event.currentTarget.value = "";
-                                }}
-                            />
-                            <Button
-                                type="button"
-                                size="lg"
-                                intent="info"
-                                aria-label="Add media"
-                                title={
-                                    !supportsAttachments
-                                        ? `${assistantName} accepts text only`
-                                        : isLoggedIn
-                                          ? "Add media"
-                                          : "Connect to add media"
-                                }
-                                disabled={
-                                    !canAttach ||
-                                    files.length >= MAX_ATTACHMENTS
-                                }
-                                className="h-12 w-12 shrink-0 p-0"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                <CloudUploadIcon className="h-5 w-5 text-theme-text-strong" />
-                            </Button>
-                        </span>
-                        <div className="ml-auto flex items-center gap-2">
-                            {messages.length > 0 && (
-                                <Button
-                                    intent="danger"
+                        <ChatPromptInputFooter>
+                            {selectedAgent?.id === FLORET_MODEL_ID && (
+                                <TabButton
+                                    type="button"
+                                    active={advancedOpen}
+                                    intent="neutral"
                                     size="lg"
-                                    aria-label="New chat"
-                                    title="New chat"
-                                    className="h-12 w-12 shrink-0 p-0"
-                                    onClick={() => {
-                                        abortRef.current?.abort();
-                                        setMessages([]);
-                                        setDraft("");
-                                        setFiles([]);
-                                        setError(null);
-                                        composerRef.current?.focus();
+                                    disabled={sending}
+                                    aria-expanded={advancedOpen}
+                                    aria-controls="play-chat-routing"
+                                    ariaLabel={`Routing, ${routingOverrideCount > 0 ? `${routingOverrideCount} customized` : "Auto"}`}
+                                    onClick={() =>
+                                        setAdvancedOpen((open) => !open)
+                                    }
+                                    className="play-routing-toggle h-12 gap-2"
+                                >
+                                    <BeakerIcon className="h-5 w-5" />
+                                    <Chip
+                                        size="sm"
+                                        aria-label={
+                                            routingOverrideCount > 0
+                                                ? `${routingOverrideCount} routes customized`
+                                                : "Automatic routing"
+                                        }
+                                        className="play-routing-badge min-w-6 justify-center px-1.5"
+                                    >
+                                        {routingOverrideCount > 0
+                                            ? routingOverrideCount
+                                            : "Auto"}
+                                    </Chip>
+                                    <ChevronIcon
+                                        expanded={advancedOpen}
+                                        className="h-4 w-4"
+                                    />
+                                </TabButton>
+                            )}
+                            <span className="inline-flex">
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept={attachmentAccept}
+                                    multiple
+                                    hidden
+                                    onChange={(event) => {
+                                        addFiles(
+                                            Array.from(
+                                                event.currentTarget.files ?? [],
+                                            ),
+                                        );
+                                        event.currentTarget.value = "";
                                     }}
-                                >
-                                    <TrashIcon className="h-5 w-5" />
-                                </Button>
-                            )}
-                            {sending ? (
+                                />
                                 <Button
-                                    intent="danger"
-                                    size="lg"
                                     type="button"
-                                    aria-label="Stop generation"
-                                    title="Stop generation"
-                                    className="h-12 w-12 shrink-0 p-0"
-                                    onClick={() => abortRef.current?.abort()}
-                                >
-                                    <XIcon className="h-5 w-5" />
-                                </Button>
-                            ) : !isHydrated ? (
-                                <Button
                                     size="lg"
-                                    disabled
-                                    aria-label="Loading account"
-                                >
-                                    Checking…
-                                </Button>
-                            ) : !isLoggedIn ? (
-                                <Button
-                                    size="lg"
-                                    type="button"
-                                    onClick={() => login()}
-                                >
-                                    <ChatIcon className="mr-2 h-4 w-4" />
-                                    Connect to chat
-                                </Button>
-                            ) : (
-                                <Button
-                                    size="lg"
-                                    type="submit"
+                                    intent="info"
+                                    aria-label="Add media"
+                                    title={
+                                        !supportsAttachments
+                                            ? `${assistantName} accepts text only`
+                                            : isLoggedIn
+                                              ? "Add media"
+                                              : "Connect to add media"
+                                    }
                                     disabled={
-                                        !selectedAgent ||
-                                        (!draft.trim() && files.length === 0)
+                                        !canAttach ||
+                                        files.length >= MAX_ATTACHMENTS
+                                    }
+                                    className="h-12 w-12 shrink-0 p-0"
+                                    onClick={() =>
+                                        fileInputRef.current?.click()
                                     }
                                 >
-                                    <RocketIcon className="mr-2 h-4 w-4" />
-                                    Send
+                                    <CloudUploadIcon className="h-5 w-5 text-theme-text-strong" />
                                 </Button>
-                            )}
-                        </div>
-                    </div>
+                            </span>
+                            <div className="ml-auto flex items-center gap-2">
+                                {messages.some(
+                                    (message) => !message.metadata?.localOnly,
+                                ) && (
+                                    <Button
+                                        intent="danger"
+                                        size="lg"
+                                        aria-label="New chat"
+                                        title="New chat"
+                                        className="h-12 w-12 shrink-0 p-0"
+                                        onClick={() => {
+                                            uploadAbortRef.current?.abort();
+                                            void stop();
+                                            setMessages([
+                                                welcomeMessage(selectedAgent),
+                                            ]);
+                                            setDraft("");
+                                            setFiles([]);
+                                            setLocalError(null);
+                                            clearError();
+                                            composerRef.current?.focus();
+                                        }}
+                                    >
+                                        <TrashIcon className="h-5 w-5" />
+                                    </Button>
+                                )}
+                                {sending ? (
+                                    <Button
+                                        intent="danger"
+                                        size="lg"
+                                        type="button"
+                                        aria-label="Stop generation"
+                                        title="Stop generation"
+                                        className="h-12 w-12 shrink-0 p-0"
+                                        onClick={() => {
+                                            uploadAbortRef.current?.abort();
+                                            void stop();
+                                        }}
+                                    >
+                                        <XIcon className="h-5 w-5" />
+                                    </Button>
+                                ) : !isHydrated ? (
+                                    <Button
+                                        size="lg"
+                                        disabled
+                                        aria-label="Loading account"
+                                    >
+                                        Checking…
+                                    </Button>
+                                ) : !isLoggedIn ? (
+                                    <Button
+                                        size="lg"
+                                        type="button"
+                                        onClick={() => login()}
+                                    >
+                                        <ChatIcon className="mr-2 h-4 w-4" />
+                                        Connect to chat
+                                    </Button>
+                                ) : (
+                                    <Button
+                                        size="lg"
+                                        type="submit"
+                                        disabled={
+                                            !selectedAgent ||
+                                            (!draft.trim() &&
+                                                files.length === 0)
+                                        }
+                                    >
+                                        <RocketIcon className="mr-2 h-4 w-4" />
+                                        Send
+                                    </Button>
+                                )}
+                            </div>
+                        </ChatPromptInputFooter>
+                    </ChatPromptInput>
                 </form>
             </div>
             {advancedOpen && selectedAgent?.id === FLORET_MODEL_ID && (

@@ -10,6 +10,7 @@ import type { ImageParams } from "../../src/image/params.ts";
 const AZURE_KEY_ENV = {
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: "img-2-sweden-key",
     AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: "img-2-eastus2-key",
+    OPENAI_API_KEY: "openai-key",
 } as const;
 
 const AZURE_KEY_NAMES = Object.keys(
@@ -92,6 +93,38 @@ describe("gpt-image-2 Azure routing", () => {
                 callGPTImage("test", params, userInfo, "gpt-image-2"),
             ).rejects.toMatchObject({ status } satisfies Partial<HttpError>);
             expect(fetchMock).toHaveBeenCalledOnce();
+        });
+    }
+});
+
+describe("GPT Image OpenAI fallback routing", () => {
+    const routes = [
+        ["gptimage-openai", "gpt-image-1-mini"],
+        ["gptimage-large-openai", "gpt-image-1.5"],
+        ["gpt-image-2-openai", "gpt-image-2"],
+    ] as const;
+
+    for (const [route, upstreamModel] of routes) {
+        it(`routes ${route} directly to ${upstreamModel}`, async () => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(successResponse());
+
+            await callGPTImage(
+                "test",
+                { ...params, model: route },
+                userInfo,
+                route,
+            );
+
+            expect(fetchMock).toHaveBeenCalledOnce();
+            const [url, init] = fetchMock.mock.calls[0];
+            expect(String(url)).toBe(
+                "https://api.openai.com/v1/images/generations",
+            );
+            expect(JSON.parse(String(init?.body))).toMatchObject({
+                model: upstreamModel,
+            });
         });
     }
 });

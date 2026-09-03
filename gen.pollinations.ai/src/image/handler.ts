@@ -61,6 +61,8 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
 
+const GPT_IMAGE_MODELS = new Set(["gptimage", "gptimage-large", "gpt-image-2"]);
+
 const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
 const EDIT_DIMENSION_STEP = 16;
 const MIN_EDIT_DIMENSION = 256;
@@ -87,6 +89,7 @@ const IMAGE_ENV_KEYS = [
     "FAL_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
+    "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
@@ -444,6 +447,11 @@ async function generateMediaWithFallback(
     params: RuntimeImageParams;
     servedIndex: number;
 }> {
+    const shouldFallback = GPT_IMAGE_MODELS.has(c.var.model?.resolved ?? "")
+        ? (error: unknown) =>
+              error instanceof Error &&
+              (error as Error & { status?: number }).status === 429
+        : undefined;
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
@@ -482,6 +490,7 @@ async function generateMediaWithFallback(
         },
         c.var.track?.attempts,
         (attempt) => enforceModelRateLimit(c, attempt),
+        shouldFallback,
     );
     return {
         ...result,

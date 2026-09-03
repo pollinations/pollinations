@@ -13,6 +13,7 @@ import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../src/text/availableModels.ts";
+import { supportsTextFallbackRequest } from "../src/text/fallbackCompatibility.ts";
 
 const OPENROUTER_ROUTES = [
     ["qwen3.8-27b-openrouter-akashml", "qwen/qwen3.8-27b", "akashml/fp8"],
@@ -27,9 +28,9 @@ const OPENROUTER_ROUTES = [
         "google-vertex/global",
     ],
     [
-        "llama-scout-openrouter-deepinfra",
+        "llama-scout-openrouter-vertex",
         "meta-llama/llama-4-scout",
-        "deepinfra/fp8",
+        "google-vertex/us-east5",
     ],
     ["grok-openrouter-xai-zdr", "x-ai/grok-4.20", "xai/zdr"],
     ["grok-large-openrouter-xai-zdr", "x-ai/grok-4.3", "xai/zdr"],
@@ -181,14 +182,16 @@ describe("static provider fallbacks", () => {
             promptTextTokens: 0.08 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
         });
+        expect(
+            TEXT_SERVICES["llama-scout-openrouter-vertex"].cost,
+        ).toMatchObject({
+            promptTextTokens: 0.25 / 1_000_000,
+            promptImageTokens: 0.25 / 1_000_000,
+            completionTextTokens: 0.7 / 1_000_000,
+        });
         expect(IMAGE_SERVICES["qwen-image-3-replicate"].cost).toMatchObject({
             promptImageTokens: 0,
             completionImageTokens: 0.03,
-        });
-        expect(
-            TEXT_SERVICES["qwen3.8-27b-openrouter-akashml"].cost,
-        ).toMatchObject({
-            promptCachedTokens: 0.05 / 1_000_000,
         });
         expect(
             TEXT_SERVICES["gemini-openrouter-ai-studio-priority"].cost,
@@ -209,10 +212,76 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("keeps Llama Vertex inside its verified request limits", () => {
+        const route = TEXT_SERVICES["llama-scout-openrouter-vertex"];
+        expect(supportsTextFallbackRequest(route, {})).toBe(true);
+        expect(
+            supportsTextFallbackRequest(route, { tool_choice: "none" }),
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(route, { tool_choice: "auto" }),
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(route, {
+                tool_choice: { type: "allowed_tools", mode: "auto" },
+            }),
+        ).toBe(true);
+        expect(
+            supportsTextFallbackRequest(route, { tool_choice: "required" }),
+        ).toBe(false);
+        expect(
+            supportsTextFallbackRequest(route, {
+                tool_choice: {
+                    type: "function",
+                    function: { name: "weather" },
+                },
+            }),
+        ).toBe(false);
+        expect(
+            supportsTextFallbackRequest(route, {
+                function_call: { name: "weather" },
+            }),
+        ).toBe(false);
+        expect(supportsTextFallbackRequest(route, { max_tokens: 8192 })).toBe(
+            true,
+        );
+        expect(supportsTextFallbackRequest(route, { max_tokens: 8193 })).toBe(
+            false,
+        );
+
+        const images = (count: number) => ({
+            messages: [
+                {
+                    role: "user",
+                    content: Array.from({ length: count }, () => ({
+                        type: "image_url",
+                        image_url: { url: "https://example.com/image.png" },
+                    })),
+                },
+            ],
+        });
+        expect(supportsTextFallbackRequest(route, images(5))).toBe(true);
+        expect(supportsTextFallbackRequest(route, images(6))).toBe(false);
+    });
+
     it("binds fallback-only text ids to their exact provider routes", () => {
         expect(findModelByName("deepseek-deepinfra")?.config()).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",
+        });
+        expect(
+            findModelByName("qwen3.7-flash-alibaba")?.config(),
+        ).toMatchObject({
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            model: "qwen3.7-flash",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(
+            findModelByName("mistral-small-3.2-deepinfra")?.config(),
+        ).toMatchObject({
+            "custom-host": "https://api.deepinfra.com/v1/openai",
+            model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
         });
         for (const [route, model, provider] of OPENROUTER_ROUTES) {
             expect(findModelByName(route)?.config()).toMatchObject({

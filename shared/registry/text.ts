@@ -648,6 +648,41 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "google/gemini-3.8-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Google",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Standard OpenRouter rates for the pinned google-vertex/global route.
+        // Google's introductory pricing ends 2026-12-31.
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
+        },
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 0.5,
+        }),
+        title: "Gemini 3.8 Flash",
+        description:
+            "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "gemini-flash-lite-3.5": {
         aliases: [
             "gemini-flash-lite-3.1",
@@ -2165,12 +2200,13 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-08-24).
-            promptTextTokens: perMillion(0.35),
-            promptCachedTokens: perMillion(0.035),
-            promptImageTokens: perMillion(0.35),
-            promptVideoTokens: perMillion(0.35),
-            completionTextTokens: perMillion(2.75),
+            // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
+            // publishes one prompt rate and no separate image/video rates.
+            promptTextTokens: perMillion(0.32),
+            promptCachedTokens: perMillion(0.032),
+            promptImageTokens: perMillion(0.32),
+            promptVideoTokens: perMillion(0.32),
+            completionTextTokens: perMillion(2.5),
         },
         title: "Qwen3.8 27B",
         description:
@@ -2203,6 +2239,36 @@ const TEXT_BASE_SERVICES = {
         title: "Qwen3.8 Max",
         description:
             "Million-token multimodal reasoning for coding and autonomous agents",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen/qwen3.8-max-0902": {
+        aliases: [],
+        provider: "alibaba",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
+        // hits (2026-09-03).
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
+        },
+        title: "Qwen3.8 Max 0902",
+        description:
+            "Pinned September checkpoint with stronger coding and long-horizon agent performance",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,

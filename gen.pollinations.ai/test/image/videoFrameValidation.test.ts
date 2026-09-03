@@ -23,6 +23,7 @@ const VIDEO_FRAME_LIMITS = [
     ["wan-fal", 1],
     ["wan-3.0", 2],
     ["wan-fast", 2],
+    ["wan-fast-fal", 2],
     ["wan-pro", 2],
     ["grok-video-pro", 1],
     ["grok-video-pro-fal", 1],

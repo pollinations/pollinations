@@ -248,6 +248,7 @@ export const portkeyConfig: PortkeyConfigMap = {
             responsesEndpoint:
                 "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
             responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
             defaultOptions: { max_tokens: 64000 },
         }),
     "qwen/qwen3.7-flash": () =>

@@ -2256,7 +2256,8 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-09-03").getTime(),
         paidOnly: true,
         priceMultiplier: 1,
-        // Alibaba Singapore qwen3.8-max-0902 rates (2026-09-03).
+        // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
+        // hits (2026-09-03).
         cost: {
             promptTextTokens: perMillion(2),
             promptCachedTokens: perMillion(0.25),

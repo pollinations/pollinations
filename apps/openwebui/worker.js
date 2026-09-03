@@ -58,6 +58,10 @@ export class OpenWebUIContainer extends Container {
         ENABLE_SIGNUP: "false",
         // Anyone with a Pollinations account may chat; they pay with their own pollen.
         DEFAULT_USER_ROLE: "user",
+        // Models fetched from a connection have no row in the model table, and
+        // get_filtered_models() shows unconfigured models to admins only. Without
+        // this every non-admin gets an empty model picker.
+        BYPASS_MODEL_ACCESS_CONTROL: "true",
         // Without this the model picker defaults to the alphabetically first
         // community model.
         DEFAULT_MODELS: "openai",

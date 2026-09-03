@@ -52,6 +52,24 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
   \"select key, value::text from config where key = 'tool_server.connections';\""
 ```
 
+## Restarting the container
+
+`envVars` on the Container class are applied when the container *starts*, and a
+`wrangler deploy` does not restart a running instance (nor does a shorter
+`sleepAfter`). To force a fresh container, delete the container application and
+deploy again — state is in Postgres, so nothing is lost:
+
+```bash
+npx wrangler containers list                     # find the app id
+npx wrangler containers delete <ID>
+npx wrangler deploy --env staging                # retry once; the first
+                                                 # attempt after a delete can
+                                                 # fail on the durable object
+```
+
+The new container cold-starts in a few minutes while it pulls the ~1.5 GB image.
+For production the deploy half must run through `Deploy / Applications`.
+
 ## Tool servers
 
 `https://mcp.pollinations.ai/` (the endpoint is the root path; `/mcp` 404s) is

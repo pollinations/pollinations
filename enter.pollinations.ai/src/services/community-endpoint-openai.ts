@@ -1,4 +1,5 @@
 import {
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
@@ -27,7 +28,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import { readResponseText } from "@shared/response-bytes.ts";
+import { readResponseBytes, readResponseText } from "@shared/response-bytes.ts";
 import { detectVideoMimeType } from "@shared/video-mime.ts";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
@@ -87,6 +88,45 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         throw new Error(endpointErrorMessage(response.status, body));
     }
     return body;
+}
+
+// Speech endpoints answer with an audio stream, not JSON, so the JSON probe
+// helper cannot validate them. Errors are still read as (small) JSON bodies.
+async function fetchAudio(
+    url: string,
+    init: RequestInit,
+): Promise<{ bytes: Uint8Array; contentType: string }> {
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            ...init,
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
+
+    if (!response.ok) {
+        const body = parseJson(
+            await readResponseText(
+                response,
+                MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+                () => new Error("Endpoint response is too large"),
+            ),
+        );
+        throw new Error(endpointErrorMessage(response.status, body));
+    }
+
+    const bytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+        () => new Error("Endpoint response is too large"),
+    );
+    return {
+        bytes,
+        contentType: response.headers.get("content-type") ?? "",
+    };
 }
 
 function parseJson(text: string): unknown {
@@ -336,6 +376,50 @@ export async function testCommunityTranscriptionEndpoint({
         // usage object that may not carry it.
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
+    };
+}
+
+// Speech endpoints are billed per synthesized character, mirroring the
+// first-party elevenlabs models. The gateway counts characters on each
+// request, so the probe only has to prove the endpoint speaks OpenAI audio:
+// a short input in, a non-empty audio stream out.
+const SPEECH_PROBE_INPUT = "Hello.";
+
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const { bytes, contentType } = await fetchAudio(
+        communityAudioSpeechUrl(baseUrl),
+        {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input: SPEECH_PROBE_INPUT,
+                voice: "alloy",
+                response_format: "mp3",
+            }),
+        },
+    );
+
+    if (!contentType.toLowerCase().startsWith("audio/")) {
+        throw new Error(
+            "Endpoint did not return audio (expected an audio/* Content-Type)",
+        );
+    }
+    if (bytes.length === 0) {
+        throw new Error("Endpoint returned an empty audio stream");
+    }
+
+    const characters = [...SPEECH_PROBE_INPUT].length;
+    return {
+        usage: { characters },
+        billableUsage: { completionAudioTokens: characters },
     };
 }
 

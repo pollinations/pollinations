@@ -1,5 +1,8 @@
 import type { Usage } from "@shared/registry/registry.ts";
-import { responsesUsageToUsage } from "@shared/registry/usage-headers.ts";
+import {
+    hasExplicitPromptCacheHit,
+    responsesUsageToUsage,
+} from "@shared/registry/usage-headers.ts";
 import { ResponseTerminalEventSchema } from "@shared/schemas/openai.ts";
 
 export const RESPONSE_TERMINAL_EVENT_TYPES = new Set([
@@ -24,9 +27,11 @@ export function normalizeResponsesTerminalEvent(
     return { ...(event as Record<string, unknown>), type: sseEvent };
 }
 
-export function getResponsesEventUsage(
-    event: unknown,
-): { model?: string; usage: Usage } | null {
+export function getResponsesEventUsage(event: unknown): {
+    model?: string;
+    usage: Usage;
+    hasExplicitCacheHit: boolean;
+} | null {
     const parsed = ResponseTerminalEventSchema.safeParse(event);
     if (!parsed.success) return null;
     return {
@@ -34,6 +39,9 @@ export function getResponsesEventUsage(
             ? { model: parsed.data.response.model }
             : {}),
         usage: responsesUsageToUsage(parsed.data.response.usage),
+        hasExplicitCacheHit: hasExplicitPromptCacheHit(
+            parsed.data.response.usage,
+        ),
     };
 }
 

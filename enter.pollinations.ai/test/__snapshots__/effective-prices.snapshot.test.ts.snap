@@ -1393,16 +1393,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
-  "llama-scout-openrouter-deepinfra": {
+  "llama-scout-openrouter-vertex": {
     "cost": {
-      "completionTextTokens": 0.0000003,
-      "promptImageTokens": 0.0000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.0000007,
+      "promptImageTokens": 0.00000025,
+      "promptTextTokens": 0.00000025,
     },
     "price": {
-      "completionTextTokens": 0.0000003,
-      "promptImageTokens": 0.0000001,
-      "promptTextTokens": 0.0000001,
+      "completionTextTokens": 0.0000007,
+      "promptImageTokens": 0.00000025,
+      "promptTextTokens": 0.00000025,
     },
   },
   "longcat": {
@@ -1597,6 +1597,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
     },
   },
   "mistral-small-3.2": {
+    "cost": {
+      "completionTextTokens": 0.0000002,
+      "promptTextTokens": 0.000000075,
+    },
+    "price": {
+      "completionTextTokens": 0.0000002,
+      "promptTextTokens": 0.000000075,
+    },
+  },
+  "mistral-small-3.2-deepinfra": {
     "cost": {
       "completionTextTokens": 0.0000002,
       "promptTextTokens": 0.000000075,
@@ -2196,6 +2206,61 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000003,
     },
   },
+  "qwen3.7-flash-alibaba": {
+    "cost": {
+      "completionTextTokens": 0.00000013,
+      "promptCacheWriteTokens": 0.000000038,
+      "promptCachedTokens": 0.000000006,
+      "promptImageTokens": 0.00000003,
+      "promptTextTokens": 0.00000003,
+      "promptVideoTokens": 0.00000003,
+    },
+    "costVariants": {
+      "context_256k": {
+        "completionTextTokens": 0.0000008,
+        "promptCacheWriteTokens": 0.00000025,
+        "promptCachedTokens": 0.00000004,
+        "promptImageTokens": 0.0000002,
+        "promptTextTokens": 0.0000002,
+        "promptVideoTokens": 0.0000002,
+      },
+      "context_256k_explicit_cache": {
+        "completionTextTokens": 0.0000008,
+        "promptCacheWriteTokens": 0.00000025,
+        "promptCachedTokens": 0.00000002,
+        "promptImageTokens": 0.0000002,
+        "promptTextTokens": 0.0000002,
+        "promptVideoTokens": 0.0000002,
+      },
+      "context_32k": {
+        "completionTextTokens": 0.0000004,
+        "promptCacheWriteTokens": 0.000000125,
+        "promptCachedTokens": 0.00000002,
+        "promptImageTokens": 0.0000001,
+        "promptTextTokens": 0.0000001,
+        "promptVideoTokens": 0.0000001,
+      },
+      "context_32k_explicit_cache": {
+        "completionTextTokens": 0.0000004,
+        "promptCacheWriteTokens": 0.000000125,
+        "promptCachedTokens": 0.00000001,
+        "promptImageTokens": 0.0000001,
+        "promptTextTokens": 0.0000001,
+        "promptVideoTokens": 0.0000001,
+      },
+      "explicit_cache": {
+        "promptCachedTokens": 0.000000003,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.00000013,
+      "promptCacheWriteTokens": 0.000000038,
+      "promptCachedTokens": 0.000000006,
+      "promptImageTokens": 0.00000003,
+      "promptTextTokens": 0.00000003,
+      "promptVideoTokens": 0.00000003,
+    },
+  },
   "qwen3.7-max": {
     "cost": {
       "completionTextTokens": 0.000004425,
@@ -2603,9 +2668,21 @@ exports[`effective cost and price per model — snapshot 1`] = `
   "wan-fast": {
     "cost": {
       "completionVideoSeconds": 0.01,
+      "promptImageTokens": 0,
     },
     "price": {
       "completionVideoSeconds": 0.01,
+      "promptImageTokens": 0,
+    },
+  },
+  "wan-fast-fal": {
+    "cost": {
+      "completionVideoSeconds": 0.01,
+      "promptImageTokens": 0,
+    },
+    "price": {
+      "completionVideoSeconds": 0.01,
+      "promptImageTokens": 0,
     },
   },
   "wan-image": {

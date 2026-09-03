@@ -180,6 +180,11 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
+        name: "qwen3.7-flash-alibaba",
+        config: portkeyConfig["qwen3.7-flash-alibaba"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
         name: "qwen-vision",
         config: portkeyConfig["qwen/qwen3-vl-30b-a3b-instruct"],
         // Vision model, no reasoning mode.
@@ -210,6 +215,11 @@ const models: ModelDefinition[] = [
         name: "mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
+        transform: stripReasoning,
+    },
+    {
+        name: "mistral-small-3.2-deepinfra",
+        config: portkeyConfig["mistral-small-3.2-deepinfra"],
         transform: stripReasoning,
     },
     {
@@ -622,8 +632,8 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "llama-scout-openrouter-deepinfra",
-        config: portkeyConfig["llama-scout-openrouter-deepinfra"],
+        name: "llama-scout-openrouter-vertex",
+        config: portkeyConfig["llama-scout-openrouter-vertex"],
         transform: stripReasoning,
     },
     {

@@ -86,6 +86,31 @@ function extractErrorMessage(details: unknown): string | null {
     return typeof message === "string" && message.trim() ? message : null;
 }
 
+/**
+ * Some OpenAI-compatible gateways return an upstream rate limit inside an
+ * otherwise successful completion. Normalize only an explicit 429; other
+ * finish errors are not necessarily retryable.
+ */
+function responseBodyError(
+    completion: ChatCompletion,
+): ChatCompletion["error"] {
+    if (completion.error) return completion.error;
+
+    for (const choice of completion.choices ?? []) {
+        if (choice.finish_reason !== "error") continue;
+        const details = choice.error;
+        if (!details || typeof details !== "object") continue;
+        const embedded = details as { code?: unknown; status?: unknown };
+        if (embedded.code !== 429 && embedded.status !== 429) continue;
+
+        return {
+            message: extractErrorMessage(details) ?? undefined,
+            status: 429,
+            details,
+        };
+    }
+}
+
 function createApiError(
     response: Response,
     details: unknown,
@@ -258,11 +283,12 @@ export async function genericOpenAIClient(
         } catch (thrown: unknown) {
             throw withUpstreamContext(thrown, requestUrl);
         }
-        if (data.error) {
+        const responseError = responseBodyError(data);
+        if (responseError) {
             const errorDetails =
-                typeof data.error === "string"
-                    ? { message: data.error }
-                    : data.error;
+                typeof responseError === "string"
+                    ? { message: responseError }
+                    : responseError;
             const error = new Error(
                 errorDetails.message || "Text generation failed",
             ) as ServiceError;

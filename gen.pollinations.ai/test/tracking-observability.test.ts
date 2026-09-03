@@ -2092,6 +2092,90 @@ describe("tracking observability", () => {
         expect(event.isBilledUsage).toBe(true);
     });
 
+    it("bills cache-write tokens reported by a Chat stream", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const model = "claude-fast";
+        const usage = {
+            prompt_tokens: 1_000,
+            prompt_tokens_details: {
+                cached_tokens: 200,
+                cache_write_tokens: 100,
+            },
+            completion_tokens: 500,
+            total_tokens: 1_500,
+        };
+        const upstream = new Response(
+            `data: ${JSON.stringify({
+                model,
+                choices: [],
+                usage,
+            })}\n\ndata: [DONE]\n\n`,
+            {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": model,
+                },
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+            model,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: "test" }],
+                    stream: true,
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        const prices = getPriceDefinitionForModel(
+            getRegistryModelDefinition(model),
+        );
+        const expectedPrice =
+            700 * (prices.promptTextTokens ?? 0) +
+            200 * (prices.promptCachedTokens ?? 0) +
+            100 * (prices.promptCacheWriteTokens ?? 0) +
+            500 * (prices.completionTextTokens ?? 0);
+        expect(event).toMatchObject({
+            tokenCountPromptText: 700,
+            tokenCountPromptCached: 200,
+            tokenCountPromptCacheWrite: 100,
+            tokenCountCompletionText: 500,
+            totalPrice: expectedPrice,
+            isBilledUsage: true,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
+    });
+
     it("bills direct Responses stream terminal usage exactly once", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -2328,18 +2412,18 @@ describe("trackResponse modelUsed", () => {
         });
     });
 
-    it("attributes a 200 with an unexpected content-type to the resolved model", async () => {
+    it("attributes an unexpected content-type to the attempted route", async () => {
         const tracking = await trackResponse(
             "generate.image",
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
-            candidateFixture(),
+            { ...candidateFixture(), id: "internal-fallback" },
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai",
+            modelUsed: "internal-fallback",
         });
     });
 

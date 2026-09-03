@@ -699,7 +699,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: resolvedModelRequested });
+        return notBilled({ modelUsed: modelCalled });
     }
 
     const { modelUsage, output, contentFilterResults } =

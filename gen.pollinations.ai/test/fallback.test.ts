@@ -289,6 +289,104 @@ describe("registry fallback linking", () => {
 
         expect(primary.fallbackEntries).toBeUndefined();
     });
+
+    describe("community primary falling back to a static registry target", () => {
+        it("links a static target that costs no more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-cheap"],
+                20,
+            );
+            const target = registryEntry("static-cheap", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries?.map((entry) => entry.id)).toEqual([
+                "static-cheap",
+            ]);
+        });
+
+        it("rejects a static target that costs more than the primary", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-expensive"],
+                10,
+            );
+            const target = registryEntry("static-expensive", [], 20);
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a static target in a different category", () => {
+            const primary = communityEntry(
+                "owner/primary",
+                "owner",
+                "public",
+                null,
+                ["static-image"],
+                10,
+            );
+            const target = registryEntry("static-image", [], 10);
+            target.definition.category = "image";
+            const entries = [primary, target];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(primary.fallbackEntries).toBeUndefined();
+        });
+
+        it("rejects a paid-only static target for a primary that takes Quest Pollen", () => {
+            const anyPollen = communityEntry(
+                "owner/any",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+            );
+            const paidPrimary = communityEntry(
+                "owner/paid",
+                "owner",
+                "public",
+                null,
+                ["static-paid"],
+                10,
+                true,
+            );
+            const staticPaid = registryEntry("static-paid", [], 10);
+            staticPaid.definition.paidOnly = true;
+            const entries = [anyPollen, paidPrimary, staticPaid];
+
+            linkFallbackEntries(
+                entries,
+                new Map(entries.map((entry) => [entry.id, entry])),
+            );
+
+            expect(anyPollen.fallbackEntries).toBeUndefined();
+            expect(
+                paidPrimary.fallbackEntries?.map((entry) => entry.id),
+            ).toEqual(["static-paid"]);
+        });
+    });
 });
 
 describe("formatFallbackTarget", () => {

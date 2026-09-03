@@ -3,6 +3,7 @@ import { Pollinations } from "./client.js";
 import {
     chat,
     configure,
+    embeddings,
     generateAudio,
     generateImage,
     generateText,
@@ -748,6 +749,93 @@ describe("Pollinations.accountQuests", () => {
         await expect(client.accountQuests()).resolves.toEqual(questsResponse);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/account/quests",
+        );
+    });
+});
+describe("Pollinations.embeddings", () => {
+    const apiResponse = {
+        object: "list",
+        data: [{ object: "embedding", embedding: [0.1, 0.2, 0.3], index: 0 }],
+        model: "gemini-2",
+        usage: { prompt_tokens: 4, total_tokens: 4 },
+    };
+
+    it("posts input to /v1/embeddings and returns the typed response", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(apiResponse));
+
+        await expect(client.embeddings("hello")).resolves.toEqual(apiResponse);
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/v1/embeddings",
+        );
+        expect(init.method).toBe("POST");
+        const headers = init.headers as Record<string, string>;
+        expect(headers["Content-Type"]).toBe("application/json");
+        expect(headers.Authorization).toBe("Bearer sk_test");
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({ input: "hello" });
+    });
+
+    it("maps camelCase options to the OpenAI-compatible wire format", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(apiResponse));
+
+        await client.embeddings(["hello", "world"], {
+            model: "gemini-2",
+            dimensions: 768,
+            taskType: "RETRIEVAL_QUERY",
+            inputType: "query",
+            encodingFormat: "base64",
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            model: "gemini-2",
+            input: ["hello", "world"],
+            dimensions: 768,
+            task_type: "RETRIEVAL_QUERY",
+            input_type: "query",
+            encoding_format: "base64",
+        });
+    });
+
+    it("rejects empty input without sending a request", async () => {
+        const client = newClient();
+
+        await expect(client.embeddings("")).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        await expect(client.embeddings([])).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("surfaces API errors", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ error: { message: "bad model" } }, { ok: false, status: 400 }),
+        );
+
+        await expect(client.embeddings("hello")).rejects.toMatchObject({
+            name: "PollinationsError",
+            message: "bad model",
+            status: 400,
+        });
+    });
+
+    it("exposes the method through the embeddings() helper", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        fetchMock.mockResolvedValueOnce(makeResponse(apiResponse));
+
+        await expect(embeddings("hello")).resolves.toEqual(apiResponse);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/v1/embeddings",
         );
     });
 });

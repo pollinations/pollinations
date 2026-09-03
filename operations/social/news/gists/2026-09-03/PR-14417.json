@@ -1,0 +1,36 @@
+{
+  "pr_number": 14417,
+  "title": "Add Open WebUI for Pollinations to chat",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14417",
+  "merged_at": "2026-09-03T22:44:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Open WebUI for Pollinations](https://openwebui.pollinations.ai) to chat\n- Open WebUI chat frontend with Pollinations login. All Pollinations text models in the picker, plus the Pollinations MCP server as a tool server for image, video and audio.\n\nFixes #14416",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The chat garden gets windows",
+    "blurb": "Open WebUI has joined the Pollinations chat patch. Sign in with Pollinations, pick from the full text-model shelf, and hand image, video, or audio jobs to the MCP tool server.",
+    "summary": "Added Open WebUI for Pollinations at openwebui.pollinations.ai, with Pollinations login, every Pollinations text model in its picker, and the Pollinations MCP server available for image, video, and audio tools.",
+    "impact": "People can now use a full Open WebUI chat workspace with Pollinations authentication and model access, then generate media without leaving the conversation.",
+    "keywords": [
+      "open-webui",
+      "chat",
+      "text-models",
+      "mcp",
+      "media-tools",
+      "authentication"
+    ],
+    "visual_concept": "Depict Open WebUI as a welcoming retro chat terminal with several tidy model-choice tabs and small tool icons for image, video, and audio. Polli, wearing tiny librarian glasses, hovers beside the monitor and helps the eager CRT Monitor Robot connect colorful code-vines from the chat window to a small garden of media-producing plants.",
+    "image_prompt": "A cozy pixel art hackerspace garden where a chunky retro chat monitor labeled \"OPEN WEBUI\" shows a friendly model picker and tiny image, video, and audio tool icons; glowing code-vines run from the screen into flower pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and warmly helps a cute CRT-monitor robot plug the chat terminal into the garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14417.jpg",
+    "prompt": "A cozy pixel art hackerspace garden where a chunky retro chat monitor labeled \"OPEN WEBUI\" shows a friendly model picker and tiny image, video, and audio tool icons; glowing code-vines run from the screen into flower pots. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and warmly helps a cute CRT-monitor robot plug the chat terminal into the garden. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow and scanlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T22:45:56.436949+00:00",
+  "app_name": "Open WebUI for Pollinations",
+  "app_url": "https://openwebui.pollinations.ai"
+}

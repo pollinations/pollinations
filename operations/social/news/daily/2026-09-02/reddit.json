@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-02",
+  "period_start": "2026-09-02",
+  "period_end": "2026-09-02",
+  "generated_at": "2026-09-03T06:29:37.175699+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-02/images/reddit.jpg"
+    }
+  ],
+  "title": "17 merges: Responses API, MCP, Gemini routing",
+  "text": "17 PRs merged today. The main API addition is a direct stateless Responses API (#14239), alongside Gemini 3.8 Flash (#14362) and Genie AI in chat (#14330).\n\nAgent plumbing got less theoretical: Composio MCP connectors landed (#14249), hosted MCP sources are now linked in the docs (#14344), and the catalog/MCP UI got a navigation pass (#14318). The Composio secret deployment also needed a follow-up fix (#14355), because software remains committed to making credentials interesting.\n\nRouting should be more predictable now. Official models have provider fallbacks (#14293); requested and actually used model IDs are kept separate (#14345); embedded upstream rate limits are retried (#14363); and the minimum model RPM is now 60 (#14336). Streamed prompt-cache writes are billed correctly (#14368).\n\nContributor loops also got shorter: PR checks were sped up (#14324). Community models can now be published by xiaotian1171 (#14328), and the image catalog gained the alternate-history scene generator (#14331).\n\nPR list and code: https://github.com/pollinations/pollinations/pulls\nDocs: https://gen.pollinations.ai/docs\n\nThe Responses endpoint and fallback behavior are the pieces most worth testing this week. Reports with a request shape, requested model, and used model are especially useful."
+}

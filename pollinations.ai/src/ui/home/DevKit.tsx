@@ -23,8 +23,8 @@ import { usePlatformStats } from "../../data/publicStats";
 type Feature = {
     title: string;
     body: string | ((modelCount: number | null) => string);
-    linkLabel: string;
-    href: string;
+    linkLabel?: string;
+    href?: string;
     external?: boolean;
     icon: ComponentType<IconProps>;
 };
@@ -89,25 +89,17 @@ const BUILD_FEATURES = [...BUILD_FOUNDATIONS, ...BUILD_TOOLS];
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "Publish an app",
-        body: "Join the app directory, reach the Pollinations community and earn from connected usage.",
-        linkLabel: "Publish an app",
-        href: "https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml",
+        body: "Share your app with the Pollinations community, reach new users, and earn from connected usage.",
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Connect your endpoint privately, or publish it in the catalog with your own price and earn from usage.",
-        linkLabel: "Publish a model",
-        href: "https://gen.pollinations.ai/docs#tag/publish-a-model",
-        external: false,
+        body: "Turn your model into a product. Add it to the community catalog, set your price, and earn whenever builders use it.",
         icon: BeakerIcon,
     },
     {
         title: "Publish an agent",
-        body: "Combine instructions, a base model and Pollinations tools into a reusable model without hosting an agent server.",
-        linkLabel: "Publish an agent",
-        href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
-        external: false,
+        body: "Combine instructions, models and tools into an agent builders can use—and earn whenever it runs.",
         icon: RobotIcon,
     },
 ];
@@ -143,15 +135,17 @@ function FeatureCard({
                 {body}
             </Text>
 
-            <ExternalLinkButton
-                href={feature.href}
-                external={feature.external}
-                size="sm"
-                appearance="raised"
-                className="self-start whitespace-nowrap"
-            >
-                {feature.linkLabel}
-            </ExternalLinkButton>
+            {feature.href && feature.linkLabel ? (
+                <ExternalLinkButton
+                    href={feature.href}
+                    external={feature.external}
+                    size="sm"
+                    appearance="raised"
+                    className="self-start whitespace-nowrap"
+                >
+                    {feature.linkLabel}
+                </ExternalLinkButton>
+            ) : null}
         </Surface>
     );
 }
@@ -248,10 +242,10 @@ export function DevKit({ className }: { className?: string }) {
 
             <FeatureGroup
                 eyebrow="Publish and earn"
-                title="Turn what you build into a product"
-                description="Turn apps, models and agents into products people can discover and use."
+                title="Bring what you build to the ecosystem"
+                description="Publish apps, models and agents for people to discover, use and build on."
             >
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                     {PUBLISH_FEATURES.map((feature) => (
                         <FeatureCard
                             key={feature.title}
@@ -260,6 +254,15 @@ export function DevKit({ className }: { className?: string }) {
                         />
                     ))}
                 </div>
+                <ExternalLinkButton
+                    href="https://enter.pollinations.ai"
+                    external={false}
+                    size="lg"
+                    appearance="raised"
+                    className="self-start whitespace-nowrap"
+                >
+                    Start publishing
+                </ExternalLinkButton>
             </FeatureGroup>
         </section>
     );

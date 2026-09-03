@@ -11,6 +11,7 @@ export type ModelQueryFilter =
           key: "publisher" | "id" | "type" | "capability";
           value: string;
       };
+export type ModelQueryFilterKey = ModelQueryFilter["key"];
 export type ParsedModelQuery = {
     terms: string[];
     filters: ModelQueryFilter[];
@@ -30,7 +31,7 @@ export type ModelQueryDraftFilter = {
 
 const ACCESS_VALUES: readonly ModelAccess[] = ["paid", "quest", "free"];
 const SOURCE_VALUES: readonly ModelSource[] = ["official", "community"];
-const FILTER_KEYS = [
+export const MODEL_QUERY_FILTER_KEYS = [
     "access",
     "source",
     "publisher",
@@ -45,12 +46,16 @@ const isModelAccess = (value: string): value is ModelAccess =>
 const isModelSource = (value: string): value is ModelSource =>
     SOURCE_VALUES.includes(value as ModelSource);
 
-function parseModelQueryFilter(token: string): ModelQueryFilter | undefined {
+function parseModelQueryFilter(
+    token: string,
+    supportedKeys: readonly ModelQueryFilterKey[] = MODEL_QUERY_FILTER_KEYS,
+): ModelQueryFilter | undefined {
     const separator = token.indexOf(":");
     if (separator <= 0 || separator === token.length - 1) return undefined;
 
     const key = token.slice(0, separator).toLowerCase();
     const value = token.slice(separator + 1).toLowerCase();
+    if (!supportedKeys.includes(key as ModelQueryFilterKey)) return undefined;
 
     switch (key) {
         case "access":
@@ -73,14 +78,17 @@ function parseModelQueryFilter(token: string): ModelQueryFilter | undefined {
  * their literal meaning. Quoting and other full query-language features are
  * intentionally out of scope.
  */
-export function parseModelQuery(query: string): ParsedModelQuery {
+export function parseModelQuery(
+    query: string,
+    supportedKeys: readonly ModelQueryFilterKey[] = MODEL_QUERY_FILTER_KEYS,
+): ParsedModelQuery {
     const terms: string[] = [];
     const filters: ModelQueryFilter[] = [];
 
     for (const token of query.split(/\s+/)) {
         if (!token) continue;
 
-        const filter = parseModelQueryFilter(token);
+        const filter = parseModelQueryFilter(token, supportedKeys);
         if (filter) {
             filters.push(filter);
         } else {
@@ -118,12 +126,13 @@ export function ensureModelQuerySource(query: string): string {
 
 export function getModelQueryFilterTokens(
     query: string,
+    supportedKeys: readonly ModelQueryFilterKey[] = MODEL_QUERY_FILTER_KEYS,
 ): ModelQueryFilterToken[] {
     return query
         .split(/\s+/)
         .filter(Boolean)
         .map((token, index) => ({
-            filter: parseModelQueryFilter(token),
+            filter: parseModelQueryFilter(token, supportedKeys),
             index,
             token,
         }))
@@ -139,6 +148,7 @@ export function getModelQueryFilterTokens(
 export function getModelQueryDraftFilter(
     query: string,
     includeCompleted = false,
+    supportedKeys: readonly ModelQueryFilterKey[] = MODEL_QUERY_FILTER_KEYS,
 ): ModelQueryDraftFilter | undefined {
     const tokens = query.split(/\s+/).filter(Boolean);
     const index = tokens.length - 1;
@@ -149,8 +159,9 @@ export function getModelQueryDraftFilter(
     if (separator <= 0) return undefined;
 
     const key = token.slice(0, separator).toLowerCase();
-    if (!FILTER_KEYS.includes(key as ModelQueryFilter["key"])) return undefined;
-    if (!includeCompleted && parseModelQueryFilter(token)) return undefined;
+    if (!supportedKeys.includes(key as ModelQueryFilterKey)) return undefined;
+    if (!includeCompleted && parseModelQueryFilter(token, supportedKeys))
+        return undefined;
 
     return {
         index,
@@ -231,6 +242,7 @@ function getFilterValues(key: string, models: ModelPrice[]): string[] {
 export function getModelQuerySuggestions(
     query: string,
     models: ModelPrice[],
+    supportedKeys: readonly ModelQueryFilterKey[] = MODEL_QUERY_FILTER_KEYS,
 ): string[] {
     const tokenStart = query.lastIndexOf(" ") + 1;
     const prefix = query.slice(0, tokenStart);
@@ -239,14 +251,18 @@ export function getModelQuerySuggestions(
 
     const suggestions =
         separator === -1
-            ? FILTER_KEYS.filter((key) => key.startsWith(token)).map(
-                  (key) => `${key}:`,
-              )
-            : getFilterValues(token.slice(0, separator), models)
-                  .filter((value) =>
-                      value.startsWith(token.slice(separator + 1)),
-                  )
-                  .map((value) => `${token.slice(0, separator)}:${value} `);
+            ? supportedKeys
+                  .filter((key) => key.startsWith(token))
+                  .map((key) => `${key}:`)
+            : supportedKeys.includes(
+                    token.slice(0, separator) as ModelQueryFilterKey,
+                )
+              ? getFilterValues(token.slice(0, separator), models)
+                    .filter((value) =>
+                        value.startsWith(token.slice(separator + 1)),
+                    )
+                    .map((value) => `${token.slice(0, separator)}:${value} `)
+              : [];
 
     return [...new Set(suggestions)]
         .sort()

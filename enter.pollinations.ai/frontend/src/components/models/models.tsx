@@ -8,6 +8,7 @@ import {
     Dropdown,
     DropdownItem,
     EditableCombobox,
+    EditableComboboxToken,
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
@@ -44,13 +45,14 @@ import {
     getModelQueryDraftFilter,
     getModelQueryFilterTokens,
     getModelQuerySuggestions,
+    MODEL_QUERY_FILTER_KEYS,
     type ModelQueryDraftFilter,
     type ModelQueryFilter,
+    type ModelQueryFilterKey,
     type ModelQueryFilterToken,
     matchesModelQuery,
     parseModelQuery,
     removeModelQueryFilterToken,
-    removeModelQuerySource,
 } from "./model-query.ts";
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
@@ -74,6 +76,23 @@ const MODEL_SECTION_ORDER: SectionType[] = [
 ];
 
 type PrimaryTab = "models" | "agent" | "mcp";
+type SearchParam = "q" | "agentQ" | "mcpQ";
+
+const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
+const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
+const SEARCH_PARAM_BY_TAB: Record<PrimaryTab, SearchParam> = {
+    models: "q",
+    agent: "agentQ",
+    mcp: "mcpQ",
+};
+const QUERY_FILTER_KEYS_BY_TAB: Record<
+    PrimaryTab,
+    readonly ModelQueryFilterKey[]
+> = {
+    models: MODEL_QUERY_FILTER_KEYS,
+    agent: AGENT_QUERY_FILTER_KEYS,
+    mcp: MCP_QUERY_FILTER_KEYS,
+};
 
 const PRIMARY_TABS: Array<{
     value: PrimaryTab;
@@ -104,12 +123,12 @@ const SORT_OPTIONS: Array<{
 }> = [
     {
         value: "popular",
-        label: "Popular",
+        label: "Most Popular",
         accessibleLabel: "Most popular",
     },
     {
         value: "newest",
-        label: "Date added",
+        label: "Last Added",
         accessibleLabel: "Date added, newest first",
     },
     {
@@ -266,7 +285,9 @@ export const Models: FC = () => {
               ? "mcp"
               : "models";
     const activeSort = modelSearch.sort ?? "popular";
-    const urlSearch = modelSearch.q ?? "";
+    const searchParam = SEARCH_PARAM_BY_TAB[activePrimaryTab];
+    const supportedFilterKeys = QUERY_FILTER_KEYS_BY_TAB[activePrimaryTab];
+    const urlSearch = modelSearch[searchParam] ?? "";
     const initialSearch =
         activePrimaryTab === "models"
             ? ensureModelQuerySource(urlSearch)
@@ -274,7 +295,9 @@ export const Models: FC = () => {
     const [search, setSearch] = useState(initialSearch);
     const [draftFilter, setDraftFilter] = useState<
         ModelQueryDraftFilter | undefined
-    >(() => getModelQueryDraftFilter(initialSearch));
+    >(() =>
+        getModelQueryDraftFilter(initialSearch, false, supportedFilterKeys),
+    );
     const [pendingRemovalIndex, setPendingRemovalIndex] = useState<
         number | undefined
     >();
@@ -293,8 +316,8 @@ export const Models: FC = () => {
         [allModels],
     );
     const allFilterTokens = useMemo(
-        () => getModelQueryFilterTokens(search),
-        [search],
+        () => getModelQueryFilterTokens(search, supportedFilterKeys),
+        [search, supportedFilterKeys],
     );
     const filterTokens = useMemo(
         () =>
@@ -305,33 +328,14 @@ export const Models: FC = () => {
         draftFilter === undefined
             ? search.trim()
             : removeModelQueryFilterToken(search, draftFilter.index);
-    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
+    const parsedQuery = useMemo(
+        () => parseModelQuery(query, supportedFilterKeys),
+        [query, supportedFilterKeys],
+    );
     const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
-    const supportsSourceFilter = activePrimaryTab === "models";
     const visibleSearch = getVisibleSearch(search, filterTokens, draftFilter);
-    const renderedFilterTokens = useMemo(
-        () =>
-            activePrimaryTab === "mcp"
-                ? []
-                : filterTokens.filter(
-                      ({ filter }) =>
-                          filter.key !== "source" || supportsSourceFilter,
-                  ),
-        [activePrimaryTab, filterTokens, supportsSourceFilter],
-    );
-    const renderedDraftFilter =
-        activePrimaryTab !== "mcp" &&
-        draftFilter &&
-        (draftFilter.key !== "source" || supportsSourceFilter)
-            ? draftFilter
-            : undefined;
-    const effectiveQuery = supportsSourceFilter
-        ? query
-        : removeModelQuerySource(query).trim();
-    const effectiveParsedQuery = useMemo(
-        () => parseModelQuery(effectiveQuery),
-        [effectiveQuery],
-    );
+    const renderedFilterTokens = filterTokens;
+    const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(
         () =>
             allModels.filter(
@@ -359,30 +363,29 @@ export const Models: FC = () => {
     }, [activeTab, agentModels, modelSections]);
     const filteredModels = useMemo(
         () =>
-            effectiveQuery
+            query
                 ? activeTabModels.filter((model) =>
-                      matchesModelQuery(model, effectiveParsedQuery),
+                      matchesModelQuery(model, parsedQuery),
                   )
                 : activeTabModels,
-        [activeTabModels, effectiveParsedQuery, effectiveQuery],
+        [activeTabModels, parsedQuery, query],
     );
     const searchOptions = useMemo(() => {
-        if (activeTab === "mcp") return [];
         let options = getModelQuerySuggestions(
             draftFilter ? search : visibleSearch,
             activeTabModels,
+            supportedFilterKeys,
         );
-        if (!supportsSourceFilter || explicitModelSource) {
+        if (explicitModelSource) {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
         return draftFilter ? options.map(getDraftSuggestionValue) : options;
     }, [
-        activeTab,
         activeTabModels,
         draftFilter,
         explicitModelSource,
         search,
-        supportsSourceFilter,
+        supportedFilterKeys,
         visibleSearch,
     ]);
     const draftFilterKey = draftFilter?.key;
@@ -443,12 +446,12 @@ export const Models: FC = () => {
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    q: normalizedSearch || undefined,
+                    [searchParam]: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
         },
-        [navigate],
+        [navigate, searchParam],
     );
 
     const setVisibleSearch = (nextSearch: string) => {
@@ -470,7 +473,11 @@ export const Models: FC = () => {
         setDraftFilter(
             nextSearch.endsWith(" ")
                 ? undefined
-                : getModelQueryDraftFilter(nextQuery, true),
+                : getModelQueryDraftFilter(
+                      nextQuery,
+                      true,
+                      supportedFilterKeys,
+                  ),
         );
         setSearch(nextQuery);
     };
@@ -543,9 +550,11 @@ export const Models: FC = () => {
             activePrimaryTab === "models"
                 ? ensureModelQuerySource(urlSearch)
                 : urlSearch;
-        setDraftFilter(getModelQueryDraftFilter(nextSearch));
+        setDraftFilter(
+            getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),
+        );
         setSearch(nextSearch);
-    }, [activePrimaryTab, urlSearch]);
+    }, [activePrimaryTab, supportedFilterKeys, urlSearch]);
 
     useEffect(() => {
         if (search === lastPushedSearchRef.current) return;
@@ -586,7 +595,7 @@ export const Models: FC = () => {
 
     const activeSortLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
-        "Popular";
+        "Most Popular";
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
             ?.accessibleLabel ?? "Most popular";
@@ -751,29 +760,21 @@ export const Models: FC = () => {
                                                             );
 
                                                         return (
-                                                            <div
+                                                            <EditableComboboxToken
                                                                 key={`${filterToken.index}:${filterToken.token}`}
-                                                                className="flex h-7 max-w-full shrink-0 items-center text-xs"
-                                                            >
-                                                                <button
-                                                                    type="button"
-                                                                    aria-label={`Change ${label} filter: ${value}`}
-                                                                    className={`polli-control flex h-full min-w-0 items-center gap-1 rounded px-1.5 transition-colors hover:bg-theme-bg-hover ${pendingRemovalIndex === filterToken.index ? "bg-theme-bg-active" : ""}`}
-                                                                    onClick={() =>
-                                                                        editFilter(
-                                                                            filterToken,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    <span className="text-theme-text-muted">
-                                                                        {label}:
-                                                                    </span>
-                                                                    <span className="truncate text-theme-text-base">
-                                                                        {value}
-                                                                    </span>
-                                                                    <ChevronIcon className="h-3 w-3 shrink-0 text-theme-text-muted" />
-                                                                </button>
-                                                            </div>
+                                                                label={label}
+                                                                value={value}
+                                                                highlighted={
+                                                                    pendingRemovalIndex ===
+                                                                    filterToken.index
+                                                                }
+                                                                aria-label={`Change ${label} filter: ${value}`}
+                                                                onClick={() =>
+                                                                    editFilter(
+                                                                        filterToken,
+                                                                    )
+                                                                }
+                                                            />
                                                         );
                                                     },
                                                 )}
@@ -899,8 +900,8 @@ export const Models: FC = () => {
                     </Alert>
                 )}
                 {activeTab === "mcp" ? (
-                    <McpServerList query={effectiveQuery} />
-                ) : effectiveQuery && sectionModels[activeTab].length === 0 ? (
+                    <McpServerList query={query} />
+                ) : query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
                         No {searchTarget.toLowerCase()} match{" "}
                         {visibleSearch.trim()

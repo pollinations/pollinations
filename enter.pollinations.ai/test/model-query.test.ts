@@ -125,6 +125,20 @@ describe("model query filter tokens", () => {
             ),
         ).toBe("capability:tool-calling");
     });
+
+    it("treats filters unsupported by the current tab as plain text", () => {
+        const agentKeys = ["publisher", "id", "capability"] as const;
+        const query = "source:community access:paid capability:agent";
+
+        expect(parseModelQuery(query, agentKeys)).toEqual({
+            terms: ["source:community", "access:paid"],
+            filters: [{ key: "capability", value: "agent" }],
+        });
+        expect(getModelQueryFilterTokens(query, agentKeys)).toHaveLength(1);
+        expect(getModelQueryDraftFilter("access:", false, agentKeys)).toBe(
+            undefined,
+        );
+    });
 });
 
 describe("matchesModelQuery", () => {
@@ -292,5 +306,18 @@ describe("getModelQuerySuggestions", () => {
             "type:image ",
             "type:text ",
         ]);
+    });
+
+    it("only suggests filters supported by the current tab", () => {
+        const agentKeys = ["publisher", "id", "capability"] as const;
+
+        expect(getModelQuerySuggestions("", models, agentKeys)).toEqual([
+            "capability:",
+            "id:",
+            "publisher:",
+        ]);
+        expect(getModelQuerySuggestions("access:", models, agentKeys)).toEqual(
+            [],
+        );
     });
 });

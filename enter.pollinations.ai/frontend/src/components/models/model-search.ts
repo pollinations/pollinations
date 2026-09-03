@@ -1,5 +1,3 @@
-import { removeModelQuerySource } from "./model-query.ts";
-
 export const MODEL_CATEGORIES = [
     "all",
     "image",
@@ -30,6 +28,8 @@ export type ModelSort = (typeof MODEL_SORTS)[number];
 export type ModelSearch = {
     category?: ModelCategory;
     q?: string;
+    agentQ?: string;
+    mcpQ?: string;
     sort?: ModelSort;
 };
 
@@ -48,13 +48,15 @@ export function validateModelSearch(
         : "all";
     const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "popular";
     const query = typeof search.q === "string" ? search.q.trim() : "";
-    const supportsSource = category !== "agent" && category !== "mcp";
+    const agentQuery =
+        typeof search.agentQ === "string" ? search.agentQ.trim() : "";
+    const mcpQuery = typeof search.mcpQ === "string" ? search.mcpQ.trim() : "";
 
     return {
         category: category === "all" ? undefined : category,
-        q: supportsSource
-            ? query || undefined
-            : removeModelQuerySource(query) || undefined,
+        q: query || undefined,
+        agentQ: agentQuery || undefined,
+        mcpQ: mcpQuery || undefined,
         sort: sort === "popular" ? undefined : sort,
     };
 }

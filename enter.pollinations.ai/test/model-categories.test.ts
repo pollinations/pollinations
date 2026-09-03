@@ -99,6 +99,8 @@ describe("model categories", () => {
         expect(validateModelSearch({})).toEqual({
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: undefined,
         });
         for (const category of [
@@ -114,22 +116,32 @@ describe("model categories", () => {
         expect(validateModelSearch({ category: "image" })).toEqual({
             category: "image",
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: undefined,
         });
-        expect(validateModelSearch({ category: "agent" }).q).toBeUndefined();
-        expect(validateModelSearch({ category: "mcp" }).q).toBeUndefined();
         expect(
             validateModelSearch({
                 category: "agent",
-                q: "source:official capability:tool-calling",
-            }).q,
-        ).toBe("capability:tool-calling");
+                q: "source:community",
+                agentQ: "capability:tool-calling",
+                mcpQ: "github",
+            }),
+        ).toEqual({
+            category: "agent",
+            q: "source:community",
+            agentQ: "capability:tool-calling",
+            mcpQ: "github",
+            sort: undefined,
+        });
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
         expect(validateModelSearch({ sort: "brand" })).toEqual({
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: "brand",
         });
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
@@ -142,11 +154,15 @@ describe("model categories", () => {
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: undefined,
         });
         expect(validateModelSearch({ sort: "newest" })).toEqual({
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: "newest",
         });
     });
@@ -157,5 +173,8 @@ describe("model categories", () => {
         expect(validateModelSearch({ q: " source:community " }).q).toBe(
             "source:community",
         );
+        expect(
+            validateModelSearch({ agentQ: " capability:agent ", mcpQ: "  " }),
+        ).toMatchObject({ agentQ: "capability:agent", mcpQ: undefined });
     });
 });

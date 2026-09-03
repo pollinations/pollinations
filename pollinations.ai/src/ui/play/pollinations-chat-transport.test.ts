@@ -39,6 +39,25 @@ async function chunksFrom(events: ChatStreamEvent[]) {
     return chunks;
 }
 
+function contentChunk(content: string, id: string): ChatStreamEvent {
+    return {
+        type: "chunk",
+        chunk: {
+            id,
+            object: "chat.completion.chunk",
+            created: 1,
+            model: "floret",
+            choices: [
+                {
+                    index: 0,
+                    delta: { content },
+                    finish_reason: null,
+                },
+            ],
+        },
+    };
+}
+
 describe("messagesForPollinations", () => {
     it("preserves attachments and server-executed tool history", () => {
         const messages: PollinationsUIMessage[] = [
@@ -205,5 +224,48 @@ describe("PollinationsChatTransport", () => {
         expect(
             chunks.filter((chunk) => chunk.type === "data-media"),
         ).toHaveLength(1);
+    });
+
+    it("buffers tool markup split across provider chunks", async () => {
+        const chunks = await chunksFrom([
+            contentChunk("Found it.\n\n<det", "chunk-1"),
+            contentChunk(
+                'ails type="tool_calls" done="true" id="call-1" name="SEARCH_WEB" ',
+                "chunk-2",
+            ),
+            contentChunk(
+                'arguments="{&quot;query&quot;:&quot;flowers&quot;}"><summary>Tool Executed</summary>{&quot;count&quot;:1}</details>',
+                "chunk-3",
+            ),
+        ]);
+
+        expect(
+            chunks.find((chunk) => chunk.type === "tool-input-available"),
+        ).toMatchObject({
+            toolCallId: "call-1",
+            toolName: "SEARCH_WEB",
+            input: { query: "flowers" },
+        });
+        expect(
+            chunks
+                .filter((chunk) => chunk.type === "text-delta")
+                .map((chunk) => chunk.delta)
+                .join(""),
+        ).toBe("Found it.\n\n");
+    });
+
+    it("buffers generated media links split across provider chunks", async () => {
+        const chunks = await chunksFrom([
+            contentChunk("![Res", "chunk-1"),
+            contentChunk("ult](<https://example.test/result", "chunk-2"),
+            contentChunk(".png>)", "chunk-3"),
+        ]);
+
+        expect(
+            chunks.filter((chunk) => chunk.type === "data-media"),
+        ).toHaveLength(1);
+        expect(
+            chunks.filter((chunk) => chunk.type === "text-delta"),
+        ).toHaveLength(0);
     });
 });

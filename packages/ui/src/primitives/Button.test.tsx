@@ -34,6 +34,21 @@ describe("Button appearances", () => {
         expect(html).toContain('target="_blank"');
     });
 
+    test("supports same-tab product navigation without an external icon", () => {
+        const html = renderToStaticMarkup(
+            <ExternalLinkButton
+                href="https://enter.pollinations.ai"
+                external={false}
+            >
+                Continue
+            </ExternalLinkButton>,
+        );
+
+        expect(html).not.toContain('target="_blank"');
+        expect(html).not.toContain("noopener noreferrer");
+        expect(html).not.toContain("<svg");
+    });
+
     test("makes disabled polymorphic links inert", () => {
         const element = Button({
             as: "a",

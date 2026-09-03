@@ -3,9 +3,9 @@ import { cn } from "../../lib/cn.ts";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
-import { CardIcon, SproutIcon } from "../../primitives/icons/index.tsx";
 import { ScrollArea } from "../../primitives/ScrollArea.tsx";
 import { TabButton } from "../../primitives/TabButton.tsx";
+import { ModelAccessIcon } from "./ModelAccessIcon.tsx";
 
 export type ModelSelectorCategory = ModelCategory;
 
@@ -36,18 +36,6 @@ export function categoryLabel(category: ModelSelectorCategory): string {
 
 function modelId(model: ModelInfo): string {
     return model.id ?? model.name;
-}
-
-/**
- * Card = needs a paid balance; sprout = runs on any Pollen. Trails the model
- * name so the name stays the thing you scan the list by.
- */
-function AccessIcon({ paidOnly }: { paidOnly?: boolean }) {
-    return paidOnly ? (
-        <CardIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-    ) : (
-        <SproutIcon className="polli:h-3.5 polli:w-3.5 polli:shrink-0" />
-    );
 }
 
 export function ModelSelector({
@@ -85,7 +73,9 @@ export function ModelSelector({
                     <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
                         <span className="polli:truncate">{modelLabel}</span>
                         {currentModel && (
-                            <AccessIcon paidOnly={currentModel.paid_only} />
+                            <ModelAccessIcon
+                                paidOnly={currentModel.paid_only}
+                            />
                         )}
                     </span>
                     <ChevronIcon expanded={open} />
@@ -120,7 +110,7 @@ export function ModelSelector({
                                                 <span className="polli:truncate">
                                                     {model.title ?? model.name}
                                                 </span>
-                                                <AccessIcon
+                                                <ModelAccessIcon
                                                     paidOnly={model.paid_only}
                                                 />
                                             </span>

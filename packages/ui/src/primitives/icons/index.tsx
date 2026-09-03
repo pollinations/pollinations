@@ -603,6 +603,14 @@ export function SparkleIcon(props: IconProps) {
     );
 }
 
+export function StarIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m12 2.5 3 6.1 6.7 1-4.9 4.7 1.2 6.7-6-3.2-6 3.2 1.2-6.7-4.9-4.7 6.7-1z" />
+        </svg>
+    );
+}
+
 export function CodeIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

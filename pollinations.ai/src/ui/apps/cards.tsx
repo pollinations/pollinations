@@ -4,6 +4,7 @@ import {
     GitHubIcon,
     InlineLink,
     LinkCard,
+    StarIcon,
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
@@ -167,11 +168,16 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                             {app.github_username}
                         </a>
                     )}
-                    {stars && <span>⭐ {stars}</span>}
+                    {stars && (
+                        <span className="inline-flex items-center gap-1">
+                            <StarIcon className="size-3.5 fill-current" />
+                            {stars}
+                        </span>
+                    )}
                     {platform && (
                         <Chip
                             size="sm"
-                            className="h-auto px-1.5 py-0.5 font-pixel text-[9px] leading-none uppercase"
+                            className="h-auto px-1.5 py-0.5 font-pixel text-micro leading-none uppercase"
                         >
                             {platform}
                         </Chip>

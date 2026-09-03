@@ -24,7 +24,7 @@ const STEPS = [
  */
 export function MoneyMoves() {
     return (
-        <section className="dark -mx-2 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-3xl bg-brand-dark px-8 py-14 md:-mx-12 md:px-14">
+        <section className="dark -mx-4 grid grid-cols-[repeat(auto-fit,minmax(min(360px,100%),1fr))] items-center gap-12 rounded-none bg-brand-dark px-8 py-14 sm:-mx-2 sm:rounded-3xl md:-mx-12 md:px-14">
             <div className="flex flex-col gap-5">
                 <ContentHeader
                     eyebrow="How the money moves"

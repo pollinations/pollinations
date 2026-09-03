@@ -194,7 +194,6 @@ export function DevKit({ className }: { className?: string }) {
                 <ContentHeader
                     eyebrow="Start free"
                     title="Make your first API call"
-                    subtitle="Earn Pollen through Quests, then make your first API call."
                 />
                 <div className="grid items-end gap-6 lg:grid-cols-[1fr_auto]">
                     <div className="flex flex-col gap-3">
@@ -203,12 +202,13 @@ export function DevKit({ className }: { className?: string }) {
                                 <SproutIcon className="size-6" />
                             </div>
                             <Heading as="h3" size="card">
-                                Win Pollen with Quests
+                                Earn Pollen with Quests
                             </Heading>
                         </div>
                         <Text size="sm">
-                            Contribute to Pollinations, earn free Pollen, and
-                            spend it across every model from your own API key.
+                            Complete a Quest—a small contribution to the
+                            project—and spend the Pollen on any model with your
+                            own secret key.
                         </Text>
                     </div>
                     <div className="flex flex-wrap gap-2 lg:justify-end">
@@ -228,7 +228,7 @@ export function DevKit({ className }: { className?: string }) {
                             appearance="raised"
                             className="whitespace-nowrap"
                         >
-                            Get an API key
+                            Create a secret key
                         </ExternalLinkButton>
                     </div>
                 </div>

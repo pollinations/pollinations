@@ -1,4 +1,4 @@
-import { ChatIcon, ExternalLinkIcon, Tooltip } from "@pollinations/ui";
+import { ExternalLinkIcon, Tooltip } from "@pollinations/ui";
 
 export const OPEN_WEBUI_URL = "https://openwebui.pollinations.ai";
 
@@ -53,7 +53,10 @@ export function OpenWebUiLink({
                 rel="noopener noreferrer"
                 className="inline-flex shrink-0 text-theme-text-muted transition-colors hover:text-theme-text-soft"
             >
-                <ChatIcon className="h-4 w-4" />
+                {/* ChatIcon and BotIcon already mean "text modality" and
+                    "agent" in a model row (see model-icons.tsx), so a launcher
+                    has to be something else. */}
+                <ExternalLinkIcon className="h-4 w-4" />
             </a>
         </Tooltip>
     );

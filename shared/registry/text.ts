@@ -2200,7 +2200,8 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-09-03).
+            // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
+            // publishes one prompt rate and no separate image/video rates.
             promptTextTokens: perMillion(0.32),
             promptCachedTokens: perMillion(0.032),
             promptImageTokens: perMillion(0.32),

@@ -4,11 +4,11 @@ import {
     BotIcon,
     Button,
     ChevronIcon,
-    Chip,
     ClockIcon,
     Dropdown,
     DropdownItem,
     EditableCombobox,
+    EditableComboboxToken,
     ExternalLinkButton,
     GitHubIcon,
     InlineLink,
@@ -40,9 +40,22 @@ import {
     getModelPricesFromCatalog,
 } from "./model-catalog.ts";
 import {
+    ensureModelQuerySource,
+    getExplicitModelQuerySource,
+    getModelQueryDraftFilter,
+    getModelQueryDraftSuggestionValue,
+    getModelQueryFilterTokens,
     getModelQuerySuggestions,
+    getModelQueryVisibleSearch,
+    MODEL_QUERY_FILTER_KEYS,
+    type ModelQueryDraftFilter,
+    type ModelQueryFilter,
+    type ModelQueryFilterKey,
+    type ModelQueryFilterToken,
     matchesModelQuery,
     parseModelQuery,
+    removeModelQueryFilterToken,
+    replaceModelQueryFilterToken,
 } from "./model-query.ts";
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
@@ -66,6 +79,23 @@ const MODEL_SECTION_ORDER: SectionType[] = [
 ];
 
 type PrimaryTab = "models" | "agent" | "mcp";
+type SearchParam = "q" | "agentQ" | "mcpQ";
+
+const AGENT_QUERY_FILTER_KEYS = ["publisher", "id", "capability"] as const;
+const MCP_QUERY_FILTER_KEYS: readonly ModelQueryFilterKey[] = [];
+const SEARCH_PARAM_BY_TAB: Record<PrimaryTab, SearchParam> = {
+    models: "q",
+    agent: "agentQ",
+    mcp: "mcpQ",
+};
+const QUERY_FILTER_KEYS_BY_TAB: Record<
+    PrimaryTab,
+    readonly ModelQueryFilterKey[]
+> = {
+    models: MODEL_QUERY_FILTER_KEYS,
+    agent: AGENT_QUERY_FILTER_KEYS,
+    mcp: MCP_QUERY_FILTER_KEYS,
+};
 
 const PRIMARY_TABS: Array<{
     value: PrimaryTab;
@@ -96,12 +126,12 @@ const SORT_OPTIONS: Array<{
 }> = [
     {
         value: "popular",
-        label: "Popular",
+        label: "Most Popular",
         accessibleLabel: "Most popular",
     },
     {
         value: "newest",
-        label: "Date added",
+        label: "Last Added",
         accessibleLabel: "Date added, newest first",
     },
     {
@@ -203,10 +233,75 @@ function handleSortMenuKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     items[nextIndex]?.focus();
 }
 
+const isSourceSuggestion = (option: string): boolean =>
+    option
+        .slice(option.lastIndexOf(" ") + 1)
+        .toLowerCase()
+        .startsWith("source:");
+
+const MODEL_FILTER_LABELS: Record<ModelQueryFilter["key"], string> = {
+    access: "Access",
+    source: "Source",
+    publisher: "Publisher",
+    id: "ID",
+    type: "Type",
+    capability: "Capability",
+};
+
+const formatFilterValue = (filter: ModelQueryFilter): string =>
+    filter.key === "id" || filter.key === "publisher"
+        ? filter.value
+        : filter.value.replaceAll("-", " ");
+
+type ModelFilterTokensProps = {
+    tokens: ModelQueryFilterToken[];
+    draft?: ModelQueryDraftFilter;
+    pendingRemovalIndex?: number;
+    onEdit: (token: ModelQueryFilterToken) => void;
+};
+
+const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
+    tokens,
+    draft,
+    pendingRemovalIndex,
+    onEdit,
+}) => {
+    if (tokens.length === 0 && !draft) {
+        return (
+            <SearchIcon className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted" />
+        );
+    }
+
+    return (
+        <>
+            {tokens.map((token) => {
+                const label = MODEL_FILTER_LABELS[token.filter.key];
+                const value = formatFilterValue(token.filter);
+                return (
+                    <EditableComboboxToken
+                        key={`${token.index}:${token.token}`}
+                        label={label}
+                        value={value}
+                        highlighted={pendingRemovalIndex === token.index}
+                        aria-label={`Change ${label} filter: ${value}`}
+                        onClick={() => onEdit(token)}
+                    />
+                );
+            })}
+            {draft && (
+                <div className="flex h-7 max-w-full shrink-0 items-center text-xs">
+                    <span className="py-1 pl-1.5 pr-1 text-theme-text-muted">
+                        {MODEL_FILTER_LABELS[draft.key]}:
+                    </span>
+                </div>
+            )}
+        </>
+    );
+};
+
 export const Models: FC = () => {
     const navigate = useNavigate({ from: "/models" });
     const modelSearch = useSearch({ from: "/_dashboard/models" });
-    const activeScope = modelSearch.scope ?? "community";
     const activeTab = modelSearch.category ?? "all";
     const activePrimaryTab: PrimaryTab =
         activeTab === "agent"
@@ -214,13 +309,29 @@ export const Models: FC = () => {
             : activeTab === "mcp"
               ? "mcp"
               : "models";
-    const includeCommunity = activeScope === "community";
     const activeSort = modelSearch.sort ?? "popular";
-    const urlSearch = modelSearch.q ?? "";
-    const [search, setSearch] = useState(urlSearch);
-    const [searchFocused, setSearchFocused] = useState(false);
+    const searchParam = SEARCH_PARAM_BY_TAB[activePrimaryTab];
+    const supportedFilterKeys = QUERY_FILTER_KEYS_BY_TAB[activePrimaryTab];
+    const urlSearch = modelSearch[searchParam] ?? "";
+    const initialSearch =
+        activePrimaryTab === "models"
+            ? ensureModelQuerySource(urlSearch)
+            : urlSearch;
+    const [search, setSearch] = useState(initialSearch);
+    const [draftFilter, setDraftFilter] = useState<
+        ModelQueryDraftFilter | undefined
+    >(() =>
+        getModelQueryDraftFilter(initialSearch, false, supportedFilterKeys),
+    );
+    const [editingFilterToken, setEditingFilterToken] = useState<
+        ModelQueryFilterToken | undefined
+    >();
+    const [pendingRemovalIndex, setPendingRemovalIndex] = useState<
+        number | undefined
+    >();
     const [searchOpen, setSearchOpen] = useState(false);
     const lastPushedSearchRef = useRef(urlSearch);
+    const previousPrimaryTabRef = useRef(activePrimaryTab);
     const [catalogModels, setCatalogModels] = useState<ApiModelInfo[]>([]);
     const [catalogError, setCatalogError] = useState<string | null>(null);
     const { stats } = useModelStats();
@@ -232,17 +343,47 @@ export const Models: FC = () => {
         () => allModels.filter((model) => model.agent),
         [allModels],
     );
-    const communityModels = useMemo(
-        () => allModels.filter((model) => model.community && !model.agent),
-        [allModels],
+    const allFilterTokens = useMemo(
+        () => getModelQueryFilterTokens(search, supportedFilterKeys),
+        [search, supportedFilterKeys],
     );
+    const filterTokens = useMemo(
+        () =>
+            allFilterTokens.filter(({ index }) => index !== draftFilter?.index),
+        [allFilterTokens, draftFilter],
+    );
+    const query =
+        draftFilter === undefined
+            ? search.trim()
+            : editingFilterToken
+              ? replaceModelQueryFilterToken(
+                    search,
+                    draftFilter.index,
+                    editingFilterToken.token,
+                )
+              : removeModelQueryFilterToken(search, draftFilter.index);
+    const parsedQuery = useMemo(
+        () => parseModelQuery(query, supportedFilterKeys),
+        [query, supportedFilterKeys],
+    );
+    const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
+    const visibleSearch = getModelQueryVisibleSearch(
+        search,
+        filterTokens,
+        draftFilter,
+    );
+    const renderedFilterTokens = filterTokens;
+    const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(
         () =>
             allModels.filter(
                 (model) =>
-                    !model.agent && (includeCommunity || !model.community),
+                    !model.agent &&
+                    (explicitModelSource === undefined ||
+                        Boolean(model.community) ===
+                            (explicitModelSource === "community")),
             ),
-        [allModels, includeCommunity],
+        [allModels, explicitModelSource],
     );
     const modelSections = useMemo(
         () => categorizeModels(modelModels),
@@ -253,8 +394,6 @@ export const Models: FC = () => {
         agent: agentModels.length,
         mcp: MCP_SERVERS.length,
     };
-    const query = search.trim();
-    const parsedQuery = useMemo(() => parseModelQuery(query), [query]);
     const activeTabModels = useMemo(() => {
         if (activeTab === "mcp") return [];
         if (activeTab === "agent") return agentModels;
@@ -269,17 +408,37 @@ export const Models: FC = () => {
                 : activeTabModels,
         [activeTabModels, parsedQuery, query],
     );
-    const searchOptions = useMemo(
-        () =>
-            activeTab === "mcp"
-                ? []
-                : getModelQuerySuggestions(search, activeTabModels),
-        [activeTab, activeTabModels, search],
-    );
+    const searchOptions = useMemo(() => {
+        let options = getModelQuerySuggestions(
+            draftFilter ? search : visibleSearch,
+            activeTabModels,
+            supportedFilterKeys,
+        );
+        if (explicitModelSource) {
+            options = options.filter((option) => !isSourceSuggestion(option));
+        }
+        return draftFilter
+            ? options.map(getModelQueryDraftSuggestionValue)
+            : options;
+    }, [
+        activeTabModels,
+        draftFilter,
+        explicitModelSource,
+        search,
+        supportedFilterKeys,
+        visibleSearch,
+    ]);
+    const draftFilterKey = draftFilter?.key;
 
     useEffect(() => {
-        setSearchOpen(searchFocused && searchOptions.length > 0);
-    }, [searchFocused, searchOptions]);
+        if (draftFilterKey) setSearchOpen(true);
+    }, [draftFilterKey]);
+
+    useEffect(() => {
+        if (!draftFilterKey && searchOptions.length === 0) {
+            setSearchOpen(false);
+        }
+    }, [draftFilterKey, searchOptions.length]);
 
     const loadModelCatalog = useCallback(
         () =>
@@ -311,10 +470,12 @@ export const Models: FC = () => {
             : activeTab === "agent"
               ? "agents"
               : activeTab === "all"
-                ? includeCommunity
-                    ? "models"
-                    : "official models"
-                : `${includeCommunity ? "" : "official "}${searchLabel} models`;
+                ? explicitModelSource
+                    ? `${explicitModelSource} models`
+                    : "models"
+                : [explicitModelSource, searchLabel, "models"]
+                      .filter(Boolean)
+                      .join(" ");
 
     const pushSearch = useCallback(
         (nextSearch: string) => {
@@ -325,30 +486,136 @@ export const Models: FC = () => {
             void navigate({
                 search: (previous) => ({
                     ...previous,
-                    q: normalizedSearch || undefined,
+                    [searchParam]: normalizedSearch || undefined,
                 }),
                 replace: true,
             });
         },
-        [navigate],
+        [navigate, searchParam],
     );
 
+    const setVisibleSearch = (nextSearch: string) => {
+        setPendingRemovalIndex(undefined);
+        const preservedFilters = filterTokens.map(({ token }) => token);
+        const editableTokens = nextSearch.trim().split(/\s+/).filter(Boolean);
+        const nextQuery = draftFilter
+            ? [
+                  ...preservedFilters,
+                  ...editableTokens.slice(0, -1),
+                  `${draftFilter.key}:${editableTokens.at(-1) ?? ""}`,
+              ]
+                  .filter(Boolean)
+                  .join(" ")
+            : [...preservedFilters, nextSearch.trim()]
+                  .filter(Boolean)
+                  .join(" ");
+
+        const nextDraftFilter = nextSearch.endsWith(" ")
+            ? undefined
+            : getModelQueryDraftFilter(nextQuery, true, supportedFilterKeys);
+        setDraftFilter(nextDraftFilter);
+        if (!nextDraftFilter) setEditingFilterToken(undefined);
+        setSearch(nextQuery);
+    };
+
+    const removeFilter = (filterToken: ModelQueryFilterToken) => {
+        setPendingRemovalIndex(undefined);
+        setSearchOpen(false);
+        setDraftFilter(undefined);
+        setEditingFilterToken(undefined);
+        setSearch(removeModelQueryFilterToken(search, filterToken.index));
+    };
+
+    const editFilter = (filterToken: ModelQueryFilterToken) => {
+        setPendingRemovalIndex(undefined);
+        setEditingFilterToken(filterToken);
+        const tokens = search.split(/\s+/).filter(Boolean);
+        tokens[filterToken.index] = `${filterToken.filter.key}:`;
+        setSearch(tokens.join(" "));
+        setDraftFilter({
+            index: filterToken.index,
+            key: filterToken.filter.key,
+            value: "",
+        });
+        setSearchOpen(true);
+    };
+
+    const getCancelledDraftSearch = () => {
+        if (!draftFilter) return search.trim();
+        return editingFilterToken
+            ? replaceModelQueryFilterToken(
+                  search,
+                  draftFilter.index,
+                  editingFilterToken.token,
+              )
+            : removeModelQueryFilterToken(search, draftFilter.index);
+    };
+
+    const removeDraftFilter = () => {
+        if (!draftFilter) return;
+        setPendingRemovalIndex(undefined);
+        setSearchOpen(false);
+        setSearch(getCancelledDraftSearch());
+        setDraftFilter(undefined);
+        setEditingFilterToken(undefined);
+    };
+
+    const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+        if (event.key !== "Backspace") {
+            setPendingRemovalIndex(undefined);
+            return;
+        }
+        if (visibleSearch !== "") {
+            setPendingRemovalIndex(undefined);
+            return;
+        }
+
+        const lastFilter = renderedFilterTokens.at(-1);
+        if (!draftFilter && !lastFilter) return;
+
+        event.preventDefault();
+        if (draftFilter) {
+            removeDraftFilter();
+        } else if (lastFilter) {
+            setSearchOpen(false);
+            if (pendingRemovalIndex === lastFilter.index) {
+                removeFilter(lastFilter);
+            } else {
+                setPendingRemovalIndex(lastFilter.index);
+            }
+        }
+    };
+
     useEffect(() => {
-        if (urlSearch === lastPushedSearchRef.current) return;
+        const primaryTabChanged =
+            activePrimaryTab !== previousPrimaryTabRef.current;
+        previousPrimaryTabRef.current = activePrimaryTab;
+
+        if (!primaryTabChanged && urlSearch === lastPushedSearchRef.current)
+            return;
 
         lastPushedSearchRef.current = urlSearch;
-        setSearch(urlSearch);
-    }, [urlSearch]);
+        setPendingRemovalIndex(undefined);
+        setEditingFilterToken(undefined);
+        const nextSearch =
+            activePrimaryTab === "models"
+                ? ensureModelQuerySource(urlSearch)
+                : urlSearch;
+        setDraftFilter(
+            getModelQueryDraftFilter(nextSearch, false, supportedFilterKeys),
+        );
+        setSearch(nextSearch);
+    }, [activePrimaryTab, supportedFilterKeys, urlSearch]);
 
     useEffect(() => {
-        if (search === lastPushedSearchRef.current) return;
+        if (query === lastPushedSearchRef.current) return;
 
         const timeout = window.setTimeout(() => {
-            pushSearch(search);
+            pushSearch(query);
         }, 200);
 
         return () => window.clearTimeout(timeout);
-    }, [pushSearch, search]);
+    }, [pushSearch, query]);
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
@@ -368,15 +635,6 @@ export const Models: FC = () => {
         });
     };
 
-    const setIncludeCommunity = (include: boolean) => {
-        void navigate({
-            search: (previous) => ({
-                ...previous,
-                scope: include ? undefined : "pollinations",
-            }),
-        });
-    };
-
     const setActiveSort = (sort: ModelSort) => {
         void navigate({
             search: (previous) => ({
@@ -388,7 +646,7 @@ export const Models: FC = () => {
 
     const activeSortLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)?.label ??
-        "Popular";
+        "Most Popular";
     const activeSortAccessibleLabel =
         SORT_OPTIONS.find(({ value }) => value === activeSort)
             ?.accessibleLabel ?? "Most popular";
@@ -507,62 +765,49 @@ export const Models: FC = () => {
                     </div>
                     <div className="flex w-full flex-wrap items-center justify-between gap-2">
                         <div className="min-w-0 max-w-md flex-1 basis-[240px]">
-                            <div className="relative">
-                                <SearchIcon className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-theme-text-muted" />
+                            <div>
                                 <EditableCombobox
-                                    value={search}
+                                    value={visibleSearch}
                                     options={searchOptions}
-                                    onChange={setSearch}
+                                    onChange={setVisibleSearch}
                                     open={searchOpen}
                                     onOpenChange={setSearchOpen}
-                                    onFocus={() => setSearchFocused(true)}
+                                    onClick={() =>
+                                        setPendingRemovalIndex(undefined)
+                                    }
+                                    onKeyDown={handleSearchKeyDown}
                                     onBlur={() => {
-                                        setSearchFocused(false);
-                                        const normalizedSearch = search.trim();
+                                        const normalizedSearch =
+                                            draftFilter && !draftFilter.value
+                                                ? getCancelledDraftSearch()
+                                                : search.trim();
+                                        setDraftFilter(undefined);
+                                        setEditingFilterToken(undefined);
                                         setSearch(normalizedSearch);
                                         pushSearch(normalizedSearch);
                                     }}
-                                    placeholder={`Search ${searchTarget}…`}
+                                    placeholder={
+                                        renderedDraftFilter
+                                            ? `${MODEL_FILTER_LABELS[renderedDraftFilter.key]} value…`
+                                            : `Search ${searchTarget}…`
+                                    }
                                     aria-label={`Search ${searchTarget}`}
                                     autoComplete="off"
-                                    className="pl-9"
+                                    startContent={
+                                        <ModelFilterTokens
+                                            tokens={renderedFilterTokens}
+                                            draft={renderedDraftFilter}
+                                            pendingRemovalIndex={
+                                                pendingRemovalIndex
+                                            }
+                                            onEdit={editFilter}
+                                        />
+                                    }
                                 />
                             </div>
                         </div>
                         {activeTab !== "mcp" && (
                             <div className="flex flex-wrap items-center gap-2">
-                                <TabButton
-                                    active={
-                                        activePrimaryTab === "agent" ||
-                                        includeCommunity
-                                    }
-                                    onClick={() =>
-                                        setIncludeCommunity(!includeCommunity)
-                                    }
-                                    disabled={activePrimaryTab === "agent"}
-                                    size="md"
-                                    ariaLabel={
-                                        activePrimaryTab === "agent"
-                                            ? `${agentModels.length} community agents; all agents are community models for now`
-                                            : includeCommunity
-                                              ? `Hide ${communityModels.length} community models`
-                                              : `Show ${communityModels.length} community models`
-                                    }
-                                >
-                                    <span className="inline-flex items-center gap-1.5">
-                                        Community
-                                        <TabCount
-                                            value={
-                                                activePrimaryTab === "agent"
-                                                    ? agentModels.length
-                                                    : communityModels.length
-                                            }
-                                        />
-                                        <Chip intent="alpha" size="sm">
-                                            Alpha
-                                        </Chip>
-                                    </span>
-                                </TabButton>
                                 <Dropdown
                                     align="end"
                                     className="w-max p-2"
@@ -623,7 +868,9 @@ export const Models: FC = () => {
                         )}
                     </div>
                 </div>
-                {(activePrimaryTab === "agent" || includeCommunity) && (
+                {(activePrimaryTab === "agent" ||
+                    (activePrimaryTab === "models" &&
+                        explicitModelSource !== "official")) && (
                     <aside
                         aria-label="Community privacy notice"
                         className="mb-4 flex items-start gap-2 rounded-lg border border-divider bg-intent-warning-bg-light/45 px-3 py-2 text-[13px] leading-snug text-theme-text-muted"
@@ -665,12 +912,16 @@ export const Models: FC = () => {
                     <McpServerList query={query} />
                 ) : query && sectionModels[activeTab].length === 0 ? (
                     <p className="py-8 text-center text-sm text-theme-text-muted">
-                        No {searchTarget.toLowerCase()} match “{search.trim()}”.
+                        No {searchTarget.toLowerCase()} match{" "}
+                        {visibleSearch.trim()
+                            ? `“${visibleSearch.trim()}”`
+                            : "the selected filters"}
+                        .
                     </p>
                 ) : (
                     <div className="overflow-x-auto md:overflow-visible [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                         <UnifiedModelTable
-                            listKey={`${activeScope}:${activeTab}:${query}:${activeSort}`}
+                            listKey={`${explicitModelSource ?? "all-sources"}:${activeTab}:${query}:${activeSort}`}
                             allModels={sectionModels.all}
                             imageModels={sectionModels.image}
                             videoModels={sectionModels.video}

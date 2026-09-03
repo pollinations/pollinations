@@ -12,6 +12,8 @@ export {
 export {
     EditableCombobox,
     type EditableComboboxProps,
+    EditableComboboxToken,
+    type EditableComboboxTokenProps,
 } from "./compositions/EditableCombobox.tsx";
 export {
     ExternalLinkButton,

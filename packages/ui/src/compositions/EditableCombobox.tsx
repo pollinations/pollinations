@@ -1,7 +1,7 @@
 import { createListCollection } from "@ark-ui/react/collection";
 import { Combobox } from "@ark-ui/react/combobox";
 import { Portal } from "@ark-ui/react/portal";
-import { type ReactNode, useMemo } from "react";
+import { type ComponentPropsWithoutRef, type ReactNode, useMemo } from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Input, type InputProps } from "../primitives/Input.tsx";
@@ -15,8 +15,48 @@ export type EditableComboboxProps = Omit<InputProps, "onChange" | "value"> & {
     align?: "start" | "end";
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
+    /**
+     * Content rendered inside the input shell before the text field. Enables
+     * the wrapped shell layout and replaces the standalone chevron trigger.
+     */
     startContent?: ReactNode;
 };
+
+export type EditableComboboxTokenProps = Omit<
+    ComponentPropsWithoutRef<"button">,
+    "children" | "type"
+> & {
+    label: string;
+    value: string;
+    highlighted?: boolean;
+};
+
+/** Interactive filter token intended for an EditableCombobox startContent slot. */
+export function EditableComboboxToken({
+    label,
+    value,
+    highlighted = false,
+    className,
+    ...buttonProps
+}: EditableComboboxTokenProps) {
+    return (
+        <button
+            type="button"
+            data-highlighted={highlighted ? "" : undefined}
+            className={cn(
+                "polli-control polli:flex polli:h-7 polli:max-w-full polli:shrink-0 polli:items-center polli:gap-1 polli:rounded polli:px-1.5 polli:text-xs polli:transition-colors polli:hover:bg-theme-bg-hover polli:data-[highlighted]:bg-theme-bg-active",
+                className,
+            )}
+            {...buttonProps}
+        >
+            <span className="polli:text-theme-text-muted">{label}:</span>
+            <span className="polli:truncate polli:text-theme-text-base">
+                {value}
+            </span>
+            <ChevronIcon className="polli:h-3 polli:w-3 polli:text-theme-text-muted" />
+        </button>
+    );
+}
 
 export function EditableCombobox({
     value,
@@ -86,7 +126,7 @@ export function EditableCombobox({
                         placeholder={placeholder}
                         className={cn(
                             hasStartContent
-                                ? "polli:min-w-28 polli:flex-1 polli:border-0 polli:bg-transparent polli:px-1 polli:py-1 polli:shadow-none polli:focus:shadow-none polli:focus-visible:shadow-none"
+                                ? "polli:min-w-28 polli:flex-1 polli:px-1 polli:py-1"
                                 : "polli:w-full polli:pr-10",
                             className,
                         )}

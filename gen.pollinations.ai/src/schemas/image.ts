@@ -84,7 +84,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         )
         .meta({
             description:
-                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing/style reference (kontext, flux-2-pro, flux-2-flex, gptimage, seedream, klein, nanobanana). **Video models:** `image[0]` = starting frame (I2V); `image[1]` = ending frame for first+last-frame interpolation. End-frame supported by `veo`, the `seedance-2.0` family, `seedance-2.5`, `wan-fast`, and `wan-pro`. Requests exceeding the selected model's `max_reference_images` return 400. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
+                "Reference image URL(s) for image editing or video generation. Separate multiple URLs with `|` or `,`. **Image models:** Used for editing or style reference. **Video models:** `image[0]` is the starting frame; `image[1]` is the optional ending frame. See `video_capabilities` and `max_reference_images` on `/image/models` or `/models` for per-model support.",
         }),
     reference_images: z
         .string()
@@ -97,7 +97,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .optional()
         .meta({
             description:
-                "Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
+                "Video models only: public HTTP(S) image URLs for visual guidance, separate from first/last-frame controls. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
     reference_videos: z
         .string()
@@ -110,7 +110,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .optional()
         .meta({
             description:
-                "Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
+                "Video models only: public HTTP(S) video URLs for motion or style guidance. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
     reference_audios: z
         .string()
@@ -123,7 +123,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         .optional()
         .meta({
             description:
-                "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. Supported only by Seedance 2.0 and 2.5.",
+                "Video models only: public HTTP(S) audio URLs for audio-driven generation. Separate multiple URLs with `|`; commas inside URLs are preserved. See `video_capabilities` on `/image/models` or `/models` for per-model support.",
         }),
     transparent: z.coerce.boolean().optional().default(false).meta({
         description:

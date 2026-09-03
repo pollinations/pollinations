@@ -303,7 +303,6 @@ function mediaResultContent(
     toolName: string,
     output: unknown,
     seenUrls: Set<string>,
-    hasContent: boolean,
 ): string {
     const result = output as CallToolResult;
     if (
@@ -356,7 +355,7 @@ function mediaResultContent(
         }
     }
     if (links.length === 0) return "";
-    return `${hasContent ? "\n\n" : ""}${links.join("\n\n")}\n\n`;
+    return `\n\n${links.join("\n\n")}\n\n`;
 }
 
 function toolResultContent(
@@ -367,20 +366,13 @@ function toolResultContent(
         output: unknown;
     },
     seenUrls: Set<string>,
-    hasContent: boolean,
 ): string {
     const details = toolDetailsContent(
         part,
         "Tool Executed",
         toolOutputText(part.output),
-        hasContent,
     );
-    const media = mediaResultContent(
-        part.toolName,
-        part.output,
-        seenUrls,
-        true,
-    );
+    const media = mediaResultContent(part.toolName, part.output, seenUrls);
     return `${details}${media || "\n\n"}`;
 }
 
@@ -388,13 +380,11 @@ function toolDetailsContent(
     part: { toolCallId: string; toolName: string; input: unknown },
     summary: string,
     output: string,
-    hasContent: boolean,
 ): string {
     const name = part.toolName.replace(/^mcp__[^_]+__/, "");
     const argumentsJson = JSON.stringify(part.input ?? {});
     return (
-        (hasContent ? "\n\n" : "") +
-        `<details type="tool_calls" done="true" ` +
+        `\n\n<details type="tool_calls" done="true" ` +
         `id="${escapeHtml(part.toolCallId)}" ` +
         `name="${escapeHtml(name)}" ` +
         `arguments="${escapeHtml(argumentsJson)}">\n` +
@@ -422,24 +412,23 @@ async function runAgent(
             for (const part of step.content) {
                 if (part.type === "text") content += part.text;
                 if (part.type === "tool-result") {
-                    content += toolResultContent(
-                        part,
-                        seenUrls,
-                        content.length > 0,
-                    );
+                    content += toolResultContent(part, seenUrls);
                 }
                 if (part.type === "tool-error") {
                     content += `${toolDetailsContent(
                         part,
                         "Tool Failed",
                         agentErrorMessage(part.error),
-                        content.length > 0,
                     )}\n\n`;
                 }
             }
         }
+        const finalContent = limited
+            ? `${content}\n\n${STEP_LIMIT_MESSAGE}`
+            : content;
+        if (!finalContent.trim()) throw new Error("Agent produced no response");
         return {
-            content: limited ? `${content}\n\n${STEP_LIMIT_MESSAGE}` : content,
+            content: finalContent,
             finishReason: limited
                 ? "length"
                 : openAIFinishReason(result.finishReason),
@@ -480,7 +469,7 @@ async function streamAgent(
                 for await (const part of result.fullStream) {
                     if (part.type === "error") throw part.error;
                     if (part.type === "text-delta") {
-                        hasContent ||= part.text.length > 0;
+                        hasContent ||= part.text.trim().length > 0;
                         send(
                             contentChunk(
                                 id,
@@ -491,11 +480,7 @@ async function streamAgent(
                         );
                     }
                     if (part.type === "tool-result") {
-                        const content = toolResultContent(
-                            part,
-                            seenUrls,
-                            hasContent,
-                        );
+                        const content = toolResultContent(part, seenUrls);
                         if (content) {
                             hasContent = true;
                             send(
@@ -513,7 +498,6 @@ async function streamAgent(
                             part,
                             "Tool Failed",
                             agentErrorMessage(part.error),
-                            hasContent,
                         );
                         hasContent = true;
                         send(
@@ -542,6 +526,9 @@ async function streamAgent(
                         ),
                     );
                 }
+                if (!hasContent && !limited) {
+                    throw new Error("Agent produced no response");
+                }
                 send({
                     id,
                     object: "chat.completion.chunk",
@@ -560,7 +547,33 @@ async function streamAgent(
                 });
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } catch (error) {
-                send({ error: { message: agentErrorMessage(error) } });
+                const content =
+                    (hasContent ? "\n\n" : "") +
+                    '<details type="error" done="true">\n' +
+                    "<summary>Agent Failed</summary>\n" +
+                    `${escapeHtml(agentErrorMessage(error))}\n` +
+                    "</details>";
+                send(
+                    contentChunk(
+                        id,
+                        created,
+                        runtime.config.baseModel,
+                        content,
+                    ),
+                );
+                send({
+                    id,
+                    object: "chat.completion.chunk",
+                    created,
+                    model: runtime.config.baseModel,
+                    choices: [
+                        {
+                            index: 0,
+                            delta: {},
+                            finish_reason: "stop",
+                        },
+                    ],
+                });
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
             } finally {
                 await close().catch((error) => console.error(error));

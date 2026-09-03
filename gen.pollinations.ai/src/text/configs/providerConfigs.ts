@@ -66,6 +66,22 @@ export function createAzureModelConfig(
     };
 }
 
+/** Azure OpenAI v1 transport for deployments proven on the Responses API. */
+export function createAzureResponsesModelConfig(
+    apiKey: string | undefined,
+    endpoint: string,
+    responsesApiKeyBinding: string,
+    overrides: ModelOverride = {},
+): ProviderConfig {
+    const { resourceName } = parseAzureEndpoint(endpoint);
+    return createAzureModelConfig(apiKey, endpoint, {
+        responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
+        responsesAuthHeader: "api-key",
+        responsesApiKeyBinding,
+        ...overrides,
+    });
+}
+
 export function createBedrockNativeConfig(
     overrides: ModelOverride = {},
 ): ProviderConfig {
@@ -84,7 +100,12 @@ export function createFireworksModelConfig(
     return createOpenAICompatibleConfig(
         "https://api.fireworks.ai/inference/v1",
         process.env.FIREWORKS_NEO_API_KEY,
-        overrides,
+        {
+            responsesEndpoint:
+                "https://api.fireworks.ai/inference/v1/responses",
+            responsesApiKeyBinding: "FIREWORKS_NEO_API_KEY",
+            ...overrides,
+        },
     );
 }
 
@@ -104,6 +125,8 @@ export function createOpenRouterModelConfig(
     return {
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        responsesEndpoint: "https://openrouter.ai/api/v1/responses",
+        responsesApiKeyBinding: "OPENROUTER_API_KEY",
         authKey: process.env.OPENROUTER_API_KEY,
         ...overrides,
     };
@@ -127,7 +150,11 @@ export function createVercelAIGatewayModelConfig(
     return createOpenAICompatibleConfig(
         "https://ai-gateway.vercel.sh/v1",
         process.env.AI_GATEWAY_API_KEY,
-        overrides,
+        {
+            responsesEndpoint: "https://ai-gateway.vercel.sh/v1/responses",
+            responsesApiKeyBinding: "AI_GATEWAY_API_KEY",
+            ...overrides,
+        },
     );
 }
 

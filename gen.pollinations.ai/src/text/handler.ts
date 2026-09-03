@@ -4,12 +4,13 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
     attachFallbackTarget,
@@ -20,7 +21,14 @@ import {
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import {
+    requireChatCompletionUsage,
+    requireChatStreamUsage,
+} from "./chat/usage.js";
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
+import { syncTextEnvironment } from "./environment.js";
+import { throwTextError } from "./errors.js";
+import { supportsTextFallbackRequest } from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -34,38 +42,6 @@ import type {
 } from "./types.js";
 
 type TextContext = Context<Env>;
-
-const TEXT_ENV_KEYS = [
-    "AI_GATEWAY_API_KEY",
-    "AWS_ACCESS_KEY_ID",
-    "AWS_REGION",
-    "AWS_SECRET_ACCESS_KEY",
-    "AZURE_MYCELI_PROD_API_KEY",
-    "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-    "DASHSCOPE_API_KEY",
-    "DEEPINFRA_API_KEY",
-    "FIREWORKS_NEO_API_KEY",
-    "GOOGLE_CLIENT_EMAIL",
-    "GOOGLE_PRIVATE_KEY",
-    "GOOGLE_PRIVATE_KEY_ID",
-    "GOOGLE_PROJECT_ID",
-    "OPENROUTER_API_KEY",
-    "OVHCLOUD_API_KEY",
-    "PERPLEXITY_API_KEY",
-    "PORTKEY_GATEWAY_URL",
-] as const satisfies readonly (keyof CloudflareBindings)[];
-
-function syncTextEnvironment(env: CloudflareBindings): void {
-    // Text provider config still reads process.env. In Workers all bindings are
-    // stable per deployment, so copying known string bindings before generation
-    // is deterministic across concurrent requests in the same isolate.
-    for (const key of TEXT_ENV_KEYS) {
-        const value = env[key];
-        if (typeof value === "string") {
-            process.env[key] = value;
-        }
-    }
-}
 
 function generatePollinationsId(): string {
     return `pllns_${crypto.randomUUID().replaceAll("-", "")}`;
@@ -162,6 +138,9 @@ function usageHeaders(
             buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
+        }
+        if (hasExplicitPromptCacheHit(usage)) {
+            headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
         }
     }
     if (completion?.fallbackTarget) {
@@ -323,31 +302,6 @@ function base64ToArrayBuffer(value: string): ArrayBuffer {
     return bytes.buffer;
 }
 
-function serializeDetails(details: unknown): string | undefined {
-    if (details === undefined || details === null) return undefined;
-    return typeof details === "string" ? details : JSON.stringify(details);
-}
-
-function throwTextError(error: ServiceError): never {
-    const status =
-        typeof error.status === "number"
-            ? error.status
-            : typeof error.code === "number"
-              ? error.code
-              : 500;
-
-    throw new UpstreamError(status as ContentfulStatusCode, {
-        message: error.message || "Text generation failed",
-        // Propagate only — the code is decided at the throw site.
-        errorCode: error.errorCode,
-        requestUrl: error.requestUrl,
-        upstreamStatus: error.upstreamStatus,
-        responseBody: serializeDetails(error.details || error.response?.data),
-        upstreamHeaders: error.upstreamHeaders,
-        cause: error,
-    });
-}
-
 async function generateTextResponse(
     c: TextContext,
     requestData: RequestData,
@@ -362,20 +316,34 @@ async function generateTextResponse(
         }
         const normalizedRequestData = normalization.requestData;
         const portkey = c.env.PORTKEY;
-        const {
-            result: completion,
-            candidate,
-            index,
-        } = await withModelFallback(
-            fallbackCandidates(c.var.model),
-            async (attempt) =>
-                generateTextPortkey(
+        const candidates = fallbackCandidates(c.var.model)
+            .map((candidate, originalIndex) => ({
+                ...candidate,
+                originalIndex,
+            }))
+            .filter(
+                (candidate) =>
+                    candidate.originalIndex === 0 ||
+                    supportsTextFallbackRequest(
+                        candidate.definition,
+                        normalizedRequestData,
+                    ),
+            );
+        const { result: completion, candidate } = await withModelFallback(
+            candidates,
+            async (attempt) => {
+                const result = await generateTextPortkey(
                     normalizedRequestData.messages,
                     await gatewayContext(c, normalizedRequestData, attempt),
                     portkey
                         ? (input, init) => portkey.fetch(input, init)
                         : undefined,
-                ),
+                );
+                if (!normalizedRequestData.stream) {
+                    requireChatCompletionUsage(result);
+                }
+                return result;
+            },
             c.var.track?.attempts,
             (attempt) => enforceModelRateLimit(c, attempt),
         );
@@ -384,13 +352,23 @@ async function generateTextResponse(
         // Keep the internal "config.targets[N]" marker stable for response
         // headers and cached tracking data. Non-enumerable so JSON.stringify /
         // R2 cache snapshots never leak the field.
-        attachFallbackTarget(completion, index);
+        attachFallbackTarget(completion, candidate.originalIndex);
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
-        if (normalizedRequestData.stream)
-            return sendTextStreamResponse(completion, servedModelId);
+        if (normalizedRequestData.stream) {
+            if (!completion.responseStream) {
+                return sendTextStreamResponse(completion, servedModelId);
+            }
+            const [clientBody, trackingBody] = completion.responseStream.tee();
+            completion.responseStream = requireChatStreamUsage(clientBody);
+            const response = sendTextStreamResponse(completion, servedModelId);
+            c.var.track?.overrideResponseTracking(
+                new Response(trackingBody, { headers: response.headers }),
+            );
+            return response;
+        }
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
         const trackingResponse = sendOpenAIResponse(completion, servedModelId);

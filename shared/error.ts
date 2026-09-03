@@ -369,12 +369,13 @@ function createUpstreamErrorResponse(
 }
 
 /**
- * Remap upstream 4xx statuses that are our operational concern (auth, routing,
- * quota, conflicts) to 502 Bad Gateway. Leaves input-content errors
- * (400/413/422) as-is since those can reflect user input we failed to validate.
+ * Remap upstream statuses that are our operational concern (auth, routing,
+ * quota, conflicts, proxy timeouts) to 502 Bad Gateway. Leaves input-content
+ * errors (400/413/422) as-is since those can reflect user input we failed to
+ * validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
-    const remapTo502 = new Set([401, 402, 403, 404, 409, 415, 429]);
+    const remapTo502 = new Set([401, 402, 403, 404, 409, 415, 429, 524]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }

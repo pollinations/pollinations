@@ -552,12 +552,22 @@ account before assuming there is no remaining Lambda charge.
 
 ## Provider: EC2 (AWS)
 
-The legacy `image-pollinations.service` (port 16384) and `text-pollinations.service` (port 16385) on the `enter-services` EC2 box are decommissioned — image and text generation now run inside the `gen.pollinations.ai` Cloudflare Worker. The host still runs Discord bots; SSH config alias is `enter-services`.
+The legacy `enter-services` box (`image-pollinations.service` port 16384 /
+`text-pollinations.service` port 16385) and its staging twin are
+decommissioned — image and text generation run inside the `gen.pollinations.ai`
+Cloudflare Worker. The only Pollinations EC2 host is now:
 
-### Staging
+### monitoring-agents (community monitor + Discord bots)
 
-- **Host**: `44.222.254.250`
-- **SSH**: `ssh -i ~/.ssh/enter-services-staging ubuntu@44.222.254.250`
+- **AWS account**: `myceli-prod` (514585225061), `us-east-1`
+- **Instance**: `i-083d9a4f2a60247ac`, `t4g.medium` (arm64, 4 GB RAM, 4 GB swap), 40 GB gp3
+- **Elastic IP**: `3.221.108.127`; security group `monitoring-agents` (SSH only)
+- **SSH**: `ssh -i ~/.ssh/thomashkey ubuntu@3.221.108.127` (alias `community-monitor`)
+- **Runs**: `community-monitor.service` + `rc-console` screen session
+  (`operations/community-monitor/README.md`) and the Discord bot units
+  (`apps/discord-bot-family/README.md`)
+- Sized to host additional monitoring agents; resize in place before adding
+  more than ~3 further Claude agents.
 
 ## Heartbeat Registration
 
@@ -586,5 +596,4 @@ Non-SOPS keys:
 | Key | Provider | Location |
 |-----|----------|----------|
 | `~/.ssh/id_ed25519` | Vast.ai | All six active Vast workers; query the current proxy host/port with `vastai show instance` |
-| `~/.ssh/enter-services-shared` | EC2 prod | enter services |
-| `~/.ssh/enter-services-staging` | EC2 staging | enter services |
+| `~/.ssh/thomashkey` | EC2 (myceli-prod) | `monitoring-agents` |

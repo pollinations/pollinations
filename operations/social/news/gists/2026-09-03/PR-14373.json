@@ -1,0 +1,34 @@
+{
+  "pr_number": 14373,
+  "title": "chore: add encrypted secrets for apps/openwebui",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14373",
+  "merged_at": "2026-09-03T02:16:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds sops-encrypted `apps/openwebui/secrets/secrets.vars.json` (`WEBUI_SECRET_KEY`, `DATABASE_URL` for production and staging)\n- Consumed by `push-secrets` in #14372; secrets-only PR per the secret mutation policy\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_015mNrP6DkRQmm3YStNjfFv3",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Secrets in the seed vault",
+    "blurb": "OpenWebUI's production and staging keys now live in an encrypted little vault, ready for the deployment bees to fetch when needed.",
+    "summary": "Added an SOPS-encrypted apps/openwebui secrets file containing WEBUI_SECRET_KEY and DATABASE_URL values for production and staging, for use by the push-secrets workflow from #14372.",
+    "impact": "OpenWebUI deployments can now receive their production and staging secret configuration through the managed encrypted-secret path.",
+    "keywords": [
+      "openwebui",
+      "sops",
+      "secrets",
+      "deployment",
+      "staging",
+      "production"
+    ],
+    "visual_concept": "Depict encrypted secret seeds stored safely in a cozy garden vault beside an OpenWebUI terminal. Polli, wearing a tiny locksmith apron, carefully carries a glowing key toward labeled production and staging planters; code-vines and small flowers show that the configuration is protected but ready to grow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny locksmith apron, placing a glowing encrypted key into a small garden seed vault beside a retro OpenWebUI terminal; two little planters are labeled \"PROD\" and \"STAGE\" in simple pixel text, with code-plants and flowers growing around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14373.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny locksmith apron, placing a glowing encrypted key into a small garden seed vault beside a retro OpenWebUI terminal; two little planters are labeled \"PROD\" and \"STAGE\" in simple pixel text, with code-plants and flowers growing around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T02:17:13.671670+00:00"
+}

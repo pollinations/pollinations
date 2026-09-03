@@ -145,7 +145,7 @@ test("connect -> ask -> disconnect keeps credentials private and per-user", asyn
     assert.equal(await store.get("user-a"), null);
 });
 
-test("least-privilege consent URL pins agent/base model and zero budget", async () => {
+test("consent URL pins the agent, base model, and bounded budget", async () => {
     const {
         AGENT_BASE_MODEL,
         AGENT_MODEL,
@@ -169,5 +169,5 @@ test("least-privilege consent URL pins agent/base model and zero budget", async 
     );
     assert.equal(url.searchParams.get("budget"), String(CONSENT_BUDGET));
     assert.equal(url.searchParams.get("expiry"), String(CONSENT_EXPIRY_DAYS));
-    assert.equal(CONSENT_BUDGET, 0);
+    assert.equal(CONSENT_BUDGET, 5);
 });

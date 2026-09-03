@@ -1,4 +1,4 @@
-# Pollinations OSAII Swarm for Discord
+# Discord Agent: OSAII Swarm
 
 A focused Discord adapter for the existing public Pollinations Community Agent `morriszdweck/osaii-swarm`.
 
@@ -6,9 +6,7 @@ The Community Agent remains the source of behavior. This app adds only Discord i
 
 ## Why this agent
 
-`morriszdweck/osaii-swarm` is a public text Community Agent backed by `morriszdweck/osaii-api-smart`. During the quest demo it was verified with both an owner key and a BYOP-issued user key to answer successfully with no Pollen budget decrease.
-
-The consent defaults to a **0-Pollen budget**. If the agent's pricing changes later, the request fails instead of spending the user's Pollen.
+`morriszdweck/osaii-swarm` is a public text Community Agent backed by `morriszdweck/osaii-api-smart`. During the quest demo it was verified with both an owner key and a BYOP-issued user key.
 
 ## Commands
 
@@ -22,8 +20,8 @@ The consent defaults to a **0-Pollen budget**. If the agent's pricing changes la
 Pollinations' SDK device helper currently transports `client_id` and OAuth account `scope`, while model permissions are selected on the consent page. This adapter keeps the SDK's device-code issuance and polling, but sends the user directly to the same Pollinations `/authorize` page with safe defaults:
 
 - allowed models: `morriszdweck/osaii-swarm` and its base model `morriszdweck/osaii-api-smart`;
-- Pollen budget: `0`;
-- expiry: `1` day;
+- Pollen budget: `5`;
+- expiry: `7` days;
 - no `profile`, `usage`, or `keys` account permission requested.
 
 The user still sees Pollinations' consent UI and can review, change, or deny the grant.
@@ -33,7 +31,7 @@ The user still sees Pollinations' consent UI and can review, change, or deny the
 Requires Node.js 18+ and a Discord application/bot.
 
 ```bash
-cd apps/discord-osaii-swarm
+cd apps/discord-agent-osaii-swarm
 npm ci
 cp .env.example .env
 ```
@@ -69,7 +67,7 @@ If Pollinations reports an expired or revoked authorization, the local token is 
 ## Reproducible connect → use → disconnect
 
 1. Start the bot and run `/connect`.
-2. Review the Pollinations consent page: OSAII Swarm + its base model, 0-Pollen budget, one-day expiry.
+2. Review the Pollinations consent page: OSAII Swarm + its base model, 5-Pollen budget, seven-day expiry.
 3. Approve; the Discord response confirms connection without exposing the token.
 4. Run `/status`.
 5. Run `/ask prompt:"Give me one practical idea for this Discord discussion"`.

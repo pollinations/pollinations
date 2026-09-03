@@ -229,7 +229,7 @@ export function createInteractionHandler({
             const connected = await connectedRecord(store, userId, userInfo);
             await interaction.reply({
                 content: connected
-                    ? `Connected as **@${displayName(connected.user)}** to **${AGENT_MODEL}** (0-Pollen consent budget).`
+                    ? `Connected as **@${displayName(connected.user)}** to **${AGENT_MODEL}**.`
                     : "Not connected. Run `/connect` first.",
                 ephemeral: true,
             });
@@ -273,7 +273,7 @@ export function createInteractionHandler({
                 }
                 if (isBudgetError(error)) {
                     await interaction.editReply(
-                        "This demo authorization has a 0-Pollen budget. The selected Community Agent is no longer free under the current pricing, so nothing was charged.",
+                        "Not enough Pollen for this request. Add Pollen at https://enter.pollinations.ai/quests or https://enter.pollinations.ai/account",
                     );
                     return;
                 }

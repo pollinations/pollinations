@@ -2,8 +2,8 @@ import { Pollinations } from "@pollinations/sdk";
 
 export const AGENT_MODEL = "morriszdweck/osaii-swarm";
 export const AGENT_BASE_MODEL = "morriszdweck/osaii-api-smart";
-export const CONSENT_BUDGET = 0;
-export const CONSENT_EXPIRY_DAYS = 1;
+export const CONSENT_BUDGET = 5;
+export const CONSENT_EXPIRY_DAYS = 7;
 
 export function buildConsentUrl(verificationUri, appKey, userCode) {
     const url = new URL("/authorize", verificationUri);
@@ -18,10 +18,6 @@ export function buildConsentUrl(verificationUri, appKey, userCode) {
 export async function startDeviceAuthorization(appKey, signal) {
     const auth = await Pollinations.authorizeDevice({
         clientId: appKey,
-        // Model permissions are independent from OAuth account scopes.
-        // `generate` is intentionally not an account scope, so the consent
-        // screen grants no profile/usage/keys permission by default.
-        scope: "generate",
         signal,
     });
     return {

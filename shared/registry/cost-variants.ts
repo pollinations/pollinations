@@ -25,6 +25,8 @@ export type PricingInput = {
     searchContextSize?: "low" | "high";
     hasDiarization?: boolean;
     hasPrompt?: boolean;
+    /** Request explicitly marks prompt content for provider-side caching. */
+    hasExplicitCache?: boolean;
 };
 
 export type CostVariantContext = {

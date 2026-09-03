@@ -336,9 +336,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
-    "llama-scout-openrouter-novita": createPinnedOpenRouterConfig(
+    "llama-scout-openrouter-vertex": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
-        "novita/bf16",
+        "google-vertex/us-east5",
     ),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",

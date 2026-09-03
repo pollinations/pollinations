@@ -140,6 +140,23 @@ describe("openaiUsageToUsage", () => {
         expect(usage.completionTextTokens).toBe(8);
     });
 
+    it("should handle Alibaba nested cache creation tokens", () => {
+        const usage = openaiUsageToUsage({
+            prompt_tokens: 2719,
+            completion_tokens: 5,
+            total_tokens: 2724,
+            prompt_tokens_details: {
+                cached_tokens: 0,
+                cache_creation_input_tokens: 2704,
+            },
+        });
+
+        expect(usage.promptTextTokens).toBe(15);
+        expect(usage.promptCacheWriteTokens).toBe(2704);
+        expect(usage.promptCachedTokens).toBe(0);
+        expect(usage.completionTextTokens).toBe(5);
+    });
+
     it("should handle reasoning tokens in completion_tokens_details", () => {
         const openaiUsage = {
             prompt_tokens: 100,

@@ -26,6 +26,7 @@ import {
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
+import { supportsTextFallbackRequest } from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -304,18 +305,41 @@ async function generateTextResponse(
     syncTextEnvironment(c.env);
 
     try {
+        c.var.track?.setPricingInput({
+            hasExplicitCache: requestData.messages.some((message) => {
+                if (message.cache_control !== undefined) return true;
+                return (
+                    Array.isArray(message.content) &&
+                    message.content.some(
+                        (part) =>
+                            part !== null &&
+                            typeof part === "object" &&
+                            "cache_control" in part,
+                    )
+                );
+            }),
+        });
         const normalization = normalizeSearchContext(c, requestData);
         if ("errorResponse" in normalization) {
             return normalization.errorResponse;
         }
         const normalizedRequestData = normalization.requestData;
         const portkey = c.env.PORTKEY;
-        const {
-            result: completion,
-            candidate,
-            index,
-        } = await withModelFallback(
-            fallbackCandidates(c.var.model),
+        const candidates = fallbackCandidates(c.var.model)
+            .map((candidate, originalIndex) => ({
+                ...candidate,
+                originalIndex,
+            }))
+            .filter(
+                (candidate) =>
+                    candidate.originalIndex === 0 ||
+                    supportsTextFallbackRequest(
+                        candidate.definition,
+                        normalizedRequestData,
+                    ),
+            );
+        const { result: completion, candidate } = await withModelFallback(
+            candidates,
             async (attempt) => {
                 const result = await generateTextPortkey(
                     normalizedRequestData.messages,
@@ -337,7 +361,7 @@ async function generateTextResponse(
         // Keep the internal "config.targets[N]" marker stable for response
         // headers and cached tracking data. Non-enumerable so JSON.stringify /
         // R2 cache snapshots never leak the field.
-        attachFallbackTarget(completion, index);
+        attachFallbackTarget(completion, candidate.originalIndex);
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.

@@ -1349,16 +1349,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
-  "llama-scout-openrouter-novita": {
+  "llama-scout-openrouter-vertex": {
     "cost": {
-      "completionTextTokens": 0.00000059,
-      "promptImageTokens": 0.00000018,
-      "promptTextTokens": 0.00000018,
+      "completionTextTokens": 0.0000007,
+      "promptImageTokens": 0.00000025,
+      "promptTextTokens": 0.00000025,
     },
     "price": {
-      "completionTextTokens": 0.00000059,
-      "promptImageTokens": 0.00000018,
-      "promptTextTokens": 0.00000018,
+      "completionTextTokens": 0.0000007,
+      "promptImageTokens": 0.00000025,
+      "promptTextTokens": 0.00000025,
     },
   },
   "longcat": {
@@ -2162,6 +2162,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "promptTextTokens": 0.0000002,
         "promptVideoTokens": 0.0000002,
       },
+      "context_256k_explicit_cache": {
+        "completionTextTokens": 0.0000008,
+        "promptCacheWriteTokens": 0.00000025,
+        "promptCachedTokens": 0.00000002,
+        "promptImageTokens": 0.0000002,
+        "promptTextTokens": 0.0000002,
+        "promptVideoTokens": 0.0000002,
+      },
       "context_32k": {
         "completionTextTokens": 0.0000004,
         "promptCacheWriteTokens": 0.000000125,
@@ -2169,6 +2177,17 @@ exports[`effective cost and price per model — snapshot 1`] = `
         "promptImageTokens": 0.0000001,
         "promptTextTokens": 0.0000001,
         "promptVideoTokens": 0.0000001,
+      },
+      "context_32k_explicit_cache": {
+        "completionTextTokens": 0.0000004,
+        "promptCacheWriteTokens": 0.000000125,
+        "promptCachedTokens": 0.00000001,
+        "promptImageTokens": 0.0000001,
+        "promptTextTokens": 0.0000001,
+        "promptVideoTokens": 0.0000001,
+      },
+      "explicit_cache": {
+        "promptCachedTokens": 0.000000003,
       },
     },
     "price": {

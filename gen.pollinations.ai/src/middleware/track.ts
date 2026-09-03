@@ -272,7 +272,7 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
             setPricingInput: (input: PricingInput) => {
-                pricingInput = input;
+                pricingInput = { ...pricingInput, ...input };
             },
             attempts,
         });

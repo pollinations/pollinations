@@ -46,6 +46,7 @@ export const OPENAI_CHAT_USAGE_PATHS: Record<
     ],
     promptCacheWriteTokens: [
         "prompt_tokens_details.cache_write_tokens",
+        "prompt_tokens_details.cache_creation_input_tokens",
         "cache_creation_input_tokens",
     ],
     promptAudioTokens: ["prompt_tokens_details.audio_tokens"],
@@ -185,6 +186,7 @@ export function openaiUsageToUsage(openaiUsage: {
     prompt_tokens_details?: {
         cached_tokens?: number | null;
         cache_write_tokens?: number | null;
+        cache_creation_input_tokens?: number | null;
         audio_tokens?: number | null;
         image_tokens?: number | null;
         video_tokens?: number | null;
@@ -208,6 +210,7 @@ export function openaiUsageToUsage(openaiUsage: {
         0;
     const promptCacheWriteTokens =
         openaiUsage.prompt_tokens_details?.cache_write_tokens ??
+        openaiUsage.prompt_tokens_details?.cache_creation_input_tokens ??
         openaiUsage.cache_creation_input_tokens ??
         0;
     const promptDetails = [
@@ -292,6 +295,7 @@ export function responsesUsageToUsage(responsesUsage: {
     input_tokens_details?: {
         cached_tokens?: number | null;
         cache_write_tokens?: number | null;
+        cache_creation_input_tokens?: number | null;
         audio_tokens?: number | null;
         image_tokens?: number | null;
         video_tokens?: number | null;

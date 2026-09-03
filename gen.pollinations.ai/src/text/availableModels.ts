@@ -613,8 +613,8 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "llama-scout-openrouter-novita",
-        config: portkeyConfig["llama-scout-openrouter-novita"],
+        name: "llama-scout-openrouter-vertex",
+        config: portkeyConfig["llama-scout-openrouter-vertex"],
         transform: stripReasoning,
     },
     {

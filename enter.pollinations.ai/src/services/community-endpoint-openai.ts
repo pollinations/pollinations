@@ -1,4 +1,5 @@
 import {
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
@@ -18,6 +19,7 @@ import {
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+    readCommunityAudioBytes,
 } from "@shared/community-media.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -336,6 +338,66 @@ export async function testCommunityTranscriptionEndpoint({
         // usage object that may not carry it.
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
+    };
+}
+
+// Speech (TTS) endpoints are billed on the characters Pollinations sends
+// (completionAudioTokens), mirroring first-party TTS. The probe submits a
+// short OpenAI speech request and validates the raw audio bytes it gets back;
+// it does not trust the upstream's reported usage because speech billing is on
+// the input we send, not what the endpoint reports.
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const input = "The quick brown fox jumps over the lazy dog.";
+    let response: Response;
+    try {
+        // Unlike the JSON probes above, /v1/audio/speech returns raw audio
+        // bytes, so we fetch directly rather than through fetchJson.
+        response = await fetch(communityAudioSpeechUrl(baseUrl), {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+                Accept: "audio/*",
+            },
+            body: JSON.stringify({ model, input, voice: "alloy" }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
+    if (!response.ok) {
+        const detail = communityEndpointErrorDetail(
+            parseJson(
+                await readResponseText(
+                    response,
+                    MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+                    () => new Error("Endpoint response is too large"),
+                ),
+            ),
+        );
+        const prefix =
+            response.status === 401
+                ? "Endpoint responded 401 after we sent Authorization"
+                : response.status >= 300 && response.status < 400
+                  ? `Endpoint responded ${response.status} with a redirect, which is not supported`
+                  : `Endpoint responded ${response.status}`;
+        throw new Error(detail ? `${prefix}: ${detail}` : prefix);
+    }
+
+    const audio = await readCommunityAudioBytes(response);
+    if (!audio) {
+        throw new Error("Endpoint did not return valid binary audio");
+    }
+
+    const completionAudioTokens = input.length;
+    return {
+        usage: { completion_audio_tokens: completionAudioTokens },
+        billableUsage: { completionAudioTokens },
     };
 }
 

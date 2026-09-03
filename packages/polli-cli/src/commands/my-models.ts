@@ -60,7 +60,7 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "video" | "transcription" | "embedding";
+    modality: "text" | "image" | "video" | "transcription" | "speech" | "embedding";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
     completionVideoPrice: number;
@@ -144,10 +144,11 @@ export function modelBody(
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         body.modality = opts.modality;
@@ -303,7 +304,7 @@ const create = addPriceOptions(
         )
         .option(
             "--modality <modality>",
-            "Model family: text (default), image, video, transcription, or embedding",
+            "Model family: text (default), image, video, transcription, speech, or embedding",
         )
         .option(
             "--image-pricing <mode>",
@@ -451,7 +452,7 @@ const test = new Command("test")
     .option("--model <model>", "Upstream model id (not used for video)")
     .option(
         "--modality <modality>",
-        "Model family: text (default), image, video, transcription, or embedding",
+        "Model family: text (default), image, video, transcription, speech, or embedding",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -461,10 +462,11 @@ const test = new Command("test")
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         const modality = opts.modality ?? "text";
@@ -493,7 +495,7 @@ const test = new Command("test")
 
 export const myModelsCommand = new Command("my-models")
     .description(
-        "Manage private and published community text, image, video, transcription, and embedding models",
+        "Manage private and published community text, image, video, transcription, speech, and embedding models",
     )
     .addCommand(list)
     .addCommand(create)

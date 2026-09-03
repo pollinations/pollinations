@@ -5,6 +5,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
@@ -540,6 +541,102 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes speech endpoints against /v1/audio/speech and bills the input characters", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe("https://api.example.com/v1/audio/speech");
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            expect(request.headers.get("content-type")).toContain(
+                "application/json",
+            );
+            const body = await request.json();
+            expect(body).toEqual({
+                model: "tts-1",
+                input: "The quick brown fox jumps over the lazy dog.",
+                voice: "alloy",
+            });
+            // IEC bytes stand in for real MP3 frames; the probe only needs a
+            // recognizable audio container.
+            const mp3 = new Uint8Array([
+                0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            ]);
+            return new Response(mp3, {
+                status: 200,
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).resolves.toEqual({
+            usage: { completion_audio_tokens: 44 },
+            billableUsage: { completionAudioTokens: 44 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("probes speech endpoints that are missing a content-type via audio magic bytes", async () => {
+        const wav = new Uint8Array(12);
+        wav.set([0x52, 0x49, 0x46, 0x46], 0);
+        wav.set([0x57, 0x41, 0x56, 0x45], 8);
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => new Response(wav, { status: 200 })),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).resolves.toMatchObject({
+            billableUsage: { completionAudioTokens: 44 },
+        });
+    });
+
+    it("refuses to register a speech endpoint that returns no audio", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ ok: true })),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).rejects.toThrow("did not return valid binary audio");
+    });
+
+    it("surfaces upstream speech errors with the endpoint detail", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json(
+                    { error: { message: "voice not found" } },
+                    { status: 400 },
+                ),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).rejects.toThrow("voice not found");
     });
 
     it("probes embedding endpoints and returns billable prompt tokens", async () => {

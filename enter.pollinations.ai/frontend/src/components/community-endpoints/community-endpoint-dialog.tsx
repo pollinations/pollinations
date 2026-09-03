@@ -437,6 +437,7 @@ export function CommunityEndpointDialog({
                                         "image",
                                         "video",
                                         "transcription",
+                                        "speech",
                                         "embedding",
                                     ] as const
                                 ).map((modality) => (

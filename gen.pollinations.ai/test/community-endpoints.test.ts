@@ -87,7 +87,10 @@ import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
-import { callCommunityTranscriptionEndpoint } from "../src/audio/communityEndpoint.ts";
+import {
+    callCommunitySpeechEndpoint,
+    callCommunityTranscriptionEndpoint,
+} from "../src/audio/communityEndpoint.ts";
 import { getCommunityModelRegistryEntries } from "../src/community-models.ts";
 import {
     callCommunityImageEndpoint,
@@ -1991,6 +1994,164 @@ describe("community endpoint helpers", () => {
             ).rejects.toMatchObject({
                 status: 413,
                 message: expect.stringContaining("Audio file too long"),
+            });
+        });
+    });
+
+    describe("community speech endpoint billing", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        const secret = "test-secret";
+
+        async function speechEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                type: "proxy",
+                id: "community-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/tts",
+                name: "tts",
+                title: "TTS",
+                description: null,
+                modality: "speech",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "tts-1",
+                visibility: "public",
+                paidOnly: false,
+                perUserRpm: null,
+                fallbacks: [],
+                hiddenAt: null,
+                hiddenReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ completionAudioPrice: 0.03 }),
+            };
+        }
+
+        const mp3 = new Uint8Array([
+            0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        ]);
+
+        it("forwards model/input/voice and bills the input characters", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/audio/speech",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                expect(request.headers.get("accept")).toContain("audio/");
+                const body = await request.json();
+                expect(body).toEqual({
+                    model: "tts-1",
+                    input: "Hello, world!",
+                    voice: "nova",
+                });
+                return new Response(mp3, {
+                    status: 200,
+                    headers: { "Content-Type": "audio/mpeg" },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunitySpeechEndpoint(
+                await speechEndpoint(),
+                { text: "Hello, world!", voice: "nova" },
+                secret,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toBe("audio/mpeg");
+            expect(
+                response.headers.get(USAGE_TYPE_HEADERS.completionAudioTokens),
+            ).toBe(String("Hello, world!".length));
+            expect(fetchMock).toHaveBeenCalledTimes(1);
+        });
+
+        it("forwards and preserves the response format", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const body = await new Request(input, init).json();
+                expect(body.response_format).toBe("wav");
+                return new Response(mp3, {
+                    status: 200,
+                    headers: { "Content-Type": "audio/wav" },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunitySpeechEndpoint(
+                await speechEndpoint(),
+                { text: "Hello", responseFormat: "wav" },
+                secret,
+            );
+
+            expect(response.headers.get("content-type")).toBe("audio/wav");
+        });
+
+        it("falls back to magic-byte detection when upstream omits a content type", async () => {
+            const wav = new Uint8Array(12);
+            wav.set([0x52, 0x49, 0x46, 0x46], 0);
+            wav.set([0x57, 0x41, 0x56, 0x45], 8);
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => new Response(wav, { status: 200 })),
+            );
+
+            const response = await callCommunitySpeechEndpoint(
+                await speechEndpoint(),
+                { text: "Hello, world!" },
+                secret,
+            );
+
+            expect(response.headers.get("content-type")).toBe("audio/wav");
+        });
+
+        it("rejects a speech response that is not valid binary audio", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => Response.json({ ok: true })),
+            );
+
+            await expect(
+                callCommunitySpeechEndpoint(
+                    await speechEndpoint(),
+                    { text: "Hello" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: expect.stringContaining(
+                    "did not return valid binary audio",
+                ),
+            });
+        });
+
+        it("propagates upstream speech failures", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "voice not found" } },
+                        { status: 400 },
+                    ),
+                ),
+            );
+
+            await expect(
+                callCommunitySpeechEndpoint(
+                    await speechEndpoint(),
+                    { text: "Hello", voice: "nope" },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 400,
+                message: expect.stringContaining("voice not found"),
             });
         });
     });

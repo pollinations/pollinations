@@ -30,6 +30,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
@@ -498,7 +499,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, video, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, speech, or embedding model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -686,11 +687,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               ? await testCommunityTranscriptionEndpoint(
                                     modelInput,
                                 )
-                              : input.modality === "embedding"
-                                ? await testCommunityEmbeddingEndpoint(
-                                      modelInput,
-                                  )
-                                : await testCommunityEndpoint(modelInput);
+                              : input.modality === "speech"
+                                ? await testCommunitySpeechEndpoint(modelInput)
+                                : input.modality === "embedding"
+                                  ? await testCommunityEmbeddingEndpoint(
+                                        modelInput,
+                                    )
+                                  : await testCommunityEndpoint(modelInput);
                 }
                 return c.json({
                     ok: true,
@@ -703,9 +706,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               ? "Endpoint responded with playable video"
                               : input.modality === "transcription"
                                 ? "Endpoint responded with transcription text"
-                                : input.modality === "embedding"
-                                  ? "Endpoint responded with embedding data"
-                                  : "Endpoint responded with usage",
+                                : input.modality === "speech"
+                                  ? "Endpoint responded with valid binary audio"
+                                  : input.modality === "embedding"
+                                    ? "Endpoint responded with embedding data"
+                                    : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {

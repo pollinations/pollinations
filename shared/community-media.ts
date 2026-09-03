@@ -5,6 +5,7 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
 export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
+export const MAX_COMMUNITY_AUDIO_BYTES = 20 * 1024 * 1024;
 // A JSON envelope carrying a 20 MB base64 clip is at most ~28 MB; leave a
 // small amount of room for the envelope while still bounding provider output.
 export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
@@ -102,6 +103,62 @@ export async function firstCommunityVideoBytes(
         }
     }
     return null;
+}
+
+/**
+ * OpenAI /v1/audio/speech returns raw audio bytes (not the JSON envelope that
+ * image/video endpoints use), so the probe and request path read the body
+ * directly. Returns null when the bytes are not a recognizable audio
+ * container, so each caller can phrase that in its own words.
+ */
+export async function readCommunityAudioBytes(
+    response: Response,
+): Promise<{ bytes: Uint8Array<ArrayBuffer>; mime: string } | null> {
+    const bytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_AUDIO_BYTES,
+        () => new HttpError("Endpoint audio is larger than 20 MB", 502),
+    );
+    const headerMime = response.headers.get("content-type");
+    const mime = headerMime?.startsWith("audio/")
+        ? headerMime
+        : detectAudioMimeType(bytes);
+    return mime ? { bytes, mime } : null;
+}
+
+export function detectAudioMimeType(bytes: Uint8Array): string | null {
+    // WAV: RIFF....WAVE
+    if (
+        bytes.byteLength >= 12 &&
+        bytesToAscii(bytes, 0, 4) === "RIFF" &&
+        bytesToAscii(bytes, 8, 4) === "WAVE"
+    ) {
+        return "audio/wav";
+    }
+    // MP3: an ID3 tag, or a frame-sync byte (0xFF Ex).
+    if (
+        (bytes.byteLength >= 3 && bytesToAscii(bytes, 0, 3) === "ID3") ||
+        (bytes.byteLength >= 2 &&
+            bytes[0] === 0xff &&
+            (bytes[1] & 0xe0) === 0xe0)
+    ) {
+        return "audio/mpeg";
+    }
+    if (bytes.byteLength >= 4 && bytesToAscii(bytes, 0, 4) === "OggS") {
+        return "audio/ogg";
+    }
+    if (bytes.byteLength >= 4 && bytesToAscii(bytes, 0, 4) === "fLaC") {
+        return "audio/flac";
+    }
+    return null;
+}
+
+function bytesToAscii(
+    bytes: Uint8Array,
+    start: number,
+    length: number,
+): string {
+    return String.fromCharCode(...bytes.subarray(start, start + length));
 }
 
 export function decodeCommunityBase64(value: string): Uint8Array | null {

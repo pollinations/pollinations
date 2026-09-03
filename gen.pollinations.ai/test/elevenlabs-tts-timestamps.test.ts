@@ -19,11 +19,15 @@ const log = {
 
 async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
     const ctx = createExecutionContext();
-    return worker.fetch(
+    const response = await worker.fetch(
         new Request(input, init),
         withInlineGenerationCoordinator(env),
         ctx,
     );
+    return {
+        response,
+        wait: () => waitOnExecutionContext(ctx),
+    };
 }
 
 const providerResponse = {
@@ -124,7 +128,7 @@ describe("ElevenLabs timestamped TTS", () => {
 workerTest(
     "rejects unsupported FLAC instead of returning PCM under the wrong format",
     async ({ paidApiKey }) => {
-        const response = await fetchGen(
+        const { response, wait } = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
             {
                 method: "POST",
@@ -148,6 +152,7 @@ workerTest(
                 ),
             },
         });
+        await wait();
     },
 );
 
@@ -230,7 +235,7 @@ for (const testCase of [
         `returns ${testCase.format} audio and alignment for ${testCase.model}`,
         async ({ paidApiKey }) => {
             const input = "Timed speech.";
-            const response = await fetchGen(
+            const { response, wait } = await fetchGen(
                 "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
                 {
                     method: "POST",
@@ -301,6 +306,7 @@ for (const testCase of [
             expect(body.normalized_alignment.characters.length).toBeGreaterThan(
                 0,
             );
+            await wait();
         },
         30_000,
     );

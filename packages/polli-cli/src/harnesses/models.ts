@@ -3,6 +3,7 @@ import type { HarnessModel } from "./types.js";
 
 interface CatalogModel {
     id: string;
+    community?: boolean;
     input_modalities?: string[];
     output_modalities?: string[];
     supported_endpoints?: string[];
@@ -13,7 +14,7 @@ interface CatalogModel {
 
 /**
  * First-party text models with tool calling — what an agentic harness can
- * drive. Community models (`owner/name`) and published agents are left out:
+ * drive. Community models and published agents are left out:
  * they come and go, and they would triple the list.
  */
 export const fetchHarnessModels = async (): Promise<HarnessModel[]> => {
@@ -26,7 +27,7 @@ export const fetchHarnessModels = async (): Promise<HarnessModel[]> => {
                 m.supported_endpoints?.includes("/v1/chat/completions") &&
                 m.context_length &&
                 !m.agent &&
-                !m.id.includes("/"),
+                m.community !== true,
         )
         .map((m) => ({
             id: m.id,

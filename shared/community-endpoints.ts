@@ -26,6 +26,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "image",
     "video",
     "transcription",
+    "speech",
     "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -239,6 +240,24 @@ const COMMUNITY_VIDEO_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Community speech (TTS) endpoints bill the caller's input text by character,
+// mirroring first-party TTS: the gateway stores the request's character count
+// in completionAudioTokens and charges the per-1M completionAudioPrice. The
+// upstream returns binary audio with no usage object, so there is nothing to
+// read from the upstream response — the probe reports the metered characters
+// itself under the same completionAudioTokens key.
+const COMMUNITY_SPEECH_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    usageType: "completionAudioTokens",
+    label: "Generated audio",
+    priceUnit: "million",
+    rawUsagePaths: ["completionAudioTokens"],
+} as const;
+
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_SPEECH_PRICE_FIELD,
+] as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
@@ -274,7 +293,8 @@ export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number];
 
 type CommunityModalitySpec = {
     category: Category;
@@ -332,6 +352,14 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
         restrictDefinitionEndpoints: true,
         priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     embedding: {
         category: "embedding",
@@ -453,6 +481,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "speech") return "speech";
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";

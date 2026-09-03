@@ -13,6 +13,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
 | Video | Exact endpoint URL entered at registration | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
+| Text to speech | `POST /v1/audio/speech` | `POST /v1/audio/speech` |
 | Embeddings | `POST /v1/embeddings` | `POST /v1/embeddings` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
@@ -46,7 +47,9 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
 
 Pollinations sends no upstream model id and bills the accepted request duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
-Text-to-speech, realtime, and 3D endpoints cannot currently be registered through this workflow.
+Text-to-speech is synchronous and OpenAI-shaped. Pollinations calls your `/v1/audio/speech` with `{ model, input, voice, response_format }` and streams the returned binary audio back to the caller with its content type preserved. Registration sends a short sample and accepts any non-empty `audio/*` response. Billing charges the input text by character against your per-1M completion-audio price. Voice cloning, speech-to-speech, and timestamps are out of scope.
+
+Realtime and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 

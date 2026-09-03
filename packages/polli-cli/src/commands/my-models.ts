@@ -144,10 +144,11 @@ export function modelBody(
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         body.modality = opts.modality;
@@ -461,10 +462,11 @@ const test = new Command("test")
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         const modality = opts.modality ?? "text";

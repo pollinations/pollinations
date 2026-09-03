@@ -828,6 +828,14 @@ function containsFinishReasonError(output: unknown): boolean {
     for (const event of events) {
         if (isResponsesFailure(event)) return true;
         if (!event || typeof event !== "object") continue;
+        const eventError = (event as { error?: unknown }).error;
+        if (
+            eventError &&
+            (typeof eventError !== "object" ||
+                (eventError as { code?: unknown }).code !== "usage_missing")
+        ) {
+            return true;
+        }
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
         for (const choice of choices) {

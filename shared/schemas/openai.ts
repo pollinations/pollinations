@@ -383,6 +383,7 @@ export const CreateResponseRequestSchema = z
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
         max_output_tokens: z.number().int().positive().nullish(),
+        max_tool_calls: z.number().int().positive().nullish(),
         stream: z.boolean().optional().default(false),
         stream_options: z
             .object({ include_obfuscation: z.boolean().optional() })
@@ -477,9 +478,22 @@ export const CreateResponseResponseSchema = z
             "incomplete",
         ]),
         output: z.array(z.object({ type: z.string() }).passthrough()),
-        usage: ResponseUsageSchema,
+        usage: ResponseUsageSchema.nullable(),
     })
     .passthrough()
+    .superRefine((response, context) => {
+        if (
+            (response.status === "completed" ||
+                response.status === "incomplete") &&
+            response.usage === null
+        ) {
+            context.addIssue({
+                code: "custom",
+                path: ["usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    })
     .meta({ $id: "CreateResponseResponse" });
 
 export type CreateResponseResponse = z.infer<
@@ -496,11 +510,20 @@ export const ResponseTerminalEventSchema = z
         response: z
             .object({
                 model: z.string().optional(),
-                usage: ResponseUsageSchema,
+                usage: ResponseUsageSchema.nullable(),
             })
             .passthrough(),
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((event, context) => {
+        if (event.type !== "response.failed" && event.response.usage === null) {
+            context.addIssue({
+                code: "custom",
+                path: ["response", "usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    });
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,

@@ -665,11 +665,11 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["✍️ Text"],
             summary: "Create Response",
             description: [
-                "Generate a stateless response through a model whose configured upstream exposes the OpenAI Responses API.",
+                "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
                 "",
-                "Requests and streaming events are sent directly to that upstream without conversion to Chat Completions. Models without a verified direct Responses route return an unsupported-model error.",
+                "Built-in models, community proxies, and external endpoint agents use their configured native Responses URL. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Chat Completions requests for these models are adapted to the same Responses route.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, encrypted reusable state, and hosted tools are not supported.",
+                "Response storage, previous response IDs, conversations, background execution, and encrypted or reusable state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents use only their configured MCP tools.",
                 "",
                 "Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.",
             ].join("\n"),
@@ -684,7 +684,7 @@ export const proxyRoutes = new Hono<Env>()
                             schema: resolver(
                                 z.string().meta({
                                     description:
-                                        "Semantic Responses API SSE events ending with response.completed, response.incomplete, or response.failed containing usage",
+                                        "Responses API SSE events ending with response.completed, response.incomplete, or response.failed; completed and incomplete responses contain usage, and a data: [DONE] marker may follow",
                                 }),
                             ),
                         },

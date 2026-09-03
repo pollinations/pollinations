@@ -767,4 +767,27 @@ describe("Chat Completions stream usage", () => {
 
         expect(() => validator.finish()).toThrow(/without terminal usage/);
     });
+
+    it("accepts an explicit terminal error without usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"error":{"message":"upstream failed","code":"upstream_error"}}\n\ndata: [DONE]\n\n',
+            ),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+    });
+
+    it("does not treat an error:null field as a terminal failure", () => {
+        const validator = createChatStreamUsageValidator();
+
+        expect(() =>
+            validator.feed(
+                encoder.encode(
+                    'data: {"error":null,"choices":[{"delta":{"content":"partial"}}]}\n\ndata: [DONE]\n\n',
+                ),
+            ),
+        ).toThrow(/omitted terminal usage/);
+    });
 });

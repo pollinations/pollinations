@@ -16,6 +16,41 @@ export type DirectResponsesTarget = {
     defaults: JsonObject;
 };
 
+/** Build a Responses target from an already-resolved model configuration. */
+export function responsesTargetFromConfig(
+    model: string,
+    config: Record<string, unknown>,
+): DirectResponsesTarget | null {
+    const endpoint = config.responsesEndpoint;
+    if (typeof endpoint !== "string") return null;
+
+    const authKey = config.authKey;
+    const authHeader: Record<string, string> =
+        typeof authKey !== "string" || !authKey
+            ? {}
+            : config.responsesAuthHeader === "api-key"
+              ? { "api-key": authKey }
+              : { Authorization: `Bearer ${authKey}` };
+    const chatDefaults = isPlainObject(config.defaultOptions)
+        ? config.defaultOptions
+        : {};
+
+    return {
+        authConfigured: typeof authKey === "string" && authKey.length > 0,
+        endpoint,
+        headers: authHeader,
+        model,
+        defaults: {
+            ...(chatDefaults.provider === undefined
+                ? {}
+                : { provider: chatDefaults.provider }),
+            ...(chatDefaults.max_tokens === undefined
+                ? {}
+                : { max_output_tokens: chatDefaults.max_tokens }),
+        },
+    };
+}
+
 function reasoningEffort(request: CreateResponseRequest): string | undefined {
     const effort = request.reasoning?.effort;
     return typeof effort === "string" ? effort : undefined;
@@ -25,7 +60,6 @@ function reasoningEffort(request: CreateResponseRequest): string | undefined {
 export function resolveDirectResponsesTarget(
     modelId: string,
     request: CreateResponseRequest,
-    env?: CloudflareBindings,
 ): DirectResponsesTarget | null {
     const modelDef = findModelByName(modelId);
     if (!modelDef) return null;
@@ -36,43 +70,7 @@ export function resolveDirectResponsesTarget(
     };
     const resolved = resolveModelConfig([], options).options;
     const config = resolved.modelConfig ?? {};
-    const endpoint = config.responsesEndpoint;
-    if (typeof endpoint !== "string") return null;
-
-    const binding = config.responsesApiKeyBinding;
-    const bindingValue =
-        typeof binding === "string"
-            ? (env as Record<string, unknown> | undefined)?.[binding]
-            : undefined;
-    const authKey =
-        typeof bindingValue === "string" && bindingValue
-            ? bindingValue
-            : config.authKey;
-    const authHeader: Record<string, string> =
-        typeof authKey !== "string" || !authKey
-            ? {}
-            : config.responsesAuthHeader === "api-key"
-              ? { "api-key": authKey }
-              : { Authorization: `Bearer ${authKey}` };
-    const chatDefaults = isPlainObject(config.defaultOptions)
-        ? config.defaultOptions
-        : {};
-    const defaults: JsonObject = {
-        ...(chatDefaults.provider === undefined
-            ? {}
-            : { provider: chatDefaults.provider }),
-        ...(chatDefaults.max_tokens === undefined
-            ? {}
-            : { max_output_tokens: chatDefaults.max_tokens }),
-    };
-
-    return {
-        authConfigured: typeof authKey === "string" && authKey.length > 0,
-        endpoint,
-        headers: authHeader,
-        model: String(resolved.model),
-        defaults,
-    };
+    return responsesTargetFromConfig(String(resolved.model), config);
 }
 
 function parseJson(text: string): unknown {

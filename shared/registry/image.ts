@@ -710,6 +710,7 @@ const IMAGE_BASE_SERVICES = {
         // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
         // flat ($0.01/s x 5s = $0.05).
         cost: {
+            promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         title: "Wan 2.2",

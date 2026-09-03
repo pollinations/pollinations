@@ -262,6 +262,11 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.7-flash-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.7-flash",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "poolside/laguna-s-2.1": () =>
         createOpenRouterModelConfig({
             model: "poolside/laguna-s-2.1",
@@ -340,9 +345,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
-    "llama-scout-openrouter-deepinfra": createPinnedOpenRouterConfig(
+    "llama-scout-openrouter-vertex": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
-        "deepinfra/fp8",
+        "google-vertex/us-east5",
     ),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
@@ -461,6 +466,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "mistralai/mistral-small-3.2-24b-instruct",
         "deepinfra/fp8",
     ),
+    "mistral-small-3.2-deepinfra": () =>
+        createDeepInfraModelConfig({
+            model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+        }),
     "mistral-small-2603": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",

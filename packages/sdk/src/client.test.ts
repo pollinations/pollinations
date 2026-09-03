@@ -435,6 +435,41 @@ describe("Pollinations seed handling", () => {
     });
 });
 
+describe("Pollinations embeddings facade", () => {
+    it("serializes embeddings request properly", async () => {
+        const client = newClient();
+
+        fetchMock.mockResolvedValue(
+            makeResponse({
+                object: "list",
+                data: [
+                    { object: "embedding", embedding: [0.1, 0.2], index: 0 },
+                ],
+                model: "openai",
+                usage: { prompt_tokens: 2, total_tokens: 2 },
+            }),
+        );
+
+        await client.embeddings("hello", {
+            model: "gemini",
+            dimensions: 256,
+            encodingFormat: "base64",
+        });
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toContain("/v1/embeddings");
+        expect(init.method).toBe("POST");
+        const body = JSON.parse(init.body as string);
+        expect(body).toEqual({
+            input: "hello",
+            model: "gemini",
+            dimensions: 256,
+            encoding_format: "base64",
+        });
+    });
+});
+
 describe("Pollinations simple text facade", () => {
     it("maps every simple text option to one canonical chat request", async () => {
         const client = newClient();

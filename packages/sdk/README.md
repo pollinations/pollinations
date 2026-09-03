@@ -364,6 +364,19 @@ console.log(result.actualModel); // actual model used
 | `private` | boolean | `false` | Keep generation private |
 | `raw` | boolean | `false` | Return full response |
 
+## Embeddings
+
+```javascript
+import { embeddings } from '@pollinations/sdk';
+
+const response = await embeddings('Hello world', {
+  model: 'gemini-2',
+});
+
+// Access the embedding vectors
+console.log(response.data[0].embedding);
+```
+
 ## Chat
 
 ```javascript

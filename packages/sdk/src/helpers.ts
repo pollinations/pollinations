@@ -40,12 +40,15 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
     KeyInfo,
     KeyUsageOptions,
     Message,
+    MessageContentPart,
     ModelInfo,
     TextGenerateOptions,
     TranscribeOptions,
@@ -320,6 +323,26 @@ export async function* chatStream(
  */
 export function conversation(options?: ChatOptions): Conversation {
     return new Conversation(options, getClient());
+}
+
+// ============================================================================
+// Embeddings Functions
+// ============================================================================
+
+/**
+ * Create an embedding (OpenAI-compatible)
+ *
+ * @example
+ * ```ts
+ * const response = await embeddings('Hello world', { model: 'gemini-2' });
+ * console.log(response.data[0].embedding);
+ * ```
+ */
+export async function embeddings(
+    input: string | string[] | MessageContentPart | MessageContentPart[],
+    options?: EmbeddingsOptions,
+): Promise<EmbeddingsResponse> {
+    return getClient().embeddings(input, options);
 }
 
 // ============================================================================

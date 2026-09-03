@@ -32,6 +32,9 @@ Rich model endpoints include `capabilities` for agentic/model traits:
 Modalities, video frame controls, voices, and context length remain separate
 structured fields.
 
+Use `supported_endpoints` to discover which public API routes accept each
+model. Models with direct stateless Responses support include `/v1/responses`.
+
 ## Community Models
 
 Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.

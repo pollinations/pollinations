@@ -1,22 +1,22 @@
 # GPU Instances
 
-Last updated: 2026-08-29
+Last updated: 2026-09-02
 
 ## Capacity Summary
 
 | Model | Workers | GPUs | Provider | Cost/hr | Status |
 |-------|---------|------|----------|---------|--------|
-| Flux (FP4) | 2 | 2x RTX PRO 4000 Blackwell | Vast.ai | $0.460000/hr all-in | **ACTIVE — two production, Vast-only** |
+| Flux (FP4) | 2 | 2x RTX PRO 4000 Blackwell | Vast.ai | $0.446667/hr all-in | **ACTIVE — two production, Vast-only** |
 | Z-Image | 1 | RTX 5090 | Vast.ai | $0.351111/hr all-in | **ACTIVE — one production with Fal spillover** |
 | Klein 4B | 1 | RTX 3090 | Vast.ai | $0.150000/hr all-in | **ACTIVE — Vast production** |
 | DreamShaper 8 LCM (`dreamshaper`, alias `sana`) | 2 | RTX 4070 + RTX 3060 | Vast.ai | $0.169444/hr all-in | **ACTIVE — production** |
 | LTX-2 + ACE-Step | 0 active routes | GH200 (historical) | Lambda Labs | Verify provider account | **RETIRED from production** |
 
-At capture time, the six running Vast instances cost **$1.130556/hr** in total
-(**$814.00 per 30-day month**).
+At capture time, the six running Vast instances cost **$1.117222/hr** in total
+(**$804.40 per 30-day month**).
 All six are production workers; there is no isolated canary left running.
 
-Live verification on 2026-08-29 confirmed that all six instances are in both
+Live verification on 2026-09-02 confirmed that all six instances are in both
 `actual_status=running` and `intended_status=running`, every model server and
 named tunnel is healthy, and the registry contains both Flux hostnames, the
 shared Z-Image hostname, and both DreamShaper hostnames. Klein is not in the
@@ -115,18 +115,24 @@ the registered `flux` pool through `callSelfHostedServer`.
 | Worker | Vast instance | Machine / region | GPU | All-in rate | Status |
 |--------|---------------|------------------|-----|-------------|--------|
 | flux-vast-04 | 47389078 | 59339 / France, FR | RTX PRO 4000 Blackwell 24 GB | $0.230000/hr | ACTIVE (promoted 2026-08-10) — registered hostname `flux-vast-04.pollinations.ai` |
-| flux-vast-06 | 47259458 | 102863 / Quebec, CA | RTX PRO 4000 Blackwell 24 GB | $0.230000/hr | ACTIVE (promoted 2026-08-09) — registered hostname `flux-vast-06.pollinations.ai` |
+| flux-vast-06 | 49145048 | 140800 / Illinois, US | RTX PRO 4000 Blackwell 24 GB | $0.216667/hr | ACTIVE — registered hostname `flux-maintenance-canary-49145048.myceli.ai` |
 
 Instance `47389078` replaced `46491202` on 2026-08-10. The France host is
 machine `59339`, has Vast reliability `0.998`, and costs **$165.60 per 30-day
 month** in Vast credits. It saves **$0.131111/hr**, or **$94.40 per 30-day
 month**, compared with the replaced RTX 5090 slot. The two-worker FLUX pool now
-costs `$0.460000/hr` all-in.
+costs `$0.446667/hr` all-in.
 
-Instance `47259458` previously replaced `47018211`. The Quebec host is machine
-`102863`, has Vast reliability `0.99595`, and costs **$165.60 per 30-day
-month** in Vast credits. It saves **$0.057778/hr**, or **$41.60 per 30-day
-month**, compared with the replaced slot.
+Instance `49145048` replaced maintenance-bound instance `47259458` before its
+scheduled 2026-08-30 downtime. The Illinois host is machine `140800`, had Vast
+reliability `0.9965586` at the 2026-09-02 audit, and costs **$156.00 per
+30-day month** in Vast credits. It saves **$0.013333/hr**, or **$9.60 per
+30-day month**, compared with the replaced slot. Its named tunnel is healthy,
+and the worker is actively heartbeating in the production `flux` registry.
+
+Instance `47259458` had previously replaced `47018211`. The retired Quebec
+host was machine `102863`, cost `$0.230000/hr`, and saved **$0.057778/hr**, or
+**$41.60 per 30-day month**, compared with that earlier slot.
 
 Qualification on the replacement passed authentication rejection, 512x512,
 1024x1024, 1024x768, and 768x1024 generation, four-request burst handling,
@@ -144,7 +150,7 @@ fast 503 shedding under concurrent load. Treat the two-worker Vast pool as the
 capacity guard. Queue admission must be hardened separately; there is no
 Replicate fallback.
 
-The post-promotion audit found that `47259458` still had
+A previous post-promotion audit found that `47259458` still had
 `HEARTBEAT_ENABLED=false` even though its named tunnel was healthy. That made
 the second paid worker invisible to normal Flux dispatch and left
 `46491202` carrying the pool alone. The flag was corrected, the worker was

@@ -159,6 +159,9 @@ export const FALLBACK_TARGET_HEADER = "x-fallback-target";
  */
 export const MODEL_USED_HEADER = "x-model-used";
 
+/** The canonical model requested, after alias resolution. */
+export const MODEL_REQUESTED_HEADER = "x-model-requested";
+
 /**
  * Convert OpenAI usage format to Usage format.
  *
@@ -279,6 +282,35 @@ export function openaiUsageToUsage(openaiUsage: {
         completionImageTokens,
         completionReasoningTokens,
     };
+}
+
+/** Convert OpenAI Responses token accounting into the shared billing shape. */
+export function responsesUsageToUsage(responsesUsage: {
+    input_tokens: number;
+    output_tokens: number;
+    total_tokens: number;
+    input_tokens_details?: {
+        cached_tokens?: number | null;
+        cache_write_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        video_tokens?: number | null;
+    } | null;
+    output_tokens_details?: {
+        reasoning_tokens?: number | null;
+        audio_tokens?: number | null;
+        image_tokens?: number | null;
+        accepted_prediction_tokens?: number | null;
+        rejected_prediction_tokens?: number | null;
+    } | null;
+}): Usage {
+    return openaiUsageToUsage({
+        prompt_tokens: responsesUsage.input_tokens,
+        completion_tokens: responsesUsage.output_tokens,
+        total_tokens: responsesUsage.total_tokens,
+        prompt_tokens_details: responsesUsage.input_tokens_details,
+        completion_tokens_details: responsesUsage.output_tokens_details,
+    });
 }
 
 export function openaiImageUsageToUsage(usage: OpenAIImageUsage): Usage {

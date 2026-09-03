@@ -234,7 +234,7 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
     .default("private")
     .notNull(),
   // A public price change or private-to-public transition becomes effective
-  // 12 hours after it is submitted. The pending payload is only meaningful
+  // 3 hours after it is submitted. The pending payload is only meaningful
   // for proxy listings; visibility applies to every listing type.
   pendingPayload: text("pending_payload"),
   pendingVisibility: text("pending_visibility", {

@@ -618,6 +618,49 @@ test("eight distinct failed cards in 24h restrict payments", async ({
     for (const session of customerSessions) {
         expect(session).toMatchObject({ status: "expired", url: null });
     }
+
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_gate_webhook_retry",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_test_card_gate",
+        status: "open",
+        url: "https://checkout.stripe.test/gate-webhook-retry",
+    });
+    await recordFailedCardPayment(
+        mocks.stripe.state,
+        userId,
+        "cus_test_card_gate",
+        "fp_gate_9",
+    );
+    await expect
+        .poll(() =>
+            mocks.stripe.state.checkoutSessions.find(
+                (session) => session.id === "cs_gate_webhook_retry",
+            ),
+        )
+        .toMatchObject({ status: "expired", url: null });
+
+    mocks.stripe.state.checkoutSessions.push({
+        id: "cs_gate_checkout_retry",
+        object: "checkout.session",
+        mode: "payment",
+        customer: "cus_test_card_gate",
+        status: "open",
+        url: "https://checkout.stripe.test/gate-checkout-retry",
+    });
+    const retryResponse = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+    expect(retryResponse.status).toBe(403);
+    expect(
+        mocks.stripe.state.checkoutSessions.find(
+            (session) => session.id === "cs_gate_checkout_retry",
+        ),
+    ).toMatchObject({ status: "expired", url: null });
+
     expect(
         mocks.stripe.state.requests.filter(
             (request) =>

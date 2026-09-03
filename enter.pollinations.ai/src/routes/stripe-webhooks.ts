@@ -142,14 +142,14 @@ async function recordFailedCardFingerprintFromCharge({
         );
         if (!gate.shouldRestrictPayments) return;
 
-        const newlyRestricted = await restrictStripePayments(
+        await restrictStripePayments(
             env.DB,
             userId,
             new Date(eventTime).toISOString(),
         );
-        if (!newlyRestricted) return;
 
-        // Close sessions opened before the account was restricted.
+        // Close sessions opened before the account was restricted. Repeat the
+        // cleanup on later locked failures so transient Stripe errors retry.
         const customerId = getStripeId(charge.customer);
         if (customerId) {
             await expireOpenStripeCheckoutSessions(stripe, customerId);

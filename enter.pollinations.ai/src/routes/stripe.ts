@@ -26,7 +26,10 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
-import { STRIPE_PAYMENT_RESTRICTED_MESSAGE } from "../utils/stripe-payment-restriction.ts";
+import {
+    expireOpenStripeCheckoutSessions,
+    STRIPE_PAYMENT_RESTRICTED_MESSAGE,
+} from "../utils/stripe-payment-restriction.ts";
 
 /**
  * Stripe pack configuration
@@ -70,6 +73,12 @@ export const stripeRoutes = new Hono<Env>()
 
         const user = await getUserStripeBillingRow(c.env.DB, userId);
         if (user.stripePaymentRestriction) {
+            if (user.stripeCustomerId) {
+                await expireOpenStripeCheckoutSessions(
+                    createStripeClient(c.env),
+                    user.stripeCustomerId,
+                );
+            }
             return c.json({ error: STRIPE_PAYMENT_RESTRICTED_MESSAGE }, 403);
         }
 

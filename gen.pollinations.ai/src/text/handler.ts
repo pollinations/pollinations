@@ -28,6 +28,10 @@ import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
+    buildPollenCostHeaders,
+    injectPollenCostIntoStream,
+} from "./pollenCost.js";
+import {
     getChatRequestData,
     getSimpleTextRequestData,
 } from "./requestUtils.js";
@@ -121,6 +125,7 @@ function withGatewayContext(c: TextContext, requestData: RequestData) {
 function usageHeaders(
     completion: ChatCompletion,
     servedModelId?: string,
+    modelDef?: ModelDefinition,
 ): Headers {
     const headers = new Headers();
     const modelUsed = servedModelId || completion?.model;
@@ -135,6 +140,15 @@ function usageHeaders(
             buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
+        }
+        // Inject pollen cost headers for non-streaming responses.
+        const pollenHeaders = buildPollenCostHeaders(
+            new Response(null, { headers }),
+            modelUsed,
+            modelDef,
+        );
+        for (const [key, value] of Object.entries(pollenHeaders)) {
+            headers.set(key, value);
         }
     }
     if (completion?.fallbackTarget) {
@@ -180,8 +194,9 @@ function publicChatCompletion(completion: ChatCompletion): ChatCompletion {
 function sendOpenAIResponse(
     completion: ChatCompletion,
     servedModelId?: string,
+    modelDef?: ModelDefinition,
 ): Response {
-    const headers = usageHeaders(completion, servedModelId);
+    const headers = usageHeaders(completion, servedModelId, modelDef);
     headers.set("Content-Type", "application/json; charset=utf-8");
 
     return new Response(
@@ -199,8 +214,9 @@ function sendTextContentResponse(
     completion: ChatCompletion,
     servedModelId: string | undefined,
     upstreamRequestUrl: URL | undefined,
+    modelDef?: ModelDefinition,
 ): Response {
-    const headers = usageHeaders(completion, servedModelId);
+    const headers = usageHeaders(completion, servedModelId, modelDef);
     headers.set("Cache-Control", IMMUTABLE_CACHE_CONTROL);
 
     if (!completion.choices?.[0]) {
@@ -261,6 +277,7 @@ function sendTextContentResponse(
 function sendTextStreamResponse(
     completion: ChatCompletion,
     servedModelId?: string,
+    modelDef?: ModelDefinition,
 ): Response {
     const headers = new Headers({
         "Content-Type": "text/event-stream; charset=utf-8",
@@ -284,7 +301,15 @@ function sendTextStreamResponse(
             requestUrl: completion.upstreamRequestUrl,
         });
     }
-    return new Response(completion.responseStream, { headers });
+
+    // Build a preliminary response so injectPollenCostIntoStream can read
+    // the x-model-used header and any x-usage-* headers we set above.
+    const preliminary = new Response(completion.responseStream, { headers });
+    return injectPollenCostIntoStream(
+        preliminary,
+        servedModelId || "",
+        modelDef,
+    );
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {
@@ -342,6 +367,7 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
+        const servedModelDef = candidate.definition;
         if (normalizedRequestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -356,7 +382,11 @@ async function generateTextResponse(
         }
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
-        const trackingResponse = sendOpenAIResponse(completion, servedModelId);
+        const trackingResponse = sendOpenAIResponse(
+            completion,
+            servedModelId,
+            servedModelDef,
+        );
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
@@ -364,10 +394,15 @@ async function generateTextResponse(
                 publicCompletion,
                 servedModelId,
                 c.var.upstreamRequestUrl,
+                servedModelDef,
             );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(publicCompletion, servedModelId);
+        return sendOpenAIResponse(
+            publicCompletion,
+            servedModelId,
+            servedModelDef,
+        );
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }

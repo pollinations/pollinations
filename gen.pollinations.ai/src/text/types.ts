@@ -56,6 +56,8 @@ export interface TransformOptions {
 export interface TransformResult {
     messages: ChatMessage[];
     options: TransformOptions;
+    /** Bytes saved by request optimization transforms (for usage reporting). */
+    saved?: number;
 }
 
 /** A transform function that takes messages and options, returns a TransformResult. */
@@ -154,4 +156,21 @@ export interface OpenAIClientConfig {
     endpoint: string | ((model: string, options: TransformOptions) => string);
     additionalHeaders?: Record<string, string>;
     fetcher?: (input: string, init?: RequestInit) => Promise<Response>;
+}
+
+/** OpenAI-style prompt token details (subset we care about). */
+export interface PromptTokenDetails {
+    cached_tokens: number;
+    [key: string]: unknown;
+}
+
+/** OpenAI-style streaming chat completion chunk. */
+export interface ChatCompletionChunk {
+    id?: string;
+    object?: string;
+    created?: number;
+    model?: string;
+    choices?: CompletionChoice[];
+    usage?: Record<string, unknown> | null;
+    [key: string]: unknown;
 }

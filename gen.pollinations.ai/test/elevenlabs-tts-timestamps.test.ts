@@ -19,11 +19,15 @@ const log = {
 
 async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
     const ctx = createExecutionContext();
-    return worker.fetch(
+    const response = await worker.fetch(
         new Request(input, init),
         withInlineGenerationCoordinator(env),
         ctx,
     );
+    return {
+        response,
+        wait: () => waitOnExecutionContext(ctx),
+    };
 }
 
 const providerResponse = {
@@ -124,7 +128,7 @@ describe("ElevenLabs timestamped TTS", () => {
 workerTest(
     "rejects unsupported FLAC instead of returning PCM under the wrong format",
     async ({ paidApiKey }) => {
-        const response = await fetchGen(
+        const { response, wait } = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
             {
                 method: "POST",
@@ -140,14 +144,18 @@ workerTest(
             },
         );
 
-        expect(response.status).toBe(400);
-        await expect(response.json()).resolves.toMatchObject({
-            error: {
-                message: expect.stringContaining(
-                    "supports mp3, opus, aac, wav, and pcm",
-                ),
-            },
-        });
+        try {
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: expect.stringContaining(
+                        "supports mp3, opus, aac, wav, and pcm",
+                    ),
+                },
+            });
+        } finally {
+            await wait();
+        }
     },
 );
 
@@ -157,6 +165,7 @@ workerTest(
         const source = getRegistryModelDefinition("elevenlabs");
         const previousFallbacks = source.fallbacks;
         const fetchMock = vi.spyOn(globalThis, "fetch");
+        const ctx = createExecutionContext();
         try {
             source.fallbacks = ["elevenflash"];
             resetGenerationModelRegistryCache();
@@ -182,7 +191,6 @@ workerTest(
                 return Response.json(providerResponse);
             });
 
-            const ctx = createExecutionContext();
             const response = await worker.fetch(
                 new Request(
                     "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
@@ -195,6 +203,7 @@ workerTest(
                         body: JSON.stringify({
                             model: "elevenlabs",
                             input: "Fallback speech",
+                            voice: "nova",
                         }),
                     },
                 ),
@@ -210,13 +219,20 @@ workerTest(
                 "config.targets[1]",
             );
             expect(response.headers.get("x-model-used")).toBe("elevenflash");
+            expect(response.headers.get("x-pollinations-response-format")).toBe(
+                "audio-with-timestamps",
+            );
+            expect(response.headers.get("x-tts-voice")).toBe("nova");
             await response.arrayBuffer();
-            await waitOnExecutionContext(ctx);
             expect(providerModels).toEqual(["eleven_v3", "eleven_flash_v2_5"]);
         } finally {
-            fetchMock.mockRestore();
-            source.fallbacks = previousFallbacks;
-            resetGenerationModelRegistryCache();
+            try {
+                await waitOnExecutionContext(ctx);
+            } finally {
+                fetchMock.mockRestore();
+                source.fallbacks = previousFallbacks;
+                resetGenerationModelRegistryCache();
+            }
         }
     },
 );
@@ -230,7 +246,7 @@ for (const testCase of [
         `returns ${testCase.format} audio and alignment for ${testCase.model}`,
         async ({ paidApiKey }) => {
             const input = "Timed speech.";
-            const response = await fetchGen(
+            const { response, wait } = await fetchGen(
                 "https://gen.pollinations.ai/v1/audio/speech/with-timestamps",
                 {
                     method: "POST",
@@ -247,60 +263,64 @@ for (const testCase of [
                 },
             );
 
-            expect(response.status).toBe(200);
-            expect(response.headers.get("content-type")).toContain(
-                "application/json",
-            );
-            expect(
-                response.headers.get("x-usage-completion-audio-tokens"),
-            ).toBe(String(input.length));
-            expect(response.headers.get("x-pollinations-response-format")).toBe(
-                "audio-with-timestamps",
-            );
+            try {
+                expect(response.status).toBe(200);
+                expect(response.headers.get("content-type")).toContain(
+                    "application/json",
+                );
+                expect(
+                    response.headers.get("x-usage-completion-audio-tokens"),
+                ).toBe(String(input.length));
+                expect(
+                    response.headers.get("x-pollinations-response-format"),
+                ).toBe("audio-with-timestamps");
 
-            const body = (await response.json()) as typeof providerResponse;
-            expect(body.audio_base64.length).toBeGreaterThan(1000);
-            const audioBytes = Uint8Array.from(
-                atob(body.audio_base64),
-                (character) => character.charCodeAt(0),
-            );
-            expect(
-                String.fromCharCode(
-                    ...audioBytes.slice(0, testCase.magic.length),
-                ),
-            ).toBe(testCase.magic);
-            if (testCase.format === "wav") {
-                const view = new DataView(audioBytes.buffer);
-                expect(view.getUint32(4, true)).toBe(audioBytes.length - 8);
-                let offset = 12;
-                while (
-                    offset + 8 <= audioBytes.length &&
-                    String.fromCharCode(
-                        ...audioBytes.slice(offset, offset + 4),
-                    ) !== "data"
-                ) {
-                    const chunkSize = view.getUint32(offset + 4, true);
-                    offset += 8 + chunkSize + (chunkSize % 2);
-                }
+                const body = (await response.json()) as typeof providerResponse;
+                expect(body.audio_base64.length).toBeGreaterThan(1000);
+                const audioBytes = Uint8Array.from(
+                    atob(body.audio_base64),
+                    (character) => character.charCodeAt(0),
+                );
                 expect(
                     String.fromCharCode(
-                        ...audioBytes.slice(offset, offset + 4),
+                        ...audioBytes.slice(0, testCase.magic.length),
                     ),
-                ).toBe("data");
-                expect(view.getUint32(offset + 4, true)).toBe(
-                    audioBytes.length - offset - 8,
+                ).toBe(testCase.magic);
+                if (testCase.format === "wav") {
+                    const view = new DataView(audioBytes.buffer);
+                    expect(view.getUint32(4, true)).toBe(audioBytes.length - 8);
+                    let offset = 12;
+                    while (
+                        offset + 8 <= audioBytes.length &&
+                        String.fromCharCode(
+                            ...audioBytes.slice(offset, offset + 4),
+                        ) !== "data"
+                    ) {
+                        const chunkSize = view.getUint32(offset + 4, true);
+                        offset += 8 + chunkSize + (chunkSize % 2);
+                    }
+                    expect(
+                        String.fromCharCode(
+                            ...audioBytes.slice(offset, offset + 4),
+                        ),
+                    ).toBe("data");
+                    expect(view.getUint32(offset + 4, true)).toBe(
+                        audioBytes.length - offset - 8,
+                    );
+                }
+                expect(body.alignment.characters.length).toBeGreaterThan(0);
+                expect(
+                    body.alignment.character_start_times_seconds.length,
+                ).toBe(body.alignment.characters.length);
+                expect(body.alignment.character_end_times_seconds.length).toBe(
+                    body.alignment.characters.length,
                 );
+                expect(
+                    body.normalized_alignment.characters.length,
+                ).toBeGreaterThan(0);
+            } finally {
+                await wait();
             }
-            expect(body.alignment.characters.length).toBeGreaterThan(0);
-            expect(body.alignment.character_start_times_seconds.length).toBe(
-                body.alignment.characters.length,
-            );
-            expect(body.alignment.character_end_times_seconds.length).toBe(
-                body.alignment.characters.length,
-            );
-            expect(body.normalized_alignment.characters.length).toBeGreaterThan(
-                0,
-            );
         },
         30_000,
     );

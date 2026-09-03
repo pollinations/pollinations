@@ -1,4 +1,5 @@
 import {
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
@@ -336,6 +337,71 @@ export async function testCommunityTranscriptionEndpoint({
         // usage object that may not carry it.
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
+    };
+}
+
+// Speech endpoints are billed per input character, the same meter the
+// first-party TTS models use. The upstream contract is binary audio out with
+// no usage object, so the probe posts a short sample and validates that a real
+// audio payload comes back; the sample's character count is the billed usage.
+const SPEECH_TEST_INPUT = "Hello from Pollinations.";
+
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    let response: Response;
+    try {
+        // Same fetch policy as fetchJson: no redirects (the validated URL is
+        // the only one we may call) and the shared community timeout.
+        response = await fetch(communityAudioSpeechUrl(baseUrl), {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input: SPEECH_TEST_INPUT,
+                voice: "alloy",
+                response_format: "mp3",
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
+
+    if (!response.ok) {
+        const body = parseJson(
+            await readResponseText(
+                response,
+                MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+                () => new Error("Endpoint response is too large"),
+            ),
+        );
+        throw new Error(endpointErrorMessage(response.status, body));
+    }
+
+    const contentType = response.headers.get("content-type") ?? "";
+    if (!contentType.toLowerCase().startsWith("audio/")) {
+        throw new Error(
+            `Endpoint did not return audio (content-type: ${contentType || "none"}); /v1/audio/speech must respond with binary audio data`,
+        );
+    }
+    const audio = new Uint8Array(await response.arrayBuffer());
+    if (audio.byteLength === 0) {
+        throw new Error("Endpoint returned empty audio data");
+    }
+    if (audio.byteLength > MAX_COMMUNITY_MEDIA_RESPONSE_BYTES) {
+        throw new Error("Endpoint response is too large");
+    }
+
+    return {
+        usage: { characters: SPEECH_TEST_INPUT.length },
+        billableUsage: { completionAudioTokens: SPEECH_TEST_INPUT.length },
     };
 }
 

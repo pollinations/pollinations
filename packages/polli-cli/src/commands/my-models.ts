@@ -60,12 +60,19 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "video" | "transcription" | "embedding";
+    modality:
+        | "text"
+        | "image"
+        | "video"
+        | "transcription"
+        | "speech"
+        | "embedding";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
     completionVideoPrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
     inputModalities: string[];
+    requiredSafetyFeatures: string[];
     fallbacks: string[];
 }
 
@@ -102,6 +109,13 @@ function readPriceOptions(opts: Record<string, unknown>) {
     return prices;
 }
 
+function commaSeparatedList(value: unknown): string[] {
+    return String(value)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
 export function modelBody(
     opts: Record<string, unknown>,
     includeRequired: boolean,
@@ -136,10 +150,11 @@ export function modelBody(
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         body.modality = opts.modality;
@@ -155,17 +170,18 @@ export function modelBody(
     // An empty string clears the list, which is why this checks for the flag
     // being present rather than for a truthy value.
     if (opts.fallbacks !== undefined) {
-        body.fallbacks = String(opts.fallbacks)
-            .split(",")
-            .map((id) => id.trim())
-            .filter((id) => id.length > 0);
+        body.fallbacks = commaSeparatedList(opts.fallbacks);
     }
 
     if (opts.inputModalities !== undefined) {
-        body.inputModalities = String(opts.inputModalities)
-            .split(",")
-            .map((modality) => modality.trim())
-            .filter((modality) => modality.length > 0);
+        body.inputModalities = commaSeparatedList(opts.inputModalities);
+    }
+
+    if (opts.requiredSafety !== undefined) {
+        body.requiredSafetyFeatures =
+            String(opts.requiredSafety).trim() === "none"
+                ? []
+                : commaSeparatedList(opts.requiredSafety);
     }
 
     if (includeRequired) {
@@ -289,8 +305,12 @@ const create = addPriceOptions(
             "Comma-separated accepted inputs: text,image,audio,video",
         )
         .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
+        )
+        .option(
             "--modality <modality>",
-            "Model family: text (default), image, video, transcription, or embedding",
+            "Model family: text (default), image, video, transcription, speech, or embedding",
         )
         .option(
             "--image-pricing <mode>",
@@ -346,6 +366,10 @@ const update = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
         )
         // No --modality here on purpose: UpdateEndpointSchema has no modality
         // field, so a registered model's family is fixed at creation.
@@ -434,7 +458,7 @@ const test = new Command("test")
     .option("--model <model>", "Upstream model id (not used for video)")
     .option(
         "--modality <modality>",
-        "Model family: text (default), image, video, transcription, or embedding",
+        "Model family: text (default), image, video, transcription, speech, or embedding",
     )
     .action(async (opts) => {
         const key = requireKey();
@@ -444,10 +468,11 @@ const test = new Command("test")
             opts.modality !== "image" &&
             opts.modality !== "video" &&
             opts.modality !== "transcription" &&
+            opts.modality !== "speech" &&
             opts.modality !== "embedding"
         ) {
             fail(
-                "--modality must be 'text', 'image', 'video', 'transcription', or 'embedding'",
+                "--modality must be 'text', 'image', 'video', 'transcription', 'speech', or 'embedding'",
             );
         }
         const modality = opts.modality ?? "text";
@@ -476,7 +501,7 @@ const test = new Command("test")
 
 export const myModelsCommand = new Command("my-models")
     .description(
-        "Manage private and published community text, image, video, transcription, and embedding models",
+        "Manage private and published community text, image, video, transcription, speech, and embedding models",
     )
     .addCommand(list)
     .addCommand(create)

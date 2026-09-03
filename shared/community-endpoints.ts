@@ -25,6 +25,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
     "video",
+    "speech",
     "transcription",
     "embedding",
 ] as const;
@@ -121,6 +122,12 @@ export function normalizeCommunityEndpointAdvertised(
 export type CommunityEndpointImagePricing =
     (typeof COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)[number];
 
+const COMMUNITY_COMPLETION_AUDIO_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    label: "Completion audio",
+    priceUnit: "million",
+} as const;
+
 const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
     promptTextTokens: {
         key: "promptTextPrice",
@@ -157,11 +164,7 @@ const COMMUNITY_PRICE_FIELD_BY_USAGE_TYPE = {
         label: "Completion reasoning",
         priceUnit: "million",
     },
-    completionAudioTokens: {
-        key: "completionAudioPrice",
-        label: "Completion audio",
-        priceUnit: "million",
-    },
+    completionAudioTokens: COMMUNITY_COMPLETION_AUDIO_PRICE_FIELD,
 } as const satisfies Record<
     OpenAIChatUsageType,
     { key: string; label: string; priceUnit: "million" }
@@ -230,6 +233,16 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Speech endpoints bill the input text by character, using the existing
+// completion-audio price column shared with first-party TTS models.
+const COMMUNITY_SPEECH_PRICE_FIELDS = [
+    {
+        ...COMMUNITY_COMPLETION_AUDIO_PRICE_FIELD,
+        usageType: "completionAudioTokens",
+        rawUsagePaths: ["characters"],
+    },
+] as const;
+
 // Community video endpoints are billed from the duration Pollinations sends.
 const COMMUNITY_VIDEO_PRICE_FIELD = {
     key: "completionVideoPrice",
@@ -254,6 +267,10 @@ const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    ...COMMUNITY_SPEECH_PRICE_FIELDS,
+] as const;
+
 const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_VIDEO_PRICE_FIELD,
 ] as const;
@@ -274,6 +291,7 @@ export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
 
 type CommunityModalitySpec = {
@@ -332,6 +350,14 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
         restrictDefinitionEndpoints: true,
         priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     embedding: {
         category: "embedding",
@@ -453,6 +479,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "speech") return "speech";
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";

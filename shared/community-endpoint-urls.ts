@@ -55,6 +55,10 @@ export function communityAudioTranscriptionsUrl(baseUrl: string): string {
     return communityOpenAIEndpointUrl(baseUrl, "/audio/transcriptions");
 }
 
+export function communityAudioSpeechUrl(baseUrl: string): string {
+    return communityOpenAIEndpointUrl(baseUrl, "/audio/speech");
+}
+
 export function communityEmbeddingsUrl(baseUrl: string): string {
     return communityOpenAIEndpointUrl(baseUrl, "/embeddings");
 }
@@ -74,6 +78,7 @@ const COMMUNITY_OPENAI_ENDPOINT_SUFFIXES = [
     "/images/generations",
     "/images/edits",
     "/audio/transcriptions",
+    "/audio/speech",
     "/embeddings",
 ] as const;
 

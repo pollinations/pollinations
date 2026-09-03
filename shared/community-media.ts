@@ -5,10 +5,40 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
 export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
+export const MAX_COMMUNITY_AUDIO_BYTES = 20 * 1024 * 1024;
 // A JSON envelope carrying a 20 MB base64 clip is at most ~28 MB; leave a
 // small amount of room for the envelope while still bounding provider output.
 export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
     Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 64 * 1024;
+
+/** Read a community TTS response with a bounded body and validated media type. */
+export async function readCommunityAudioResponse(
+    response: Response,
+): Promise<{ bytes: Uint8Array; contentType: string }> {
+    const contentType = response.headers
+        .get("content-type")
+        ?.split(";", 1)[0]
+        .trim()
+        .toLowerCase();
+    if (!contentType?.startsWith("audio/")) {
+        throw new HttpError(
+            "Community speech endpoint did not return audio data",
+            502,
+        );
+    }
+    const bytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_AUDIO_BYTES,
+        () => new HttpError("Community audio is larger than 20 MB", 502),
+    );
+    if (bytes.byteLength === 0) {
+        throw new HttpError(
+            "Community speech endpoint returned empty audio",
+            502,
+        );
+    }
+    return { bytes, contentType };
+}
 
 /**
  * Pull the first usable image out of an OpenAI images response: inline base64

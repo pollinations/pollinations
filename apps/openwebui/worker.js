@@ -1,5 +1,5 @@
-import { Container, getContainer } from "@cloudflare/containers";
 import { env as workerEnv } from "cloudflare:workers";
+import { Container, getContainer } from "@cloudflare/containers";
 
 const CONTAINER_NAME = "primary";
 const WEBUI_URL = required("WEBUI_URL");
@@ -101,7 +101,9 @@ export default {
                 .fetch(new Request(`${WEBUI_URL}/health`))
                 .then((response) => {
                     if (!response.ok) {
-                        console.warn(`Open WebUI health returned ${response.status}`);
+                        console.warn(
+                            `Open WebUI health returned ${response.status}`,
+                        );
                     }
                 })
                 .catch((error) => {

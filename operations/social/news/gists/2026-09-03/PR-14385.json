@@ -1,0 +1,34 @@
+{
+  "pr_number": 14385,
+  "title": "fix: preserve timestamped audio cache headers",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14385",
+  "merged_at": "2026-09-03T09:26:52Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserves `x-pollinations-response-format` in cached responses so timestamped ElevenLabs results retain their format marker after the durable R2 round trip.\n- Waits for request execution contexts in timestamp tests so background cache and tracking work cannot outlive isolated test storage.\n- Adds regression coverage for the cached response header.\n- Verified with focused Vitest suites, typecheck, Biome, and the production build.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The timestamps survived winter",
+    "blurb": "Timestamped ElevenLabs audio now keeps its format marker after a trip through the R2 cache. Polli put a label on the jar, which turns out to help.",
+    "summary": "Cached ElevenLabs timestamped audio responses now preserve the x-pollinations-response-format header through the durable R2 cache round trip, with regression coverage for the cached header.",
+    "impact": "Apps requesting timestamped ElevenLabs results will continue receiving the format marker on cache hits, so cached and freshly generated audio responses behave consistently.",
+    "keywords": [
+      "elevenlabs",
+      "tts",
+      "timestamps",
+      "cache",
+      "r2",
+      "headers"
+    ],
+    "visual_concept": "Depict the R2 cache as a cozy labeled pantry of glowing audio jars: a timestamped waveform jar has a clearly preserved format tag. Polli, wearing tiny archivist glasses, carefully attaches the label while a retro terminal and small code-plants confirm that cached audio still knows what it is.",
+    "image_prompt": "A cozy pixel art archive pantry where the cute bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; she wears tiny archivist glasses and carefully labels a glowing audio-waveform jar \"TIMESTAMPS\" beside a retro terminal and sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14385.jpg",
+    "prompt": "A cozy pixel art archive pantry where the cute bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings; she wears tiny archivist glasses and carefully labels a glowing audio-waveform jar \"TIMESTAMPS\" beside a retro terminal and sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T09:27:54.445950+00:00"
+}

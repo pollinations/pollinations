@@ -28,7 +28,7 @@ export function LiveApps() {
                 }
                 action={
                     <InlineLink as={Link} to="/apps" directional>
-                        Browse the ecosystem
+                        See all apps
                     </InlineLink>
                 }
             />

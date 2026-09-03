@@ -50,9 +50,9 @@ export const Route = createFileRoute("/apps")({
 });
 
 const SORT_LABELS: Record<AppSort, string> = {
-    fresh: "Fresh",
-    buzz: "Buzz",
-    pollen: "Pollen",
+    fresh: "New",
+    buzz: "Popular",
+    pollen: "Accepts Pollen",
 };
 
 const SORT_ICONS = {
@@ -194,27 +194,30 @@ function AppsPage() {
                             ? "Apps built on Pollinations"
                             : `${apps.length} apps built on Pollinations`
                     }
-                    title="Ecosystem"
+                    title="Apps"
                     subtitle={
                         <>
-                            What the community ships on the same API you get —{" "}
+                            Explore what the community builds with
+                            Pollinations—from{" "}
                             <strong>
-                                from weekend experiments to apps with real users
+                                creative weekend experiments to apps used at
+                                scale
                             </strong>
-                            . Browse, try, ship your own.
+                            .
                         </>
                     }
                     variant="page"
                 />
-                <div className="flex flex-wrap items-center gap-4">
+                <div className="flex flex-col items-start gap-3">
                     <span className="font-semibold text-sm text-theme-text-strong">
                         Built something with Pollinations?
                     </span>
                     <ExternalLinkButton
                         href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
                         appearance="raised"
+                        className="self-start"
                     >
-                        Share your App
+                        List your app
                     </ExternalLinkButton>
                 </div>
             </HeroScene>
@@ -232,11 +235,7 @@ function AppsPage() {
                     spotlight.length === 0 && postHeroSpacingClassName,
                 )}
             >
-                <ContentHeader
-                    eyebrow="Directory"
-                    title="Browse them all"
-                    subtitle="Explore apps built with Pollinations, from creative experiments to tools people use every day."
-                />
+                <ContentHeader eyebrow="Directory" title="All apps" />
 
                 <div className="flex flex-col gap-3">
                     <Input
@@ -253,7 +252,7 @@ function AppsPage() {
                                 }),
                             })
                         }
-                        className="mb-2 min-h-11 w-full max-w-xl"
+                        className="mb-2 min-h-11 w-96 max-w-full"
                     />
                     <FilterAxis
                         ariaLabel="Categories"

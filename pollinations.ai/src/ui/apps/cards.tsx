@@ -32,17 +32,21 @@ function AppSignals({ app }: { app: DirectoryApp }) {
     return (
         <span className="flex shrink-0 items-center gap-1.5 text-theme-text-muted">
             {isFresh(app) ? (
-                <span role="img" title="Fresh" aria-label="Fresh">
+                <span role="img" title="New" aria-label="New">
                     <ClockIcon className="size-4" />
                 </span>
             ) : null}
             {isBuzz(app) ? (
-                <span role="img" title="Buzz" aria-label="Buzz">
+                <span role="img" title="Popular" aria-label="Popular">
                     <TrendUpIcon className="size-4" />
                 </span>
             ) : null}
             {isPollen(app) ? (
-                <span role="img" title="Pollen" aria-label="Pollen">
+                <span
+                    role="img"
+                    title="Accepts Pollen"
+                    aria-label="Accepts Pollen"
+                >
                     <WalletIcon className="size-4" />
                 </span>
             ) : null}

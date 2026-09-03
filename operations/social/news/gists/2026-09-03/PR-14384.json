@@ -1,0 +1,35 @@
+{
+  "pr_number": 14384,
+  "title": "feat: add OpenAI fallbacks for GPT Image",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14384",
+  "merged_at": "2026-09-03T09:36:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds hidden OpenAI direct fallback routes for `gptimage`, `gptimage-large`, and `gpt-image-2` while preserving their public IDs, aliases, pricing, access, and Azure primary routes.\n- Falls back only when an OpenAI-branded Azure route returns 429; ambiguous timeouts and generic 5xx responses remain terminal to avoid duplicate generation and provider billing.\n- Keeps Azure endpoint rotation isolated per model and skips a redundant per-user rate-limit check on the internal OpenAI fallback route.\n- Adds a 6 RPM per-user token bucket for `gpt-image-2` only, based on seven days of production traffic (p95: 4 requests/user/minute).\n- Verifies live OpenAI generation/editing and tests registry routing, provider request shapes, fallback observability/billing, timeout safety, regional rotation, and rate limiting.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The image hive has backups",
+    "blurb": "GPT Image now has a second pollinator waiting behind the Azure gate. When an OpenAI-branded Azure route is busy, the request can keep flying instead of circling the same flower.",
+    "summary": "Added hidden direct OpenAI fallback routes for gptimage, gptimage-large, and gpt-image-2 that activate only after an OpenAI-branded Azure route returns 429, while preserving public model IDs, aliases, pricing, access rules, and Azure-first routing.",
+    "impact": "Image requests for these GPT Image models can continue through OpenAI during Azure 429 congestion, while timeouts and generic 5xx responses remain safely terminal to prevent duplicate generations and billing; gpt-image-2 also now has a 6 RPM per-user limit.",
+    "keywords": [
+      "gpt-image-2",
+      "gptimage",
+      "openai",
+      "azure",
+      "fallbacks",
+      "image-generation",
+      "rate-limits"
+    ],
+    "visual_concept": "A cozy image-generation garden has three labeled seed packets—gptimage, gptimage-large, and gpt-image-2—feeding into an Azure-blue primary watering pipe, with a tucked-away OpenAI backup pipe opening only when a tiny 429 traffic sign appears. Polli should be a warm, observant garden mechanic using a small wrench to guide a single image request safely through the alternate pipe, surrounded by blooming code-plants and a gently glowing retro terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt and adjusting a backup watering pipe in a code-flower garden; three seed packets read “gptimage”, “large”, and “gpt-image-2”, while a small “429” sign redirects one glowing request from an Azure-blue pipe to a discreet OpenAI backup pipe. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with blooming code-plants and a CRT terminal glow; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14384.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt and adjusting a backup watering pipe in a code-flower garden; three seed packets read “gptimage”, “large”, and “gpt-image-2”, while a small “429” sign redirects one glowing request from an Azure-blue pipe to a discreet OpenAI backup pipe. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with blooming code-plants and a CRT terminal glow; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-03T09:37:17.957422+00:00"
+}

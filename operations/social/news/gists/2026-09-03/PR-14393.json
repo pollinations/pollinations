@@ -1,0 +1,34 @@
+{
+  "pr_number": 14393,
+  "title": "chore: refresh staging economics ingest token",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14393",
+  "merged_at": "2026-09-03T11:09:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Refreshes the encrypted local Economics ingest value to the current Tinybird staging `operations_ingest` token.\n- Changes no Tinybird token, scope, or production credential.\n- Verifies only `TINYBIRD_OPS_INGEST_TOKEN` changed and that the stored token can read the staging ledger.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Staging nectar refreshed",
+    "blurb": "The economics ingest worker received a fresh staging token and checked it against the ledger. Production bees were not disturbed.",
+    "summary": "Refreshed the encrypted `TINYBIRD_OPS_INGEST_TOKEN` used by the Economics staging ingest pipeline and verified it can read the staging ledger without changing production credentials or token scope.",
+    "impact": "Staging economics ingestion keeps working with the current Tinybird `operations_ingest` credential while production access remains unchanged.",
+    "keywords": [
+      "tinybird",
+      "staging",
+      "economics",
+      "ingest",
+      "credentials",
+      "operations"
+    ],
+    "visual_concept": "A cozy garden-shed operations scene: Polli, wearing a tiny locksmith apron, carefully replaces a key on a labeled staging ledger terminal while a separate production hive jar remains safely untouched. The key represents the refreshed encrypted ingest credential; sprouts and flowers make the internal maintenance feel calm rather than dramatic.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed server nook: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings wears a tiny locksmith apron while swapping a small key into a retro terminal labeled \"STAGING\" beside a glowing ledger and code-plants; a sealed jar marked \"PROD\" sits safely on a high shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14393.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed server nook: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings wears a tiny locksmith apron while swapping a small key into a retro terminal labeled \"STAGING\" beside a glowing ledger and code-plants; a sealed jar marked \"PROD\" sits safely on a high shelf. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T11:10:48.613922+00:00"
+}

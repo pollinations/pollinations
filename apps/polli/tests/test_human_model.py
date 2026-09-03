@@ -1,3 +1,4 @@
+import asyncio
 import json
 import tempfile
 import unittest
@@ -33,8 +34,21 @@ class FakeGateway:
         self.asks.append((thread_id, messages, timeout))
         return self.reply
 
+    async def verify_session(self, code, timeout):
+        return "Discord human"
+
     async def delete_inactive_threads(self, inactive_for):
         self.cleanup_calls.append(inactive_for)
+
+
+class WaitingGateway(FakeGateway):
+    def __init__(self):
+        super().__init__()
+        self.waiting = asyncio.Event()
+
+    async def ask(self, thread_id, messages, timeout):
+        self.waiting.set()
+        await asyncio.Event().wait()
 
 
 class HumanModelTests(unittest.IsolatedAsyncioTestCase):
@@ -107,6 +121,49 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertEqual(response["usage"]["completion_tokens"], 2)
         self.assertEqual(response["choices"][0]["finish_reason"], "length")
+
+    async def test_accepts_web_response(self):
+        gateway = WaitingGateway()
+        self.service.gateway = gateway
+        completion = asyncio.create_task(
+            self.service.complete(
+                messages=[{"role": "user", "content": "A web question"}],
+                max_tokens=None,
+                max_completion_tokens=None,
+            )
+        )
+        await gateway.waiting.wait()
+        pending = self.service.pending_requests()
+        self.assertEqual(len(pending), 1)
+        self.assertTrue(self.service.respond(pending[0]["id"], "A web answer"))
+        response = await completion
+        self.assertEqual(response["choices"][0]["message"]["content"], "A web answer")
+        self.assertEqual(self.service.pending_requests(), [])
+
+    async def test_returns_web_link_after_timeout(self):
+        self.service.gateway = WaitingGateway()
+        self.service.response_timeout = 0.01
+        response = await self.service.complete(
+            messages=[{"role": "user", "content": "An unanswered question"}],
+            max_tokens=None,
+            max_completion_tokens=None,
+            response_url="https://example.com/humans",
+        )
+        self.assertEqual(
+            response["choices"][0]["message"]["content"],
+            "No human responded within two minutes. Become the human at https://example.com/humans",
+        )
+        self.assertEqual(response["choices"][0]["finish_reason"], "stop")
+        self.assertGreater(response["usage"]["completion_tokens"], 0)
+
+    async def test_verifies_web_session_through_discord(self):
+        session_id, code = self.service.create_session()
+        self.assertTrue(code)
+        await asyncio.sleep(0)
+        self.assertEqual(
+            self.service.session_status(session_id),
+            {"authorized": True, "name": "Discord human", "code": None},
+        )
 
     def test_authorization(self):
         self.service.authorize("Bearer secret")

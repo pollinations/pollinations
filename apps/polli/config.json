@@ -81,7 +81,7 @@
   },
   "human_model": {
     "channel_id": 1544162520586129538,
-    "response_timeout_seconds": 270
+    "response_timeout_seconds": 120
   },
   "webhook": {
     "enabled": false,

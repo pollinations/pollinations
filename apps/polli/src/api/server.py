@@ -1,10 +1,11 @@
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
 from ..ai.client import UpstreamAuthError, _auth_override
@@ -12,11 +13,17 @@ from ..utils.uuid import uuid4_hex
 from .humans import HumanService, stream_completion
 
 logger = logging.getLogger(__name__)
+_HUMAN_UI = Path(__file__).with_name("humans.html").read_text(encoding="utf-8")
+_HUMAN_SESSION_COOKIE = "human_session"
 
 
 class Message(BaseModel):
     role: str
     content: str | list | None = None
+
+
+class HumanResponse(BaseModel):
+    content: str
 
 
 class ChatRequest(BaseModel):
@@ -123,6 +130,64 @@ def create_api_app(pollinations_client, config, human_service: HumanService | No
         allow_headers=["*"],
     )
 
+    def require_human_session(request: Request) -> None:
+        if human_service is None:
+            raise HTTPException(status_code=503, detail="The humans model is not configured")
+        if not human_service.is_authorized(request.cookies.get(_HUMAN_SESSION_COOKIE)):
+            raise HTTPException(status_code=401, detail="Verify your Discord access first")
+
+    @app.get("/humans", response_class=HTMLResponse, include_in_schema=False)
+    async def human_ui():
+        return _HUMAN_UI
+
+    @app.post("/v1/humans/session")
+    async def create_human_session(request: Request):
+        if human_service is None:
+            raise HTTPException(status_code=503, detail="The humans model is not configured")
+        try:
+            session_id, code = human_service.create_session()
+        except RuntimeError as error:
+            raise HTTPException(status_code=503, detail=str(error))
+        response = JSONResponse(
+            {
+                "authorized": False,
+                "code": code,
+                "channel_url": (
+                    f"https://discord.com/channels/{config.discord.guild_id}/{config.human_model.channel_id}"
+                ),
+            }
+        )
+        response.set_cookie(
+            _HUMAN_SESSION_COOKIE,
+            session_id,
+            max_age=12 * 60 * 60,
+            httponly=True,
+            secure=request.url.scheme == "https",
+            samesite="strict",
+        )
+        return response
+
+    @app.get("/v1/humans/session")
+    async def human_session(request: Request):
+        if human_service is None:
+            raise HTTPException(status_code=503, detail="The humans model is not configured")
+        return human_service.session_status(request.cookies.get(_HUMAN_SESSION_COOKIE))
+
+    @app.get("/v1/humans/requests")
+    async def human_requests(request: Request):
+        require_human_session(request)
+        return {"requests": human_service.pending_requests()}
+
+    @app.post("/v1/humans/requests/{request_id}/responses")
+    async def human_response(request_id: str, response: HumanResponse, request: Request):
+        require_human_session(request)
+        content = response.content.strip()
+        if not content or len(content) > 4_000:
+            raise HTTPException(status_code=400, detail="Response must be between 1 and 4,000 characters")
+        if not human_service.respond(request_id, content):
+            raise HTTPException(status_code=409, detail="This request has already been answered or expired")
+        return {"accepted": True}
+
     @app.post("/v1/chat/completions")
     async def chat_completions(request: ChatRequest, raw_request: Request):
         # Pass through user's API key — no cross-contamination with bot's key
@@ -156,6 +221,7 @@ def create_api_app(pollinations_client, config, human_service: HumanService | No
                     messages=[message.model_dump() for message in request.messages],
                     max_tokens=request.max_tokens,
                     max_completion_tokens=request.max_completion_tokens,
+                    response_url=str(raw_request.url_for("human_ui")),
                 )
                 if request.stream:
                     return StreamingResponse(stream_completion(completion), media_type="text/event-stream")

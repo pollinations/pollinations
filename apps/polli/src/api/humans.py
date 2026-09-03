@@ -10,6 +10,7 @@ import os
 import re
 import sys
 import time
+from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from typing import Protocol
@@ -29,6 +30,9 @@ _DISCORD_PREVIEW_EDGE = 280
 _MAX_THREAD_NAME = 100
 _THREAD_CLEANUP_INTERVAL = 60
 _THREAD_INACTIVE_SECONDS = 5 * 60
+_SESSION_VERIFY_SECONDS = 5 * 60
+_SESSION_ACTIVE_SECONDS = 12 * 60 * 60
+_MAX_SESSIONS = 100
 
 logger = logging.getLogger(__name__)
 
@@ -37,10 +41,32 @@ class HumanReply(Protocol):
     content: str
 
 
+@dataclass(frozen=True)
+class TextReply:
+    content: str
+
+
+@dataclass
+class PendingRequest:
+    messages: list[dict]
+    created_at: float
+    response: asyncio.Future[TextReply]
+
+
+@dataclass
+class HumanSession:
+    code: str
+    expires_at: float
+    name: str | None = None
+    verification: asyncio.Task | None = None
+
+
 class HumanGateway(Protocol):
     async def create_thread(self, name: str) -> int: ...
 
     async def ask(self, thread_id: int, messages: list[dict], timeout: float) -> HumanReply: ...
+
+    async def verify_session(self, code: str, timeout: float) -> str: ...
 
     async def delete_inactive_threads(self, inactive_for: float) -> None: ...
 
@@ -103,6 +129,21 @@ class DiscordHumanGateway:
                 return message
         return await waiter
 
+    async def verify_session(self, code: str, timeout: float) -> str:
+        def eligible(message: discord.Message) -> bool:
+            return (
+                message.channel.id == self.channel_id
+                and not message.author.bot
+                and message.content.strip().lower() == f"human-web {code.lower()}"
+            )
+
+        message = await self.bot.wait_for("message", check=eligible, timeout=timeout)
+        try:
+            await message.add_reaction("✅")
+        except discord.HTTPException:
+            pass
+        return message.author.display_name
+
     async def delete_inactive_threads(self, inactive_for: float) -> None:
         if not self.bot.is_ready() or self.bot.user is None:
             return
@@ -132,6 +173,8 @@ class HumanService:
         self.response_timeout = response_timeout
         self.database: aiosqlite.Connection | None = None
         self.cleanup_task: asyncio.Task | None = None
+        self.pending: dict[str, PendingRequest] = {}
+        self.sessions: dict[str, HumanSession] = {}
 
     async def start(self) -> None:
         self.database_path.parent.mkdir(parents=True, exist_ok=True)
@@ -151,6 +194,14 @@ class HumanService:
         self.cleanup_task = asyncio.create_task(self._cleanup_inactive_threads())
 
     async def close(self) -> None:
+        for session in self.sessions.values():
+            if session.verification:
+                session.verification.cancel()
+        await asyncio.gather(
+            *(session.verification for session in self.sessions.values() if session.verification),
+            return_exceptions=True,
+        )
+        self.sessions.clear()
         if self.cleanup_task:
             self.cleanup_task.cancel()
             try:
@@ -183,6 +234,7 @@ class HumanService:
         messages: list[dict],
         max_tokens: int | None,
         max_completion_tokens: int | None,
+        response_url: str | None = None,
     ) -> dict:
         if not self.database:
             raise RuntimeError("Human model is not configured")
@@ -195,7 +247,14 @@ class HumanService:
             thread_id, prompt_start = match
             prompt = messages[prompt_start:]
 
-        reply = await self.gateway.ask(thread_id, prompt, self.response_timeout)
+        try:
+            reply = await self._wait_for_reply(thread_id, prompt, messages)
+        except TimeoutError:
+            reply = TextReply(
+                f"No human responded within two minutes. Become the human at {response_url}"
+                if response_url
+                else "No human responded within two minutes."
+            )
 
         limit_values = [value for value in (max_tokens, max_completion_tokens) if value is not None]
         limit = min(limit_values) if limit_values else None
@@ -236,6 +295,89 @@ class HumanService:
                 "total_tokens": prompt_tokens + completion_tokens,
             },
         }
+
+    async def _wait_for_reply(self, thread_id: int, prompt: list[dict], messages: list[dict]) -> HumanReply:
+        request_id = uuid4_hex()
+        response = asyncio.get_running_loop().create_future()
+        self.pending[request_id] = PendingRequest(messages=messages, created_at=time.time(), response=response)
+        discord_reply = asyncio.create_task(self.gateway.ask(thread_id, prompt, self.response_timeout))
+        try:
+            done, _ = await asyncio.wait(
+                {discord_reply, response},
+                timeout=self.response_timeout,
+                return_when=asyncio.FIRST_COMPLETED,
+            )
+            if not done:
+                raise TimeoutError
+            return next(iter(done)).result()
+        finally:
+            self.pending.pop(request_id, None)
+            if not discord_reply.done():
+                discord_reply.cancel()
+                await asyncio.gather(discord_reply, return_exceptions=True)
+            if not response.done():
+                response.cancel()
+
+    def pending_requests(self) -> list[dict]:
+        return [
+            {
+                "id": request_id,
+                "title": conversation_thread_name(request.messages),
+                "messages": request.messages,
+                "created_at": request.created_at,
+            }
+            for request_id, request in self.pending.items()
+        ]
+
+    def respond(self, request_id: str, content: str) -> bool:
+        request = self.pending.pop(request_id, None)
+        if request is None or request.response.done():
+            return False
+        request.response.set_result(TextReply(content=content.strip()))
+        return True
+
+    def create_session(self) -> tuple[str, str]:
+        self._remove_expired_sessions()
+        if len(self.sessions) >= _MAX_SESSIONS:
+            raise RuntimeError("Too many pending responder sign-ins")
+        session_id = uuid4_hex()
+        code = uuid4_hex()[:6].upper()
+        session = HumanSession(code=code, expires_at=time.time() + _SESSION_VERIFY_SECONDS)
+        self.sessions[session_id] = session
+        session.verification = asyncio.create_task(self._verify_session(session_id))
+        return session_id, code
+
+    async def _verify_session(self, session_id: str) -> None:
+        session = self.sessions[session_id]
+        try:
+            session.name = await self.gateway.verify_session(session.code, _SESSION_VERIFY_SECONDS)
+            session.expires_at = time.time() + _SESSION_ACTIVE_SECONDS
+        except TimeoutError:
+            self.sessions.pop(session_id, None)
+        except Exception:
+            self.sessions.pop(session_id, None)
+            logger.exception("Failed to verify human responder session")
+
+    def session_status(self, session_id: str | None) -> dict:
+        self._remove_expired_sessions()
+        session = self.sessions.get(session_id or "")
+        return {
+            "authorized": bool(session and session.name),
+            "name": session.name if session else None,
+            "code": session.code if session and not session.name else None,
+        }
+
+    def is_authorized(self, session_id: str | None) -> bool:
+        return self.session_status(session_id)["authorized"]
+
+    def _remove_expired_sessions(self) -> None:
+        now = time.time()
+        for session_id, session in list(self.sessions.items()):
+            if session.expires_at > now:
+                continue
+            if session.verification:
+                session.verification.cancel()
+            self.sessions.pop(session_id)
 
     async def _thread_for_messages(self, messages: list[dict]) -> tuple[int, int] | None:
         assert self.database

@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Humans API</title>
+    <style>
+      :root { color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #0d0f0e; color: #f4f7f5; }
+      main { width: min(760px, calc(100% - 32px)); margin: 48px auto; }
+      header { margin-bottom: 28px; }
+      h1 { margin: 0 0 8px; font-size: clamp(32px, 7vw, 52px); letter-spacing: -0.05em; }
+      h2 { margin: 0; font-size: 18px; }
+      p { color: #a9b3ad; line-height: 1.55; }
+      a { color: #d7ff64; }
+      button, textarea { font: inherit; }
+      button { border: 0; border-radius: 10px; padding: 11px 16px; background: #d7ff64; color: #11150f; font-weight: 700; cursor: pointer; }
+      button:disabled { cursor: wait; opacity: 0.55; }
+      .secondary { background: #252a27; color: #f4f7f5; }
+      .card { border: 1px solid #2c332f; border-radius: 16px; padding: 20px; background: #151816; margin-bottom: 14px; }
+      .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .code { display: inline-block; margin: 12px 0; padding: 10px 14px; border-radius: 10px; background: #080a09; color: #d7ff64; font: 700 22px ui-monospace, monospace; letter-spacing: 0.08em; }
+      .messages { margin: 16px 0; display: grid; gap: 8px; }
+      .message { padding: 11px 13px; border-radius: 10px; background: #202522; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .role { display: block; margin-bottom: 4px; color: #8f9a94; font-size: 12px; font-weight: 800; text-transform: uppercase; }
+      textarea { width: 100%; min-height: 100px; resize: vertical; border: 1px solid #39413c; border-radius: 10px; padding: 12px; background: #0d0f0e; color: #f4f7f5; }
+      form .row { justify-content: flex-end; margin-top: 10px; }
+      .empty { padding: 42px 20px; text-align: center; border: 1px dashed #39413c; border-radius: 16px; }
+      .hidden { display: none; }
+      #status { min-height: 24px; color: #d7ff64; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Humans API</h1>
+        <p>Answer live chat-completion requests. The first response wins.</p>
+      </header>
+
+      <section id="access" class="card">
+        <h2>Verify with Discord</h2>
+        <p id="access-copy">Connect through <code>#humans-api</code> before viewing requests.</p>
+        <button id="connect">Get access code</button>
+        <div id="verify" class="hidden">
+          <p>Post this in <a id="channel" target="_blank" rel="noreferrer">#humans-api</a>:</p>
+          <div class="code" id="code"></div>
+          <p>This page unlocks automatically. The code expires in five minutes.</p>
+        </div>
+      </section>
+
+      <section id="workspace" class="hidden">
+        <div class="row">
+          <div>
+            <h2 id="welcome">Open requests</h2>
+            <p id="status"></p>
+          </div>
+          <button id="notifications" class="secondary">Enable notifications</button>
+        </div>
+        <div id="requests"></div>
+      </section>
+    </main>
+
+    <script>
+      const access = document.querySelector("#access");
+      const workspace = document.querySelector("#workspace");
+      const requests = document.querySelector("#requests");
+      const status = document.querySelector("#status");
+      const seen = new Set();
+      let initialized = false;
+      let sessionTimer;
+
+      async function json(url, options) {
+        const response = await fetch(url, options);
+        const body = await response.json();
+        if (!response.ok) throw new Error(body.detail || "Request failed");
+        return body;
+      }
+
+      async function checkSession() {
+        const session = await json("/v1/humans/session");
+        if (!session.authorized) return;
+        clearInterval(sessionTimer);
+        access.classList.add("hidden");
+        workspace.classList.remove("hidden");
+        document.querySelector("#welcome").textContent = `Open requests · ${session.name}`;
+        await loadRequests();
+        setInterval(loadRequests, 2000);
+      }
+
+      document.querySelector("#connect").addEventListener("click", async event => {
+        event.currentTarget.disabled = true;
+        try {
+          const session = await json("/v1/humans/session", { method: "POST" });
+          document.querySelector("#code").textContent = `human-web ${session.code}`;
+          document.querySelector("#channel").href = session.channel_url;
+          document.querySelector("#verify").classList.remove("hidden");
+          sessionTimer = setInterval(checkSession, 1500);
+        } catch (error) {
+          document.querySelector("#access-copy").textContent = error.message;
+          event.currentTarget.disabled = false;
+        }
+      });
+
+      document.querySelector("#notifications").addEventListener("click", async event => {
+        if (!("Notification" in window)) return;
+        const permission = await Notification.requestPermission();
+        event.currentTarget.textContent = permission === "granted" ? "Notifications on" : "Notifications blocked";
+      });
+
+      function renderRequest(request) {
+        const card = document.createElement("article");
+        card.className = "card";
+        const heading = document.createElement("h2");
+        heading.textContent = request.title;
+        card.append(heading);
+
+        const messages = document.createElement("div");
+        messages.className = "messages";
+        request.messages.forEach(message => {
+          const item = document.createElement("div");
+          item.className = "message";
+          const role = document.createElement("span");
+          role.className = "role";
+          role.textContent = message.role;
+          const content = document.createElement("span");
+          content.textContent = message.content;
+          item.append(role, content);
+          messages.append(item);
+        });
+        card.append(messages);
+
+        const form = document.createElement("form");
+        const answer = document.createElement("textarea");
+        answer.placeholder = "Write the human response…";
+        answer.maxLength = 4000;
+        answer.required = true;
+        const actions = document.createElement("div");
+        actions.className = "row";
+        const submit = document.createElement("button");
+        submit.textContent = "Send response";
+        submit.type = "submit";
+        actions.append(submit);
+        form.append(answer, actions);
+        form.addEventListener("submit", async event => {
+          event.preventDefault();
+          submit.disabled = true;
+          try {
+            await json(`/v1/humans/requests/${request.id}/responses`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ content: answer.value })
+            });
+            status.textContent = "Response sent.";
+            await loadRequests();
+          } catch (error) {
+            status.textContent = error.message;
+            submit.disabled = false;
+          }
+        });
+        card.append(form);
+        return card;
+      }
+
+      async function loadRequests() {
+        try {
+          const body = await json("/v1/humans/requests");
+          for (const request of body.requests) {
+            if (initialized && !seen.has(request.id) && "Notification" in window && Notification.permission === "granted") {
+              new Notification("New Humans API request", { body: request.title });
+            }
+            seen.add(request.id);
+          }
+          requests.replaceChildren(...body.requests.map(renderRequest));
+          if (!body.requests.length) {
+            const empty = document.createElement("div");
+            empty.className = "empty";
+            empty.textContent = "Waiting for a question…";
+            requests.append(empty);
+          }
+          initialized = true;
+          status.textContent = `${body.requests.length} waiting`;
+        } catch (error) {
+          status.textContent = error.message;
+        }
+      }
+
+      checkSession();
+    </script>
+  </body>
+</html>

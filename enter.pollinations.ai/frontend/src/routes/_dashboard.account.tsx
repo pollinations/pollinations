@@ -8,14 +8,15 @@ import {
     GitHubIcon,
     Heading,
     Input,
-    LockIcon,
     Section,
     Surface,
     Text,
+    TrashIcon,
 } from "@pollinations/ui";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { authClient } from "../auth.ts";
+import { ConnectedApps } from "../components/account/connected-apps.tsx";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
 const DELETE_CONFIRMATION = "DELETE";
@@ -259,6 +260,10 @@ function AccountPage() {
                 </Section>
             )}
 
+            <div id="connectors" className="scroll-mt-6">
+                <ConnectedApps />
+            </div>
+
             <Section title="Danger zone" framed>
                 <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
                     <Text tone="strong" weight="semibold">
@@ -275,7 +280,7 @@ function AccountPage() {
                 </div>
                 <div className="space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                     <p className="flex items-start gap-1.5">
-                        <LockIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <TrashIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                         <span>
                             Permanently close your account and revoke access.
                         </span>

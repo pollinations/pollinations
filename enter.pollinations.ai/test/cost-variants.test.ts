@@ -26,6 +26,21 @@ function bill(
     });
 }
 
+function fallbackBill(
+    model: ModelName,
+    servedBy: ModelName,
+    usage: BillingArgs["usage"],
+    input?: BillingArgs["input"],
+) {
+    return calculateUsageBilling({
+        model,
+        usage,
+        servedBy: getRegistryModelDefinition(servedBy),
+        quotedBy: getRegistryModelDefinition(model),
+        input,
+    });
+}
+
 describe("long-context cost variants", () => {
     it.each([
         ["gpt-5.4", 272_000],
@@ -170,6 +185,50 @@ describe("long-context cost variants", () => {
                 ).toBeCloseTo(perMillionTokens / 1e6, 15);
             }
         }
+    });
+
+    it.each([
+        [32_000, undefined],
+        [32_001, "context_32k"],
+        [256_000, "context_32k"],
+        [256_001, "context_256k"],
+    ] as const)("direct Alibaba uses its strict tier boundary at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(
+            bill("qwen3.7-flash-alibaba", { promptTextTokens }).costVariant,
+        ).toBe(expectedVariant);
+    });
+
+    it("records direct Alibaba explicit-cache cost without changing the quote", () => {
+        const billing = fallbackBill(
+            "qwen3.7-flash",
+            "qwen3.7-flash-alibaba",
+            { promptCachedTokens: 10_000 },
+            { hasExplicitCacheHit: true },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.00003, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00006, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.00003, 12);
+    });
+
+    it("keeps the Llama Scout quote and records the absorbed Vertex loss", () => {
+        const billing = fallbackBill(
+            "llama-scout",
+            "llama-scout-openrouter-vertex",
+            {
+                promptTextTokens: 1_000_000,
+                promptImageTokens: 1_000_000,
+                completionTextTokens: 1_000_000,
+            },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(1.2, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
+        expect(billing.servedPrice).toBeCloseTo(1.2, 12);
+        expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
+            0.7,
+            12,
+        );
     });
 
     it("reprices the whole GPT-5.5 request one token above 272K", () => {
@@ -706,6 +765,29 @@ describe("FLUX.2 image billing", () => {
         expect(billing.adjustments).toMatchObject([
             {
                 ruleId: "azure.flux_2_pro.initial_output_megapixel.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("attributes the Replicate fallback execution fee to Replicate", () => {
+        const billing = calculateUsageBilling({
+            model: "flux-2-pro",
+            usage: {
+                promptImageTokens: 2,
+                completionImageTokens: 4,
+            },
+            servedBy: getRegistryModelDefinition("flux-2-pro-replicate"),
+            quotedBy: getRegistryModelDefinition("flux-2-pro"),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "replicate.flux_2_pro.run.v1",
                 units: 1,
                 cost: 0.015,
                 price: 0.01125,

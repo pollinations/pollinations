@@ -29,6 +29,7 @@ import {
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
 } from "./price-table.tsx";
+import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type ActionState,
     type CommunityEndpointTestResponse,
@@ -414,7 +415,7 @@ export function CommunityEndpointDialog({
                             title="Queued changes will be cancelled"
                         >
                             Saving this model as Private removes its queued
-                            changes. Publishing it again starts a new 12-hour
+                            changes. Publishing it again starts a new 3-hour
                             wait.
                         </Alert>
                     )}
@@ -717,6 +718,18 @@ export function CommunityEndpointDialog({
                                 </TabButton>
                             </ButtonGroup>
                         </FieldStack>
+                    )}
+                    {!isEndpointAgent && (
+                        <SafetyFeatureSelector
+                            value={form.requiredSafetyFeatures}
+                            disabled={isSubmitting}
+                            onChange={(requiredSafetyFeatures) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    requiredSafetyFeatures,
+                                }))
+                            }
+                        />
                     )}
                     {isShared && (
                         <FieldStack

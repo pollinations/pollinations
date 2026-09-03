@@ -16,10 +16,11 @@ import {
     OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
+import type { SafetyFeature } from "./schemas/safety.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
+export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
@@ -726,6 +727,7 @@ type CommunityEndpointRuntimeBase = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    requiredSafetyFeatures?: SafetyFeature[];
     paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
@@ -784,6 +786,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
     hidden?: boolean;
@@ -973,6 +976,7 @@ export function communityModelDefinition(
                   ),
               }
             : {}),
+        requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

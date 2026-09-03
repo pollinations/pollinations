@@ -1,0 +1,66 @@
+{
+  "name": "openwebui",
+  "main": "worker.js",
+  "compatibility_date": "2026-01-01",
+  // Pre-built upstream image pushed to the Cloudflare registry by
+  // scripts/push-image.sh. No Dockerfile: every setting is an env var, so the
+  // deploy needs no Docker and CI never builds an image.
+  "containers": [
+    {
+      "class_name": "OpenWebUIContainer",
+      "image": "registry.cloudflare.com/b6ec751c0862027ba269faf7029b2501/open-webui:0.11.3-slim",
+      "max_instances": 1,
+      "instance_type": "standard-1"
+    }
+  ],
+  "durable_objects": {
+    "bindings": [{ "name": "OPENWEBUI", "class_name": "OpenWebUIContainer" }]
+  },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["OpenWebUIContainer"] }],
+  // Same shape as floret/observability: myceli origin first, public alias second.
+  "routes": [
+    {
+      "pattern": "openwebui.myceli.ai",
+      "zone_name": "myceli.ai",
+      "custom_domain": true
+    },
+    {
+      "pattern": "openwebui.pollinations.ai",
+      "zone_name": "pollinations.ai",
+      "custom_domain": true
+    }
+  ],
+  // Keep the single instance warm; a cold start pulls a ~1.5 GB image.
+  "triggers": { "crons": ["*/5 * * * *"] },
+  "vars": {
+    "WEBUI_URL": "https://openwebui.pollinations.ai",
+    "OAUTH_CLIENT_ID": "pk_NVZ2LTQeblbbw1P8"
+  },
+  "observability": { "enabled": true },
+  // Secrets (pushed by scripts/push-secrets.mjs from secrets/secrets.vars.json):
+  // - WEBUI_SECRET_KEY
+  // - DATABASE_URL
+  "env": {
+    "staging": {
+      "name": "openwebui-staging",
+      "workers_dev": true,
+      "routes": [],
+      "containers": [
+        {
+          "class_name": "OpenWebUIContainer",
+          "image": "registry.cloudflare.com/b6ec751c0862027ba269faf7029b2501/open-webui:0.11.3-slim",
+          "max_instances": 1,
+          "instance_type": "standard-1"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "OPENWEBUI", "class_name": "OpenWebUIContainer" }]
+      },
+      "triggers": { "crons": [] },
+      "vars": {
+        "WEBUI_URL": "https://openwebui-staging.elliot-b6e.workers.dev",
+        "OAUTH_CLIENT_ID": "pk_NVZ2LTQeblbbw1P8"
+      }
+    }
+  }
+}

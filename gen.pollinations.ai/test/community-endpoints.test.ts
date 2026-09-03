@@ -3119,10 +3119,10 @@ fixtureTest(
         const textExcludeModels = (await textExclude.json()) as ListedModel[];
         const textOnlyModels = (await textOnly.json()) as ListedModel[];
         const openaiExcludeData = (await openaiExclude.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const openaiOnlyData = (await openaiOnly.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
         const imageOnlyModels = (await imageOnly.json()) as ListedModel[];
@@ -3147,9 +3147,15 @@ fixtureTest(
         expect(
             openaiExcludeData.data.find((m) => m.id === textModelId),
         ).toBeUndefined();
+        expect(openaiExcludeData.data.every((m) => m.community === false)).toBe(
+            true,
+        );
         expect(
             openaiOnlyData.data.find((m) => m.id === textModelId),
         ).toBeDefined();
+        expect(openaiOnlyData.data.every((m) => m.community === true)).toBe(
+            true,
+        );
 
         expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
         expect(
@@ -5690,6 +5696,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const promptAgent = {
         systemPrompt: "You are a terse SQL tutor.",
         baseModel: "openai-fast",
+        requiredSafetyFeatures: ["sexual"],
         mcpServers: ["pollinations"],
     };
     const createAgentResponse = await fetchEnterApi(
@@ -5737,7 +5744,12 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(storedAgent.id).toBe(agent.id);
     expect(storedAgent.baseUrl).toBe(PROMPT_AGENT_BASE_URL_PLACEHOLDER);
     expect(storedAgent.upstreamModel).toBe(agent.id);
-    expect(JSON.parse(storedAgent.payload)).toEqual(promptAgent);
+    expect(storedAgent.requiredSafetyFeatures).toEqual(["sexual"]);
+    expect(JSON.parse(storedAgent.payload)).toEqual({
+        systemPrompt: promptAgent.systemPrompt,
+        baseModel: promptAgent.baseModel,
+        mcpServers: promptAgent.mcpServers,
+    });
     const partialUpdateResponse = await fetchEnterApi(
         enterApi,
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
@@ -5782,8 +5794,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         .select()
         .from(communityEndpointTable)
         .where(eq(communityEndpointTable.id, agent.id));
+    expect(agentAfterPromptUpdate.requiredSafetyFeatures).toEqual(["sexual"]);
     expect(JSON.parse(agentAfterPromptUpdate.payload)).toEqual({
-        ...promptAgent,
+        baseModel: promptAgent.baseModel,
+        mcpServers: promptAgent.mcpServers,
         systemPrompt: "You are an editable SQL tutor.",
     });
     const listResponse = await fetchEnterApi(
@@ -5884,6 +5898,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         promptTextTokens: 0,
         completionTextTokens: 0,
     });
+    expect(registryEntry.definition.requiredSafetyFeatures).toEqual(["sexual"]);
     const gatewayContext = await communityEndpointGatewayContext({
         endpoint: registryEntry.communityEndpoint,
         modelDefinition: registryEntry.definition,
@@ -5935,6 +5950,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                     baseUrl: "https://updated-agent.example.com/v1",
                     upstreamModel: "updated-endpoint-agent",
                     perUserRpm: 7,
+                    requiredSafetyFeatures: ["violence"],
                 }),
             },
         ),
@@ -5948,6 +5964,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         baseUrl: "https://updated-agent.example.com/v1",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
+        requiredSafetyFeatures: ["violence"],
     });
     expect(endpointAgentResponse).not.toHaveProperty("agentId");
     expect(endpointAgentResponse).not.toHaveProperty("modality");
@@ -5977,7 +5994,11 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         baseUrl: "https://updated-agent.example.com/v1",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
+        requiredSafetyFeatures: ["violence"],
     });
+    expect(
+        endpointAgentRegistryEntry?.definition.requiredSafetyFeatures,
+    ).toEqual(["violence"]);
     expect(endpointAgentRegistryEntry?.communityEndpoint).not.toHaveProperty(
         "bearerTokenCiphertext",
     );
@@ -6922,9 +6943,9 @@ fixtureTest(
                 upstreamHosts.push(host);
                 if (host === primaryHostname) {
                     return Response.json(
-                        { error: "upstream down" },
+                        { error: "upstream timed out" },
                         {
-                            status: 500,
+                            status: 524,
                         },
                     );
                 }

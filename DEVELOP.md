@@ -71,6 +71,9 @@ This will enable comprehensive debug output to help troubleshoot issues during d
 
 Current-state architecture diagrams for pollinations.ai infrastructure and model routing.
 
+For the agent-specific request paths, credential delegation, MCP gateway, and
+billing model, see [Agents and MCP Architecture](./AGENTS_AND_MCP.md).
+
 ## Models & Providers
 
 ```mermaid

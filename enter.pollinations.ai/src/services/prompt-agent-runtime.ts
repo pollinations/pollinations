@@ -303,7 +303,6 @@ function mediaResultContent(
     toolName: string,
     output: unknown,
     seenUrls: Set<string>,
-    hasContent: boolean,
 ): string {
     const result = output as CallToolResult;
     if (
@@ -356,7 +355,7 @@ function mediaResultContent(
         }
     }
     if (links.length === 0) return "";
-    return `${hasContent ? "\n\n" : ""}${links.join("\n\n")}\n\n`;
+    return `\n\n${links.join("\n\n")}\n\n`;
 }
 
 function toolResultContent(
@@ -367,20 +366,13 @@ function toolResultContent(
         output: unknown;
     },
     seenUrls: Set<string>,
-    hasContent: boolean,
 ): string {
     const details = toolDetailsContent(
         part,
         "Tool Executed",
         toolOutputText(part.output),
-        hasContent,
     );
-    const media = mediaResultContent(
-        part.toolName,
-        part.output,
-        seenUrls,
-        true,
-    );
+    const media = mediaResultContent(part.toolName, part.output, seenUrls);
     return `${details}${media || "\n\n"}`;
 }
 
@@ -388,13 +380,11 @@ function toolDetailsContent(
     part: { toolCallId: string; toolName: string; input: unknown },
     summary: string,
     output: string,
-    hasContent: boolean,
 ): string {
     const name = part.toolName.replace(/^mcp__[^_]+__/, "");
     const argumentsJson = JSON.stringify(part.input ?? {});
     return (
-        (hasContent ? "\n\n" : "") +
-        `<details type="tool_calls" done="true" ` +
+        `\n\n<details type="tool_calls" done="true" ` +
         `id="${escapeHtml(part.toolCallId)}" ` +
         `name="${escapeHtml(name)}" ` +
         `arguments="${escapeHtml(argumentsJson)}">\n` +
@@ -422,18 +412,13 @@ async function runAgent(
             for (const part of step.content) {
                 if (part.type === "text") content += part.text;
                 if (part.type === "tool-result") {
-                    content += toolResultContent(
-                        part,
-                        seenUrls,
-                        content.length > 0,
-                    );
+                    content += toolResultContent(part, seenUrls);
                 }
                 if (part.type === "tool-error") {
                     content += `${toolDetailsContent(
                         part,
                         "Tool Failed",
                         agentErrorMessage(part.error),
-                        content.length > 0,
                     )}\n\n`;
                 }
             }
@@ -495,11 +480,7 @@ async function streamAgent(
                         );
                     }
                     if (part.type === "tool-result") {
-                        const content = toolResultContent(
-                            part,
-                            seenUrls,
-                            hasContent,
-                        );
+                        const content = toolResultContent(part, seenUrls);
                         if (content) {
                             hasContent = true;
                             send(
@@ -517,7 +498,6 @@ async function streamAgent(
                             part,
                             "Tool Failed",
                             agentErrorMessage(part.error),
-                            hasContent,
                         );
                         hasContent = true;
                         send(

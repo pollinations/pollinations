@@ -42,6 +42,7 @@ interface ResponsesUsage {
     input_tokens_details?: {
         cached_tokens?: number;
         cache_write_tokens?: number;
+        cache_type?: string;
     };
     output_tokens_details?: { reasoning_tokens?: number };
 }
@@ -244,6 +245,9 @@ function chatUsage(usage: ResponsesUsage): Json {
             cached_tokens: usage.input_tokens_details.cached_tokens ?? 0,
             cache_write_tokens:
                 usage.input_tokens_details.cache_write_tokens ?? 0,
+            ...(usage.input_tokens_details.cache_type
+                ? { cache_type: usage.input_tokens_details.cache_type }
+                : {}),
         };
     }
     if (usage.output_tokens_details) {

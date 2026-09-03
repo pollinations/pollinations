@@ -1,3 +1,4 @@
+import { defineCostVariants, matchResolution } from "./cost-variants";
 import type { FallbackMap } from "./merge-fallbacks";
 
 /**
@@ -7,11 +8,166 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    gptimage: {
+        "gptimage-openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+        },
+    },
+    "gptimage-large": {
+        "gptimage-large-openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+        },
+    },
+    "gpt-image-2": {
+        "gpt-image-2-openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+            perUserRpm: null,
+        },
+    },
+    kontext: {
+        "kontext-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "flux-2-pro": {
+        "flux-2-pro-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+            billing: {
+                adjustments: [
+                    {
+                        id: "replicate.flux_2_pro.run.v1",
+                        description: "Replicate FLUX.2 Pro execution fee",
+                        kind: "image",
+                        unit: "generation",
+                        unitCost: 0.015,
+                        publicPricing: {
+                            label: "Execution fee",
+                            quantity: 1,
+                            unit: "generation",
+                        },
+                        countUnits: () => 1,
+                    },
+                ],
+            },
+        },
+    },
+    "qwen-image-3": {
+        "qwen-image-3-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: {
+                promptImageTokens: 0,
+                completionImageTokens: 0.03,
+            },
+            costVariants: {
+                "2k": {
+                    promptImageTokens: 0,
+                    completionImageTokens: 0.03,
+                },
+            },
+        },
+    },
+    "p-image-edit": {
+        "p-image-edit-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "nanobanana-2": {
+        "nanobanana-2-openrouter-ai-studio": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "nanobanana-pro": {
+        "nanobanana-pro-openrouter-vertex": {
+            provider: "openrouter",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    flux: {
+        "flux-deepinfra": {
+            provider: "deepinfra",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: { completionImageTokens: 0.0005 },
+        },
+    },
+    krea: {
+        "krea-replicate": {
+            provider: "replicate",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    seedream5: {
+        "seedream5-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+            maxReferenceImages: 10,
+        },
+    },
+    "grok-video-pro": {
+        "grok-video-pro-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "grok-imagine-video-1.5": {
+        "grok-imagine-video-1.5-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    wan: {
+        "wan-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "wan-fast": {
+        "wan-fast-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-02").getTime(),
+            // Fal charges $0.05 per fixed 5-second 480p generation. The
+            // inherited $0.01/second sheet bills the caller the same $0.05, so
+            // this fallback has no loss for either text-to-video or image-to-video.
+        },
+    },
+    "seedance-pro": {
+        "seedance-pro-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-01").getTime(),
+            cost: { completionVideoSeconds: 0.0216 },
+            ...defineCostVariants(
+                {
+                    "480p": { completionVideoSeconds: 0.0096 },
+                    "1080p": { completionVideoSeconds: 0.0486 },
+                },
+                matchResolution("480p", "1080p"),
+                {
+                    "480p": {
+                        label: "480p",
+                        description:
+                            "Applies when the requested video resolution is 480p.",
+                    },
+                    "1080p": {
+                        label: "1080p",
+                        description:
+                            "Applies when the requested video resolution is 1080p.",
+                    },
+                },
+                "720p",
+            ),
+        },
+    },
     zimage: {
         "zimage-fal": {
             provider: "fal",
             addedDate: new Date("2026-08-10").getTime(),
-            paidOnly: true,
             // Fal bills $0.005 per output megapixel. The token line stays at
             // zero; the adjustment below records the exact provider cost while
             // the caller keeps the public zimage flat price.

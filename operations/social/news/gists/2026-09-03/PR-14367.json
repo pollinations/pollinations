@@ -1,0 +1,35 @@
+{
+  "pr_number": 14367,
+  "title": "feat: add fallbacks for degraded models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14367",
+  "merged_at": "2026-09-03T10:03:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds direct Alibaba and DeepInfra fallbacks for Qwen3.7 Flash and Mistral Small 3.2, plus a fixed 5-second, 480p Fal route for Wan 2.2 Turbo.\n- Qwen and Mistral bypass the OpenRouter gateway but intentionally keep the same inference provider and checkpoint. They cover OpenRouter transport failures, not an Alibaba- or DeepInfra-wide outage or rate limit.\n- Keeps the caller price on the requested public model. Mistral and Wan have no fallback loss; Alibaba is equal or cheaper, with exact tiers and explicit-cache reads selected from provider-reported response usage.\n- Uses Google Vertex for Llama Scout. Vertex costs $0.25/M input or image and $0.70/M output versus the unchanged $0.10/$0.30 quote, so Pollinations absorbs $0.15/M input or image and $0.40/M output.\n- Restricts Wan Turbo to its supported ratios and keeps incompatible Llama tool, image-count, and explicit output-limit requests on the primary route.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The backup hive is awake",
+    "blurb": "When a model’s usual road gets bumpy, the request can now take a well-mapped side path. Same public model, same caller price, fewer conversations stranded in transit.",
+    "summary": "Added direct Alibaba fallbacks for Qwen3.7 Flash, DeepInfra fallbacks for Mistral Small 3.2, a fixed 5-second 480p Fal route for compatible Wan 2.2 Turbo requests, and Google Vertex fallback coverage for compatible Llama Scout requests when primary transport routes fail.",
+    "impact": "Users gain more resilient Qwen, Mistral, Wan, and Llama Scout generation while keeping the requested public model and quoted caller price; incompatible tool, image-count, output-limit, and video-ratio requests remain on their primary routes.",
+    "keywords": [
+      "fallbacks",
+      "reliability",
+      "Qwen3.7 Flash",
+      "Mistral Small 3.2",
+      "Wan 2.2 Turbo",
+      "Llama Scout",
+      "providers"
+    ],
+    "visual_concept": "A cozy garden crossroads represents provider fallbacks: Polli carefully guides glowing request-pollen along alternate paths from a retro terminal to Alibaba, DeepInfra, Fal video, and Vertex-style cloud waypoints. Small code-plants and flowers frame the paths, while a CRT robot watches the routes light up; a tiny 480p film strip symbolizes the fixed Wan Turbo video route.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blush, a happy smile, light blue rounded wings, and a tiny route-planner cap, guiding glowing request-pollen from a lime green (#ecf874) retro terminal down several gentle garden paths to cloud waypoints and a small 480p film strip; a cute CRT monitor robot happily maps the backup routes among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, pixel-font text: \"BACKUP ROUTES\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14367.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown stripes, black antennae and oval eyes, pink rectangular cheek blush, a happy smile, light blue rounded wings, and a tiny route-planner cap, guiding glowing request-pollen from a lime green (#ecf874) retro terminal down several gentle garden paths to cloud waypoints and a small 480p film strip; a cute CRT monitor robot happily maps the backup routes among flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, pixel-font text: \"BACKUP ROUTES\"."
+  },
+  "generated_at": "2026-09-03T10:04:08.548606+00:00"
+}

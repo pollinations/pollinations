@@ -713,6 +713,29 @@ describe("FLUX.2 image billing", () => {
         ]);
     });
 
+    it("attributes the Replicate fallback execution fee to Replicate", () => {
+        const billing = calculateUsageBilling({
+            model: "flux-2-pro",
+            usage: {
+                promptImageTokens: 2,
+                completionImageTokens: 4,
+            },
+            servedBy: getRegistryModelDefinition("flux-2-pro-replicate"),
+            quotedBy: getRegistryModelDefinition("flux-2-pro"),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "replicate.flux_2_pro.run.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
     it("bills Flex input and output megapixels at the same rate", () => {
         const billing = bill("flux-2-flex", {
             promptImageTokens: 2,

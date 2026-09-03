@@ -18,6 +18,23 @@ export const IMAGE_FALLBACKS = {
         "flux-2-pro-replicate": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
+            billing: {
+                adjustments: [
+                    {
+                        id: "replicate.flux_2_pro.run.v1",
+                        description: "Replicate FLUX.2 Pro execution fee",
+                        kind: "image",
+                        unit: "generation",
+                        unitCost: 0.015,
+                        publicPricing: {
+                            label: "Execution fee",
+                            quantity: 1,
+                            unit: "generation",
+                        },
+                        countUnits: () => 1,
+                    },
+                ],
+            },
         },
     },
     "qwen-image-3": {

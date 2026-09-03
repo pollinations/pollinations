@@ -2200,12 +2200,12 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-08-24).
-            promptTextTokens: perMillion(0.35),
-            promptCachedTokens: perMillion(0.035),
-            promptImageTokens: perMillion(0.35),
-            promptVideoTokens: perMillion(0.35),
-            completionTextTokens: perMillion(2.75),
+            // OpenRouter Chutes FP8 route rates (2026-09-03).
+            promptTextTokens: perMillion(0.32),
+            promptCachedTokens: perMillion(0.032),
+            promptImageTokens: perMillion(0.32),
+            promptVideoTokens: perMillion(0.32),
+            completionTextTokens: perMillion(2.5),
         },
         title: "Qwen3.8 27B",
         description:

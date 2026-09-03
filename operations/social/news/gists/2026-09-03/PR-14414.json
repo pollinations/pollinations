@@ -1,0 +1,34 @@
+{
+  "pr_number": 14414,
+  "title": "fix: clarify model catalog schemas",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14414",
+  "merged_at": "2026-09-03T20:25:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds explicit community, title, category, alias, and description metadata to OpenAI-compatible model responses.\n- Makes the rich catalog’s `community` signal explicit for official and community models.\n- Restores valid `video` and `embedding` OpenAPI enums by removing obsolete global alias filtering.\n- Documents model-health parameters and response rows, including nullable failure-window latency values.\n- Tested with focused Vitest suites, TypeScript, Biome, and the production build.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The catalog labels its jars",
+    "blurb": "The model shelf got proper labels instead of vibes. OpenAI-compatible listings now carry clearer metadata, and video and embedding entries can appear in the schema without getting lost behind an old filter.",
+    "summary": "Clarified the model catalog API by adding explicit community, title, category, alias, and description fields to OpenAI-compatible responses, restoring valid video and embedding OpenAPI enums, and documenting nullable model-health latency fields.",
+    "impact": "Developers can now reliably distinguish official from community models, read richer catalog metadata, discover video and embedding models through valid OpenAPI schemas, and handle model-health response rows correctly.",
+    "keywords": [
+      "model-catalog",
+      "openai-compatible",
+      "openapi",
+      "model-health",
+      "community-models",
+      "api"
+    ],
+    "visual_concept": "A cozy model-library garden: neatly labeled seed jars represent official and community models, while a retro terminal shows a clean catalog with video and embedding icons restored to the shelf. Polli acts as the observant librarian, attaching clear labels and checking a small health-status chart; code-plants and flowers make the schema cleanup feel like tending an organized garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she labels glowing model-seed jars on a garden shelf beside a retro terminal showing simple pixel icons for chat, video, and embeddings. Prominent lime green (#ecf874) catalog cards and code-plants bloom among pastel flowers, with small pixel-font text reading “MODEL CATALOG”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14414.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she labels glowing model-seed jars on a garden shelf beside a retro terminal showing simple pixel icons for chat, video, and embeddings. Prominent lime green (#ecf874) catalog cards and code-plants bloom among pastel flowers, with small pixel-font text reading “MODEL CATALOG”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T20:26:30.267939+00:00"
+}

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14396,
+  "title": "feat: refine account app connections",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14396",
+  "merged_at": "2026-09-03T12:37:42Z",
+  "labels": [],
+  "pr_body_excerpt": "- Refines the Account connect section with clearer hierarchy, compact connected cards, and responsive discovery controls\n- Uses Composio toolkit metadata so connected and available apps show their correct logos on theme-safe tiles\n- Uses shared UI components and adds a reusable trash icon for the account deletion footer\n- Adds connector metadata coverage and updates the Account integration contract\n\nTests:\n- `npm test` in `packages/ui`\n- `npm test` in `apps/composio-mcp`\n- `npx vitest run test/integration/integrations.test.ts` in `enter.pollinations.ai`\n- UI and Enter TypeScript checks\n- `npm run build:frontend` in `enter.pollinations.ai`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The app garden got labels",
+    "blurb": "Account connections have been given a proper little tidy-up. Connected apps are more compact, new ones are easier to discover, and every tile finally knows which logo it is supposed to be wearing.",
+    "summary": "Refined the Account connect section with clearer hierarchy, compact connected-app cards, responsive discovery controls, and theme-safe app logos sourced from Composio toolkit metadata.",
+    "impact": "Users can scan connected and available integrations more easily across screen sizes, with correct app branding on every connection tile.",
+    "keywords": [
+      "account",
+      "integrations",
+      "composio",
+      "connected-apps",
+      "frontend",
+      "ui"
+    ],
+    "visual_concept": "Depict Polli tending a cozy garden of integration tiles: tidy connected-app pots on one side and a responsive discovery shelf of new app seedlings on the other, each carrying a distinct logo badge. A helpful CRT monitor robot can sort the tiles while Polli, wearing a tiny gardener apron, checks that every app has the right label; include flowers and code-vines to make the account dashboard feel organized but alive.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular cheek blush, light-blue translucent wings, antennae, and a small smile, wearing a tiny gardener apron while arranging compact app-logo tiles in a blooming integration garden; a cute CRT monitor robot carefully sorts connected pots from a shelf of newly discovered app seedlings. Soft lime green (#ecf874) and warm cream pastel gradient background, code-vines and tiny flowers, pixel-font sign reading \"CONNECTED APPS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14396.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular cheek blush, light-blue translucent wings, antennae, and a small smile, wearing a tiny gardener apron while arranging compact app-logo tiles in a blooming integration garden; a cute CRT monitor robot carefully sorts connected pots from a shelf of newly discovered app seedlings. Soft lime green (#ecf874) and warm cream pastel gradient background, code-vines and tiny flowers, pixel-font sign reading \"CONNECTED APPS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T12:38:48.909909+00:00"
+}

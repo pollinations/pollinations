@@ -22,6 +22,7 @@ import {
     TerminalIcon,
     useScrollLock,
     WalletIcon,
+    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
@@ -369,30 +370,26 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                         {accountRestricted && (
                             <div
                                 role="alert"
-                                className="rounded-xl border border-intent-danger-border bg-intent-danger-bg-light px-4 py-3 text-sm text-intent-danger-text"
+                                className="flex items-center gap-2 rounded-xl bg-intent-danger-bg-light px-4 py-3 text-sm text-intent-danger-text"
                             >
-                                <strong>Account restricted.</strong> Please
-                                contact{" "}
-                                <a
-                                    href="mailto:billing@pollinations.ai"
-                                    className="font-semibold underline underline-offset-2"
-                                >
-                                    billing@pollinations.ai
-                                </a>{" "}
-                                if you think that was a mistake.
+                                <WarningIcon className="h-4 w-4 shrink-0" />
+                                <span>
+                                    <strong>Account restricted.</strong> Contact{" "}
+                                    <a
+                                        href="mailto:billing@pollinations.ai"
+                                        className="underline underline-offset-2"
+                                    >
+                                        billing@pollinations.ai
+                                    </a>
+                                </span>
                             </div>
                         )}
-                        <div
-                            inert={accountRestricted || undefined}
-                            aria-disabled={accountRestricted || undefined}
-                            className={cn(
-                                "flex flex-col gap-6",
-                                accountRestricted &&
-                                    "[&_a]:cursor-not-allowed [&_a]:opacity-50 [&_button]:cursor-not-allowed [&_button]:opacity-50 [&_input]:cursor-not-allowed [&_input]:opacity-50 [&_select]:cursor-not-allowed [&_select]:opacity-50 [&_textarea]:cursor-not-allowed [&_textarea]:opacity-50",
-                            )}
+                        <fieldset
+                            disabled={accountRestricted}
+                            className="contents"
                         >
                             {children}
-                        </div>
+                        </fieldset>
                     </main>
                 </ScrollArea>
             </div>

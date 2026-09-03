@@ -48,6 +48,7 @@ export function CommunityEndpointCard({
     const isAgent = endpoint.type !== "proxy";
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
+    const chatUrl = openWebUiChatUrl(endpoint);
 
     return (
         <Surface
@@ -180,7 +181,7 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <Link
                     to="/activity"
                     search={{
@@ -196,9 +197,34 @@ export function CommunityEndpointCard({
                 >
                     View activity
                 </Link>
+                {chatUrl && (
+                    <a
+                        href={chatUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
+                    >
+                        Test in Open WebUI
+                        <ExternalLinkIcon className="h-3 w-3" />
+                    </a>
+                )}
             </div>
         </Surface>
     );
+}
+
+const OPEN_WEBUI_URL = "https://openwebui.pollinations.ai";
+
+/**
+ * Open WebUI signs in with Pollinations OAuth and lists models with the
+ * caller's own key, so the owner can open a private model of theirs — but only
+ * one it can chat with. A hidden model is not served, and image, video,
+ * transcription and embedding models never reach the chat picker.
+ */
+function openWebUiChatUrl(endpoint: CommunityEndpoint): string | null {
+    if (endpoint.hidden) return null;
+    if (endpoint.type === "proxy" && endpoint.modality !== "text") return null;
+    return `${OPEN_WEBUI_URL}/?model=${encodeURIComponent(endpoint.modelId)}`;
 }
 
 function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {

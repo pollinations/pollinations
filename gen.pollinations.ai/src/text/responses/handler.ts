@@ -2,7 +2,9 @@ import { UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
+    PROMPT_CACHE_TYPE_HEADER,
     responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import {
@@ -24,6 +26,7 @@ import { assertStreamContentType } from "../../utils/upstream-response.ts";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
+import { supportsTextFallbackRequest } from "../fallbackCompatibility.js";
 import type { ServiceError } from "../types.js";
 import {
     callDirectResponses,
@@ -84,6 +87,9 @@ function directResponsesCandidates(
     ];
     for (let index = 1; index < candidates.length; index += 1) {
         const candidate = candidates[index];
+        if (!supportsTextFallbackRequest(candidate.definition, request)) {
+            continue;
+        }
         const target = targetFor(candidate);
         if (target === null) continue;
         supported.push({
@@ -207,6 +213,9 @@ async function handleDirectResponse(
                 ),
             )) {
                 headers.set(name, value);
+            }
+            if (hasExplicitPromptCacheHit(result.usage)) {
+                headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
             }
         }
 

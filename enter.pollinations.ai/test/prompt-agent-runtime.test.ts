@@ -914,7 +914,7 @@ describe("prompt-agent runtime", () => {
                     return modelResponse(
                         {
                             role: "assistant",
-                            content: "Drawing",
+                            content: "",
                             tool_calls: [
                                 {
                                     index: 0,
@@ -977,7 +977,7 @@ describe("prompt-agent runtime", () => {
         expect(content).toContain(
             "![Generated image](<https://images.example/pirate.png>)",
         );
-        expect(content.startsWith("Drawing\n\n")).toBe(true);
+        expect(content.startsWith('\n\n<details type="tool_calls"')).toBe(true);
         expect(content.endsWith("Finished")).toBe(true);
     });
 

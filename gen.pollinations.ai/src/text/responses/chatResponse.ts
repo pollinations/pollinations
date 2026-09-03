@@ -56,6 +56,9 @@ function chatUsage(usage: ResponseUsage): JsonObject {
                   prompt_tokens_details: {
                       cached_tokens: inputDetails.cached_tokens ?? 0,
                       cache_write_tokens: inputDetails.cache_write_tokens ?? 0,
+                      ...(typeof inputDetails.cache_type === "string"
+                          ? { cache_type: inputDetails.cache_type }
+                          : {}),
                       audio_tokens: inputDetails.audio_tokens ?? 0,
                       image_tokens: inputDetails.image_tokens ?? 0,
                   },

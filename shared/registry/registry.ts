@@ -192,6 +192,8 @@ export type ModelDefinition = {
     inputModalities?: ModelInputModality[];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
+    /** Internal route limitation: false when forced/named tool selection fails. */
+    supportsForcedToolChoice?: boolean;
     reasoning?: boolean;
     search?: boolean;
     // Supported Perplexity search-context sizes; first entry is the default.
@@ -222,6 +224,8 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    /** Internal provider-route output-token cap used for fallback compatibility. */
+    maxCompletionTokens?: number;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

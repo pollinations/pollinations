@@ -10,7 +10,10 @@ import {
     type DirectResponsesTarget,
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
-import { validateDirectResponsesRequest } from "@/text/responses/request.ts";
+import {
+    buildDirectResponsesRequestBody,
+    validateDirectResponsesRequest,
+} from "@/text/responses/request.ts";
 import { createResponsesStreamUsageValidator } from "@/text/responses/stream.ts";
 import {
     getResponsesEventUsage,
@@ -128,6 +131,30 @@ describe("direct Responses transport", () => {
                 request({ model: "step-flash" }),
             ),
         ).toBeNull();
+    });
+
+    it.each([
+        ["required", "required", "none"],
+        ["function object", { type: "function", name: "lookup" }, "none"],
+        ["auto", "auto", "high"],
+    ])("normalizes Qwen3.8 Max 0902 reasoning for %s tool choice", (_label, toolChoice, expectedEffort) => {
+        const directRequest = request({
+            model: "qwen/qwen3.8-max-0902",
+            reasoning: { effort: "high" },
+            tool_choice: toolChoice,
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected direct target");
+
+        expect(
+            buildDirectResponsesRequestBody(directRequest, target),
+        ).toMatchObject({
+            reasoning: { effort: expectedEffort },
+            tool_choice: toolChoice,
+        });
     });
 
     it("passes Responses JSON directly with only target resolution and defaults", async () => {
@@ -313,6 +340,7 @@ describe("direct Responses transport", () => {
 
         expect(getResponsesEventUsage(event)).toEqual({
             model: "qwen/qwen3.7-plus",
+            hasExplicitCacheHit: false,
             usage: expect.objectContaining({
                 promptTextTokens: 2,
                 completionTextTokens: 1,

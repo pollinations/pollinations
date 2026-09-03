@@ -49,6 +49,19 @@ const grokTransform: TransformFn = (messages, options) =>
         ? { messages, options }
         : stripReasoning(messages, options);
 
+const qwenMaxTransform: TransformFn = (messages, options) => {
+    const toolChoice = options.tool_choice;
+    const forcesTool =
+        toolChoice === "required" ||
+        (typeof toolChoice === "object" && toolChoice !== null);
+    return {
+        messages,
+        options: forcesTool
+            ? { ...options, reasoning_effort: "none" }
+            : options,
+    };
+};
+
 const models: ModelDefinition[] = [
     {
         name: "openai",
@@ -156,8 +169,19 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
     {
+        name: "qwen/qwen3.8-max-0902",
+        config: portkeyConfig["qwen3.8-max-0902"],
+        // Alibaba rejects forced tool selection while thinking is enabled.
+        transform: qwenMaxTransform,
+    },
+    {
         name: "qwen3.7-flash",
         config: portkeyConfig["qwen/qwen3.7-flash"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen3.7-flash-alibaba",
+        config: portkeyConfig["qwen3.7-flash-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
     },
     {
@@ -191,6 +215,11 @@ const models: ModelDefinition[] = [
         name: "mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
+        transform: stripReasoning,
+    },
+    {
+        name: "mistral-small-3.2-deepinfra",
+        config: portkeyConfig["mistral-small-3.2-deepinfra"],
         transform: stripReasoning,
     },
     {
@@ -603,8 +632,8 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "llama-scout-openrouter-deepinfra",
-        config: portkeyConfig["llama-scout-openrouter-deepinfra"],
+        name: "llama-scout-openrouter-vertex",
+        config: portkeyConfig["llama-scout-openrouter-vertex"],
         transform: stripReasoning,
     },
     {

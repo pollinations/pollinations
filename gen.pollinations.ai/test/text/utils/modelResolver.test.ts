@@ -167,6 +167,22 @@ describe("resolveModelConfig", () => {
     it("routes Qwen3.8 Max to Alibaba without fallback", () => {
         const result = resolveModelConfig(messages, { model: "qwen3.8-max" });
 
+        expect(result.options.model).toBe("qwen/qwen3.8-max");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("routes Qwen3.8 Max 0902 directly to Alibaba", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-max-0902",
+        });
+
         expect(result.options.model).toBe("qwen3.8-max-0902");
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",
@@ -179,10 +195,10 @@ describe("resolveModelConfig", () => {
         expect(result.options.provider).toBeUndefined();
     });
 
-    it("disables Qwen3.8 Max thinking when a tool is forced", async () => {
-        const definition = findModelByName("qwen3.8-max");
+    it("disables Qwen3.8 Max 0902 thinking when a tool is forced", async () => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
         const transformed = await definition?.transform?.(messages, {
-            model: "qwen3.8-max",
+            model: "qwen/qwen3.8-max-0902",
             reasoning_effort: "high",
             tool_choice: {
                 type: "function",

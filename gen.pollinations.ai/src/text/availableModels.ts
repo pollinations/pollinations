@@ -166,6 +166,10 @@ const models: ModelDefinition[] = [
     })),
     {
         name: "qwen3.8-max",
+        config: portkeyConfig["qwen/qwen3.8-max"],
+    },
+    {
+        name: "qwen/qwen3.8-max-0902",
         config: portkeyConfig["qwen3.8-max-0902"],
         // Alibaba rejects forced tool selection while thinking is enabled.
         transform: qwenMaxTransform,

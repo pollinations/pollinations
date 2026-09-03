@@ -231,6 +231,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         "akashml/fp8",
         64000,
     ),
+    "qwen/qwen3.8-max": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-max",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
     "qwen3.8-max-0902": () =>
         createAlibabaModelConfig({
             model: "qwen3.8-max-0902",

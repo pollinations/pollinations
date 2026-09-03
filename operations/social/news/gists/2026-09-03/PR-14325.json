@@ -1,0 +1,34 @@
+{
+  "pr_number": 14325,
+  "title": "Add Discord adapter for OSAII Swarm Community Agent",
+  "author": "fkom13",
+  "url": "https://github.com/pollinations/pollinations/pull/14325",
+  "merged_at": "2026-09-03T14:41:01Z",
+  "labels": [],
+  "pr_body_excerpt": "## Quest\n\nImplements #14227 with a focused Discord adapter for the existing public Community Agent `morriszdweck/osaii-swarm`.\n\n## What this adds\n\n- `apps/discord-osaii-swarm/` as a standalone example app.\n- `/connect`, `/ask`, `/status`, and `/disconnect` slash commands.\n- Pollinations SDK device authorization using a publishable App Key for attribution; users never paste API keys into Discord.\n- Least-privilege consent defaults: only `morriszdweck/osaii-swarm` plus its base model `morriszdweck/osaii-api-smart`, a 0-Pollen budget, one-day expiry, and no account scopes. Users still review/change/deny the grant in Pollinations' consent UI.\n- Per-Discord-user private token storage with serialized atomic writes and file mode `0600`. Tokens are never placed in public messages or logs.\n- Bounded conversation context reconstructed from this bot's own Discord response embeds, isolated by Discord user ID; no conversation database.\n- Revoked/expired authorization cleanup and a clear `/connect` recovery path.\n- Setup/deployment instructions and Node tests covering persistence, isolation, context, connect → ask → disconnect, and least-privilege consent.\n\nThe Community Agent remains the behavior source; this adapter does not copy its system prompt or agent logic.\n\n## Verification\n\n- `npm test --prefix apps/discord-osaii-swarm`: **6/6 passing**.\n- Biome check: passing.\n- Live Discord E2E completed with the public bot:\n  1. `/connect` minted a BYOP key restricted to exactly the agent + base model, `pollenBudget=0`, one-day expiry, and no account scopes.\n  2. `/ask` returned `DISCORD-OSAII-OK` through `morriszdweck/osaii-swarm`.\n  3. Budget stayed `0 → 0`.\n  4. `/disconnect` removed the user's local authorization; token store returned to zero users.\n- Four slash commands are registered globally for maintainer testing.\n\n## Live maintainer test bot\n\nInvite: https://discord.com/oauth2/authorize?client_id=1544470232234459227&permissions=277025508352&scope=bot%20applications.commands\n\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A swarm joins Discord",
+    "blurb": "The OSAII Swarm Community Agent now has a tidy little Discord home. Connect once, ask away, and keep your keys safely out of the chat scrollback where they belong.",
+    "summary": "Added a standalone Discord adapter for `morriszdweck/osaii-swarm` with `/connect`, `/ask`, `/status`, and `/disconnect`, using Pollinations device authorization restricted to the agent and `morriszdweck/osaii-api-smart` with a 0-Pollen, one-day grant.",
+    "impact": "Discord users can now chat with the public OSAII Swarm agent through private per-user authorization, bounded user-isolated context, and a clear reconnect path after an expired or revoked grant.",
+    "keywords": [
+      "community-agent",
+      "discord",
+      "osaii-swarm",
+      "device-authorization",
+      "sdk",
+      "slash-commands"
+    ],
+    "visual_concept": "Depict a cozy Discord-like community garden desk where Polli helps a friendly swarm of tiny code-bees deliver message envelopes between a retro CRT terminal and a Discord chat window. The key symbols are four small command tiles labeled CONNECT, ASK, STATUS, and DISCONNECT; a tiny locked pollen jar represents the zero-budget, least-privilege grant, while code-plants and flowers make the adapter feel like a community-grown tool.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny headset headphones as she guides a friendly swarm of miniature code-bees between a retro CRT Discord terminal and four chunky command tiles reading “CONNECT”, “ASK”, “STATUS”, and “DISCONNECT”; a small locked lime green (#ecf874) pollen jar, flowering code-plants, and warm cream garden shelves show safe private access. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14325.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny headset headphones as she guides a friendly swarm of miniature code-bees between a retro CRT Discord terminal and four chunky command tiles reading “CONNECT”, “ASK”, “STATUS”, and “DISCONNECT”; a small locked lime green (#ecf874) pollen jar, flowering code-plants, and warm cream garden shelves show safe private access. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow and scanlines, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-03T14:42:17.963976+00:00"
+}

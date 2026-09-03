@@ -40,7 +40,10 @@ import {
     apiKeyBudgetReservation,
     generationAccess,
 } from "@/utils/generation-access.ts";
-import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
+import {
+    callCommunitySpeechEndpoint,
+    callCommunityTranscriptionEndpoint,
+} from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -2809,8 +2812,19 @@ async function generateAudioFromSpeechRequest(
         ? await fetchReferenceAudio(reference_audio)
         : undefined;
 
-    return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
+    return withAudioFallback(c, (candidate) => {
+        if (candidate.communityEndpoint) {
+            return callCommunitySpeechEndpoint(
+                candidate.communityEndpoint,
+                {
+                    input: safeInput,
+                    voice: voice || undefined,
+                    responseFormat: response_format || undefined,
+                },
+                c.env.BETTER_AUTH_SECRET,
+            );
+        }
+        return dispatchAudioGeneration(c, candidate.id, {
             text: safeInput,
             voice,
             responseFormat: response_format,
@@ -2835,8 +2849,8 @@ async function generateAudioFromSpeechRequest(
             falKey: c.env.FAL_KEY,
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
-        }),
-    );
+        });
+    });
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {

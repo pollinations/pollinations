@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [📚 AI Homework Solver](https://zizoisu.github.io/ai-homework-solver) | A web-based homework solver that integrates with Pollinations AI. Supports multiple question types including MCQ, short answer, true/false, and fill-in-the-blank questions. Features a hybrid model wit | [@zizoisu](https://github.com/zizoisu) |
 | [🖼️ ¿Y si…? — Alternate History Scene Generator](https://jecxolab.github.io/y-si-historia) | Type a historical "what if" and get the scene illustrated. Built for the Spanish-language history channel El Efecto Historia. Uses the Pollinations image API with four visual presets (epic oil paintin | [@jecxolab](https://github.com/jecxolab) |
 | [💬 Genie AI](https://play.google.com/store/apps/details?id=com.genie.aiassistant) | Genie AI Companion is a powerful multi-modal AI super app designed to bring everything you need into one place. You can chat and get live answers from the internet, analyze and summarize docs, recogni | [@lankafoaz](https://github.com/lankafoaz) |
 | [🖼️ AI Story & Image Studio](https://adventuretreehouse.com) | A minimal interactive studio that generates short stories and matching illustrations simultaneously using Pollinations text and image APIs with seamless PKCE OAuth authentication. | [@tlandcoder](https://github.com/tlandcoder) |
@@ -37,7 +38,6 @@
 | [🖼️ AI STUDIO — RealTime AUDIO & VIDEO CREATOR](https://noanswers.website/WebAnimation) | Creates collaborative images using the Pollinations image API integration. Thereby, allowing users to add generated content or uploaded from the local machines and create slide/videos adaptive to FPS | [@noanswers-website](https://github.com/noanswers-website) |
 | [💬 Pollinations Studio](https://sankezhiyyds.github.io/pollinations-app) | A pure HTML/JavaScript AI generation studio with no framework dependencies. It supports image, text, audio, and video generation via the Pollinations API. Users bring their own API key (sk_ or pk_) fo | [@sankezhiyyds](https://github.com/sankezhiyyds) |
 | [🖼️ Dery AI](https://dery-ai.my.id) | Create collaborative images using the Pollinations image API | [@derymegana](https://github.com/derymegana) |
-| [🖼️ Pollinations App](https://sohaib7838.github.io/pollinations-app) | A simple web app that lets users connect their Pollinations account and generate AI images using their own Pollen. | [@Sohaib7838](https://github.com/Sohaib7838) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-02** – **🚀 Responses API, direct from providers** Send stateless OpenAI-compatible requests to `/v1/responses` across 56 supported models, with native SSE streaming plus Pollinations safety, caching, and billing. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-02** – **🔗 Agents can connect to the outside world** The new Composio MCP connector lets agents use caller-owned Gmail, Slack, GitHub, Drive, and hundreds more services—without lending public agents anyone’s credentials. [MCP Docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
+- **2026-09-02** – **✨ Backup wings for official models** 42 text, image, video, audio, and 3D models can now continue through verified providers when an upstream has a bad day. Same requested model; fewer dead ends.
+- **2026-09-02** – **🤖 Gemini 3.8 Flash is live** Call `google/gemini-3.8-flash` for fast multimodal chat, streaming, structured output, tools, reasoning, search, and caching. [See available models](https://gen.pollinations.ai/v1/models)
+- **2026-09-01** – **🎨 Wan video gets more routes** `wan-pro` and `wan-3.0` now handle text, image, and reference-to-video workflows; Wan 3.0 can also use a second image as the end frame. [Try the API](https://gen.pollinations.ai/docs)
+- **2026-09-01** – **🚀 Mercury 2.5 Preview** A new model for reasoning, tool use, structured output, multi-turn chat, and streaming—available as `inception/mercury-2.5-preview`. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-09-01** – **🤖 DeepSeek V4 Flash Vision** Send text and images to `deepseek/deepseek-v4-flash-vision-exp` for fast multimodal prompts through the unified API. [Try the API](https://gen.pollinations.ai/v1/chat/completions)
+- **2026-09-01** – **✨ Claude Fable 5.1** Long-context multimodal Claude arrives with adaptive reasoning, automatic tools, prompt caching, and up to 1M tokens of context. [Browse models](https://gen.pollinations.ai/v1/models)
 - **2026-08-31** – **🎨 Community video models** Community model publishers can now offer OpenAI-compatible video generation, with prompts, reference media, frame URLs, duration controls, and MP4 results.
 - **2026-08-31** – **🚀 FLUX.2 Pro and Flex** Paid users can generate with Azure-hosted `flux-2-pro` and `flux-2-flex`, including wide formats up to 4,096×1,024 and up to eight Pro reference images. [Try it](https://pollinations.ai/play)
-- **2026-08-31** – **🤖 Inkling joins the model roster** `thinkingmachines/inkling` is now available for paid API use with text, image, and audio inputs, tool calling, JSON, streaming, and reasoning. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-08-31** – **🔗 MCP servers get a catalog** Browse available MCP servers, connection endpoints, and Pollen rates in the official catalog or through `GET /mcp` before letting tools near your agent. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-08-30** – **🚀 Community Embeddings** Community embedding models now work through the standard OpenAI-compatible `/v1/embeddings` endpoint. The vector garden is open.
-- **2026-08-30** – **✨ Floret Media Tools** Floret now discovers the live catalog for text, images, video, audio, transcription, and audio transforms—returning usable public media URLs and streaming tool progress.
-- **2026-08-30** – **🎨 AI Story & Image Studio** Turn a prompt into a short story with matching illustrations in one go. [Try it](https://adventuretreehouse.com) <!-- app -->
-- **2026-08-28** – **🚀 Every model gets a playground** Open any supported Image, Text, Audio, or Video model directly in a preconfigured [Play session](https://pollinations.ai/play).
-- **2026-08-28** – **🎯 The quest garden has rankings** The Community page now shows the top Quest contributors, completed quests, and Pollen earned. Useful motivation, mildly dangerous for your sleep schedule.
-- **2026-08-28** – **🎨 Two frames, then cinema** Generate 3–10 second, audio-synced video clips with `google/gemini-omni-1.1-flash`: text or two keyframes in, 360p to 4K video out. [Check the API docs](https://gen.pollinations.ai/docs).
 ---
 
 ## 🌱 Introduction

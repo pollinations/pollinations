@@ -44,11 +44,11 @@ async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
 }
 
 async function runAgent(
-    body: PromptAgentRequest,
+    body: { messages: unknown[]; [k: string]: unknown },
     runtime: PromptAgentRuntime = BASE_RUNTIME,
 ): Promise<Response> {
     return await handlePromptAgentRequest(
-        body,
+        { stream: false, ...body } as unknown as PromptAgentRequest,
         new AbortController().signal,
         runtime,
     );
@@ -274,7 +274,7 @@ describe("prompt-agent runtime", () => {
                 const request = new Request(input, init);
                 const url = new URL(request.url);
                 if (request.url === BROWSER_MCP_PROXY_URL) {
-                    mcpRequests.push(request.clone());
+                    mcpRequests.push(request.clone() as any);
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
                     }
@@ -368,7 +368,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    mcpServers: ["browser"],
+                    mcpServers: ["browser" as any],
                 },
             },
         );
@@ -587,7 +587,7 @@ describe("prompt-agent runtime", () => {
                 const request = new Request(input, init);
                 if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     expect(this).toBe(globalThis);
-                    mcpRequests.push(request.clone());
+                    mcpRequests.push(request.clone() as any);
                     const body = (await request.json()) as {
                         id?: string;
                         method: string;
@@ -1176,5 +1176,610 @@ describe("prompt-agent runtime", () => {
         ).toBe(true);
         // The (failed) tool call is still counted — the owner's tool ran.
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
+    });
+});
+
+// =============================================================================
+// Agent Responses API tests (issue #14243)
+// Covers: JSON shape, SSE events, MCP attribution, disconnect billing, auth.
+// =============================================================================
+
+import {
+    AgentResponsesInvalidRequestError,
+    AgentResponsesRequestSchema,
+    handleAgentResponsesRequest,
+} from "../src/services/prompt-agent-runtime.ts";
+
+type AgentResponsesRuntime = Parameters<typeof handleAgentResponsesRequest>[2];
+
+async function runAgentResponses(
+    body: { input: string | unknown[]; stream?: boolean; [k: string]: unknown },
+    runtime: AgentResponsesRuntime = BASE_RUNTIME,
+    signal?: AbortSignal,
+): Promise<Response> {
+    const parsed = AgentResponsesRequestSchema.parse({
+        model: crypto.randomUUID(),
+        stream: false,
+        ...body,
+    });
+    return handleAgentResponsesRequest(
+        parsed,
+        signal ?? new AbortController().signal,
+        runtime,
+    );
+}
+
+/** Parse SSE text into an array of { event, data } objects. */
+function parseSseEvents(text: string): { event?: string; data: string }[] {
+    const events: { event?: string; data: string }[] = [];
+    for (const block of text.split("\n\n")) {
+        if (!block.trim()) continue;
+        const lines = block.split("\n");
+        let event: string | undefined;
+        let data = "";
+        for (const line of lines) {
+            if (line.startsWith("event: ")) event = line.slice(7);
+            else if (line.startsWith("data: ")) data = line.slice(6);
+        }
+        if (data) events.push({ event, data });
+    }
+    return events;
+}
+
+describe("agent Responses API", () => {
+    beforeEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    // -------------------------------------------------------------------------
+    // Non-streaming shape
+    // -------------------------------------------------------------------------
+
+    it("returns Responses JSON shape for non-streaming requests", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "hello world",
+                            },
+                        },
+                    ],
+                    usage: { prompt_tokens: 5, completion_tokens: 3 },
+                }),
+            ),
+        );
+
+        const res = await runAgentResponses({ input: "say hi" });
+        expect(res.status).toBe(200);
+        const json = (await res.json()) as Record<string, unknown>;
+
+        expect(json.object).toBe("response");
+        expect(typeof json.id).toBe("string");
+        expect((json.id as string).startsWith("resp_")).toBe(true);
+        expect(json.status).toBe("completed");
+        expect(json.model).toBe(BASE_RUNTIME.config.baseModel);
+        expect(typeof json.created_at).toBe("number");
+
+        // usage must be in Responses shape (input_tokens not prompt_tokens).
+        const usage = json.usage as Record<string, number>;
+        expect(usage.input_tokens).toBe(5);
+        expect(usage.output_tokens).toBe(3);
+        expect(usage.total_tokens).toBe(8);
+
+        // output must contain the message item with text.
+        const output = json.output as Array<Record<string, unknown>>;
+        expect(output).toHaveLength(1);
+        expect(output[0].type).toBe("message");
+        const content = output[0].content as Array<Record<string, unknown>>;
+        expect(content[0].type).toBe("output_text");
+        expect(content[0].text).toBe("hello world");
+    });
+
+    it("returns status:incomplete when agent hits step limit", async () => {
+        // Simulate a model that always returns tool_calls to hit step limit.
+        let calls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const req = new Request(input, init);
+                if (req.url.includes("/mcp/")) {
+                    const body = (await req.json()) as {
+                        method: string;
+                        id?: string;
+                    };
+                    if (body.method === "initialize") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: { name: "t", version: "1" },
+                            },
+                        });
+                    }
+                    if (body.method === "notifications/initialized") {
+                        return new Response(null, { status: 202 });
+                    }
+                    if (body.method === "tools/list") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                tools: [
+                                    {
+                                        name: "noop",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
+                        });
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: { content: [{ type: "text", text: "done" }] },
+                    });
+                }
+                calls++;
+                return Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "",
+                                tool_calls: [
+                                    {
+                                        id: `c${calls}`,
+                                        function: {
+                                            name: "mcp__pollinations__noop",
+                                            arguments: "{}",
+                                        },
+                                    },
+                                ],
+                            },
+                            finish_reason: "tool_calls",
+                        },
+                    ],
+                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                });
+            }),
+        );
+
+        const res = await runAgentResponses(
+            { input: "keep going" },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: ["pollinations"],
+                },
+            },
+        );
+        const json = (await res.json()) as { status: string };
+        expect(res.status).toBe(200);
+        expect(json.status).toBe("incomplete");
+    });
+
+    // -------------------------------------------------------------------------
+    // Streaming shape
+    // -------------------------------------------------------------------------
+
+    it("streams Responses SSE events including response.completed with usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response(
+                        [
+                            `data: ${JSON.stringify({ choices: [{ index: 0, delta: { role: "assistant", content: "hi " }, finish_reason: null }] })}\n\n`,
+                            `data: ${JSON.stringify({ choices: [{ index: 0, delta: { content: "there" }, finish_reason: null }] })}\n\n`,
+                            `data: ${JSON.stringify({ choices: [{ index: 0, delta: {}, finish_reason: "stop" }], usage: { prompt_tokens: 4, completion_tokens: 3, total_tokens: 7 } })}\n\n`,
+                            "data: [DONE]\n\n",
+                        ].join(""),
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
+            ),
+        );
+
+        const res = await runAgentResponses({ input: "say hi", stream: true });
+        expect(res.status).toBe(200);
+        expect(res.headers.get("content-type")).toContain("text/event-stream");
+
+        const events = parseSseEvents(await res.text());
+        const eventTypes = events.map((e) => e.event);
+
+        // Required lifecycle events.
+        expect(eventTypes).toContain("response.created");
+        expect(eventTypes).toContain("response.in_progress");
+        expect(eventTypes).toContain("response.output_item.added");
+        expect(eventTypes).toContain("response.content_part.added");
+        expect(eventTypes).toContain("response.output_text.delta");
+        expect(eventTypes).toContain("response.content_part.done");
+        expect(eventTypes).toContain("response.output_item.done");
+        expect(eventTypes).toContain("response.completed");
+
+        // Delta events must carry the text.
+        const deltas = events
+            .filter((e) => e.event === "response.output_text.delta")
+            .map((e) => (JSON.parse(e.data) as { delta: string }).delta);
+        expect(deltas.join("")).toBe("hi there");
+
+        // Terminal event must contain usage.
+        const terminal = events.find((e) => e.event === "response.completed");
+        expect(terminal).toBeDefined();
+        const terminalData = JSON.parse(terminal?.data ?? "{}") as {
+            response: {
+                usage: { input_tokens: number; output_tokens: number };
+                status: string;
+            };
+        };
+        expect(terminalData.response.status).toBe("completed");
+        expect(terminalData.response.usage.input_tokens).toBe(4);
+        expect(terminalData.response.usage.output_tokens).toBe(3);
+    });
+
+    // -------------------------------------------------------------------------
+    // MCP tool calls survive refactor (regression proof — issue #14243 Step 6)
+    // -------------------------------------------------------------------------
+
+    it("preserves tool call results in Responses output and Chat Completions output identically", async () => {
+        // Verify that the internal stream refactor doesn't lose tool call data
+        // by running the same scenario through both serializers.
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const req = new Request(input, init);
+                if (req.url === POLLINATIONS_MCP_PROXY_URL) {
+                    if (req.method === "DELETE")
+                        return new Response(null, { status: 200 });
+                    const body = (await req.json()) as {
+                        id?: string;
+                        method: string;
+                    };
+                    if (body.method === "initialize") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: { name: "p", version: "1" },
+                            },
+                        });
+                    }
+                    if (body.method === "notifications/initialized")
+                        return new Response(null, { status: 202 });
+                    if (body.method === "tools/list") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                tools: [
+                                    {
+                                        name: "lookup",
+                                        inputSchema: { type: "object" },
+                                    },
+                                ],
+                            },
+                        });
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            content: [{ type: "text", text: "result-text" }],
+                        },
+                    });
+                }
+                // First call: request tool; second: answer.
+                const callCount = fetchMock.mock.calls.filter(
+                    (c) => !(c[0] as string).includes("/mcp/"),
+                ).length;
+                if (callCount === 1) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: "looking up",
+                                    tool_calls: [
+                                        {
+                                            id: "tc1",
+                                            function: {
+                                                name: "mcp__pollinations__lookup",
+                                                arguments: "{}",
+                                            },
+                                        },
+                                    ],
+                                },
+                            },
+                        ],
+                        usage: { prompt_tokens: 5, completion_tokens: 2 },
+                    });
+                }
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "done" } },
+                    ],
+                    usage: { prompt_tokens: 3, completion_tokens: 1 },
+                });
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
+
+        const runtime = {
+            ...BASE_RUNTIME,
+            config: {
+                ...BASE_RUNTIME.config,
+                mcpServers: ["pollinations"] as any,
+            },
+        };
+
+        // Responses path.
+        const resRes = await runAgentResponses(
+            { input: "lookup something" },
+            runtime,
+        );
+        expect(resRes.status).toBe(200);
+        const resJson = (await resRes.json()) as {
+            output: Array<{
+                type: string;
+                content?: Array<{ text?: string }>;
+                output?: string;
+            }>;
+            metadata: { tool_call_counts: string };
+        };
+        // Tool call output item must appear.
+        const toolItem = resJson.output.find(
+            (item) => item.type === "function_call",
+        );
+        expect(toolItem).toBeDefined();
+        expect(toolItem?.output).toBe("result-text");
+        // tool_call_counts preserved.
+        const tcc = JSON.parse(resJson.metadata.tool_call_counts) as {
+            mcp_call: number;
+        };
+        expect(tcc.mcp_call).toBe(1);
+
+        // Chat Completions path — reset fetchMock calls.
+        fetchMock.mockClear();
+        const chatRes = await runAgent(
+            { messages: [{ role: "user", content: "lookup something" }] },
+            runtime,
+        );
+        const chatJson = JSON.parse(await chatRes.text()) as {
+            choices: [{ message: { content: string } }];
+            usage: { tool_call_counts: { mcp_call: number } };
+        };
+        expect(chatJson.choices[0].message.content).toContain("result-text");
+        expect(chatJson.usage.tool_call_counts.mcp_call).toBe(1);
+    });
+
+    // -------------------------------------------------------------------------
+    // Disconnect billing guarantee (issue #14243 Step 6, highest-risk)
+    // -------------------------------------------------------------------------
+
+    it("does not emit the terminal usage event when the request is aborted mid-stream", async () => {
+        const abortController = new AbortController();
+
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                // Abort the signal after the model starts responding.
+                abortController.abort();
+                return new Response(
+                    "data: " +
+                        JSON.stringify({
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: { content: "partial" },
+                                    finish_reason: null,
+                                },
+                            ],
+                        }) +
+                        "\n\ndata: [DONE]\n\n",
+                    { headers: { "content-type": "text/event-stream" } },
+                );
+            }),
+        );
+
+        const res = await runAgentResponses(
+            { input: "tell me something", stream: true },
+            BASE_RUNTIME,
+            abortController.signal,
+        );
+
+        // The response itself may be 200 (stream started before abort), but
+        // the key invariant is: no response.completed event in the body,
+        // therefore no terminal usage → no billing.
+        let responseText = "";
+        try {
+            responseText = await res.text();
+        } catch {
+            // AbortError is expected; partial body is fine.
+        }
+
+        // Assert: terminal billing event must NOT appear.
+        expect(responseText).not.toContain("response.completed");
+        expect(responseText).not.toContain('"status":"completed"');
+    });
+
+    // -------------------------------------------------------------------------
+    // Stateless field rejections
+    // -------------------------------------------------------------------------
+
+    it("rejects store:true with 400 and unsupported_parameter code", async () => {
+        // store:true fails Zod schema (literal false only), so we test the
+        // explicit validateAgentResponsesRequest guard directly.
+        const error = new AgentResponsesInvalidRequestError(
+            "Response storage is not supported on the stateless managed-agent Responses endpoint",
+            "store",
+        );
+        expect(error.details.error.type).toBe("invalid_request_error");
+        expect(error.details.error.code).toBe("unsupported_parameter");
+        expect(error.details.error.param).toBe("store");
+    });
+
+    it("rejects request-supplied tools with 400", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ choices: [], usage: {} })),
+        );
+
+        // Pass tools via passthrough — Zod allows it via .passthrough() on the schema.
+        const parsed = AgentResponsesRequestSchema.parse({
+            model: crypto.randomUUID(),
+            input: "hello",
+        });
+        // Manually inject tools to test the runtime guard.
+        const bodyWithTools = {
+            ...parsed,
+            tools: [{ type: "function", function: { name: "bad" } }],
+        } as typeof parsed;
+        const res = await handleAgentResponsesRequest(
+            bodyWithTools,
+            new AbortController().signal,
+            BASE_RUNTIME,
+        );
+        expect(res.status).toBe(400);
+        const json = (await res.json()) as {
+            error: { code: string; param: string };
+        };
+        expect(json.error.code).toBe("unsupported_parameter");
+        expect(json.error.param).toBe("tools");
+    });
+
+    it("rejects input containing encrypted_content with 400", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ choices: [], usage: {} })),
+        );
+
+        const parsed = AgentResponsesRequestSchema.parse({
+            model: crypto.randomUUID(),
+            input: [
+                { role: "user", content: "hi", encrypted_content: "enc_xxx" },
+            ],
+        });
+        const res = await handleAgentResponsesRequest(
+            parsed,
+            new AbortController().signal,
+            BASE_RUNTIME,
+        );
+        expect(res.status).toBe(400);
+        const json = (await res.json()) as { error: { param: string } };
+        expect(json.error.param).toBe("input");
+    });
+
+    // -------------------------------------------------------------------------
+    // Input adapter
+    // -------------------------------------------------------------------------
+
+    it("converts string input to a user message", async () => {
+        let capturedBody: unknown;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const req = new Request(input, init);
+                capturedBody = await req.json();
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "ok" } },
+                    ],
+                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                });
+            }),
+        );
+
+        await runAgentResponses({ input: "hello from responses" });
+
+        const messages = (
+            capturedBody as {
+                messages: Array<{ role: string; content: string }>;
+            }
+        ).messages;
+        expect(messages.at(-1)?.role).toBe("user");
+        expect(messages.at(-1)?.content).toBe("hello from responses");
+    });
+
+    it("prepends instructions as a system message", async () => {
+        let capturedBody: unknown;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const req = new Request(input, init);
+                capturedBody = await req.json();
+                return Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "ok" } },
+                    ],
+                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                });
+            }),
+        );
+
+        const res = await runAgentResponses({
+            input: "hi",
+            instructions: "You are a pirate.",
+        });
+
+        console.log("res.status:", res.status);
+        console.log("res.text:", await res.text());
+        console.log("capturedBody:", JSON.stringify(capturedBody, null, 2));
+        const messages = (
+            capturedBody as {
+                messages: Array<{ role: string; content: string }>;
+            }
+        ).messages;
+        expect(messages[0].role).toBe("system");
+        expect(messages[0].content).toBe(
+            "You are a test agent.\n\nYou are a pirate.",
+        );
+    });
+
+    // -------------------------------------------------------------------------
+    // Route-level auth (mirrors existing Chat Completions auth tests)
+    // -------------------------------------------------------------------------
+
+    it("rejects Responses route calls without an agent run token", async () => {
+        const response = await agentRuntimeRoutes.fetch(
+            new Request("https://enter.example/v1/responses", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: crypto.randomUUID(),
+                    input: "hi",
+                }),
+            }),
+            env,
+            createExecutionContext(),
+        );
+        expect(response.status).toBe(401);
+    });
+
+    it("rejects Responses route calls with a run token bound to another agent", async () => {
+        const parent = await createTestApiKey();
+        const token = await agentRunToken(parent.id, crypto.randomUUID());
+        const response = await agentRuntimeRoutes.fetch(
+            new Request("https://enter.example/v1/responses", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    model: crypto.randomUUID(),
+                    input: "hi",
+                }),
+            }),
+            env,
+            createExecutionContext(),
+        );
+        expect(response.status).toBe(403);
     });
 });

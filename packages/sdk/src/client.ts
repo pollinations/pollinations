@@ -20,6 +20,8 @@ import type {
     DeviceCodeResponse,
     DeviceTokenResponse,
     EarningsOptions,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -27,6 +29,7 @@ import type {
     KeyInfo,
     KeyUsageOptions,
     Message,
+    MessageContentPart,
     ModelInfo,
     PollinationsConfig,
     RequestOptions,
@@ -844,6 +847,54 @@ export class Pollinations {
         }
 
         return response.json() as Promise<ChatResponse>;
+    }
+
+    /**
+     * Create an embedding (OpenAI-compatible).
+     *
+     * @example
+     * ```ts
+     * const response = await pollinations.embeddings('Hello world', { model: 'gemini-2' });
+     * console.log(response.data[0].embedding);
+     * ```
+     */
+    async embeddings(
+        input: string | string[] | MessageContentPart | MessageContentPart[],
+        options: EmbeddingsOptions = {},
+    ): Promise<EmbeddingsResponse> {
+        if (!input) {
+            throw new PollinationsError(
+                "Input is required",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = {
+            input,
+            model: options.model,
+            dimensions: options.dimensions,
+            task_type: options.taskType,
+            input_type: options.inputType,
+            encoding_format: options.encodingFormat,
+        };
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/embeddings`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(this.stripUndefined(body)),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        return response.json() as Promise<EmbeddingsResponse>;
     }
 
     /**

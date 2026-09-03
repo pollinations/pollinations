@@ -25,6 +25,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
     "video",
+    "speech",
     "transcription",
     "embedding",
 ] as const;
@@ -219,6 +220,14 @@ const COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS = [
 // Transcription endpoints bill audio input duration in seconds against the
 // same prompt audio price column, mirroring the first-party whisper/scribe
 // models (cost keyed on promptAudioSeconds at a per-second rate).
+const COMMUNITY_SPEECH_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    usageType: "completionAudioTokens",
+    label: "Completion audio",
+    priceUnit: "million",
+    rawUsagePaths: ["characters"],
+} as const;
+
 const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     key: "promptAudioPrice",
     usageType: "promptAudioSeconds",
@@ -250,6 +259,10 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_IMAGE_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_SPEECH_PRICE_FIELD,
+] as const;
+
 const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
@@ -273,6 +286,7 @@ const COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS = [
 export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
 
@@ -324,6 +338,14 @@ export const COMMUNITY_MODALITY_SPEC = {
             "/video/{prompt}",
         ],
         priceFields: COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech", "/audio/{text}"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     transcription: {
         category: "audio",
@@ -452,6 +474,7 @@ export function isCommunityFallbackBalanceAllowed(
 export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
+    if (value === "speech") return "speech";
     if (value === "transcription") return "transcription";
     if (value === "video") return "video";
     if (value === "image") return "image";

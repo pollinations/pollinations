@@ -612,6 +612,32 @@ export function getPriceDefinitionForModel(
 }
 
 /**
+ * True when `target` costs no more than `primary` on every priced dimension.
+ *
+ * Static and community models both reduce to a `PriceDefinition` keyed by
+ * `UsageType` (static via `getPriceDefinitionForModel`, community via
+ * `communityPriceDefinition`), so this one comparison covers every
+ * static/community fallback pair instead of a kind-specific comparator.
+ * A dimension absent from either side is treated as free (`?? 0`): a target
+ * that omits a dimension the primary charges for is cheaper, and a target
+ * that charges for a dimension the primary never billed is rejected — the
+ * caller would otherwise be billed for something the requested model never
+ * charged for.
+ */
+export function isFallbackPricingAllowed(
+    primary: PriceDefinition,
+    target: PriceDefinition,
+): boolean {
+    const dimensions = new Set([
+        ...Object.keys(primary),
+        ...Object.keys(target),
+    ]) as Set<UsageType>;
+    return [...dimensions].every(
+        (dimension) => (target[dimension] ?? 0) <= (primary[dimension] ?? 0),
+    );
+}
+
+/**
  * Get cost definition for a public model name
  */
 export function getCostDefinition(model: ModelName): CostDefinition | null {

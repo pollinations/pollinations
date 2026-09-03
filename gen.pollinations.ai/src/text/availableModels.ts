@@ -359,6 +359,15 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "google/gemini-3.8-flash",
+        config: portkeyConfig["google/gemini-3.8-flash"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            // Gemini 3.8 requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "gemini-flash-lite-3.5",
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(

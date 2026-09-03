@@ -459,6 +459,63 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
+    it("maps an embedded completion 429 to a retryable upstream error", async () => {
+        const details = {
+            code: 429,
+            message: "Provider rate limited",
+            metadata: { error_type: "rate_limit_exceeded" },
+        };
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                choices: [
+                    {
+                        finish_reason: "error",
+                        error: details,
+                    },
+                ],
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            details,
+        });
+    });
+
+    it("leaves non-rate-limit completion errors unchanged", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                choices: [
+                    {
+                        finish_reason: "error",
+                        error: {
+                            code: 400,
+                            message: "Malformed function call",
+                        },
+                    },
+                ],
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]).toMatchObject({
+            finish_reason: "error",
+            error: { code: 400 },
+        });
+    });
+
     it.each([
         '{"error":{"message":"Failed to load image: cannot identify image file","code":400}}',
         '{"error":{"message":"Invalid or unsupported audio file.","code":400}}',

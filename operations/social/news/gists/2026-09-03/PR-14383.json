@@ -1,0 +1,35 @@
+{
+  "pr_number": 14383,
+  "title": "feat: add Qwen3.8 Max 0902 on Alibaba",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14383",
+  "merged_at": "2026-09-03T09:32:13Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds canonical `qwen/qwen3.8-max-0902` alongside the unchanged `qwen3.8-max` OpenRouter model; no aliases or fallback.\n- Routes Alibaba Singapore Chat Completions and Responses to exact checkpoint `qwen3.8-max-0902`.\n- Keeps it paid-only with multiplier `1`, no Pollinations GPU, and exact $2/M input, $0.25/M cached input, $2.50/M cache write, and $6/M output rates.\n- Disables thinking only for explicitly forced tool selection on both APIs because Alibaba rejects that combination.\n\n## Verification\n\n- Alibaba direct: text, streaming, reasoning efforts, structured output, tools, image, multiple images, video, prompt cache, invalid input, and 10-request burst passed.\n- Alibaba Responses forced-tool probe returned 200 with a function call after the required non-thinking normalization.\n- Full isolated Pollinations matrix and staging Tinybird settlement passed on the exact direct route; provider attribution was `alibaba`, with no fallback and cost equal to price.\n- Focused resolver, Responses, permission, registry, catalog, pricing, type, formatting, and logo checks passed locally.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A fresh Qwen blooms",
+    "blurb": "The hive planted a direct route to Alibaba's Qwen3.8 Max 0902 checkpoint. It knows where it is going, brings its own price tag, and does not wander off looking for a fallback.",
+    "summary": "Added the canonical paid-only `qwen/qwen3.8-max-0902` model on an exact Alibaba Singapore route, with $2/M input, $0.25/M cached input, $2.50/M cache-write, and $6/M output pricing.",
+    "impact": "Developers can now select the exact Qwen3.8 Max 0902 checkpoint for chat and Responses APIs, including streaming, tools, images, video, structured output, and prompt caching, with direct Alibaba attribution and no fallback.",
+    "keywords": [
+      "qwen",
+      "alibaba",
+      "text-models",
+      "responses-api",
+      "tool-calling",
+      "pricing",
+      "openai-compatible"
+    ],
+    "visual_concept": "A new labeled seed packet for the exact Qwen3.8 Max 0902 checkpoint arrives in a cozy model garden. Polli acts as a careful gardener, guiding a glowing request along a clearly marked direct path from a retro terminal to an Alibaba-inspired cloud greenhouse, while a small tool-shaped flower shows the special forced-tool normalization.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded light-blue translucent wings, wearing a tiny gardener hat and carefully planting a seed packet labeled \"QWEN3.8 MAX 0902\" beside a retro terminal. A clearly marked glowing path leads to a warm cloud greenhouse labeled \"ALIBABA,\" with code-plants, soft tool-shaped flowers, and lime green (#ecf874) foliage; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14383.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a happy smile, and small rounded light-blue translucent wings, wearing a tiny gardener hat and carefully planting a seed packet labeled \"QWEN3.8 MAX 0902\" beside a retro terminal. A clearly marked glowing path leads to a warm cloud greenhouse labeled \"ALIBABA,\" with code-plants, soft tool-shaped flowers, and lime green (#ecf874) foliage; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T09:33:11.123622+00:00"
+}

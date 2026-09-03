@@ -825,6 +825,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
+  "gpt-image-2-openai": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
   "gpt-live-transcribe": {
     "cost": {
       "promptAudioSeconds": 0.000283333333333333,
@@ -915,6 +929,36 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000009375,
       "promptImageTokens": 0.000006,
       "promptTextTokens": 0.00000375,
+    },
+  },
+  "gptimage-large-openai": {
+    "cost": {
+      "completionImageTokens": 0.000032,
+      "completionTextTokens": 0.00001,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.000024,
+      "completionTextTokens": 0.0000075,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
+  "gptimage-openai": {
+    "cost": {
+      "completionImageTokens": 0.000008,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.0000025,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionImageTokens": 0.000006,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.000001875,
+      "promptTextTokens": 0.0000015,
     },
   },
   "grok": {
@@ -2100,6 +2144,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000098,
     },
   },
+  "qwen/qwen3.8-max-0902": {
+    "cost": {
+      "completionTextTokens": 0.000006,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.00000025,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+      "promptVideoTokens": 0.000002,
+    },
+    "price": {
+      "completionTextTokens": 0.000006,
+      "promptCacheWriteTokens": 0.0000025,
+      "promptCachedTokens": 0.00000025,
+      "promptImageTokens": 0.000002,
+      "promptTextTokens": 0.000002,
+      "promptVideoTokens": 0.000002,
+    },
+  },
   "qwen3-embedding-8b": {
     "cost": {
       "promptTextTokens": 0.0000001,
@@ -2239,34 +2301,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "qwen3.8-27b": {
     "cost": {
-      "completionTextTokens": 0.00000275,
-      "promptCachedTokens": 0.000000035,
-      "promptImageTokens": 0.00000035,
-      "promptTextTokens": 0.00000035,
-      "promptVideoTokens": 0.00000035,
+      "completionTextTokens": 0.0000025,
+      "promptCachedTokens": 0.000000032,
+      "promptImageTokens": 0.00000032,
+      "promptTextTokens": 0.00000032,
+      "promptVideoTokens": 0.00000032,
     },
     "price": {
-      "completionTextTokens": 0.00000275,
-      "promptCachedTokens": 0.000000035,
-      "promptImageTokens": 0.00000035,
-      "promptTextTokens": 0.00000035,
-      "promptVideoTokens": 0.00000035,
+      "completionTextTokens": 0.0000025,
+      "promptCachedTokens": 0.000000032,
+      "promptImageTokens": 0.00000032,
+      "promptTextTokens": 0.00000032,
+      "promptVideoTokens": 0.00000032,
     },
   },
   "qwen3.8-27b-openrouter-akashml": {
     "cost": {
-      "completionTextTokens": 0.00000255,
-      "promptCachedTokens": 0.00000005,
-      "promptImageTokens": 0.00000035,
-      "promptTextTokens": 0.00000035,
-      "promptVideoTokens": 0.00000035,
+      "completionTextTokens": 0.0000025,
+      "promptCachedTokens": 0.000000032,
+      "promptImageTokens": 0.00000032,
+      "promptTextTokens": 0.00000032,
+      "promptVideoTokens": 0.00000032,
     },
     "price": {
-      "completionTextTokens": 0.00000255,
-      "promptCachedTokens": 0.00000005,
-      "promptImageTokens": 0.00000035,
-      "promptTextTokens": 0.00000035,
-      "promptVideoTokens": 0.00000035,
+      "completionTextTokens": 0.0000025,
+      "promptCachedTokens": 0.000000032,
+      "promptImageTokens": 0.00000032,
+      "promptTextTokens": 0.00000032,
+      "promptVideoTokens": 0.00000032,
     },
   },
   "qwen3.8-max": {

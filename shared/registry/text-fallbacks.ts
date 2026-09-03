@@ -46,13 +46,6 @@ export const TEXT_FALLBACKS = {
         "qwen3.8-27b-openrouter-akashml": {
             provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
-            cost: {
-                promptTextTokens: perMillion(0.35),
-                promptCachedTokens: perMillion(0.05),
-                promptImageTokens: perMillion(0.35),
-                promptVideoTokens: perMillion(0.35),
-                completionTextTokens: perMillion(2.55),
-            },
         },
     },
     "qwen3.7-flash": {

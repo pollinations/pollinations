@@ -194,11 +194,6 @@ describe("static provider fallbacks", () => {
             completionImageTokens: 0.03,
         });
         expect(
-            TEXT_SERVICES["qwen3.8-27b-openrouter-akashml"].cost,
-        ).toMatchObject({
-            promptCachedTokens: 0.05 / 1_000_000,
-        });
-        expect(
             TEXT_SERVICES["gemini-openrouter-ai-studio-priority"].cost,
         ).toMatchObject({
             promptCacheWriteTokens: 1.35 / 1_000_000,

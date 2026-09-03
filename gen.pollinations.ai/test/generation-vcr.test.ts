@@ -43,6 +43,11 @@ const test = baseTest.extend<{
 
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
+    env.AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY =
+        "azure-gpt-image-2-sweden-test-key";
+    env.AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY =
+        "azure-gpt-image-2-eastus2-test-key";
+    env.OPENAI_API_KEY = "openai-test-key";
     env.OPENROUTER_API_KEY = "openrouter-test-key";
     env.DEEPINFRA_API_KEY = "deepinfra-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";
@@ -73,6 +78,13 @@ function createGenerationMocks() {
     };
     const deepInfraState: { requests: Record<string, unknown>[] } = {
         requests: [],
+    };
+    const gptImageState: {
+        azureStatus: number;
+        openAIRequests: Record<string, unknown>[];
+    } = {
+        azureStatus: 429,
+        openAIRequests: [],
     };
     return createFetchMock({
         tinybird: createMockTinybird(),
@@ -195,6 +207,47 @@ function createGenerationMocks() {
             },
             reset: () => {
                 deepInfraState.requests = [];
+            },
+        },
+        gptImage: {
+            state: gptImageState,
+            handlerMap: {
+                "content-safety.test": async () =>
+                    Response.json({ categoriesAnalysis: [] }),
+                "gptimagemain1-resource.cognitiveservices.azure.com":
+                    async () => Response.json({ categoriesAnalysis: [] }),
+                "myceli-prod-img-2-swedencentral.cognitiveservices.azure.com":
+                    async () =>
+                        Response.json(
+                            { error: { code: "RateLimitReached" } },
+                            { status: gptImageState.azureStatus },
+                        ),
+                "myceli-prod-img-2-eastus2.cognitiveservices.azure.com":
+                    async () =>
+                        Response.json(
+                            { error: { code: "RateLimitReached" } },
+                            { status: gptImageState.azureStatus },
+                        ),
+                "api.openai.com": async (request) => {
+                    gptImageState.openAIRequests.push(
+                        (await request.json()) as Record<string, unknown>,
+                    );
+                    return Response.json({
+                        data: [{ b64_json: png1x1Base64 }],
+                        usage: {
+                            input_tokens: 10,
+                            output_tokens: 20,
+                            input_tokens_details: {
+                                text_tokens: 10,
+                                image_tokens: 0,
+                            },
+                        },
+                    });
+                },
+            },
+            reset: () => {
+                gptImageState.azureStatus = 429;
+                gptImageState.openAIRequests = [];
             },
         },
         replicate: {
@@ -1830,6 +1883,76 @@ test("gpt-image-2 rejects transparent backgrounds with 400", async ({
         eventType: "generate.image",
         modelRequested: "gpt-image-2",
         responseStatus: 400,
+    });
+});
+
+test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "gptImage");
+    const { key } = await createTestApiKey({
+        allowedModels: ["gpt-image-2"],
+        user: { tierBalance: 100 },
+    });
+
+    const { response, wait } = await fetchWorker(
+        "/image/fallback%20probe?model=gpt-image-2&quality=low&seed=9347",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-requested")).toBe("gpt-image-2");
+    expect(response.headers.get("x-model-used")).toBe("gpt-image-2-openai");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.arrayBuffer();
+    await wait();
+
+    expect(mocks.gptImage.state.openAIRequests).toEqual([
+        expect.objectContaining({ model: "gpt-image-2" }),
+    ]);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "gpt-image-2",
+        modelProviderUsed: "azure",
+        responseStatus: 502,
+        isFinal: false,
+    });
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        modelUsed: "gpt-image-2-openai",
+        modelProviderUsed: "openai",
+        responseStatus: 200,
+        fallbackUsed: true,
+        isFinal: true,
+        isBilledUsage: true,
+    });
+});
+
+test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "gptImage");
+    mocks.gptImage.state.azureStatus = 524;
+    const { key } = await createTestApiKey({
+        allowedModels: ["gpt-image-2"],
+        user: { tierBalance: 100 },
+    });
+
+    const { response, wait } = await fetchWorker(
+        "/image/timeout%20probe?model=gpt-image-2&quality=low&seed=9348",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+
+    expect(response.status).toBe(502);
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        modelUsed: "gpt-image-2",
+        modelProviderUsed: "azure",
+        responseStatus: 502,
+        isFinal: true,
+        isBilledUsage: false,
     });
 });
 

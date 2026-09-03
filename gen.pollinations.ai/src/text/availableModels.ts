@@ -49,6 +49,19 @@ const grokTransform: TransformFn = (messages, options) =>
         ? { messages, options }
         : stripReasoning(messages, options);
 
+const qwenMaxTransform: TransformFn = (messages, options) => {
+    const toolChoice = options.tool_choice;
+    const forcesTool =
+        toolChoice === "required" ||
+        (typeof toolChoice === "object" && toolChoice !== null);
+    return {
+        messages,
+        options: forcesTool
+            ? { ...options, reasoning_effort: "none" }
+            : options,
+    };
+};
+
 const models: ModelDefinition[] = [
     {
         name: "openai",
@@ -154,6 +167,12 @@ const models: ModelDefinition[] = [
     {
         name: "qwen3.8-max",
         config: portkeyConfig["qwen/qwen3.8-max"],
+    },
+    {
+        name: "qwen/qwen3.8-max-0902",
+        config: portkeyConfig["qwen3.8-max-0902"],
+        // Alibaba rejects forced tool selection while thinking is enabled.
+        transform: qwenMaxTransform,
     },
     {
         name: "qwen3.7-flash",

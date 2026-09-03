@@ -581,6 +581,7 @@ export const CompletionUsageSchema = z
         prompt_tokens_details: z
             .object({
                 audio_tokens: z.number().int().nonnegative().nullish(),
+                cache_write_tokens: z.number().int().nonnegative().nullish(),
                 cached_tokens: z.number().int().nonnegative().nullish(),
                 cache_creation_input_tokens: z
                     .number()

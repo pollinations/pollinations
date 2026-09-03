@@ -123,18 +123,10 @@ export function getModelQueryFilterTokens(
     return query
         .split(/\s+/)
         .filter(Boolean)
-        .map((token, index) => ({
-            filter: parseModelQueryFilter(token, supportedKeys),
-            index,
-            token,
-        }))
-        .filter(
-            (
-                entry,
-            ): entry is ModelQueryFilterToken & {
-                filter: ModelQueryFilter;
-            } => Boolean(entry.filter),
-        );
+        .flatMap((token, index) => {
+            const filter = parseModelQueryFilter(token, supportedKeys);
+            return filter ? [{ filter, index, token }] : [];
+        });
 }
 
 export function getModelQueryDraftFilter(
@@ -182,6 +174,30 @@ export function replaceModelQueryFilterToken(
         )
         .filter(Boolean)
         .join(" ");
+}
+
+export function getModelQueryVisibleSearch(
+    query: string,
+    filters: ModelQueryFilterToken[],
+    draftFilter?: ModelQueryDraftFilter,
+): string {
+    const filterIndexes = new Set(filters.map(({ index }) => index));
+    return query
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((token, index) =>
+            index === draftFilter?.index ? draftFilter.value : token,
+        )
+        .filter((_token, index) => !filterIndexes.has(index))
+        .filter(Boolean)
+        .join(" ");
+}
+
+export function getModelQueryDraftSuggestionValue(option: string): string {
+    const trimmedOption = option.trimEnd();
+    const token = trimmedOption.slice(trimmedOption.lastIndexOf(" ") + 1);
+    const trailingSpace = option.endsWith(" ") ? " " : "";
+    return `${token.slice(token.indexOf(":") + 1)}${trailingSpace}`;
 }
 
 function getModelAccess(model: ModelPrice): ModelAccess {

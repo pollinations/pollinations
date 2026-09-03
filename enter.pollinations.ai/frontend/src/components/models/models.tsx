@@ -43,8 +43,10 @@ import {
     ensureModelQuerySource,
     getExplicitModelQuerySource,
     getModelQueryDraftFilter,
+    getModelQueryDraftSuggestionValue,
     getModelQueryFilterTokens,
     getModelQuerySuggestions,
+    getModelQueryVisibleSearch,
     MODEL_QUERY_FILTER_KEYS,
     type ModelQueryDraftFilter,
     type ModelQueryFilter,
@@ -251,28 +253,50 @@ const formatFilterValue = (filter: ModelQueryFilter): string =>
         ? filter.value
         : filter.value.replaceAll("-", " ");
 
-function getVisibleSearch(
-    query: string,
-    filters: ModelQueryFilterToken[],
-    draftFilter?: ModelQueryDraftFilter,
-): string {
-    const filterIndexes = new Set(filters.map(({ index }) => index));
-    return query
-        .split(/\s+/)
-        .filter(Boolean)
-        .map((token, index) =>
-            index === draftFilter?.index ? draftFilter.value : token,
-        )
-        .filter((_token, index) => !filterIndexes.has(index))
-        .filter(Boolean)
-        .join(" ");
-}
+type ModelFilterTokensProps = {
+    tokens: ModelQueryFilterToken[];
+    draft?: ModelQueryDraftFilter;
+    pendingRemovalIndex?: number;
+    onEdit: (token: ModelQueryFilterToken) => void;
+};
 
-const getDraftSuggestionValue = (option: string): string => {
-    const trimmedOption = option.trimEnd();
-    const token = trimmedOption.slice(trimmedOption.lastIndexOf(" ") + 1);
-    const trailingSpace = option.endsWith(" ") ? " " : "";
-    return `${token.slice(token.indexOf(":") + 1)}${trailingSpace}`;
+const ModelFilterTokens: FC<ModelFilterTokensProps> = ({
+    tokens,
+    draft,
+    pendingRemovalIndex,
+    onEdit,
+}) => {
+    if (tokens.length === 0 && !draft) {
+        return (
+            <SearchIcon className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted" />
+        );
+    }
+
+    return (
+        <>
+            {tokens.map((token) => {
+                const label = MODEL_FILTER_LABELS[token.filter.key];
+                const value = formatFilterValue(token.filter);
+                return (
+                    <EditableComboboxToken
+                        key={`${token.index}:${token.token}`}
+                        label={label}
+                        value={value}
+                        highlighted={pendingRemovalIndex === token.index}
+                        aria-label={`Change ${label} filter: ${value}`}
+                        onClick={() => onEdit(token)}
+                    />
+                );
+            })}
+            {draft && (
+                <div className="flex h-7 max-w-full shrink-0 items-center text-xs">
+                    <span className="py-1 pl-1.5 pr-1 text-theme-text-muted">
+                        {MODEL_FILTER_LABELS[draft.key]}:
+                    </span>
+                </div>
+            )}
+        </>
+    );
 };
 
 export const Models: FC = () => {
@@ -343,7 +367,11 @@ export const Models: FC = () => {
         [query, supportedFilterKeys],
     );
     const explicitModelSource = getExplicitModelQuerySource(parsedQuery);
-    const visibleSearch = getVisibleSearch(search, filterTokens, draftFilter);
+    const visibleSearch = getModelQueryVisibleSearch(
+        search,
+        filterTokens,
+        draftFilter,
+    );
     const renderedFilterTokens = filterTokens;
     const renderedDraftFilter = draftFilter;
     const modelModels = useMemo(
@@ -389,7 +417,9 @@ export const Models: FC = () => {
         if (explicitModelSource) {
             options = options.filter((option) => !isSourceSuggestion(option));
         }
-        return draftFilter ? options.map(getDraftSuggestionValue) : options;
+        return draftFilter
+            ? options.map(getModelQueryDraftSuggestionValue)
+            : options;
     }, [
         activeTabModels,
         draftFilter,
@@ -764,58 +794,14 @@ export const Models: FC = () => {
                                     aria-label={`Search ${searchTarget}`}
                                     autoComplete="off"
                                     startContent={
-                                        renderedFilterTokens.length === 0 &&
-                                        !renderedDraftFilter ? (
-                                            <SearchIcon className="pointer-events-none ml-1 mr-0.5 h-4 w-4 shrink-0 text-theme-text-muted" />
-                                        ) : (
-                                            <>
-                                                {renderedFilterTokens.map(
-                                                    (filterToken) => {
-                                                        const { filter } =
-                                                            filterToken;
-                                                        const label =
-                                                            MODEL_FILTER_LABELS[
-                                                                filter.key
-                                                            ];
-                                                        const value =
-                                                            formatFilterValue(
-                                                                filter,
-                                                            );
-
-                                                        return (
-                                                            <EditableComboboxToken
-                                                                key={`${filterToken.index}:${filterToken.token}`}
-                                                                label={label}
-                                                                value={value}
-                                                                highlighted={
-                                                                    pendingRemovalIndex ===
-                                                                    filterToken.index
-                                                                }
-                                                                aria-label={`Change ${label} filter: ${value}`}
-                                                                onClick={() =>
-                                                                    editFilter(
-                                                                        filterToken,
-                                                                    )
-                                                                }
-                                                            />
-                                                        );
-                                                    },
-                                                )}
-                                                {renderedDraftFilter && (
-                                                    <div className="flex h-7 max-w-full shrink-0 items-center text-xs">
-                                                        <span className="py-1 pl-1.5 pr-1 text-theme-text-muted">
-                                                            {
-                                                                MODEL_FILTER_LABELS[
-                                                                    renderedDraftFilter
-                                                                        .key
-                                                                ]
-                                                            }
-                                                            :
-                                                        </span>
-                                                    </div>
-                                                )}
-                                            </>
-                                        )
+                                        <ModelFilterTokens
+                                            tokens={renderedFilterTokens}
+                                            draft={renderedDraftFilter}
+                                            pendingRemovalIndex={
+                                                pendingRemovalIndex
+                                            }
+                                            onEdit={editFilter}
+                                        />
                                     }
                                 />
                             </div>

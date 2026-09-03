@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
     ensureModelQuerySource,
     getModelQueryDraftFilter,
+    getModelQueryDraftSuggestionValue,
     getModelQueryFilterTokens,
     getModelQuerySuggestions,
+    getModelQueryVisibleSearch,
     matchesModelQuery,
     parseModelQuery,
     removeModelQueryFilterToken,
@@ -112,6 +114,21 @@ describe("model query filter tokens", () => {
                 "source:community",
             ),
         ).toBe("source:community capability:tool-calling");
+    });
+
+    it("projects filter tokens out of the editable search value", () => {
+        const query = "source:official flux capability:tool-calling access:pa";
+        const filters = getModelQueryFilterTokens(query);
+        const draft = getModelQueryDraftFilter(query, true);
+
+        expect(getModelQueryVisibleSearch(query, filters, draft)).toBe(
+            "flux pa",
+        );
+        expect(
+            getModelQueryDraftSuggestionValue(
+                "source:official flux access:paid ",
+            ),
+        ).toBe("paid ");
     });
 
     it("treats filters unsupported by the current tab as plain text", () => {

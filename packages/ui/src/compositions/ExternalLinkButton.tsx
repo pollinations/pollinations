@@ -6,6 +6,9 @@ import { ExternalLinkIcon } from "../primitives/icons/index.tsx";
 type ExternalLinkButtonBaseProps = {
     size?: "sm" | "md" | "lg";
     appearance?: ButtonAppearance;
+    /** Set false for another Pollinations property that should behave as product navigation. */
+    external?: boolean;
+    showIcon?: boolean;
     className?: string;
     children: ReactNode;
 };
@@ -22,24 +25,35 @@ export type ExternalLinkButtonProps =
     | ExternalLinkButtonNativeButtonProps;
 
 export function ExternalLinkButton(props: ExternalLinkButtonProps) {
-    const { size = "md", appearance, className, children } = props;
+    const {
+        size = "md",
+        appearance,
+        external = true,
+        showIcon = true,
+        className,
+        children,
+    } = props;
     const content = (
         <>
             <span>{children}</span>
-            <ExternalLinkIcon
-                className="polli:h-4 polli:w-4 polli:shrink-0 polli:opacity-60"
-                aria-hidden="true"
-            />
+            {external && showIcon ? (
+                <ExternalLinkIcon
+                    className="polli:h-4 polli:w-4 polli:shrink-0 polli:opacity-60"
+                    aria-hidden="true"
+                />
+            ) : null}
         </>
     );
 
     if ("href" in props) {
         const {
             href,
-            target = "_blank",
+            target = external ? "_blank" : undefined,
             rel = target === "_blank" ? "noopener noreferrer" : undefined,
             size: _size,
             appearance: _appearance,
+            external: _external,
+            showIcon: _showIcon,
             className: _className,
             children: _children,
             ...anchorProps
@@ -65,6 +79,8 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
         type = "button",
         size: _size,
         appearance: _appearance,
+        external: _external,
+        showIcon: _showIcon,
         className: _className,
         children: _children,
         ...buttonProps

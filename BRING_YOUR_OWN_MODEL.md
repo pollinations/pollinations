@@ -13,6 +13,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
 | Video | Exact endpoint URL entered at registration | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
+| Text to speech | `POST /v1/audio/speech` | `POST /v1/audio/speech` |
 | Embeddings | `POST /v1/embeddings` | `POST /v1/embeddings` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
@@ -46,7 +47,9 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
 
 Pollinations sends no upstream model id and bills the accepted request duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
-Text-to-speech, realtime, and 3D endpoints cannot currently be registered through this workflow.
+Text-to-speech providers expose OpenAI's `/v1/audio/speech` and receive the request text, voice, and response format. Return the synthesized audio bytes synchronously; audio content types pass through, and anything else is served as `audio/mpeg`. Pollinations bills the synthesized request text in characters, so speech pricing is entered per 1M characters. Inline responses are limited to 20 MB.
+
+Realtime and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
@@ -60,6 +63,7 @@ Public models appear in the model catalog and can be called by other Pollination
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from the requested duration in seconds.
 - Transcription models are priced from reported audio duration.
+- Text-to-speech models are priced from the synthesized text in characters.
 - Embedding models use the prompt-token count reported by the upstream endpoint.
 - A zero price makes the public model free.
 
@@ -69,7 +73,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For video, enter the exact generation URL and bearer token.
+3. Select text, image, transcription, speech, or embedding and enter the upstream base URL, model id, and bearer token. For video, enter the exact generation URL and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
@@ -82,7 +86,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI manages text, image, video, transcription, and embedding model registrations. Sign in, test the endpoint, then create the model:
+The CLI manages text, image, video, transcription, speech, and embedding model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login
@@ -119,7 +123,7 @@ Public models support these owner controls in the dashboard or Account API:
 - The provider profile at `POST /account/my-models/provider` sets the public provider name and service URL shared by your models.
 - Owners can hide or relist their models without deleting them.
 
-Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, video prices cannot exceed 0.5 Pollen per generated second, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
+Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, video prices cannot exceed 0.5 Pollen per generated second, transcription prices cannot exceed 0.012 Pollen per minute, and text-to-speech prices cannot exceed 50 Pollen per 1M characters of synthesized speech. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
 
 ## Call Your Model
 

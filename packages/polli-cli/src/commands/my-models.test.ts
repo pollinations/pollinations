@@ -111,6 +111,25 @@ describe("modelBody", () => {
         });
     });
 
+    it("supports text-to-speech model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "tts-provider",
+                    title: "TTS Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "speech",
+                    completionAudioPrice: "0.00001",
+                },
+                true,
+            ),
+        ).toMatchObject({
+            modality: "speech",
+            completionAudioPrice: 0.00001,
+        });
+    });
+
     it("supports embedding model registration", () => {
         expect(
             modelBody(

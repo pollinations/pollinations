@@ -5,6 +5,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
@@ -540,6 +541,64 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes speech endpoints with a real TTS request and returns character usage", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe("https://api.example.com/v1/audio/speech");
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                model: "gpt-4o-mini-tts",
+                input: "A simple green sprout.",
+                voice: "alloy",
+                response_format: "mp3",
+            });
+            // A structurally valid MP3: an ID3v2 tag header. The probe only
+            // checks magic bytes — content does not need to decode.
+            return new Response(
+                new Uint8Array([
+                    0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                    0x00, 0x00,
+                ]),
+                { headers: { "Content-Type": "audio/mpeg" } },
+            );
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-4o-mini-tts",
+            }),
+        ).resolves.toEqual({
+            usage: { characters: 22 },
+            billableUsage: { completionAudioTokens: 22 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects speech upstreams that do not return encoded audio", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response("plain text", {
+                        headers: { "Content-Type": "text/plain" },
+                    }),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-4o-mini-tts",
+            }),
+        ).rejects.toThrow("Endpoint did not return a supported audio format");
     });
 
     it("probes embedding endpoints and returns billable prompt tokens", async () => {

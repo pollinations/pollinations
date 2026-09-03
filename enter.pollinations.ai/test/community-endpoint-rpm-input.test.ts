@@ -95,10 +95,41 @@ describe("community endpoint per-user RPM input", () => {
                     community: true,
                     agent: true,
                 },
+                { name: "owner/transcriber", type: "audio", community: true },
+                {
+                    name: "owner/tts",
+                    type: "audio",
+                    community: true,
+                    outputModalities: ["audio"],
+                },
             ]),
         ).toEqual([
             { modelId: "owner/model", modality: "text" },
             { modelId: "owner/video", modality: "video" },
+            { modelId: "owner/transcriber", modality: "transcription" },
+            { modelId: "owner/tts", modality: "speech" },
+        ]);
+    });
+
+    it("maps catalog audio models to speech or transcription by output modality", () => {
+        expect(
+            publicCommunityFallbackOptions([
+                {
+                    name: "owner/transcriber",
+                    type: "audio",
+                    community: true,
+                    outputModalities: ["text"],
+                },
+                {
+                    name: "owner/tts",
+                    type: "audio",
+                    community: true,
+                    outputModalities: ["audio"],
+                },
+            ]),
+        ).toEqual([
+            { modelId: "owner/transcriber", modality: "transcription" },
+            { modelId: "owner/tts", modality: "speech" },
         ]);
     });
 

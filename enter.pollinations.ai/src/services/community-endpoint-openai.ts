@@ -1,4 +1,6 @@
+import { detectAudioMimeType } from "@shared/audio-mime.ts";
 import {
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
@@ -17,6 +19,7 @@ import {
     decodeCommunityBase64,
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
+    MAX_COMMUNITY_AUDIO_BYTES,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
 } from "@shared/community-media.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
@@ -27,7 +30,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import { readResponseText } from "@shared/response-bytes.ts";
+import { readResponseBytes, readResponseText } from "@shared/response-bytes.ts";
 import { detectVideoMimeType } from "@shared/video-mime.ts";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
@@ -336,6 +339,69 @@ export async function testCommunityTranscriptionEndpoint({
         // usage object that may not carry it.
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
+    };
+}
+
+// Speech endpoints are billed per character of synthesized input text,
+// mirroring the first-party TTS models (createAudioTokenUsage). Unlike the
+// other probes the upstream answer is the raw encoded audio — not a JSON
+// envelope — so the probe reads bytes and validates the format directly.
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const probeText = "A simple green sprout.";
+    const upstreamUrl = communityAudioSpeechUrl(baseUrl);
+
+    let response: Response;
+    try {
+        response = await fetch(upstreamUrl, {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input: probeText,
+                voice: "alloy",
+                response_format: "mp3",
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
+
+    if (!response.ok) {
+        const body = parseJson(
+            await readResponseText(
+                response,
+                MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+                () => new Error("Endpoint response is too large"),
+            ),
+        );
+        throw new Error(endpointErrorMessage(response.status, body));
+    }
+
+    const bytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_AUDIO_BYTES,
+        () => new Error("Endpoint audio response is too large"),
+    );
+    if (!detectAudioMimeType(bytes)) {
+        throw new Error("Endpoint did not return a supported audio format");
+    }
+
+    const characters = [...probeText].length;
+    return {
+        // Bill the probe under the speech price field's usage type so the
+        // price table marks the completion-audio row as exercised. The probe
+        // text's character count is the only thing billed here.
+        usage: { characters },
+        billableUsage: { completionAudioTokens: characters },
     };
 }
 

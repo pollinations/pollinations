@@ -120,4 +120,30 @@ describe("community endpoint price input", () => {
             ),
         ).toBe(false);
     });
+
+    it("allows publishing speech models with only a completion-audio price", () => {
+        const visiblePriceKeys = new Set(basePriceKeysForModality("speech"));
+
+        expect([...visiblePriceKeys]).toEqual(["completionAudioPrice"]);
+        expect(
+            hasValidVisibleFormPrices(
+                { ...emptyForm, modality: "speech" },
+                visiblePriceKeys,
+            ),
+        ).toBe(true);
+    });
+
+    it("scales speech prices per 1M characters with the per-million ceiling", () => {
+        expect(formPriceToStoredPrice("10")).toBe(0.00001);
+        expect(storedPriceToFormValue(0.00001)).toBe("10");
+        expect(isValidPriceInput("10")).toBe(true);
+        expect(
+            isValidPriceInput(String(MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS)),
+        ).toBe(true);
+        expect(
+            isValidPriceInput(
+                String(MAX_COMMUNITY_PRICE_PER_MILLION_TOKENS + 1),
+            ),
+        ).toBe(false);
+    });
 });

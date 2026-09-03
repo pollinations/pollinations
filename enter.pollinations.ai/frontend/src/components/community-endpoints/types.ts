@@ -126,6 +126,7 @@ export function publicCommunityFallbackOptions(
         type: string;
         community?: boolean;
         agent?: boolean;
+        outputModalities?: readonly string[];
     }[],
 ): FallbackModelOption[] {
     return models
@@ -147,7 +148,9 @@ export function publicCommunityFallbackOptions(
                     : model.type === "video"
                       ? "video"
                       : model.type === "audio"
-                        ? "transcription"
+                        ? model.outputModalities?.includes("audio")
+                            ? "speech"
+                            : "transcription"
                         : model.type === "embedding"
                           ? "embedding"
                           : "text",

@@ -5,6 +5,9 @@ import { readResponseBytes } from "./response-bytes.ts";
 
 export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
 export const MAX_COMMUNITY_VIDEO_BYTES = 20 * 1024 * 1024;
+// Speech endpoints return raw encoded audio bytes, so the response cap is the
+// clip cap itself rather than a base64 envelope around it.
+export const MAX_COMMUNITY_AUDIO_BYTES = 20 * 1024 * 1024;
 // A JSON envelope carrying a 20 MB base64 clip is at most ~28 MB; leave a
 // small amount of room for the envelope while still bounding provider output.
 export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =

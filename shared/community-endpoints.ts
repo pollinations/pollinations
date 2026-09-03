@@ -26,6 +26,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "image",
     "video",
     "transcription",
+    "speech",
     "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -239,11 +240,25 @@ const COMMUNITY_VIDEO_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Speech endpoints bill the character count of the synthesized input text
+// against the same completion audio price column as chat audio output,
+// mirroring first-party TTS cost, which counts characters (createAudioTokenUsage).
+// The registration probe reports upstream "characters" (the probe text length).
+const COMMUNITY_SPEECH_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    usageType: "completionAudioTokens",
+    label: "Completion audio",
+    priceUnit: "million",
+    // Paths are relative to the stored usage object, same as the chat fields.
+    rawUsagePaths: ["characters"],
+} as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
     COMMUNITY_VIDEO_PRICE_FIELD,
+    COMMUNITY_SPEECH_PRICE_FIELD,
 ] as const;
 
 const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
@@ -256,6 +271,10 @@ const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
 
 const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_VIDEO_PRICE_FIELD,
+] as const;
+
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_SPEECH_PRICE_FIELD,
 ] as const;
 
 // Embedding endpoints bill token usage per 1M like text models. Token-only
@@ -274,7 +293,8 @@ export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number];
 
 type CommunityModalitySpec = {
     category: Category;
@@ -332,6 +352,14 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
         restrictDefinitionEndpoints: true,
         priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     embedding: {
         category: "embedding",
@@ -453,6 +481,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "speech") return "speech";
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";
@@ -471,10 +500,10 @@ export function normalizeCommunityEndpointInputModalities(
 ): ModelInputModality[] {
     // Both empty cases — nothing declared, and a declared set that shares
     // nothing with this modality — fall back to the modality's own first
-    // input: text for text, image, and video endpoints; audio for transcription.
-    // Falling back to a bare "text" would hand a transcription endpoint the
-    // one input it cannot accept, which the write path then rejects with a
-    // 400 naming an input the owner never chose.
+    // input: text for text, image, video, and speech endpoints; audio for
+    // transcription. Falling back to a bare "text" would hand a transcription
+    // endpoint the one input it cannot accept, which the write path then
+    // rejects with a 400 naming an input the owner never chose.
     const permitted = COMMUNITY_MODALITY_SPEC[endpointModality].inputModalities;
     const declared = new Set(value ?? []);
     const normalized = permitted.filter((modality) => declared.has(modality));

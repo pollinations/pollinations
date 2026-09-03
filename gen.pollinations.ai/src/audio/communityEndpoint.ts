@@ -1,15 +1,21 @@
-import { communityAudioTranscriptionsUrl } from "@shared/community-endpoint-urls.ts";
+import {
+    communityAudioSpeechUrl,
+    communityAudioTranscriptionsUrl,
+} from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     communityTranscriptionSeconds,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import { MAX_COMMUNITY_AUDIO_BYTES } from "@shared/community-media.ts";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
+    createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseBytes } from "@shared/response-bytes.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
@@ -204,5 +210,97 @@ function toTimedWords(value: unknown): NormalizedWord[] {
             return [];
         }
         return [{ word, start, end }];
+    });
+}
+
+export type CommunitySpeechOptions = {
+    text: string;
+    voice?: string;
+    responseFormat?: string;
+};
+
+export async function callCommunitySpeechEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    options: CommunitySpeechOptions,
+    secret: string,
+): Promise<Response> {
+    // Managed agents are text-only, so a speech endpoint is always external.
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community speech endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityAudioSpeechUrl(endpoint.baseUrl);
+
+    let response: Response;
+    try {
+        response = await fetch(upstreamUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
+                    bearerToken,
+                )}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: endpoint.upstreamModel,
+                input: options.text,
+                ...(options.voice !== undefined && {
+                    voice: options.voice,
+                }),
+                ...(options.responseFormat !== undefined && {
+                    response_format: options.responseFormat,
+                }),
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch (error) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Community speech endpoint timed out or could not connect",
+            cause: error,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+    response = await ensureUpstreamOk(response, upstreamUrl);
+
+    const bytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_AUDIO_BYTES,
+        (total) =>
+            new UpstreamError(502 as ContentfulStatusCode, {
+                message: `Community speech endpoint response is larger than 20 MB (${total} bytes)`,
+                requestUrl: new URL(upstreamUrl),
+            }),
+    );
+
+    // Speech endpoints stream back raw encoded audio. Only trust the
+    // upstream's content type when it is a real audio/* type, otherwise
+    // label it audio/mpeg so clients play it correctly — the same stance the
+    // fal and Grok audio paths take with file hosts that serve
+    // application/octet-stream.
+    const headerContentType = response.headers.get("content-type");
+    const contentType = headerContentType?.startsWith("audio/")
+        ? headerContentType
+        : "audio/mpeg";
+
+    // Billing mirrors first-party TTS: the synthesized input text counted in
+    // characters against the completion audio token price column.
+    const usageHeaders = buildUsageHeaders(
+        endpoint.modelId,
+        createAudioTokenUsage([...options.text].length),
+    );
+
+    return new Response(bytes, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
     });
 }

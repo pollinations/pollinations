@@ -34,6 +34,7 @@ type ApiKeyDialogProps = {
     onComplete: () => void;
     triggerLabel?: ReactNode;
     triggerClassName?: string;
+    triggerDisabled?: boolean;
     /** Simplified mode: hides key type selector, permissions, budget, expiry. Shows only app key settings. */
     simplified?: boolean;
 };
@@ -43,6 +44,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
     onComplete,
     triggerLabel = "Create new key",
     triggerClassName,
+    triggerDisabled = false,
     simplified = false,
 }) => {
     function generateFunName(): string {
@@ -185,6 +187,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
             trigger={
                 <Button
                     type="button"
+                    disabled={triggerDisabled}
                     className={cn(
                         "inline-flex shrink-0 self-start whitespace-nowrap",
                         triggerClassName,

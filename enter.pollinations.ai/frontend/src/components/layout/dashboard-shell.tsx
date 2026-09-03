@@ -384,12 +384,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                                 </span>
                             </div>
                         )}
-                        <fieldset
-                            disabled={accountRestricted}
-                            className="contents"
-                        >
-                            {children}
-                        </fieldset>
+                        {children}
                     </main>
                 </ScrollArea>
             </div>

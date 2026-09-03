@@ -70,6 +70,7 @@ export type BillingState = {
 
 type AutoTopUpPanelProps = {
     initialBillingState: BillingState | null;
+    accountRestricted: boolean;
 };
 
 const DEFAULT_PACK_AMOUNT_USD = 10;
@@ -124,6 +125,7 @@ type ToggleStatus = "off" | "draft" | "on";
 
 export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     initialBillingState,
+    accountRestricted,
 }) => {
     const [billingState, setBillingState] = useState(initialBillingState);
     const [packAmountUsd, setPackAmountUsd] = useState(
@@ -143,7 +145,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
     const serviceFeeCents = selectedPack
         ? calculateServiceFeeCents(selectedPack.amountUsd * 100)
         : 0;
-    const showConfig = isEnabled || enableDraft;
+    const showConfig = !accountRestricted && (isEnabled || enableDraft);
     const hasUnsavedChanges =
         billingState !== null &&
         showConfig &&
@@ -298,7 +300,7 @@ export const AutoTopUpPanel: FC<AutoTopUpPanelProps> = ({
                     checked={isToggleOn}
                     onChange={handleToggle}
                     status={switchStatus}
-                    disabled={isSaving}
+                    disabled={isSaving || accountRestricted}
                     ariaLabel={
                         isToggleOn
                             ? "Turn off auto top-up"

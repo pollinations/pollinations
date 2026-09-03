@@ -33,7 +33,7 @@ export const Route = createFileRoute("/_dashboard/pollen")({
 function PollenPage() {
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const { tierBalance, packBalance, paidWeek, tierWeek, billingState } =
+    const { tierBalance, packBalance, paidWeek, tierWeek, billingState, user } =
         DashboardRoute.useLoaderData();
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
 
@@ -55,6 +55,7 @@ function PollenPage() {
             <Section title="Top-up" framed id="buy-pollen">
                 <BuyPollenPanel
                     initialBillingState={billingState}
+                    accountRestricted={Boolean(user?.stripePaymentRestriction)}
                     selectedPackAmount={selectedPack?.amountUsd ?? 5}
                     onSelectedPackAmountChange={selectPack}
                 />

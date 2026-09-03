@@ -38,6 +38,7 @@ import {
 
 type CommunityEndpointsProps = {
     onChange?: () => void | Promise<void>;
+    creationDisabled?: boolean;
     // Allowlisted owners can make models public (set prices, list in /models).
     // Everyone else can only create and edit private, owner-only models.
     canPublish: boolean;
@@ -50,6 +51,7 @@ const PUBLISHER_ACCESS_REQUEST_URL =
 
 export function CommunityEndpoints({
     onChange,
+    creationDisabled = false,
     canPublish,
     fallbackOptions,
 }: CommunityEndpointsProps) {
@@ -419,6 +421,7 @@ export function CommunityEndpoints({
                             trigger={
                                 <Button
                                     type="button"
+                                    disabled={creationDisabled}
                                     className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
                                 >
                                     <BotIcon className="h-4 w-4" />
@@ -474,6 +477,7 @@ export function CommunityEndpoints({
                             trigger={
                                 <Button
                                     type="button"
+                                    disabled={creationDisabled}
                                     className="inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap"
                                 >
                                     <BeakerIcon className="h-4 w-4" />

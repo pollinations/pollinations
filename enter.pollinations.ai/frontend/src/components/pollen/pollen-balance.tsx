@@ -259,16 +259,17 @@ export const SidebarWallet: FC<SidebarWalletProps> = ({
 
 type BuyPollenPanelProps = {
     initialBillingState: BillingState | null;
+    accountRestricted: boolean;
     selectedPackAmount: number;
     onSelectedPackAmountChange: (amount: number) => void;
 };
 
 export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     initialBillingState,
+    accountRestricted,
     selectedPackAmount,
     onSelectedPackAmountChange,
 }) => {
-    const accountRestricted = initialBillingState?.accountRestricted ?? false;
     const selectedPackIndex = Math.max(
         0,
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),
@@ -338,7 +339,10 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
                 )}
             </Surface>
             <Surface>
-                <AutoTopUpPanel initialBillingState={initialBillingState} />
+                <AutoTopUpPanel
+                    initialBillingState={initialBillingState}
+                    accountRestricted={accountRestricted}
+                />
             </Surface>
             <div className="mt-4 space-y-2 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <PaymentTrustBadge className="mt-0 pt-0" />

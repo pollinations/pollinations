@@ -7,6 +7,7 @@ import {
     ContentHeader,
     cn,
     Dropdown,
+    ExternalLinkButton,
     Input,
     MultiSelect,
     TabButton,
@@ -209,13 +210,12 @@ function AppsPage() {
                     <span className="font-semibold text-sm text-theme-text-strong">
                         Built something with Pollinations?
                     </span>
-                    <Button
-                        as="a"
+                    <ExternalLinkButton
                         href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
                         appearance="raised"
                     >
                         Share your App
-                    </Button>
+                    </ExternalLinkButton>
                 </div>
             </HeroScene>
 

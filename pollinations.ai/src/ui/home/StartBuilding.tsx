@@ -1,4 +1,4 @@
-import { Button, Callout } from "@pollinations/ui";
+import { Button, Callout, ExternalLinkButton } from "@pollinations/ui";
 
 /**
  * The closing CTA, at the normal section width. It does NOT break out to the
@@ -19,14 +19,13 @@ export function StartBuilding() {
             >
                 Get an API key
             </Button>
-            <Button
-                as="a"
+            <ExternalLinkButton
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 appearance="raised"
                 className="bg-surface-opaque"
             >
                 Join the Discord
-            </Button>
+            </ExternalLinkButton>
         </Callout>
     );
 }

@@ -11,7 +11,6 @@ import {
     AudioIcon,
     Button,
     ButtonGroup,
-    CardIcon,
     ChevronIcon,
     cn,
     DownloadIcon,
@@ -24,14 +23,13 @@ import {
     RobotIcon,
     ScrollArea,
     Slider,
-    SproutIcon,
     TabButton,
     Text,
     Textarea,
     Tooltip,
     VideoIcon,
 } from "@pollinations/ui";
-import { categoryLabel } from "@pollinations/ui/gen";
+import { categoryLabel, ModelAccessIcon } from "@pollinations/ui/gen";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Chat } from "./Chat";
@@ -297,15 +295,6 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
     return "speech-generation";
 }
 
-/** Card = needs a paid balance; sprout = runs on any Pollen. */
-function AccessIcon({ paidOnly }: { paidOnly?: boolean }) {
-    return paidOnly ? (
-        <CardIcon className="h-3.5 w-3.5 shrink-0" />
-    ) : (
-        <SproutIcon className="h-3.5 w-3.5 shrink-0" />
-    );
-}
-
 /** Modality tabs only switch modes; model selection belongs to the media card. */
 function modalityButtonStyle(active: boolean): CSSProperties {
     return {
@@ -461,7 +450,9 @@ function ModelPicker({
                                         <span className="truncate">
                                             {model.title}
                                         </span>
-                                        <AccessIcon paidOnly={model.paidOnly} />
+                                        <ModelAccessIcon
+                                            paidOnly={model.paidOnly}
+                                        />
                                     </span>
                                 </TabButton>
                             ))}

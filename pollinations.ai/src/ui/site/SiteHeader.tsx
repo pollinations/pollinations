@@ -64,7 +64,6 @@ const SOCIAL = [
     },
 ] as const;
 
-const REPO_STARS_FALLBACK = 5_000;
 const maskStyle = (
     url: string,
     width: number,
@@ -84,7 +83,7 @@ const MARK_STYLE = maskStyle(markUrl, 32, 32);
 const MOBILE_MENU_MARK_STYLE = maskStyle(markUrl, 26, 26);
 const DRAWER_MENU_LOCKUP_STYLE = maskStyle(lockupUrl, 174, 22);
 const DESKTOP_ACTION_CLASS =
-    "hidden h-9 shrink-0 gap-1.5 bg-surface-opaque px-3 text-theme-text-strong shadow-well transition-all duration-200 hover:-translate-y-0.5 hover:bg-theme-bg-hover hover:shadow-lg min-[780px]:inline-flex motion-reduce:hover:translate-y-0";
+    "hidden h-9 shrink-0 gap-1.5 bg-surface-opaque px-3 text-theme-text-strong shadow-well min-[780px]:inline-flex";
 
 const isCurrent = (to: string, pathname: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -95,7 +94,7 @@ function MenuUtilities({
     discordOnline,
 }: {
     close: () => void;
-    displayedRepoStars: string;
+    displayedRepoStars: string | null;
     discordOnline: number | null;
 }) {
     return (
@@ -112,9 +111,11 @@ function MenuUtilities({
                 <span className="site-drawer-social-label">
                     {EXTERNAL[1].label}
                 </span>
-                <Chip intent="alpha" size="sm" className="ml-auto">
-                    {displayedRepoStars} stars
-                </Chip>
+                {displayedRepoStars !== null && (
+                    <Chip intent="alpha" size="sm" className="ml-auto">
+                        {displayedRepoStars} stars
+                    </Chip>
+                )}
             </DropdownItem>
             <DropdownItem
                 as="a"
@@ -159,7 +160,7 @@ function MenuUtilities({
 export function SiteHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { data: repoStars } = useRepoStars();
-    const displayedRepoStars = compact(repoStars ?? REPO_STARS_FALLBACK);
+    const displayedRepoStars = repoStars === null ? null : compact(repoStars);
     const { data: discordOnline } = useDiscordPresence({
         enabled: mobileMenuOpen,
         refreshMs: 30_000,
@@ -339,8 +340,6 @@ export function SiteHeader() {
                                         <Button
                                             as="a"
                                             href={EXTERNAL[0].href}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
                                             size="md"
                                             onClick={() =>
                                                 setMobileMenuOpen(false)
@@ -353,8 +352,6 @@ export function SiteHeader() {
                                         <Button
                                             as="a"
                                             href="https://enter.pollinations.ai"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
                                             size="md"
                                             onClick={() =>
                                                 setMobileMenuOpen(false)

@@ -25,6 +25,7 @@ type Feature = {
     body: string | ((modelCount: number | null) => string);
     linkLabel: string;
     href: string;
+    external?: boolean;
     icon: ComponentType<IconProps>;
 };
 
@@ -35,6 +36,7 @@ const BUILD_FOUNDATIONS: Feature[] = [
             `Build text, image, video, audio and multimodal features through one OpenAI-compatible API${modelCount ? ` across ${modelCount} models` : ""}.`,
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
+        external: false,
         icon: GenApiIcon,
     },
     {
@@ -42,6 +44,7 @@ const BUILD_FOUNDATIONS: Feature[] = [
         body: "Let users bring their own Pollen, choose a budget, expiry and access, and pay for their own usage. You avoid payment infrastructure and can earn from every connected call.",
         linkLabel: "Connect a wallet",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        external: false,
         icon: WalletIcon,
     },
     {
@@ -49,6 +52,7 @@ const BUILD_FOUNDATIONS: Feature[] = [
         body: "Add Pollinations Login to your app. Users connect their account and approve profile and usage access through a standard OAuth flow.",
         linkLabel: "Add Pollinations Login",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
+        external: false,
         icon: LogInIcon,
     },
 ];
@@ -59,6 +63,7 @@ const BUILD_TOOLS: Feature[] = [
         body: "Upload generated images, audio and video and receive reusable URLs for apps, agents and workflows.",
         linkLabel: "Store media",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
+        external: false,
         icon: CloudUploadIcon,
     },
     {
@@ -66,6 +71,7 @@ const BUILD_TOOLS: Feature[] = [
         body: "Generate every modality, inspect models and manage access, published models and agents from the shell.",
         linkLabel: "Use the CLI",
         href: "https://gen.pollinations.ai/docs#tag/cli",
+        external: false,
         icon: TerminalIcon,
     },
     {
@@ -73,6 +79,7 @@ const BUILD_TOOLS: Feature[] = [
         body: "Bring generation, media, model discovery and account tools into Codex, Claude, Cursor and any MCP-capable product.",
         linkLabel: "Connect the MCP",
         href: "https://gen.pollinations.ai/docs#tag/mcp-server",
+        external: false,
         icon: McpIcon,
     },
 ];
@@ -92,6 +99,7 @@ const PUBLISH_FEATURES: Feature[] = [
         body: "Connect your endpoint privately, or publish it in the catalog with your own price and earn from usage.",
         linkLabel: "Publish a model",
         href: "https://gen.pollinations.ai/docs#tag/publish-a-model",
+        external: false,
         icon: BeakerIcon,
     },
     {
@@ -99,6 +107,7 @@ const PUBLISH_FEATURES: Feature[] = [
         body: "Combine instructions, a base model and Pollinations tools into a reusable model without hosting an agent server.",
         linkLabel: "Publish an agent",
         href: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
+        external: false,
         icon: RobotIcon,
     },
 ];
@@ -136,6 +145,7 @@ function FeatureCard({
 
             <ExternalLinkButton
                 href={feature.href}
+                external={feature.external}
                 size="sm"
                 appearance="raised"
                 className="self-start whitespace-nowrap"
@@ -200,6 +210,7 @@ export function DevKit({ className }: { className?: string }) {
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                         <ExternalLinkButton
                             href="https://enter.pollinations.ai/quests"
+                            external={false}
                             size="sm"
                             appearance="raised"
                             className="whitespace-nowrap"
@@ -208,6 +219,7 @@ export function DevKit({ className }: { className?: string }) {
                         </ExternalLinkButton>
                         <ExternalLinkButton
                             href="https://enter.pollinations.ai/keys"
+                            external={false}
                             size="sm"
                             appearance="raised"
                             className="whitespace-nowrap"

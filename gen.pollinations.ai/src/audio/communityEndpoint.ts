@@ -1,4 +1,7 @@
-import { communityAudioTranscriptionsUrl } from "@shared/community-endpoint-urls.ts";
+import {
+    communityAudioSpeechUrl,
+    communityAudioTranscriptionsUrl,
+} from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
@@ -9,6 +12,7 @@ import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
+    createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -19,6 +23,85 @@ import {
     type NormalizedWord,
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "../routes/transcription-response.ts";
+
+export type CommunitySpeechOptions = {
+    input: string;
+    voice?: string;
+    responseFormat?: string;
+};
+
+/**
+ * Forward an OpenAI-compatible text-to-speech request to a community
+ * endpoint. Only the standard contract fields travel upstream — `model`,
+ * `input`, `voice`, `response_format` — and the returned audio bytes and
+ * format are preserved for the caller. Billing is character-based: the meter
+ * is the input length Pollinations sends, reported as completion audio tokens
+ * (the same usage type the first-party TTS models bill characters on).
+ */
+export async function callCommunitySpeechEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    options: CommunitySpeechOptions,
+    secret: string,
+): Promise<Response> {
+    // Managed agents are text-only, so a speech endpoint is always external.
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community speech endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityAudioSpeechUrl(endpoint.baseUrl);
+
+    let response: Response;
+    try {
+        response = await fetch(upstreamUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
+                    bearerToken,
+                )}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: endpoint.upstreamModel,
+                input: options.input,
+                voice: options.voice ?? "alloy",
+                response_format: options.responseFormat ?? "mp3",
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch (error) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Community speech endpoint timed out or could not connect",
+            cause: error,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+    response = await ensureUpstreamOk(response, upstreamUrl);
+
+    const audio = await response.arrayBuffer();
+    // Preserve the returned audio format: trust an audio/* content-type as-is
+    // and label anything else as a generic binary stream so clients do not
+    // misinterpret a mislabeled payload.
+    const upstreamContentType = response.headers.get("content-type");
+    const contentType = upstreamContentType?.toLowerCase().startsWith("audio/")
+        ? upstreamContentType
+        : "application/octet-stream";
+    return new Response(audio, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...buildUsageHeaders(
+                endpoint.modelId,
+                createAudioTokenUsage(options.input.length),
+            ),
+        },
+    });
+}
 
 export type CommunityTranscriptionOptions = {
     file: File;

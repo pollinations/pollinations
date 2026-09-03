@@ -5,6 +5,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
@@ -596,5 +597,98 @@ describe("community endpoint OpenAI service", () => {
         ).rejects.toThrow(
             "Endpoint did not return billable OpenAI token usage",
         );
+    });
+});
+
+describe("community speech endpoint probe", () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("posts the OpenAI speech contract and bills the sample's characters", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe("https://api.example.com/v1/audio/speech");
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            expect(await request.json()).toEqual({
+                model: "tts-1",
+                input: "Hello from Pollinations.",
+                voice: "alloy",
+                response_format: "mp3",
+            });
+            return new Response(new Uint8Array([1, 2, 3, 4]), {
+                headers: { "content-type": "audio/mpeg" },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "tts-1",
+            }),
+        ).resolves.toEqual({
+            usage: { characters: 24 },
+            billableUsage: { completionAudioTokens: 24 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects a non-audio response, which callers could not play", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ error: "not audio" })),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).rejects.toThrow("did not return audio");
+    });
+
+    it("rejects empty audio data", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response(new Uint8Array([]), {
+                        headers: { "content-type": "audio/mpeg" },
+                    }),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).rejects.toThrow("empty audio");
+    });
+
+    it("surfaces upstream errors with the endpoint's detail", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json(
+                    { error: { message: "voice not found" } },
+                    { status: 400 },
+                ),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).rejects.toThrow("voice not found");
     });
 });

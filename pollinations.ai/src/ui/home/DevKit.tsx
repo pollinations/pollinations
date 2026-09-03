@@ -8,7 +8,6 @@ import {
     GenApiIcon,
     Heading,
     type IconProps,
-    LogInIcon,
     McpIcon,
     RobotIcon,
     SproutIcon,
@@ -32,28 +31,39 @@ type Feature = {
 const BUILD_FOUNDATIONS: Feature[] = [
     {
         title: "One API, every model",
-        body: (modelCount) =>
-            `Build text, image, video, audio and multimodal features through one OpenAI-compatible API${modelCount ? ` across ${modelCount} models` : ""}.`,
+        body: (modelCount) => {
+            const threshold = modelCount
+                ? Math.floor((modelCount - 1) / 50) * 50
+                : 0;
+            const catalogSize =
+                modelCount === null
+                    ? "hundreds of models"
+                    : threshold > 0
+                      ? `more than ${threshold.toLocaleString()} models`
+                      : `${modelCount.toLocaleString()} models`;
+
+            return `Build text, image, video, audio and multimodal features through one OpenAI-compatible API across ${catalogSize}.`;
+        },
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
         external: false,
         icon: GenApiIcon,
     },
     {
-        title: "Connect user wallets",
-        body: "Let users bring their own Pollen, choose a budget, expiry and access, and pay for their own usage. You avoid payment infrastructure and can earn from every connected call.",
-        linkLabel: "Connect a wallet",
+        title: "Ready-made agents",
+        body: "Use agents that already combine instructions, models and tools through the same OpenAI-compatible API.",
+        linkLabel: "Explore agents",
+        href: "https://enter.pollinations.ai/models?scope=community&category=agent",
+        external: false,
+        icon: RobotIcon,
+    },
+    {
+        title: "Connect Pollinations accounts",
+        body: "Let users connect securely through OAuth 2.1, approve access and a spending budget, and pay with their own Pollen—without you building account or payment infrastructure.",
+        linkLabel: "Connect an account",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         external: false,
         icon: WalletIcon,
-    },
-    {
-        title: "Pollinations Login",
-        body: "Add Pollinations Login to your app. Users connect their account and approve profile and usage access through a standard OAuth flow.",
-        linkLabel: "Add Pollinations Login",
-        href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
-        external: false,
-        icon: LogInIcon,
     },
 ];
 
@@ -75,10 +85,10 @@ const BUILD_TOOLS: Feature[] = [
         icon: TerminalIcon,
     },
     {
-        title: "Pollinations MCP",
-        body: "Bring generation, media, model discovery and account tools into Codex, Claude, Cursor and any MCP-capable product.",
-        linkLabel: "Connect the MCP",
-        href: "https://gen.pollinations.ai/docs#tag/mcp-server",
+        title: "MCP connectors",
+        body: "Connect generation, media processing and web search tools to agents—or use them from any MCP-compatible product.",
+        linkLabel: "Explore MCPs",
+        href: "https://enter.pollinations.ai/models?category=mcp",
         external: false,
         icon: McpIcon,
     },
@@ -227,7 +237,7 @@ export function DevKit({ className }: { className?: string }) {
             <FeatureGroup
                 eyebrow="Build"
                 title="Tools for production AI apps"
-                description="Connect users, call every model, and bring the workflow into your existing tools."
+                description="Build with models and agents, connect users, and add tools without managing the infrastructure."
             >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {BUILD_FEATURES.map((feature) => (

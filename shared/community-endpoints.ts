@@ -26,6 +26,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "image",
     "video",
     "transcription",
+    "speech",
     "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -230,6 +231,21 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Speech (TTS) endpoints bill the synthesized text length in characters
+// against the completion audio price column, mirroring the first-party
+// elevenlabs models (cost keyed on completionAudioTokens at a per-1M rate).
+// The gateway counts the characters itself, so the meter cannot go missing
+// the way an upstream-reported duration can.
+const COMMUNITY_SPEECH_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    usageType: "completionAudioTokens",
+    label: "Completion audio",
+    priceUnit: "million",
+    // The probe reports the probe text's length under `characters` so the
+    // pricing UI can mark the row this field bills.
+    rawUsagePaths: ["characters"],
+} as const;
+
 // Community video endpoints are billed from the duration Pollinations sends.
 const COMMUNITY_VIDEO_PRICE_FIELD = {
     key: "completionVideoPrice",
@@ -252,6 +268,10 @@ const COMMUNITY_IMAGE_ENDPOINT_PRICE_FIELDS = [
 
 const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
+] as const;
+
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_SPEECH_PRICE_FIELD,
 ] as const;
 
 const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
@@ -332,6 +352,14 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
         restrictDefinitionEndpoints: true,
         priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech", "/audio/{text}"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     embedding: {
         category: "embedding",
@@ -453,6 +481,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "speech") return "speech";
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";

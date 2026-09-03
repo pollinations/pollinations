@@ -1,0 +1,34 @@
+{
+  "pr_number": 14392,
+  "title": "fix: clean up model monitor UI",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14392",
+  "merged_at": "2026-09-03T10:43:35Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses shared UI primitives for the favorite star, text, filters, and icon-button states\n- Vertically centers mixed-height controls in the shared app header\n- Makes the monitor responsive while containing horizontal scrolling to the data table\n- Adds accessible pressed and sort states with focused UI package tests\n- Verifies light/dark favorite styling, responsive layouts, typecheck, tests, and production build",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The monitor found its balance",
+    "blurb": "The model monitor got a small desk tidy: shared controls, steadier headers, and a table that keeps its sideways wandering to itself.",
+    "summary": "Cleaned up the internal model-monitor UI with shared favorite, filter, text, and icon-button primitives; responsive table-only horizontal scrolling; vertically centered app-header controls; and tested accessible pressed and sort states.",
+    "impact": "Operators get a more consistent, keyboard-aware model monitor that stays usable across light and dark themes and narrower screens without making the whole page scroll sideways.",
+    "keywords": [
+      "model-monitor",
+      "ui",
+      "accessibility",
+      "responsive",
+      "shared-components",
+      "tables"
+    ],
+    "visual_concept": "Depict Polli calmly organizing a cozy model-monitor workstation: mixed-size controls align neatly in a shared header, while a wide data-table scroll sits contained inside a small CRT screen. Use tidy star and filter icons, subtle sort arrows, code-plants, and a few flowers to represent shared UI primitives and accessible polish.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny librarian visor, carefully straightening star, filter, and sort-arrow controls above a retro CRT model-monitor table; the wide table scrolls only inside the glowing screen while little code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) pixel details, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14392.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny librarian visor, carefully straightening star, filter, and sort-arrow controls above a retro CRT model-monitor table; the wide table scrolls only inside the glowing screen while little code-plants and flowers grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, dark purple (#110518) pixel details, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T10:44:31.979848+00:00"
+}

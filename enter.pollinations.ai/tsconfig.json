@@ -5,7 +5,7 @@
         "moduleResolution": "bundler",
         "rootDirs": ["src"],
         "lib": ["esnext", "dom", "dom.iterable"],
-        "types": ["node"],
+        "types": ["node", "@cloudflare/vitest-pool-workers"],
         "jsx": "react-jsx",
         "jsxImportSource": "react",
 

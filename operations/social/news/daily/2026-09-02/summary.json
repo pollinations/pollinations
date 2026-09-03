@@ -1,0 +1,79 @@
+{
+  "date": "2026-09-02",
+  "period_start": "2026-09-02",
+  "period_end": "2026-09-02",
+  "title": "A broader API surface, with a new Gemini route",
+  "summary": "A busy day for builders: a new Responses API, agents that can use real app accounts, sturdier model routing, and faster contributor feedback.\n\nDevelopers can now use a stateless OpenAI-compatible `/v1/responses` endpoint across 56 supported direct-provider models, including JSON and SSE streaming. Gemini 3.8 Flash joined the catalog with multimodal input, tools, structured output, reasoning, search, streaming, and caching support. Capped canonical text, image, and audio models now also share a consistent 60 RPM minimum.\n\nComposio MCP connectors now let agents work through caller-owned accounts for Gmail, Slack, GitHub, Drive, and a rather large pile of other apps. The production worker now actually loads those tools, while the catalog gained clearer Models, Agents, and MCP sections, persistent Community filtering, focused search, and more legible MCP cards. Hosted MCP documentation now links back to source, because mysteries are better reserved for agent behavior.\n\nForty-two official text, image, video, audio, and 3D models can now move to verified fallback providers when an upstream returns a 5xx, without changing the model callers selected. Response headers separately report the requested model and the route that served it, embedded upstream 429s can enter existing retry handling, and streamed prompt-cache writes are tracked accurately in usage records.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 14239,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14249,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14293,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14318,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14324,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14328,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14330,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14331,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14335,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14336,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14342,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14344,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14345,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14355,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14362,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14363,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14368,
+      "date": "2026-09-02"
+    }
+  ],
+  "generated_at": "2026-09-03T06:29:37.175699+00:00"
+}

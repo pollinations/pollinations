@@ -78,6 +78,39 @@ export class OpenWebUIContainer extends Container {
             },
         }),
 
+        // Pollinations MCP as a tool server, on the same per-user consent key as
+        // the model connection above: generation from a tool call is billed to
+        // the signed-in user, and getBalance reports their own wallet.
+        // access_grants is required — without it the server is admin-only.
+        // Both of these are seeded into the DB only on a first boot with an
+        // empty config table; afterwards the stored row wins and editing this
+        // does nothing (Config.seed_defaults inserts missing keys only).
+        TOOL_SERVER_CONNECTIONS: JSON.stringify([
+            {
+                url: "https://mcp.pollinations.ai/",
+                path: "",
+                type: "mcp",
+                auth_type: "system_oauth",
+                key: "",
+                config: {
+                    enable: true,
+                    access_grants: [
+                        {
+                            principal_type: "user",
+                            principal_id: "*",
+                            permission: "read",
+                        },
+                    ],
+                },
+                info: {
+                    id: "pollinations",
+                    name: "Pollinations",
+                    description:
+                        "Generate images, video, audio, text and embeddings from your own wallet.",
+                },
+            },
+        ]),
+
         // Never download local embedding/whisper models onto the ephemeral disk.
         RAG_EMBEDDING_ENGINE: "openai",
         RAG_OPENAI_API_BASE_URL: GEN_URL,

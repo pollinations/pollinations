@@ -751,3 +751,81 @@ describe("Pollinations.accountQuests", () => {
         );
     });
 });
+
+describe("Pollinations.embeddings", () => {
+    it("posts a single input and returns the embedding response", async () => {
+        const client = newClient();
+        const apiResponse = {
+            data: [{ embedding: [0.1, 0.2, 0.3], index: 0, object: "embedding" }],
+            model: "gemini-2",
+            object: "list",
+            usage: { prompt_tokens: 3, total_tokens: 3 },
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(apiResponse));
+
+        const result = await client.embeddings("Hello world");
+
+        expect(result).toEqual(apiResponse);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://example.test/v1/embeddings");
+        expect(init.method).toBe("POST");
+        expect(JSON.parse(init.body)).toEqual({
+            input: "Hello world",
+            model: undefined,
+        });
+    });
+
+    it("posts multiple inputs and passes options through", async () => {
+        const client = newClient();
+        const apiResponse = {
+            data: [
+                { embedding: [0.1], index: 0, object: "embedding" },
+                { embedding: [0.2], index: 1, object: "embedding" },
+            ],
+            model: "gemini-2",
+            object: "list",
+            usage: { prompt_tokens: 5, total_tokens: 5 },
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(apiResponse));
+
+        const result = await client.embeddings(["Hello", "World"], {
+            model: "gemini-2",
+            encodingFormat: "float",
+            dimensions: 1536,
+            user: "abc",
+        });
+
+        expect(result.data).toHaveLength(2);
+        const [, init] = fetchMock.mock.calls[0];
+        expect(JSON.parse(init.body)).toEqual({
+            input: ["Hello", "World"],
+            model: "gemini-2",
+            encoding_format: "float",
+            dimensions: 1536,
+            user: "abc",
+        });
+    });
+
+    it("throws on empty input array", async () => {
+        const client = newClient();
+        await expect(client.embeddings([])).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+        });
+    });
+
+    it("throws on empty string input", async () => {
+        const client = newClient();
+        await expect(client.embeddings("")).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+        });
+    });
+
+    it("throws on upstream error", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({ error: "bad" }, { ok: false, status: 400 }),
+        );
+        await expect(client.embeddings("test")).rejects.toThrow();
+    });
+});

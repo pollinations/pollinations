@@ -977,6 +977,55 @@ export interface UserInfo {
 }
 
 // ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Input for embedding request — string, array of strings, or content parts */
+export type EmbeddingInput = string | string[];
+
+/** Options for embedding generation */
+export interface EmbeddingOptions extends RequestOptions {
+    /** Embedding model to use (server default: 'gemini-2') */
+    model?: string;
+    /** Output encoding format (default: 'float') */
+    encodingFormat?: "float" | "base64";
+    /** Number of dimensions for output embeddings */
+    dimensions?: number;
+    /** User identifier for tracking */
+    user?: string;
+}
+
+/** A single embedding result */
+export interface EmbeddingData {
+    /** The embedding vector */
+    embedding: number[];
+    /** Index in the input array */
+    index: number;
+    /** Object type */
+    object: "embedding";
+}
+
+/** Token usage for embedding request */
+export interface EmbeddingUsage {
+    /** Number of tokens in the prompt */
+    prompt_tokens: number;
+    /** Total tokens used */
+    total_tokens: number;
+}
+
+/** Response from embedding generation */
+export interface EmbeddingResponse {
+    /** The input data */
+    data: EmbeddingData[];
+    /** Model used */
+    model: string;
+    /** Object type */
+    object: "list";
+    /** Token usage */
+    usage: EmbeddingUsage;
+}
+
+// ============================================================================
 // Image Generation (OpenAI-compatible POST /v1/images/generations)
 // ============================================================================
 

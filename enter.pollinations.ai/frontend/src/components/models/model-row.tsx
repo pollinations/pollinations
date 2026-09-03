@@ -36,6 +36,7 @@ import {
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
+import { OpenWebUiLink } from "./open-webui-link.tsx";
 import {
     ModelPricingControls,
     ModelPricingLedger,
@@ -243,6 +244,8 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
         model.type !== "3d" &&
         model.type !== "embedding" &&
         model.type !== "realtime";
+    // Open WebUI is a chat client, so only text models reach its picker.
+    const openWebUiSupported = model.type === "text";
     const balanceAccess: BalanceAccess = model.free
         ? "free"
         : showPaidOnly
@@ -333,6 +336,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     <RocketIcon className="h-4 w-4" />
                                 </a>
                             </Tooltip>
+                        )}
+                        {openWebUiSupported && (
+                            <OpenWebUiLink modelId={model.name} />
                         )}
                     </div>
                     <ModelId name={model.name} />

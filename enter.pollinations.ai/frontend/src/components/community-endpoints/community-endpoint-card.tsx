@@ -20,10 +20,12 @@ import {
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    openWebUiTestableModelId,
     type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
@@ -48,7 +50,7 @@ export function CommunityEndpointCard({
     const isAgent = endpoint.type !== "proxy";
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
-    const chatUrl = openWebUiChatUrl(endpoint);
+    const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
         <Surface
@@ -197,34 +199,12 @@ export function CommunityEndpointCard({
                 >
                     View activity
                 </Link>
-                {chatUrl && (
-                    <a
-                        href={chatUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1.5 text-xs font-medium text-theme-text-muted underline underline-offset-2 transition-colors hover:text-theme-text-strong"
-                    >
-                        Test in Open WebUI
-                        <ExternalLinkIcon className="h-3 w-3" />
-                    </a>
+                {testableModelId && (
+                    <OpenWebUiLink modelId={testableModelId} variant="text" />
                 )}
             </div>
         </Surface>
     );
-}
-
-const OPEN_WEBUI_URL = "https://openwebui.pollinations.ai";
-
-/**
- * Open WebUI signs in with Pollinations OAuth and lists models with the
- * caller's own key, so the owner can open a private model of theirs — but only
- * one it can chat with. A hidden model is not served, and image, video,
- * transcription and embedding models never reach the chat picker.
- */
-function openWebUiChatUrl(endpoint: CommunityEndpoint): string | null {
-    if (endpoint.hidden) return null;
-    if (endpoint.type === "proxy" && endpoint.modality !== "text") return null;
-    return `${OPEN_WEBUI_URL}/?model=${encodeURIComponent(endpoint.modelId)}`;
 }
 
 function PendingChangeNotice({ endpoint }: { endpoint: CommunityEndpoint }) {

@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { Client, Events, GatewayIntentBits } from "discord.js";
 import { TokenStore, validToken } from "./store.js";
 
-export const APP_KEY = process.env.APP_KEY ?? "";
+export const POLLINATIONS_APP_KEY = process.env.POLLINATIONS_APP_KEY ?? "";
 export const MODEL_ID = "AkshayCoder48/researcher";
 export const ENTER_URL = "https://enter.pollinations.ai";
 export const GEN_URL = "https://gen.pollinations.ai";
@@ -12,6 +12,7 @@ const DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 const MAX_QUESTION_LENGTH = 2000;
 const MAX_ANSWER_LENGTH = 2000;
 const DEFAULT_TIMEOUT_MS = 12_000;
+const AGENT_TIMEOUT_MS = 90_000;
 
 export class UserFacingError extends Error {
     constructor(code) {
@@ -81,7 +82,7 @@ export async function requestDeviceCode({
         {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ client_id: appKey.trim(), scope: "usage" }),
+            body: JSON.stringify({ client_id: appKey.trim() }),
         },
         { fetchImpl, timeoutMs },
     );
@@ -172,13 +173,17 @@ export function errorMessage(error) {
         return (
             {
                 configuration:
-                    "This bot is not configured with a valid APP_KEY.",
+                    "This bot is not configured with a valid POLLINATIONS_APP_KEY.",
                 network: "Pollinations could not be reached. Please try again.",
                 start: "Pollinations could not start sign-in. Please try again.",
                 poll: "Sign-in failed. Please start /connect again.",
                 denied: "Authorization was denied. Run /connect if you want to try again.",
                 expired:
                     "The sign-in code expired. Run /connect to get a new one.",
+                authorization:
+                    "Your Pollinations connection expired or was revoked. Run /connect to reconnect.",
+                balance:
+                    "You do not have enough Pollen for this request. Add Pollen at https://enter.pollinations.ai/quests",
                 ask: "Pollinations could not answer right now. Please try again.",
             }[error.code] ?? "Something went wrong. Please try again."
         );
@@ -196,7 +201,7 @@ function answerText(body) {
 export async function askAgent(
     question,
     accessToken,
-    { fetchImpl = fetch, timeoutMs = DEFAULT_TIMEOUT_MS } = {},
+    { fetchImpl = fetch, timeoutMs = AGENT_TIMEOUT_MS } = {},
 ) {
     const prompt = safeText(question, MAX_QUESTION_LENGTH);
     if (!prompt || !validToken(accessToken)) throw new UserFacingError("ask");
@@ -215,6 +220,10 @@ export async function askAgent(
         },
         { fetchImpl, timeoutMs },
     );
+    if (result.status === 401 || result.status === 403) {
+        throw new UserFacingError("authorization");
+    }
+    if (result.status === 402) throw new UserFacingError("balance");
     const answer = result.ok ? answerText(result.body) : null;
     if (!answer) throw new UserFacingError("ask");
     return answer;
@@ -227,7 +236,7 @@ async function defer(interaction, privateResponse) {
 export async function handleCommand(
     interaction,
     {
-        appKey = APP_KEY,
+        appKey = POLLINATIONS_APP_KEY,
         store,
         fetchImpl = fetch,
         sleep = delay,
@@ -289,12 +298,15 @@ export async function handleCommand(
             }
             const question = interaction.options.getString("question", true);
             await interaction.editReply({
-                content: await askAgent(question, token, {
-                    fetchImpl,
-                    timeoutMs,
-                }),
+                content: await askAgent(question, token, { fetchImpl }),
             });
         } catch (error) {
+            if (
+                error instanceof UserFacingError &&
+                error.code === "authorization"
+            ) {
+                await store.delete(interaction.user.id);
+            }
             await interaction.editReply({ content: errorMessage(error) });
         }
     }
@@ -304,7 +316,7 @@ export function createClient(options = {}) {
     const client = new Client({ intents: [GatewayIntentBits.Guilds] });
     const store =
         options.store ??
-        new TokenStore(process.env.TOKEN_STORE_PATH ?? "./tokens.json");
+        new TokenStore(process.env.TOKEN_STORE_PATH ?? "./data/tokens.json");
     client.once(Events.ClientReady, (ready) =>
         console.log(`Logged in as ${ready.user.tag}`),
     );
@@ -331,9 +343,9 @@ if (
     process.argv[1] &&
     fileURLToPath(import.meta.url) === resolve(process.argv[1])
 ) {
-    if (!process.env.DISCORD_TOKEN || !validAppKey(APP_KEY)) {
+    if (!process.env.DISCORD_TOKEN || !validAppKey(POLLINATIONS_APP_KEY)) {
         console.error(
-            "DISCORD_TOKEN and a valid APP_KEY (pk_...) are required",
+            "DISCORD_TOKEN and a valid POLLINATIONS_APP_KEY (pk_...) are required",
         );
         process.exit(1);
     }
@@ -341,9 +353,9 @@ if (
 }
 
 export {
-    validAppKey,
+    MAX_ANSWER_LENGTH,
+    MAX_QUESTION_LENGTH,
     requestJson,
     safeText,
-    MAX_QUESTION_LENGTH,
-    MAX_ANSWER_LENGTH,
+    validAppKey,
 };

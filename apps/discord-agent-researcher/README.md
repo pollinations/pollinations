@@ -1,4 +1,4 @@
-# Pollinations Discord Researcher
+# Discord Agent: Researcher
 
 A small Discord slash-command adapter for the public managed agent `AkshayCoder48/researcher`.
 
@@ -14,13 +14,13 @@ The model ID is pinned in `bot.js`; it is not inferred from a user command.
 
 ## Setup
 
-Create a Discord application/bot and a Pollinations publishable App Key (`pk_...`) at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). Set:
+Create a Discord application/bot and a Pollinations publishable App Key (`pk_...`) at [enter.pollinations.ai/keys](https://enter.pollinations.ai/keys). Copy `.env.example` to `.env`, then set:
 
 ```text
 DISCORD_TOKEN=...
 DISCORD_CLIENT_ID=...
-APP_KEY=pk_...
-TOKEN_STORE_PATH=./tokens.json
+POLLINATIONS_APP_KEY=pk_...
+TOKEN_STORE_PATH=./data/tokens.json
 ```
 
 Install and register commands:
@@ -36,7 +36,9 @@ Set `DISCORD_GUILD_ID` while developing for immediate guild command updates; omi
 ## Commands
 
 - `/connect` privately sends a BYOP device authorization link and waits for approval. The resulting delegated `sk_...` key is stored per Discord user in an atomic, local-only JSON file.
-- `/ask question:<text>` calls the pinned managed agent with that user’s delegated key. The answer is public; missing credentials and errors are private-safe messages.
+- `/ask question:<text>` sends one self-contained research request to the pinned managed agent with that user’s delegated key. The answer is public; missing credentials and errors are private-safe messages.
 - `/disconnect` deletes the local token. Server-side revocation is done by the user from [the account keys page](https://enter.pollinations.ai/keys); the bot never attempts to revoke it.
 
-Never commit `tokens.json`, `.env`, bot tokens, App Keys, or delegated keys.
+Each request is intentionally independent: the bot does not store or replay conversation history into later research tasks.
+
+Never commit `data/tokens.json`, `.env`, bot tokens, App Keys, or delegated keys.

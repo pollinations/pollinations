@@ -105,7 +105,6 @@ test("device start validates App Key and returns complete verification URI", asy
     );
     assert.deepEqual(JSON.parse(calls[0].init.body), {
         client_id: "pk_test_app",
-        scope: "usage",
     });
     await assert.rejects(
         requestDeviceCode({
@@ -245,4 +244,20 @@ test("ask without a connection does not call the model", async () => {
     });
     assert.equal(called, false);
     assert.match(ask.edits.at(-1).content, /Connect first/);
+});
+
+test("expired authorization is removed and asks the user to reconnect", async () => {
+    const ask = interaction("ask");
+    let removed = false;
+    await handleCommand(ask, {
+        store: {
+            get: async () => "sk_expired",
+            delete: async () => {
+                removed = true;
+            },
+        },
+        fetchImpl: async () => response({}, false, 401),
+    });
+    assert.equal(removed, true);
+    assert.match(ask.edits.at(-1).content, /\/connect to reconnect/);
 });

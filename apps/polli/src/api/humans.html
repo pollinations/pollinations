@@ -20,7 +20,6 @@
       .secondary { background: #252a27; color: #f4f7f5; }
       .card { border: 1px solid #2c332f; border-radius: 16px; padding: 20px; background: #151816; margin-bottom: 14px; }
       .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-      .code { display: inline-block; margin: 12px 0; padding: 10px 14px; border-radius: 10px; background: #080a09; color: #d7ff64; font: 700 22px ui-monospace, monospace; letter-spacing: 0.08em; }
       .messages { margin: 16px 0; display: grid; gap: 8px; }
       .message { padding: 11px 13px; border-radius: 10px; background: #202522; white-space: pre-wrap; overflow-wrap: anywhere; }
       .role { display: block; margin-bottom: 4px; color: #8f9a94; font-size: 12px; font-weight: 800; text-transform: uppercase; }
@@ -39,14 +38,9 @@
       </header>
 
       <section id="access" class="card">
-        <h2>Verify with Discord</h2>
-        <p id="access-copy">Connect through <code>#humans-api</code> before viewing requests.</p>
-        <button id="connect">Get access code</button>
-        <div id="verify" class="hidden">
-          <p>Post this in <a id="channel" target="_blank" rel="noreferrer">#humans-api</a>:</p>
-          <div class="code" id="code"></div>
-          <p>This page unlocks automatically. The code expires in five minutes.</p>
-        </div>
+        <h2>Respond as a human</h2>
+        <p id="access-copy">Sign in with your Pollinations account to view requests.</p>
+        <button id="connect">Continue with Pollinations</button>
       </section>
 
       <section id="workspace" class="hidden">
@@ -62,13 +56,15 @@
     </main>
 
     <script>
+      const ENTER_URL = "https://enter.pollinations.ai";
+      const OAUTH_STATE = "humans_oauth_state";
       const access = document.querySelector("#access");
       const workspace = document.querySelector("#workspace");
       const requests = document.querySelector("#requests");
       const status = document.querySelector("#status");
       const seen = new Set();
       let initialized = false;
-      let sessionTimer;
+      let requestTimer;
 
       async function json(url, options) {
         const response = await fetch(url, options);
@@ -77,30 +73,51 @@
         return body;
       }
 
-      async function checkSession() {
-        const session = await json("/v1/humans/session");
-        if (!session.authorized) return;
-        clearInterval(sessionTimer);
+      async function unlock(session) {
         access.classList.add("hidden");
         workspace.classList.remove("hidden");
         document.querySelector("#welcome").textContent = `Open requests · ${session.name}`;
         await loadRequests();
-        setInterval(loadRequests, 2000);
+        requestTimer ||= setInterval(loadRequests, 2000);
       }
 
-      document.querySelector("#connect").addEventListener("click", async event => {
-        event.currentTarget.disabled = true;
-        try {
-          const session = await json("/v1/humans/session", { method: "POST" });
-          document.querySelector("#code").textContent = `human-web ${session.code}`;
-          document.querySelector("#channel").href = session.channel_url;
-          document.querySelector("#verify").classList.remove("hidden");
-          sessionTimer = setInterval(checkSession, 1500);
-        } catch (error) {
-          document.querySelector("#access-copy").textContent = error.message;
-          event.currentTarget.disabled = false;
+      async function checkSession() {
+        const session = await json("/v1/humans/session");
+        if (session.authorized) await unlock(session);
+        return session.authorized;
+      }
+
+      function login() {
+        const state = crypto.randomUUID();
+        sessionStorage.setItem(OAUTH_STATE, state);
+        const redirectUrl = `${location.origin}${location.pathname}`;
+        const params = new URLSearchParams({ redirect_url: redirectUrl, state, expiry: "1" });
+        location.href = `${ENTER_URL}/authorize?${params}`;
+      }
+
+      async function finishLogin() {
+        const params = new URLSearchParams(location.hash.slice(1));
+        const apiKey = params.get("api_key");
+        const error = params.get("error");
+        if (!apiKey && !error) return false;
+
+        const expectedState = sessionStorage.getItem(OAUTH_STATE);
+        sessionStorage.removeItem(OAUTH_STATE);
+        history.replaceState({}, "", location.pathname + location.search);
+        if (error) throw new Error("Pollinations login was cancelled.");
+        if (!expectedState || params.get("state") !== expectedState) {
+          throw new Error("Pollinations login could not be verified.");
         }
-      });
+
+        const session = await json("/v1/humans/session", {
+          method: "POST",
+          headers: { Authorization: `Bearer ${apiKey}` }
+        });
+        await unlock(session);
+        return true;
+      }
+
+      document.querySelector("#connect").addEventListener("click", login);
 
       document.querySelector("#notifications").addEventListener("click", async event => {
         if (!("Notification" in window)) return;
@@ -185,7 +202,9 @@
         }
       }
 
-      checkSession();
+      finishLogin()
+        .then(completed => completed || checkSession())
+        .catch(error => document.querySelector("#access-copy").textContent = error.message);
     </script>
   </body>
 </html>

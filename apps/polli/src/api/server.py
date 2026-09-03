@@ -3,6 +3,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+import aiohttp
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -15,6 +16,7 @@ from .humans import HumanService, stream_completion
 logger = logging.getLogger(__name__)
 _HUMAN_UI = Path(__file__).with_name("humans.html").read_text(encoding="utf-8")
 _HUMAN_SESSION_COOKIE = "human_session"
+_POLLINATIONS_USERINFO_URL = "https://enter.pollinations.ai/api/oauth/userinfo"
 
 
 class Message(BaseModel):
@@ -112,6 +114,24 @@ _PASSTHROUGH_KEYS = (
 )
 
 
+async def pollinations_profile(pollinations_client, authorization: str) -> dict:
+    if not authorization.lower().startswith("bearer "):
+        raise PermissionError("Pollinations login required")
+    session = await pollinations_client.get_session()
+    try:
+        async with session.get(
+            _POLLINATIONS_USERINFO_URL,
+            headers={"Authorization": authorization},
+            timeout=aiohttp.ClientTimeout(total=10),
+        ) as response:
+            profile = await response.json()
+    except (aiohttp.ClientError, TimeoutError) as error:
+        raise RuntimeError("Pollinations authentication is unavailable") from error
+    if response.status != 200 or not isinstance(profile, dict) or not profile.get("sub"):
+        raise PermissionError("Invalid Pollinations login")
+    return profile
+
+
 def create_api_app(pollinations_client, config, human_service: HumanService | None = None):
     """Create FastAPI app that shares the bot's services.
 
@@ -145,18 +165,17 @@ def create_api_app(pollinations_client, config, human_service: HumanService | No
         if human_service is None:
             raise HTTPException(status_code=503, detail="The humans model is not configured")
         try:
-            session_id, code = human_service.create_session()
+            profile = await pollinations_profile(
+                pollinations_client,
+                request.headers.get("authorization", ""),
+            )
+            name = profile.get("preferred_username") or profile.get("name") or str(profile["sub"])
+            session_id = human_service.create_session(name)
+        except PermissionError as error:
+            raise HTTPException(status_code=401, detail=str(error))
         except RuntimeError as error:
             raise HTTPException(status_code=503, detail=str(error))
-        response = JSONResponse(
-            {
-                "authorized": False,
-                "code": code,
-                "channel_url": (
-                    f"https://discord.com/channels/{config.discord.guild_id}/{config.human_model.channel_id}"
-                ),
-            }
-        )
+        response = JSONResponse({"authorized": True, "name": name})
         response.set_cookie(
             _HUMAN_SESSION_COOKIE,
             session_id,

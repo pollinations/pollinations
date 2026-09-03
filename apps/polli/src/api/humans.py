@@ -30,7 +30,6 @@ _DISCORD_PREVIEW_EDGE = 280
 _MAX_THREAD_NAME = 100
 _THREAD_CLEANUP_INTERVAL = 60
 _THREAD_INACTIVE_SECONDS = 5 * 60
-_SESSION_VERIFY_SECONDS = 5 * 60
 _SESSION_ACTIVE_SECONDS = 12 * 60 * 60
 _MAX_SESSIONS = 100
 
@@ -55,18 +54,14 @@ class PendingRequest:
 
 @dataclass
 class HumanSession:
-    code: str
+    name: str
     expires_at: float
-    name: str | None = None
-    verification: asyncio.Task | None = None
 
 
 class HumanGateway(Protocol):
     async def create_thread(self, name: str) -> int: ...
 
     async def ask(self, thread_id: int, messages: list[dict], timeout: float) -> HumanReply: ...
-
-    async def verify_session(self, code: str, timeout: float) -> str: ...
 
     async def delete_inactive_threads(self, inactive_for: float) -> None: ...
 
@@ -129,21 +124,6 @@ class DiscordHumanGateway:
                 return message
         return await waiter
 
-    async def verify_session(self, code: str, timeout: float) -> str:
-        def eligible(message: discord.Message) -> bool:
-            return (
-                message.channel.id == self.channel_id
-                and not message.author.bot
-                and message.content.strip().lower() == f"human-web {code.lower()}"
-            )
-
-        message = await self.bot.wait_for("message", check=eligible, timeout=timeout)
-        try:
-            await message.add_reaction("✅")
-        except discord.HTTPException:
-            pass
-        return message.author.display_name
-
     async def delete_inactive_threads(self, inactive_for: float) -> None:
         if not self.bot.is_ready() or self.bot.user is None:
             return
@@ -194,13 +174,6 @@ class HumanService:
         self.cleanup_task = asyncio.create_task(self._cleanup_inactive_threads())
 
     async def close(self) -> None:
-        for session in self.sessions.values():
-            if session.verification:
-                session.verification.cancel()
-        await asyncio.gather(
-            *(session.verification for session in self.sessions.values() if session.verification),
-            return_exceptions=True,
-        )
         self.sessions.clear()
         if self.cleanup_task:
             self.cleanup_task.cancel()
@@ -336,35 +309,23 @@ class HumanService:
         request.response.set_result(TextReply(content=content.strip()))
         return True
 
-    def create_session(self) -> tuple[str, str]:
+    def create_session(self, name: str) -> str:
         self._remove_expired_sessions()
         if len(self.sessions) >= _MAX_SESSIONS:
             raise RuntimeError("Too many pending responder sign-ins")
         session_id = uuid4_hex()
-        code = uuid4_hex()[:6].upper()
-        session = HumanSession(code=code, expires_at=time.time() + _SESSION_VERIFY_SECONDS)
-        self.sessions[session_id] = session
-        session.verification = asyncio.create_task(self._verify_session(session_id))
-        return session_id, code
-
-    async def _verify_session(self, session_id: str) -> None:
-        session = self.sessions[session_id]
-        try:
-            session.name = await self.gateway.verify_session(session.code, _SESSION_VERIFY_SECONDS)
-            session.expires_at = time.time() + _SESSION_ACTIVE_SECONDS
-        except TimeoutError:
-            self.sessions.pop(session_id, None)
-        except Exception:
-            self.sessions.pop(session_id, None)
-            logger.exception("Failed to verify human responder session")
+        self.sessions[session_id] = HumanSession(
+            name=name,
+            expires_at=time.time() + _SESSION_ACTIVE_SECONDS,
+        )
+        return session_id
 
     def session_status(self, session_id: str | None) -> dict:
         self._remove_expired_sessions()
         session = self.sessions.get(session_id or "")
         return {
-            "authorized": bool(session and session.name),
+            "authorized": session is not None,
             "name": session.name if session else None,
-            "code": session.code if session and not session.name else None,
         }
 
     def is_authorized(self, session_id: str | None) -> bool:
@@ -375,8 +336,6 @@ class HumanService:
         for session_id, session in list(self.sessions.items()):
             if session.expires_at > now:
                 continue
-            if session.verification:
-                session.verification.cancel()
             self.sessions.pop(session_id)
 
     async def _thread_for_messages(self, messages: list[dict]) -> tuple[int, int] | None:

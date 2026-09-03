@@ -15,6 +15,7 @@ from src.api.humans import (
     stream_completion,
     truncate_tokens,
 )
+from src.api.server import pollinations_profile
 
 
 class FakeGateway:
@@ -34,9 +35,6 @@ class FakeGateway:
         self.asks.append((thread_id, messages, timeout))
         return self.reply
 
-    async def verify_session(self, code, timeout):
-        return "Discord human"
-
     async def delete_inactive_threads(self, inactive_for):
         self.cleanup_calls.append(inactive_for)
 
@@ -49,6 +47,34 @@ class WaitingGateway(FakeGateway):
     async def ask(self, thread_id, messages, timeout):
         self.waiting.set()
         await asyncio.Event().wait()
+
+
+class FakeProfileResponse:
+    def __init__(self, status, profile):
+        self.status = status
+        self.profile = profile
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_):
+        pass
+
+    async def json(self):
+        return self.profile
+
+
+class FakePollinationsClient:
+    def __init__(self, status=200, profile=None):
+        self.response = FakeProfileResponse(status, profile or {})
+        self.authorization = None
+
+    async def get_session(self):
+        return self
+
+    def get(self, _url, *, headers, timeout):
+        self.authorization = headers["Authorization"]
+        return self.response
 
 
 class HumanModelTests(unittest.IsolatedAsyncioTestCase):
@@ -156,13 +182,11 @@ class HumanModelTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response["choices"][0]["finish_reason"], "stop")
         self.assertGreater(response["usage"]["completion_tokens"], 0)
 
-    async def test_verifies_web_session_through_discord(self):
-        session_id, code = self.service.create_session()
-        self.assertTrue(code)
-        await asyncio.sleep(0)
+    async def test_creates_pollinations_web_session(self):
+        session_id = self.service.create_session("Pollinations human")
         self.assertEqual(
             self.service.session_status(session_id),
-            {"authorized": True, "name": "Discord human", "code": None},
+            {"authorized": True, "name": "Pollinations human"},
         )
 
     def test_authorization(self):
@@ -237,6 +261,18 @@ class HumanRequestTests(unittest.TestCase):
         self.assertEqual(parsed[3]["choices"], [])
         self.assertEqual(parsed[3]["usage"], completion["usage"])
         self.assertEqual(events[-1], "data: [DONE]\n\n")
+
+
+class PollinationsAuthTests(unittest.IsolatedAsyncioTestCase):
+    async def test_validates_pollinations_profile(self):
+        client = FakePollinationsClient(200, {"sub": "user-1", "preferred_username": "human"})
+        profile = await pollinations_profile(client, "Bearer user-key")
+        self.assertEqual(profile["preferred_username"], "human")
+        self.assertEqual(client.authorization, "Bearer user-key")
+
+    async def test_rejects_invalid_pollinations_profile(self):
+        with self.assertRaises(PermissionError):
+            await pollinations_profile(FakePollinationsClient(401), "Bearer invalid")
 
 
 if __name__ == "__main__":

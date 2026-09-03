@@ -1,0 +1,34 @@
+{
+  "pr_number": 14343,
+  "title": "feat(cli): add OpenClaw harness to polli CLI",
+  "author": "Marcus-Mok-GH",
+  "url": "https://github.com/pollinations/pollinations/pull/14343",
+  "merged_at": "2026-09-03T00:02:08Z",
+  "labels": [],
+  "pr_body_excerpt": "Addresses #14121. Adds the OpenClaw harness to the shared `polli harness` workflow built on the foundation from #14107, using the existing `apps/openclaw` integration as reference.\n\n## What this adds\n\n`polli harness openclaw on|off|status`.\n\n### Quest requirements, met minimally\n\n- **New or existing installs** — `on` merges a `pollinations` provider into `~/.openclaw/openclaw.json` (honors `OPENCLAW_CONFIG_PATH` / `OPENCLAW_STATE_DIR`, tilde included). It works from scratch or on an existing config the same way, with no subprocess onboarding to simulate.\n- **Missing OpenClaw → official install offered** — `on` refuses before any login/key/config work with `https://openclaw.ai/install`.\n- **Dedicated key** — shared `resolveHarnessKey` mints `polli-harness-openclaw`; a still-valid stored key is reused. Stored once in `env.vars.POLLI_OPENCLAW_API_KEY`, referenced from the provider as `${POLLI_OPENCLAW_API_KEY}` (OpenClaw's documented substitution), so the secret never appears twice.\n- **No second hardcoded catalog** — models come from `fetchHarnessModels()` (live `gen.pollinations.ai/v1/models`, tool-calling text only), the same helper as the other adapters.\n- **Selectable default** — `--model <id>`, validated against the live catalog, default `kimi`; written to `agents.defaults.model.primary`.\n- **Polli skill** — installed as a managed skill at `<state-dir>/skills/polli/SKILL.md` for image/audio/video generation.\n- **Works with current OpenClaw** — schema matches `docs/concepts/model-providers.md` (`models.providers.<id>`, `models.mode` only set if unset, `env.vars` + `${VAR}`).\n- **Unrelated config preserved** — only the config file and skill are ever written; an explicit existing `models.mode` (e.g. `\"replace\"`) is never overridden; atomic writes with 0600 permissions.\n- **`status`** — reports configured/not and the active default model.\n- **`off` removes only Pollinations-owned changes** — byte-for-byte snapshot restore when the files are untouched; otherwise surgi",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli joins the claw",
+    "blurb": "The polli CLI can now tuck Pollinations into OpenClaw with one small command. A dedicated key, a live model menu, and a tiny managed skill arrive without trampling the rest of your config garden.",
+    "summary": "Added `polli harness openclaw on|off|status`, which configures an OpenClaw `pollinations` provider with a dedicated reusable `polli-harness-openclaw` key, live tool-calling model catalog, selectable `--model` default (defaulting to `kimi`), and a managed Polli media-generation skill.",
+    "impact": "OpenClaw users can enable Pollinations from the CLI while preserving unrelated configuration and existing `models.mode`, then inspect the active model or cleanly remove Pollinations-owned setup with `status` and `off`.",
+    "keywords": [
+      "polli-cli",
+      "openclaw",
+      "harness",
+      "models",
+      "api-keys",
+      "skills"
+    ],
+    "visual_concept": "Depict Polli helping a friendly OpenClaw-inspired pixel crab/assistant connect a cozy CRT terminal to a Pollinations garden. The terminal shows a simple `polli harness openclaw on` command and a model selector, while a locked jar labeled as an API key is safely stored beside sprouting code-plants; Polli wears a tiny mechanic tool belt to show careful configuration rather than chaotic setup.",
+    "image_prompt": "Cozy pixel art scene of the main character, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she helps a friendly chunky pixel OpenClaw crab assistant plug a cable into a glowing CRT terminal showing `polli harness openclaw on` and a `kimi` model card. Lime green (#ecf874) code-plants grow around a safely locked API-key jar, with warm cream, mint, lavender, and peach surroundings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14343.jpg",
+    "prompt": "Cozy pixel art scene of the main character, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she helps a friendly chunky pixel OpenClaw crab assistant plug a cable into a glowing CRT terminal showing `polli harness openclaw on` and a `kimi` model card. Lime green (#ecf874) code-plants grow around a safely locked API-key jar, with warm cream, mint, lavender, and peach surroundings; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T00:03:05.864723+00:00"
+}

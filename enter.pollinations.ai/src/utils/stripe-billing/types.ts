@@ -42,7 +42,7 @@ export type AutoTopUpIssue =
       };
 
 export type BillingOverview = {
-    paymentsRestricted: boolean;
+    accountRestricted: boolean;
     autoTopUp: {
         enabled: boolean;
         thresholdPollen: number;

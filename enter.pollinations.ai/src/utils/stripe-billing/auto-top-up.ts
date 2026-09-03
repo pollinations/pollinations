@@ -14,7 +14,7 @@ import {
 } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import { createStripeClient } from "../stripe.ts";
-import { STRIPE_PAYMENT_RESTRICTED_MESSAGE } from "../stripe-payment-restriction.ts";
+import { ACCOUNT_RESTRICTED_MESSAGE } from "../stripe-payment-restriction.ts";
 import { isBillingDetailsComplete } from "./billing-details.ts";
 import { getBillingOverview } from "./billing-overview.ts";
 import {
@@ -121,7 +121,7 @@ export async function updateAutoTopUpSettings(
         return {
             ok: false,
             status: 403,
-            error: STRIPE_PAYMENT_RESTRICTED_MESSAGE,
+            error: ACCOUNT_RESTRICTED_MESSAGE,
         };
     }
 

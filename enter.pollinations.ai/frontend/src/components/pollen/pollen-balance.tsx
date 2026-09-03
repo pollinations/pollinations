@@ -268,20 +268,6 @@ export const BuyPollenPanel: FC<BuyPollenPanelProps> = ({
     selectedPackAmount,
     onSelectedPackAmountChange,
 }) => {
-    if (initialBillingState?.paymentsRestricted) {
-        return (
-            <Surface>
-                <p className="text-sm text-intent-danger-text">
-                    Payments are unavailable for this account. Contact{" "}
-                    <InlineLink href="mailto:billing@pollinations.ai">
-                        billing@pollinations.ai
-                    </InlineLink>
-                    .
-                </p>
-            </Surface>
-        );
-    }
-
     const selectedPackIndex = Math.max(
         0,
         POLLEN_PACKS.findIndex((pack) => pack.amountUsd === selectedPackAmount),

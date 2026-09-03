@@ -54,6 +54,13 @@ export class BannedAccountError extends Error {
     }
 }
 
+export class AccountRestrictedError extends Error {
+    constructor(message = "Account restricted.") {
+        super(message);
+        this.name = "AccountRestrictedError";
+    }
+}
+
 export class StagingAccessDeniedError extends Error {
     constructor() {
         super("staging is invite-only");
@@ -210,6 +217,13 @@ export function assertNotBanned(user: {
     );
 }
 
+export function assertAccountNotRestricted(user: {
+    stripePaymentRestriction?: string | null;
+}): void {
+    if (!user.stripePaymentRestriction) return;
+    throw new AccountRestrictedError();
+}
+
 export async function authenticateApiKeyRequest(opts: {
     request: Request;
     env: ApiKeyAuthBindings;
@@ -318,6 +332,7 @@ async function loadActiveApiKeyAuthResult(opts: {
     }
 
     assertNotBanned(row.user);
+    assertAccountNotRestricted(row.user);
     assertStagingAccess(opts.env, row.user);
 
     return {

@@ -64,6 +64,7 @@ type DashboardShellProps = PropsWithChildren<{
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     showFooterLinks?: boolean;
+    accountRestricted?: boolean;
 }>;
 
 type BrandLink = {
@@ -147,6 +148,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     accountArea,
     walletArea,
     showFooterLinks = true,
+    accountRestricted = false,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -364,7 +366,33 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
-                        {children}
+                        {accountRestricted && (
+                            <div
+                                role="alert"
+                                className="rounded-xl border border-intent-danger-border bg-intent-danger-bg-light px-4 py-3 text-sm text-intent-danger-text"
+                            >
+                                <strong>Account restricted.</strong> Please
+                                contact{" "}
+                                <a
+                                    href="mailto:billing@pollinations.ai"
+                                    className="font-semibold underline underline-offset-2"
+                                >
+                                    billing@pollinations.ai
+                                </a>{" "}
+                                if you think that was a mistake.
+                            </div>
+                        )}
+                        <div
+                            inert={accountRestricted || undefined}
+                            aria-disabled={accountRestricted || undefined}
+                            className={cn(
+                                "flex flex-col gap-6",
+                                accountRestricted &&
+                                    "[&_a]:cursor-not-allowed [&_a]:opacity-50 [&_button]:cursor-not-allowed [&_button]:opacity-50 [&_input]:cursor-not-allowed [&_input]:opacity-50 [&_select]:cursor-not-allowed [&_select]:opacity-50 [&_textarea]:cursor-not-allowed [&_textarea]:opacity-50",
+                            )}
+                        >
+                            {children}
+                        </div>
                     </main>
                 </ScrollArea>
             </div>

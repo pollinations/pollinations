@@ -32,9 +32,9 @@ export async function getBillingOverview(
     const billingDetailsComplete = customer
         ? isBillingDetailsComplete(customer, paymentMethod)
         : false;
-    const paymentRestricted = user.stripePaymentRestriction !== null;
+    const accountRestricted = user.stripePaymentRestriction !== null;
     const autoTopUpEnabled =
-        !paymentRestricted &&
+        !accountRestricted &&
         user.autoTopUpEnabled &&
         !!paymentMethod &&
         billingDetailsComplete;
@@ -44,7 +44,7 @@ export async function getBillingOverview(
         user.autoTopUpAmountUsd ?? DEFAULT_AUTO_TOP_UP_AMOUNT_USD;
 
     return {
-        paymentsRestricted: paymentRestricted,
+        accountRestricted,
         autoTopUp: {
             enabled: autoTopUpEnabled,
             thresholdPollen: AUTO_TOP_UP_THRESHOLD_POLLEN,

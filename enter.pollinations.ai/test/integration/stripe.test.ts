@@ -483,7 +483,8 @@ test("four distinct failed cards trigger Radar without restricting the account",
     expect(user?.restriction).toBeNull();
 });
 
-test("eight distinct failed cards in 24h restrict payments", async ({
+test("eight distinct failed cards in 24h restrict the account", async ({
+    apiKey,
     sessionToken,
     mocks,
 }) => {
@@ -589,7 +590,7 @@ test("eight distinct failed cards in 24h restrict payments", async ({
     });
     expect(response.status).toBe(403);
     await expect(response.json()).resolves.toEqual({
-        error: "Payments are unavailable for this account.",
+        error: "Account restricted.",
     });
 
     const user = await env.DB.prepare(
@@ -605,6 +606,41 @@ test("eight distinct failed cards in 24h restrict payments", async ({
         }>();
     expect(user?.restriction).not.toBeNull();
     expect(user?.autoTopUpEnabled).toBe(0);
+
+    const sessionResponse = await SELF.fetch(
+        "http://localhost:3000/api/auth/get-session",
+        {
+            headers: {
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+        },
+    );
+    expect(sessionResponse.status).toBe(200);
+    const restrictedSession = (await sessionResponse.json()) as {
+        user: { stripePaymentRestriction: string | null };
+    };
+    expect(restrictedSession.user.stripePaymentRestriction).not.toBeNull();
+
+    const apiKeyResponse = await SELF.fetch(
+        "http://localhost:3000/api/account/key",
+        {
+            headers: { Authorization: `Bearer ${apiKey}` },
+        },
+    );
+    expect(apiKeyResponse.status).toBe(403);
+
+    const createKeyResponse = await SELF.fetch(
+        "http://localhost:3000/api/api-keys",
+        {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ name: "blocked restricted key" }),
+        },
+    );
+    expect(createKeyResponse.status).toBe(403);
     // Every open session of the customer is expired, including the one the
     // pre-limit checkout above created, not only the one behind the charge.
     const customerSessions = mocks.stripe.state.checkoutSessions.filter(
@@ -670,7 +706,7 @@ test("eight distinct failed cards in 24h restrict payments", async ({
     ).toHaveLength(createdCheckoutCount);
 });
 
-test("fifty failed attempts on one card restrict payments", async ({
+test("fifty failed attempts on one card restrict the account", async ({
     sessionToken,
     mocks,
 }) => {

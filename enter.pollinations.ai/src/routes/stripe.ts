@@ -27,8 +27,8 @@ import {
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
 import {
+    ACCOUNT_RESTRICTED_MESSAGE,
     expireOpenStripeCheckoutSessions,
-    STRIPE_PAYMENT_RESTRICTED_MESSAGE,
 } from "../utils/stripe-payment-restriction.ts";
 
 /**
@@ -79,7 +79,7 @@ export const stripeRoutes = new Hono<Env>()
                     user.stripeCustomerId,
                 );
             }
-            return c.json({ error: STRIPE_PAYMENT_RESTRICTED_MESSAGE }, 403);
+            return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
         }
 
         const newCardGate = await getStripeNewCardGateStatus(c.env.DB, userId);
@@ -223,7 +223,7 @@ export const stripeRoutes = new Hono<Env>()
      * Return Stripe Portal-backed billing and auto top-up state.
      */
     .get("/billing", async (c) => {
-        const user = await requireSessionUser(c);
+        const user = await requireSessionUser(c, { allowRestricted: true });
         return c.json(await getBillingOverview(c.env, user.id));
     })
 
@@ -318,7 +318,10 @@ export const stripeRoutes = new Hono<Env>()
         return c.json(await processAutoTopUpForUser(c.env, body.userId));
     });
 
-async function requireSessionUser(c: Context<Env>) {
+async function requireSessionUser(
+    c: Context<Env>,
+    options: { allowRestricted?: boolean } = {},
+) {
     const auth = createAuth(c.env, c.executionCtx);
     const session = await auth.api.getSession({
         headers: c.req.raw.headers,
@@ -327,6 +330,12 @@ async function requireSessionUser(c: Context<Env>) {
     if (!session?.user?.id) {
         throw new HTTPException(401, {
             message: "Authentication required",
+        });
+    }
+
+    if (!options.allowRestricted && session.user.stripePaymentRestriction) {
+        throw new HTTPException(403, {
+            message: ACCOUNT_RESTRICTED_MESSAGE,
         });
     }
 

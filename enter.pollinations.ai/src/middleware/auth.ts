@@ -1,5 +1,6 @@
 import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
+    AccountRestrictedError,
     type AuthenticatedApiKey,
     assertNotBanned,
     assertStagingAccess,
@@ -92,6 +93,7 @@ export const auth = (options: AuthOptions) =>
                 };
             } catch (error) {
                 if (
+                    error instanceof AccountRestrictedError ||
                     error instanceof BannedAccountError ||
                     error instanceof StagingAccessDeniedError
                 ) {
@@ -107,6 +109,16 @@ export const auth = (options: AuthOptions) =>
             authResult = await authenticateApiKey();
         }
         const { user, session, apiKey, rawApiKey, agentRun } = authResult || {};
+
+        if (
+            session &&
+            user?.stripePaymentRestriction &&
+            !["GET", "HEAD", "OPTIONS"].includes(c.req.method)
+        ) {
+            throw new HTTPException(403, {
+                message: "Account restricted.",
+            });
+        }
 
         const requireAuthorization = async (options?: {
             message?: string;

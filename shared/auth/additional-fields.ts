@@ -8,6 +8,10 @@ export const authAdditionalFields = {
             type: "string",
             input: false,
         },
+        stripePaymentRestriction: {
+            type: "string",
+            input: false,
+        },
         tier: {
             type: "string",
             defaultValue: "spore",

@@ -1,7 +1,6 @@
 import type Stripe from "stripe";
 
-export const STRIPE_PAYMENT_RESTRICTED_MESSAGE =
-    "Payments are unavailable for this account.";
+export const ACCOUNT_RESTRICTED_MESSAGE = "Account restricted.";
 
 export async function restrictStripePayments(
     db: D1Database,

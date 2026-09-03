@@ -72,30 +72,6 @@ type Contributor = {
     commits: number;
 };
 
-/**
- * Keep the section useful when GitHub's small unauthenticated API allowance is
- * exhausted. Live data replaces this snapshot whenever the API is available.
- */
-const FALLBACK_CONTRIBUTORS: Contributor[] = [
-    ["voodoohop", 5640],
-    ["ElliotEtag", 1640],
-    ["ale-rls", 262],
-    ["Itachi-1824", 189],
-    ["Circuit-Overtime", 154],
-    ["gokaykucuk", 140],
-    ["eulervoid", 95],
-    ["lauraibnz", 63],
-    ["fisventurous", 37],
-    ["alexreiling", 34],
-    ["CloudCompile", 26],
-    ["chakra-gold", 20],
-].map(([login, commits]) => ({
-    login: String(login),
-    avatarUrl: `https://github.com/${login}.png?size=80`,
-    profileUrl: `https://github.com/${login}`,
-    commits: Number(commits),
-}));
-
 /** Apps and CI accounts commit constantly and would otherwise take the top. */
 const isBot = (login: string) =>
     login.includes("[bot]") ||
@@ -111,25 +87,22 @@ type GhContributor = {
 };
 
 export function useContributors(limit = 12) {
-    return useAsync<Contributor[]>(
-        async () => {
-            // One request, already ranked by commit count — the old page walked
-            // five pages of commits to rebuild the same ordering by hand.
-            const rows = await github<GhContributor[]>(
-                `/repos/${REPO}/contributors?per_page=${limit + 8}`,
-            );
-            return rows
-                .filter((row) => row.type !== "Bot" && !isBot(row.login))
-                .slice(0, limit)
-                .map((row) => ({
-                    login: row.login,
-                    avatarUrl: row.avatar_url,
-                    profileUrl: row.html_url,
-                    commits: row.contributions,
-                }));
-        },
-        FALLBACK_CONTRIBUTORS.slice(0, limit),
-    );
+    return useAsync<Contributor[]>(async () => {
+        // One request, already ranked by commit count — the old page walked
+        // five pages of commits to rebuild the same ordering by hand.
+        const rows = await github<GhContributor[]>(
+            `/repos/${REPO}/contributors?per_page=${limit + 8}`,
+        );
+        return rows
+            .filter((row) => row.type !== "Bot" && !isBot(row.login))
+            .slice(0, limit)
+            .map((row) => ({
+                login: row.login,
+                avatarUrl: row.avatar_url,
+                profileUrl: row.html_url,
+                commits: row.contributions,
+            }));
+    }, []);
 }
 
 /**

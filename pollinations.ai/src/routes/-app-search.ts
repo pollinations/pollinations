@@ -24,15 +24,15 @@ export const APP_CATEGORIES = [
 type AppCategory = (typeof APP_CATEGORIES)[number];
 
 export const CATEGORY_LABELS: Record<AppCategory, string> = {
-    image: "🖼️ Image",
-    chat: "💬 Chat",
-    build: "🛠️ Build",
-    writing: "✍️ Writing",
-    games: "🎮 Games",
-    learn: "📚 Learn",
-    business: "💼 Business",
-    bots: "🤖 Bots",
-    video_audio: "🎬 Video & audio",
+    image: "Image",
+    chat: "Chat",
+    build: "Build",
+    writing: "Writing",
+    games: "Games",
+    learn: "Learn",
+    business: "Business",
+    bots: "Bots",
+    video_audio: "Video & audio",
 };
 
 /** Mirrors the Platform column; an app can list several. */

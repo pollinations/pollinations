@@ -9,6 +9,7 @@ import {
     ContentHeader,
     cn,
     DiscordIcon,
+    ExternalLinkButton,
     Eyebrow,
     GitPullRequestIcon,
     InlineLink,
@@ -93,8 +94,6 @@ const WAYS_IN = [
 ];
 
 const FEED_SKELETON_KEYS = ["first", "second", "third", "fourth"];
-const CONTRIBUTOR_COUNT_FALLBACK = 136;
-
 /**
  * Every feed on this page can fail — GitHub is rate-limited per visitor IP and
  * Discord's widget can be off. Returning null on failure quietly deleted whole
@@ -136,50 +135,80 @@ function FeedState({
 
 function CommunityParticipation() {
     const { data: issues, loading, failed } = useVotingIssues();
-    const { data: online } = useDiscordPresence();
-    const { data: contributorCount } = useContributorCount();
-    const { data: platform } = usePlatformStats();
-    const { data: apps } = useAppDirectory();
+    const {
+        data: online,
+        loading: onlineLoading,
+        failed: onlineFailed,
+    } = useDiscordPresence();
+    const {
+        data: contributorCount,
+        loading: contributorsLoading,
+        failed: contributorsFailed,
+    } = useContributorCount();
+    const {
+        data: platform,
+        loading: platformLoading,
+        failed: platformFailed,
+    } = usePlatformStats();
+    const {
+        data: apps,
+        loading: appsLoading,
+        failed: appsFailed,
+    } = useAppDirectory();
     const bare = loading || failed || issues.length === 0;
     const ways = [
         {
             ...WAYS_IN[0],
-            metrics: [
-                {
-                    value: apps.length > 0 ? String(apps.length) : null,
-                    label: "published apps",
-                },
-            ],
+            metrics: appsFailed
+                ? []
+                : [
+                      {
+                          value: appsLoading ? null : String(apps.length),
+                          label: "published apps",
+                      },
+                  ],
         },
         {
             ...WAYS_IN[1],
-            metrics: [
-                {
-                    value:
-                        platform !== null ? compact(platform.community) : null,
-                    label: "published models",
-                },
-            ],
+            metrics: platformFailed
+                ? []
+                : [
+                      {
+                          value:
+                              platformLoading || platform === null
+                                  ? null
+                                  : compact(platform.community),
+                          label: "published models",
+                      },
+                  ],
         },
         {
             ...WAYS_IN[2],
-            metrics: [
-                {
-                    value: compact(
-                        contributorCount ?? CONTRIBUTOR_COUNT_FALLBACK,
-                    ),
-                    label: "code contributors",
-                },
-            ],
+            metrics: contributorsFailed
+                ? []
+                : [
+                      {
+                          value:
+                              contributorsLoading || contributorCount === null
+                                  ? null
+                                  : compact(contributorCount),
+                          label: "code contributors",
+                      },
+                  ],
         },
         {
             ...WAYS_IN[3],
-            metrics: [
-                {
-                    value: online !== null ? String(online) : null,
-                    label: "Discord online",
-                },
-            ],
+            metrics: onlineFailed
+                ? []
+                : [
+                      {
+                          value:
+                              onlineLoading || online === null
+                                  ? null
+                                  : String(online),
+                          label: "Discord online",
+                      },
+                  ],
         },
     ];
 
@@ -228,40 +257,42 @@ function CommunityParticipation() {
                                 <p className="text-sm leading-relaxed text-theme-text-base">
                                     {way.body}
                                 </p>
-                                <dl className="mt-auto flex flex-wrap gap-x-6 gap-y-3 pt-3">
-                                    {way.metrics.map((metric) => (
-                                        <div
-                                            key={metric.label}
-                                            className="flex flex-col gap-0.5"
-                                        >
-                                            <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                {metric.value ?? (
-                                                    <span
-                                                        aria-hidden="true"
-                                                        className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                                    />
-                                                )}
-                                            </dt>
-                                            <dd className="text-xs text-theme-text-muted">
-                                                {metric.label}
-                                            </dd>
-                                        </div>
-                                    ))}
-                                </dl>
-                                <div className="flex flex-wrap gap-2 pt-2">
-                                    {way.links.map((link) => (
-                                        <Button
-                                            as="a"
-                                            key={link.label}
-                                            href={link.href}
-                                            size="sm"
-                                            appearance="raised"
-                                            className="gap-2 whitespace-nowrap"
-                                        >
-                                            {link.label}
-                                            <ArrowRightIcon className="size-3.5" />
-                                        </Button>
-                                    ))}
+                                <div className="mt-auto flex flex-col gap-4 pt-3">
+                                    {way.metrics.length > 0 && (
+                                        <dl className="flex flex-wrap gap-x-6 gap-y-3">
+                                            {way.metrics.map((metric) => (
+                                                <div
+                                                    key={metric.label}
+                                                    className="flex flex-col gap-0.5"
+                                                >
+                                                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                                        {metric.value ?? (
+                                                            <span
+                                                                aria-hidden="true"
+                                                                className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                            />
+                                                        )}
+                                                    </dt>
+                                                    <dd className="text-xs text-theme-text-muted">
+                                                        {metric.label}
+                                                    </dd>
+                                                </div>
+                                            ))}
+                                        </dl>
+                                    )}
+                                    <div className="flex flex-wrap gap-2">
+                                        {way.links.map((link) => (
+                                            <ExternalLinkButton
+                                                key={link.label}
+                                                href={link.href}
+                                                size="sm"
+                                                appearance="raised"
+                                                className="gap-2 whitespace-nowrap"
+                                            >
+                                                {link.label}
+                                            </ExternalLinkButton>
+                                        ))}
+                                    </div>
                                 </div>
                             </Surface>
                         );
@@ -311,16 +342,14 @@ function CommunityParticipation() {
                                             {issue.votes} vote
                                             {issue.votes === 1 ? "" : "s"}
                                         </Eyebrow>
-                                        <Button
-                                            as="a"
+                                        <ExternalLinkButton
                                             href={issue.url}
                                             size="sm"
                                             appearance="raised"
                                             className="gap-1.5"
                                         >
                                             Vote
-                                            <ArrowRightIcon className="size-3.5" />
-                                        </Button>
+                                        </ExternalLinkButton>
                                     </span>
                                 </Surface>
                             ))}
@@ -674,16 +703,21 @@ function BuildDiary() {
                                                 aria-label={item.ariaLabel}
                                                 aria-pressed={item.active}
                                                 title={`${item.label} · ${item.value} PR${item.value === 1 ? "" : "s"}`}
-                                                className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-transform motion-reduce:transition-none ${
-                                                    item.active
-                                                        ? "size-5 border-theme-text-strong bg-theme-bg-active"
-                                                        : "size-3 border-theme-text-soft bg-surface-opaque hover:scale-125"
-                                                }`}
+                                                className="group absolute flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full disabled:cursor-default"
                                                 style={{
                                                     left: `${x}%`,
                                                     top: `${y}%`,
                                                 }}
-                                            />
+                                            >
+                                                <span
+                                                    aria-hidden="true"
+                                                    className={`block rounded-full border-2 transition-transform motion-reduce:transition-none ${
+                                                        item.active
+                                                            ? "size-5 border-theme-text-strong bg-theme-bg-active"
+                                                            : "size-3 border-theme-text-soft bg-surface-opaque group-hover:scale-125"
+                                                    }`}
+                                                />
+                                            </button>
                                         ))}
                                 </div>
                                 <div className="absolute right-1 bottom-0 left-9 flex justify-between text-micro text-theme-text-muted">
@@ -851,11 +885,15 @@ function CommunityPage() {
                 />
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(min(240px,100%),1fr))] gap-3.5">
                     {SUPPORTERS.map((supporter) => (
-                        <a
+                        <Surface
+                            as="a"
+                            variant="card"
                             key={supporter.name}
                             href={supporter.url}
                             aria-label={supporter.name}
-                            className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 rounded-2xl border border-theme-border border-dashed px-5 py-4 transition-colors hover:border-theme-bg-active hover:bg-surface-opaque motion-reduce:transition-none"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-3 rounded-2xl px-5 py-4 transition-colors hover:bg-theme-bg-subtle motion-reduce:transition-none"
                         >
                             <span
                                 aria-hidden="true"
@@ -877,7 +915,7 @@ function CommunityPage() {
                             <span className="text-sm leading-snug text-theme-text-muted">
                                 {supporter.description}
                             </span>
-                        </a>
+                        </Surface>
                     ))}
                 </div>
             </section>
@@ -887,14 +925,13 @@ function CommunityPage() {
                 title="Join the conversation"
                 body="Builders are in there swapping prompts, debugging each other's apps, and telling us what to build next."
             >
-                <Button
-                    as="a"
+                <ExternalLinkButton
                     href={DISCORD_URL}
                     appearance="raised"
                     className="bg-brand-accent text-brand-dark"
                 >
                     Join Discord
-                </Button>
+                </ExternalLinkButton>
                 <InlineLink href={REPO_URL} className="px-2 text-base">
                     Browse the repo
                 </InlineLink>

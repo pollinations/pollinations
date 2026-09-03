@@ -59,6 +59,7 @@ function LeaderboardAction() {
     return (
         <ExternalLinkButton
             href={QUESTS_PAGE_URL}
+            external={false}
             size="sm"
             appearance="raised"
         >
@@ -81,6 +82,7 @@ export function QuestLeaderboardContent({
             intro="Builders who completed public GitHub Pollen Quests."
             action={<LeaderboardAction />}
             className="gap-5"
+            titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
         >
             <dl
                 className="grid grid-cols-1 gap-3 min-[440px]:grid-cols-3"
@@ -90,18 +92,27 @@ export function QuestLeaderboardContent({
                     <StatCard
                         label="Builders"
                         value={formatNumber(data.totals.contributors)}
+                        className="flex flex-col"
+                        labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
+                        valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
                     />
                 </Surface>
                 <Surface as="div" variant="card">
                     <StatCard
                         label="Completed quests"
                         value={formatNumber(data.totals.completedQuests)}
+                        className="flex flex-col"
+                        labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
+                        valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
                     />
                 </Surface>
                 <Surface as="div" variant="card">
                     <StatCard
                         label="Quest Pollen"
                         value={formatNumber(data.totals.totalPollen)}
+                        className="flex flex-col"
+                        labelClassName="order-2 font-normal text-xs normal-case tracking-normal"
+                        valueClassName="order-1 mt-0 font-heading font-normal text-3xl text-theme-text-soft"
                     />
                 </Surface>
             </dl>
@@ -217,6 +228,7 @@ export function QuestLeaderboard() {
             intro="Builders who completed public GitHub Pollen Quests."
             action={<LeaderboardAction />}
             className="gap-5"
+            titleClassName="font-subheading text-3xl leading-tight sm:text-4xl"
         >
             {state.status === "loading" ? (
                 <output

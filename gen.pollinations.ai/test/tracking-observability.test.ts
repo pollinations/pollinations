@@ -2092,6 +2092,90 @@ describe("tracking observability", () => {
         expect(event.isBilledUsage).toBe(true);
     });
 
+    it("bills cache-write tokens reported by a Chat stream", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const model = "claude-fast";
+        const usage = {
+            prompt_tokens: 1_000,
+            prompt_tokens_details: {
+                cached_tokens: 200,
+                cache_write_tokens: 100,
+            },
+            completion_tokens: 500,
+            total_tokens: 1_500,
+        };
+        const upstream = new Response(
+            `data: ${JSON.stringify({
+                model,
+                choices: [],
+                usage,
+            })}\n\ndata: [DONE]\n\n`,
+            {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": model,
+                },
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+            model,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model,
+                    messages: [{ role: "user", content: "test" }],
+                    stream: true,
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        const prices = getPriceDefinitionForModel(
+            getRegistryModelDefinition(model),
+        );
+        const expectedPrice =
+            700 * (prices.promptTextTokens ?? 0) +
+            200 * (prices.promptCachedTokens ?? 0) +
+            100 * (prices.promptCacheWriteTokens ?? 0) +
+            500 * (prices.completionTextTokens ?? 0);
+        expect(event).toMatchObject({
+            tokenCountPromptText: 700,
+            tokenCountPromptCached: 200,
+            tokenCountPromptCacheWrite: 100,
+            tokenCountCompletionText: 500,
+            totalPrice: expectedPrice,
+            isBilledUsage: true,
+        });
+        expect(consumePollen).toHaveBeenCalledWith(expectedPrice);
+    });
+
     it("bills direct Responses stream terminal usage exactly once", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -2373,6 +2457,84 @@ describe("trackResponse modelUsed", () => {
         expect(tracking.cacheHit).toBe(true);
         expect(tracking.isBilledUsage).toBe(false);
         expect(tracking.modelUsed).toBeUndefined();
+    });
+
+    it("prices an Alibaba explicit-cache hit from response metadata", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "qwen3.7-flash"),
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": "qwen3.7-flash-alibaba",
+                        "x-usage-prompt-cached-tokens": "1000000",
+                        "x-usage-prompt-cache-type": "ephemeral",
+                    },
+                },
+            ),
+            candidateFixture("qwen3.7-flash-alibaba"),
+        );
+
+        // The reported variant is the caller's unchanged public tier; the
+        // served cost independently uses Alibaba's explicit-cache rate.
+        expect(tracking.costVariant).toBe("context_256k");
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+    });
+
+    it("uses Alibaba's implicit rate unless the response confirms an explicit hit", async () => {
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(false, "qwen3.7-flash"),
+            Response.json(
+                { choices: [] },
+                {
+                    headers: {
+                        "x-model-used": "qwen3.7-flash-alibaba",
+                        "x-usage-prompt-cached-tokens": "1000000",
+                    },
+                },
+            ),
+            candidateFixture("qwen3.7-flash-alibaba"),
+            // Even a stale request-side hint must not override what the
+            // provider actually reported on the response.
+            { hasExplicitCacheHit: true },
+        );
+
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.04, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
+    });
+
+    it("prices a streamed Alibaba explicit-cache hit from terminal usage", async () => {
+        const usageEvent = JSON.stringify({
+            model: "qwen3.7-flash",
+            choices: [],
+            usage: {
+                prompt_tokens: 1_000_000,
+                completion_tokens: 0,
+                total_tokens: 1_000_000,
+                prompt_tokens_details: {
+                    cached_tokens: 1_000_000,
+                    cache_type: "ephemeral",
+                },
+            },
+        });
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true, "qwen3.7-flash"),
+            new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
+                headers: {
+                    "content-type": "text/event-stream",
+                    "x-model-used": "qwen3.7-flash-alibaba",
+                },
+            }),
+            candidateFixture("qwen3.7-flash-alibaba"),
+        );
+
+        expect(tracking.costVariant).toBe("context_256k");
+        expect(tracking.cost?.totalCost).toBeCloseTo(0.02, 12);
+        expect(tracking.price?.totalPrice).toBeCloseTo(0.04, 12);
     });
 });
 

@@ -7,8 +7,10 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
+    type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
+    isRetryableFallbackError,
     withModelFallback,
 } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
@@ -87,6 +89,7 @@ const IMAGE_ENV_KEYS = [
     "FAL_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
+    "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
@@ -444,6 +447,18 @@ async function generateMediaWithFallback(
     params: RuntimeImageParams;
     servedIndex: number;
 }> {
+    const shouldFallback = (error: unknown, candidate: FallbackCandidate) => {
+        if (
+            candidate.definition?.provider === "azure" &&
+            candidate.definition.brand === "OpenAI"
+        ) {
+            return (
+                error instanceof Error &&
+                (error as Error & { status?: number }).status === 429
+            );
+        }
+        return isRetryableFallbackError(error);
+    };
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
@@ -482,6 +497,7 @@ async function generateMediaWithFallback(
         },
         c.var.track?.attempts,
         (attempt) => enforceModelRateLimit(c, attempt),
+        shouldFallback,
     );
     return {
         ...result,

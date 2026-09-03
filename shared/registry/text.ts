@@ -2045,6 +2045,30 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1048576,
         isSpecialized: false,
     },
+    "meta/muse-spark-1.3": {
+        aliases: [],
+        provider: "vercel",
+        brand: "Meta",
+        category: "text",
+        addedDate: new Date("2026-09-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // Vercel AI Gateway Meta route, verified 2026-09-03.
+            promptTextTokens: perMillion(1.25),
+            promptCachedTokens: perMillion(0.15),
+            completionTextTokens: perMillion(4.25),
+        },
+        title: "Muse Spark 1.3",
+        description:
+            "Long-horizon multimodal reasoning for coding, agents and tool-driven workflows",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        tools: true,
+        reasoning: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
     "mistral-large": {
         aliases: ["mistral-large-3", "mistralai/mistral-large-3"],
         provider: "azure",

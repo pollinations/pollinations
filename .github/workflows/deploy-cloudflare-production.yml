@@ -176,11 +176,13 @@ jobs:
         run: npm run migrate:production --workspace pollinations-enter
 
   deploy-enter:
-    needs: [changes, migrate]
+    needs: [changes, migrate, deploy-mcp-apps]
     if: >-
-      !cancelled() &&
+      always() &&
       needs.changes.outputs.enter == 'true' &&
-      needs.migrate.result == 'success'
+      needs.migrate.result == 'success' &&
+      (needs.deploy-mcp-apps.result == 'success' ||
+       needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
@@ -308,8 +310,8 @@ jobs:
         run: npm run deploy:production
         working-directory: ./media.pollinations.ai
 
-  # A Worker must exist before Gen can deploy a service binding to it. Deploy
-  # changed private MCP applications before Gen. The automatic Applications
+  # A Worker must exist before Gen or Enter can deploy a service binding to it.
+  # Deploy changed private MCP applications first. The automatic Applications
   # workflow excludes MCP Workers so it cannot race this dependency chain.
   deploy-mcp-apps:
     needs: [changes, deploy-media]

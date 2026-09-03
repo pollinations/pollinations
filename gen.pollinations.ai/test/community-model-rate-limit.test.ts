@@ -1,7 +1,11 @@
 import { env } from "cloudflare:test";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
-import type { ModelDefinition } from "@shared/registry/registry.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    type ModelDefinition,
+} from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
 
@@ -11,6 +15,17 @@ describe("model rate limiting", () => {
         expect(IMAGE_SERVICES.zimage.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.klein.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.dreamshaper.perUserRpm).toBe(300);
+        expect(IMAGE_SERVICES["gpt-image-2"].perUserRpm).toBe(6);
+        expect(IMAGE_SERVICES["gpt-image-2-openai"].perUserRpm).toBeNull();
+    });
+
+    it("keeps other configured catalog model limits at 60 RPM or higher", () => {
+        for (const model of getModels()) {
+            const limit = getRegistryModelDefinition(model).perUserRpm;
+            if (limit != null && model !== "gpt-image-2") {
+                expect(limit).toBeGreaterThanOrEqual(60);
+            }
+        }
     });
 
     it("publishes a catalog model's configured per-user RPM", () => {

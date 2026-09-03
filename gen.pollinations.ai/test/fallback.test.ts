@@ -87,6 +87,25 @@ describe("registry fallback linking", () => {
         expect(getVisibleImageModels()).not.toContain("zimage-fal");
     });
 
+    it("declares direct OpenAI fallbacks for every GPT Image model", () => {
+        const pairs = [
+            ["gptimage", "gptimage-openai"],
+            ["gptimage-large", "gptimage-large-openai"],
+            ["gpt-image-2", "gpt-image-2-openai"],
+        ] as const;
+
+        for (const [primary, fallback] of pairs) {
+            expect(IMAGE_SERVICES[primary].fallbacks).toEqual([fallback]);
+            expect(IMAGE_SERVICES[fallback]).toMatchObject({
+                aliases: [],
+                hidden: true,
+                fallbackOnly: true,
+                provider: "openai",
+            });
+            expect(getVisibleImageModels()).not.toContain(fallback);
+        }
+    });
+
     it("uses registry declarations without applying community price rules", () => {
         const primary = registryEntry("primary", ["target-alias", "target"]);
         const target = registryEntry("target", ["primary"], 10);
@@ -544,6 +563,25 @@ describe("withModelFallback", () => {
         // Nothing was moved on from, but the 400 still came from a named
         // model, and that name is the only thing the response cannot carry.
         expect(seen(attempts)).toEqual(["primary!"]);
+    });
+
+    it("supports a route-specific fallback policy", async () => {
+        const attempt = vi.fn(async () => "served");
+        attempt.mockRejectedValueOnce(new HttpError("ambiguous timeout", 524));
+        const shouldFallback = vi.fn(() => false);
+
+        await expect(
+            withModelFallback(
+                [candidate("primary"), candidate("second")],
+                attempt,
+                undefined,
+                undefined,
+                shouldFallback,
+            ),
+        ).rejects.toThrow("ambiguous timeout");
+
+        expect(attempt).toHaveBeenCalledOnce();
+        expect(shouldFallback).toHaveBeenCalledOnce();
     });
 
     it("tries the next model for any upstream 5xx", async () => {

@@ -9,6 +9,7 @@ import {
     callAzureFlux2,
     callAzureFluxKontext,
 } from "./models/azureFluxKontextModel.js";
+import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
     callIdeogramBalancedAPI,
@@ -25,11 +26,13 @@ import {
     callOpenRouterSeedreamProAPI,
 } from "./models/openRouterImageModel.ts";
 import {
+    callFluxSchnellDeepInfraAPI,
     callPrunaImageAPI,
     callPrunaImageEditAPI,
 } from "./models/prunaModel.ts";
 import { callQwenImage3API } from "./models/qwenImage3Model.ts";
 import { callQwenImageAPI } from "./models/qwenImageModel.ts";
+import { callReplicateFallbackImage } from "./models/replicateFallbackImageModel.ts";
 import { callSeedream5API } from "./models/seedream5ReplicateModel.ts";
 import {
     callSeedream5ProAPI,
@@ -293,6 +296,7 @@ export async function convertToJpeg(buffer: Buffer): Promise<Buffer> {
 }
 
 interface GPTImageConfig {
+    provider: "azure" | "openai";
     baseUrl: string;
     modelName: string;
     apiKeyEnv: string;
@@ -307,6 +311,7 @@ const AZURE_API_VERSION = "2025-04-01-preview";
 const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     gptimage: [
         {
+            provider: "azure",
             baseUrl:
                 "https://myceli-prod-img-mini-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
             modelName: "gpt-image-1-mini",
@@ -314,6 +319,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "swedencentral",
         },
         {
+            provider: "azure",
             baseUrl:
                 "https://myceli-prod-img-mini-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1-mini",
             modelName: "gpt-image-1-mini",
@@ -323,6 +329,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
     "gptimage-large": [
         {
+            provider: "azure",
             baseUrl:
                 "https://myceli-prod-img-15-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
             modelName: "gpt-image-1.5",
@@ -330,6 +337,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "swedencentral",
         },
         {
+            provider: "azure",
             baseUrl:
                 "https://myceli-prod-img-15-westus3.cognitiveservices.azure.com/openai/deployments/gpt-image-1.5",
             modelName: "gpt-image-1.5",
@@ -339,6 +347,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
     "gpt-image-2": [
         {
+            provider: "azure",
             baseUrl:
                 "https://myceli-prod-img-2-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
             modelName: "gpt-image-2",
@@ -346,6 +355,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "swedencentral",
         },
         {
+            provider: "azure",
             baseUrl:
                 "https://myceli-prod-img-2-eastus2.cognitiveservices.azure.com/openai/deployments/gpt-image-2",
             modelName: "gpt-image-2",
@@ -353,15 +363,43 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "eastus2",
         },
     ],
+    "gptimage-openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-1-mini",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "gptimage-large-openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-1.5",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "gpt-image-2-openai": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
 };
 
-let gptImageEndpointIndex = 0;
+const gptImageEndpointIndexes = new Map<string, number>();
 
 /** Round robins the Azure regions to spread load. One region per request. */
 function nextGPTImageConfig(model: string): GPTImageConfig {
     const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
-    const config = configs[gptImageEndpointIndex % configs.length];
-    gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
+    const index = gptImageEndpointIndexes.get(model) ?? 0;
+    const config = configs[index % configs.length];
+    gptImageEndpointIndexes.set(model, (index + 1) % configs.length);
     return config;
 }
 
@@ -381,9 +419,12 @@ const callGPTImageWithEndpoint = async (
 
     const isEditMode = safeParams.image && safeParams.image.length > 0;
     const path = isEditMode ? "images/edits" : "images/generations";
-    const endpoint = `${config.baseUrl}/${path}?api-version=${AZURE_API_VERSION}`;
+    const endpoint =
+        config.provider === "azure"
+            ? `${config.baseUrl}/${path}?api-version=${AZURE_API_VERSION}`
+            : `${config.baseUrl}/${path}`;
     logCloudflare(
-        `Using Azure ${config.modelName} in ${config.region} for ${isEditMode ? "edit" : "generation"}`,
+        `Using ${config.provider} ${config.modelName} in ${config.region} for ${isEditMode ? "edit" : "generation"}`,
     );
 
     // Map safeParams to API size parameter.
@@ -434,6 +475,7 @@ const callGPTImageWithEndpoint = async (
     // Set output format to png if model is gptimage, otherwise jpeg
     const outputFormat = "png";
     const requestBody = {
+        ...(config.provider === "openai" ? { model: config.modelName } : {}),
         prompt: sanitizeString(prompt),
         size,
         quality,
@@ -547,6 +589,9 @@ const callGPTImageWithEndpoint = async (
             throw new Error(`Failed to process image: ${error.message}`);
         }
 
+        if (config.provider === "openai") {
+            formData.append("model", config.modelName);
+        }
         formData.append("quality", quality);
         formData.append("n", "1");
 
@@ -588,7 +633,10 @@ const callGPTImageWithEndpoint = async (
         const errorText = await response.text();
         // Azure 403 means content/quota block, not client auth. Remap to 502 so
         // callers see it as an upstream failure.
-        const status = response.status === 403 ? 502 : response.status;
+        const status =
+            config.provider === "azure" && response.status === 403
+                ? 502
+                : response.status;
         throw new HttpError(errorText, status, undefined, endpoint);
     }
 
@@ -646,7 +694,7 @@ export const callGPTImage = async (
         );
     } catch (error) {
         logError(
-            `Error calling Azure GPT Image API (${config.modelName}, ${config.region}):`,
+            `Error calling ${config.provider} GPT Image API (${config.modelName}, ${config.region}):`,
             error,
         );
         throw error;
@@ -670,7 +718,10 @@ const generateImage = async (
     switch (safeParams.model) {
         case "gptimage":
         case "gptimage-large":
-        case "gpt-image-2": {
+        case "gpt-image-2":
+        case "gptimage-openai":
+        case "gptimage-large-openai":
+        case "gpt-image-2-openai": {
             const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,
@@ -687,7 +738,7 @@ const generateImage = async (
                 );
             } catch (error) {
                 logError(
-                    `Azure GPT Image generation or safety check failed:`,
+                    `GPT Image generation or safety check failed:`,
                     error.message,
                 );
                 await logGptImageError(prompt, safeParams, userInfo, error);
@@ -697,6 +748,7 @@ const generateImage = async (
 
         case "nanobanana":
         case "nanobanana-2":
+        case "nanobanana-2-openrouter-ai-studio":
         case "nanobanana-2-lite": {
             logError(
                 "Nano Banana authentication check:",
@@ -719,7 +771,8 @@ const generateImage = async (
             }
         }
 
-        case "nanobanana-pro": {
+        case "nanobanana-pro":
+        case "nanobanana-pro-openrouter-vertex": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -767,6 +820,9 @@ const generateImage = async (
 
         case "seedream5":
             return await callSeedream5API(prompt, safeParams);
+
+        case "seedream5-fal":
+            return await callFalFallbackImage(prompt, safeParams);
 
         case "seedream5-pro":
             return await callSeedream5ProAPI(prompt, safeParams);
@@ -829,12 +885,22 @@ const generateImage = async (
         case "qwen-image-3":
             return await callQwenImage3API(prompt, safeParams);
 
+        case "kontext-replicate":
+        case "flux-2-pro-replicate":
+        case "qwen-image-3-replicate":
+        case "p-image-edit-replicate":
+        case "krea-replicate":
+            return await callReplicateFallbackImage(prompt, safeParams);
+
         case "dreamshaper":
             // pool key stays "sana" — see VALID_TYPES in availableServers.ts
             return await callSelfHostedServer(prompt, safeParams, "sana");
 
         case "flux":
             return await callSelfHostedServer(prompt, safeParams, "flux");
+
+        case "flux-deepinfra":
+            return await callFluxSchnellDeepInfraAPI(prompt, safeParams);
 
         case "zimage-fal":
             return await callZImageFalAPI(prompt, safeParams);

@@ -118,6 +118,11 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
+        name: "qwen-coder-large-openrouter-streamlake",
+        config: portkeyConfig["qwen-coder-large-openrouter-streamlake"],
+        transform: createSystemPromptTransform(BASE_PROMPTS.coding),
+    },
+    {
         name: "qwen-large",
         config: portkeyConfig["qwen/qwen3.7-plus"],
         transform: createReasoningEffortTransform("toggle"),
@@ -132,10 +137,20 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "qwen3.8-2.4t-a95b-deepinfra",
+        config: portkeyConfig["Qwen/Qwen3.8-2.4T-A95B"],
+        transform: fireworksThinking,
+    },
+    {
         name: "qwen3.8-27b",
         config: portkeyConfig["qwen/qwen3.8-27b"],
         transform: createReasoningEffortTransform("toggle"),
     },
+    ...["qwen3.8-27b-openrouter-akashml"].map((name) => ({
+        name,
+        config: portkeyConfig[name],
+        transform: createReasoningEffortTransform("toggle"),
+    })),
     {
         name: "qwen3.8-max",
         config: portkeyConfig["qwen/qwen3.8-max"],
@@ -155,6 +170,11 @@ const models: ModelDefinition[] = [
         name: "qwen-vision-pro",
         config: portkeyConfig["qwen3-vl-235b-a22b-thinking"],
         // Alibaba thinking-only model; strip "none" to preserve always-on reasoning.
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "qwen-vision-pro-openrouter-novita",
+        config: portkeyConfig["qwen-vision-pro-openrouter-novita"],
         transform: mandatoryReasoning,
     },
     {
@@ -178,10 +198,19 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["mistral-small-2603"],
     },
     {
+        name: "mistral-openrouter-eu",
+        config: portkeyConfig["mistral-openrouter-eu"],
+    },
+    {
         name: "deepseek",
         config: portkeyConfig[
             "accounts/fireworks/models/deepseek-v4-flash-0731"
         ],
+        transform: fireworksThinking,
+    },
+    {
+        name: "deepseek-deepinfra",
+        config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash-0731"],
         transform: fireworksThinking,
     },
     {
@@ -196,8 +225,16 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
+        name: "gemma-deepinfra",
+        config: portkeyConfig["google/gemma-4-26B-A4B-it"],
+    },
+    {
         name: "gemma-4-31b",
         config: portkeyConfig["google/gemma-4-31b-it"],
+    },
+    {
+        name: "gemma-4-31b-deepinfra",
+        config: portkeyConfig["google/gemma-4-31B-it"],
     },
     {
         name: "deepseek-pro",
@@ -213,8 +250,17 @@ const models: ModelDefinition[] = [
         transform: grokTransform,
     },
     {
+        name: "grok-openrouter-xai-zdr",
+        config: portkeyConfig["grok-openrouter-xai-zdr"],
+        transform: grokTransform,
+    },
+    {
         name: "grok-large",
         config: portkeyConfig["grok-4.3"],
+    },
+    {
+        name: "grok-large-openrouter-xai-zdr",
+        config: portkeyConfig["grok-large-openrouter-xai-zdr"],
     },
     {
         name: "grok-4.6",
@@ -234,6 +280,11 @@ const models: ModelDefinition[] = [
     {
         name: "claude-fast",
         config: portkeyConfig["claude-haiku-4-5"],
+        transform: claudeManualThinking,
+    },
+    {
+        name: "claude-fast-openrouter-vertex",
+        config: portkeyConfig["claude-fast-openrouter-vertex"],
         transform: claudeManualThinking,
     },
     {
@@ -258,6 +309,11 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
+        name: "claude-opus-4.7-openrouter-vertex",
+        config: portkeyConfig["claude-opus-4.7-openrouter-vertex"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
         name: "claude-large",
         config: portkeyConfig["claude-opus-5"],
         transform: claudeOpus5Thinking,
@@ -265,6 +321,11 @@ const models: ModelDefinition[] = [
     {
         name: "claude-fable-5",
         config: portkeyConfig["claude-fable-5"],
+        transform: claudeAdaptiveThinking,
+    },
+    {
+        name: "claude-fable-5-openrouter-vertex",
+        config: portkeyConfig["claude-fable-5-openrouter-vertex"],
         transform: claudeAdaptiveThinking,
     },
     {
@@ -290,6 +351,23 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-openrouter-ai-studio-priority",
+        config: portkeyConfig["gemini-openrouter-ai-studio-priority"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-3.8-flash",
+        config: portkeyConfig["google/gemini-3.8-flash"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            // Gemini 3.8 requires reasoning; map `none` to its lowest level.
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
         name: "gemini-flash-lite-3.5",
         config: portkeyConfig["google/gemini-3.5-flash-lite"],
         transform: pipe(
@@ -298,8 +376,26 @@ const models: ModelDefinition[] = [
         ),
     },
     {
+        name: "gemini-flash-lite-3.5-openrouter-ai-studio-flex",
+        config: portkeyConfig[
+            "gemini-flash-lite-3.5-openrouter-ai-studio-flex"
+        ],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-flash"),
+        ),
+    },
+    {
         name: "gemini-fast",
         config: portkeyConfig["google/gemini-2.5-flash-lite"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v2.5"),
+        ),
+    },
+    {
+        name: "gemini-fast-openrouter-ai-studio",
+        config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v2.5"),
@@ -317,12 +413,12 @@ const models: ModelDefinition[] = [
     },
     {
         name: "midijourney",
-        config: portkeyConfig["gpt-5.4-mini"],
+        config: portkeyConfig["gpt-5.4-mini-chat"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
         name: "midijourney-large",
-        config: portkeyConfig["gpt-5.5"],
+        config: portkeyConfig["gpt-5.5-chat"],
         transform: createMessageTransform(midijourneyPrompt),
     },
     {
@@ -343,8 +439,18 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "kimi-deepinfra",
+        config: portkeyConfig["moonshotai/Kimi-K2.6"],
+        transform: fireworksThinking,
+    },
+    {
         name: "kimi-code",
         config: portkeyConfig["accounts/fireworks/models/kimi-k2p7-code"],
+        transform: fireworksThinking,
+    },
+    {
+        name: "kimi-code-deepinfra",
+        config: portkeyConfig["kimi-code-deepinfra"],
         transform: fireworksThinking,
     },
     {
@@ -384,6 +490,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "nemotron-3.5-lightning-openrouter-coreweave",
+        config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
+        transform: fireworksThinking,
+    },
+    {
         name: "mimo-v2.5",
         config: portkeyConfig["xiaomi/mimo-v2.5"],
     },
@@ -394,6 +505,14 @@ const models: ModelDefinition[] = [
     {
         name: "gemini-large",
         config: portkeyConfig["google/gemini-3.1-pro-preview"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "gemini-large-openrouter-ai-studio",
+        config: portkeyConfig["gemini-large-openrouter-ai-studio"],
         transform: pipe(
             adaptGoogleSearchToolForOpenRouter,
             createGeminiThinkingTransform("v3-pro"),
@@ -421,6 +540,11 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
+        name: "glm-5.3-openrouter-friendli",
+        config: portkeyConfig["glm-5.3-openrouter-friendli"],
+        transform: mandatoryReasoning,
+    },
+    {
         name: "z-ai/glm-5.3-flash",
         config: portkeyConfig["accounts/fireworks/models/glm-5p3-flash"],
         // Reasoning is mandatory; off requests keep the upstream default.
@@ -430,6 +554,11 @@ const models: ModelDefinition[] = [
         name: "minimax-m2.7",
         config: portkeyConfig["minimax/minimax-m2.7"],
         // Reasoning mandatory: rejects "none"/"minimal", accepts low/medium/high.
+        transform: mandatoryReasoning,
+    },
+    {
+        name: "minimax-m2.7-deepinfra",
+        config: portkeyConfig["MiniMaxAI/MiniMax-M2.7"],
         transform: mandatoryReasoning,
     },
     {
@@ -443,6 +572,11 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
+        name: "muse-glimmer-openrouter-deepinfra",
+        config: portkeyConfig["muse-glimmer-openrouter-deepinfra"],
+        transform: fireworksThinking,
+    },
+    {
         name: "muse-spark-1.2",
         config: portkeyConfig["meta/muse-spark-1.2"],
     },
@@ -450,6 +584,11 @@ const models: ModelDefinition[] = [
         name: "llama",
         config: portkeyConfig["Llama-3.3-70B-Instruct"],
         // No reasoning mode; Azure 422/400s on reasoning_effort.
+        transform: stripReasoning,
+    },
+    {
+        name: "llama-deepinfra",
+        config: portkeyConfig["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
         transform: stripReasoning,
     },
     {
@@ -464,9 +603,19 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
+        name: "llama-scout-openrouter-deepinfra",
+        config: portkeyConfig["llama-scout-openrouter-deepinfra"],
+        transform: stripReasoning,
+    },
+    {
         name: "mistral-large",
         config: portkeyConfig["Mistral-Large-3"],
         // Azure deployment 500s on reasoning_effort.
+        transform: stripReasoning,
+    },
+    {
+        name: "mistral-large-openrouter-zdr",
+        config: portkeyConfig["mistral-large-openrouter-zdr"],
         transform: stripReasoning,
     },
     {
@@ -494,4 +643,14 @@ export function findModelByName(modelName: string): ModelDefinition | null {
     } catch {
         return null;
     }
+}
+
+/** Whether the resolved model config has a verified direct Responses route. */
+export function supportsDirectResponses(modelName: string): boolean {
+    const model = findModelByName(modelName);
+    if (!model) return false;
+    return (
+        typeof model.config({ model: model.name }).responsesEndpoint ===
+        "string"
+    );
 }

@@ -1,4 +1,6 @@
+import { AUDIO_FALLBACKS } from "./audio-fallbacks";
 import { defineCostVariants } from "./cost-variants";
+import { mergeFallbacks } from "./merge-fallbacks";
 import type { ModelDefinition } from "./registry";
 
 // Voice name to ElevenLabs voice ID mapping
@@ -151,9 +153,8 @@ export const AUDIO_VOICES = [
 ];
 
 export const DEFAULT_AUDIO_MODEL = "elevenlabs" as const;
-export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
-export const AUDIO_SERVICES = {
+const AUDIO_BASE_SERVICES = {
     elevenlabs: {
         aliases: [
             "tts",
@@ -736,6 +737,12 @@ export const AUDIO_SERVICES = {
         voices: [...KOKORO_VOICES],
     },
 } satisfies Record<string, ModelDefinition>;
+
+export const AUDIO_SERVICES = mergeFallbacks(
+    AUDIO_BASE_SERVICES,
+    AUDIO_FALLBACKS,
+);
+export type AudioModelName = keyof typeof AUDIO_SERVICES;
 
 export function resolveElevenLabsVoiceId(voice: string): string {
     return VOICE_MAPPING[voice] ?? voice;

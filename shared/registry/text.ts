@@ -2221,7 +2221,7 @@ const TEXT_BASE_SERVICES = {
     },
     "qwen3.8-max": {
         aliases: ["qwen/qwen3.8-max"],
-        provider: "openrouter",
+        provider: "alibaba",
         brand: "Qwen",
         category: "text",
         addedDate: new Date("2026-08-04").getTime(),

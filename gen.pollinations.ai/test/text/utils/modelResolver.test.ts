@@ -167,15 +167,30 @@ describe("resolveModelConfig", () => {
     it("routes Qwen3.8 Max to Alibaba without fallback", () => {
         const result = resolveModelConfig(messages, { model: "qwen3.8-max" });
 
-        expect(result.options.model).toBe("qwen/qwen3.8-max");
+        expect(result.options.model).toBe("qwen3.8-max-0902");
         expect(result.options.modelConfig).toMatchObject({
-            provider: "openrouter",
-            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
         });
-        expect(result.options.provider).toEqual({
-            only: ["Alibaba"],
-            allow_fallbacks: false,
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("disables Qwen3.8 Max thinking when a tool is forced", async () => {
+        const definition = findModelByName("qwen3.8-max");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen3.8-max",
+            reasoning_effort: "high",
+            tool_choice: {
+                type: "function",
+                function: { name: "get_weather" },
+            },
         });
+
+        expect(transformed?.options.reasoning_effort).toBe("none");
     });
 
     it("routes Qwen3.8 2.4T A95B directly to Fireworks", () => {

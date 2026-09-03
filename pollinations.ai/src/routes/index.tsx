@@ -66,12 +66,14 @@ function HelloPage() {
                 <div className="flex flex-wrap gap-3">
                     <ExternalLinkButton
                         href="https://enter.pollinations.ai/quests"
+                        external={false}
                         appearance="raised"
                     >
                         Start for free
                     </ExternalLinkButton>
                     <ExternalLinkButton
                         href="https://gen.pollinations.ai/docs"
+                        external={false}
                         appearance="raised"
                         className="bg-surface-opaque"
                     >

@@ -135,6 +135,7 @@ export function SiteFooter() {
                                     <InlineLink
                                         key={link.label}
                                         href={link.href}
+                                        external={false}
                                         className="text-sm font-normal text-theme-text-base"
                                     >
                                         {link.label}

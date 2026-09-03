@@ -228,6 +228,7 @@ export class PollinationsChatTransport
                 const messageId = crypto.randomUUID();
                 let textId: string | null = null;
                 let finalReason: FinishReason = "stop";
+                let contentBuffer = "";
                 const emittedMedia = new Set<string>();
 
                 const endText = () => {
@@ -252,7 +253,7 @@ export class PollinationsChatTransport
                     emittedMedia.add(media.url);
                     controller.enqueue({ type: "data-media", id, data: media });
                 };
-                const emitContent = (content: string) => {
+                const emitParsedContent = (content: string) => {
                     const parts = parseAgentMessage(content);
                     for (const part of parts) {
                         if (part.type === "tool-call") {
@@ -294,6 +295,118 @@ export class PollinationsChatTransport
                         for (const media of extracted.media) {
                             emitMedia(media, `media:${media.url}`);
                         }
+                    }
+                };
+                const partialToolPrefix = (content: string) => {
+                    const lower = content.toLowerCase();
+                    const token = "<details";
+                    for (
+                        let length = Math.min(token.length - 1, lower.length);
+                        length > 0;
+                        length--
+                    ) {
+                        if (token.startsWith(lower.slice(-length)))
+                            return length;
+                    }
+                    return 0;
+                };
+                const flushContent = (final = false) => {
+                    while (contentBuffer) {
+                        const lower = contentBuffer.toLowerCase();
+                        const toolIndex = lower.indexOf("<details");
+                        const bracketIndex = contentBuffer.indexOf("[");
+                        const linkIndex =
+                            bracketIndex > 0 &&
+                            contentBuffer[bracketIndex - 1] === "!"
+                                ? bracketIndex - 1
+                                : bracketIndex;
+                        const starts = [toolIndex, linkIndex].filter(
+                            (index) => index >= 0,
+                        );
+                        const specialIndex =
+                            starts.length > 0 ? Math.min(...starts) : -1;
+
+                        if (specialIndex < 0) {
+                            if (!textId && contentBuffer.trim() === "") {
+                                if (final) contentBuffer = "";
+                                return;
+                            }
+                            const pendingLength = final
+                                ? 0
+                                : Math.max(
+                                      partialToolPrefix(contentBuffer),
+                                      contentBuffer.endsWith("!") ? 1 : 0,
+                                  );
+                            const safeLength =
+                                contentBuffer.length - pendingLength;
+                            emitText(contentBuffer.slice(0, safeLength));
+                            contentBuffer = contentBuffer.slice(safeLength);
+                            return;
+                        }
+
+                        if (specialIndex > 0) {
+                            const prefix = contentBuffer.slice(0, specialIndex);
+                            if (textId || prefix.trim()) emitText(prefix);
+                            contentBuffer = contentBuffer.slice(specialIndex);
+                            continue;
+                        }
+
+                        if (
+                            contentBuffer.toLowerCase().startsWith("<details")
+                        ) {
+                            const closeIndex = contentBuffer
+                                .toLowerCase()
+                                .indexOf("</details>");
+                            if (closeIndex < 0) {
+                                if (final) {
+                                    emitText(contentBuffer);
+                                    contentBuffer = "";
+                                }
+                                return;
+                            }
+                            const end = closeIndex + "</details>".length;
+                            emitParsedContent(contentBuffer.slice(0, end));
+                            contentBuffer = contentBuffer.slice(end);
+                            continue;
+                        }
+
+                        const labelEnd = contentBuffer.indexOf("]");
+                        if (labelEnd < 0) {
+                            if (final) {
+                                emitText(contentBuffer);
+                                contentBuffer = "";
+                            }
+                            return;
+                        }
+                        if (contentBuffer[labelEnd + 1] !== "(") {
+                            const end = labelEnd + 1;
+                            emitText(contentBuffer.slice(0, end));
+                            contentBuffer = contentBuffer.slice(end);
+                            continue;
+                        }
+                        const linkEnd = contentBuffer.indexOf(
+                            ")",
+                            labelEnd + 2,
+                        );
+                        if (linkEnd < 0) {
+                            if (final) {
+                                emitText(contentBuffer);
+                                contentBuffer = "";
+                            }
+                            return;
+                        }
+                        const end = linkEnd + 1;
+                        const candidate = contentBuffer.slice(0, end);
+                        const extracted = extractStreamedMedia(candidate);
+                        if (extracted.media.length === 0) {
+                            emitText(candidate);
+                        } else {
+                            endText();
+                            for (const media of extracted.media) {
+                                emitMedia(media, `media:${media.url}`);
+                            }
+                        }
+                        contentBuffer = contentBuffer.slice(end);
                     }
                 };
 
@@ -341,8 +454,12 @@ export class PollinationsChatTransport
                                 },
                             });
                         }
-                        if (delta?.content) emitContent(delta.content);
+                        if (delta?.content) {
+                            contentBuffer += delta.content;
+                            flushContent();
+                        }
                     }
+                    flushContent(true);
                     endText();
                     controller.enqueue({ type: "finish-step" });
                     controller.enqueue({

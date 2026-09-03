@@ -83,6 +83,7 @@ export {
     IconButton,
     type IconButtonIntent,
     type IconButtonProps,
+    type IconButtonVariant,
 } from "./primitives/IconButton.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";

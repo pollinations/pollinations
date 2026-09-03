@@ -99,17 +99,17 @@ const BUILD_FEATURES = [...BUILD_FOUNDATIONS, ...BUILD_TOOLS];
 const PUBLISH_FEATURES: Feature[] = [
     {
         title: "Publish an app",
-        body: "Share your app with the Pollinations community, reach new users, and earn from connected usage.",
+        body: "Add your app to the Pollinations catalog, reach new users, and earn from connected usage.",
         icon: AppIcon,
     },
     {
         title: "Publish a model",
-        body: "Turn your model into a product. Add it to the community catalog, set your price, and earn whenever builders use it.",
+        body: "Add your model to the community catalog, set its price, and earn whenever builders use it.",
         icon: BeakerIcon,
     },
     {
         title: "Publish an agent",
-        body: "Combine instructions, models and tools into an agent builders can use—and earn whenever it runs.",
+        body: "Combine a system prompt, base model, and MCP tools into an agent people can discover and use—and earn whenever it runs.",
         icon: RobotIcon,
     },
 ];

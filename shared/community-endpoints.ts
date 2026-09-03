@@ -16,15 +16,17 @@ import {
     OPENAI_EMBEDDING_USAGE_PATHS,
     type OpenAIChatUsageType,
 } from "./registry/usage-headers.ts";
+import type { SafetyFeature } from "./schemas/safety.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
+export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
     "video",
     "transcription",
+    "speech",
     "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -229,6 +231,22 @@ const COMMUNITY_TRANSCRIPTION_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Speech (TTS) endpoints bill input characters against the same completion
+// audio price column the first-party TTS models use, where
+// completionAudioTokens already counts characters (see createAudioTokenUsage).
+// The upstream answers with binary audio and no usage object, so the meter is
+// the character count of the input Pollinations sends — mirroring how video
+// bills the sent duration.
+const COMMUNITY_SPEECH_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    usageType: "completionAudioTokens",
+    label: "Generated speech",
+    priceUnit: "million",
+    // The probe reports the billed meter as `characters` directly, the way
+    // the transcription probe reports `duration`.
+    rawUsagePaths: ["characters"],
+} as const;
+
 // Community video endpoints are billed from the duration Pollinations sends.
 const COMMUNITY_VIDEO_PRICE_FIELD = {
     key: "completionVideoPrice",
@@ -253,6 +271,10 @@ const COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_TRANSCRIPTION_PRICE_FIELD,
 ] as const;
 
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_SPEECH_PRICE_FIELD,
+] as const;
+
 const COMMUNITY_VIDEO_ENDPOINT_PRICE_FIELDS = [
     COMMUNITY_VIDEO_PRICE_FIELD,
 ] as const;
@@ -273,6 +295,7 @@ export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
 
 type CommunityModalitySpec = {
@@ -331,6 +354,14 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
         restrictDefinitionEndpoints: true,
         priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     embedding: {
         category: "embedding",
@@ -452,6 +483,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "speech") return "speech";
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";
@@ -726,6 +758,7 @@ type CommunityEndpointRuntimeBase = {
     baseUrl: string;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
+    requiredSafetyFeatures?: SafetyFeature[];
     paidOnly: boolean;
     // Exact gateway-side cap per Pollinations user. Null delegates capacity
     // limits to the upstream, whose 429 then remains a model failure.
@@ -784,6 +817,7 @@ export type CommunityModelDefinitionInput = {
     modality?: CommunityEndpointModality;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[] | null;
+    requiredSafetyFeatures?: SafetyFeature[];
     fallbacks?: string[];
     advertised?: CommunityEndpointAdvertised | null;
     hidden?: boolean;
@@ -973,6 +1007,7 @@ export function communityModelDefinition(
                   ),
               }
             : {}),
+        requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         hidden: endpoint.hidden,
         ...(endpoint.fallbacks?.length
             ? { fallbacks: endpoint.fallbacks }

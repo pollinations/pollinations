@@ -231,16 +231,17 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
-- Creating branches and worktrees needs no approval. Branch off the current
-  `origin/main` for new work rather than piling onto an unrelated branch.
-- Keep related follow-up work on the active branch and its PR instead of
-  scattering it across new ones.
+- Creating a branch or worktree needs no approval — branch off the current
+  `origin/main` rather than piling onto an unrelated branch.
+- Integrate follow-up work directly on the active branch and its PR. Opening an
+  additional PR the user did not ask for still needs a check-in first.
 - Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
 - Run biome check before committing.
-- If the active PR is already merged, ask before opening a follow-up branch or PR.
+- If the active PR is already merged, open a follow-up branch only when the user
+  requests another PR.
 
 ## Communication Style
 

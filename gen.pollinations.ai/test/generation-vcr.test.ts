@@ -43,6 +43,11 @@ const test = baseTest.extend<{
 
 function createGenerationMocks() {
     env.PORTKEY_GATEWAY_URL = "https://portkey.test";
+    env.AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY =
+        "azure-gpt-image-2-sweden-test-key";
+    env.AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY =
+        "azure-gpt-image-2-eastus2-test-key";
+    env.OPENAI_API_KEY = "openai-test-key";
     env.OPENROUTER_API_KEY = "openrouter-test-key";
     env.DEEPINFRA_API_KEY = "deepinfra-test-key";
     env.REPLICATE_API_TOKEN = "replicate-test-key";

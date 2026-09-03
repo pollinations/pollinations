@@ -15,7 +15,7 @@ describe("model rate limiting", () => {
         expect(IMAGE_SERVICES.zimage.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.klein.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.dreamshaper.perUserRpm).toBe(300);
-        expect(IMAGE_SERVICES["gpt-image-2"].perUserRpm).toBe(5);
+        expect(IMAGE_SERVICES["gpt-image-2"].perUserRpm).toBe(6);
     });
 
     it("keeps other configured catalog model limits at 60 RPM or higher", () => {

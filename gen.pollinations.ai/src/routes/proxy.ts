@@ -308,6 +308,13 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         object: "model" as const,
         created: Math.floor(entry.definition.addedDate / 1000),
         owned_by: entry.info.brand,
+        aliases: entry.info.aliases,
+        category: entry.info.category,
+        community: entry.info.community,
+        title: entry.info.title,
+        ...(entry.info.description && {
+            description: entry.info.description,
+        }),
         input_modalities: entry.info.input_modalities,
         output_modalities: entry.info.output_modalities,
         supported_endpoints: entry.supportedEndpoints,

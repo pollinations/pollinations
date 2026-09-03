@@ -86,6 +86,64 @@ describe("/openapi.json", () => {
         expect(schema.paths["/account/key"]).toBeDefined();
         expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
 
+        const modelProperties = collectPropertySets(
+            schema.paths["/models"],
+        ).find(
+            (properties) =>
+                "name" in properties &&
+                "category" in properties &&
+                "community" in properties,
+        );
+        expect((modelProperties?.category as { enum?: string[] }).enum).toEqual(
+            ["text", "image", "audio", "video", "3d", "embedding", "realtime"],
+        );
+        expect(
+            (
+                modelProperties?.input_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video"]);
+        expect(
+            (
+                modelProperties?.output_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video", "embedding", "3d"]);
+
+        const openAIModelProperties = collectPropertySets(
+            schema.paths["/v1/models"],
+        ).find(
+            (properties) =>
+                "id" in properties &&
+                "owned_by" in properties &&
+                "community" in properties,
+        );
+        expect(openAIModelProperties).toEqual(
+            expect.objectContaining({
+                aliases: expect.any(Object),
+                category: expect.any(Object),
+                community: expect.any(Object),
+                title: expect.any(Object),
+            }),
+        );
+
+        const statusOperation = schema.paths["/v1/models/status"] as {
+            get: {
+                parameters: { name: string }[];
+            };
+        };
+        expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
+            "minutes",
+            "format",
+        ]);
+        expect(
+            collectPropertySets(schema.paths["/v1/models/status"]).some(
+                (properties) => "data" in properties,
+            ),
+        ).toBe(true);
+
         const speechRequestPropertySets = collectPropertySets(schema).filter(
             (properties) =>
                 "reference_audio" in properties &&

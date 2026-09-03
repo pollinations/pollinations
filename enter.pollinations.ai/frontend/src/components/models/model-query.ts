@@ -99,14 +99,6 @@ export function parseModelQuery(
     return { terms, filters };
 }
 
-/** The Models tab defaults to official models until the query selects a source. */
-export function getModelQuerySource(query: ParsedModelQuery): ModelSource {
-    return (
-        query.filters.find((filter) => filter.key === "source")?.value ??
-        "official"
-    );
-}
-
 export function getExplicitModelQuerySource(
     query: ParsedModelQuery,
 ): ModelSource | undefined {
@@ -174,20 +166,21 @@ export function removeModelQueryFilterToken(
     query: string,
     index: number,
 ): string {
+    return replaceModelQueryFilterToken(query, index, "");
+}
+
+export function replaceModelQueryFilterToken(
+    query: string,
+    index: number,
+    replacement: string,
+): string {
     return query
         .split(/\s+/)
         .filter(Boolean)
-        .filter((_token, tokenIndex) => tokenIndex !== index)
-        .join(" ");
-}
-
-/** Remove source tokens from the text rendered beside the source filter pill. */
-export function removeModelQuerySource(query: string): string {
-    return query
-        .split(/\s+/)
-        .filter(
-            (token) => token && parseModelQueryFilter(token)?.key !== "source",
+        .map((token, tokenIndex) =>
+            tokenIndex === index ? replacement : token,
         )
+        .filter(Boolean)
         .join(" ");
 }
 

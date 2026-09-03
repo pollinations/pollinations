@@ -1,7 +1,13 @@
 import { createListCollection } from "@ark-ui/react/collection";
 import { Combobox } from "@ark-ui/react/combobox";
 import { Portal } from "@ark-ui/react/portal";
-import { type ComponentPropsWithoutRef, type ReactNode, useMemo } from "react";
+import {
+    type ComponentPropsWithoutRef,
+    type ReactNode,
+    useEffect,
+    useMemo,
+    useRef,
+} from "react";
 import { cn } from "../lib/cn.ts";
 import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
 import { Input, type InputProps } from "../primitives/Input.tsx";
@@ -91,6 +97,15 @@ export function EditableCombobox({
     );
     const hasOptions = options.length > 0;
     const hasStartContent = Boolean(startContent);
+    const inputRef = useRef<HTMLInputElement>(null);
+
+    // Zag renders the field with defaultValue. Keep its DOM value aligned when
+    // a controlled value projects an input event back to the same string.
+    useEffect(() => {
+        if (inputRef.current && inputRef.current.value !== value) {
+            inputRef.current.value = value;
+        }
+    });
 
     return (
         <Combobox.Root
@@ -121,6 +136,7 @@ export function EditableCombobox({
                 {startContent}
                 <Combobox.Input asChild>
                     <Input
+                        ref={inputRef}
                         {...inputProps}
                         name={name}
                         placeholder={placeholder}

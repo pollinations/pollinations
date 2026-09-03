@@ -1,15 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
     ensureModelQuerySource,
-    getExplicitModelQuerySource,
     getModelQueryDraftFilter,
     getModelQueryFilterTokens,
-    getModelQuerySource,
     getModelQuerySuggestions,
     matchesModelQuery,
     parseModelQuery,
     removeModelQueryFilterToken,
-    removeModelQuerySource,
+    replaceModelQueryFilterToken,
 } from "../frontend/src/components/models/model-query.ts";
 import type { ModelPrice } from "../frontend/src/components/models/types.ts";
 
@@ -62,24 +60,7 @@ describe("parseModelQuery", () => {
     });
 });
 
-describe("getModelQuerySource", () => {
-    it("defaults to official models and allows community searches", () => {
-        const defaultQuery = parseModelQuery("flux");
-        expect(getExplicitModelQuerySource(defaultQuery)).toBeUndefined();
-        expect(getModelQuerySource(defaultQuery)).toBe("official");
-        expect(
-            getModelQuerySource(parseModelQuery("source:community flux")),
-        ).toBe("community");
-    });
-
-    it("separates the source token from visible search text", () => {
-        expect(
-            removeModelQuerySource(
-                "flux SOURCE:community access:quest publisher:alice",
-            ),
-        ).toBe("flux access:quest publisher:alice");
-    });
-
+describe("model query source", () => {
     it("preselects official without replacing an explicit source", () => {
         expect(ensureModelQuerySource("")).toBe("source:official");
         expect(ensureModelQuerySource("capability:reasoning")).toBe(
@@ -124,6 +105,13 @@ describe("model query filter tokens", () => {
                 0,
             ),
         ).toBe("capability:tool-calling");
+        expect(
+            replaceModelQueryFilterToken(
+                "source:official capability:tool-calling",
+                0,
+                "source:community",
+            ),
+        ).toBe("source:community capability:tool-calling");
     });
 
     it("treats filters unsupported by the current tab as plain text", () => {

@@ -53,6 +53,7 @@ import {
     matchesModelQuery,
     parseModelQuery,
     removeModelQueryFilterToken,
+    replaceModelQueryFilterToken,
 } from "./model-query.ts";
 import type { ModelSort } from "./model-search.ts";
 import { sortModels } from "./model-sort.ts";
@@ -298,6 +299,9 @@ export const Models: FC = () => {
     >(() =>
         getModelQueryDraftFilter(initialSearch, false, supportedFilterKeys),
     );
+    const [editingFilterToken, setEditingFilterToken] = useState<
+        ModelQueryFilterToken | undefined
+    >();
     const [pendingRemovalIndex, setPendingRemovalIndex] = useState<
         number | undefined
     >();
@@ -327,7 +331,13 @@ export const Models: FC = () => {
     const query =
         draftFilter === undefined
             ? search.trim()
-            : removeModelQueryFilterToken(search, draftFilter.index);
+            : editingFilterToken
+              ? replaceModelQueryFilterToken(
+                    search,
+                    draftFilter.index,
+                    editingFilterToken.token,
+                )
+              : removeModelQueryFilterToken(search, draftFilter.index);
     const parsedQuery = useMemo(
         () => parseModelQuery(query, supportedFilterKeys),
         [query, supportedFilterKeys],
@@ -470,15 +480,11 @@ export const Models: FC = () => {
                   .filter(Boolean)
                   .join(" ");
 
-        setDraftFilter(
-            nextSearch.endsWith(" ")
-                ? undefined
-                : getModelQueryDraftFilter(
-                      nextQuery,
-                      true,
-                      supportedFilterKeys,
-                  ),
-        );
+        const nextDraftFilter = nextSearch.endsWith(" ")
+            ? undefined
+            : getModelQueryDraftFilter(nextQuery, true, supportedFilterKeys);
+        setDraftFilter(nextDraftFilter);
+        if (!nextDraftFilter) setEditingFilterToken(undefined);
         setSearch(nextQuery);
     };
 
@@ -486,11 +492,13 @@ export const Models: FC = () => {
         setPendingRemovalIndex(undefined);
         setSearchOpen(false);
         setDraftFilter(undefined);
+        setEditingFilterToken(undefined);
         setSearch(removeModelQueryFilterToken(search, filterToken.index));
     };
 
     const editFilter = (filterToken: ModelQueryFilterToken) => {
         setPendingRemovalIndex(undefined);
+        setEditingFilterToken(filterToken);
         const tokens = search.split(/\s+/).filter(Boolean);
         tokens[filterToken.index] = `${filterToken.filter.key}:`;
         setSearch(tokens.join(" "));
@@ -502,12 +510,24 @@ export const Models: FC = () => {
         setSearchOpen(true);
     };
 
+    const getCancelledDraftSearch = () => {
+        if (!draftFilter) return search.trim();
+        return editingFilterToken
+            ? replaceModelQueryFilterToken(
+                  search,
+                  draftFilter.index,
+                  editingFilterToken.token,
+              )
+            : removeModelQueryFilterToken(search, draftFilter.index);
+    };
+
     const removeDraftFilter = () => {
         if (!draftFilter) return;
         setPendingRemovalIndex(undefined);
         setSearchOpen(false);
-        setSearch(removeModelQueryFilterToken(search, draftFilter.index));
+        setSearch(getCancelledDraftSearch());
         setDraftFilter(undefined);
+        setEditingFilterToken(undefined);
     };
 
     const handleSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -546,6 +566,7 @@ export const Models: FC = () => {
 
         lastPushedSearchRef.current = urlSearch;
         setPendingRemovalIndex(undefined);
+        setEditingFilterToken(undefined);
         const nextSearch =
             activePrimaryTab === "models"
                 ? ensureModelQuerySource(urlSearch)
@@ -557,14 +578,14 @@ export const Models: FC = () => {
     }, [activePrimaryTab, supportedFilterKeys, urlSearch]);
 
     useEffect(() => {
-        if (search === lastPushedSearchRef.current) return;
+        if (query === lastPushedSearchRef.current) return;
 
         const timeout = window.setTimeout(() => {
-            pushSearch(search);
+            pushSearch(query);
         }, 200);
 
         return () => window.clearTimeout(timeout);
-    }, [pushSearch, search]);
+    }, [pushSearch, query]);
 
     const setActiveTab = (category: SectionType) => {
         void navigate({
@@ -726,10 +747,12 @@ export const Models: FC = () => {
                                     }
                                     onKeyDown={handleSearchKeyDown}
                                     onBlur={() => {
-                                        if (draftFilter?.value) {
-                                            setDraftFilter(undefined);
-                                        }
-                                        const normalizedSearch = search.trim();
+                                        const normalizedSearch =
+                                            draftFilter && !draftFilter.value
+                                                ? getCancelledDraftSearch()
+                                                : search.trim();
+                                        setDraftFilter(undefined);
+                                        setEditingFilterToken(undefined);
                                         setSearch(normalizedSearch);
                                         pushSearch(normalizedSearch);
                                     }}

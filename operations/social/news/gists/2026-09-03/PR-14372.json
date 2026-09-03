@@ -1,0 +1,34 @@
+{
+  "pr_number": 14372,
+  "title": "feat: host Open WebUI with Pollinations as the only login",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14372",
+  "merged_at": "2026-09-03T02:21:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `apps/openwebui`: Cloudflare Containers Worker running the upstream `open-webui:0.11.3-slim` image (mirrored to the Cloudflare registry via `scripts/push-image.sh`, no Dockerfile) with Pollinations OAuth 2.1 (code + PKCE, public client) as the only login\n- Forwards chats to `gen.pollinations.ai` with the signed-in user's consent key (`auth_type: system_oauth`), so each user is billed from their own wallet; verified on staging (login + chat, key balance debited)\n- State in Postgres with pgvector on the monitoring-agents EC2 box (`DATABASE_URL`); `WEBUI_SECRET_KEY` and `DATABASE_URL` arrive via `push-secrets` from a sops file shipped in a separate PR\n- `deploy.json` for `Deploy / Applications`; custom domains `openwebui.myceli.ai` + `openwebui.pollinations.ai`; staging: https://openwebui-staging.elliot-b6e.workers.dev\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_015mNrP6DkRQmm3YStNjfFv3",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A chat room grew wings",
+    "blurb": "Open WebUI now lives in the garden with Pollinations as its one front door. Sign in once, chat with the models, and your own wallet handles the pollen tab.",
+    "summary": "Added a hosted Open WebUI 0.11.3-slim app at openwebui.pollinations.ai with Pollinations OAuth 2.1 PKCE-only login, forwarding chats to gen.pollinations.ai using each signed-in user's consent key.",
+    "impact": "Users can use a familiar full-featured chat interface with their Pollinations identity, while generation usage is billed directly and transparently to their own Pollen wallet.",
+    "keywords": [
+      "open-webui",
+      "oauth",
+      "chat",
+      "gen.pollinations.ai",
+      "pollen",
+      "community-app"
+    ],
+    "visual_concept": "Depict Open WebUI as a cozy shared chat greenhouse: a retro CRT terminal shows friendly conversation bubbles and a small Pollinations login key, while secure little pollen tokens travel from the terminal into the user's own jar. Polli acts as a warm host and guide, wearing a tiny concierge scarf; code-plants and flowers establish that this is an open, community-grown interface rather than a corporate dashboard.",
+    "image_prompt": "Cozy pixel art scene of a welcoming garden hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny concierge scarf and guides a friend toward a glowing retro CRT chat terminal labeled in simple pixel text “OPEN WEBUI”; small pollen tokens flow into a personal jar beside the terminal, with code-plants, vines, and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14372.jpg",
+    "prompt": "Cozy pixel art scene of a welcoming garden hackerspace where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny concierge scarf and guides a friend toward a glowing retro CRT chat terminal labeled in simple pixel text “OPEN WEBUI”; small pollen tokens flow into a personal jar beside the terminal, with code-plants, vines, and flowers growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T02:22:11.752046+00:00"
+}

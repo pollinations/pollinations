@@ -393,6 +393,7 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
+        perUserRpm: 6,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens

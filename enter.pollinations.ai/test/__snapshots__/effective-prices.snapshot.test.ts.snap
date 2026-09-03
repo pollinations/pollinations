@@ -825,6 +825,20 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
+  "gpt-image-2-openai": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.0000225,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
   "gpt-live-transcribe": {
     "cost": {
       "promptAudioSeconds": 0.000283333333333333,
@@ -915,6 +929,36 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000009375,
       "promptImageTokens": 0.000006,
       "promptTextTokens": 0.00000375,
+    },
+  },
+  "gptimage-large-openai": {
+    "cost": {
+      "completionImageTokens": 0.000032,
+      "completionTextTokens": 0.00001,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.000024,
+      "completionTextTokens": 0.0000075,
+      "promptCachedTokens": 0.0000009375,
+      "promptImageTokens": 0.000006,
+      "promptTextTokens": 0.00000375,
+    },
+  },
+  "gptimage-openai": {
+    "cost": {
+      "completionImageTokens": 0.000008,
+      "promptCachedTokens": 0.0000002,
+      "promptImageTokens": 0.0000025,
+      "promptTextTokens": 0.000002,
+    },
+    "price": {
+      "completionImageTokens": 0.000006,
+      "promptCachedTokens": 0.00000015,
+      "promptImageTokens": 0.000001875,
+      "promptTextTokens": 0.0000015,
     },
   },
   "grok": {

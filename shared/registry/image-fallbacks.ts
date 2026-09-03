@@ -8,6 +8,25 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    gptimage: {
+        "gptimage-openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+        },
+    },
+    "gptimage-large": {
+        "gptimage-large-openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+        },
+    },
+    "gpt-image-2": {
+        "gpt-image-2-openai": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+            perUserRpm: null,
+        },
+    },
     kontext: {
         "kontext-replicate": {
             provider: "replicate",

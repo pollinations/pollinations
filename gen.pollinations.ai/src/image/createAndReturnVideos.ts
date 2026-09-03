@@ -77,6 +77,7 @@ export async function createAndReturnVideo(
             break;
         case "seedance-pro-fal":
         case "wan-fal":
+        case "wan-fast-fal":
         case "grok-video-pro-fal":
         case "grok-imagine-video-1.5-fal":
             result = await callFalFallbackVideo(prompt, safeParams);

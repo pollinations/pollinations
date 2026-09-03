@@ -128,6 +128,15 @@ export const IMAGE_FALLBACKS = {
             addedDate: new Date("2026-09-01").getTime(),
         },
     },
+    "wan-fast": {
+        "wan-fast-fal": {
+            provider: "fal",
+            addedDate: new Date("2026-09-02").getTime(),
+            // Fal charges $0.05 per fixed 5-second 480p generation. The
+            // inherited $0.01/second sheet bills the caller the same $0.05, so
+            // this fallback has no loss for either text-to-video or image-to-video.
+        },
+    },
     "seedance-pro": {
         "seedance-pro-fal": {
             provider: "fal",

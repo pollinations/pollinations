@@ -4,8 +4,10 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
@@ -26,6 +28,7 @@ import {
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
+import { supportsTextFallbackRequest } from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -135,6 +138,9 @@ function usageHeaders(
             buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
+        }
+        if (hasExplicitPromptCacheHit(usage)) {
+            headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
         }
     }
     if (completion?.fallbackTarget) {
@@ -310,12 +316,21 @@ async function generateTextResponse(
         }
         const normalizedRequestData = normalization.requestData;
         const portkey = c.env.PORTKEY;
-        const {
-            result: completion,
-            candidate,
-            index,
-        } = await withModelFallback(
-            fallbackCandidates(c.var.model),
+        const candidates = fallbackCandidates(c.var.model)
+            .map((candidate, originalIndex) => ({
+                ...candidate,
+                originalIndex,
+            }))
+            .filter(
+                (candidate) =>
+                    candidate.originalIndex === 0 ||
+                    supportsTextFallbackRequest(
+                        candidate.definition,
+                        normalizedRequestData,
+                    ),
+            );
+        const { result: completion, candidate } = await withModelFallback(
+            candidates,
             async (attempt) => {
                 const result = await generateTextPortkey(
                     normalizedRequestData.messages,
@@ -337,7 +352,7 @@ async function generateTextResponse(
         // Keep the internal "config.targets[N]" marker stable for response
         // headers and cached tracking data. Non-enumerable so JSON.stringify /
         // R2 cache snapshots never leak the field.
-        attachFallbackTarget(completion, index);
+        attachFallbackTarget(completion, candidate.originalIndex);
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.

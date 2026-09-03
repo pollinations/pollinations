@@ -1,0 +1,34 @@
+{
+  "pr_number": 14400,
+  "title": "fix: keep agent tool calls renderable",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14400",
+  "merged_at": "2026-09-03T13:56:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Always separate managed-agent tool blocks from surrounding Markdown\n- Cover first-output tool results in streaming and non-streaming responses\n- Fix Open WebUI intermittently showing raw tool-call details markup\n\nChecks: `npx tsc --noEmit`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tool calls, neatly planted",
+    "blurb": "Managed-agent tool blocks now get a little breathing room before meeting Markdown. Open WebUI can render the useful bits instead of occasionally displaying the plumbing.",
+    "summary": "Fixed managed-agent response formatting so tool blocks are always separated from surrounding Markdown, including first-output tool results in both streaming and non-streaming responses.",
+    "impact": "Open WebUI users will see consistently renderable tool calls rather than intermittent raw tool-call markup.",
+    "keywords": [
+      "agents",
+      "tool-calls",
+      "open-webui",
+      "streaming",
+      "markdown",
+      "formatting"
+    ],
+    "visual_concept": "Depict Polli as a meticulous little typesetter in a cozy garden-terminal, placing clear divider lines between glowing tool-call cards and Markdown scrolls. A happy CRT monitor robot reads the neatly rendered result while small code-plants grow from organized document trays.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a tiny editor visor carefully placing clean divider lines between glowing tool-call cards and Markdown scrolls at a retro terminal, while a chunky CRT monitor robot happily reads the properly rendered output. Lime green (#ecf874) is prominent in the screen glow and code-plants in nearby pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'RENDERED'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14400.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a tiny editor visor carefully placing clean divider lines between glowing tool-call cards and Markdown scrolls at a retro terminal, while a chunky CRT monitor robot happily reads the properly rendered output. Lime green (#ecf874) is prominent in the screen glow and code-plants in nearby pots; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'RENDERED'."
+  },
+  "generated_at": "2026-09-03T13:57:06.294420+00:00"
+}

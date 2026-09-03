@@ -1,0 +1,36 @@
+{
+  "pr_number": 14377,
+  "title": "Add AI Homework Solver to learn",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14377",
+  "merged_at": "2026-09-03T04:12:01Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [AI Homework Solver](https://zizoisu.github.io/ai-homework-solver) to learn\n- A web-based homework solver that integrates with Pollinations AI. Supports multiple question types including MCQ, short answer, true/false, and fill-in-the-blank questions. Features a hybrid model wit\n\nFixes #14310",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Homework gets a study buddy",
+    "blurb": "AI Homework Solver has joined the learn garden. It helps turn multiple-choice, short-answer, true/false, and fill-in-the-blank questions into something a little less mysterious.",
+    "summary": "Added AI Homework Solver to the learn collection, a Pollinations-powered web app for working through MCQ, short-answer, true/false, and fill-in-the-blank homework questions with a hybrid model approach.",
+    "impact": "Learners can now find a dedicated Pollinations-powered homework helper in learn for several common question formats.",
+    "keywords": [
+      "community-app",
+      "learn",
+      "homework",
+      "education",
+      "ai",
+      "pollinations-api"
+    ],
+    "visual_concept": "Depict a cozy after-school study nook with a retro computer showing several simple quiz cards—multiple choice, true/false, and a fill-in-the-blank—alongside sprouting code-plants and small flowers. Polli, wearing tiny round teacher glasses and carrying a pencil, warmly helps organize the questions while a friendly CRT monitor robot displays a solved answer card.",
+    "image_prompt": "A cozy pixel art study nook where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny teacher glasses and holds a pencil while helping a chunky CRT monitor robot sort MCQ, true/false, short-answer, and fill-in-the-blank quiz cards beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"LEARN\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14377.jpg",
+    "prompt": "A cozy pixel art study nook where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny teacher glasses and holds a pencil while helping a chunky CRT monitor robot sort MCQ, true/false, short-answer, and fill-in-the-blank quiz cards beside flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"LEARN\"."
+  },
+  "generated_at": "2026-09-03T04:13:02.173637+00:00",
+  "app_name": "AI Homework Solver",
+  "app_url": "https://zizoisu.github.io/ai-homework-solver"
+}

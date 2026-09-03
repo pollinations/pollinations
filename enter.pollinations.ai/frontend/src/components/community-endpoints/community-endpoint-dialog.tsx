@@ -603,6 +603,31 @@ export function CommunityEndpointDialog({
                         )}
                     </div>
 
+                    {(isEndpointAgent || form.modality === "text") && (
+                        <FieldStack
+                            label="Responses API URL"
+                            helper="Optional exact /v1/responses URL. When set, Responses requests go directly to this endpoint with the same authentication and billing as Chat Completions."
+                            alignLabelRow
+                        >
+                            <Input
+                                name="community-responses-url"
+                                type="url"
+                                inputMode="url"
+                                value={form.responsesUrl}
+                                placeholder="https://api.example.com/v1/responses"
+                                autoComplete="off"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                onChange={(event) =>
+                                    updateForm(
+                                        "responsesUrl",
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                        </FieldStack>
+                    )}
+
                     {!isEndpointAgent && (
                         <FieldStack
                             label="API bearer token"

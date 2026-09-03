@@ -1,3 +1,4 @@
+import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
@@ -150,6 +151,7 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
+                    responsesUrl: communityResponsesUrl(baseUrl),
                 };
                 break;
             }
@@ -164,6 +166,7 @@ export async function getCommunityModelRegistryEntries(
                     ...agentDefaults,
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
+                    responsesUrl: payload.responsesUrl,
                 };
                 break;
             }
@@ -181,6 +184,7 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,
+                    responsesUrl: payload.responsesUrl,
                     ...payload.prices,
                 };
             }

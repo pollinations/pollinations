@@ -138,16 +138,23 @@ function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
     const eventType = eventTypeForCategory(entry.definition.category);
+    const supportedEndpoints = communityEndpointSupportedEndpoints(
+        entry.communityEndpoint.modality,
+        entry.definition.inputModalities ?? [],
+    );
+    if (
+        entry.communityEndpoint.modality === "text" &&
+        entry.communityEndpoint.responsesUrl
+    ) {
+        supportedEndpoints.push("/v1/responses");
+    }
     return {
         id: entry.id,
         aliases: entry.aliases,
         eventType,
-        supportedEndpoints: communityEndpointSupportedEndpoints(
-            entry.communityEndpoint.modality,
-            entry.definition.inputModalities ?? [],
-        ),
+        supportedEndpoints,
         definition: entry.definition,
-        info: entry.info,
+        info: { ...entry.info, supported_endpoints: supportedEndpoints },
         communityEndpoint: entry.communityEndpoint,
         agentConfig: entry.agentConfig,
         // Public endpoints appear for everyone. Private endpoints are added

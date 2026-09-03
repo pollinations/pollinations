@@ -140,13 +140,10 @@ export function buildPollenCostHeaders(
 /**
  * Parse a single SSE `data:` line, returning the parsed JSON or null.
  */
-function parseSSELine(line: string):
-    | {
-          usage?: Record<string, unknown> | null;
-          [key: string]: unknown;
-      }
-    | null
-    | string {
+function parseSSELine(line: string): {
+    usage?: Record<string, unknown> | null;
+    [key: string]: unknown;
+} | null {
     const trimmed = line.trim();
     if (!trimmed.startsWith("data:")) return null;
     const payload = trimmed.slice(5).trim();
@@ -157,7 +154,7 @@ function parseSSELine(line: string):
             [key: string]: unknown;
         };
     } catch {
-        return "";
+        return null;
     }
 }
 
@@ -179,13 +176,23 @@ function ensureChoices(parsed: { [key: string]: unknown }): boolean {
  * line (without trailing newline) if modified, otherwise null.
  */
 function ensureChoicesInLinePart(part: string): string | null {
-    const parsed = parseSSELine(part);
-    if (parsed === null) return null;
-    if (parsed === "") return "";
-    if (typeof parsed === "object" && ensureChoices(parsed)) {
-        return `data: ${JSON.stringify(parsed)}`;
+    const trimmed = part.trim();
+    if (!trimmed.startsWith("data:")) return null;
+    const payload = trimmed.slice(5).trim();
+    if (payload === "[DONE]") return null;
+    try {
+        const parsed = JSON.parse(payload) as {
+            usage?: Record<string, unknown> | null;
+            [key: string]: unknown;
+        };
+        if (ensureChoices(parsed)) {
+            return `data: ${JSON.stringify(parsed)}`;
+        }
+        return null;
+    } catch {
+        // Ignore parse errors; we don't rewrite invalid JSON.
+        return "";
     }
-    return null;
 }
 
 /**

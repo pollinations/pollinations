@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🌻",
+    "name": "Pollen Craft",
+    "url": "https://pollen-craft.vercel.app",
+    "description": "Combine elements in a canvas crafting game while Pollinations names and illustrates each new AI-generated discovery.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": null,
+    "repositoryStars": null,
+    "discordUsername": "tomdacato",
+    "other": null,
+    "submittedDate": "2026-05-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/10973",
+    "approvedDate": null,
+    "byop": true,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "AI Homework Solver",
     "url": "https://zizoisu.github.io/ai-homework-solver",

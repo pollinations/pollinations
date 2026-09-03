@@ -23,7 +23,7 @@ export function ChatMessage({
                 "polli:group/message polli:flex polli:w-fit polli:max-w-full polli:min-w-0 polli:flex-col polli:gap-3 polli:[overflow-wrap:anywhere] polli:rounded-xl polli:px-4 polli:py-3",
                 from === "user"
                     ? "polli:ml-auto polli:bg-theme-bg-active polli:text-theme-text-strong"
-                    : "polli:mr-auto polli:border polli:border-theme-border/25 polli:bg-surface-opaque polli:text-theme-text-base polli:shadow-well",
+                    : "polli:mr-auto polli:bg-surface-opaque polli:text-theme-text-base polli:shadow-well",
                 className,
             )}
             {...props}
@@ -102,7 +102,7 @@ export function ChatMessageActions({
     return (
         <footer
             className={cn(
-                "polli:flex polli:flex-wrap polli:items-center polli:gap-1 polli:border-theme-border/25 polli:border-t polli:pt-2",
+                "polli:flex polli:flex-wrap polli:items-center polli:gap-1 polli:pt-2",
                 className,
             )}
             {...props}

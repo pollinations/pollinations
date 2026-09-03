@@ -51,6 +51,9 @@ function createTextCacheApp() {
                             "Content-Type": "application/json; charset=utf-8",
                             "x-model-used": "openai-fast",
                             "x-fallback-target": "openai",
+                            "x-pollinations-response-format":
+                                "audio-with-timestamps",
+                            "x-tts-voice": "nova",
                             "x-usage-prompt-text-tokens": "12",
                             "x-moderation-hate-severity": "safe",
                         },
@@ -259,6 +262,10 @@ describe("text cache", () => {
         );
         expect(second.headers.get("x-model-used")).toBe("openai-fast");
         expect(second.headers.get("x-fallback-target")).toBe("openai");
+        expect(second.headers.get("x-pollinations-response-format")).toBe(
+            "audio-with-timestamps",
+        );
+        expect(second.headers.get("x-tts-voice")).toBe("nova");
         expect(second.headers.get("x-usage-prompt-text-tokens")).toBe("12");
         expect(second.headers.get("x-moderation-hate-severity")).toBe("safe");
         expect(await second.json()).toMatchObject({ originHits: 1 });
@@ -541,6 +548,47 @@ describe("text cache", () => {
         expect(firstGet.response.headers.get("X-Cache")).toBe("MISS");
         expect(secondGet.response.headers.get("X-Cache")).toBe("HIT");
         expect(cache.originHits).toBe(2);
+    });
+
+    it("does not cache SSE protocol errors", async () => {
+        let originHits = 0;
+        const app = new Hono<TestEnv>()
+            .use("*", async (c, next) => {
+                c.set("log", testLog);
+                c.set("requestId", "test-request");
+                await next();
+            })
+            .get("/sse/:protocol", textCache, (c) => {
+                originHits += 1;
+                const body =
+                    c.req.param("protocol") === "responses"
+                        ? 'event: error\ndata: {"type":"error"}\n\n'
+                        : 'data: {"error":{"code":"usage_missing"}}\n\n';
+                return new Response(body, {
+                    headers: { "Content-Type": "text/event-stream" },
+                });
+            });
+        const env = createTextCacheEnv();
+
+        for (const protocol of ["chat", "responses"]) {
+            const first = await dispatch(
+                app,
+                `/sse/${protocol}`,
+                undefined,
+                env,
+            );
+            await consumeAndWait(first);
+            const second = await dispatch(
+                app,
+                `/sse/${protocol}`,
+                undefined,
+                env,
+            );
+            await consumeAndWait(second);
+            expect(first.response.headers.get("X-Cache")).toBe("MISS");
+            expect(second.response.headers.get("X-Cache")).toBe("MISS");
+        }
+        expect(originHits).toBe(4);
     });
 
     it("does not add text cache headers to routes without cache middleware", async () => {

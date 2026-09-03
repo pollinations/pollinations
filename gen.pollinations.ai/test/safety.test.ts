@@ -3,6 +3,7 @@ import {
     communityModelDefinition,
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
+import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
@@ -15,11 +16,8 @@ import type { Env } from "@/env.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import { getRequiredSafetyFeatures } from "@/middleware/model.ts";
-import {
-    applySafety,
-    applySafetyToChatRequest,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
+import { applySafetyToResponseRequest } from "@/text/responses/safety.ts";
 import type { BedrockResponse } from "@/utils/bedrock-guardrail.ts";
 import {
     generateCacheKey as generateMediaCacheKey,
@@ -68,14 +66,30 @@ function safetyApp(
             await next();
         })
         .get("/scan/:text", async (c) => {
-            const text = await applySafety(c, c.req.param("text"));
+            const text = await applySafetyToInput(c, c.req.param("text"));
             return withSafetyHeaders(c, new Response(text));
+        })
+        .post("/texts", async (c) => {
+            const body = await c.req.json<{
+                texts: string[];
+                safe?: "privacy";
+            }>();
+            const texts = await applySafetyToInput(c, body.texts, body.safe);
+            return withSafetyHeaders(c, Response.json(texts));
         })
         .post("/chat", async (c) => {
             const body = await c.req.json();
-            const safeBody = await applySafetyToChatRequest(
+            const safeBody = await applySafetyToInput(
                 c,
-                body as Parameters<typeof applySafetyToChatRequest>[1],
+                body as CreateChatCompletionRequest & Record<string, unknown>,
+            );
+            return withSafetyHeaders(c, Response.json(safeBody));
+        })
+        .post("/responses", async (c) => {
+            const body = await c.req.json();
+            const safeBody = await applySafetyToResponseRequest(
+                c,
+                body as Parameters<typeof applySafetyToResponseRequest>[1],
             );
             return withSafetyHeaders(c, Response.json(safeBody));
         });
@@ -126,7 +140,7 @@ describe("safety schema", () => {
 // The Bedrock-backed tests sign requests with AWS SigV4 (WebCrypto HMAC-SHA256)
 // inside the workerd runtime; that crypto path can take several seconds on a cold
 // or loaded runtime, so give these blocks generous headroom over the 5s default.
-describe("applySafety", { timeout: 30000 }, () => {
+describe("applySafetyToInput text", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));
@@ -320,6 +334,39 @@ describe("applySafety", { timeout: 30000 }, () => {
         expect(fetchMock).toHaveBeenCalledOnce();
     });
 
+    it("prepares multiple text inputs for one guardrail request", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "first {EMAIL}" }, { text: "second" }],
+        );
+
+        const response = await safetyApp().request(
+            "/texts",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    texts: ["first a@example.com", "second"],
+                    safe: "privacy",
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        expect(await response.json()).toEqual(["first {EMAIL}", "second"]);
+    });
+
     it("blocks requested content categories", async () => {
         guardrailResponse = intervened({
             contentPolicy: {
@@ -408,7 +455,7 @@ describe("applySafety", { timeout: 30000 }, () => {
     });
 });
 
-describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
+describe("applySafetyToInput", { timeout: 30000 }, () => {
     beforeEach(() => {
         guardrailResponse = { action: "NONE", assessments: [] };
         fetchMock = vi.fn(async () => Response.json(guardrailResponse));
@@ -488,6 +535,57 @@ describe("applySafetyToChatRequest", { timeout: 30000 }, () => {
                         },
                         { type: "text", text: "phone {PHONE}" },
                     ],
+                },
+            ],
+        });
+    });
+
+    it("checks array-form function outputs in Responses requests", async () => {
+        guardrailResponse = intervened(
+            {
+                sensitiveInformationPolicy: {
+                    piiEntities: [
+                        {
+                            action: "ANONYMIZED",
+                            match: "a@example.com",
+                            type: "EMAIL",
+                        },
+                    ],
+                },
+            },
+            [{ text: "email {EMAIL}" }],
+        );
+
+        const response = await safetyApp().request(
+            "/responses",
+            {
+                method: "POST",
+                body: JSON.stringify({
+                    model: "openai",
+                    safe: "privacy",
+                    input: [
+                        {
+                            type: "function_call_output",
+                            call_id: "call_123",
+                            output: [
+                                {
+                                    type: "input_text",
+                                    text: "email a@example.com",
+                                },
+                            ],
+                        },
+                    ],
+                }),
+            },
+            configuredEnv,
+        );
+
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledOnce();
+        await expect(response.json()).resolves.toMatchObject({
+            input: [
+                {
+                    output: [{ type: "input_text", text: "email {EMAIL}" }],
                 },
             ],
         });

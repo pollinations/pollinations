@@ -86,6 +86,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | DeepSeek V4 Flash 0731 | `deepseek` | `deepseek/deepseek-v4-flash` |
+| DeepSeek V4 Flash Vision Exp | — | `deepseek/deepseek-v4-flash-vision-exp` |
 | DeepSeek V4 Pro 0813 | `deepseek-pro` | `deepseek/deepseek-v4-pro` |
 
 ## ElevenLabs
@@ -118,6 +119,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Gemini 3.1 Pro Preview | `gemini-large` | `google/gemini-3.1-pro-preview` |
 | Gemini 3.5 Flash Lite | `gemini-flash-lite-3.5` | `google/gemini-3.5-flash-lite` |
 | Gemini 3.7 Flash | `gemini` | `google/gemini-3.7-flash` |
+| Gemini 3.8 Flash | — | `google/gemini-3.8-flash` |
 | Gemini Embedding 2 | `gemini-2` | `google/gemini-embedding-2` |
 | Gemma 4 26B A4B | `gemma` | `google/gemma-4-26b-a4b-it` |
 | Gemma 4 31B | `gemma-4-31b` | `google/gemma-4-31b-it` |
@@ -154,6 +156,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | Mercury 2 | `mercury` | `inception/mercury-2` |
+| Mercury 2.5 Preview | — | `inception/mercury-2.5-preview` |
 
 ## Krea
 

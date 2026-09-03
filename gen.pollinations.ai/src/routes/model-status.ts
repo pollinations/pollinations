@@ -33,9 +33,9 @@ const ModelHealthRowSchema = z.object({
     primary_retried_503s: z.number().int().nonnegative(),
     fallback_rescues: z.number().int().nonnegative(),
     last_error_at: z.string(),
-    latency_p50_ms: z.number().nonnegative(),
-    latency_p95_ms: z.number().nonnegative(),
-    avg_latency_ms: z.number().nonnegative(),
+    latency_p50_ms: z.number().nonnegative().nullable(),
+    latency_p95_ms: z.number().nonnegative().nullable(),
+    avg_latency_ms: z.number().nonnegative().nullable(),
     last_request_at: z.string(),
     tokens_per_second: z.number().nonnegative().nullable(),
 });

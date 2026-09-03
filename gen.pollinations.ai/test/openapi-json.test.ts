@@ -94,19 +94,26 @@ describe("/openapi.json", () => {
                 "category" in properties &&
                 "community" in properties,
         );
-        expect((modelProperties?.category as { enum?: string[] }).enum).toEqual(
-            ["text", "image", "audio", "video", "3d", "embedding", "realtime"],
-        );
+        if (!modelProperties) throw new Error("Model schema not found");
+        expect((modelProperties.category as { enum?: string[] }).enum).toEqual([
+            "text",
+            "image",
+            "audio",
+            "video",
+            "3d",
+            "embedding",
+            "realtime",
+        ]);
         expect(
             (
-                modelProperties?.input_modalities as {
+                modelProperties.input_modalities as {
                     items?: { enum?: string[] };
                 }
             ).items?.enum,
         ).toEqual(["text", "image", "audio", "video"]);
         expect(
             (
-                modelProperties?.output_modalities as {
+                modelProperties.output_modalities as {
                     items?: { enum?: string[] };
                 }
             ).items?.enum,

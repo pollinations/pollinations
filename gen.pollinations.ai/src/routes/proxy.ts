@@ -312,9 +312,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         category: entry.info.category,
         community: entry.info.community,
         title: entry.info.title,
-        ...(entry.info.description && {
-            description: entry.info.description,
-        }),
+        description: entry.info.description,
         input_modalities: entry.info.input_modalities,
         output_modalities: entry.info.output_modalities,
         supported_endpoints: entry.supportedEndpoints,

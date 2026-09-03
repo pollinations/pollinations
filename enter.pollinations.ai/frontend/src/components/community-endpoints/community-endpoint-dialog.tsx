@@ -29,6 +29,7 @@ import {
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
 } from "./price-table.tsx";
+import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type ActionState,
     type CommunityEndpointTestResponse,
@@ -212,7 +213,9 @@ export function CommunityEndpointDialog({
                           ? "Endpoint responded, but did not return playable video"
                           : form.modality === "transcription"
                             ? "Endpoint responded, but did not return transcription text or usage"
-                            : "Endpoint responded, but did not return billable usage",
+                            : form.modality === "speech"
+                              ? "Endpoint responded, but did not return audio data"
+                              : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -414,7 +417,7 @@ export function CommunityEndpointDialog({
                             title="Queued changes will be cancelled"
                         >
                             Saving this model as Private removes its queued
-                            changes. Publishing it again starts a new 12-hour
+                            changes. Publishing it again starts a new 3-hour
                             wait.
                         </Alert>
                     )}
@@ -436,6 +439,7 @@ export function CommunityEndpointDialog({
                                         "image",
                                         "video",
                                         "transcription",
+                                        "speech",
                                         "embedding",
                                     ] as const
                                 ).map((modality) => (
@@ -499,7 +503,7 @@ export function CommunityEndpointDialog({
                             helper={
                                 form.modality === "video"
                                     ? "The exact URL Pollinations calls to generate a video."
-                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription/speech URL."
                             }
                             alignLabelRow
                         >
@@ -580,9 +584,11 @@ export function CommunityEndpointDialog({
                                             ? "gpt-image-2"
                                             : form.modality === "transcription"
                                               ? "whisper-1"
-                                              : form.modality === "embedding"
-                                                ? "text-embedding-3-small"
-                                                : "gpt-4o-mini"
+                                              : form.modality === "speech"
+                                                ? "tts-1"
+                                                : form.modality === "embedding"
+                                                  ? "text-embedding-3-small"
+                                                  : "gpt-4o-mini"
                                     }
                                     align="end"
                                     open={providerModelMenuOpen}
@@ -717,6 +723,18 @@ export function CommunityEndpointDialog({
                                 </TabButton>
                             </ButtonGroup>
                         </FieldStack>
+                    )}
+                    {!isEndpointAgent && (
+                        <SafetyFeatureSelector
+                            value={form.requiredSafetyFeatures}
+                            disabled={isSubmitting}
+                            onChange={(requiredSafetyFeatures) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    requiredSafetyFeatures,
+                                }))
+                            }
+                        />
                     )}
                     {isShared && (
                         <FieldStack

@@ -393,6 +393,7 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
+        perUserRpm: 6,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -709,6 +710,7 @@ const IMAGE_BASE_SERVICES = {
         // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
         // flat ($0.01/s x 5s = $0.05).
         cost: {
+            promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         title: "Wan 2.2",

@@ -61,13 +61,32 @@ async function listConnections(userId, env, fetchImpl) {
         env,
         fetchImpl,
     );
-    return Array.isArray(body?.items) ? body.items : [];
+    const accounts = Array.isArray(body?.items) ? body.items : [];
+    const toolkitSlugs = [
+        ...new Set(accounts.map((account) => account.toolkit?.slug)),
+    ].filter(Boolean);
+    if (toolkitSlugs.length === 0) return [];
+
+    const toolkitBody = await callComposio("/toolkits/multi", env, fetchImpl, {
+        method: "POST",
+        body: JSON.stringify({ toolkits: toolkitSlugs }),
+    });
+    const toolkitsBySlug = new Map(
+        (Array.isArray(toolkitBody?.items) ? toolkitBody.items : []).map(
+            (toolkit) => [toolkit.slug, toolkit],
+        ),
+    );
+    return accounts.map((account) =>
+        connectionSummary(account, toolkitsBySlug.get(account.toolkit?.slug)),
+    );
 }
 
-function connectionSummary(account) {
+function connectionSummary(account, toolkit) {
     return {
         id: account.id,
         toolkit: account.toolkit?.slug,
+        name: toolkit?.name || null,
+        logo: toolkit?.meta?.logo || null,
         alias: account.alias || null,
         status: account.status,
     };
@@ -296,9 +315,7 @@ async function handleManagement(request, userId, env, fetchImpl) {
     const url = new URL(request.url);
     if (request.method === "GET" && url.pathname === "/connections") {
         return Response.json({
-            data: (await listConnections(userId, env, fetchImpl)).map(
-                connectionSummary,
-            ),
+            data: await listConnections(userId, env, fetchImpl),
         });
     }
     if (request.method === "GET" && url.pathname === "/toolkits") {

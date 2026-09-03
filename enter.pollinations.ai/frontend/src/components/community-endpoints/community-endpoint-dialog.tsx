@@ -417,7 +417,7 @@ export function CommunityEndpointDialog({
                             title="Queued changes will be cancelled"
                         >
                             Saving this model as Private removes its queued
-                            changes. Publishing it again starts a new 12-hour
+                            changes. Publishing it again starts a new 3-hour
                             wait.
                         </Alert>
                     )}

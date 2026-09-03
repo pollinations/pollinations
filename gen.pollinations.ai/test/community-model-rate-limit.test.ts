@@ -15,12 +15,16 @@ describe("model rate limiting", () => {
         expect(IMAGE_SERVICES.zimage.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.klein.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.dreamshaper.perUserRpm).toBe(300);
+        expect(IMAGE_SERVICES["gpt-image-2"].perUserRpm).toBe(6);
+        expect(IMAGE_SERVICES["gpt-image-2-openai"].perUserRpm).toBeNull();
     });
 
-    it("keeps configured catalog model limits at 60 RPM or higher", () => {
+    it("keeps other configured catalog model limits at 60 RPM or higher", () => {
         for (const model of getModels()) {
             const limit = getRegistryModelDefinition(model).perUserRpm;
-            if (limit != null) expect(limit).toBeGreaterThanOrEqual(60);
+            if (limit != null && model !== "gpt-image-2") {
+                expect(limit).toBeGreaterThanOrEqual(60);
+            }
         }
     });
 

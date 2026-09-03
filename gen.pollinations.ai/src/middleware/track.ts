@@ -46,8 +46,10 @@ import {
 } from "@shared/registry/registry.ts";
 import {
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -102,6 +104,7 @@ export type ModelUsage = {
     model: string;
     usage: Usage;
     output?: unknown;
+    pricingInput?: PricingInput;
 };
 
 type RequestTrackingData = {
@@ -272,7 +275,7 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
             setPricingInput: (input: PricingInput) => {
-                pricingInput = input;
+                pricingInput = { ...pricingInput, ...input };
             },
             attempts,
         });
@@ -708,6 +711,9 @@ export async function trackResponse(
             requestTracking,
             response,
         );
+    const billingInput = modelUsage?.pricingInput
+        ? { ...pricingInput, ...modelUsage.pricingInput }
+        : pricingInput;
     const hasFinishReasonError =
         eventType === "generate.text"
             ? containsFinishReasonError(output)
@@ -728,7 +734,7 @@ export async function trackResponse(
                     candidate.definition ?? requestTracking.modelDefinition,
                 quotedBy: requestTracking.modelDefinition,
                 output,
-                input: pricingInput,
+                input: billingInput,
             }),
             modelUsed: modelUsage?.model ?? modelCalled,
             modelProviderUsed,
@@ -801,7 +807,7 @@ export async function trackResponse(
         servedBy: candidate.definition ?? requestTracking.modelDefinition,
         quotedBy: requestTracking.modelDefinition,
         output: modelUsage.output,
-        input: pricingInput,
+        input: billingInput,
     });
     return {
         responseStatus: response.status,
@@ -1168,6 +1174,10 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
     return {
         model: modelUsed,
         usage,
+        pricingInput: {
+            hasExplicitCacheHit:
+                response.headers.get(PROMPT_CACHE_TYPE_HEADER) === "ephemeral",
+        },
     };
 }
 
@@ -1251,6 +1261,7 @@ async function extractUsageAndContentFilterResultsStream(
 
     let model: string | undefined;
     let usage: Usage | undefined;
+    let hasExplicitCacheHit = false;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
@@ -1282,6 +1293,9 @@ async function extractUsageAndContentFilterResultsStream(
                 log.warn("Multiple usage objects found in event stream");
             }
             usage = openaiUsageToUsage(parseResult.data.usage);
+            hasExplicitCacheHit = hasExplicitPromptCacheHit(
+                parseResult.data.usage,
+            );
             model = parseResult.data?.model;
         }
 
@@ -1291,6 +1305,7 @@ async function extractUsageAndContentFilterResultsStream(
                 log.warn("Multiple usage objects found in event stream");
             }
             usage = responsesUsage.usage;
+            hasExplicitCacheHit = responsesUsage.hasExplicitCacheHit;
             model = responsesUsage.model ?? model;
         }
     }
@@ -1319,6 +1334,7 @@ async function extractUsageAndContentFilterResultsStream(
             model: servedModel,
             usage,
             output,
+            pricingInput: { hasExplicitCacheHit },
         },
         output,
         contentFilterResults,

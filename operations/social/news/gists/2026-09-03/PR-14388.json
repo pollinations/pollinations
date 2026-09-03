@@ -1,0 +1,35 @@
+{
+  "pr_number": 14388,
+  "title": "docs: record FLUX single-GPU fallback topology",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14388",
+  "merged_at": "2026-09-03T09:43:40Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records the destruction of stopped FLUX instance `49145048` after its host lost Docker.\n- Updates the live Vast fleet to five production GPUs and `$0.900556/hr` fixed spend.\n- Documents the single RTX PRO 4000 plus hidden DeepInfra spillover topology.\n- Captures measured 24-hour fallback volume, cost, latency, and failure evidence.\n- Updates FLUX operational guidance to monitor Vast attribution and DeepInfra spillover together.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "FLUX Keeps a Spare Hive",
+    "blurb": "The FLUX garden map now includes its quiet backup path: one RTX PRO 4000 tending the main plot, with DeepInfra ready for spillover when the weather turns weird.",
+    "summary": "Updated FLUX operations documentation to reflect the five-GPU Vast fleet at $0.900556/hr, a single RTX PRO 4000 primary topology, hidden DeepInfra spillover, and measured 24-hour fallback cost, latency, volume, and failure evidence.",
+    "impact": "Operators can now monitor Vast attribution and DeepInfra spillover as one system, with a documented fallback path and current fleet baseline for diagnosing FLUX capacity events.",
+    "keywords": [
+      "FLUX",
+      "GPU",
+      "Vast",
+      "DeepInfra",
+      "fallback",
+      "operations",
+      "infrastructure"
+    ],
+    "visual_concept": "Depict Polli as an observant operations gardener mapping a cozy GPU garden: one clearly labeled RTX PRO 4000 server plant handles the main FLUX stream while a soft, tucked-away DeepInfra cloud greenhouse catches overflow pollen. Include five small glowing Vast GPU server crates in the background, a friendly CRT monitor robot holding a topology map, and flowers/vines connecting the primary and fallback paths.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny operations headset, carefully tracing a glowing FLUX pollen path from one RTX PRO 4000 garden server to a tucked-away pastel cloud greenhouse labeled \"SPILLOVER\"; five small Vast GPU server crates and code-flowers bloom behind her while a CRT monitor robot holds a topology map. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14388.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny operations headset, carefully tracing a glowing FLUX pollen path from one RTX PRO 4000 garden server to a tucked-away pastel cloud greenhouse labeled \"SPILLOVER\"; five small Vast GPU server crates and code-flowers bloom behind her while a CRT monitor robot holds a topology map. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-09-03T09:44:41.135551+00:00"
+}

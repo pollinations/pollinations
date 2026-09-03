@@ -40,7 +40,10 @@ import {
     apiKeyBudgetReservation,
     generationAccess,
 } from "@/utils/generation-access.ts";
-import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
+import {
+    callCommunitySpeechEndpoint,
+    callCommunityTranscriptionEndpoint,
+} from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -2810,32 +2813,42 @@ async function generateAudioFromSpeechRequest(
         : undefined;
 
     return withAudioFallback(c, (candidate) =>
-        dispatchAudioGeneration(c, candidate.id, {
-            text: safeInput,
-            voice,
-            responseFormat: response_format,
-            seed,
-            duration,
-            seconds,
-            steps,
-            negativePrompt: negative_prompt,
-            instrumental,
-            storeForInpainting: store_for_inpainting,
-            conditioningRef: conditioning_ref,
-            compositionPlan: composition_plan,
-            referenceAudio,
-            instructions,
-            loop,
-            promptInfluence: prompt_influence,
-            apiKey: c.env.ELEVENLABS_API_KEY,
-            dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
-            deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
-            xaiApiKey: c.env.XAI_API_KEY,
-            openRouterApiKey: c.env.OPENROUTER_API_KEY,
-            falKey: c.env.FAL_KEY,
-            stabilityApiKey: c.env.STABILITY_API_KEY,
-            log,
-        }),
+        candidate.communityEndpoint
+            ? callCommunitySpeechEndpoint(
+                  candidate.communityEndpoint,
+                  {
+                      input: safeInput,
+                      voice,
+                      responseFormat: response_format,
+                  },
+                  c.env.BETTER_AUTH_SECRET,
+              )
+            : dispatchAudioGeneration(c, candidate.id, {
+                  text: safeInput,
+                  voice,
+                  responseFormat: response_format,
+                  seed,
+                  duration,
+                  seconds,
+                  steps,
+                  negativePrompt: negative_prompt,
+                  instrumental,
+                  storeForInpainting: store_for_inpainting,
+                  conditioningRef: conditioning_ref,
+                  compositionPlan: composition_plan,
+                  referenceAudio,
+                  instructions,
+                  loop,
+                  promptInfluence: prompt_influence,
+                  apiKey: c.env.ELEVENLABS_API_KEY,
+                  dashScopeApiKey: c.env.DASHSCOPE_API_KEY,
+                  deepInfraApiKey: c.env.DEEPINFRA_API_KEY,
+                  xaiApiKey: c.env.XAI_API_KEY,
+                  openRouterApiKey: c.env.OPENROUTER_API_KEY,
+                  falKey: c.env.FAL_KEY,
+                  stabilityApiKey: c.env.STABILITY_API_KEY,
+                  log,
+              }),
     );
 }
 

@@ -20,6 +20,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
@@ -33,6 +34,7 @@ export type ManagedAgent = {
     upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
+    requiredSafetyFeatures: SafetyFeature[];
     mcpServers: McpServerId[];
     createdAt: string;
     updatedAt: string;
@@ -40,7 +42,7 @@ export type ManagedAgent = {
 
 type AgentFields = Pick<
     ManagedAgent,
-    "systemPrompt" | "baseModel" | "mcpServers"
+    "systemPrompt" | "baseModel" | "requiredSafetyFeatures" | "mcpServers"
 >;
 
 export type AgentFormState = AgentFields;
@@ -68,6 +70,7 @@ type CommunityEndpointBase = {
     description: string | null;
     baseUrl: string;
     upstreamModel: string;
+    requiredSafetyFeatures: SafetyFeature[];
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
     visibility: CommunityEndpointVisibility;
@@ -123,6 +126,7 @@ export function publicCommunityFallbackOptions(
         type: string;
         community?: boolean;
         agent?: boolean;
+        outputModalities?: readonly string[];
     }[],
 ): FallbackModelOption[] {
     return models
@@ -138,13 +142,17 @@ export function publicCommunityFallbackOptions(
         )
         .map((model) => ({
             modelId: model.name,
+            // Both audio families catalogue as "audio": speech models output
+            // audio, transcription models output text.
             modality:
                 model.type === "image"
                     ? "image"
                     : model.type === "video"
                       ? "video"
                       : model.type === "audio"
-                        ? "transcription"
+                        ? model.outputModalities?.includes("audio")
+                            ? "speech"
+                            : "transcription"
                         : model.type === "embedding"
                           ? "embedding"
                           : "text",
@@ -174,6 +182,7 @@ export type EndpointFormState = ModelListingFormState & {
     bearerToken: string;
     // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
     paidOnly: boolean;
+    requiredSafetyFeatures: SafetyFeature[];
     // Public community model ids, tried in the order listed.
     fallbacks: string[];
 } & EndpointFormPrices;
@@ -194,6 +203,7 @@ export type EndpointPayload = ModelListingPayload & {
     baseUrl: string;
     upstreamModel: string;
     paidOnly: boolean;
+    requiredSafetyFeatures: SafetyFeature[];
     fallbacks: string[];
 } & CommunityEndpointPrices;
 
@@ -245,6 +255,7 @@ export const emptyForm: EndpointFormState = {
     upstreamModel: "",
     bearerToken: "",
     paidOnly: false,
+    requiredSafetyFeatures: [],
     fallbacks: [],
     ...emptyPriceForm,
 };
@@ -252,6 +263,7 @@ export const emptyForm: EndpointFormState = {
 export const emptyAgentForm: AgentFormState = {
     systemPrompt: "",
     baseModel: "",
+    requiredSafetyFeatures: [],
     mcpServers: [],
 };
 
@@ -337,6 +349,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
             perUserRpm: endpoint.perUserRpm?.toString() ?? "",
             baseUrl: endpoint.baseUrl,
             upstreamModel: endpoint.upstreamModel,
+            requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         };
     }
     const imagePricing = pending?.imagePricing ?? endpoint.imagePricing;
@@ -361,6 +374,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         paidOnly: pending?.paidOnly ?? endpoint.paidOnly,
+        requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         fallbacks: endpoint.fallbacks ?? [],
         ...(Object.fromEntries(
             COMMUNITY_ENDPOINT_PRICE_FIELDS.map((field) => {
@@ -477,6 +491,7 @@ export function toAgentPayload(form: AgentFormState): AgentPayload {
     return {
         systemPrompt,
         baseModel,
+        requiredSafetyFeatures: form.requiredSafetyFeatures,
         mcpServers: form.mcpServers,
     };
 }
@@ -514,6 +529,7 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
         baseUrl: form.baseUrl,
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
+        requiredSafetyFeatures: form.requiredSafetyFeatures,
         // Private models carry no public pricing, so their fallbacks cannot be
         // validated against a quoted price.
         fallbacks: form.visibility === "public" ? form.fallbacks : [],

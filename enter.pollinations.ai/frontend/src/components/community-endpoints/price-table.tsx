@@ -345,6 +345,10 @@ export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
 
 export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
 
+// Speech models bill per input character through the completion audio price,
+// the same column first-party TTS uses.
+export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
+
 export function basePriceKeysForModality(
     modality: CommunityEndpointModality,
 ): PriceFieldKey[] {
@@ -354,9 +358,11 @@ export function basePriceKeysForModality(
           ? BASE_VIDEO_PRICE_KEYS
           : modality === "transcription"
             ? BASE_TRANSCRIPTION_PRICE_KEYS
-            : modality === "embedding"
-              ? BASE_EMBEDDING_PRICE_KEYS
-              : BASE_TEXT_PRICE_KEYS;
+            : modality === "speech"
+              ? BASE_SPEECH_PRICE_KEYS
+              : modality === "embedding"
+                ? BASE_EMBEDDING_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
 }
 
 export function returnedPriceFields(

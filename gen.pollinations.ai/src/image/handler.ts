@@ -7,8 +7,10 @@ import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import {
+    type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
+    isRetryableFallbackError,
     withModelFallback,
 } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
@@ -60,8 +62,6 @@ import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
-
-const GPT_IMAGE_MODELS = new Set(["gptimage", "gptimage-large", "gpt-image-2"]);
 
 const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
 const EDIT_DIMENSION_STEP = 16;
@@ -447,11 +447,18 @@ async function generateMediaWithFallback(
     params: RuntimeImageParams;
     servedIndex: number;
 }> {
-    const shouldFallback = GPT_IMAGE_MODELS.has(c.var.model?.resolved ?? "")
-        ? (error: unknown) =>
-              error instanceof Error &&
-              (error as Error & { status?: number }).status === 429
-        : undefined;
+    const shouldFallback = (error: unknown, candidate: FallbackCandidate) => {
+        if (
+            candidate.definition?.provider === "azure" &&
+            candidate.definition.brand === "OpenAI"
+        ) {
+            return (
+                error instanceof Error &&
+                (error as Error & { status?: number }).status === 429
+            );
+        }
+        return isRetryableFallbackError(error);
+    };
     const { result, index } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {

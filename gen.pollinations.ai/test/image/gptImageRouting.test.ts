@@ -127,4 +127,26 @@ describe("GPT Image OpenAI fallback routing", () => {
             });
         });
     }
+
+    it("keeps Azure rotation independent from direct OpenAI calls", async () => {
+        const urls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            urls.push(String(input));
+            return successResponse();
+        });
+
+        await callGPTImage("test", params, userInfo, "gpt-image-2");
+        await callGPTImage(
+            "test",
+            { ...params, model: "gpt-image-2-openai" },
+            userInfo,
+            "gpt-image-2-openai",
+        );
+        await callGPTImage("test", params, userInfo, "gpt-image-2");
+
+        const azureHosts = urls
+            .map((url) => new URL(url).host)
+            .filter((host) => host !== "api.openai.com");
+        expect(new Set(azureHosts)).toEqual(EXPECTED_HOSTS);
+    });
 });

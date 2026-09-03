@@ -392,13 +392,14 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
     ],
 };
 
-let gptImageEndpointIndex = 0;
+const gptImageEndpointIndexes = new Map<string, number>();
 
 /** Round robins the Azure regions to spread load. One region per request. */
 function nextGPTImageConfig(model: string): GPTImageConfig {
     const configs = GPTIMAGE_CONFIGS[model] || GPTIMAGE_CONFIGS.gptimage;
-    const config = configs[gptImageEndpointIndex % configs.length];
-    gptImageEndpointIndex = (gptImageEndpointIndex + 1) % configs.length;
+    const index = gptImageEndpointIndexes.get(model) ?? 0;
+    const config = configs[index % configs.length];
+    gptImageEndpointIndexes.set(model, (index + 1) % configs.length);
     return config;
 }
 

@@ -24,6 +24,7 @@ export const IMAGE_FALLBACKS = {
         "gpt-image-2-openai": {
             provider: "openai",
             addedDate: new Date("2026-09-03").getTime(),
+            perUserRpm: null,
         },
     },
     kontext: {

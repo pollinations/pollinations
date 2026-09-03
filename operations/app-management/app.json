@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "📚",
+    "name": "AI Homework Solver",
+    "url": "https://zizoisu.github.io/ai-homework-solver",
+    "description": "A web-based homework solver that integrates with Pollinations AI. Supports multiple question types including MCQ, short answer, true/false, and fill-in-the-blank questions. Features a hybrid model wit",
+    "language": "en",
+    "category": "learn",
+    "platform": "web",
+    "githubUsername": "zizoisu",
+    "githubUserId": "78863445",
+    "repositoryUrl": "https://github.com/zizoisu/ai-homework-solver",
+    "repositoryStars": null,
+    "discordUsername": "zizoisu (if registered; otherwise, please reach out via GitHub)",
+    "other": null,
+    "submittedDate": "2026-09-01",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14310",
+    "approvedDate": "2026-09-03",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🖼️",
     "name": "¿Y si…? — Alternate History Scene Generator",
     "url": "https://jecxolab.github.io/y-si-historia",

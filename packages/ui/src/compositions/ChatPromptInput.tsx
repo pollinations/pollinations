@@ -15,10 +15,7 @@ export type ChatPromptInputProps = ComponentPropsWithoutRef<"fieldset">;
 export function ChatPromptInput({ className, ...props }: ChatPromptInputProps) {
     return (
         <fieldset
-            className={cn(
-                "polli:m-0 polli:min-w-0 polli:overflow-hidden polli:rounded-xl polli:border polli:border-theme-border polli:bg-theme-bg-pale polli:p-0 polli:transition-shadow polli:focus-within:shadow-[0_0_0_1px_var(--polli-color-border)]",
-                className,
-            )}
+            className={cn("polli:m-0 polli:min-w-0 polli:p-0", className)}
             {...props}
         />
     );
@@ -31,10 +28,7 @@ export const ChatPromptTextarea = forwardRef<
     <Textarea
         {...props}
         ref={ref}
-        className={cn(
-            "polli:resize-none polli:rounded-none polli:border-transparent polli:bg-transparent polli:shadow-none polli:focus:border-transparent polli:focus:bg-transparent polli:focus:shadow-none polli:focus-visible:border-transparent polli:focus-visible:bg-transparent polli:focus-visible:shadow-none",
-            className,
-        )}
+        className={cn("polli:resize-none", className)}
     />
 ));
 
@@ -55,7 +49,7 @@ export function ChatPromptInputFooter({
     return (
         <div
             className={cn(
-                "polli:flex polli:flex-wrap polli:items-end polli:gap-2 polli:border-theme-border/25 polli:border-t polli:px-3 polli:py-2",
+                "polli:flex polli:flex-wrap polli:items-end polli:gap-2",
                 className,
             )}
             {...props}

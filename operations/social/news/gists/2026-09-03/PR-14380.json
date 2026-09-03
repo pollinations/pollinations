@@ -1,0 +1,35 @@
+{
+  "pr_number": 14380,
+  "title": "docs: update README — 2026-09-03",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14380",
+  "merged_at": "2026-09-03T07:29:38Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The garden journal updates itself",
+    "blurb": "The README got its daily tending: fresh project news, refreshed recent apps, and an updated record of the hive's growing constellation of stars.",
+    "summary": "Refreshed the README's Latest News, Recent Apps, and dark/light GitHub star-history charts for September 3, 2026.",
+    "impact": "Visitors to the repository can see the latest community apps, project updates, and current star-growth history without digging through old garden notes.",
+    "keywords": [
+      "readme",
+      "news",
+      "recent-apps",
+      "star-history",
+      "github"
+    ],
+    "visual_concept": "Depict Polli tending a cozy open-source garden journal on a retro CRT desk, where fresh app cards bloom like flowers and a star-history chart rises across the screen like a gentle vine. Polli wears a tiny librarian visor and uses a watering can; scattered lime-green seedlings and soft pastel stars make the routine update feel alive.",
+    "image_prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body, dark brown stripes, pink blush, light blue wings, and a tiny librarian visor updating an open README journal beside a glowing CRT monitor; fresh app cards bloom as little code-flowers while a gentle star-history vine climbs the screen. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach pastels, with subtle pixel-font text \"LATEST NEWS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14380.jpg",
+    "prompt": "Cozy pixel art scene of the cute bee mascot with a yellow body, dark brown stripes, pink blush, light blue wings, and a tiny librarian visor updating an open README journal beside a glowing CRT monitor; fresh app cards bloom as little code-flowers while a gentle star-history vine climbs the screen. Lime green (#ecf874) is prominent among warm cream, mint, lavender, and peach pastels, with subtle pixel-font text \"LATEST NEWS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-03T07:30:56.084294+00:00"
+}

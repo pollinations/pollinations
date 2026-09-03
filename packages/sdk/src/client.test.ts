@@ -756,7 +756,9 @@ describe("Pollinations.embeddings", () => {
     it("posts a single input and returns the embedding response", async () => {
         const client = newClient();
         const apiResponse = {
-            data: [{ embedding: [0.1, 0.2, 0.3], index: 0, object: "embedding" }],
+            data: [
+                { embedding: [0.1, 0.2, 0.3], index: 0, object: "embedding" },
+            ],
             model: "gemini-2",
             object: "list",
             usage: { prompt_tokens: 3, total_tokens: 3 },

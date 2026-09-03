@@ -1,0 +1,34 @@
+{
+  "pr_number": 14407,
+  "title": "fix: reduce community publishing delay",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14407",
+  "merged_at": "2026-09-03T16:04:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reduces the community model publication and price-change delay from 12 hours to 3 hours\n- Applies the same delay to owner relisting and endpoint agents\n- Updates API/UI/monitor wording and focused assertions\n\nTests: exact 3-hour constant assertion passes; 16/18 wider focused tests passed locally, with two unchanged error-path tests blocked by unavailable local Tinybird error ingestion.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden updates faster",
+    "blurb": "Community models no longer spend half a day staring at the pot before they are allowed outside. Publishing, price updates, relisting, and endpoint agents now move on a three-hour rhythm.",
+    "summary": "Reduced the community endpoint publication and price-change delay from 12 hours to 3 hours, with the same 3-hour window applied to owner relisting and endpoint agents across the API, UI, and monitor.",
+    "impact": "Community model owners can publish, update pricing, relist endpoints, and use endpoint agents up to 9 hours sooner while seeing consistent three-hour timing everywhere.",
+    "keywords": [
+      "community-endpoints",
+      "publishing",
+      "pricing",
+      "endpoint-agents",
+      "api",
+      "community-models"
+    ],
+    "visual_concept": "Depict a cozy community model garden where a large retro clock has been adjusted from 12 hours to 3 hours and model-seed packets can reach a glowing API endpoint sooner. Polli, wearing a tiny gardener's hat and holding a clock key, helps a small CRT monitor robot place freshly bloomed code-plants onto a community shelf; lime green status lights and flowers make the faster publishing cycle visible.",
+    "image_prompt": "A cozy pixel art community garden workshop where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears a tiny gardener hat and turns a retro clock from “12H” to “3H”; beside her, a chunky CRT-monitor robot carefully shelves blooming code-plants labeled “PUBLISH” and “PRICE.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream workspace, pixel flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and the pixel-font text “3 HOURS.” Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-03/PR-14407.jpg",
+    "prompt": "A cozy pixel art community garden workshop where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears a tiny gardener hat and turns a retro clock from “12H” to “3H”; beside her, a chunky CRT-monitor robot carefully shelves blooming code-plants labeled “PUBLISH” and “PRICE.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream workspace, pixel flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and the pixel-font text “3 HOURS.” Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-03T16:05:27.977123+00:00"
+}

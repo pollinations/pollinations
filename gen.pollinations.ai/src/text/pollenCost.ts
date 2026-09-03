@@ -1,13 +1,13 @@
+import type { Usage } from "@shared/registry/registry.ts";
 import {
-    type ModelDefinition,
     calculateUsageBilling,
     getPriceDefinitionForModel,
+    type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import {
     MODEL_USED_HEADER,
     parseUsageHeaders,
 } from "@shared/registry/usage-headers.ts";
-import type { Usage } from "@shared/registry/registry.ts";
 
 /**
  * Pollen cost injection for text generation responses.
@@ -125,7 +125,10 @@ export function buildPollenCostHeaders(
         [POLLEN_CURRENCY_HEADER]: currency,
     };
 
-    if (costFields?.pollen_cost !== null && costFields?.pollen_cost !== undefined) {
+    if (
+        costFields?.pollen_cost !== null &&
+        costFields?.pollen_cost !== undefined
+    ) {
         headers[POLLEN_COST_HEADER] = String(costFields.pollen_cost);
     }
 
@@ -137,10 +140,13 @@ export function buildPollenCostHeaders(
 /**
  * Parse a single SSE `data:` line, returning the parsed JSON or null.
  */
-function parseSSELine(line: string): {
-    usage?: Record<string, unknown> | null;
-    [key: string]: unknown;
-} | null {
+function parseSSELine(line: string):
+    | {
+          usage?: Record<string, unknown> | null;
+          [key: string]: unknown;
+      }
+    | null
+    | string {
     const trimmed = line.trim();
     if (!trimmed.startsWith("data:")) return null;
     const payload = trimmed.slice(5).trim();
@@ -151,7 +157,7 @@ function parseSSELine(line: string): {
             [key: string]: unknown;
         };
     } catch {
-        return null;
+        return "";
     }
 }
 
@@ -174,8 +180,9 @@ function ensureChoices(parsed: { [key: string]: unknown }): boolean {
  */
 function ensureChoicesInLinePart(part: string): string | null {
     const parsed = parseSSELine(part);
-    if (!parsed) return null;
-    if (ensureChoices(parsed)) {
+    if (parsed === null) return null;
+    if (parsed === "") return "";
+    if (typeof parsed === "object" && ensureChoices(parsed)) {
         return `data: ${JSON.stringify(parsed)}`;
     }
     return null;
@@ -185,10 +192,7 @@ function ensureChoicesInLinePart(part: string): string | null {
  * Rewrite a `data:` SSE line, injecting pollen cost fields into its `usage`
  * object. Also ensures choices are present. Returns null if no rewrite needed.
  */
-function rewriteSSELine(
-    line: string,
-    fields: PollenCostFields,
-): string | null {
+function rewriteSSELine(line: string, fields: PollenCostFields): string | null {
     const parsed = parseSSELine(line);
     if (!parsed) return null;
 
@@ -252,7 +256,10 @@ function wrapStreamResponse(
     headers.set(POLLEN_MODEL_HEADER, modelId);
     headers.set(POLLEN_PRICING_AVAILABLE_HEADER, String(pricingAvailable));
     headers.set(POLLEN_CURRENCY_HEADER, POLLEN_CURRENCY);
-    if (costFields?.pollen_cost !== null && costFields?.pollen_cost !== undefined) {
+    if (
+        costFields?.pollen_cost !== null &&
+        costFields?.pollen_cost !== undefined
+    ) {
         headers.set(POLLEN_COST_HEADER, String(costFields.pollen_cost));
     }
     return new Response(newBody, {
@@ -285,9 +292,10 @@ export function injectPollenCostIntoStream(
     if (!response || !response.body) return response;
 
     const headerUsage = extractUsageFromHeaders(response.headers);
-    const resolvedModel = modelId || response.headers.get(MODEL_USED_HEADER) || "";
+    const resolvedModel =
+        modelId || response.headers.get(MODEL_USED_HEADER) || "";
 
-    const { pricingAvailable, currency, costFields } = resolvePollenCost(
+    const { pricingAvailable, costFields } = resolvePollenCost(
         headerUsage,
         resolvedModel,
         modelDef,
@@ -315,10 +323,12 @@ export function injectPollenCostIntoStream(
                             }
                             controller.close();
                             return;
-                            }
-                        const text = pending + decoder.decode(value, {
-                            stream: true,
-                        });
+                        }
+                        const text =
+                            pending +
+                            decoder.decode(value, {
+                                stream: true,
+                            });
                         let lastSplit = -1;
                         for (let i = 0; i < text.length; i++) {
                             if (text.charCodeAt(i) === newlineCode)
@@ -384,9 +394,11 @@ export function injectPollenCostIntoStream(
                         controller.close();
                         return;
                     }
-                    const text = state.pending + decoder.decode(value, {
-                        stream: true,
-                    });
+                    const text =
+                        state.pending +
+                        decoder.decode(value, {
+                            stream: true,
+                        });
                     let lastSplit = -1;
                     for (let i = 0; i < text.length; i++) {
                         if (text.charCodeAt(i) === newlineCode) lastSplit = i;
@@ -409,7 +421,7 @@ export function injectPollenCostIntoStream(
                         const lineText = part + (isLast ? "" : "\n");
                         const lineInfo = parseSSELine(part);
 
-                        if (lineInfo && lineInfo.usage) {
+                        if (lineInfo?.usage) {
                             if (state.costFields) {
                                 const rewritten = rewriteSSELine(
                                     part,
@@ -417,10 +429,12 @@ export function injectPollenCostIntoStream(
                                 );
                                 if (rewritten !== null) {
                                     controller.enqueue(
-                                        encoder.encode(rewritten + "\n"),
+                                        encoder.encode(`${rewritten}\n`),
                                     );
                                 } else {
-                                    controller.enqueue(encoder.encode(lineText));
+                                    controller.enqueue(
+                                        encoder.encode(lineText),
+                                    );
                                 }
                             } else {
                                 usageBuffer.push(lineText);
@@ -448,10 +462,7 @@ export function injectPollenCostIntoStream(
                                                 bufferedRaw.replace(/\n$/, "");
                                             const bufferedInfo =
                                                 parseSSELine(stripped);
-                                            if (
-                                                bufferedInfo &&
-                                                bufferedInfo.usage
-                                            ) {
+                                            if (bufferedInfo?.usage) {
                                                 const rewritten =
                                                     rewriteSSELine(
                                                         stripped,
@@ -459,9 +470,7 @@ export function injectPollenCostIntoStream(
                                                     );
                                                 controller.enqueue(
                                                     encoder.encode(
-                                                        (rewritten !== null
-                                                            ? rewritten
-                                                            : stripped) + "\n",
+                                                        `${rewritten !== null ? rewritten : stripped}\n`,
                                                     ),
                                                 );
                                             } else {
@@ -478,7 +487,9 @@ export function injectPollenCostIntoStream(
                             const choicesFixed = ensureChoicesInLinePart(part);
                             if (choicesFixed !== null) {
                                 controller.enqueue(
-                                    encoder.encode(choicesFixed + (isLast ? "" : "\n")),
+                                    encoder.encode(
+                                        choicesFixed + (isLast ? "" : "\n"),
+                                    ),
                                 );
                             } else {
                                 passThrough += lineText;

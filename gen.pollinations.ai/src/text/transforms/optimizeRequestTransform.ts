@@ -23,8 +23,6 @@ import type {
 
 const MAX_TURNS = 40;
 const TOOL_RESULT_CAP = 4000;
-const TOOL_RESULT_HEAD = 1500;
-const TOOL_RESULT_TAIL = 1500;
 const OLD_TOOL_RESULT_CAP = 1200;
 
 // ── System prompt condensation ───────────────────────────────────────────────
@@ -57,7 +55,7 @@ const REPLACE_VSC =
     "required properties. No need to ask permission before using a tool.\n" +
     "- **Parallelization:** Call independent tools in parallel. Run terminal " +
     "commands sequentially (never in parallel).\n" +
-    '- **Transparency:** Never mention tool names to the user (e.g., say "I\'ll ' +
+    "- **Transparency:** Never mention tool names to the user (e.g., say \"I'll " +
     'run the command" not "I\'ll use run_in_terminal").\n' +
     "- **Best practices:** Use absolute paths/URIs. Use `grep_search` for file " +
     "overviews. Use browser tools for front-end UI validation. Only use " +
@@ -382,170 +380,221 @@ const TOOL_REPLACEMENTS: ToolReplacement[] = [
     { pattern: /\bMUST\b/g, replacement: "should" },
     // Remove redundant "When NOT to use" boilerplate.
     {
-        pattern: /When NOT to use this tool: creating single files or small code snippets; adding individual files to existing projects; making modifications to existing codebases; user asks to "create a file" or "add a component"; simple code examples or demonstrations; debugging/gi,
+        pattern:
+            /When NOT to use this tool: creating single files or small code snippets; adding individual files to existing projects; making modifications to existing codebases; user asks to "create a file" or "add a component"; simple code examples or demonstrations; debugging/gi,
         replacement: "",
     },
     // Trim verbose run_in_terminal description.
     {
-        pattern: /This tool allows you to execute shell commands in a persistent bash terminal session, preserving environment variables, working directory, and other context across multiple commands\./gi,
+        pattern:
+            /This tool allows you to execute shell commands in a persistent bash terminal session, preserving environment variables, working directory, and other context across multiple commands\./gi,
         replacement:
             "Execute shell commands in a persistent terminal. State (env vars, cwd) is preserved across calls.",
     },
     {
-        pattern: /For ALL one-shot commands \(builds, tests, installs, compilation, linting, downloads, scripts\), use mode='sync' and omit timeout\. The tool waits for the command to complete and returns full output inline\. This is the default and strongly preferred mode\./gi,
+        pattern:
+            /For ALL one-shot commands \(builds, tests, installs, compilation, linting, downloads, scripts\), use mode='sync' and omit timeout\. The tool waits for the command to complete and returns full output inline\. This is the default and strongly preferred mode\./gi,
         replacement:
             "Use mode='sync' (default) for all one-shot commands. Output is returned inline.",
     },
     {
-        pattern: /Use mode='async' ONLY for processes that must keep running indefinitely while you do other work \(servers, watchers, dev daemons\)\. Async waits for an initial idle\/output signal, then returns a terminal ID and output snapshot while the process continues running\./gi,
+        pattern:
+            /Use mode='async' ONLY for processes that must keep running indefinitely while you do other work \(servers, watchers, dev daemons\)\. Async waits for an initial idle\/output signal, then returns a terminal ID and output snapshot while the process continues running\./gi,
         replacement:
             "Use mode='async' only for long-running processes (servers, watchers, daemons). Returns a terminal ID for later use.",
     },
     {
-        pattern: /In sync mode, the full output is returned when the command completes — you do NOT need to call get_terminal_output afterward\. Only use get_terminal_output if the tool result explicitly says the command was moved to background, timed out, or needs input\./gi,
+        pattern:
+            /In sync mode, the full output is returned when the command completes — you do NOT need to call get_terminal_output afterward\. Only use get_terminal_output if the tool result explicitly says the command was moved to background, timed out, or needs input\./gi,
         replacement:
             "In sync mode, output is returned inline. Only use get_terminal_output if the result indicates the command was moved to background or needs input.",
     },
     {
-        pattern: /Sync output is final: When a sync command completes, the full output is returned inline — do NOT call get_terminal_output afterward\. Only use get_terminal_output if the tool result explicitly indicates the command was moved to background, timed out, or needs input\. Do NOT tell the user to check the terminal panel — all command output is already included in the tool result\./gi,
+        pattern:
+            /Sync output is final: When a sync command completes, the full output is returned inline — do NOT call get_terminal_output afterward\. Only use get_terminal_output if the tool result explicitly indicates the command was moved to background, timed out, or needs input\. Do NOT tell the user to check the terminal panel — all command output is already included in the tool result\./gi,
         replacement: "Sync output is final and returned inline.",
     },
     {
-        pattern: /Terminal notifications: When an async command finishes or a sync command times out, you will be automatically notified on your next turn with the exit code and terminal output\. You will also be notified if the terminal needs input\. Do NOT poll or sleep to wait for completion\./gi,
+        pattern:
+            /Terminal notifications: When an async command finishes or a sync command times out, you will be automatically notified on your next turn with the exit code and terminal output\. You will also be notified if the terminal needs input\. Do NOT poll or sleep to wait for completion\./gi,
         replacement:
             "For async/timeout commands, you'll be auto-notified on completion. Do not poll.",
     },
     {
-        pattern: /NEVER run sleep or similar wait commands in a terminal\. You will be automatically notified on your next turn when async terminal commands or timed-out sync commands complete or need input\. Do NOT poll for completion\.\n-/gi,
+        pattern:
+            /NEVER run sleep or similar wait commands in a terminal\. You will be automatically notified on your next turn when async terminal commands or timed-out sync commands complete or need input\. Do NOT poll for completion\.\n-/gi,
         replacement:
             "Do not run sleep or wait commands. You'll be auto-notified on completion.\n-",
     },
     {
-        pattern: /NEVER pipe interactive commands through tail, head, grep, or other filters — this hides prompts and prevents the terminal from detecting when input is needed\. Run interactive commands without pipes\.\n\n/gi,
+        pattern:
+            /NEVER pipe interactive commands through tail, head, grep, or other filters — this hides prompts and prevents the terminal from detecting when input is needed\. Run interactive commands without pipes\.\n\n/gi,
         replacement:
             "Do not pipe interactive commands through filters — this hides prompts.\n\n",
     },
     {
-        pattern: /When a terminal command is waiting for interactive input, do NOT suggest alternatives or ask the user whether to proceed\. Instead, use the vscode_askQuestions tool to collect the needed values from the user, then send them\./gi,
+        pattern:
+            /When a terminal command is waiting for interactive input, do NOT suggest alternatives or ask the user whether to proceed\. Instead, use the vscode_askQuestions tool to collect the needed values from the user, then send them\./gi,
         replacement:
             "For interactive input prompts, use vscode_askQuestions to collect values from the user.",
     },
     {
-        pattern: /Send exactly one answer per prompt using send_to_terminal\. Never send multiple answers in a single send\./gi,
+        pattern:
+            /Send exactly one answer per prompt using send_to_terminal\. Never send multiple answers in a single send\./gi,
         replacement: "Send one answer per prompt.",
     },
     {
-        pattern: /After each send, call get_terminal_output to read the next prompt before sending the next answer\./gi,
+        pattern:
+            /After each send, call get_terminal_output to read the next prompt before sending the next answer\./gi,
         replacement:
             "After sending, call get_terminal_output to read the next prompt.",
     },
-    { pattern: /Continue one prompt at a time until the command finishes\./gi, replacement: "" },
-    { pattern: /Use \[\[ \]\] for conditional tests instead of \[ \]/g, replacement: "Use [[ ]] for conditionals" },
-    { pattern: /Prefer \$\(\) over backticks for command substitution/g, replacement: "Prefer $() over backticks" },
-    { pattern: /Use which or command -v to verify command availability/g, replacement: "Use `which` to verify command availability." },
+    {
+        pattern: /Continue one prompt at a time until the command finishes\./gi,
+        replacement: "",
+    },
+    {
+        pattern: /Use \[\[ \]\] for conditional tests instead of \[ \]/g,
+        replacement: "Use [[ ]] for conditionals",
+    },
+    {
+        pattern: /Prefer \$\(\) over backticks for command substitution/g,
+        replacement: "Prefer $() over backticks",
+    },
+    {
+        pattern: /Use which or command -v to verify command availability/g,
+        replacement: "Use `which` to verify command availability.",
+    },
     // Fix insert_edit_into_file verbose example.
     {
-        pattern: /The system is very smart and can understand how to apply your edits to the notebooks\.\n/gi,
-        replacement: "Provide minimal hints — the system applies edits intelligently.",
+        pattern:
+            /The system is very smart and can understand how to apply your edits to the notebooks\.\n/gi,
+        replacement:
+            "Provide minimal hints — the system applies edits intelligently.",
     },
     // Fix replace_string_in_file verbose warnings.
     {
-        pattern: /CRITICAL for \\?`oldString\\?`: Must uniquely identify the single instance to change\. Include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely\. If this string matches multiple locations, or does not match exactly, the tool will fail\. Never use 'Lines 123-456 omitted' from summarized documents or \.\.\.existing code\.\.\. comments in the oldString or newString\./gi,
+        pattern:
+            /CRITICAL for \\?`oldString\\?`: Must uniquely identify the single instance to change\. Include at least 3 lines of context BEFORE and AFTER the target text, matching whitespace and indentation precisely\. If this string matches multiple locations, or does not match exactly, the tool will fail\. Never use 'Lines 123-456 omitted' from summarized documents or \.\.\.existing code\.\.\. comments in the oldString or newString\./gi,
         replacement:
             "oldString must uniquely identify one location. Include 3+ lines of surrounding context.",
     },
     // Fix manage_todo_list verbose CRITICAL workflow.
     {
-        pattern: /CRITICAL workflow:\s*\n1\. Plan tasks by writing todo list with specific, actionable items\s*\n2\. Mark ONE todo as in-progress before starting work\s*\n3\. Complete the work for that specific todo\s*\n4\. Mark that todo as completed IMMEDIATELY\s*\n5\. Move to next todo and repeat/gi,
+        pattern:
+            /CRITICAL workflow:\s*\n1\. Plan tasks by writing todo list with specific, actionable items\s*\n2\. Mark ONE todo as in-progress before starting work\s*\n3\. Complete the work for that specific todo\s*\n4\. Mark that todo as completed IMMEDIATELY\s*\n5\. Move to next todo and repeat/gi,
         replacement:
             "Workflow: write todos → mark one as in-progress → complete it → mark completed → repeat.",
     },
     // Fix open_browser_page verbose note.
     {
-        pattern: /May prompt the user to share a page if there is a similar one already open, unless "forceNew" is true\./gi,
+        pattern:
+            /May prompt the user to share a page if there is a similar one already open, unless "forceNew" is true\./gi,
         replacement:
             "Set forceNew=true to force a new page; otherwise reuses existing pages.",
     },
     // Fix runSubagent verbose preamble.
     {
-        pattern: /This tool is good at researching complex questions, searching for code, and executing multi-step tasks\. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries, use this agent to perform the search for you\./gi,
+        pattern:
+            /This tool is good at researching complex questions, searching for code, and executing multi-step tasks\. When you are searching for a keyword or file and are not confident that you will find the right match in the first few tries, use this agent to perform the search for you\./gi,
         replacement:
             "Use for complex multi-step research, code search, or tasks that may need multiple attempts.",
     },
     {
-        pattern: /Agents do not run async or in the background, you will wait for the agent's result\./gi,
+        pattern:
+            /Agents do not run async or in the background, you will wait for the agent's result\./gi,
         replacement: "Agents run synchronously — wait for results.",
     },
     {
-        pattern: /When the agent is done, it will return a single message back to you\. The result returned by the agent is not visible to the user\. To show the user the result, you should send a text message back to the user with a concise summary of the result\./gi,
-        replacement: "Agent results aren't shown to users — summarize results in your reply.",
+        pattern:
+            /When the agent is done, it will return a single message back to you\. The result returned by the agent is not visible to the user\. To show the user the result, you should send a text message back to the user with a concise summary of the result\./gi,
+        replacement:
+            "Agent results aren't shown to users — summarize results in your reply.",
     },
     {
-        pattern: /Each agent invocation is stateless\. You will not be able to send additional messages to the agent, nor will the agent be able to communicate with you outside of its final report\. Therefore, your prompt should contain a highly detailed task description for the agent to perform autonomously and you should specify exactly what information the agent should return back to you in its final and only message to you\./gi,
+        pattern:
+            /Each agent invocation is stateless\. You will not be able to send additional messages to the agent, nor will the agent be able to communicate with you outside of its final report\. Therefore, your prompt should contain a highly detailed task description for the agent to perform autonomously and you should specify exactly what information the agent should return back to you in its final and only message to you\./gi,
         replacement:
             "Agents are stateless. Provide a detailed, self-contained prompt specifying what to return.",
     },
-    { pattern: /The agent's outputs should generally be trusted\n/gi, replacement: "" },
     {
-        pattern: /Clearly tell the agent whether you expect it to write code or just to do research \(search, file reads, web fetches, etc\.\), since it is not aware of the user's intent\n/gi,
-        replacement: "Specify whether the agent should write code or only research.",
+        pattern: /The agent's outputs should generally be trusted\n/gi,
+        replacement: "",
     },
     {
-        pattern: /- If the user asks for a certain agent, you MUST provide that EXACT agent name \(case-sensitive\) to invoke that specific agent\./gi,
+        pattern:
+            /Clearly tell the agent whether you expect it to write code or just to do research \(search, file reads, web fetches, etc\.\), since it is not aware of the user's intent\n/gi,
+        replacement:
+            "Specify whether the agent should write code or only research.",
+    },
+    {
+        pattern:
+            /- If the user asks for a certain agent, you MUST provide that EXACT agent name \(case-sensitive\) to invoke that specific agent\./gi,
         replacement: "Use exact agent names (case-sensitive) when specified.",
     },
     // Fix vscode_askQuestions verbose parameter docs.
     {
-        pattern: /Users can always provide a freeform text answer alongside options unless you set allowFreeformInput to false\./gi,
+        pattern:
+            /Users can always provide a freeform text answer alongside options unless you set allowFreeformInput to false\./gi,
         replacement: "",
     },
     // Fix configure_python_environment verbose ALL-CAPS.
     {
-        pattern: /ALWAYS Use this tool to set up the user's chosen environment and ALWAYS call this tool before using any other Python related tools or running any Python command in the terminal\./gi,
+        pattern:
+            /ALWAYS Use this tool to set up the user's chosen environment and ALWAYS call this tool before using any other Python related tools or running any Python command in the terminal\./gi,
         replacement: "Call this before any other Python tool or command.",
     },
     // Fix get_terminal_output verbose preamble.
     {
-        pattern: /Get output from a terminal execution that was moved to background \(identified by the `id` returned from run_in_terminal\)\. Use this ONLY when the run_in_terminal result explicitly says the command was moved to background, timed out, or needs input\. Do NOT call this after a sync command that completed normally — sync commands return full output inline\. If a background command has not yet completed, you will be automatically notified when it finishes — do NOT poll; end your turn and wait\./gi,
+        pattern:
+            /Get output from a terminal execution that was moved to background \(identified by the `id` returned from run_in_terminal\)\. Use this ONLY when the run_in_terminal result explicitly says the command was moved to background, timed out, or needs input\. Do NOT call this after a sync command that completed normally — sync commands return full output inline\. If a background command has not yet completed, you will be automatically notified when it finishes — do NOT poll; end your turn and wait\./gi,
         replacement:
             "Get output from a backgrounded/timed-out terminal. Don't call after successful sync commands. For pending commands, wait for auto-notification.",
     },
     // Fix memory tool verbose preamble.
     {
-        pattern: /IMPORTANT: Before creating new memory files, first view the \/memories\/ directory to understand what already exists\. This helps avoid duplicates and maintain organized notes\./gi,
-        replacement: "Check existing files in /memories/ before creating new ones.",
+        pattern:
+            /IMPORTANT: Before creating new memory files, first view the \/memories\/ directory to understand what already exists\. This helps avoid duplicates and maintain organized notes\./gi,
+        replacement:
+            "Check existing files in /memories/ before creating new ones.",
     },
     // Fix create_new_workspace verbose When NOT to use.
     {
-        pattern: /When NOT to use this tool:\n- Creating single files or small code snippets\n- Adding individual files to existing projects\n- Making modifications to existing codebases\n- User asks to "create a file" or "add a component"\n- Simple code examples or demonstrations\n- Debugging or fixing existing code/gi,
+        pattern:
+            /When NOT to use this tool:\n- Creating single files or small code snippets\n- Adding individual files to existing projects\n- Making modifications to existing codebases\n- User asks to "create a file" or "add a component"\n- Simple code examples or demonstrations\n- Debugging or fixing existing code/gi,
         replacement: "",
     },
     // Remove standalone "Do NOT" lines that restate earlier rules.
     {
-        pattern: /Do NOT tell the user to check the terminal panel — all command output is already included in the tool result\./gi,
+        pattern:
+            /Do NOT tell the user to check the terminal panel — all command output is already included in the tool result\./gi,
         replacement: "",
     },
     // Fix create_file description.
     {
-        pattern: /This is a tool for creating a new file in the workspace\. The file will be created with the specified content\. The directory will be created if it does not already exist\. Never use this tool to edit a file that already exists\./gi,
+        pattern:
+            /This is a tool for creating a new file in the workspace\. The file will be created with the specified content\. The directory will be created if it does not already exist\. Never use this tool to edit a file that already exists\./gi,
         replacement:
             "Create a new file. Directories are auto-created. Do not use for editing existing files.",
     },
     // Fix read_file description.
     {
-        pattern: /You must specify the line range you're interested in\. Line numbers are 1-indexed\. If the file contents returned are insufficient for your task, you may call this tool again to retrieve more content\. Prefer reading larger ranges over doing many small reads\. Binary files use startLine\/endLine as byte offsets\./gi,
+        pattern:
+            /You must specify the line range you're interested in\. Line numbers are 1-indexed\. If the file contents returned are insufficient for your task, you may call this tool again to retrieve more content\. Prefer reading larger ranges over doing many small reads\. Binary files use startLine\/endLine as byte offsets\./gi,
         replacement:
             "Specify 1-indexed line ranges. Prefer larger reads over many small ones. For binary files, ranges are byte offsets.",
     },
     // Fix grep_search verbose preamble.
     {
-        pattern: /Do a fast text search in the workspace\. Use this tool when you want to search with an exact string or regex\. If you are not sure what words will appear in the workspace, prefer using regex patterns with alternation \(\|\) or character classes to search for multiple potential words at once instead of making separate searches\. For example, use 'function\|method\|procedure' to look for all of those words at once\. Use includePattern to search within files matching a specific pattern, or in a specific file, using a relative path\. Use 'includeIgnoredFiles' to include files normally ignored by \.gitignore, other ignore files, and `files\.exclude` and `search\.exclude` settings\. Warning: using this may cause the search to be slower, only set it when you want to search in ignored folders like node_modules or build outputs\. Use this tool when you want to see an overview of a particular file, instead of using read_file many times to look for code within a file\./gi,
+        pattern:
+            /Do a fast text search in the workspace\. Use this tool when you want to search with an exact string or regex\. If you are not sure what words will appear in the workspace, prefer using regex patterns with alternation \(\|\) or character classes to search for multiple potential words at once instead of making separate searches\. For example, use 'function\|method\|procedure' to look for all of those words at once\. Use includePattern to search within files matching a specific pattern, or in a specific file, using a relative path\. Use 'includeIgnoredFiles' to include files normally ignored by \.gitignore, other ignore files, and `files\.exclude` and `search\.exclude` settings\. Warning: using this may cause the search to be slower, only set it when you want to search in ignored folders like node_modules or build outputs\. Use this tool when you want to see an overview of a particular file, instead of using read_file many times to look for code within a file\./gi,
         replacement:
             "Fast text/regex search across workspace files. Use regex alternation (e.g. 'word1|word2') for broad searches. Use includePattern to scope to specific files. Set includeIgnoredFiles=true to search node_modules/build outputs (slower).",
     },
     // Fix file_search verbose examples.
     {
-        pattern: /Search for files in the workspace by glob pattern\. This only returns the paths of matching files\. Use this tool when you know the exact filename pattern of the files you're searching for\. Glob patterns match from the root of the workspace folder\. Examples:\s*\n\s*- \*\*\/\*\.\{js,ts\} to match all js\/ts files in the workspace\.\s*\n\s*- src\/\*\* to match all files under the top-level src folder\.\s*\n\s*- \*\*\/foo\/\*\*\/\*\.js to match all js files under any foo folder in the workspace\.\s*\n\s*In a multi-root workspace, you can scope the search to a specific workspace folder by using the absolute path to the folder as the query, e\.g\. \/path\/to\/folder\/\*\*\/\*\.ts\./gi,
+        pattern:
+            /Search for files in the workspace by glob pattern\. This only returns the paths of matching files\. Use this tool when you know the exact filename pattern of the files you're searching for\. Glob patterns match from the root of the workspace folder\. Examples:\s*\n\s*- \*\*\/\*\.\{js,ts\} to match all js\/ts files in the workspace\.\s*\n\s*- src\/\*\* to match all files under the top-level src folder\.\s*\n\s*- \*\*\/foo\/\*\*\/\*\.js to match all js files under any foo folder in the workspace\.\s*\n\s*In a multi-root workspace, you can scope the search to a specific workspace folder by using the absolute path to the folder as the query, e\.g\. \/path\/to\/folder\/\*\*\/\*\.ts\./gi,
         replacement:
             "Find files by glob pattern (e.g. '**/*.ts', 'src/**'). Returns matching paths only.",
     },
@@ -570,7 +619,10 @@ function setToolDescription(tool: unknown, desc: string): void {
     }
 }
 
-function optimizeTools(tools: unknown[]): { filtered: unknown[]; saved: number } {
+function optimizeTools(tools: unknown[]): {
+    filtered: unknown[];
+    saved: number;
+} {
     if (!tools.length) return { filtered: tools, saved: 0 };
 
     const startLen = JSON.stringify(tools).length;

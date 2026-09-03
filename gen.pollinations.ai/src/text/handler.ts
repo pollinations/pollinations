@@ -17,10 +17,6 @@ import {
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
-import {
-    buildPollenCostHeaders,
-    injectPollenCostIntoStream,
-} from "./pollenCost.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
@@ -31,6 +27,10 @@ import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
+import {
+    buildPollenCostHeaders,
+    injectPollenCostIntoStream,
+} from "./pollenCost.js";
 import {
     getChatRequestData,
     getSimpleTextRequestData,
@@ -305,7 +305,11 @@ function sendTextStreamResponse(
     // Build a preliminary response so injectPollenCostIntoStream can read
     // the x-model-used header and any x-usage-* headers we set above.
     const preliminary = new Response(completion.responseStream, { headers });
-    return injectPollenCostIntoStream(preliminary, servedModelId || "", modelDef);
+    return injectPollenCostIntoStream(
+        preliminary,
+        servedModelId || "",
+        modelDef,
+    );
 }
 
 function base64ToArrayBuffer(value: string): ArrayBuffer {
@@ -363,6 +367,7 @@ async function generateTextResponse(
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.
         const servedModelId = candidate.id || undefined;
+        const servedModelDef = candidate.definition;
         if (normalizedRequestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
@@ -377,7 +382,11 @@ async function generateTextResponse(
         }
         // Provider-reported cost is read post-response in track (clamp-and-alert
         // in the registry) — malformed/absent cost never fails the request.
-        const trackingResponse = sendOpenAIResponse(completion, servedModelId, servedModelDef);
+        const trackingResponse = sendOpenAIResponse(
+            completion,
+            servedModelId,
+            servedModelDef,
+        );
         const publicCompletion = publicChatCompletion(completion);
         if (contentResponse) {
             c.var.track?.overrideResponseTracking(trackingResponse.clone());
@@ -389,7 +398,11 @@ async function generateTextResponse(
             );
         }
         c.var.track?.overrideResponseTracking(trackingResponse.clone());
-        return sendOpenAIResponse(publicCompletion, servedModelId, servedModelDef);
+        return sendOpenAIResponse(
+            publicCompletion,
+            servedModelId,
+            servedModelDef,
+        );
     } catch (thrown: unknown) {
         throwTextError(thrown as ServiceError);
     }

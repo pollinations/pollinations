@@ -189,11 +189,7 @@ function AppsPage() {
                 nightScene="/heroes/apps-top-night.webp"
             >
                 <ContentHeader
-                    eyebrow={
-                        loading
-                            ? "Apps built on Pollinations"
-                            : `${apps.length} apps built on Pollinations`
-                    }
+                    eyebrow="Community catalog"
                     title="Apps"
                     subtitle={
                         <>
@@ -223,10 +219,15 @@ function AppsPage() {
             </HeroScene>
 
             {spotlight.length > 0 && (
-                <AppCarousel
-                    apps={spotlight}
-                    className={postHeroSpacingClassName}
-                />
+                <section
+                    className={cn(
+                        "flex flex-col gap-5",
+                        postHeroSpacingClassName,
+                    )}
+                >
+                    <ContentHeader eyebrow="Spotlight" title="Featured apps" />
+                    <AppCarousel apps={spotlight} />
+                </section>
             )}
 
             <section

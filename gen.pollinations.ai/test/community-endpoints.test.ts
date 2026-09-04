@@ -290,10 +290,15 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
     );
 }
 
+const enterTestEnv = {
+    ...env,
+    GEN_BASE_URL: "https://gen.pollinations.ai",
+};
+
 async function fetchEnterApi(
     app: Hono<Env>,
     request: Request,
-    envOverride: typeof env = env,
+    envOverride: typeof env = enterTestEnv,
 ): Promise<Response> {
     const ctx = createExecutionContext();
     return app.fetch(request, envOverride, ctx);
@@ -2691,7 +2696,14 @@ fixtureTest(
             user: { packBalance: 100 },
         });
         const balanceBefore = await getUserBalance(db, caller.userId);
+        const expectedInnerPrice = calculateUsageBilling({
+            model: "openai-fast",
+            usage: { promptTextTokens: 10, completionTextTokens: 5 },
+            servedBy: getRegistryModelDefinition("openai-fast"),
+        }).price.totalPrice;
         const tinybirdEvents: Record<string, unknown>[] = [];
+        const testClientIp = "203.0.113.42";
+        const runtimeClientIps: string[] = [];
         let runtimeToken = "";
         vi.stubGlobal(
             "fetch",
@@ -2707,6 +2719,9 @@ fixtureTest(
                     request.url ===
                     "https://gen.pollinations.ai/v1/chat/completions"
                 ) {
+                    runtimeClientIps.push(
+                        request.headers.get("x-real-ip") ?? "",
+                    );
                     runtimeToken =
                         request.headers
                             .get("authorization")
@@ -2746,6 +2761,7 @@ fixtureTest(
                 headers: {
                     Authorization: `Bearer ${caller.key}`,
                     "Content-Type": "application/json",
+                    "cf-connecting-ip": testClientIp,
                 },
                 body: JSON.stringify({ model: modelId, input: "hello" }),
             }),
@@ -2770,9 +2786,11 @@ fixtureTest(
             parentApiKeyId: caller.id,
             managedAgentId: agentId,
         });
+        expect(runtimeClientIps).toEqual([testClientIp]);
         const balanceAfter = await getUserBalance(db, caller.userId);
-        expect(balanceAfter.packBalance).toBeLessThan(
-            balanceBefore.packBalance,
+        expect(balanceAfter.packBalance).toBeCloseTo(
+            balanceBefore.packBalance - expectedInnerPrice,
+            8,
         );
         expect(
             tinybirdEvents.filter(
@@ -2788,6 +2806,7 @@ fixtureTest(
                 headers: {
                     Authorization: `Bearer ${caller.key}`,
                     "Content-Type": "application/json",
+                    "cf-connecting-ip": testClientIp,
                 },
                 body: JSON.stringify({
                     model: modelId,
@@ -2812,9 +2831,11 @@ fixtureTest(
                 total_tokens: 15,
             },
         });
+        expect(runtimeClientIps).toEqual([testClientIp, testClientIp]);
         const balanceAfterChat = await getUserBalance(db, caller.userId);
-        expect(balanceAfterChat.packBalance).toBeLessThan(
-            balanceAfter.packBalance,
+        expect(balanceAfterChat.packBalance).toBeCloseTo(
+            balanceBefore.packBalance - 2 * expectedInnerPrice,
+            8,
         );
         const billedInnerEvents = tinybirdEvents.filter(
             (event) =>
@@ -2822,14 +2843,29 @@ fixtureTest(
                 event.isBilledUsage === true,
         );
         expect(billedInnerEvents).toHaveLength(2);
-        expect(billedInnerEvents).toEqual(
-            expect.arrayContaining([
-                expect.objectContaining({
-                    tokenCountPromptText: 10,
-                    tokenCountCompletionText: 5,
-                }),
-            ]),
+        for (const event of billedInnerEvents) {
+            expect(event).toMatchObject({
+                tokenCountPromptText: 10,
+                tokenCountCompletionText: 5,
+                totalPrice: expectedInnerPrice,
+            });
+        }
+        const outerEvents = tinybirdEvents.filter(
+            (event) => event.modelRequested === modelId,
         );
+        expect(outerEvents).toHaveLength(2);
+        for (const event of outerEvents) {
+            expect(event).toMatchObject({
+                totalCost: 0,
+                totalPrice: 0,
+                devPrice: 0,
+            });
+        }
+        const outerRequestIds = outerEvents.map((event) => event.requestId);
+        expect(new Set(outerRequestIds).size).toBe(2);
+        expect(
+            billedInnerEvents.map((event) => event.parentRequestId).sort(),
+        ).toEqual([...outerRequestIds].sort());
     },
 );
 

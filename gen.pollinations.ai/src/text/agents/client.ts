@@ -1,3 +1,4 @@
+import { getRealClientIp } from "@shared/client-ip.ts";
 import {
     type PromptAgentCommunityEndpointRuntime,
     parseListingPayload,
@@ -38,11 +39,18 @@ async function loadPromptAgentRuntime(
     if (!config)
         throw new Error(`Agent ${endpoint.id} has invalid configuration`);
 
+    const clientIp = getRealClientIp(c);
+    const fetcher: typeof fetch = (input, init) => {
+        const request = new Request(input, init);
+        request.headers.set("x-real-ip", clientIp);
+        return fetch(request);
+    };
+
     return {
         config,
         apiKey,
         genBaseUrl: new URL(c.req.url).origin,
-        fetcher: fetch,
+        fetcher,
     };
 }
 

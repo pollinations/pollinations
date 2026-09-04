@@ -566,8 +566,8 @@ export const ProxyListingPayloadSchema = z
 export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
 /**
- * An agent Enter runs itself. Its row id is also the model sent to the shared
- * runtime, which loads this configuration from the same row.
+ * A managed prompt agent Gen runs locally. Its row id is also the model used
+ * to load this configuration from the same row.
  */
 export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({

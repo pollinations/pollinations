@@ -151,122 +151,35 @@ When we process personal data on your behalf, you are the **controller** and we 
 
 **Effective date: September 4, 2026**
 
-### 1. About Polli
+Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ**. This section supplements the rest of these Terms. By using Polli, you agree to these Terms and the applicable Discord, GitHub, community, and repository rules.
 
-Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ** ("we," "us," or "our"). These Terms govern your use of Polli through Discord, its API integration, and connected GitHub features.
+### Eligibility and Service
 
-By using Polli, you agree to these Terms and our [Polli Privacy Policy](/privacy#16-polli-discord-bot). You must also follow the applicable Discord, GitHub, Pollinations.ai, and community or repository rules.
+You must be at least 16, meet Discord's minimum age requirements in your country, and be legally able to agree to these Terms.
 
-If you do not agree, do not use Polli.
+Depending on configuration and permissions, Polli may answer questions, process messages and attachments, search accessible Discord or public GitHub content, perform authorized GitHub actions, generate visual content, and provide an API interface. Features may be limited or unavailable because of permissions, configuration, provider availability, rate limits, or safety controls.
 
-### 2. Eligibility
+### Authorized and Acceptable Use
 
-You must be at least 16 years old and meet Discord's minimum age requirements in your country to use Polli. You must also be legally able to agree to these Terms. If you use Polli on behalf of an organization, you represent that you are authorized to do so.
+You may request only information and actions you are authorized to access or perform. Do not use Polli to:
 
-### 3. What Polli Does
+- Violate law, another person's rights, or another platform's rules.
+- Access or expose private information, bypass permissions, or misrepresent your authorization.
+- Harass others, distribute malware, steal credentials, spam, or disrupt services.
+- Submit credentials, tokens, secrets, or unnecessary sensitive personal data.
 
-Depending on configuration and your permissions, Polli may:
+Authorized security testing must be lawful, scoped, non-destructive, and approved by the relevant system owner.
 
-- answer questions and participate in Discord conversations;
-- process messages, attachments, links, images, and recent thread context;
-- search Discord messages, channels, threads, members, or roles within enforced access boundaries;
-- search and inspect public GitHub repositories, issues, pull requests, and comments;
-- create or comment on GitHub issues and perform other actions where explicitly authorized;
-- generate tables, charts, and diagrams as image attachments; and
-- provide an OpenAI-compatible API interface for Polli's assistant functionality.
+### Content, Output, and Actions
 
-Some features may be unavailable, limited, delayed, or changed based on permissions, service configuration, provider availability, rate limits, or safety controls.
+You retain your rights in submitted content and permit us to process it only as needed to operate, secure, and improve Polli and fulfill your requests. Content may be sent to the providers described in the [Privacy Policy](/privacy#16-polli-discord-bot).
 
-### 4. Permissions and Authorized Use
+Polli uses automated models and tools. Its output may be inaccurate, incomplete, outdated, insecure, or unsuitable for your purpose and is not professional advice. Review consequential output, code, commands, and repository changes before relying on or approving them.
 
-You may request only information and actions that you are authorized to access or perform.
+Requested GitHub comments, issues, pull requests, commits, or other actions may be public, persistent, indexed, or difficult to reverse.
 
-Discord search availability and results depend on the permission context available to Polli, the bot's permissions, server configuration, and Discord indexing. Public API callers do not have a Discord member identity, so Discord search through that interface may be unavailable or limited to content configured for public access.
+### Availability and Enforcement
 
-Polli may perform GitHub actions using credentials controlled by its operator. Those actions remain subject to Polli's internal authorization rules and the permissions of the connected GitHub account or application. A request does not guarantee that Polli will perform an action.
+Polli depends on third-party services and is provided as available. We may change, limit, suspend, or discontinue features and may restrict access to protect users, services, or third parties. The warranties, liability limits, governing law, and other provisions elsewhere in these Terms, including the liability cap in Section 10, apply to Polli.
 
-You are responsible for reviewing any requested public or consequential action before relying on it. GitHub comments, issues, pull requests, commits, and other actions may be public, persistent, indexed, or difficult to reverse.
-
-### 5. Acceptable Use
-
-You must not use Polli to:
-
-- violate law, regulation, contractual obligations, or another platform's terms;
-- access, infer, expose, or distribute private information without authorization;
-- bypass permissions, authentication, rate limits, safety controls, or access boundaries;
-- impersonate others, misrepresent authorization, or deceive users about Polli's output;
-- harass, threaten, exploit, discriminate against, or endanger others;
-- generate or distribute malware, credential theft, destructive payloads, spam, or abusive automation;
-- interfere with Polli, Discord, GitHub, Pollinations.ai, or related infrastructure;
-- submit credentials, secrets, authentication tokens, or unnecessarily sensitive personal data; or
-- use automated means to overload, scrape, benchmark, or probe the service in a manner that harms availability or security.
-
-Authorized security testing must be scoped, lawful, non-destructive, and approved by the relevant system owner.
-
-### 6. Your Content
-
-You retain the rights you hold in content you submit. You grant us a limited, worldwide license to host, transmit, transform, and process that content only as reasonably necessary to operate, secure, and improve Polli and fulfill your requests.
-
-You represent that you have the rights and permissions necessary to submit the content and request the processing or actions involved.
-
-Content you submit may be sent to Discord, GitHub, Pollinations.ai, model providers, and infrastructure providers as described in the Privacy Policy. Do not submit content that you are not permitted to share with those services.
-
-### 7. Generated Output
-
-Polli uses automated models and tools. Outputs may be inaccurate, incomplete, outdated, misleading, insecure, or unsuitable for your purpose. Polli may misunderstand context, omit results due to permissions or indexing, or propose actions that require human review.
-
-You are responsible for evaluating output before using it. Do not rely on Polli as a substitute for professional, legal, medical, financial, safety, or security advice. Review code, commands, repository changes, and other consequential output before execution or approval.
-
-### 8. Third-Party Services
-
-Polli depends on third-party services, including Discord, GitHub, Pollinations.ai, model providers, and hosting or infrastructure providers. Your use of those services remains governed by their respective terms and policies.
-
-We are not responsible for third-party service outages, changes, content, security, moderation, account actions, or retention practices. Features may stop working if a third party changes or removes an API, permission, account, or integration.
-
-### 9. Open-Source Software
-
-Polli's source code is publicly available under the license provided with the repository. The availability of source code does not grant access to production systems, credentials, private data, trademarks, or services beyond the rights stated in the applicable software license.
-
-Production behavior may also depend on deployment configuration, permissions, secrets, infrastructure, and third-party services that are not contained in the public source repository.
-
-### 10. Service Changes and Enforcement
-
-We may modify, limit, suspend, or discontinue any part of Polli. We may refuse requests, restrict access, remove integrations, or take protective action when reasonably necessary for security, safety, legal compliance, platform compliance, abuse prevention, or service reliability.
-
-We may suspend or terminate access for violations of these Terms. Server administrators and platform operators may also restrict or remove Polli independently.
-
-### 11. Availability
-
-Polli is provided on an as-available basis. We do not guarantee uninterrupted availability, specific response times, complete search results, preservation of conversation context, compatibility with every client, or continued support for a particular feature or provider.
-
-### 12. Disclaimers
-
-To the maximum extent permitted by law, Polli is provided "as is" and "as available," without warranties of merchantability, fitness for a particular purpose, non-infringement, accuracy, availability, or error-free operation.
-
-Nothing in these Terms excludes warranties or rights that cannot legally be excluded.
-
-### 13. Limitation of Liability
-
-To the maximum extent permitted by law, Myceli.AI OÜ and its contributors, officers, employees, contractors, and service providers will not be liable for indirect, incidental, special, consequential, exemplary, or punitive damages, or for loss of profits, data, goodwill, business opportunity, or service availability arising from Polli.
-
-The liability cap in Section 12 of these Terms applies to claims arising from Polli. This limitation does not apply where liability cannot legally be limited.
-
-### 14. Indemnity
-
-To the extent permitted by law, you agree to indemnify and hold Myceli.AI OÜ harmless from claims, losses, and reasonable costs arising from your unlawful use of Polli, your violation of these Terms, or content and actions you were not authorized to submit or request.
-
-### 15. Governing Law
-
-These Terms are governed by the laws of Estonia, without regard to conflict-of-law principles. Courts with jurisdiction in Estonia will have exclusive jurisdiction unless mandatory consumer law provides otherwise.
-
-If you are a consumer, you retain any mandatory protections and venues available under the law of your country of residence.
-
-### 16. Changes to These Terms
-
-We may update these Terms as Polli, its providers, or applicable requirements change. We will update the effective date when revised Terms are published. Continued use after an update takes effect constitutes acceptance where permitted by law.
-
-### 17. Contact
-
-**Operator:** Myceli.AI OÜ\
-**Product:** Pollinations.ai / Polli\
-**Email:** hello@pollinations.ai
+Questions about Polli may be sent to **hello@pollinations.ai**.

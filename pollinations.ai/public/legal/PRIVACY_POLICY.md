@@ -125,113 +125,35 @@ Email: hello@pollinations.ai
 
 **Effective date: September 4, 2026**
 
-### 1. About Polli
+Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ**. This section supplements the rest of this Privacy Policy.
 
-Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ** ("we," "us," or "our"). This Privacy Policy explains how Polli processes information when people interact with it through Discord, its API integration, or connected GitHub features.
+### Information Polli Processes
 
-For privacy questions or requests, contact **hello@pollinations.ai**.
+Depending on the feature used, Polli may process:
 
-### 2. Information Polli Processes
+- Discord user, server, channel, thread, message, and role identifiers, including usernames, display names, permissions, and role membership.
+- Messages directed to Polli, recent conversation context, and Discord content retrieved when a user requests a search.
+- Attachments, images, videos, links, embeds, and related metadata.
+- Public GitHub profiles, repositories, issues, pull requests, comments, projects, and records of requested GitHub actions.
+- API prompts, conversation history, model parameters, authorization results, and technical request metadata.
+- Limited operational data such as timestamps, request status, errors, latency, tool activity, and rate-limit events.
 
-Depending on the feature you use, Polli may process:
+Do not send Polli passwords, tokens, API keys, or unnecessary sensitive information.
 
-- **Discord account and server information:** user IDs, usernames, display names, role IDs, channel and thread IDs, server IDs, and permission information.
-- **Messages and conversation context:** messages directed to Polli, recent messages needed to understand a conversation, and Discord content retrieved when you ask Polli to search.
-- **Attachments and links:** files, images, videos, URLs, embeds, and related metadata supplied in a conversation or returned by an authorized search.
-- **GitHub information:** public repository content, issues, pull requests, comments, usernames, and metadata needed to answer questions or perform requested GitHub actions.
-- **API information:** prompts, conversation history, model parameters, authentication and authorization results, and technical request metadata when Polli is accessed through an API.
-- **Operational information:** timestamps, request status, errors, latency, tool activity, rate-limit information, and limited logs needed to operate, secure, and troubleshoot the service.
+### Use and Access Controls
 
-Polli does not need your password, Discord token, GitHub token, Pollinations API key, or other credentials in message content. Do not send credentials or unnecessary sensitive information to Polli.
+We use this information to respond, maintain relevant context, perform requested searches and authorized GitHub actions, process attachments, enforce permissions, prevent abuse, and troubleshoot the service.
 
-### 3. How Polli Uses Information
+Discord search availability and results depend on the identity and permission context available to Polli, the bot's permissions, server configuration, and Discord indexing. Public API callers have no Discord member identity, so Discord search through that interface may be unavailable or limited to content configured for public access.
 
-Polli processes information to:
+### Providers and Retention
 
-- answer questions and maintain relevant conversation context;
-- search Discord content within the access boundaries enforced by Polli;
-- inspect public repository information and perform authorized GitHub actions;
-- process attachments, links, tables, charts, and diagrams;
-- enforce permissions, rate limits, and abuse protections;
-- diagnose errors, monitor reliability, and improve service operation; and
-- comply with legal obligations and protect users, communities, and our services.
+Requests may be processed by Discord, GitHub, Pollinations.ai, model providers routed through Pollinations.ai, and infrastructure providers needed to operate Polli. Their terms and privacy policies may also apply.
 
-Polli's source code is publicly available, allowing its implemented behavior and permission controls to be inspected. Public source code does not expose production credentials or private user data.
+Pollinations.ai does not sell personal data or use prompts and outputs to train or fine-tune models without explicit opt-in.
 
-### 4. Discord Search and Access Controls
+Polli holds active conversation context temporarily in memory. Limited logs and caches follow the retention periods described elsewhere in this Policy. Discord messages, GitHub content, and attachments remain subject to those platforms' retention, deletion, and visibility controls.
 
-Polli applies Discord access controls using the identity and permission context available for each interaction. Search availability and results depend on the bot's permissions, server configuration, Discord indexing, and the request context.
+### Rights and Contact
 
-Public API callers do not have a Discord member identity. Discord search through that interface may therefore be unavailable or limited to content configured for public access. Access controls may reduce or omit results, and a successful search response does not imply that every matching Discord message was retrieved.
-
-### 5. AI and Service Providers
-
-Polli uses Pollinations.ai model APIs and may use model and infrastructure providers needed to generate responses or operate specific features. Information included in a request may be transmitted to those providers for processing. Polli may also interact with:
-
-- **Discord**, for messages, server context, permissions, and bot functionality;
-- **GitHub**, for repository information and requested repository actions;
-- **Cloud and infrastructure providers**, for hosting, networking, logging, and storage; and
-- **Model providers routed through Pollinations.ai**, for inference and related processing.
-
-Those services may process information under their own terms and privacy policies. We select and configure services for Polli's operation, but we do not control data you independently publish to Discord or GitHub.
-
-Polli does not sell personal data. We do not intentionally use private conversation content to train Polli. We do not promise that content sent to an external platform or model provider is governed only by this Policy; the applicable provider's terms and configured data-handling practices also apply.
-
-### 6. Retention
-
-Polli keeps conversation context temporarily so it can respond coherently. In-memory sessions and short-lived caches expire automatically according to operational settings.
-
-Operational logs may be retained for security, reliability, debugging, abuse prevention, and legal compliance for as long as reasonably necessary for those purposes. We do not claim a fixed retention period where the underlying implementation or hosting configuration does not enforce one.
-
-Discord messages, GitHub content, and attachments remain subject to the retention, deletion, and visibility controls of Discord, GitHub, the relevant server or repository, and their users. A requested GitHub action or comment may be public and persist in repository history even after Polli's temporary context expires.
-
-### 7. Legal Bases
-
-Where the European Economic Area or similar law applies, we process information as necessary to:
-
-- provide the service requested by you;
-- pursue legitimate interests in operating, securing, and improving Polli;
-- comply with legal obligations; and
-- act with consent where consent is required.
-
-### 8. Sharing
-
-We share information only as needed to operate Polli, fulfill a request, protect the service, comply with law, or complete a transaction you direct. This may include the providers described above and authorized contributors who need access to diagnose or operate the service.
-
-We may disclose information if reasonably necessary to respond to lawful requests, enforce our terms, investigate abuse, or protect rights, safety, and service integrity.
-
-### 9. International Processing
-
-Polli and its providers may process information in countries other than your own. Where required, we use appropriate safeguards for international transfers. Discord, GitHub, and model providers may independently determine where they process information under their own policies.
-
-### 10. Security
-
-We use access controls, scoped credentials, permission checks, rate limits, input restrictions, and operational monitoring appropriate to Polli's functions. No online service is completely secure, and we cannot guarantee absolute security.
-
-If you believe Polli exposed information or has a security issue, stop sharing sensitive data and contact **hello@pollinations.ai**.
-
-### 11. Your Choices and Rights
-
-You can avoid further processing by not interacting with Polli, removing Polli from a server you control, deleting content through the platform where available, or asking a server administrator for help.
-
-Depending on applicable law, you may have rights to request access, correction, deletion, restriction, objection, or portability of personal data, and to complain to a data-protection authority. To make a request, contact **hello@pollinations.ai** and provide enough information for us to identify the relevant interaction without sending credentials or unnecessary sensitive data.
-
-Some requests may need to be handled through Discord, GitHub, or a server administrator because those parties control the original content or account data. We may retain information where required by law or necessary for security, fraud prevention, dispute resolution, or protection of legal rights.
-
-### 12. Children
-
-Polli is not directed to children under 16. You must also meet Discord's minimum age requirements in your country to use Polli.
-
-### 13. Automated Output
-
-Polli generates automated responses and may make mistakes. Its output should not be treated as professional, legal, medical, financial, or security advice. Human review is required before relying on consequential output or approving repository changes.
-
-### 14. Changes to This Policy
-
-We may update this Privacy Policy as Polli, its providers, or applicable requirements change. We will update the effective date when material changes are published.
-
-### 15. Contact
-
-**Data controller:** Myceli.AI OÜ\
-**Product:** Pollinations.ai / Polli\
-**Email:** hello@pollinations.ai
+The rights and safeguards described elsewhere in this Policy apply to Polli. Some requests must be handled by Discord, GitHub, or a server administrator because they control the original content. For privacy or data requests, contact **hello@pollinations.ai**.

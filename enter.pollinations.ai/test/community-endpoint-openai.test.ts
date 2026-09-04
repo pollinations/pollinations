@@ -602,9 +602,7 @@ describe("community endpoint OpenAI service", () => {
     it("probes speech endpoints with the OpenAI speech contract and bills sample characters", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
-            expect(request.url).toBe(
-                "https://api.example.com/v1/audio/speech",
-            );
+            expect(request.url).toBe("https://api.example.com/v1/audio/speech");
             expect(request.headers.get("authorization")).toBe(
                 "Bearer sk_saved_token",
             );

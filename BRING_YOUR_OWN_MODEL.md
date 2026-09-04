@@ -115,7 +115,7 @@ For a text provider with native Responses support, add the exact URL with `--res
 
 Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
 
-Speech models use `--modality speech` and are priced per input character. For example, `--completion-audio-price 0.000075` charges 75 Pollen per 1M input characters.
+Speech models use `--modality speech` and are priced per input character. For example, `--completion-audio-price 0.00003` charges 30 Pollen per 1M input characters.
 
 ## Publishing Controls
 

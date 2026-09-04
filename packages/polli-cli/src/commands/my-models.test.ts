@@ -113,11 +113,11 @@ describe("modelBody", () => {
                     baseUrl: "https://example.com/v1",
                     bearerToken: "upstream-token",
                     modality: "speech",
-                    completionAudioPrice: "0.000075",
+                    completionAudioPrice: "0.00003",
                 },
                 true,
             ),
-        ).toMatchObject({ modality: "speech", completionAudioPrice: 0.000075 });
+        ).toMatchObject({ modality: "speech", completionAudioPrice: 0.00003 });
     });
 
     it("supports per-second video model registration", () => {

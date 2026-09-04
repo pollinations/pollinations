@@ -84,17 +84,14 @@ export async function callCommunitySpeechEndpoint(
         });
     } catch (error) {
         throw new UpstreamError(502 as ContentfulStatusCode, {
-            message:
-                "Community speech endpoint timed out or could not connect",
+            message: "Community speech endpoint timed out or could not connect",
             cause: error,
             requestUrl: new URL(upstreamUrl),
         });
     }
     response = await ensureUpstreamOk(response, upstreamUrl);
 
-    const contentType = (
-        response.headers.get("content-type") ?? ""
-    )
+    const contentType = (response.headers.get("content-type") ?? "")
         .split(";")[0]
         .trim()
         .toLowerCase();

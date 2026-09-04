@@ -61,7 +61,13 @@ interface MyModelBase {
 interface ProxyMyModel extends MyModelBase {
     type: "proxy";
     paidOnly: boolean;
-    modality: "text" | "image" | "video" | "transcription" | "speech" | "embedding";
+    modality:
+        | "text"
+        | "image"
+        | "video"
+        | "transcription"
+        | "speech"
+        | "embedding";
     imagePricing: "request" | "tokens";
     completionImagePrice: number;
     completionVideoPrice: number;

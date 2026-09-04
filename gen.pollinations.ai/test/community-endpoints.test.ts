@@ -771,13 +771,11 @@ describe("community endpoint helpers", () => {
     });
 
     it("derives the OpenAI-compatible audio speech URL", () => {
+        expect(communityAudioSpeechUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/audio/speech",
+        );
         expect(
-            communityAudioSpeechUrl("https://api.example.com/v1"),
-        ).toBe("https://api.example.com/v1/audio/speech");
-        expect(
-            communityAudioSpeechUrl(
-                "https://api.example.com/v1/audio/speech",
-            ),
+            communityAudioSpeechUrl("https://api.example.com/v1/audio/speech"),
         ).toBe("https://api.example.com/v1/audio/speech");
     });
 
@@ -1191,7 +1189,7 @@ describe("community endpoint helpers", () => {
             title: "Community Speech",
             description: "Community text-to-speech model",
             modality: "speech",
-            ...communityEndpointPrices({ completionAudioPrice: 0.000075 }),
+            ...communityEndpointPrices({ completionAudioPrice: 0.00003 }),
         });
 
         expect(definition).toMatchObject({
@@ -1199,7 +1197,7 @@ describe("community endpoint helpers", () => {
             inputModalities: ["text"],
             outputModalities: ["audio"],
             supportedEndpoints: ["/v1/audio/speech"],
-            cost: { completionAudioTokens: 0.000075 },
+            cost: { completionAudioTokens: 0.00003 },
         });
         expect(definition).not.toHaveProperty("flatRate");
         expect(definition.cost).not.toHaveProperty("promptTextTokens");
@@ -1209,15 +1207,15 @@ describe("community endpoint helpers", () => {
                 usage: { completionAudioTokens: 60 },
                 servedBy: definition,
             }).price.totalPrice,
-        ).toBeCloseTo(0.000075 * 60, 10);
+        ).toBeCloseTo(0.00003 * 60, 10);
     });
 
     it("keeps the speech price as the only billed bucket for its modality", () => {
         const definition = communityPriceDefinition(
-            communityEndpointPrices({ completionAudioPrice: 0.000075 }),
+            communityEndpointPrices({ completionAudioPrice: 0.00003 }),
             "speech",
         );
-        expect(definition).toEqual({ completionAudioTokens: 0.000075 });
+        expect(definition).toEqual({ completionAudioTokens: 0.00003 });
     });
 
     it("bills speech characters against the per-1M completion audio column", () => {
@@ -1304,7 +1302,7 @@ describe("community endpoint helpers", () => {
                     "sk_saved_token",
                     secret,
                 ),
-                ...communityEndpointPrices({ completionAudioPrice: 0.000075 }),
+                ...communityEndpointPrices({ completionAudioPrice: 0.00003 }),
             };
         }
 
@@ -1343,9 +1341,7 @@ describe("community endpoint helpers", () => {
             expect(response.status).toBe(200);
             // The upstream audio format must survive to the caller.
             expect(response.headers.get("content-type")).toBe("audio/mpeg");
-            expect(response.headers.get("x-model-used")).toBe(
-                "voodoohop/tts",
-            );
+            expect(response.headers.get("x-model-used")).toBe("voodoohop/tts");
             expect(
                 response.headers.get("x-usage-completion-audio-tokens"),
             ).toBe("12");
@@ -1392,7 +1388,9 @@ describe("community endpoint helpers", () => {
                 ),
             ).rejects.toMatchObject({
                 status: 502,
-                message: expect.stringContaining("did not return audio content"),
+                message: expect.stringContaining(
+                    "did not return audio content",
+                ),
             });
         });
 
@@ -5456,7 +5454,7 @@ fixtureTest(
 
 fixtureTest(
     "registers an OpenAI-compatible speech endpoint and bills it through the speech API",
-    async ({ apiKey }) => {
+    async () => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `tts-${crypto.randomUUID().slice(0, 8)}`;
         const ownerUserId = await createTestUser({
@@ -5507,7 +5505,7 @@ fixtureTest(
             baseUrl: "https://api.example.com/v1",
             upstreamModel: "tts-1",
             bearerToken: "Bearer sk_speech_upstream",
-            completionAudioPrice: 0.000075,
+            completionAudioPrice: 0.00003,
         };
         const registerResponse = await fetchEnterApi(
             enterApi,
@@ -5539,7 +5537,7 @@ fixtureTest(
             completionAudioPrice: 0,
             pending: {
                 visibility: "public",
-                completionAudioPrice: 0.000075,
+                completionAudioPrice: 0.00003,
             },
         });
         await maturePendingCommunityEndpoint(registered.id);
@@ -5595,9 +5593,9 @@ fixtureTest(
         expect(
             speechResponse.headers.get("x-usage-completion-audio-tokens"),
         ).toBe("12");
-        expect(
-            new Uint8Array(await speechResponse.arrayBuffer()),
-        ).toEqual(audioBytes);
+        expect(new Uint8Array(await speechResponse.arrayBuffer())).toEqual(
+            audioBytes,
+        );
 
         const balanceAfter = await getUserBalance(db, caller.userId);
         expect(balanceAfter.tierBalance).toBeLessThan(
@@ -5645,7 +5643,7 @@ fixtureTest(
             category: "audio",
             community: true,
             input_modalities: ["text"],
-            pricing: { completionAudioTokens: "0.000075" },
+            pricing: { completionAudioTokens: "0.00003" },
         });
         expect(listedAudioModel?.supported_endpoints).toEqual(
             expect.arrayContaining(["/v1/audio/speech"]),

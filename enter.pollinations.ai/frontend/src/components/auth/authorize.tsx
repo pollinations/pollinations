@@ -688,9 +688,7 @@ export function Authorize() {
                                         {formatUsdCentsCompact(
                                             selectedTopUpFeeCents,
                                         )}{" "}
-                                        service fee. Tax is calculated at
-                                        checkout. You won&apos;t be charged
-                                        until you confirm there.
+                                        service fee. Tax calculated at checkout.
                                     </p>
                                 </Alert>
                             </div>

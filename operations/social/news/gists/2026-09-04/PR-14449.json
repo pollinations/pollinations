@@ -1,0 +1,35 @@
+{
+  "pr_number": 14449,
+  "title": "refactor: run managed prompt agents in gen",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14449",
+  "merged_at": "2026-09-04T20:05:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Runs managed prompt and MCP agent execution inside Gen.\n- Routes child model and MCP calls through public Gen with scoped run tokens, preserving billing, caching, and tracking.\n- Keeps Enter responsible only for agent configuration and public metadata.\n- Removes Enter's private agent runtime and unused Chat serialization route.\n\nTests:\n- Gen and Enter typechecks\n- Managed Responses and Chat billing integration\n- Managed runtime and Responses tests\n- Managed-agent lifecycle and Enter config tests\n- Gen and Enter staging builds",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents moved into the garden",
+    "blurb": "Managed prompt and MCP agents now do their actual buzzing inside Gen. Their child model calls carry scoped run tokens, so billing, caching, and tracking follow the whole little expedition.",
+    "summary": "Moved managed prompt and MCP agent execution from Enter into Gen, routing child model and MCP calls through the public Gen API with scoped run tokens while Enter retains agent configuration and public metadata.",
+    "impact": "Managed agent runs now keep billing, caching, and tracking intact across their child model and MCP calls through Gen, with the old private Enter runtime retired.",
+    "keywords": [
+      "managed-agents",
+      "gen",
+      "mcp",
+      "responses-api",
+      "billing",
+      "caching",
+      "run-tokens"
+    ],
+    "visual_concept": "A cozy handoff scene: Polli guides tiny prompt-agent seedlings from an Enter gateway garden into a welcoming Gen greenhouse, where scoped token badges travel with each plant to connected model terminals and MCP tool sheds. The move should read as a clean internal routing upgrade, with glowing paths representing preserved billing, caching, and tracking.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny gardener tool belt as she guides code-plant seedlings through a lime green (#ecf874) garden gate labeled \"GEN\" toward cozy retro terminals and little MCP tool sheds; each seedling carries a tiny scoped token tag while a CRT monitor robot happily tracks their glowing path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14449.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing a tiny gardener tool belt as she guides code-plant seedlings through a lime green (#ecf874) garden gate labeled \"GEN\" toward cozy retro terminals and little MCP tool sheds; each seedling carries a tiny scoped token tag while a CRT monitor robot happily tracks their glowing path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, subtle CRT glow, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-04T20:06:27.797186+00:00"
+}

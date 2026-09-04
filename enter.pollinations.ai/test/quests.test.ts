@@ -705,7 +705,7 @@ test("quest check records product rewards and claim endpoint credits one", async
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
-    expect(balance?.tierBalance).toBeCloseTo(user.tierBalance ?? 0);
+    expect(balance?.tierBalance).toBeCloseTo((user.tierBalance ?? 0) + 0.25);
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/quests/rewards",
@@ -729,9 +729,8 @@ test("quest check records product rewards and claim endpoint credits one", async
         }[];
     };
 
-    // History shape, not exact amounts: nothing claimed yet (every reward's
-    // claimedAt is null, asserted below), no internal fields leak, and the
-    // first-API-key reward is present so we can claim it below.
+    // History shape, not exact catalog: no internal fields leak, the API-key
+    // reward auto-claims, and another earned reward remains manually claimable.
     expect(payload.rewards.length).toBeGreaterThan(0);
     for (const reward of payload.rewards) {
         expect(reward).not.toHaveProperty("idempotencyKey");
@@ -739,16 +738,22 @@ test("quest check records product rewards and claim endpoint credits one", async
         expect(reward).not.toHaveProperty("sourceRef");
         expect(reward).not.toHaveProperty("metadata");
         expect(reward).not.toHaveProperty("metadataJson");
-        expect(reward.claimedAt).toBeNull();
         expect(typeof reward.earnedAt).toBe("string");
     }
     const firstApiKeyReward = payload.rewards.find(
         (reward) => reward.questId === "first_api_key",
     );
-
     if (!firstApiKeyReward) throw new Error("Expected first API key reward");
+    expect(firstApiKeyReward.claimedAt).not.toBeNull();
+
+    const topUpReward = payload.rewards.find(
+        (reward) => reward.questId === TOP_UP_SINCE_LAUNCH_QUEST_ID,
+    );
+
+    if (!topUpReward) throw new Error("Expected top-up reward");
+    expect(topUpReward.claimedAt).toBeNull();
     const claimResponse = await SELF.fetch(
-        `http://localhost:3000/api/quests/rewards/${firstApiKeyReward.id}/claim`,
+        `http://localhost:3000/api/quests/rewards/${topUpReward.id}/claim`,
         {
             method: "POST",
             headers: {
@@ -763,14 +768,14 @@ test("quest check records product rewards and claim endpoint credits one", async
     };
     expect(claimPayload.claimed).toBe(true);
     expect(claimPayload.reward.claimedAt).not.toBeNull();
-    expect(claimPayload.reward.pollenAmount).toBe(0.25);
+    expect(claimPayload.reward.pollenAmount).toBe(5);
 
     const [claimedBalance] = await db
         .select({ tierBalance: schema.user.tierBalance })
         .from(schema.user)
         .where(eq(schema.user.id, user.id));
     expect(claimedBalance?.tierBalance).toBeCloseTo(
-        (user.tierBalance ?? 0) + 0.25,
+        (user.tierBalance ?? 0) + 5.25,
     );
 });
 

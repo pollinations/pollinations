@@ -316,6 +316,16 @@ main > * {
     mask-image: linear-gradient(to bottom, transparent 0%, black 34%);
 }
 
+/* Feature-card scenes are full-bleed backgrounds. Mirroring the hero's
+   two-axis dissolve keeps the upper-left copy area quiet while the artwork
+   resolves naturally into the lower-right corner. */
+.tool-card-scene {
+    mask-image:
+        linear-gradient(to right, transparent 8%, black 62%),
+        linear-gradient(to bottom, transparent 18%, black 62%);
+    mask-composite: intersect;
+}
+
 /* ── /play ─────────────────────────────────────────────────────────────
    Layout that needs container queries or sticky positioning, which is
    clearer as CSS than as a wall of arbitrary variants. */

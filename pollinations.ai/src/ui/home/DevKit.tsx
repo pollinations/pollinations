@@ -14,6 +14,7 @@ import {
     Surface,
     TerminalIcon,
     Text,
+    useColorMode,
     WalletIcon,
 } from "@pollinations/ui";
 import type { ComponentType, ReactNode } from "react";
@@ -24,8 +25,11 @@ type Feature = {
     body: string | ((modelCount: number | null) => string);
     linkLabel?: string;
     href?: string;
-    external?: boolean;
     icon: ComponentType<IconProps>;
+    scene?: {
+        day: string;
+        night: string;
+    };
 };
 
 const BUILD_FOUNDATIONS: Feature[] = [
@@ -46,24 +50,33 @@ const BUILD_FOUNDATIONS: Feature[] = [
         },
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
-        external: false,
         icon: GenApiIcon,
+        scene: {
+            day: "/tool-scenes/api-models-day.webp",
+            night: "/tool-scenes/api-models-night.webp",
+        },
     },
     {
         title: "Ready-made agents",
         body: "Use agents that already combine instructions, models and tools through the same OpenAI-compatible API.",
         linkLabel: "Explore agents",
         href: "https://enter.pollinations.ai/models?scope=community&category=agent",
-        external: false,
         icon: RobotIcon,
+        scene: {
+            day: "/tool-scenes/ready-agents-day.webp",
+            night: "/tool-scenes/ready-agents-night.webp",
+        },
     },
     {
         title: "Connect Pollinations accounts",
         body: "Let users connect securely through OAuth 2.1, approve access and a spending budget, and pay with their own Pollen—without you building account or payment infrastructure.",
         linkLabel: "Connect an account",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
-        external: false,
         icon: WalletIcon,
+        scene: {
+            day: "/tool-scenes/connected-accounts-day.webp",
+            night: "/tool-scenes/connected-accounts-night.webp",
+        },
     },
 ];
 
@@ -73,24 +86,33 @@ const BUILD_TOOLS: Feature[] = [
         body: "Upload generated images, audio and video and receive reusable URLs for apps, agents and workflows.",
         linkLabel: "Store media",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
-        external: false,
         icon: CloudUploadIcon,
+        scene: {
+            day: "/tool-scenes/media-hosting-day.webp",
+            night: "/tool-scenes/media-hosting-night.webp",
+        },
     },
     {
         title: "Pollinations CLI",
         body: "Generate every modality, inspect models and manage access, published models and agents from the shell.",
         linkLabel: "Use the CLI",
         href: "https://gen.pollinations.ai/docs#tag/cli",
-        external: false,
         icon: TerminalIcon,
+        scene: {
+            day: "/tool-scenes/cli-day.webp",
+            night: "/tool-scenes/cli-night.webp",
+        },
     },
     {
         title: "MCP connectors",
         body: "Connect generation, media processing and web search tools to agents—or use them from any MCP-compatible product.",
         linkLabel: "Explore MCPs",
         href: "https://enter.pollinations.ai/models?category=mcp",
-        external: false,
         icon: McpIcon,
+        scene: {
+            day: "/tool-scenes/mcp-connectors-day.webp",
+            night: "/tool-scenes/mcp-connectors-night.webp",
+        },
     },
 ];
 
@@ -121,6 +143,7 @@ function FeatureCard({
     feature: Feature;
     modelCount: number | null;
 }) {
+    const { isDark } = useColorMode();
     const Icon = feature.icon;
     const body =
         typeof feature.body === "function"
@@ -130,32 +153,47 @@ function FeatureCard({
     return (
         <Surface
             variant="card"
-            className="flex h-full flex-col gap-5 p-5 sm:p-6"
+            className={cn(
+                "relative flex h-full flex-col overflow-hidden p-0",
+                feature.scene && "min-h-96",
+            )}
         >
-            <div className="flex items-center gap-3">
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
-                    <Icon className="size-6" />
-                </div>
-                <Heading as="h3" size="card">
-                    {feature.title}
-                </Heading>
-            </div>
-
-            <Text size="sm" className="flex-1">
-                {body}
-            </Text>
-
-            {feature.href && feature.linkLabel ? (
-                <ExternalLinkButton
-                    href={feature.href}
-                    external={feature.external}
-                    size="sm"
-                    appearance="raised"
-                    className="self-start whitespace-nowrap"
-                >
-                    {feature.linkLabel}
-                </ExternalLinkButton>
+            {feature.scene ? (
+                <img
+                    src={isDark ? feature.scene.night : feature.scene.day}
+                    alt=""
+                    width={928}
+                    height={1152}
+                    loading="lazy"
+                    decoding="async"
+                    aria-hidden="true"
+                    className="tool-card-scene pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-center"
+                />
             ) : null}
+
+            <div className="relative z-10 flex flex-1 flex-col gap-5 p-5 sm:p-6">
+                <div className="flex items-center gap-3">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
+                        <Icon className="size-6" />
+                    </div>
+                    <Heading as="h3" size="card">
+                        {feature.title}
+                    </Heading>
+                </div>
+
+                <Text size="sm">{body}</Text>
+
+                {feature.href && feature.linkLabel ? (
+                    <ExternalLinkButton
+                        href={feature.href}
+                        size="sm"
+                        appearance="raised"
+                        className="self-start whitespace-nowrap"
+                    >
+                        {feature.linkLabel}
+                    </ExternalLinkButton>
+                ) : null}
+            </div>
         </Surface>
     );
 }
@@ -214,7 +252,6 @@ export function DevKit({ className }: { className?: string }) {
                     <div className="flex flex-wrap gap-2 lg:justify-end">
                         <ExternalLinkButton
                             href="https://enter.pollinations.ai/quests"
-                            external={false}
                             size="sm"
                             appearance="raised"
                             className="whitespace-nowrap"
@@ -223,7 +260,6 @@ export function DevKit({ className }: { className?: string }) {
                         </ExternalLinkButton>
                         <ExternalLinkButton
                             href="https://enter.pollinations.ai/keys"
-                            external={false}
                             size="sm"
                             appearance="raised"
                             className="whitespace-nowrap"
@@ -266,7 +302,6 @@ export function DevKit({ className }: { className?: string }) {
                 </div>
                 <ExternalLinkButton
                     href="https://enter.pollinations.ai"
-                    external={false}
                     size="lg"
                     appearance="raised"
                     className="self-start whitespace-nowrap"

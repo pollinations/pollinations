@@ -2,8 +2,8 @@ import inspect
 import unittest
 
 from src.ai.prompts import BASE_SYSTEM_PROMPT, DISCORD_PROMPT_ADDON
-from src.ai.tool_filters import filter_tools_by_intent
-from src.ai.tools import DISCORD_SEARCH_TOOL, RENDER_VISUAL_TOOL
+from src.ai.tool_filters import filter_api_tools, filter_tools_by_intent, get_tools_with_embeddings
+from src.ai.tools import DISCORD_SEARCH_TOOL, GITHUB_TOOLS, RENDER_VISUAL_TOOL
 from src.bot import format_discord_identity
 from src.discord.search import tool_discord_search
 
@@ -53,6 +53,19 @@ class DiscordToolContractTests(unittest.TestCase):
         filtered = filter_tools_by_intent("what all can you render?", [RENDER_VISUAL_TOOL])
 
         self.assertEqual(filtered, [RENDER_VISUAL_TOOL])
+
+    def test_api_excludes_discord_only_tools_and_actions(self):
+        tools = get_tools_with_embeddings(GITHUB_TOOLS, code_search_enabled=True)
+        filtered = filter_api_tools(tools)
+        by_name = {tool["function"]["name"]: tool for tool in filtered}
+
+        self.assertIn("discord_search", by_name)
+        self.assertNotIn("render_visual", by_name)
+        issue_actions = by_name["github_issue"]["function"]["parameters"]["properties"]["action"]["enum"]
+        self.assertNotIn("subscribe", issue_actions)
+        self.assertNotIn("unsubscribe", issue_actions)
+        self.assertNotIn("unsubscribe_all", issue_actions)
+        self.assertNotIn("list_subscriptions", issue_actions)
 
 
 if __name__ == "__main__":

@@ -167,7 +167,17 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool, is_collaborator
 
 # Actions blocked for API users (superset of ADMIN_ACTIONS — also blocks PR comment/review)
 API_RESTRICTED_ACTIONS = {
-    "github_issue": ADMIN_ACTIONS["github_issue"] | {"create", "comment", "edit_comment", "delete_comment"},
+    "github_issue": ADMIN_ACTIONS["github_issue"]
+    | {
+        "create",
+        "comment",
+        "edit_comment",
+        "delete_comment",
+        "subscribe",
+        "unsubscribe",
+        "unsubscribe_all",
+        "list_subscriptions",
+    },
     "github_pr": ADMIN_ACTIONS["github_pr"] | {"comment", "review"},
     "github_project": ADMIN_ACTIONS["github_project"],
 }

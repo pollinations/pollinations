@@ -203,9 +203,28 @@ class SSEDecoder {
         const field = separator < 0 ? line : line.slice(0, separator);
         const rawValue = separator < 0 ? "" : line.slice(separator + 1);
         const value = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
-        if (field === "data") this.data.push(value);
+        if (field === "data") {
+            // OpenAI-compatible streams commonly emit one JSON payload per
+            // data line without the blank SSE separator. Preserve legitimate
+            // multiline data until the accumulated JSON is complete.
+            const pending = this.hasCompleteData() ? this.dispatch() : null;
+            this.data.push(value);
+            return pending;
+        }
         if (field === "event") this.event = value;
         return null;
+    }
+
+    private hasCompleteData(): boolean {
+        if (this.data.length === 0) return false;
+        const data = this.data.join("\n").trim();
+        if (data === "[DONE]") return true;
+        try {
+            JSON.parse(data);
+            return true;
+        } catch {
+            return false;
+        }
     }
 
     private dispatch(): SSEMessage | null {
@@ -282,21 +301,36 @@ function parseChatStreamData(data: string): ChatStreamChunk {
         parsed = JSON.parse(data);
     } catch {
         throw new PollinationsError(
-            "Chat stream contained invalid JSON",
-            "INVALID_STREAM",
+            "Invalid JSON in chat completion stream",
+            "MALFORMED_STREAM",
             502,
         );
     }
     if (parsed && typeof parsed === "object" && "error" in parsed) {
         const error = (parsed as { error?: unknown }).error;
         const message =
-            error &&
-            typeof error === "object" &&
-            "message" in error &&
-            typeof error.message === "string"
-                ? error.message
-                : "Chat stream failed";
+            typeof error === "string"
+                ? error
+                : error &&
+                    typeof error === "object" &&
+                    "message" in error &&
+                    typeof error.message === "string"
+                  ? error.message
+                  : "Streaming request failed";
         throw new PollinationsError(message, "STREAM_ERROR", 502);
+    }
+
+    if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !("choices" in parsed) ||
+        !Array.isArray((parsed as { choices: unknown }).choices)
+    ) {
+        throw new PollinationsError(
+            "Invalid chat completion stream event",
+            "MALFORMED_STREAM",
+            502,
+        );
     }
     return parsed as ChatStreamChunk;
 }
@@ -1027,7 +1061,14 @@ export class Pollinations {
                     const agentEvent = parseAgentComment(comment);
                     if (agentEvent) yield { type: "agent", event: agentEvent };
                 }
-                if (!message.data || finished) continue;
+                if (!message.data) continue;
+                if (finished) {
+                    throw new PollinationsError(
+                        "Chat stream contained data after completion",
+                        "MALFORMED_STREAM",
+                        502,
+                    );
+                }
                 if (message.data.trim() === "[DONE]") {
                     finished = true;
                     continue;

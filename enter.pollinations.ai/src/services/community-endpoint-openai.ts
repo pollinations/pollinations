@@ -1,4 +1,5 @@
 import {
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
@@ -27,7 +28,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import { readResponseText } from "@shared/response-bytes.ts";
+import { readResponseBytes, readResponseText } from "@shared/response-bytes.ts";
 import { detectVideoMimeType } from "@shared/video-mime.ts";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
@@ -336,6 +337,60 @@ export async function testCommunityTranscriptionEndpoint({
         // usage object that may not carry it.
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
+    };
+}
+
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const sampleText = "Hello world";
+    const url = communityAudioSpeechUrl(baseUrl);
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input: sampleText,
+                voice: "alloy",
+                response_format: "mp3",
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
+
+    if (!response.ok) {
+        const bodyText = await readResponseText(
+            response,
+            MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+            () => new Error("Endpoint response is too large"),
+        );
+        const body = parseJson(bodyText);
+        throw new Error(endpointErrorMessage(response.status, body));
+    }
+
+    const audioBytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+        () => new Error("Endpoint audio response is larger than 20 MB"),
+    );
+
+    if (!audioBytes || audioBytes.byteLength === 0) {
+        throw new Error("Endpoint did not return audio response bytes");
+    }
+
+    return {
+        usage: { characters: sampleText.length },
+        billableUsage: { completionAudioTokens: sampleText.length },
     };
 }
 

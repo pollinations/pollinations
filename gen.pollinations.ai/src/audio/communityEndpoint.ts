@@ -1,4 +1,7 @@
-import { communityAudioTranscriptionsUrl } from "@shared/community-endpoint-urls.ts";
+import {
+    communityAudioSpeechUrl,
+    communityAudioTranscriptionsUrl,
+} from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
@@ -9,6 +12,7 @@ import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
+    createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -19,6 +23,76 @@ import {
     type NormalizedWord,
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "../routes/transcription-response.ts";
+
+export type CommunitySpeechOptions = {
+    input: string;
+    voice?: string;
+    responseFormat?: string;
+};
+
+export async function callCommunitySpeechEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    options: CommunitySpeechOptions,
+    secret: string,
+): Promise<Response> {
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community speech endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityAudioSpeechUrl(endpoint.baseUrl);
+
+    const bodyPayload: Record<string, unknown> = {
+        model: endpoint.upstreamModel,
+        input: options.input,
+    };
+    if (options.voice) bodyPayload.voice = options.voice;
+    if (options.responseFormat)
+        bodyPayload.response_format = options.responseFormat;
+
+    let response: Response;
+    try {
+        response = await fetch(upstreamUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
+                    bearerToken,
+                )}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(bodyPayload),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch (error) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Community speech endpoint timed out or could not connect",
+            cause: error,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+
+    response = await ensureUpstreamOk(response, upstreamUrl);
+
+    const contentType = response.headers.get("content-type") || "audio/mpeg";
+    const usageHeaders = buildUsageHeaders(
+        endpoint.modelId,
+        createAudioTokenUsage(options.input.length),
+    );
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...usageHeaders,
+        },
+    });
+}
 
 export type CommunityTranscriptionOptions = {
     file: File;

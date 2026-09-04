@@ -5,6 +5,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
@@ -569,6 +570,53 @@ describe("community endpoint OpenAI service", () => {
             usage: { prompt_tokens: 12, total_tokens: 12 },
             billableUsage: { promptTextTokens: 12 },
         });
+    });
+
+    it("probes speech endpoints and returns billable completion audio characters", async () => {
+        let sentBody: unknown;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (_url: string, init?: RequestInit) => {
+                sentBody = JSON.parse(init?.body as string);
+                return new Response(new Uint8Array([1, 2, 3, 4]), {
+                    headers: { "Content-Type": "audio/mpeg" },
+                });
+            }),
+        );
+
+        const result = await testCommunitySpeechEndpoint({
+            baseUrl: "https://api.example.com/v1",
+            bearerToken: "sk_saved_token",
+            model: "tts-1",
+        });
+
+        expect(result).toEqual({
+            usage: { characters: 11 },
+            billableUsage: { completionAudioTokens: 11 },
+        });
+        expect(sentBody).toEqual({
+            model: "tts-1",
+            input: "Hello world",
+            voice: "alloy",
+            response_format: "mp3",
+        });
+    });
+
+    it("rejects speech upstreams that return empty body or non-ok status", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () => new Response(new Uint8Array([]), { status: 200 }),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "tts-1",
+            }),
+        ).rejects.toThrow("Endpoint did not return audio response bytes");
     });
 
     it("rejects embedding upstreams that omit billable token usage", async () => {

@@ -441,17 +441,21 @@ async function emitServerError<TEnv extends ErrorHandlerEnv>(
         envelope,
     );
 
-    c.executionCtx.waitUntil(
-        sendErrorEventToTinybird(
-            toTinybirdErrorEvent(envelope),
-            getTinybirdDatasourceIngestUrl(
-                c.env.TINYBIRD_INGEST_URL,
-                "error_event",
+    try {
+        c.executionCtx.waitUntil(
+            sendErrorEventToTinybird(
+                toTinybirdErrorEvent(envelope),
+                getTinybirdDatasourceIngestUrl(
+                    c.env.TINYBIRD_INGEST_URL,
+                    "error_event",
+                ),
+                c.env.TINYBIRD_INGEST_TOKEN,
+                log,
             ),
-            c.env.TINYBIRD_INGEST_TOKEN,
-            log,
-        ),
-    );
+        );
+    } catch {
+        // Ignore missing executionCtx in test/synthetic contexts
+    }
 }
 
 async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
@@ -489,7 +493,7 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         severity: "error",
         timestamp,
         requestId: c.get("requestId"),
-        environment: c.env.ENVIRONMENT,
+        environment: c.env?.ENVIRONMENT,
         routePath: resolvedRoutePath,
         method: c.req.method,
         status,

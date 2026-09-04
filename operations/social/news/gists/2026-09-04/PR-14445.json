@@ -1,0 +1,34 @@
+{
+  "pr_number": 14445,
+  "title": "fix: omit unsupported seed from social text requests",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14445",
+  "merged_at": "2026-09-04T15:25:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the unsupported `seed` parameter from shared social text requests\n- Keeps the existing retry and exponential-backoff behavior\n- Fixes News gist generation with `gpt-5.6-terra` after the stateless Responses rollout\n- Leaves image-generation seeds unchanged",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Seeds stay in the garden",
+    "blurb": "The news hive stopped handing text models a seed they do not plant. Gists can now pass through gpt-5.6-terra cleanly while image seeds keep doing their pixel-growing work.",
+    "summary": "Removed the unsupported seed parameter from shared social text requests, restoring News gist generation with gpt-5.6-terra after the stateless Responses rollout while preserving image-generation seeds and retry backoff.",
+    "impact": "Social News gists can again generate through gpt-5.6-terra, with the existing exponential retry behavior intact and image outputs still using seeds as before.",
+    "keywords": [
+      "social",
+      "news",
+      "gpt-5.6-terra",
+      "responses-api",
+      "seed",
+      "gist-generation"
+    ],
+    "visual_concept": "Polli tends two neighboring code-plants: one text-request plant has a small seed packet politely set aside because it does not accept seeds, while an image-generation flower pot happily keeps its seed. A CRT monitor robot watches a News gist scroll successfully, representing the repaired internal social pipeline.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully placing a seed packet beside a text code-plant while a neighboring image flower pot sprouts from its seed; a cheerful CRT monitor robot displays a successful News gist. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, flowers and vines, warm lighting, retro gaming vibes, with small pixel-font text: 'TEXT: NO SEED'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14445.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener hat, carefully placing a seed packet beside a text code-plant while a neighboring image flower pot sprouts from its seed; a cheerful CRT monitor robot displays a successful News gist. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, flowers and vines, warm lighting, retro gaming vibes, with small pixel-font text: 'TEXT: NO SEED'."
+  },
+  "generated_at": "2026-09-04T15:26:21.334507+00:00"
+}

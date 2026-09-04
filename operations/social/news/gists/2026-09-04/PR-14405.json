@@ -1,0 +1,34 @@
+{
+  "pr_number": 14405,
+  "title": "feat: add Pollinations MCP to Open WebUI on the user's own key",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14405",
+  "merged_at": "2026-09-04T08:42:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Registers `https://mcp.pollinations.ai/` as an MCP tool server with `auth_type: system_oauth`, so tool calls reuse the same per-user consent key as chat — generation from a tool call is billed to the signed-in user's own wallet, not a shared admin key.\n- Grants public read. An empty `access_grants` list means admin-only, not everyone.\n- Documents that `DEFAULT_CONFIG` vars seed the Postgres `config` table only when the key is absent, so editing them on a live DB is a silent no-op.\n\nVerified end-to-end on staging: the tool lists for a non-admin user, and a real chat executed `getBalance`, returning the user's own key-scoped balance (15.59 of a 20-pollen consent budget) rather than the account-wide balance — proving per-user forwarding. The live config row is already applied to staging and production; this commit keeps the declared config in sync for a fresh database.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_015mNrP6DkRQmm3YStNjfFv3",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Your wallet, your tools",
+    "blurb": "Pollinations MCP now lives in Open WebUI with per-user OAuth. Ask a chat to use a tool, and the pollen comes from your own consented wallet—not the communal jar.",
+    "summary": "Added the Pollinations MCP server at https://mcp.pollinations.ai/ to Open WebUI with system OAuth, forwarding each signed-in user's consent key to tool calls and exposing it publicly to non-admin users.",
+    "impact": "Open WebUI users can now run Pollinations MCP tools such as getBalance from chat with their own key-scoped Pollen budget and billing, rather than an account-wide admin balance.",
+    "keywords": [
+      "open-webui",
+      "mcp",
+      "oauth",
+      "per-user-billing",
+      "pollen",
+      "tools"
+    ],
+    "visual_concept": "A cozy Open WebUI chat window connects through a little OAuth key-and-pipe to the Pollinations MCP tool garden. Polli, wearing tiny librarian glasses and holding a personal key, watches the Monitor Robot happily inspect a small wallet gauge labeled with an individual Pollen balance; flowering code-plants make the per-user tool connection feel safe and personal.",
+    "image_prompt": "Cozy pixel art scene of an Open WebUI-style chat terminal connected by a glowing OAuth key to a small Pollinations MCP tool garden, where a wallet gauge shows a personal Pollen balance; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses and holding the key while a chunky CRT-headed robot points excitedly at the tool connection. Lime green (#ecf874) appears prominently in the terminal glow and code-plants among warm cream, mint, lavender, and peach flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"MY KEY\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14405.jpg",
+    "prompt": "Cozy pixel art scene of an Open WebUI-style chat terminal connected by a glowing OAuth key to a small Pollinations MCP tool garden, where a wallet gauge shows a personal Pollen balance; the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses and holding the key while a chunky CRT-headed robot points excitedly at the tool connection. Lime green (#ecf874) appears prominently in the terminal glow and code-plants among warm cream, mint, lavender, and peach flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"MY KEY\"."
+  },
+  "generated_at": "2026-09-04T08:43:21.081094+00:00"
+}

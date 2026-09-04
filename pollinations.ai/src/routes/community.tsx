@@ -4,6 +4,7 @@ import {
     BeakerIcon,
     Button,
     Callout,
+    CardIcon,
     CheckIcon,
     ChevronIcon,
     Chip,
@@ -18,6 +19,7 @@ import {
     GitPullRequestIcon,
     InlineLink,
     LinkCard,
+    LogInIcon,
     MegaphoneIcon,
     Surface,
     TabButton,
@@ -99,6 +101,14 @@ const WAYS_IN = [
 ];
 
 const FEED_SKELETON_KEYS = ["first", "second", "third", "fourth"];
+
+function voteIconFor(title: string) {
+    if (/login|account|auth/i.test(title)) return LogInIcon;
+    if (/model/i.test(title)) return BeakerIcon;
+    if (/payment|billing/i.test(title)) return CardIcon;
+    return MegaphoneIcon;
+}
+
 /**
  * Every feed on this page can fail — GitHub is rate-limited per visitor IP and
  * Discord's widget can be off. Returning null on failure quietly deleted whole
@@ -276,46 +286,23 @@ function CommunityParticipation() {
                                             </dl>
                                         )}
                                         <div className="flex flex-col items-start gap-2">
-                                            <div
-                                                className={cn(
-                                                    "flex flex-wrap gap-2",
-                                                    isTalk && "[&>*]:w-auto",
-                                                )}
-                                            >
+                                            {isTalk && (
+                                                <DiscordPresenceBadge
+                                                    online={online}
+                                                    glow={false}
+                                                />
+                                            )}
+                                            <div className="flex flex-wrap gap-2">
                                                 {way.links.map((link) => (
                                                     <ExternalLinkButton
                                                         key={link.label}
                                                         href={link.href}
                                                         size="sm"
                                                         appearance="raised"
-                                                        showIcon={!isTalk}
-                                                        className={cn(
-                                                            "gap-2",
-                                                            isTalk
-                                                                ? "h-auto min-h-9 py-2"
-                                                                : "whitespace-nowrap",
-                                                        )}
+                                                        showIcon
+                                                        className="whitespace-nowrap"
                                                     >
-                                                        {isTalk ? (
-                                                            <span className="inline-flex flex-col items-start gap-1">
-                                                                <span>
-                                                                    {link.label}
-                                                                </span>
-                                                                <span className="inline-flex items-center gap-2">
-                                                                    <DiscordPresenceBadge
-                                                                        online={
-                                                                            online
-                                                                        }
-                                                                        glow={
-                                                                            false
-                                                                        }
-                                                                    />
-                                                                    <ExternalLinkIcon className="h-4 w-4 shrink-0 opacity-60" />
-                                                                </span>
-                                                            </span>
-                                                        ) : (
-                                                            link.label
-                                                        )}
+                                                        {link.label}
                                                     </ExternalLinkButton>
                                                 ))}
                                             </div>
@@ -353,38 +340,47 @@ function CommunityParticipation() {
                         />
                     ) : (
                         <div className="grid grid-cols-1 gap-3 min-[700px]:grid-cols-3">
-                            {issues.map((issue) => (
-                                <LinkCard
-                                    key={issue.number}
-                                    href={issue.url}
-                                    showIcon={false}
-                                    aria-label={`Open “${issue.title}” and add your vote`}
-                                    className="group gap-5 rounded-2xl bg-surface-opaque p-5 transition-[background-color,transform] hover:-translate-y-0.5"
-                                >
-                                    <span className="font-semibold leading-snug text-theme-text-strong">
-                                        {issue.title}
-                                    </span>
-                                    <div className="mt-auto flex items-end justify-between gap-3">
-                                        <dl>
-                                            <div className="flex flex-col gap-0.5">
-                                                <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                    {issue.votes}
-                                                </dt>
-                                                <dd className="text-xs text-theme-text-muted">
-                                                    vote
-                                                    {issue.votes === 1
-                                                        ? ""
-                                                        : "s"}
-                                                </dd>
-                                            </div>
-                                        </dl>
-                                        <ExternalLinkIcon
-                                            aria-hidden="true"
-                                            className="size-7 text-theme-text-soft transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                                        />
-                                    </div>
-                                </LinkCard>
-                            ))}
+                            {issues.map((issue) => {
+                                const VoteIcon = voteIconFor(issue.title);
+
+                                return (
+                                    <LinkCard
+                                        key={issue.number}
+                                        href={issue.url}
+                                        showIcon={false}
+                                        aria-label={`Open “${issue.title}” and add your vote`}
+                                        className="group gap-5 rounded-2xl bg-surface-opaque p-5 transition-[background-color,transform] hover:-translate-y-0.5"
+                                    >
+                                        <span className="flex items-start gap-3">
+                                            <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-soft">
+                                                <VoteIcon className="size-4" />
+                                            </span>
+                                            <span className="font-semibold leading-snug text-theme-text-strong">
+                                                {issue.title}
+                                            </span>
+                                        </span>
+                                        <div className="mt-auto flex items-end justify-between gap-3">
+                                            <dl>
+                                                <div className="flex flex-col gap-0.5">
+                                                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                                        {issue.votes}
+                                                    </dt>
+                                                    <dd className="text-xs text-theme-text-muted">
+                                                        vote
+                                                        {issue.votes === 1
+                                                            ? ""
+                                                            : "s"}
+                                                    </dd>
+                                                </div>
+                                            </dl>
+                                            <ExternalLinkIcon
+                                                aria-hidden="true"
+                                                className="size-7 text-theme-text-soft transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                            />
+                                        </div>
+                                    </LinkCard>
+                                );
+                            })}
                         </div>
                     )}
                 </Surface>

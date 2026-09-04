@@ -59,7 +59,6 @@ function LeaderboardAction() {
     return (
         <ExternalLinkButton
             href={QUESTS_PAGE_URL}
-            external={false}
             size="sm"
             appearance="raised"
         >

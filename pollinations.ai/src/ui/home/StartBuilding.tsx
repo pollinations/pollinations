@@ -1,4 +1,4 @@
-import { Button, Callout, ExternalLinkButton } from "@pollinations/ui";
+import { Callout, ExternalLinkButton } from "@pollinations/ui";
 
 /**
  * The closing CTA, at the normal section width. It does NOT break out to the
@@ -11,14 +11,13 @@ export function StartBuilding() {
             title="Start building"
             body="One API. Free Pollen from Quests to start, earnings when your app gets used."
         >
-            <Button
-                as="a"
+            <ExternalLinkButton
                 href="https://enter.pollinations.ai/keys"
                 appearance="raised"
                 className="bg-brand-accent text-brand-dark"
             >
                 Get an API key
-            </Button>
+            </ExternalLinkButton>
             <ExternalLinkButton
                 href="https://discord.gg/pollinations-ai-885844321461485618"
                 appearance="raised"

@@ -6,6 +6,7 @@ import {
     DiscordIcon,
     Drawer,
     DropdownItem,
+    ExternalLinkIcon,
     GitHubIcon,
     InstagramIcon,
     LinkedInIcon,
@@ -309,6 +310,7 @@ export function SiteHeader() {
                         >
                             <BookIcon className="h-4 w-4" />
                             <span>Docs</span>
+                            <ExternalLinkIcon className="h-3.5 w-3.5 opacity-60" />
                         </Button>
                         <Button
                             as="a"
@@ -320,6 +322,7 @@ export function SiteHeader() {
                         >
                             <LogInIcon className="h-4 w-4" />
                             <span>Login</span>
+                            <ExternalLinkIcon className="h-3.5 w-3.5 opacity-60" />
                         </Button>
                         <div className="hidden h-9 items-center min-[780px]:flex">
                             <ColorModeToggle />
@@ -413,6 +416,7 @@ export function SiteHeader() {
                                         >
                                             <BookIcon className="h-4 w-4 shrink-0" />
                                             {EXTERNAL[0].label}
+                                            <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
                                         </Button>
                                         <Button
                                             as="a"
@@ -425,6 +429,7 @@ export function SiteHeader() {
                                         >
                                             <LogInIcon className="h-4 w-4 shrink-0" />
                                             Login
+                                            <ExternalLinkIcon className="ml-auto h-3.5 w-3.5 shrink-0 opacity-60" />
                                         </Button>
                                     </div>
                                     <div

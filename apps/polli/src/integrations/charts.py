@@ -35,6 +35,37 @@ from .diagrams import detect_diagram_type, render_mermaid_safe
 
 logger = logging.getLogger(__name__)
 
+TABLE_ROWS_PER_PAGE = 50
+MAX_TABLE_PAGES = 10
+MAX_CHART_POINTS = 100
+MAX_HEATMAP_CELLS = 2_500
+
+
+def _paginate_table(rows: list[list[str]]) -> list[list[list[str]]]:
+    visible_rows = rows[: TABLE_ROWS_PER_PAGE * MAX_TABLE_PAGES]
+    return [
+        visible_rows[index : index + TABLE_ROWS_PER_PAGE] for index in range(0, len(visible_rows), TABLE_ROWS_PER_PAGE)
+    ]
+
+
+def _aggregate_chart_data(data: dict) -> tuple[dict, bool]:
+    labels = list(data.get("labels") or [])
+    datasets = list(data.get("datasets") or [])
+    if len(labels) <= MAX_CHART_POINTS:
+        return data, False
+
+    bucket_size = max(1, (len(labels) + MAX_CHART_POINTS - 1) // MAX_CHART_POINTS)
+    aggregate_labels = []
+    aggregate_datasets = [{**dataset, "values": []} for dataset in datasets]
+    for start in range(0, len(labels), bucket_size):
+        stop = min(start + bucket_size, len(labels))
+        aggregate_labels.append(labels[start] if stop - start == 1 else f"{labels[start]}–{labels[stop - 1]}")
+        for output, dataset in zip(aggregate_datasets, datasets):
+            values = dataset.get("values", [])[start:stop]
+            numeric = [value for value in values if isinstance(value, (int, float)) and not isinstance(value, bool)]
+            output["values"].append(sum(numeric))
+    return {**data, "labels": aggregate_labels, "datasets": aggregate_datasets}, True
+
 
 def _png_to_data_url(buf: io.BytesIO) -> str:
     buf.seek(0)
@@ -62,16 +93,22 @@ async def _render_table(title: str, data: dict, options: dict) -> dict:
     if not headers or not rows:
         return _err("Table requires data.headers and data.rows.")
 
-    # Coerce to plain strings for the renderer.
-    headers = [str(h) for h in headers]
-    rows = [[str(c) for c in row] for row in rows]
+    headers = [str(header) for header in headers]
+    rows = [[str(cell) for cell in row] for row in rows]
+    pages = _paginate_table(rows)
+    images = []
+    for page in pages:
+        buffer, _links = await render_table_image(headers, page)
+        if buffer is None:
+            return _err("Table rendering failed (PIL unavailable or invalid input).")
+        images.append(_png_to_data_url(buffer))
 
-    buf, _links = await render_table_image(headers, rows)
-    if buf is None:
-        return _err("Table rendering failed (PIL unavailable or invalid input).")
-
-    msg = title.strip() if title else "Table rendered."
-    return _ok(msg, [_png_to_data_url(buf)])
+    message = title.strip() if title else "Table rendered."
+    if len(pages) > 1:
+        message += f" Split into {len(pages)} readable pages."
+    if len(rows) > TABLE_ROWS_PER_PAGE * MAX_TABLE_PAGES:
+        message += f" Showing the first {TABLE_ROWS_PER_PAGE * MAX_TABLE_PAGES} rows."
+    return _ok(message, images)
 
 
 # =============================================================================
@@ -310,7 +347,18 @@ async def render_visual(
         normalized = _normalize_chart_data(data)
         if not normalized:
             return _shape_help(chart_type, data)
+        if chart_type == "heatmap":
+            rows = normalized.get("datasets") or normalized.get("rows") or []
+            columns = normalized.get("labels") or []
+            if len(rows) * max(1, len(columns)) > MAX_HEATMAP_CELLS:
+                return _err("Heatmap is too dense to render readably; summarize it to at most 2,500 cells.")
+        normalized, aggregated = _aggregate_chart_data(normalized)
         result = await _render_chart_async(chart_type, title, normalized, options)
+        if result.get("success") and aggregated:
+            original_points = len(data.get("labels", [])) if isinstance(data, dict) else 0
+            result[
+                "message"
+            ] += f" Aggregated {original_points} points into {len(normalized['labels'])} readable buckets."
         if result.get("success"):
             return result
         return result

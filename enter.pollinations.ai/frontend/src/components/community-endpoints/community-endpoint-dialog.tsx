@@ -19,6 +19,7 @@ import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
     basePriceKeysForModality,
@@ -42,6 +43,7 @@ import {
     idleAction,
     isValidPerUserRpm,
     nextFormState,
+    openWebUiTestableModelId,
     providerModelHelper,
     readError,
     toEndpointPayload,
@@ -73,6 +75,10 @@ export function CommunityEndpointDialog({
 }: CommunityEndpointDialogProps) {
     const isEdit = !!endpoint;
     const isEndpointAgent = endpoint?.type === "endpoint_agent";
+    // Only in edit mode: a model being created has no id to open yet.
+    const testableModelId = endpoint
+        ? openWebUiTestableModelId(endpoint)
+        : null;
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
@@ -842,7 +848,15 @@ export function CommunityEndpointDialog({
                     )}
                 </ScrollArea>
 
-                <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
+                <div className="flex shrink-0 items-center justify-end gap-2 p-6 pt-4">
+                    {testableModelId && (
+                        <div className="mr-auto">
+                            <OpenWebUiLink
+                                modelId={testableModelId}
+                                variant="text"
+                            />
+                        </div>
+                    )}
                     <Button
                         type="button"
                         intent="danger"

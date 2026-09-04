@@ -6525,8 +6525,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     expect(baseModelInfo).toBeDefined();
     const agentCapabilities = [
-        ...(baseModelInfo?.capabilities ?? []),
-        "pollinations_models",
+        ...new Set([
+            ...(baseModelInfo?.capabilities ?? []),
+            "pollinations_models",
+        ]),
     ];
     expect(agentModelInfo).toMatchObject({
         community: true,
@@ -6535,7 +6537,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: baseModelInfo?.input_modalities,
-        output_modalities: baseModelInfo?.output_modalities,
+        output_modalities: ["text"],
         supported_endpoints: expect.arrayContaining(["/v1/responses"]),
     });
     const openaiBaseModel = openaiModels.data.find(
@@ -6551,7 +6553,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: openaiBaseModel?.input_modalities,
-        output_modalities: openaiBaseModel?.output_modalities,
+        output_modalities: ["text"],
         tools: openaiBaseModel?.tools,
         context_length: openaiBaseModel?.context_length,
         supported_endpoints: expect.arrayContaining(["/v1/responses"]),

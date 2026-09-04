@@ -111,6 +111,19 @@ export type EditableEndpoint =
     | ProxyCommunityEndpoint
     | EndpointAgentCommunityEndpoint;
 
+/**
+ * The model id to offer as an Open WebUI test link, or null when Open WebUI
+ * cannot chat with it: a hidden model is not served, and image, video,
+ * transcription and embedding models never reach its chat picker.
+ */
+export function openWebUiTestableModelId(
+    endpoint: CommunityEndpoint,
+): string | null {
+    if (endpoint.hidden) return null;
+    if (endpoint.type === "proxy" && endpoint.modality !== "text") return null;
+    return endpoint.modelId;
+}
+
 export type FallbackModelOption = {
     modelId: string;
     modality: CommunityEndpointModality;

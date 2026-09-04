@@ -11,7 +11,6 @@ import { AppCarousel } from "../apps/AppCarousel";
  */
 export function LiveApps() {
     const { data: featured, loading, failed } = useAppShowcase();
-    const totalApps = featured[0]?.total_apps ?? 0;
 
     // Only disappears when the directory loaded fine and genuinely had
     // nothing to show — a failure gets a line, not a silent hole.
@@ -21,11 +20,7 @@ export function LiveApps() {
         <section className="flex flex-col gap-5">
             <ContentHeader
                 eyebrow="Live now"
-                title={
-                    loading || failed
-                        ? "Apps built on Pollinations."
-                        : `${totalApps} apps built on Pollinations.`
-                }
+                title="Apps from the community."
                 action={
                     <InlineLink as={Link} to="/apps" directional>
                         See all apps

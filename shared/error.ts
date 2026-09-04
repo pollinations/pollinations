@@ -371,11 +371,11 @@ function createUpstreamErrorResponse(
 /**
  * Remap upstream statuses that are our operational concern (auth, routing,
  * quota, conflicts, proxy timeouts) to 502 Bad Gateway. Leaves input-content
- * errors (400/413/422) as-is since those can reflect user input we failed to
+ * errors (400/413/415/422) as-is since those can reflect user input we failed to
  * validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
-    const remapTo502 = new Set([401, 402, 403, 404, 409, 415, 429, 524]);
+    const remapTo502 = new Set([401, 402, 403, 404, 409, 429, 524]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }
@@ -389,6 +389,7 @@ export function getErrorCode(status: number): string {
         404: "NOT_FOUND",
         405: "METHOD_NOT_ALLOWED",
         409: "CONFLICT",
+        415: "UNSUPPORTED_MEDIA_TYPE",
         422: "UNPROCESSABLE_ENTITY",
         429: "RATE_LIMITED",
         500: "INTERNAL_ERROR",
@@ -399,7 +400,7 @@ export function getErrorCode(status: number): string {
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 402, 403, 404, 405, 409, 422, 426, 429, 500, 502, 503,
+    400, 401, 402, 403, 404, 405, 409, 415, 422, 426, 429, 500, 502, 503,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -413,6 +414,7 @@ export function getDefaultErrorMessage(status: number): string {
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",
         409: "Something with these details already exists. Maybe update it instead?",
+        415: "The request media type isn't supported.",
         422: "Your request looks good, but some required fields are missing or invalid.",
         426: "This endpoint requires a WebSocket upgrade request.",
         429: "You're making requests too quickly. Please slow down a bit.",

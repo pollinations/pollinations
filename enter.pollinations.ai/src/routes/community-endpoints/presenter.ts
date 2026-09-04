@@ -1,3 +1,4 @@
+import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     communityModelId,
@@ -86,6 +87,7 @@ export function toCommunityEndpointResponse(
         return CommunityEndpointResponseSchema.parse({
             ...common,
             type: row.type,
+            responsesUrl: communityResponsesUrl(agentRuntimeUrl),
         });
     }
     if (row.type === "endpoint_agent") {
@@ -97,6 +99,7 @@ export function toCommunityEndpointResponse(
             ...common,
             type: row.type,
             perUserRpm: payload.perUserRpm,
+            responsesUrl: payload.responsesUrl,
         });
     }
 

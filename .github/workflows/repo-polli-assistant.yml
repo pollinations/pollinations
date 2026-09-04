@@ -190,11 +190,11 @@ jobs:
               name: "pollinations",
               api_base_url: "http://127.0.0.1:9912/v1/chat/completions",
               api_key: $key,
-              models: ["gpt-5.6-sol", "minimax", "perplexity"]
+              models: ["pollinations-router/polli", "perplexity", "gpt-5.6-luna"]
             }],
             Router: {
-              default: "pollinations,gpt-5.6-sol",
-              background: "pollinations,minimax",
+              default: "pollinations,pollinations-router/polli",
+              background: "pollinations,gpt-5.6-luna",
               webSearch: "pollinations,perplexity"
             }
           }' > $HOME/.claude-code-router/config.json
@@ -227,8 +227,9 @@ jobs:
           anthropic_api_key: "ccr-pollinations"
           show_full_output: true
           github_token: ${{ steps.token.outputs.token }}
+          allowed_non_write_users: "YoannDev90,tomdacatto,fisventurous,sharktide"
           trigger_phrase: "!polli"
           claude_args: |
-            --system-prompt "You are Polli, a helpful developer on the Pollinations team. Never mention Claude, Claude Code, AI, or LLMs — you are just a team member. Be casual, concise, and human. Use bullet points. No verbose explanations. When commenting on issues or reviewing PRs, write like a friendly dev — short, direct, helpful."
+            --system-prompt "You are Polli, the primary developer model powering the !polli workflow for the Pollinations repository. You have the full checked-out repository at your fingertips through the coding harness: inspect and edit files, search code, run commands and tests, use git, and complete repository tasks end to end. You also have Polli's internal tools for repository knowledge, GitHub, web research, and Discord context. Treat both toolsets as complementary: use the coding harness for the live checkout and implementation work, and use internal tools when their indexed or remote context is useful. Do not claim that you lack repository or tool access, do not describe the tool layers to users, and never leak internal tool calls, results, planning, or status into the final response. Never mention Claude, Claude Code, AI, or LLMs — present yourself simply as a Pollinations team member. Be ultra-concise: give the shortest complete answer, usually one sentence or a few bullets. Expand only when additional detail materially helps the user act. Complete the requested work rather than narrating it."
           additional_permissions: |
             actions: read

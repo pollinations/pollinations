@@ -50,6 +50,7 @@ interface MyModelBase {
     title: string;
     description: string | null;
     baseUrl: string;
+    responsesUrl: string | null;
     upstreamModel: string;
     visibility: "private" | "public";
     createdAt: string;
@@ -133,6 +134,10 @@ export function modelBody(
 
     for (const [optionKey, bodyKey] of fields) {
         if (opts[optionKey] !== undefined) body[bodyKey] = opts[optionKey];
+    }
+    if (opts.responses === false) body.responsesUrl = null;
+    else if (opts.responsesUrl !== undefined) {
+        body.responsesUrl = opts.responsesUrl;
     }
 
     if (opts.visibility !== undefined) {
@@ -234,6 +239,7 @@ function printModels(models: MyModel[]) {
                     ? "-"
                     : model.upstreamModel,
             base_url: model.baseUrl,
+            responses_url: model.responsesUrl ?? "-",
             fallbacks:
                 model.type === "proxy"
                     ? model.fallbacks?.join(", ") || "-"
@@ -252,6 +258,7 @@ function printModels(models: MyModel[]) {
             "visibility",
             "upstream",
             "base_url",
+            "responses_url",
             "fallbacks",
             "description",
         ],
@@ -282,6 +289,11 @@ const create = addPriceOptions(
             "--base-url <url>",
             "OpenAI-compatible base URL, or exact video endpoint URL",
         )
+        .option(
+            "--responses-url <url>",
+            "Exact OpenAI-compatible /v1/responses URL for text models",
+        )
+        .option("--no-responses", "Disable Responses support")
         .option(
             "--upstream-model <model>",
             "Upstream model id (not used for video)",
@@ -345,6 +357,11 @@ const update = addPriceOptions(
             "--base-url <url>",
             "OpenAI-compatible base URL, or exact video endpoint URL",
         )
+        .option(
+            "--responses-url <url>",
+            "Exact OpenAI-compatible /v1/responses URL for text models",
+        )
+        .option("--no-responses", "Disable Responses support")
         .option(
             "--upstream-model <model>",
             "Upstream model id (not used for video)",

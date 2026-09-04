@@ -14,7 +14,7 @@ import {
     type PromptAgentRuntime,
     runPromptAgent,
     streamPromptAgent,
-} from "./prompt-agent-runtime.ts";
+} from "./runtime.ts";
 
 export const PromptAgentResponsesRequestSchema =
     CreateResponseRequestSchema.extend({ model: z.string().uuid() });

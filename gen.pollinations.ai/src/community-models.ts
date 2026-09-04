@@ -28,10 +28,7 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type CommunityModelEnv = Pick<
-    CloudflareBindings,
-    "DB" | "AGENT_RUNTIME_BASE_URL"
->;
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB">;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
@@ -72,10 +69,7 @@ export async function getCommunityModelRegistryEntries(
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
-        const baseUrl =
-            row.type === "prompt_agent"
-                ? env.AGENT_RUNTIME_BASE_URL
-                : row.baseUrl;
+        const baseUrl = row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =

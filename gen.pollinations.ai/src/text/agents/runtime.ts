@@ -1,13 +1,13 @@
 import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { getLogger } from "@logtape/logtape";
+import type { PromptAgentListingPayload } from "@shared/community-endpoints.ts";
 import type { McpServerId } from "@shared/registry/mcp.ts";
 import {
     type CompletionUsage,
     CompletionUsageSchema,
 } from "@shared/schemas/openai.ts";
 import {
-    APICallError,
     type FinishReason,
     type LanguageModelCallOptions,
     type ModelMessage,
@@ -15,30 +15,14 @@ import {
     ToolLoopAgent,
     type ToolLoopAgentSettings,
 } from "ai";
-import { z } from "zod";
-import type { PromptAgentConfig } from "./prompt-agent.ts";
 
-const log = getLogger(["enter", "prompt-agent-runtime"]);
-
-export const PromptAgentRequestSchema = z
-    .object({
-        // z.custom() accepts the same inputs, but cannot be represented in the
-        // OpenAPI JSON Schema generated for the account service.
-        messages: z.array(z.unknown()).optional().default([]),
-        stream: z.boolean().optional().default(false),
-    })
-    .passthrough();
-
-export const PromptAgentRuntimeRequestSchema = PromptAgentRequestSchema.extend({
-    model: z.string().uuid(),
-});
-
-export type PromptAgentRequest = z.output<typeof PromptAgentRequestSchema>;
+const log = getLogger(["gen", "prompt-agent-runtime"]);
 
 export type PromptAgentRuntime = {
-    config: PromptAgentConfig;
+    config: PromptAgentListingPayload;
     apiKey: string;
     genBaseUrl: string;
+    fetcher: typeof fetch;
 };
 
 type McpClient = Awaited<ReturnType<typeof createMCPClient>>;
@@ -94,24 +78,12 @@ function agentErrorMessage(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
 }
 
-function agentErrorResponse(error: unknown): Response {
-    const upstreamStatus = APICallError.isInstance(error)
-        ? error.statusCode
-        : undefined;
-    return Response.json(
-        { error: { message: agentErrorMessage(error) } },
-        {
-            status:
-                upstreamStatus && upstreamStatus >= 400 ? upstreamStatus : 502,
-        },
-    );
-}
-
 async function loadMcpTools(
     serverId: McpServerId,
     url: string,
     apiKey: string,
     signal: AbortSignal,
+    fetcher: typeof fetch,
 ): Promise<{
     tools: Record<string, McpTool>;
     close: () => Promise<void>;
@@ -140,7 +112,7 @@ async function loadMcpTools(
                 // The MCP client asks for redirect "error", which workerd does
                 // not support. Use a valid fetch mode for the hosted endpoint.
                 fetch: async (input, init) =>
-                    globalThis.fetch.call(globalThis, input, {
+                    fetcher(input, {
                         ...init,
                         redirect: "follow",
                     }),
@@ -179,6 +151,7 @@ async function createAgent(
                 `${genBaseUrl}/mcp/${serverId}`,
                 runtime.apiKey,
                 signal,
+                runtime.fetcher,
             ),
         ),
     );
@@ -212,6 +185,7 @@ async function createAgent(
         name: "pollinations",
         apiKey: runtime.apiKey,
         baseURL: `${genBaseUrl}/v1`,
+        fetch: runtime.fetcher,
         metadataExtractor: {
             async extractMetadata({ parsedBody }) {
                 return {
@@ -368,27 +342,6 @@ export function buildUsage(usage: AgentUsage, toolCallCounts: ToolCallCounts) {
             reasoning_tokens: usage.outputTokenDetails?.reasoningTokens ?? null,
         },
         tool_call_counts: toolCallCounts,
-    };
-}
-
-function contentChunk(
-    id: string,
-    created: number,
-    model: string,
-    content: string,
-) {
-    return {
-        id,
-        object: "chat.completion.chunk",
-        created,
-        model,
-        choices: [
-            {
-                index: 0,
-                delta: { role: "assistant", content },
-                finish_reason: null,
-            },
-        ],
     };
 }
 
@@ -658,108 +611,5 @@ export async function streamPromptAgent(
         };
     } finally {
         await close();
-    }
-}
-
-async function streamAgent(
-    runtime: PromptAgentRuntime,
-    messages: ModelMessage[],
-    signal: AbortSignal,
-    id: string,
-    created: number,
-): Promise<Response> {
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream<Uint8Array>({
-        async start(controller) {
-            const send = (payload: unknown) =>
-                controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify(payload)}\n\n`),
-                );
-            try {
-                const out = await streamPromptAgent(
-                    runtime,
-                    messages,
-                    signal,
-                    (content) =>
-                        send(
-                            contentChunk(
-                                id,
-                                created,
-                                runtime.config.baseModel,
-                                content,
-                            ),
-                        ),
-                );
-                send({
-                    id,
-                    object: "chat.completion.chunk",
-                    created,
-                    model: runtime.config.baseModel,
-                    choices: [
-                        {
-                            index: 0,
-                            delta: {},
-                            finish_reason: out.finishReason,
-                        },
-                    ],
-                    usage: buildUsage(out.usage, out.toolCallCounts),
-                });
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-            } catch (error) {
-                send({
-                    error: {
-                        message: agentErrorMessage(error),
-                        type: "upstream_error",
-                        code: "agent_error",
-                    },
-                });
-            } finally {
-                controller.close();
-            }
-        },
-    });
-    return new Response(stream, {
-        headers: {
-            "content-type": "text/event-stream",
-            "cache-control": "no-cache",
-            connection: "keep-alive",
-        },
-    });
-}
-
-export async function handlePromptAgentRequest(
-    body: PromptAgentRequest,
-    signal: AbortSignal,
-    runtime: PromptAgentRuntime,
-): Promise<Response> {
-    const messages = (
-        Array.isArray(body.messages) ? body.messages : []
-    ) as ModelMessage[];
-    const id = `chatcmpl-${crypto.randomUUID()}`;
-    const created = Math.floor(Date.now() / 1000);
-    try {
-        if (body.stream) {
-            return await streamAgent(runtime, messages, signal, id, created);
-        }
-        const out = await runPromptAgent(runtime, messages, signal);
-        return Response.json({
-            id,
-            object: "chat.completion",
-            created,
-            model: runtime.config.baseModel,
-            choices: [
-                {
-                    index: 0,
-                    message: {
-                        role: "assistant",
-                        content: out.content,
-                    },
-                    finish_reason: out.finishReason,
-                },
-            ],
-            usage: buildUsage(out.usage, out.toolCallCounts),
-        });
-    } catch (error) {
-        return agentErrorResponse(error);
     }
 }

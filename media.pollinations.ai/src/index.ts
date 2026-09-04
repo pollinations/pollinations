@@ -39,6 +39,7 @@ const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 interface Env {
     MEDIA_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
+    PRESIGN_SECRET?: string;
     DB: D1Database;
 }
 
@@ -54,7 +55,8 @@ interface KeyVerifyResponse {
     byopApp: { clientKeyId: string } | null;
 }
 
-interface AuthResult {
+// Exported so that s3.ts can share the same type without duplicating it.
+export interface AuthResult {
     valid: boolean;
     type: string;
     name: string | null;
@@ -339,6 +341,16 @@ api.post(
         const authResult = await verifyApiKey(apiKey);
         if (!authResult) {
             return c.json({ error: "Invalid or expired API key" }, 401);
+        }
+        // pk_ keys ship in public HTML. A writable pk_ lets anyone spend the
+        // owner's Pollen — reject writes from publishable keys explicitly.
+        if (authResult.type === "publishable") {
+            return c.json(
+                {
+                    error: "Publishable (pk_) keys are read-only. Use a secret (sk_) key to upload files.",
+                },
+                403,
+            );
         }
 
         const maxSize = parseInt(c.env.MAX_FILE_SIZE, 10) || DEFAULT_MAX_SIZE;
@@ -879,9 +891,20 @@ app.use(
     "*",
     cors({
         origin: "*",
-        allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
-        allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Id", "X-Content-Size"],
+        allowMethods: ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+        allowHeaders: [
+            "Content-Type",
+            "Authorization",
+            "Range",
+            "x-amz-decoded-content-length",
+            "x-amz-content-sha256",
+        ],
+        exposeHeaders: [
+            "X-Content-Id",
+            "X-Content-Size",
+            "ETag",
+            "Content-Range",
+        ],
     }),
 );
 
@@ -933,6 +956,12 @@ app.get("/openapi.json", async (c, next) => {
     return c.json(schema);
 });
 
+import { createS3Router } from "./s3.ts";
+
+const s3Router = createS3Router(verifyApiKey);
+// Mount at /s3/* — both /s3 and /s3/ will be forwarded to the s3 subrouter.
+app.route("/s3", s3Router);
+app.route("/s3/", s3Router);
 app.route("/", api);
 
 const MIME_TYPES: Record<string, string> = {

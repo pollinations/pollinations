@@ -48,7 +48,7 @@ interface MediaPageResponse {
 }
 
 // Kept for the pre-existing tests that don't care about identity.
-const VALID_KEY = "pk_alice";
+const VALID_KEY = "sk_alice";
 
 const KEY_IDENTITIES: Record<
     string,
@@ -87,7 +87,7 @@ const KEY_IDENTITIES: Record<
         type: "secret",
         name: "alice-secret",
         userId: "user_alice",
-        byopApp: null,
+        byopApp: { clientKeyId: "sk_app_1" },
     },
     sk_bob: {
         valid: true,
@@ -109,7 +109,7 @@ function createMediaEnv(bucket = createTestR2Bucket()) {
     return {
         MEDIA_BUCKET: bucket,
         MAX_FILE_SIZE: "104857600",
-        DB: env.DB,
+        DB: (env as any).DB,
     };
 }
 
@@ -146,7 +146,7 @@ function mockAuth() {
 }
 
 async function seedUsers() {
-    const db = drizzle(env.DB);
+    const db = drizzle((env as any).DB);
     const now = new Date();
     for (const id of ["user_alice", "user_bob"]) {
         await db
@@ -577,7 +577,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("tagged upload is published to the tag gallery, without owner fields", async () => {
-        const { status, body } = await uploadViaForm("pk_alice", {
+        const { status, body } = await uploadViaForm("sk_alice", {
             fileName: "gallery-a.png",
             bytes: variant(1),
             tags: ["Sunset "],
@@ -617,7 +617,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("untagged upload is not cataloged: unlisted but retrievable", async () => {
-        const { status, body } = await uploadViaForm("pk_alice", {
+        const { status, body } = await uploadViaForm("sk_alice", {
             fileName: "untagged.png",
             bytes: variant(2),
         });
@@ -627,7 +627,7 @@ describe("media.pollinations.ai", () => {
 
         // No catalog row at all — untagged means unpublished, not "cataloged
         // but hidden".
-        const db = drizzle(env.DB);
+        const db = drizzle((env as any).DB);
         const rows = await db
             .select({ id: mediaItem.id })
             .from(mediaItem)
@@ -651,7 +651,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("stamps owner and app from the verified key, ignoring spoofed form fields", async () => {
-        const alice = await uploadViaForm("pk_alice", {
+        const alice = await uploadViaForm("sk_alice", {
             fileName: "spoof-alice.png",
             bytes: variant(3),
             tags: ["spoof-test"],
@@ -665,8 +665,8 @@ describe("media.pollinations.ai", () => {
         const aliceUpload = alice.body as UploadResponse;
 
         // The catalog row carries the identity attested by /account/key —
-        // pk_alice → user_alice via app pk_app_1 — not the form fields.
-        const db = drizzle(env.DB);
+        // sk_alice → user_alice via app sk_app_1 — not the form fields.
+        const db = drizzle((env as any).DB);
         const [row] = await db
             .select({
                 ownerUserId: mediaItem.ownerUserId,
@@ -676,12 +676,12 @@ describe("media.pollinations.ai", () => {
             .where(eq(mediaItem.id, aliceUpload.id));
         expect(row).toEqual({
             ownerUserId: "user_alice",
-            appKeyId: "pk_app_1",
+            appKeyId: "sk_app_1",
         });
     });
 
     it("rejects invalid tags with 400", async () => {
-        const upperCase = await uploadViaForm("pk_alice", {
+        const upperCase = await uploadViaForm("sk_alice", {
             fileName: "bad-tag-1.png",
             bytes: variant(5),
             tags: ["UPPER CASE!"],
@@ -691,7 +691,7 @@ describe("media.pollinations.ai", () => {
             /UPPER CASE!/,
         );
 
-        const leadingDash = await uploadViaForm("pk_alice", {
+        const leadingDash = await uploadViaForm("sk_alice", {
             fileName: "bad-tag-2.png",
             bytes: variant(6),
             tags: ["-leading"],
@@ -703,7 +703,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("does not treat singular tag as catalog metadata", async () => {
-        const res = await uploadViaForm("pk_alice", {
+        const res = await uploadViaForm("sk_alice", {
             fileName: "singular-tag-ignored.png",
             bytes: variant(30),
             extraFields: { tag: "legacy" },
@@ -743,7 +743,7 @@ describe("media.pollinations.ai", () => {
 
     it("rejects more than 8 tags with 400", async () => {
         const tags = Array.from({ length: 9 }, (_, i) => `tag${i}`);
-        const res = await uploadViaForm("pk_alice", {
+        const res = await uploadViaForm("sk_alice", {
             fileName: "too-many-tags.png",
             bytes: variant(7),
             tags,
@@ -752,7 +752,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("keys without a user can't publish, but plain uploads still work", async () => {
-        const withTag = await uploadViaForm("pk_nouser", {
+        const withTag = await uploadViaForm("sk_legacy", {
             fileName: "nouser-tagged.png",
             bytes: variant(8),
             tags: ["should-fail"],
@@ -762,7 +762,7 @@ describe("media.pollinations.ai", () => {
             /requires a user-owned API key/,
         );
 
-        const plain = await uploadViaForm("pk_nouser", {
+        const plain = await uploadViaForm("sk_legacy", {
             fileName: "nouser-plain.png",
             bytes: variant(9),
         });
@@ -785,7 +785,7 @@ describe("media.pollinations.ai", () => {
         });
         expect(legacyPlain.status).toBe(200);
         const legacyUpload = legacyPlain.body as UploadResponse;
-        const db = drizzle(env.DB);
+        const db = drizzle((env as any).DB);
         const rows = await db
             .select({ id: mediaItem.id })
             .from(mediaItem)
@@ -794,7 +794,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("re-uploading the same bytes creates a distinct item, not a merge", async () => {
-        const first = await uploadViaForm("pk_alice", {
+        const first = await uploadViaForm("sk_alice", {
             fileName: "merge.png",
             bytes: variant(10),
             tags: ["first-tag"],
@@ -802,7 +802,7 @@ describe("media.pollinations.ai", () => {
         expect(first.status).toBe(200);
         const firstUpload = first.body as UploadResponse;
 
-        const second = await uploadViaForm("pk_alice", {
+        const second = await uploadViaForm("sk_alice", {
             fileName: "merge.png",
             bytes: variant(10),
             tags: ["second-tag"],
@@ -838,12 +838,12 @@ describe("media.pollinations.ai", () => {
 
     it("galleries order by upload time (createdAt)", async () => {
         const tag = "order-tag";
-        const first = await uploadViaForm("pk_alice", {
+        const first = await uploadViaForm("sk_alice", {
             fileName: "order-a.png",
             bytes: variant(60),
             tags: [tag],
         });
-        const second = await uploadViaForm("pk_alice", {
+        const second = await uploadViaForm("sk_alice", {
             fileName: "order-b.png",
             bytes: variant(61),
             tags: [tag],
@@ -855,7 +855,7 @@ describe("media.pollinations.ai", () => {
 
         // Backdate deterministically: a older than b. The upload id is the
         // item id, so update the row directly. Ordering is by createdAt.
-        const db = drizzle(env.DB);
+        const db = drizzle((env as any).DB);
         const backdate = async (id: string, epochSeconds: number) => {
             await db
                 .update(mediaItem)
@@ -879,7 +879,7 @@ describe("media.pollinations.ai", () => {
         const tag = "pagination-tag";
         const uploads: UploadResponse[] = [];
         for (let i = 0; i < 3; i++) {
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm("sk_alice", {
                 fileName: `page-${i}.png`,
                 bytes: variant(20 + i),
                 tags: [tag],
@@ -893,7 +893,7 @@ describe("media.pollinations.ai", () => {
         // Force distinct, strictly increasing timestamps directly in D1 so
         // the ordering assertions below are deterministic. The gallery sorts
         // by upload time (mediaItem.created_at).
-        const db = drizzle(env.DB);
+        const db = drizzle((env as any).DB);
         for (let i = 0; i < uploads.length; i++) {
             const when = new Date((1000 + i) * 1000);
             await db
@@ -982,7 +982,7 @@ describe("media.pollinations.ai", () => {
 
     describe("DELETE /media/:id", () => {
         it("owner deletes with a secret key: unpublished and gone", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm("sk_alice", {
                 fileName: "delete-me.png",
                 bytes: variant(40),
                 tags: ["delete-flow-tag"],
@@ -1017,7 +1017,7 @@ describe("media.pollinations.ai", () => {
             expect(getRes.status).toBe(404);
 
             // …and the catalog rows (item + tags) are gone.
-            const db = drizzle(env.DB);
+            const db = drizzle((env as any).DB);
             const itemRows = await db
                 .select({ id: mediaItem.id })
                 .from(mediaItem)
@@ -1041,7 +1041,7 @@ describe("media.pollinations.ai", () => {
         });
 
         it("rejects non-owners, publishable keys, and missing/invalid keys", async () => {
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm("sk_alice", {
                 fileName: "delete-authz.png",
                 bytes: variant(41),
                 tags: ["delete-authz-tag"],
@@ -1076,7 +1076,7 @@ describe("media.pollinations.ai", () => {
             // A valid key with no attached user has no library to own.
             const noUser = await SELF.fetch(url, {
                 method: "DELETE",
-                headers: { Authorization: "Bearer pk_nouser" },
+                headers: { Authorization: "Bearer sk_legacy" },
             });
             expect(noUser.status).toBe(403);
 
@@ -1109,7 +1109,7 @@ describe("media.pollinations.ai", () => {
 
             // An untagged upload was never published: no catalog row, no
             // owner record to authorize a delete against → 404, blob stays.
-            const { status, body } = await uploadViaForm("pk_alice", {
+            const { status, body } = await uploadViaForm("sk_alice", {
                 fileName: "delete-untagged.png",
                 bytes: variant(42),
             });
@@ -1134,7 +1134,7 @@ describe("media.pollinations.ai", () => {
     });
 
     it("serves a full page at limit=100 (D1 bound-parameter cap regression)", async () => {
-        const db = drizzle(env.DB);
+        const db = drizzle((env as any).DB);
         const now = Date.now();
         const rows = Array.from({ length: 101 }, (_, i) => ({
             id: `bulk-${i}-${crypto.randomUUID()}`,

@@ -104,30 +104,6 @@ export function useContributors(limit = 12) {
     }, []);
 }
 
-/**
- * An exact all-time repository contributor count without downloading every
- * profile. Anonymous authors matter especially in the project's older commit
- * history. With one result per page, GitHub's final pagination page is the
- * total.
- */
-export function useContributorCount() {
-    return useAsync<number | null>(async () => {
-        const response = await fetch(
-            `${GITHUB}/repos/${REPO}/contributors?per_page=1&anon=1`,
-            { headers: { Accept: "application/vnd.github+json" } },
-        );
-        if (!response.ok)
-            throw new Error(`github contributors: ${response.status}`);
-
-        const rows = (await response.json()) as GhContributor[];
-        const lastPage = response.headers
-            .get("link")
-            ?.match(/[?&]page=(\d+)[^>]*>;\s*rel="last"/)?.[1];
-
-        return lastPage ? Number(lastPage) : rows.length;
-    }, null);
-}
-
 /* ── Open votes ─────────────────────────────────────────────────────────── */
 
 type VotingIssue = {
@@ -219,6 +195,7 @@ type DiaryHistory = {
     byDate: Map<string, DiaryPr[]>;
     firstDay: string;
     latestDay: string;
+    allTimeCount: number;
 };
 
 type DiaryRange = {
@@ -363,9 +340,17 @@ function loadPullRequestHistory() {
             byDate,
             firstDay,
             latestDay,
+            allTimeCount: uniquePullRequests.size,
         };
     })();
     return historyCache;
+}
+
+export function usePullRequestCount() {
+    return useAsync<number | null>(
+        async () => (await loadPullRequestHistory()).allTimeCount,
+        null,
+    );
 }
 
 function addDays(iso: string, amount: number): string {

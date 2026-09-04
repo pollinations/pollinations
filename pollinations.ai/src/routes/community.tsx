@@ -10,14 +10,15 @@ import {
     CodeIcon,
     ContentHeader,
     cn,
-    DiscordIcon,
     Dropdown,
     DropdownItem,
     ExternalLinkButton,
+    ExternalLinkIcon,
     Eyebrow,
     GitPullRequestIcon,
     InlineLink,
     LinkCard,
+    MegaphoneIcon,
     Surface,
     TabButton,
 } from "@pollinations/ui";
@@ -29,9 +30,9 @@ import {
     SUPPORTERS,
     useBuildDiary,
     useBuildDiaryAll,
-    useContributorCount,
     useContributors,
     useDiscordPresence,
+    usePullRequestCount,
     useVotingIssues,
 } from "../data/community";
 import {
@@ -42,6 +43,7 @@ import {
 import { routeHead } from "../routeMeta";
 import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
 import { BottomScene } from "../ui/site/BottomScene";
+import { DiscordPresenceBadge } from "../ui/site/DiscordPresenceBadge";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/community")({
@@ -64,13 +66,13 @@ const WAYS_IN = [
         ],
     },
     {
-        label: "Models",
+        label: "Models & agents",
         icon: BeakerIcon,
-        title: "Publish a model",
-        body: "Bring your own model to the public catalog and make it available to builders.",
+        title: "Publish a model or agent",
+        body: "Bring your own model or managed agent to the public catalog and make it available to builders.",
         links: [
             {
-                label: "Publish a model",
+                label: "Publish a model or agent",
                 href: "https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml",
             },
         ],
@@ -78,21 +80,21 @@ const WAYS_IN = [
     {
         label: "Code",
         icon: CodeIcon,
-        title: "Submit a feature, fix a bug, or improve the docs",
-        body: "Open a PR, close an issue, propose a feature, or improve the examples.",
+        title: "Contribute code or improve the docs",
+        body: "Fix a bug, propose a feature, improve an example, or open a pull request.",
         links: [
             {
-                label: "Good first issues",
+                label: "Find a good first issue",
                 href: `${REPO_URL}/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22`,
             },
         ],
     },
     {
         label: "Talk",
-        icon: DiscordIcon,
+        icon: MegaphoneIcon,
         title: "Help in Discord",
         body: "Answer questions, share experiments, and tell the team what feels missing.",
-        links: [{ label: "Join the Discord", href: DISCORD_URL }],
+        links: [{ label: "Join Discord", href: DISCORD_URL }],
     },
 ];
 
@@ -138,16 +140,12 @@ function FeedState({
 
 function CommunityParticipation() {
     const { data: issues, loading, failed } = useVotingIssues();
+    const { data: online } = useDiscordPresence();
     const {
-        data: online,
-        loading: onlineLoading,
-        failed: onlineFailed,
-    } = useDiscordPresence();
-    const {
-        data: contributorCount,
-        loading: contributorsLoading,
-        failed: contributorsFailed,
-    } = useContributorCount();
+        data: pullRequestCount,
+        loading: pullRequestsLoading,
+        failed: pullRequestsFailed,
+    } = usePullRequestCount();
     const {
         data: platform,
         loading: platformLoading,
@@ -187,31 +185,21 @@ function CommunityParticipation() {
         },
         {
             ...WAYS_IN[2],
-            metrics: contributorsFailed
+            metrics: pullRequestsFailed
                 ? []
                 : [
                       {
                           value:
-                              contributorsLoading || contributorCount === null
+                              pullRequestsLoading || pullRequestCount === null
                                   ? null
-                                  : compact(contributorCount),
-                          label: "code contributors",
+                                  : compact(pullRequestCount),
+                          label: "PRs merged",
                       },
                   ],
         },
         {
             ...WAYS_IN[3],
-            metrics: onlineFailed
-                ? []
-                : [
-                      {
-                          value:
-                              onlineLoading || online === null
-                                  ? null
-                                  : String(online),
-                          label: "Discord online",
-                      },
-                  ],
+            metrics: [{ value: "19K", label: "Discord users" }],
         },
     ];
 
@@ -240,61 +228,98 @@ function CommunityParticipation() {
             <div
                 className={cn(postHeroSpacingClassName, "flex flex-col gap-7")}
             >
-                <div className="grid grid-cols-1 gap-5 min-[540px]:grid-cols-2 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
                     {ways.map((way) => {
                         const WayIcon = way.icon;
+                        const isTalk = way.label === "Talk";
 
                         return (
                             <Surface
                                 variant="card"
                                 key={way.label}
-                                className="flex flex-col gap-2.5 p-7 min-[700px]:p-5 lg:p-7"
+                                className="p-5 sm:p-6 xl:p-5"
                             >
-                                <div className="flex items-center gap-1.5 text-theme-text-muted">
-                                    <WayIcon className="size-3.5" />
-                                    <Eyebrow>{way.label}</Eyebrow>
-                                </div>
-                                <h3 className="font-body text-xl font-semibold text-theme-text-strong">
-                                    {way.title}
-                                </h3>
-                                <p className="text-sm leading-relaxed text-theme-text-base">
-                                    {way.body}
-                                </p>
-                                <div className="mt-auto flex flex-col gap-4 pt-3">
-                                    {way.metrics.length > 0 && (
-                                        <dl className="flex flex-wrap gap-x-6 gap-y-3">
-                                            {way.metrics.map((metric) => (
-                                                <div
-                                                    key={metric.label}
-                                                    className="flex flex-col gap-0.5"
-                                                >
-                                                    <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
-                                                        {metric.value ?? (
-                                                            <span
-                                                                aria-hidden="true"
-                                                                className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
-                                                            />
-                                                        )}
-                                                    </dt>
-                                                    <dd className="text-xs text-theme-text-muted">
-                                                        {metric.label}
-                                                    </dd>
-                                                </div>
-                                            ))}
-                                        </dl>
-                                    )}
-                                    <div className="flex flex-wrap gap-2">
-                                        {way.links.map((link) => (
-                                            <ExternalLinkButton
-                                                key={link.label}
-                                                href={link.href}
-                                                size="sm"
-                                                appearance="raised"
-                                                className="gap-2 whitespace-nowrap"
+                                <div className="grid h-full content-between gap-4 min-[540px]:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] min-[900px]:grid-cols-1">
+                                    <div className="flex flex-col gap-2.5">
+                                        <div className="flex items-center gap-1.5 text-theme-text-muted">
+                                            <WayIcon className="size-3.5" />
+                                            <Eyebrow>{way.label}</Eyebrow>
+                                        </div>
+                                        <h3 className="font-body text-xl font-semibold text-theme-text-strong">
+                                            {way.title}
+                                        </h3>
+                                        <p className="text-sm leading-relaxed text-theme-text-base">
+                                            {way.body}
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col items-start justify-end gap-3 min-[900px]:flex-row min-[900px]:items-end min-[900px]:justify-between xl:flex-col xl:items-start">
+                                        {way.metrics.length > 0 && (
+                                            <dl className="flex flex-wrap gap-x-6 gap-y-3">
+                                                {way.metrics.map((metric) => (
+                                                    <div
+                                                        key={metric.label}
+                                                        className="flex flex-col gap-0.5"
+                                                    >
+                                                        <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                                            {metric.value ?? (
+                                                                <span
+                                                                    aria-hidden="true"
+                                                                    className="block h-8 w-14 animate-pulse rounded-md bg-theme-bg-subtle"
+                                                                />
+                                                            )}
+                                                        </dt>
+                                                        <dd className="text-xs text-theme-text-muted">
+                                                            {metric.label}
+                                                        </dd>
+                                                    </div>
+                                                ))}
+                                            </dl>
+                                        )}
+                                        <div className="flex flex-col items-start gap-2">
+                                            <div
+                                                className={cn(
+                                                    "flex flex-wrap gap-2",
+                                                    isTalk && "[&>*]:w-auto",
+                                                )}
                                             >
-                                                {link.label}
-                                            </ExternalLinkButton>
-                                        ))}
+                                                {way.links.map((link) => (
+                                                    <ExternalLinkButton
+                                                        key={link.label}
+                                                        href={link.href}
+                                                        size="sm"
+                                                        appearance="raised"
+                                                        showIcon={!isTalk}
+                                                        className={cn(
+                                                            "gap-2",
+                                                            isTalk
+                                                                ? "h-auto min-h-9 py-2"
+                                                                : "whitespace-nowrap",
+                                                        )}
+                                                    >
+                                                        {isTalk ? (
+                                                            <span className="inline-flex flex-col items-start gap-1">
+                                                                <span>
+                                                                    {link.label}
+                                                                </span>
+                                                                <span className="inline-flex items-center gap-2">
+                                                                    <DiscordPresenceBadge
+                                                                        online={
+                                                                            online
+                                                                        }
+                                                                        glow={
+                                                                            false
+                                                                        }
+                                                                    />
+                                                                    <ExternalLinkIcon className="h-4 w-4 shrink-0 opacity-60" />
+                                                                </span>
+                                                            </span>
+                                                        ) : (
+                                                            link.label
+                                                        )}
+                                                    </ExternalLinkButton>
+                                                ))}
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </Surface>
@@ -329,32 +354,36 @@ function CommunityParticipation() {
                     ) : (
                         <div className="grid grid-cols-1 gap-3 min-[700px]:grid-cols-3">
                             {issues.map((issue) => (
-                                <Surface
-                                    variant="card"
+                                <LinkCard
                                     key={issue.number}
-                                    className="flex flex-col gap-5 rounded-2xl p-5"
+                                    href={issue.url}
+                                    showIcon={false}
+                                    aria-label={`Open “${issue.title}” and add your vote`}
+                                    className="group gap-5 rounded-2xl bg-surface-opaque p-5 transition-[background-color,transform] hover:-translate-y-0.5"
                                 >
                                     <span className="font-semibold leading-snug text-theme-text-strong">
                                         {issue.title}
                                     </span>
-                                    <span className="mt-auto flex items-center justify-between gap-3">
-                                        <Eyebrow
-                                            size="chrome"
-                                            className="tabular-nums"
-                                        >
-                                            {issue.votes} vote
-                                            {issue.votes === 1 ? "" : "s"}
-                                        </Eyebrow>
-                                        <ExternalLinkButton
-                                            href={issue.url}
-                                            size="sm"
-                                            appearance="raised"
-                                            className="gap-1.5"
-                                        >
-                                            Vote
-                                        </ExternalLinkButton>
-                                    </span>
-                                </Surface>
+                                    <div className="mt-auto flex items-end justify-between gap-3">
+                                        <dl>
+                                            <div className="flex flex-col gap-0.5">
+                                                <dt className="font-heading text-3xl text-theme-text-soft tabular-nums">
+                                                    {issue.votes}
+                                                </dt>
+                                                <dd className="text-xs text-theme-text-muted">
+                                                    vote
+                                                    {issue.votes === 1
+                                                        ? ""
+                                                        : "s"}
+                                                </dd>
+                                            </div>
+                                        </dl>
+                                        <ExternalLinkIcon
+                                            aria-hidden="true"
+                                            className="size-7 text-theme-text-soft transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                                        />
+                                    </div>
+                                </LinkCard>
                             ))}
                         </div>
                     )}

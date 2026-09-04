@@ -168,6 +168,7 @@ export type MockStripeState = {
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
     requests: StripeRequest[];
+    onCheckoutSessionCreated: (() => Promise<void>) | null;
     customerCreateByIdempotencyKey: Record<string, string>;
     /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
@@ -268,6 +269,7 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 status: "open",
             };
             state.checkoutSessions.push(session);
+            await state.onCheckoutSessionCreated?.();
             return c.json(session);
         })
         .get("/v1/checkout/sessions", (c) => {
@@ -583,6 +585,7 @@ function createInitialState(): MockStripeState {
         invoicePayments: [],
         paymentIntents: [],
         requests: [],
+        onCheckoutSessionCreated: null,
         customerCreateByIdempotencyKey: {},
         payBehavior: {},
     };

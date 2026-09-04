@@ -1,4 +1,5 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
@@ -11,11 +12,30 @@ import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+test("restricted accounts cannot use existing API keys", async () => {
+    const { key, userId } = await createTestApiKey();
+    await drizzle(env.DB)
+        .update(userTable)
+        .set({ stripePaymentRestriction: new Date().toISOString() })
+        .where(eq(userTable.id, userId));
+
+    const response = await fetchWorker("/v1/models", {
+        headers: { Authorization: `Bearer ${key}` },
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+        error: { message: "Account restricted." },
+    });
+});
 
 test("filters OpenAI-compatible model list by API key permissions", async ({
     restrictedApiKey,

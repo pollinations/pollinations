@@ -17,7 +17,10 @@ import {
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
-import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
+import {
+    getStripeNewCardGateStatus,
+    STRIPE_NEW_CARD_GATE_METADATA,
+} from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 import {
     type MockStripeState,
@@ -387,6 +390,39 @@ test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", asyn
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
+test("checkout expires a session created while the account becomes restricted", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const userId = await getSeededUserId();
+    mocks.stripe.state.onCheckoutSessionCreated = async () => {
+        await env.DB.prepare(
+            `UPDATE user
+            SET stripe_payment_restriction = ?
+            WHERE id = ?`,
+        )
+            .bind(new Date().toISOString(), userId)
+            .run();
+    };
+
+    const response = await SELF.fetch(`${base}/checkout/p10`, {
+        method: "GET",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toEqual({
+        error: "Account restricted.",
+    });
+    expect(mocks.stripe.state.checkoutSessions).toHaveLength(1);
+    expect(mocks.stripe.state.checkoutSessions[0]).toMatchObject({
+        status: "expired",
+        url: null,
+    });
+});
+
 test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", async ({
     sessionToken,
     mocks,
@@ -481,6 +517,43 @@ test("four distinct failed cards trigger Radar without restricting the account",
         .bind(userId)
         .first<{ restriction: string | null }>();
     expect(user?.restriction).toBeNull();
+});
+
+test("card gate ignores attempts recorded after the evaluation time", async ({
+    sessionToken,
+}) => {
+    expect(sessionToken).toBeTruthy();
+    const userId = await getSeededUserId();
+    const evaluationTime = Date.now();
+
+    for (let index = 0; index < 8; index += 1) {
+        await env.DB.prepare(
+            `INSERT INTO stripe_card_fingerprint_attempt (
+                event_id,
+                user_id,
+                card_fingerprint,
+                created_at
+            ) VALUES (?, ?, ?, ?)`,
+        )
+            .bind(
+                `evt_time_bound_${index}`,
+                userId,
+                `fp_time_bound_${index}`,
+                evaluationTime + index + 1,
+            )
+            .run();
+    }
+
+    const status = await getStripeNewCardGateStatus(
+        env.DB,
+        userId,
+        evaluationTime,
+    );
+    expect(status).toMatchObject({
+        gate: "ok",
+        shouldRestrictPayments: false,
+        distinctFailedCardCount24h: 0,
+    });
 });
 
 test("eight distinct failed cards in 24h restrict the account", async ({
@@ -620,6 +693,30 @@ test("eight distinct failed cards in 24h restrict the account", async ({
         user: { stripePaymentRestriction: string | null };
     };
     expect(restrictedSession.user.stripePaymentRestriction).not.toBeNull();
+
+    const billingResponse = await SELF.fetch(`${base}/billing`, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(billingResponse.status).toBe(200);
+    await expect(billingResponse.json()).resolves.toMatchObject({
+        accountRestricted: true,
+    });
+
+    const portalResponse = await SELF.fetch(`${base}/billing/portal`, {
+        method: "POST",
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+    });
+    expect(portalResponse.status).toBe(200);
+
+    const autoTopUpResponse = await SELF.fetch(`${base}/auto-top-up`, {
+        method: "PATCH",
+        headers: {
+            "content-type": "application/json",
+            cookie: `better-auth.session_token=${sessionToken}`,
+        },
+        body: JSON.stringify({ enabled: false }),
+    });
+    expect(autoTopUpResponse.status).toBe(403);
 
     const apiKeyResponse = await SELF.fetch(
         "http://localhost:3000/api/account/key",

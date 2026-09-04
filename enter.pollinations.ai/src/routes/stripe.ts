@@ -189,6 +189,19 @@ export const stripeRoutes = new Hono<Env>()
                 cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });
 
+            const latestUser = await getUserStripeBillingRow(c.env.DB, userId);
+            if (latestUser.stripePaymentRestriction) {
+                try {
+                    await stripe.checkout.sessions.expire(checkoutSession.id);
+                } catch (error) {
+                    console.error(
+                        `Failed to expire newly created Stripe Checkout session ${checkoutSession.id}:`,
+                        error,
+                    );
+                }
+                return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+            }
+
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
             if (checkoutSession.url) {
                 return c.redirect(checkoutSession.url);
@@ -232,7 +245,7 @@ export const stripeRoutes = new Hono<Env>()
      * Create a Stripe Customer Portal session for billing management.
      */
     .post("/billing/portal", async (c) => {
-        const user = await requireSessionUser(c);
+        const user = await requireSessionUser(c, { allowRestricted: true });
 
         try {
             const session = await createBillingPortalSession(c.env, user.id);

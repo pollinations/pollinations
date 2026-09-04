@@ -36,6 +36,7 @@ import {
     fetchTinybirdRows,
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
+import { assertAccountCanCreate } from "../utils/stripe-payment-restriction.ts";
 import {
     hasAccountPermission,
     requireAccountPermission,
@@ -1450,6 +1451,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
+            assertAccountCanCreate(user);
             requireAccountPermission(c.var.auth.apiKey, "keys");
 
             const {

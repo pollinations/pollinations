@@ -1,6 +1,14 @@
+import { HTTPException } from "hono/http-exception";
 import type Stripe from "stripe";
 
 export const ACCOUNT_RESTRICTED_MESSAGE = "Account restricted.";
+
+export function assertAccountCanCreate(user: {
+    stripePaymentRestriction?: string | null;
+}): void {
+    if (!user.stripePaymentRestriction) return;
+    throw new HTTPException(403, { message: ACCOUNT_RESTRICTED_MESSAGE });
+}
 
 export async function restrictStripePayments(
     db: D1Database,

@@ -110,16 +110,6 @@ export const auth = (options: AuthOptions) =>
         }
         const { user, session, apiKey, rawApiKey, agentRun } = authResult || {};
 
-        if (
-            session &&
-            user?.stripePaymentRestriction &&
-            !["GET", "HEAD", "OPTIONS"].includes(c.req.method)
-        ) {
-            throw new HTTPException(403, {
-                message: "Account restricted.",
-            });
-        }
-
         const requireAuthorization = async (options?: {
             message?: string;
         }): Promise<void> => {

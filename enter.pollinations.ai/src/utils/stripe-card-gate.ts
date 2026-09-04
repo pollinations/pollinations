@@ -45,9 +45,10 @@ export async function getStripeNewCardGateStatus(
                 COUNT(*) AS attempt_count
             FROM stripe_card_fingerprint_attempt
             WHERE user_id = ?
-                AND created_at >= ?`,
+                AND created_at >= ?
+                AND created_at <= ?`,
         )
-        .bind(userId, windowStart)
+        .bind(userId, windowStart, now)
         .first<{
             distinct_count: number | null;
             attempt_count: number | null;

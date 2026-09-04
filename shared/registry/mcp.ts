@@ -21,12 +21,15 @@ type McpServerDefinitionBase = {
     id: string;
     name: string;
     description: string;
-    url?: string;
     proxyPath?: string;
     binding: McpBindingName;
     pricing: McpPricingDefinition;
     userScoped?: boolean;
     accountPath?: string;
+    ownerReward?: {
+        githubId: number;
+        rate: number;
+    };
 };
 
 type McpPricingDefinition = {
@@ -65,6 +68,11 @@ export const ROBOTIC_ROBOT_TIME_PRICE_PER_REQUEST = 0.0001;
 export const ROBOTIC_ROBOT_RUN_JS_PRICE_PER_MB_SECOND = {
     0.01: 0.000025,
     0.025: 0.0000625,
+} as const;
+export const MCP_OWNER_REWARD_RATE = 0.75;
+const ROBOTIC_ROBOT_OWNER_REWARD = {
+    githubId: 85689068,
+    rate: MCP_OWNER_REWARD_RATE,
 } as const;
 const COMPOSIO_MCP_PRICING = {
     description: "Launch price",
@@ -177,11 +185,11 @@ export const MCP_SERVERS = [
         id: "time",
         name: "Time",
         description: "Get the current date and time in any IANA timezone.",
-        url: "https://mcp.roboticrobot.xyz/mcp/pollinations",
         proxyPath: "/time",
         binding: "ROBOTIC_ROBOT_MCP",
         billing: "usage_receipt",
         provider: "robotic-robot",
+        ownerReward: ROBOTIC_ROBOT_OWNER_REWARD,
         pricing: {
             rates: [
                 {
@@ -204,11 +212,11 @@ export const MCP_SERVERS = [
         name: "Run JS",
         description:
             "Run JavaScript in a network-disabled V8 isolate with selectable RAM and vCPU limits.",
-        url: "https://mcp.roboticrobot.xyz/mcp/pollinations",
         proxyPath: "/run-js",
         binding: "ROBOTIC_ROBOT_MCP",
         billing: "usage_receipt",
         provider: "robotic-robot",
+        ownerReward: ROBOTIC_ROBOT_OWNER_REWARD,
         pricing: {
             rates: [
                 ...Object.entries(ROBOTIC_ROBOT_RUN_JS_PRICE_PER_MB_SECOND).map(

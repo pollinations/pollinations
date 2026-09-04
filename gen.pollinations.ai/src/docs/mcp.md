@@ -15,18 +15,14 @@ then choose a server:
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
-| Time | `https://mcp.roboticrobot.xyz/mcp/pollinations` | Get the current time in any IANA timezone | [Billing proxy](https://gen.pollinations.ai/mcp/time) |
-| Run JS | `https://mcp.roboticrobot.xyz/mcp/pollinations` | Run JavaScript in an isolated V8 sandbox | [Billing proxy](https://gen.pollinations.ai/mcp/run-js) |
+| Time | `https://gen.pollinations.ai/mcp/time` | Get the current time in any IANA timezone | [Source](https://github.com/pollinations/pollinations/tree/main/apps/robotic-robot-mcp) |
+| Run JS | `https://gen.pollinations.ai/mcp/run-js` | Run JavaScript in an isolated V8 sandbox | [Source](https://github.com/pollinations/pollinations/tree/main/apps/robotic-robot-mcp) |
 
-Send the key with every request to an endpoint on `gen.pollinations.ai`:
+Send the key with every request:
 
 ```http
 Authorization: Bearer YOUR_KEY
 ```
-
-Do not send a Pollinations API key to an external MCP domain. Hosted agents
-access the Time and Run JS servers through the Pollinations billing proxies
-linked in the table.
 
 Get current endpoints and pricing from the live catalog:
 
@@ -136,11 +132,10 @@ connections from [MCP Connectors](https://enter.pollinations.ai/account#connecto
 
 ### Billing and permissions
 
-Calls made through a Pollinations billing proxy use the same Pollen wallet as
-the Pollinations API. Direct calls to an external MCP URL are outside
-Pollinations billing. The catalog endpoint shows each server's current hosted
-agent pricing. Pollinations generation tools use the selected model's listed
-rate.
+Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
+shows each server's current pricing. Pollinations generation tools use the
+selected model's listed rate. The Time and Run JS owner receives 75% of each
+charge in the same Quest or Paid Pollen bucket used by the caller.
 
 An MCP server can only use models and account features allowed by the caller's
 key and cannot spend beyond that key's budget. Configure both in

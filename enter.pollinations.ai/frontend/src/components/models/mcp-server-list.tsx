@@ -101,10 +101,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
         <div>
             <div className="@container flex flex-col gap-2 pb-1">
                 {servers.map((server) => {
-                    const endpoint =
-                        "url" in server
-                            ? server.url
-                            : `${config.genBaseUrl}/mcp/${server.id}`;
+                    const endpoint = `${config.genBaseUrl}/mcp/${server.id}`;
                     return (
                         <div
                             key={server.id}

@@ -315,6 +315,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                                 });
                             },
                             ROBOTIC_ROBOT_MCP: async (request: Request) => {
+                                const pathname = new URL(request.url).pathname;
                                 if (
                                     request.headers.has("authorization") ||
                                     request.headers.has("cookie")
@@ -333,13 +334,14 @@ export default defineWorkersConfig(async ({ mode }) => {
                                     "Content-Type": "application/json",
                                 });
                                 if (payload.method === "tools/call") {
+                                    const isRunJs = pathname === "/run-js";
                                     headers.set(
                                         "x-pollinations-mcp-cost",
-                                        "0.0001",
+                                        isRunJs ? "0.0008" : "0.0001",
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-tool",
-                                        "time",
+                                        isRunJs ? "run-js" : "time",
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-status",
@@ -347,7 +349,9 @@ export default defineWorkersConfig(async ({ mode }) => {
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-adjustment-id",
-                                        "robotic_robot.time.v1",
+                                        isRunJs
+                                            ? "robotic_robot.run_js.0_01_vcpu.v1"
+                                            : "robotic_robot.time.v1",
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-adjustment-units",

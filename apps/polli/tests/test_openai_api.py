@@ -273,7 +273,6 @@ class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
                 return_value=[{"type": "function", "function": {"name": "internal"}}],
             ),
             patch("src.ai.client.filter_api_tools", side_effect=lambda tools: tools),
-            patch("src.ai.client.filter_tools_by_intent", side_effect=lambda _message, tools, _admin: tools),
         ):
             events = [
                 event
@@ -311,7 +310,6 @@ class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
             patch.object(client, "_call_api_with_tools", upstream),
             patch("src.ai.client.get_tools_with_embeddings", return_value=[]),
             patch("src.ai.client.filter_api_tools", side_effect=lambda tools: tools),
-            patch("src.ai.client.filter_tools_by_intent", side_effect=lambda _message, tools, _admin: tools),
         ):
             result = await client.process_with_tools(
                 user_message="weather",

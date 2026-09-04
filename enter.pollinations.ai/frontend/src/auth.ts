@@ -1,8 +1,6 @@
+import { apiKeyClient } from "@better-auth/api-key/client";
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
-import {
-    apiKeyClient,
-    inferAdditionalFields,
-} from "better-auth/client/plugins";
+import { inferAdditionalFields } from "better-auth/client/plugins";
 import { createAuthClient } from "better-auth/react";
 import { config } from "./config.ts";
 

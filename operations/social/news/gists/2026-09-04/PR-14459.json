@@ -1,0 +1,34 @@
+{
+  "pr_number": 14459,
+  "title": "fix: stop Open WebUI injecting builtin tools into every chat",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14459",
+  "merged_at": "2026-09-04T20:19:58Z",
+  "labels": [],
+  "pr_body_excerpt": "- Sets `DEFAULT_MODEL_METADATA={\"capabilities\":{\"builtin_tools\":false}}`. Open WebUI appends its builtin tool specs to every request from its UI unless the model says otherwise; connection-fetched models have no `model` row, so the global default is the only lever (`utils/models.py` applies it to them wholesale).\n- Fixes managed agents and community models that reject a `tools` field 400-ing on every chat, without touching gen.\n- The Pollinations MCP server is unaffected — it arrives via the request body, so it stays opt-in per chat.\n- Both live config rows (`openwebui`, `openwebui_staging`) were updated directly; the env var is inert on a booted DB because `Config.seed_defaults` only inserts missing keys. Verified live: all 425 models on production now report `builtin_tools: false`, retroactively for existing chats and users (`models.base_models_cache` is false and `Config.get_many` reads per request).\n- README: documents the above and corrects a stale claim that the database is Neon.\n\nUpstream confirms this is the intended fix — open-webui/open-webui#28540 was closed as already-satisfied by `DEFAULT_MODEL_METADATA`, and #26823 reports the same defaulting bug.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_015mNrP6DkRQmm3YStNjfFv3",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tools stay in their garden",
+    "blurb": "Open WebUI has stopped packing builtin tools into every single chat like an overprepared picnic basket. Models that prefer a tool-free request can now simply answer the question.",
+    "summary": "Configured Open WebUI's default model metadata with `capabilities.builtin_tools: false`, preventing its UI from attaching builtin tool specifications to all 425 production models while leaving Pollinations MCP tools opt-in per request.",
+    "impact": "Managed agents and community models that reject a `tools` field can now chat through Open WebUI without recurring 400 errors, while MCP-enabled chats keep working when users explicitly send those tools.",
+    "keywords": [
+      "open-webui",
+      "builtin-tools",
+      "model-metadata",
+      "chat",
+      "mcp",
+      "bug-fix"
+    ],
+    "visual_concept": "A cozy Open WebUI-style retro chat terminal is tidily sorting a pile of unused tool cards into a garden shed instead of adding them to every message. Polli, wearing a tiny gardener apron, checks that the chat path is clear; a small code-plant and flowers reinforce that tools remain available when deliberately chosen.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener apron as she helps a friendly CRT monitor robot place extra tool cards into a garden shed beside a clean Open WebUI chat terminal glowing lime green (#ecf874); code-plants and pastel flowers grow nearby, with a small pixel-font label reading “TOOLS: OPT-IN.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14459.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener apron as she helps a friendly CRT monitor robot place extra tool cards into a garden shed beside a clean Open WebUI chat terminal glowing lime green (#ecf874); code-plants and pastel flowers grow nearby, with a small pixel-font label reading “TOOLS: OPT-IN.” Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-04T20:21:02.612428+00:00"
+}

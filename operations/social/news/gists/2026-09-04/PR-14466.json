@@ -1,0 +1,34 @@
+{
+  "pr_number": 14466,
+  "title": "fix: add curated request bodies for responses and integrations docs examples",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14466",
+  "merged_at": "2026-09-04T22:22:54Z",
+  "labels": [],
+  "pr_body_excerpt": "The Docs / Regenerate API reference workflow has failed since #14449 and the Connect App route went live (https://github.com/pollinations/pollinations/actions/runs/33920656829). Validation rejects the regenerated file because two POST examples have no body, so no docs PR is created.\n\n- Adds `postV1Responses` and `postAccountIntegrations` to `CURATED_BODIES` in `gen.pollinations.ai/scripts/generate-apidocs.ts`\n- `pickExample` cannot synthesize plain `string` fields, and both schemas' only required field is one (`input` string|array, `toolkit` string); compact mode also skips the optional `model` default\n- Values mirror existing usage: `openai` advertises `/v1/responses`; `github` is the toolkit slug the integrations tests use\n- Verified locally: `docs:generate` then `docs:validate` passes; `APIDOCS.md` is intentionally not included, the workflow regenerates it after merge\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The examples have bodies",
+    "blurb": "Two API examples were arriving at the docs party empty-handed. The generator now gives Responses and Integrations their proper request bodies, so the reference can keep blooming.",
+    "summary": "Added curated request bodies for the POST /v1/responses and account integrations API reference examples, allowing the Docs / Regenerate API reference workflow to validate and publish regenerated documentation again.",
+    "impact": "Developers will get usable generated examples with `input` values for Responses and the `github` toolkit slug for Integrations instead of body-less POST requests blocking documentation updates.",
+    "keywords": [
+      "documentation",
+      "api-reference",
+      "responses-api",
+      "integrations",
+      "api-examples",
+      "generation"
+    ],
+    "visual_concept": "A cozy API-reference garden where Polli repairs two empty pixel request envelopes by placing an `input` card into the Responses envelope and a `github` toolkit tag into the Integrations envelope. A cheerful CRT monitor robot watches a documentation printer produce a clean page, with code-plants and flowers showing that the docs pipeline is growing again.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, carefully placing an `input` card and a `github` toolkit tag into two glowing API request envelopes beside a retro terminal; a chunky CRT monitor robot happily prints a clean reference page while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle pixel-font text: 'REQUEST BODY OK', nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14466.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, carefully placing an `input` card and a `github` toolkit tag into two glowing API request envelopes beside a retro terminal; a chunky CRT monitor robot happily prints a clean reference page while code-plants bloom around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes, subtle pixel-font text: 'REQUEST BODY OK', nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-04T22:24:07.471268+00:00"
+}

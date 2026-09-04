@@ -1437,6 +1437,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000025,
     },
   },
+  "microsoft/mai-image-2.5-flash": {
+    "cost": {
+      "completionImageTokens": 0.0000195,
+      "promptImageTokens": 0.00000175,
+      "promptTextTokens": 0.00000175,
+    },
+    "price": {
+      "completionImageTokens": 0.000014625,
+      "promptImageTokens": 0.0000013125,
+      "promptTextTokens": 0.0000013125,
+    },
+  },
   "midijourney": {
     "cost": {
       "completionTextTokens": 0.0000045,

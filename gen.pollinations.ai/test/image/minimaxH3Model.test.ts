@@ -1,9 +1,16 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { syncImageEnv } from "../../src/image/env.ts";
-import { callMinimaxH3API } from "../../src/image/models/minimaxH3Model.ts";
+import {
+    callMinimaxH3API,
+    callMinimaxH3MaxTurboAPI,
+} from "../../src/image/models/minimaxH3Model.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 
 const H3_ENDPOINT = "https://queue.fal.run/minimax/h3/text-to-video";
+const H3_MAX_TURBO_TEXT_ENDPOINT =
+    "https://queue.fal.run/minimax/h3-max-turbo/text-to-video";
+const H3_MAX_TURBO_IMAGE_ENDPOINT =
+    "https://queue.fal.run/minimax/h3-max-turbo/image-to-video";
 const STATUS_URL = "https://queue.fal.run/minimax/h3/requests/test/status";
 const RESULT_URL = "https://queue.fal.run/minimax/h3/requests/test";
 const VIDEO_URL = "https://fal.media/minimax-h3-test.mp4";
@@ -47,7 +54,11 @@ function mockH3Fetch(
                       >)
                     : undefined,
             });
-            if (href === H3_ENDPOINT) {
+            if (
+                href === H3_ENDPOINT ||
+                href === H3_MAX_TURBO_TEXT_ENDPOINT ||
+                href === H3_MAX_TURBO_IMAGE_ENDPOINT
+            ) {
                 return Response.json({
                     status_url: STATUS_URL,
                     response_url: RESULT_URL,
@@ -122,6 +133,96 @@ describe("callMinimaxH3API", () => {
 
         await expect(
             callMinimaxH3API("a rejected prompt", baseParams),
+        ).rejects.toMatchObject({
+            status: 502,
+            message: "provider rejected prompt",
+        });
+    });
+});
+
+describe("callMinimaxH3MaxTurboAPI", () => {
+    it.each([
+        [5, "480p", "480P"],
+        [5, "768p", "768P"],
+        [10, "480p", "480P"],
+        [10, "768p", "768P"],
+        [15, "480p", "480P"],
+        [15, "768p", "768P"],
+    ] as const)("routes %ss at %s with deterministic billing", async (duration, resolution, upstreamResolution) => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests);
+
+        const result = await callMinimaxH3MaxTurboAPI(
+            "a paper windmill turning gently",
+            {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
+                duration,
+                resolution,
+                aspectRatio: "21:9",
+            },
+        );
+
+        expect(requests[0]).toEqual({
+            url: H3_MAX_TURBO_TEXT_ENDPOINT,
+            body: {
+                prompt: "a paper windmill turning gently",
+                duration,
+                resolution: upstreamResolution,
+                aspect_ratio: "21:9",
+                seed: 42,
+                enable_safety_checker: true,
+                prompt_expansion_mode: "balanced",
+            },
+        });
+        expect(result).toMatchObject({
+            buffer: Buffer.from(VIDEO_BYTES),
+            mimeType: "video/mp4",
+            durationSeconds: duration,
+            trackingData: {
+                actualModel: "minimax/minimax-h3-max-turbo",
+                usage: { completionVideoSeconds: duration },
+            },
+        });
+    });
+
+    it("forwards first and last frame URLs to the image route", async () => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests);
+        const start = "https://media.pollinations.ai/start.png";
+        const end = "https://media.pollinations.ai/end.png";
+
+        await callMinimaxH3MaxTurboAPI("a seamless camera move", {
+            ...baseParams,
+            model: "minimax/minimax-h3-max-turbo",
+            duration: 10,
+            resolution: "768p",
+            image: [start, end],
+        });
+
+        expect(requests[0]).toEqual({
+            url: H3_MAX_TURBO_IMAGE_ENDPOINT,
+            body: {
+                prompt: "a seamless camera move",
+                duration: 10,
+                resolution: "768P",
+                seed: 42,
+                enable_safety_checker: true,
+                prompt_expansion_mode: "balanced",
+                image_url: start,
+                end_image_url: end,
+            },
+        });
+    });
+
+    it("surfaces a terminal provider failure", async () => {
+        mockH3Fetch([], "FAILED");
+
+        await expect(
+            callMinimaxH3MaxTurboAPI("a rejected prompt", {
+                ...baseParams,
+                model: "minimax/minimax-h3-max-turbo",
+            }),
         ).rejects.toMatchObject({
             status: 502,
             message: "provider rejected prompt",

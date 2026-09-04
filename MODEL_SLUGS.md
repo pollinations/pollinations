@@ -197,6 +197,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Model | Existing ID | New ID |
 | --- | --- | --- |
 | MiniMax H3 | `minimax-h3` | `minimax/minimax-h3` |
+| MiniMax H3 Max Turbo | — | `minimax/minimax-h3-max-turbo` |
 | MiniMax M2.7 | `minimax-m2.7` | `minimax/minimax-m2.7` |
 | MiniMax M3 | `minimax` | `minimax/minimax-m3` |
 

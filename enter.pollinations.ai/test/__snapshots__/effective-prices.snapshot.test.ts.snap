@@ -1544,6 +1544,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000025,
     },
   },
+  "minimax/minimax-h3-max-turbo": {
+    "cost": {
+      "completionVideoSeconds": 0.025,
+    },
+    "costVariants": {
+      "768p": {
+        "completionVideoSeconds": 0.04,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.025,
+    },
+  },
   "mistral": {
     "cost": {
       "completionTextTokens": 0.0000006,

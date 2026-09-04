@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🖼️",
+    "name": "Nectar MCP",
+    "url": "https://github.com/pinkpixel-dev/nectar-mcp",
+    "description": "Nectar is a stdio MCP server for Pollinations image, video, and audio generation. It gives MCP clients a focused set of creative media tools. Generate and edit images, create videos, and generate spee",
+    "language": "en",
+    "category": "image",
+    "platform": "web",
+    "githubUsername": "sizzlebop",
+    "githubUserId": "192782247",
+    "repositoryUrl": "https://github.com/pinkpixel-dev/nectar-mcp",
+    "repositoryStars": null,
+    "discordUsername": "sizzlebopz",
+    "other": null,
+    "submittedDate": "2026-09-04",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14437",
+    "approvedDate": "2026-09-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "Pollin Uptime (HA Gateway)",
     "url": "https://brhost.eu.org",

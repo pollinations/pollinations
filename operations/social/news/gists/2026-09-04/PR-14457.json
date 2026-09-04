@@ -1,0 +1,33 @@
+{
+  "pr_number": 14457,
+  "title": "Add Polli privacy policy and terms",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14457",
+  "merged_at": "2026-09-04T17:32:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds Itachi’s complete Polli privacy policy to the existing /privacy document.\n- Adds Itachi’s complete Polli terms to the existing /terms document.\n- Keeps both policies published within the canonical Pollinations legal pages.\n- Credits @Itachi-1824 for the policy text.\n- Do not merge until @ElliotEtag verifies the review findings.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli Gets House Rules",
+    "blurb": "Polli’s legal nest has been properly furnished. The canonical privacy and terms pages now carry complete policy text, with a well-earned credit to @Itachi-1824.",
+    "summary": "Expanded the canonical /privacy and /terms legal pages with complete Polli privacy-policy and terms-of-service text, credited to @Itachi-1824.",
+    "impact": "Visitors can now find fuller, clearly published Polli privacy and service terms directly at the existing Pollinations legal URLs.",
+    "keywords": [
+      "polli",
+      "privacy",
+      "terms",
+      "legal",
+      "documentation"
+    ],
+    "visual_concept": "Depict Polli as a careful little librarian or legal clerk placing two clearly labeled policy scrolls, Privacy and Terms, into a cozy garden-library bookshelf. The documents should feel welcoming rather than stern, surrounded by flowers, code-plants, and a softly glowing retro terminal representing the canonical legal pages.",
+    "image_prompt": "Cozy pixel art scene of the cute Polli bee mascot wearing tiny librarian glasses and a little lavender scarf, carefully shelving two friendly scrolls labeled “PRIVACY” and “TERMS” in a warm garden library beside a softly glowing retro terminal. Lime green (#ecf874) book spines and code-plants bloom among pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14457.jpg",
+    "prompt": "Cozy pixel art scene of the cute Polli bee mascot wearing tiny librarian glasses and a little lavender scarf, carefully shelving two friendly scrolls labeled “PRIVACY” and “TERMS” in a warm garden library beside a softly glowing retro terminal. Lime green (#ecf874) book spines and code-plants bloom among pastel flowers; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-04T17:34:00.810359+00:00"
+}

@@ -37,7 +37,8 @@ class DiscordToolContractTests(unittest.TestCase):
         top_n = parameters["properties"]["top_n"]
 
         self.assertIn("top_n", parameters["required"])
-        self.assertEqual(top_n["enum"], list(range(1, 101)))
+        self.assertEqual(top_n["minimum"], 1)
+        self.assertEqual(top_n["maximum"], 25)
         self.assertNotIn("limit", parameters["properties"])
         self.assertIs(inspect.signature(tool_discord_search).parameters["top_n"].default, inspect.Parameter.empty)
 

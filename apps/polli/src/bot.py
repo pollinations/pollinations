@@ -571,7 +571,7 @@ class PolliBot(commands.Bot):
 
             from .api.server import create_api_app
 
-            api_app = create_api_app(pollinations_client, config)
+            api_app = create_api_app(pollinations_client, config, self)
             self._api_server = GranianServer(
                 target=api_app,
                 address="127.0.0.1",
@@ -614,6 +614,9 @@ class PolliBot(commands.Bot):
         if self.webhook_server:
             await stop_webhook_server()
         await pollinations_client.close()
+        from .discord.search import discord_search_client
+
+        await discord_search_client.close()
         await github_manager.close()
         await github_graphql.close()
         await github_pr_manager.close()
@@ -1257,8 +1260,8 @@ async def process_message(
     # Build tool context - this is passed to ALL tool handlers for permission checks
     # This is thread-safe because it's created per-request, not globally registered
     # Determine channel/thread IDs based on channel type
-    if isinstance(channel, discord.Thread) and channel.parent_id:
-        context_channel_id = channel.parent_id
+    if isinstance(channel, discord.Thread):
+        context_channel_id = channel.id
         context_thread_id: int | None = channel.id
     else:
         context_channel_id = channel.id

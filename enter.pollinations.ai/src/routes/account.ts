@@ -1394,7 +1394,7 @@ export const accountRoutes = new Hono<Env>()
                     enabled: apikeyTable.enabled,
                 })
                 .from(apikeyTable)
-                .where(eq(apikeyTable.userId, user.id))
+                .where(eq(apikeyTable.referenceId, user.id))
                 .all();
             const parsedPermissions = keys.map((key) => {
                 if (!key.permissions) return null;
@@ -1528,7 +1528,7 @@ export const accountRoutes = new Hono<Env>()
                 .where(
                     and(
                         eq(apikeyTable.id, id),
-                        eq(apikeyTable.userId, user.id),
+                        eq(apikeyTable.referenceId, user.id),
                     ),
                 )
                 .get();

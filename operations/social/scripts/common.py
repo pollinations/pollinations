@@ -304,6 +304,7 @@ def call_pollinations_api(
     }
 
     last_error = None
+    seed_supported = True
 
     for attempt in range(MAX_RETRIES):
         seed = random.randint(0, MAX_SEED)
@@ -315,12 +316,17 @@ def call_pollinations_api(
                 {"role": "user", "content": user_prompt}
             ],
             "temperature": temperature,
-            "seed": seed
         }
+        if seed_supported:
+            payload["seed"] = seed
 
         if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            retry_detail = f"with new seed: {seed}" if seed_supported else "without seed"
+            print(
+                f"  Retry {attempt}/{MAX_RETRIES - 1} {retry_detail} "
+                f"(waiting {backoff_delay}s)"
+            )
             time.sleep(backoff_delay)
 
         try:
@@ -341,6 +347,21 @@ def call_pollinations_api(
                     error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
                     print(f"  {last_error}")
                     print(f"  Response preview: {error_preview}")
+            elif response.status_code == 400 and seed_supported:
+                try:
+                    error = response.json().get("error") or {}
+                except json.JSONDecodeError:
+                    error = {}
+                error_text = f"{error.get('message', '')} {error.get('details', '')}"
+                if error.get("code") == "unsupported_parameter" and "seed" in error_text:
+                    seed_supported = False
+                    last_error = "API does not support seed; retrying without it"
+                    print(f"  {last_error}")
+                    continue
+                last_error = f"API error: {response.status_code}"
+                error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text
+                print(f"  {last_error}")
+                print(f"  Error preview: {error_preview}")
             else:
                 last_error = f"API error: {response.status_code}"
                 error_preview = response.text[:500] + "..." if len(response.text) > 500 else response.text

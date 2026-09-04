@@ -104,6 +104,22 @@ describe("modelBody", () => {
         ).toMatchObject({ modality: "transcription" });
     });
 
+    it("supports speech model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "tts-provider",
+                    title: "TTS Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "speech",
+                    completionAudioPrice: "0.000075",
+                },
+                true,
+            ),
+        ).toMatchObject({ modality: "speech", completionAudioPrice: 0.000075 });
+    });
+
     it("supports per-second video model registration", () => {
         expect(
             modelBody(

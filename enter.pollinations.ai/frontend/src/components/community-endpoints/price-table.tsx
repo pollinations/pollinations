@@ -343,6 +343,10 @@ export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
     "promptAudioPrice",
 ];
 
+// Speech (TTS) models bill generated audio per 1M input characters against
+// the completion-audio price, like the first-party TTS models.
+export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
+
 export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
 
 export function basePriceKeysForModality(
@@ -354,9 +358,11 @@ export function basePriceKeysForModality(
           ? BASE_VIDEO_PRICE_KEYS
           : modality === "transcription"
             ? BASE_TRANSCRIPTION_PRICE_KEYS
-            : modality === "embedding"
-              ? BASE_EMBEDDING_PRICE_KEYS
-              : BASE_TEXT_PRICE_KEYS;
+            : modality === "speech"
+              ? BASE_SPEECH_PRICE_KEYS
+              : modality === "embedding"
+                ? BASE_EMBEDDING_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
 }
 
 export function returnedPriceFields(

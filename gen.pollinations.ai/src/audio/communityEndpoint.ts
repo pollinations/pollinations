@@ -1,4 +1,7 @@
-import { communityAudioTranscriptionsUrl } from "@shared/community-endpoint-urls.ts";
+import {
+    communityAudioSpeechUrl,
+    communityAudioTranscriptionsUrl,
+} from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
@@ -9,6 +12,7 @@ import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
+    createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -27,6 +31,93 @@ export type CommunityTranscriptionOptions = {
     responseFormat?: string;
     temperature?: number;
 };
+
+export type CommunitySpeechOptions = {
+    input: string;
+    voice: string;
+    responseFormat?: string;
+};
+
+// Community speech (TTS) endpoints speak the OpenAI `/v1/audio/speech`
+// contract: POST model/input/voice/response_format, get binary audio back.
+// The response body and its content type are passed straight through so the
+// audio format the endpoint produced (mp3, opus, wav, ...) reaches the caller
+// unchanged, and usage is billed by input characters the way the first-party
+// TTS models are.
+export async function callCommunitySpeechEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    options: CommunitySpeechOptions,
+    secret: string,
+): Promise<Response> {
+    // Managed agents are text-only, so a speech endpoint is always external.
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community speech endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityAudioSpeechUrl(endpoint.baseUrl);
+
+    let response: Response;
+    try {
+        response = await fetch(upstreamUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(
+                    bearerToken,
+                )}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: endpoint.upstreamModel,
+                input: options.input,
+                voice: options.voice,
+                ...(options.responseFormat
+                    ? { response_format: options.responseFormat }
+                    : {}),
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch (error) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message:
+                "Community speech endpoint timed out or could not connect",
+            cause: error,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+    response = await ensureUpstreamOk(response, upstreamUrl);
+
+    const contentType = (
+        response.headers.get("content-type") ?? ""
+    )
+        .split(";")[0]
+        .trim()
+        .toLowerCase();
+    // The registration probe proved this endpoint returns audio; anything
+    // else here is a provider regression, not a free request.
+    if (!contentType.startsWith("audio/")) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: `Community speech endpoint '${endpoint.modelId}' did not return audio content`,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+
+    return new Response(response.body, {
+        status: 200,
+        headers: {
+            "Content-Type": contentType,
+            ...buildUsageHeaders(
+                endpoint.modelId,
+                createAudioTokenUsage(options.input.length),
+            ),
+        },
+    });
+}
 
 export async function callCommunityTranscriptionEndpoint(
     endpoint: CommunityEndpointRuntime,

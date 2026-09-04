@@ -15,6 +15,11 @@ export const Route = createFileRoute("/_dashboard/my-models")({
 });
 
 function MyModelsPage() {
-    const { communityEndpointsAllowed } = DashboardRoute.useLoaderData();
-    return <Deployments canPublish={communityEndpointsAllowed} />;
+    const { communityEndpointsAllowed, user } = DashboardRoute.useLoaderData();
+    return (
+        <Deployments
+            canPublish={communityEndpointsAllowed}
+            creationDisabled={Boolean(user?.stripePaymentRestriction)}
+        />
+    );
 }

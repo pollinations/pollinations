@@ -47,6 +47,7 @@ export const user = sqliteTable("user", {
   packBalance: real("pack_balance"),
   lastTierGrant: integer("last_tier_grant"),
   stripeCustomerId: text("stripe_customer_id").unique(),
+  stripePaymentRestriction: text("stripe_payment_restriction"),
   autoTopUpEnabled: integer("auto_top_up_enabled", { mode: "boolean" })
     .default(sql`0`)
     .notNull(),

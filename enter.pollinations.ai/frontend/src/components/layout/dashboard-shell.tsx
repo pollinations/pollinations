@@ -22,6 +22,7 @@ import {
     TerminalIcon,
     useScrollLock,
     WalletIcon,
+    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
 import logoWordmarkUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
@@ -64,6 +65,7 @@ type DashboardShellProps = PropsWithChildren<{
     accountArea?: ReactNode;
     walletArea?: ReactNode;
     showFooterLinks?: boolean;
+    accountRestricted?: boolean;
 }>;
 
 type BrandLink = {
@@ -147,6 +149,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     accountArea,
     walletArea,
     showFooterLinks = true,
+    accountRestricted = false,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -364,6 +367,23 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
+                        {accountRestricted && (
+                            <div
+                                role="alert"
+                                className="flex items-center gap-2 rounded-xl bg-intent-danger-bg-light px-4 py-3 text-sm text-intent-danger-text"
+                            >
+                                <WarningIcon className="h-4 w-4 shrink-0" />
+                                <span>
+                                    <strong>Account restricted.</strong> Contact{" "}
+                                    <a
+                                        href="mailto:billing@pollinations.ai"
+                                        className="underline underline-offset-2"
+                                    >
+                                        billing@pollinations.ai
+                                    </a>
+                                </span>
+                            </div>
+                        )}
                         {children}
                     </main>
                 </ScrollArea>

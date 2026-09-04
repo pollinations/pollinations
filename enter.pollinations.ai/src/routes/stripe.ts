@@ -14,6 +14,7 @@ import { createAuth } from "../auth.ts";
 import type { Env } from "../env.ts";
 import { getCohortFromCountry } from "../utils/currency-router.ts";
 import { createStripeClient } from "../utils/stripe.ts";
+import { getUserStripeBillingRow } from "../utils/stripe-billing/customer.ts";
 import {
     createBillingPortalSession,
     getBillingOverview,
@@ -25,6 +26,10 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import {
+    ACCOUNT_RESTRICTED_MESSAGE,
+    expireOpenStripeCheckoutSessions,
+} from "../utils/stripe-payment-restriction.ts";
 
 /**
  * Stripe pack configuration
@@ -66,6 +71,19 @@ export const stripeRoutes = new Hono<Env>()
 
         const userId = session.user.id;
 
+        const user = await getUserStripeBillingRow(c.env.DB, userId);
+        if (user.stripePaymentRestriction) {
+            if (user.stripeCustomerId) {
+                await expireOpenStripeCheckoutSessions(
+                    createStripeClient(c.env),
+                    user.stripeCustomerId,
+                );
+            }
+            return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+        }
+
+        const newCardGate = await getStripeNewCardGateStatus(c.env.DB, userId);
+
         // Create Stripe client
         const stripe = createStripeClient(c.env);
 
@@ -93,10 +111,6 @@ export const stripeRoutes = new Hono<Env>()
         try {
             const stripeCustomerId = await getOrCreateStripeCustomerId(
                 c.env,
-                userId,
-            );
-            const newCardGate = await getStripeNewCardGateStatus(
-                c.env.DB,
                 userId,
             );
 
@@ -175,6 +189,19 @@ export const stripeRoutes = new Hono<Env>()
                 cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });
 
+            const latestUser = await getUserStripeBillingRow(c.env.DB, userId);
+            if (latestUser.stripePaymentRestriction) {
+                try {
+                    await stripe.checkout.sessions.expire(checkoutSession.id);
+                } catch (error) {
+                    console.error(
+                        `Failed to expire newly created Stripe Checkout session ${checkoutSession.id}:`,
+                        error,
+                    );
+                }
+                return c.json({ error: ACCOUNT_RESTRICTED_MESSAGE }, 403);
+            }
+
             // Redirect to Stripe Checkout (will use checkout.pollinations.ai custom domain)
             if (checkoutSession.url) {
                 return c.redirect(checkoutSession.url);
@@ -209,7 +236,7 @@ export const stripeRoutes = new Hono<Env>()
      * Return Stripe Portal-backed billing and auto top-up state.
      */
     .get("/billing", async (c) => {
-        const user = await requireSessionUser(c);
+        const user = await requireSessionUser(c, { allowRestricted: true });
         return c.json(await getBillingOverview(c.env, user.id));
     })
 
@@ -218,7 +245,7 @@ export const stripeRoutes = new Hono<Env>()
      * Create a Stripe Customer Portal session for billing management.
      */
     .post("/billing/portal", async (c) => {
-        const user = await requireSessionUser(c);
+        const user = await requireSessionUser(c, { allowRestricted: true });
 
         try {
             const session = await createBillingPortalSession(c.env, user.id);
@@ -304,7 +331,10 @@ export const stripeRoutes = new Hono<Env>()
         return c.json(await processAutoTopUpForUser(c.env, body.userId));
     });
 
-async function requireSessionUser(c: Context<Env>) {
+async function requireSessionUser(
+    c: Context<Env>,
+    options: { allowRestricted?: boolean } = {},
+) {
     const auth = createAuth(c.env, c.executionCtx);
     const session = await auth.api.getSession({
         headers: c.req.raw.headers,
@@ -313,6 +343,12 @@ async function requireSessionUser(c: Context<Env>) {
     if (!session?.user?.id) {
         throw new HTTPException(401, {
             message: "Authentication required",
+        });
+    }
+
+    if (!options.allowRestricted && session.user.stripePaymentRestriction) {
+        throw new HTTPException(403, {
+            message: ACCOUNT_RESTRICTED_MESSAGE,
         });
     }
 

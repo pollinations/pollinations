@@ -1054,6 +1054,64 @@ describe("API Key Management", () => {
     });
 
     describe("POST /api/api-keys/:id/update", () => {
+        test("restricted sessions can update existing keys but cannot create keys", async ({
+            sessionToken,
+        }) => {
+            const createdKey = await createApiKeyViaApi(sessionToken, {
+                name: "before-restriction",
+            });
+            const db = drizzle(env.DB, { schema });
+            const owner = await db.query.apikey.findFirst({
+                where: eq(schema.apikey.id, createdKey.id),
+            });
+            expect(owner).toBeTruthy();
+            if (!owner) throw new Error("Expected API key owner");
+
+            await db
+                .update(schema.user)
+                .set({ stripePaymentRestriction: new Date().toISOString() })
+                .where(eq(schema.user.id, owner.userId));
+
+            const updateResponse = await SELF.fetch(
+                `http://localhost:3000/api/api-keys/${createdKey.id}/update`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ name: "after-restriction" }),
+                },
+            );
+            expect(updateResponse.status).toBe(200);
+
+            const createResponse = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ name: "blocked-new-key" }),
+                },
+            );
+            expect(createResponse.status).toBe(403);
+
+            const accountCreateResponse = await SELF.fetch(
+                "http://localhost:3000/api/account/keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({ name: "blocked-account-key" }),
+                },
+            );
+            expect(accountCreateResponse.status).toBe(403);
+        });
+
         test("should update API key name", async ({ sessionToken }) => {
             // Create a new key for this test
             const createdKey = await createApiKeyViaApi(sessionToken, {

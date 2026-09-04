@@ -52,6 +52,7 @@ export async function getUserStripeBillingRow(
             email: userTable.email,
             packBalance: userTable.packBalance,
             stripeCustomerId: userTable.stripeCustomerId,
+            stripePaymentRestriction: userTable.stripePaymentRestriction,
             autoTopUpEnabled: userTable.autoTopUpEnabled,
             autoTopUpAmountUsd: userTable.autoTopUpAmountUsd,
         })

@@ -55,7 +55,8 @@ type StripeCheckoutSession = {
     object: "checkout.session";
     mode: string;
     customer: string | null;
-    url: string;
+    url: string | null;
+    status?: "open" | "complete" | "expired";
 };
 
 type StripePortalSession = {
@@ -167,6 +168,7 @@ export type MockStripeState = {
     invoicePayments: StripeInvoicePayment[];
     paymentIntents: StripePaymentIntent[];
     requests: StripeRequest[];
+    onCheckoutSessionCreated: (() => Promise<void>) | null;
     customerCreateByIdempotencyKey: Record<string, string>;
     /**
      * Per-invoice override for the `/v1/invoices/:id/pay` mock response.
@@ -264,8 +266,36 @@ export function createMockStripe(): MockAPI<MockStripeState> {
                 mode: form.get("mode") ?? "payment",
                 customer: form.get("customer"),
                 url: `https://checkout.stripe.test/${state.checkoutSessions.length + 1}`,
+                status: "open",
             };
             state.checkoutSessions.push(session);
+            await state.onCheckoutSessionCreated?.();
+            return c.json(session);
+        })
+        .get("/v1/checkout/sessions", (c) => {
+            recordRequest(c, state);
+            const customer = c.req.query("customer");
+            const status = c.req.query("status");
+            const data = state.checkoutSessions.filter(
+                (session) =>
+                    (!customer || session.customer === customer) &&
+                    (!status || session.status === status),
+            );
+            return c.json({
+                object: "list",
+                url: "/v1/checkout/sessions",
+                has_more: false,
+                data,
+            });
+        })
+        .post("/v1/checkout/sessions/:id/expire", (c) => {
+            recordRequest(c, state);
+            const session = state.checkoutSessions.find(
+                (item) => item.id === c.req.param("id"),
+            );
+            if (!session) return stripeNotFound(c);
+            session.status = "expired";
+            session.url = null;
             return c.json(session);
         })
         .post("/v1/billing_portal/sessions", async (c) => {
@@ -555,6 +585,7 @@ function createInitialState(): MockStripeState {
         invoicePayments: [],
         paymentIntents: [],
         requests: [],
+        onCheckoutSessionCreated: null,
         customerCreateByIdempotencyKey: {},
         payBehavior: {},
     };

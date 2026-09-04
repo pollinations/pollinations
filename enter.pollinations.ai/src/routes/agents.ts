@@ -22,6 +22,7 @@ import {
     parsePromptAgentConfig,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
+import { assertAccountCanCreate } from "../utils/stripe-payment-restriction.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import { RequiredSafetyFeaturesSchema } from "./community-endpoints/schemas.ts";
 
@@ -253,6 +254,7 @@ export const agentsRoutes = new Hono<Env>()
         validator("json", CreateAgentSchema),
         async (c) => {
             const user = c.var.auth.requireUser();
+            assertAccountCanCreate(user);
             const input = c.req.valid("json");
             requireAccountPermission(c.var.auth.apiKey, "keys");
             const db = drizzle(c.env.DB, { schema });

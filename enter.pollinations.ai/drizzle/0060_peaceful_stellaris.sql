@@ -1,0 +1,1 @@
+ALTER TABLE `user` ADD `stripe_payment_restriction` text;

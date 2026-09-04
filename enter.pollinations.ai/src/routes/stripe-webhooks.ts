@@ -7,11 +7,19 @@ import { Hono } from "hono";
 import type Stripe from "stripe";
 import type { Env } from "../env.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
+import { getStripeId } from "../utils/stripe-billing/customer.ts";
 import {
     creditAutoTopUpInvoice,
     markAutoTopUpInvoiceFailed,
 } from "../utils/stripe-billing/index.ts";
-import { recordStripeCardFingerprintAttempt } from "../utils/stripe-card-gate.ts";
+import {
+    getStripeNewCardGateStatus,
+    recordStripeCardFingerprintAttempt,
+} from "../utils/stripe-card-gate.ts";
+import {
+    expireOpenStripeCheckoutSessions,
+    restrictStripePayments,
+} from "../utils/stripe-payment-restriction.ts";
 
 interface StripeEventData {
     eventType: string;
@@ -102,12 +110,14 @@ function readUserIdFromMetadata(
 
 async function recordFailedCardFingerprintFromCharge({
     env,
+    stripe,
     event,
     charge,
     snapshot,
     fallbackUserId = "",
 }: {
     env: CloudflareBindings;
+    stripe: Stripe;
     event: Stripe.Event;
     charge: Stripe.Charge | null | undefined;
     snapshot: ChargeSnapshot;
@@ -123,9 +133,30 @@ async function recordFailedCardFingerprintFromCharge({
             cardFingerprint: snapshot.cardFingerprint,
             createdAt: event.created ? event.created * 1000 : Date.now(),
         });
+
+        const eventTime = event.created ? event.created * 1000 : Date.now();
+        const gate = await getStripeNewCardGateStatus(
+            env.DB,
+            userId,
+            eventTime,
+        );
+        if (!gate.shouldRestrictPayments) return;
+
+        await restrictStripePayments(
+            env.DB,
+            userId,
+            new Date(eventTime).toISOString(),
+        );
+
+        // Close sessions opened before the account was restricted. Repeat the
+        // cleanup on later locked failures so transient Stripe errors retry.
+        const customerId = getStripeId(charge.customer);
+        if (customerId) {
+            await expireOpenStripeCheckoutSessions(stripe, customerId);
+        }
     } catch (err) {
         console.error(
-            `Failed to record Stripe failed-card fingerprint for event ${event.id}:`,
+            `Failed to enforce Stripe failed-card gate for event ${event.id}:`,
             err,
         );
     }
@@ -422,6 +453,7 @@ function emitPaymentIntentAnalytics(
             if (recordFailedCardFingerprint) {
                 await recordFailedCardFingerprintFromCharge({
                     env: c.env,
+                    stripe,
                     event,
                     charge,
                     snapshot,

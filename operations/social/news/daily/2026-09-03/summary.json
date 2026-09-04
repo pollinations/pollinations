@@ -1,0 +1,83 @@
+{
+  "date": "2026-09-03",
+  "period_start": "2026-09-03",
+  "period_end": "2026-09-03",
+  "title": "A full Pollinations chat workspace landed in Open WebUI",
+  "summary": "A notably busy day: Open WebUI arrived, the model catalog became less mysterious, and more generation routes learned how to fail gracefully.\n\nOpen WebUI is now hosted at openwebui.pollinations.ai with Pollinations login, every Pollinations text model in the picker, and MCP-powered image, video, and audio tools in the conversation. Managed-agent tool calls also render cleanly in streaming and non-streaming chats, rather than occasionally escaping into raw Markdown.\n\nModel browsing now puts URL-backed filters directly in search, defaults to a removable official-model view, and makes filter edits fast without confusing free-text search. Managed agents expose their actual modalities, MCP-derived tools, web-search access, and model capabilities, while catalog APIs, leaderboards, monitors, and the Polli CLI now use clearer provider and community metadata.\n\nQwen, Mistral, Wan, Llama Scout, and GPT Image requests gained carefully scoped fallback coverage when primary providers are congested or unavailable, while preserving public model identities and avoiding duplicate generations. Qwen3.8 Max 0902 also joined the catalog with chat, streaming, tool use, structured output, prompt caching, and multimodal support; cached timestamped ElevenLabs audio now keeps its response-format marker intact.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 14294,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14325,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14343,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14364,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14367,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14372,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14377,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14380,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14382,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14383,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14384,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14385,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14396,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14400,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14402,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14407,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14414,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14417,
+      "date": "2026-09-03"
+    }
+  ],
+  "generated_at": "2026-09-04T06:29:46.366930+00:00"
+}

@@ -2,8 +2,6 @@
 
 import logging
 
-from ...core.config import config
-
 logger = logging.getLogger(__name__)
 
 

@@ -100,7 +100,6 @@ describe("economics Worker auth", () => {
         expect(response.status).toBe(401);
         await expect(response.json()).resolves.toEqual({
             error: "Unauthorized",
-            code: "AUTH_REQUIRED",
         });
         expect(mock).not.toHaveBeenCalled();
     });
@@ -167,6 +166,21 @@ describe("economics Worker auth", () => {
                 },
             },
         );
+    });
+
+    it("reports Tinybird failures as upstream errors", async () => {
+        const mock = upstream();
+        const cookie = await authenticatedCookie(mock);
+        mock.mockResolvedValueOnce(
+            Response.json({ error: "Forbidden" }, { status: 403 }),
+        );
+
+        const response = await request(
+            "/api/pipes/economics_compute_ledger_api",
+            { headers: { Cookie: cookie } },
+        );
+
+        expect(response.status).toBe(502);
     });
 
     it("routes Pollen reads to the environment-specific upstream", async () => {

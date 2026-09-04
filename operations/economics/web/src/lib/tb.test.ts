@@ -75,15 +75,12 @@ describe("loadAll", () => {
         );
     });
 
-    it("marks only dashboard authentication failures for login", async () => {
+    it("preserves dashboard authentication status", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(() =>
                 Promise.resolve(
-                    Response.json(
-                        { error: "Unauthorized", code: "AUTH_REQUIRED" },
-                        { status: 401 },
-                    ),
+                    Response.json({ error: "Unauthorized" }, { status: 401 }),
                 ),
             ),
         );
@@ -91,23 +88,7 @@ describe("loadAll", () => {
         const error = await loadAll().catch((caught: unknown) => caught);
 
         expect(error).toBeInstanceOf(TbError);
-        expect((error as TbError).authRequired).toBe(true);
-    });
-
-    it("does not treat an upstream Tinybird denial as a login failure", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(() =>
-                Promise.resolve(
-                    Response.json({ error: "Forbidden" }, { status: 403 }),
-                ),
-            ),
-        );
-
-        const error = await loadAll().catch((caught: unknown) => caught);
-
-        expect(error).toBeInstanceOf(TbError);
-        expect((error as TbError).authRequired).toBe(false);
+        expect((error as TbError).status).toBe(401);
     });
 });
 

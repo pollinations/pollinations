@@ -84,7 +84,7 @@ async function handleApi(request: Request, env: Env) {
             },
         );
         return new Response(upstream.body, {
-            status: upstream.status,
+            status: upstream.ok ? upstream.status : 502,
             headers: {
                 "Cache-Control": "no-store",
                 "Content-Type":
@@ -117,7 +117,7 @@ async function handleRequest(request: Request, env: Env) {
 
     if (!(await pollinationsAuth.getUser(request))) {
         return url.pathname.startsWith("/api/")
-            ? json({ error: "Unauthorized", code: "AUTH_REQUIRED" }, 401)
+            ? json({ error: "Unauthorized" }, 401)
             : pollinationsAuth.signIn(request);
     }
 

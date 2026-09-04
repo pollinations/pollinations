@@ -692,7 +692,7 @@ export default function App() {
             .catch((caught: unknown) => {
                 if (cancelled || retryKey !== attempt) return;
 
-                if (caught instanceof TbError && caught.authRequired) {
+                if (caught instanceof TbError && caught.status === 401) {
                     window.location.assign("/auth/login");
                 } else {
                     setError(

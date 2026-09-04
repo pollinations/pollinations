@@ -19,13 +19,11 @@ export const fixturesMode = (): boolean =>
 export class TbError extends Error {
     pipe: string;
     status: number;
-    authRequired: boolean;
 
-    constructor(pipe: string, status: number, authRequired = false) {
+    constructor(pipe: string, status: number) {
         super(`${pipe}: HTTP ${status}`);
         this.pipe = pipe;
         this.status = status;
-        this.authRequired = authRequired;
     }
 }
 
@@ -135,12 +133,7 @@ async function fetchPipe<T>(pipe: string): Promise<T[]> {
     }
 
     const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`);
-    if (!res.ok) {
-        const error = (await res.json().catch(() => null)) as {
-            code?: string;
-        } | null;
-        throw new TbError(pipe, res.status, error?.code === "AUTH_REQUIRED");
-    }
+    if (!res.ok) throw new TbError(pipe, res.status);
 
     const body = (await res.json()) as { data?: unknown[] };
     if (!Array.isArray(body.data)) {

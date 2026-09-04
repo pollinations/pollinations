@@ -82,11 +82,6 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         grantTypes: ["authorization_code"],
         accessTokenExpiresIn: 60,
         disableJwtPlugin: true,
-        cachedTrustedClients: new Set([
-            "pk_Bxny9FSNDpousKqW",
-            "pk_LBL0KnkHI6AZopCc",
-            "pk_vVa38CFt1R1gGScW",
-        ]),
         customUserInfoClaims: ({ user }) => ({
             role: isAdminUser(user) ? "admin" : "user",
         }),

@@ -208,14 +208,14 @@ async function seedByopConnections(
     await db.insert(schema.apikey).values({
         id: appKeyId,
         key: `pk_${prefix}`,
-        userId: ownerUserId,
+        referenceId: ownerUserId,
         createdAt: now,
         updatedAt: now,
     });
     const userKeys = userIds.map((userId, index) => ({
         id: `${prefix}-user-key-${index}`,
         key: `sk_${prefix}_${index}`,
-        userId,
+        referenceId: userId,
         byopClientKeyId: appKeyId,
         createdAt: now,
         updatedAt: now,
@@ -1068,7 +1068,7 @@ test("D1 quest check only records the requested user", async ({
         name: "Window User Key",
         key: "sk_api_key_window_user",
         prefix: "sk",
-        userId: secondUserId,
+        referenceId: secondUserId,
         createdAt: new Date(),
         updatedAt: new Date(),
     });

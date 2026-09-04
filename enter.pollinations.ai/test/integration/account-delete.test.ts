@@ -79,6 +79,7 @@ describe("POST /api/auth/delete-user", () => {
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: `better-auth.session_token=${sessionToken}`,
+                    Origin: "http://localhost:3000",
                 },
                 body: JSON.stringify({}),
             },
@@ -222,6 +223,7 @@ describe("POST /api/auth/delete-user", () => {
                 headers: {
                     "Content-Type": "application/json",
                     Cookie: `better-auth.session_token=${sessionToken}`,
+                    Origin: "http://localhost:3000",
                 },
                 body: JSON.stringify({}),
             },

@@ -92,7 +92,7 @@ async function requireOwnedKey(
     const key = await db.query.apikey.findFirst({
         where: and(
             eq(schema.apikey.id, keyId),
-            eq(schema.apikey.userId, userId),
+            eq(schema.apikey.referenceId, userId),
         ),
     });
     if (!key) {
@@ -278,7 +278,7 @@ export const apiKeysRoutes = new Hono<Env>()
             setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
-                where: eq(schema.apikey.userId, user.id),
+                where: eq(schema.apikey.referenceId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
             const parsedPermissions = keys.map((key) =>

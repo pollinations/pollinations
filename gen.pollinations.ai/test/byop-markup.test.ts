@@ -98,7 +98,7 @@ async function setupPayerAndDev() {
 
     await db.insert(apikeyTable).values({
         id: pkId,
-        userId: devId,
+        referenceId: devId,
         name: "markup-app",
         prefix: "pk",
         key: `hashed-${pkId}`,

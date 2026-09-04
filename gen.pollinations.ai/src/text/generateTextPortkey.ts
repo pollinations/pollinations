@@ -66,6 +66,7 @@ export async function generateTextPortkey(
         string,
         string
     >;
+    const responsesFetcher = state.options.responsesFetcher;
     const requestConfig =
         typeof directEndpoint === "string"
             ? {
@@ -85,6 +86,7 @@ export async function generateTextPortkey(
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;
+    delete state.options.responsesFetcher;
 
     // Models marked for Responses use their declared direct Responses target;
     // the adapter keeps the public Chat Completions contract stateless.
@@ -92,7 +94,11 @@ export async function generateTextPortkey(
         !modelDef &&
         typeof state.options.modelConfig?.responsesEndpoint === "string";
     if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
-        return await callChatViaResponses(state.messages, state.options);
+        return await callChatViaResponses(
+            state.messages,
+            state.options,
+            responsesFetcher,
+        );
     }
 
     // Only the Responses adapter owns this parameter. Keep generic provider

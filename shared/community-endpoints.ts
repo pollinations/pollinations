@@ -507,11 +507,10 @@ export const LISTING_TYPES = [
     "endpoint_agent",
 ] as const;
 
-// Prompt agents all share one deployment-specific worker. Store this safe,
-// environment-neutral URL in the common target column, then replace it with
-// AGENT_RUNTIME_BASE_URL when a row crosses the API/runtime boundary. The
-// reserved .invalid host guarantees a missed replacement cannot call another
-// environment by accident.
+// Prompt agents execute inside Gen and have no upstream URL. The common target
+// column remains required for every listing, so store this safe sentinel and
+// replace it with Gen's public API URL only when presenting the row to callers.
+// The reserved .invalid host guarantees it can never become a real target.
 export const PROMPT_AGENT_BASE_URL_PLACEHOLDER =
     "https://agent-runtime.invalid/api/agent-runtime/v1";
 
@@ -567,8 +566,8 @@ export const ProxyListingPayloadSchema = z
 export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
 /**
- * An agent Enter runs itself. Its row id is also the model sent to the shared
- * runtime, which loads this configuration from the same row.
+ * A managed prompt agent Gen runs locally. Its row id is also the model used
+ * to load this configuration from the same row.
  */
 export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
@@ -749,7 +748,7 @@ export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     advertised?: CommunityEndpointAdvertised;
 };
 
-/** An agent Enter runs on its own runtime, named by its listing id. */
+/** An agent Gen runs locally, named by its listing id. */
 export type PromptAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "prompt_agent";

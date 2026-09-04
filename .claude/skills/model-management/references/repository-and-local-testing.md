@@ -41,6 +41,8 @@ Use `npm run dev`, not a bare Worker command, so the current bundle and persiste
 
 Test tokens are references in `_local/.env`; provider credentials are not. Never print secret values. Any provider-secret mutation requires the separate approval and PR process in `AGENTS.md`.
 
+In an isolated worktree, locate the primary checkout with `git worktree list` and use its existing `POLLINATIONS_TOKEN_LOCAL` directly at execution time without copying it into the worktree or printing it. This is read-only use of an already-authorized credential, so it does not require secret-mutation approval. If the token is absent or invalid, do not create, replace, or deploy one without the separate approval required by `AGENTS.md`.
+
 ## Minimum smoke
 
 Call the public route shape through local Gen with the canonical model ID and authenticated local token. A successful direct-provider probe is not a substitute for this test: local E2E must prove registry resolution, request transforms, handler behavior, permissions, billing, and response mapping together.

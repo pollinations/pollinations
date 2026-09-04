@@ -1,3 +1,4 @@
+import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     communityModelId,
@@ -18,7 +19,7 @@ type CommunityEndpointRow = typeof schema.communityEndpoint.$inferSelect;
 export function toCommunityEndpointResponse(
     row: CommunityEndpointRow,
     ownerGithubUsername: string,
-    agentRuntimeUrl: string,
+    promptAgentApiUrl: string,
 ): CommunityEndpointResponse {
     const modelId = communityModelId(ownerGithubUsername, row.name);
     let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
@@ -64,7 +65,7 @@ export function toCommunityEndpointResponse(
         name: row.name,
         title: row.title,
         description: row.description,
-        baseUrl: row.type === "prompt_agent" ? agentRuntimeUrl : row.baseUrl,
+        baseUrl: row.type === "prompt_agent" ? promptAgentApiUrl : row.baseUrl,
         upstreamModel: row.upstreamModel,
         requiredSafetyFeatures: row.requiredSafetyFeatures,
         visibility:
@@ -86,6 +87,7 @@ export function toCommunityEndpointResponse(
         return CommunityEndpointResponseSchema.parse({
             ...common,
             type: row.type,
+            responsesUrl: communityResponsesUrl(promptAgentApiUrl),
         });
     }
     if (row.type === "endpoint_agent") {
@@ -97,6 +99,7 @@ export function toCommunityEndpointResponse(
             ...common,
             type: row.type,
             perUserRpm: payload.perUserRpm,
+            responsesUrl: payload.responsesUrl,
         });
     }
 

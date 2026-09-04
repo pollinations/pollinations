@@ -15,6 +15,7 @@ import {
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+    communityResponsesUrl,
     normalizeCommunityAssetUrl,
     validateCommunityEndpointUrl,
 } from "@shared/community-endpoint-urls.ts";
@@ -111,6 +112,7 @@ type CommunityEndpointFixture = Omit<CommunityEndpointInsert, "title"> &
         imagePricing?: CommunityEndpointImagePricing;
         inputModalities?: ModelInputModality[] | null;
         baseUrl?: string | null;
+        responsesUrl?: string | null;
         upstreamModel?: string;
         agentConfig?: PromptAgentListingPayload;
         bearerTokenCiphertext?: string | null;
@@ -132,6 +134,7 @@ function insertCommunityEndpoints(
             imagePricing: rawImagePricing,
             inputModalities: rawInputModalities,
             baseUrl,
+            responsesUrl,
             upstreamModel,
             agentConfig,
             bearerTokenCiphertext,
@@ -158,10 +161,14 @@ function insertCommunityEndpoints(
                       mcpServers: [],
                   })
                 : type === "endpoint_agent"
-                  ? { perUserRpm: perUserRpm ?? null }
+                  ? {
+                        perUserRpm: perUserRpm ?? null,
+                        responsesUrl: responsesUrl ?? null,
+                    }
                   : {
                         bearerTokenCiphertext:
                             bearerTokenCiphertext ?? "test-ciphertext",
+                        responsesUrl: responsesUrl ?? null,
                         modality,
                         imagePricing:
                             normalizeCommunityEndpointImagePricing(
@@ -283,10 +290,15 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
     );
 }
 
+const enterTestEnv = {
+    ...env,
+    GEN_BASE_URL: "https://gen.pollinations.ai",
+};
+
 async function fetchEnterApi(
     app: Hono<Env>,
     request: Request,
-    envOverride: typeof env = env,
+    envOverride: typeof env = enterTestEnv,
 ): Promise<Response> {
     const ctx = createExecutionContext();
     return app.fetch(request, envOverride, ctx);
@@ -496,6 +508,7 @@ describe("community endpoint helpers", () => {
     it("resolves pending visibility and pricing as one effective listing", () => {
         const current: ProxyListingPayload = {
             bearerTokenCiphertext: "current-credential",
+            responsesUrl: null,
             paidOnly: false,
             modality: "text",
             imagePricing: "request",
@@ -567,6 +580,7 @@ describe("community endpoint helpers", () => {
 
         expect(payload).toMatchObject({
             bearerTokenCiphertext: "ciphertext",
+            responsesUrl: null,
             paidOnly: false,
             modality: "image",
             imagePricing: "request",
@@ -2074,6 +2088,7 @@ describe("community endpoint helpers", () => {
                 imagePricing: "request",
                 inputModalities: null,
                 baseUrl: "https://agent.example.com/v1",
+                responsesUrl: null,
                 upstreamModel: "agent",
                 visibility: "public",
                 paidOnly: false,
@@ -2106,12 +2121,18 @@ describe("community endpoint helpers", () => {
         }
 
         it("authenticates as a run token, not the caller's key", async () => {
-            const endpoint = endpointAgent();
+            const endpoint = endpointAgent({
+                responsesUrl:
+                    "https://agent.example.com/custom/responses?version=1",
+            });
             const context = await contextFor(endpoint, "parent-key-id");
 
             const token = String(context.modelConfig?.authKey);
             expect(token).toMatch(/^ag_/);
             expect(token).not.toContain("sk_user_key");
+            expect(context.modelConfig?.responsesEndpoint).toBe(
+                endpoint.responsesUrl,
+            );
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
@@ -2488,6 +2509,509 @@ fixtureTest(
         await expect(freePublicResponse.json()).resolves.toMatchObject({
             choices: [{ message: { content: "ok" } }],
         });
+    },
+);
+
+fixtureTest(
+    "routes native Responses and Chat through a community model's exact Responses URL",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `responses-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const responsesUrl =
+            "https://provider.example/custom/openai/v1/responses?region=eu";
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            baseUrl: "https://provider.example/v1",
+            responsesUrl,
+            upstreamModel: "provider-model",
+            bearerTokenCiphertext: await encryptSecret(
+                "Bearer exact-responses-token",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const upstreamRequests: Record<string, unknown>[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === responsesUrl) {
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer exact-responses-token",
+                    );
+                    const body = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    upstreamRequests.push(body);
+                    return Response.json({
+                        id: `resp_${upstreamRequests.length}`,
+                        object: "response",
+                        created_at: 1,
+                        model: "provider-model",
+                        status: "completed",
+                        output: [
+                            {
+                                id: `msg_${upstreamRequests.length}`,
+                                type: "message",
+                                status: "completed",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "community response",
+                                        annotations: [],
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const native = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/responses", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ model: modelId, input: "native" }),
+            }),
+        );
+        expect(native.status).toBe(200);
+        expect(native.headers.get("x-model-used")).toBe(modelId);
+        await expect(native.json()).resolves.toMatchObject({
+            object: "response",
+            output: [{ type: "message" }],
+            usage: { input_tokens: 2, output_tokens: 3 },
+        });
+
+        const chat = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "adapted" }],
+                }),
+            }),
+        );
+        expect(chat.status).toBe(200);
+        expect(chat.headers.get("x-model-used")).toBe(modelId);
+        await expect(chat.json()).resolves.toMatchObject({
+            object: "chat.completion",
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content: "community response",
+                    },
+                },
+            ],
+            usage: { prompt_tokens: 2, completion_tokens: 3 },
+        });
+
+        expect(upstreamRequests).toHaveLength(2);
+        expect(upstreamRequests[0]).toMatchObject({
+            model: "provider-model",
+            input: "native",
+            store: false,
+        });
+        expect(upstreamRequests[1]).toMatchObject({
+            model: "provider-model",
+            input: [
+                {
+                    role: "user",
+                    content: [{ type: "input_text", text: "adapted" }],
+                },
+            ],
+            store: false,
+        });
+
+        const models = (await (
+            await fetchGen("https://gen.pollinations.ai/v1/models")
+        ).json()) as { data: { id: string; supported_endpoints?: string[] }[] };
+        expect(
+            models.data.find((model) => model.id === modelId)
+                ?.supported_endpoints,
+        ).toContain("/v1/responses");
+    },
+);
+
+fixtureTest(
+    "runs managed Responses and Chat through Gen and bills each inner model call once",
+    async () => {
+        const ownerGithubUsername = `agent-owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `managed-${crypto.randomUUID().slice(0, 8)}`;
+        const agentId = crypto.randomUUID();
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        await insertCommunityEndpoints({
+            id: agentId,
+            ownerUserId,
+            type: "prompt_agent",
+            visibility: "public",
+            name: modelName,
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: agentId,
+            agentConfig: {
+                systemPrompt: "Reply tersely.",
+                baseModel: "openai-fast",
+                mcpServers: [],
+            },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        resetGenerationModelRegistryCache();
+
+        const caller = await createTestApiKey({
+            name: "managed-responses-billing",
+            user: { packBalance: 100 },
+        });
+        const balanceBefore = await getUserBalance(db, caller.userId);
+        const expectedInnerPrice = calculateUsageBilling({
+            model: "openai-fast",
+            usage: { promptTextTokens: 10, completionTextTokens: 5 },
+            servedBy: getRegistryModelDefinition("openai-fast"),
+        }).price.totalPrice;
+        const tinybirdEvents: Record<string, unknown>[] = [];
+        const testClientIp = "203.0.113.42";
+        const runtimeClientIps: string[] = [];
+        let runtimeToken = "";
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (isBillingFetch(request)) {
+                    tinybirdEvents.push(
+                        ...parseIngestedEvents(await request.text()),
+                    );
+                    return Response.json({ data: [] });
+                }
+                if (
+                    request.url ===
+                    "https://gen.pollinations.ai/v1/chat/completions"
+                ) {
+                    runtimeClientIps.push(
+                        request.headers.get("x-real-ip") ?? "",
+                    );
+                    runtimeToken =
+                        request.headers
+                            .get("authorization")
+                            ?.replace(/^Bearer\s+/i, "") ?? "";
+                    return fetchGen(request);
+                }
+                if (isPortkeyChatCompletionsRequest(request)) {
+                    return Response.json({
+                        id: "chatcmpl-managed",
+                        object: "chat.completion",
+                        created: 1,
+                        model: "openai-fast",
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "managed answer",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 5,
+                            total_tokens: 15,
+                        },
+                    });
+                }
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/responses", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                    "cf-connecting-ip": testClientIp,
+                },
+                body: JSON.stringify({ model: modelId, input: "hello" }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            object: "response",
+            model: agentId,
+            output: [
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "managed answer" }],
+                },
+            ],
+            usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
+        });
+        expect(runtimeToken).toMatch(/^ag_/);
+        await expect(
+            verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
+        ).resolves.toMatchObject({
+            parentApiKeyId: caller.id,
+            managedAgentId: agentId,
+        });
+        expect(runtimeClientIps).toEqual([testClientIp]);
+        const balanceAfter = await getUserBalance(db, caller.userId);
+        expect(balanceAfter.packBalance).toBeCloseTo(
+            balanceBefore.packBalance - expectedInnerPrice,
+            8,
+        );
+        expect(
+            tinybirdEvents.filter(
+                (event) =>
+                    event.modelRequested === "openai-fast" &&
+                    event.isBilledUsage === true,
+            ),
+        ).toHaveLength(1);
+
+        const chatResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                    "cf-connecting-ip": testClientIp,
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "different prompt" }],
+                }),
+            }),
+        );
+        expect(chatResponse.status).toBe(200);
+        await expect(chatResponse.json()).resolves.toMatchObject({
+            object: "chat.completion",
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content: "managed answer",
+                    },
+                },
+            ],
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            },
+        });
+        expect(runtimeClientIps).toEqual([testClientIp, testClientIp]);
+        const balanceAfterChat = await getUserBalance(db, caller.userId);
+        expect(balanceAfterChat.packBalance).toBeCloseTo(
+            balanceBefore.packBalance - 2 * expectedInnerPrice,
+            8,
+        );
+        const billedInnerEvents = tinybirdEvents.filter(
+            (event) =>
+                event.modelRequested === "openai-fast" &&
+                event.isBilledUsage === true,
+        );
+        expect(billedInnerEvents).toHaveLength(2);
+        for (const event of billedInnerEvents) {
+            expect(event).toMatchObject({
+                tokenCountPromptText: 10,
+                tokenCountCompletionText: 5,
+                totalPrice: expectedInnerPrice,
+            });
+        }
+        const outerEvents = tinybirdEvents.filter(
+            (event) => event.modelRequested === modelId,
+        );
+        expect(outerEvents).toHaveLength(2);
+        for (const event of outerEvents) {
+            expect(event).toMatchObject({
+                totalCost: 0,
+                totalPrice: 0,
+                devPrice: 0,
+            });
+        }
+        const outerRequestIds = outerEvents.map((event) => event.requestId);
+        expect(new Set(outerRequestIds).size).toBe(2);
+        expect(
+            billedInnerEvents.map((event) => event.parentRequestId).sort(),
+        ).toEqual([...outerRequestIds].sort());
+    },
+);
+
+fixtureTest(
+    "falls back between community Responses endpoints with per-attempt credentials",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        const primaryName = `primary-${crypto.randomUUID().slice(0, 8)}`;
+        const fallbackName = `fallback-${crypto.randomUUID().slice(0, 8)}`;
+        const primaryModelId = communityModelId(
+            ownerGithubUsername,
+            primaryName,
+        );
+        const fallbackModelId = communityModelId(
+            ownerGithubUsername,
+            fallbackName,
+        );
+        const primaryUrl = "https://primary.example/v1/responses";
+        const fallbackUrl = "https://fallback.example/v1/responses";
+        await insertCommunityEndpoints([
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: fallbackName,
+                baseUrl: "https://fallback.example/v1",
+                responsesUrl: fallbackUrl,
+                upstreamModel: "fallback-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "fallback-token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+            {
+                id: `endpoint-${crypto.randomUUID()}`,
+                ownerUserId,
+                visibility: "public",
+                name: primaryName,
+                baseUrl: "https://primary.example/v1",
+                responsesUrl: primaryUrl,
+                upstreamModel: "primary-upstream",
+                bearerTokenCiphertext: await encryptSecret(
+                    "primary-token",
+                    env.BETTER_AUTH_SECRET,
+                ),
+                fallbacks: [fallbackModelId],
+                promptTextPrice: 0,
+                completionTextPrice: 0,
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            },
+        ]);
+
+        const attempts: Array<{
+            url: string;
+            authorization: string | null;
+            model: unknown;
+        }> = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === primaryUrl || request.url === fallbackUrl) {
+                    const body = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    attempts.push({
+                        url: request.url,
+                        authorization: request.headers.get("authorization"),
+                        model: body.model,
+                    });
+                    if (request.url === primaryUrl) {
+                        return Response.json(
+                            { error: { message: "temporarily unavailable" } },
+                            { status: 503 },
+                        );
+                    }
+                    return Response.json({
+                        id: "resp_fallback",
+                        object: "response",
+                        model: "fallback-upstream",
+                        status: "completed",
+                        output: [
+                            {
+                                type: "message",
+                                role: "assistant",
+                                content: [
+                                    {
+                                        type: "output_text",
+                                        text: "fallback response",
+                                    },
+                                ],
+                            },
+                        ],
+                        usage: {
+                            input_tokens: 2,
+                            output_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const response = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/responses", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: primaryModelId,
+                    input: "use fallback",
+                }),
+            }),
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("x-model-used")).toBe(fallbackModelId);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        expect(attempts).toEqual([
+            {
+                url: primaryUrl,
+                authorization: "Bearer primary-token",
+                model: "primary-upstream",
+            },
+            {
+                url: fallbackUrl,
+                authorization: "Bearer fallback-token",
+                model: "fallback-upstream",
+            },
+        ]);
     },
 );
 
@@ -3119,10 +3643,10 @@ fixtureTest(
         const textExcludeModels = (await textExclude.json()) as ListedModel[];
         const textOnlyModels = (await textOnly.json()) as ListedModel[];
         const openaiExcludeData = (await openaiExclude.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const openaiOnlyData = (await openaiOnly.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
         const imageOnlyModels = (await imageOnly.json()) as ListedModel[];
@@ -3147,9 +3671,15 @@ fixtureTest(
         expect(
             openaiExcludeData.data.find((m) => m.id === textModelId),
         ).toBeUndefined();
+        expect(openaiExcludeData.data.every((m) => m.community === false)).toBe(
+            true,
+        );
         expect(
             openaiOnlyData.data.find((m) => m.id === textModelId),
         ).toBeDefined();
+        expect(openaiOnlyData.data.every((m) => m.community === true)).toBe(
+            true,
+        );
 
         expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
         expect(
@@ -5680,7 +6210,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const enterEnv = {
         ...env,
         BETTER_AUTH_URL: "https://enter.test",
-        AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
+        GEN_BASE_URL: "https://gen.pollinations.ai",
     };
     const enterApi = await createEnterFrontendApi();
     const cookie = (await signedSessionCookie(sessionToken)).replace(
@@ -5728,7 +6258,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         name: modelName,
         description: null,
         visibility: "private",
-        baseUrl: env.AGENT_RUNTIME_BASE_URL,
+        baseUrl: "https://gen.pollinations.ai/v1",
         upstreamModel: agent.id,
     });
     const [storedAgent] = await db
@@ -5809,6 +6339,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 modelId: string;
                 type: "prompt_agent";
                 baseUrl: string;
+                responsesUrl: string | null;
                 upstreamModel: string;
             }[];
         }
@@ -5817,7 +6348,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     if (!registration) throw new Error("Agent listing was not created");
     expect(registration.id).toBe(agent.id);
     expect(registration.type).toBe("prompt_agent");
-    expect(registration.baseUrl).toBe(env.AGENT_RUNTIME_BASE_URL);
+    expect(registration.baseUrl).toBe("https://gen.pollinations.ai/v1");
+    expect(registration.responsesUrl).toBe(
+        "https://gen.pollinations.ai/v1/responses",
+    );
     expect(registration.upstreamModel).toBe(agent.id);
     expect(registration).not.toHaveProperty("modality");
     const paidUpdateResponse = await fetchEnterApi(
@@ -5876,7 +6410,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     expect(registryEntry?.communityEndpoint).toMatchObject({
         type: "prompt_agent",
-        baseUrl: env.AGENT_RUNTIME_BASE_URL,
+        baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+        responsesUrl: communityResponsesUrl(PROMPT_AGENT_BASE_URL_PLACEHOLDER),
         upstreamModel: agent.id,
     });
     // An agent listing carries no upstream credential of its own.
@@ -5913,8 +6448,11 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         managedAgentId: agent.id,
     });
     expect(gatewayContext.modelConfig).toMatchObject({
-        "custom-host": env.AGENT_RUNTIME_BASE_URL,
+        "custom-host": PROMPT_AGENT_BASE_URL_PLACEHOLDER,
         model: agent.id,
+        responsesEndpoint: communityResponsesUrl(
+            PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+        ),
     });
 
     const endpointAgentId = `endpoint-${crypto.randomUUID()}`;
@@ -5942,6 +6480,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
                 },
                 body: JSON.stringify({
                     baseUrl: "https://updated-agent.example.com/v1",
+                    responsesUrl:
+                        "https://updated-agent.example.com/v1/responses",
                     upstreamModel: "updated-endpoint-agent",
                     perUserRpm: 7,
                     requiredSafetyFeatures: ["violence"],
@@ -5956,6 +6496,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         id: endpointAgentId,
         type: "endpoint_agent",
         baseUrl: "https://updated-agent.example.com/v1",
+        responsesUrl: "https://updated-agent.example.com/v1/responses",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
         requiredSafetyFeatures: ["violence"],
@@ -5986,6 +6527,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     expect(endpointAgentRegistryEntry?.communityEndpoint).toMatchObject({
         type: "endpoint_agent",
         baseUrl: "https://updated-agent.example.com/v1",
+        responsesUrl: "https://updated-agent.example.com/v1/responses",
         upstreamModel: "updated-endpoint-agent",
         perUserRpm: 7,
         requiredSafetyFeatures: ["violence"],
@@ -6010,6 +6552,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         capabilities?: string[];
         input_modalities?: string[];
         output_modalities?: string[];
+        supported_endpoints?: string[];
     }[];
     const openaiModels = (await openaiModelsResponse.json()) as {
         data: {
@@ -6023,6 +6566,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
             tools?: boolean;
             reasoning?: boolean;
             context_length?: number;
+            supported_endpoints?: string[];
         }[];
     };
     const baseModelInfo = models.find(
@@ -6033,8 +6577,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     expect(baseModelInfo).toBeDefined();
     const agentCapabilities = [
-        ...(baseModelInfo?.capabilities ?? []),
-        "pollinations_models",
+        ...new Set([
+            ...(baseModelInfo?.capabilities ?? []),
+            "pollinations_models",
+        ]),
     ];
     expect(agentModelInfo).toMatchObject({
         community: true,
@@ -6043,7 +6589,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: baseModelInfo?.input_modalities,
-        output_modalities: baseModelInfo?.output_modalities,
+        output_modalities: ["text"],
+        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
     });
     const openaiBaseModel = openaiModels.data.find(
         (model) => model.id === promptAgent.baseModel,
@@ -6058,9 +6605,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: openaiBaseModel?.input_modalities,
-        output_modalities: openaiBaseModel?.output_modalities,
+        output_modalities: ["text"],
         tools: openaiBaseModel?.tools,
         context_length: openaiBaseModel?.context_length,
+        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
     });
 
     const deleteRegisteredAgentResponse = await fetchEnterApi(

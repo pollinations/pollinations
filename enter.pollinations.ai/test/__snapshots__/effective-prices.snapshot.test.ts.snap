@@ -1544,6 +1544,19 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000025,
     },
   },
+  "minimax/minimax-h3-max-turbo": {
+    "cost": {
+      "completionVideoSeconds": 0.00625,
+    },
+    "costVariants": {
+      "768p": {
+        "completionVideoSeconds": 0.01,
+      },
+    },
+    "price": {
+      "completionVideoSeconds": 0.00625,
+    },
+  },
   "mistral": {
     "cost": {
       "completionTextTokens": 0.0000006,
@@ -1910,6 +1923,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionTextTokens": 0.0000225,
       "promptCachedTokens": 0.000000375,
       "promptTextTokens": 0.00000375,
+    },
+  },
+  "openai/gpt-6-astra": {
+    "cost": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000075,
+        "promptCacheWriteTokens": 0.000025,
+        "promptCachedTokens": 0.000002,
+        "promptTextTokens": 0.00002,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.0000375,
+      "promptCacheWriteTokens": 0.000009375,
+      "promptCachedTokens": 0.00000075,
+      "promptTextTokens": 0.0000075,
     },
   },
   "p-image": {

@@ -320,28 +320,6 @@ def decode_base64_images(
     return files
 
 
-def suppress_url_embeds(text: str) -> str:
-    """Wrap bare URLs in angle brackets to suppress Discord embed previews.
-
-    Skips URLs inside code blocks (```) and inline code (`).
-    Does NOT wrap URLs inside markdown links [text](url).
-    """
-    # Split text into code and non-code segments
-    # Match fenced code blocks (```...```) and inline code (`...`)
-    code_pattern = re.compile(r"(```[\s\S]*?```|`[^`\n]+`)")
-    segments = code_pattern.split(text)
-
-    for i, segment in enumerate(segments):
-        # Skip code segments (odd indices from split)
-        if code_pattern.match(segment):
-            continue
-        # Wrap bare URLs not already in angle brackets or markdown links
-        segment = re.sub(r"(?<![<\(\]])\b(https?://[^\s<>\)]+)(?![>\)])", r"<\1>", segment)
-        segments[i] = segment
-
-    return "".join(segments)
-
-
 def extract_media_urls(
     message: discord.Message,
 ) -> tuple[list[str], list[str], list[str]]:
@@ -1176,7 +1154,6 @@ async def handle_inline_polli_mention(message: discord.Message):
                 response_text = response_text.strip()
 
             # Suppress URL embeds to prevent chat bloat
-            response_text = suppress_url_embeds(response_text)
 
             if response_text or image_files:
                 # Reply to the message WITHOUT ping (mention_author=False)
@@ -1322,7 +1299,6 @@ async def process_message(
             response_text = response_text.strip()
 
         # Suppress URL embeds to prevent chat bloat
-        response_text = suppress_url_embeds(response_text)
 
         # Log tool usage for debugging
         if tool_calls:
@@ -1611,19 +1587,24 @@ async def _send_chunk(
 
         if not first_sent and reply_to:
             if chunk:
-                await reply_to.reply(chunk, files=files_to_send, mention_author=mention_author)
+                await reply_to.reply(
+                    chunk,
+                    files=files_to_send,
+                    mention_author=mention_author,
+                    suppress_embeds=True,
+                )
             elif files_to_send:
                 await reply_to.reply(files=files_to_send, mention_author=mention_author)
             first_sent = True
         elif not first_sent:
             if chunk:
-                await channel.send(chunk, files=files_to_send)
+                await channel.send(chunk, files=files_to_send, suppress_embeds=True)
             elif files_to_send:
                 await channel.send(files=files_to_send)
             first_sent = True
         else:
             if chunk:
-                await channel.send(chunk, files=files_to_send)
+                await channel.send(chunk, files=files_to_send, suppress_embeds=True)
             elif files_to_send:
                 await channel.send(files=files_to_send)
 

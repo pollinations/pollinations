@@ -1,0 +1,35 @@
+{
+  "pr_number": 14428,
+  "title": "feat: add MiniMax H3 Max Turbo at promotional pricing",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14428",
+  "merged_at": "2026-09-04T14:40:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical `minimax/minimax-h3-max-turbo` on fal with no aliases, fallback, or Pollinations GPU\n- Supports 480p/768p, 5/10/15 seconds, synchronized audio, and first/last frames; defaults text-to-video to 16:9\n- Bills fal's launch promotion at $0.00625/s for 480p and $0.01/s for 768p with `priceMultiplier: 1` and `paidOnly: true`; #14431 restores list rates after the promotion and must not merge before 2026-09-08 UTC\n- Keeps the existing `minimax-h3` model unchanged\n\nValidation:\n- Direct fal matrix passed all duration/resolution combinations; 768p/15s completed in 14.54s. Three-request burst completed in 4.07s with no errors.\n- Local E2E 768p/15s: request `8c9a63c5-27db-45c3-9410-9cbb3960558b`, 200 in 21.91s, 1536×672 H.264/AAC; route, usage, and settlement were verified. The registry now reflects fal's live promotional unit rate.\n- media.pollinations.ai first/last-frame request `37a63e12-eff0-4fc7-9582-2b20bb330451` passed; identical retry returned byte-identical cached output in 0.03s with no second debit.\n- Disconnect/rejoin request `f3d0877d-2242-4deb-83bf-1a8be5e202ab` returned the completed 10s/768p result from cache with one upstream execution, one $0.40 debit, and one Tinybird event.\n- Native, `/v1/images/generations`, `/v1/images/edits`, catalogs, paid-only denial/success, errors, formats, logo, and focused automated tests passed.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Turbo films enter the garden",
+    "blurb": "MiniMax H3 Max Turbo has landed on fal with synchronized sound, frame-to-frame guidance, and launch pricing. The hive now makes short films with slightly fewer reasons to open a video editor.",
+    "summary": "Added the paid-only canonical `minimax/minimax-h3-max-turbo` video model on fal, supporting 480p/768p output, 5/10/15-second clips, synchronized audio, first/last-frame inputs, and a 16:9 text-to-video default at promotional rates of $0.00625/s (480p) and $0.01/s (768p).",
+    "impact": "Developers can generate guided, audio-synchronized MiniMax H3 Max Turbo videos through native and OpenAI-compatible image endpoints, while cached retries and reconnects return completed output without a second upstream run or debit.",
+    "keywords": [
+      "video",
+      "MiniMax H3 Max Turbo",
+      "fal",
+      "audio",
+      "first-last-frame",
+      "paid models",
+      "API"
+    ],
+    "visual_concept": "Depict MiniMax H3 Max Turbo as a cozy little pixel film studio: a retro camera and CRT editing monitor render a widescreen video strip with sound-wave notes, while two framed images become the first and last scene. Polli is the observant director, using a tiny director's beret and clapperboard to guide the frames through a blooming code-garden; lime-green film reels and flowers signal the new model's fast, polished video path.",
+    "image_prompt": "A cozy pixel art mini film studio in a flower-filled code garden, where Polli—the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings—wears a tiny director's beret and holds a clapperboard beside a CRT monitor rendering a 16:9 video strip with gentle audio waveforms and first/last-frame picture cards. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel flowers, vines, and code-plants; pixel-font text: \"H3 MAX TURBO\". Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14428.jpg",
+    "prompt": "A cozy pixel art mini film studio in a flower-filled code garden, where Polli—the cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings—wears a tiny director's beret and holds a clapperboard beside a CRT monitor rendering a 16:9 video strip with gentle audio waveforms and first/last-frame picture cards. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with small pixel flowers, vines, and code-plants; pixel-font text: \"H3 MAX TURBO\". Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-04T15:32:52.792823+00:00"
+}

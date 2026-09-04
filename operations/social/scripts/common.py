@@ -306,21 +306,18 @@ def call_pollinations_api(
     last_error = None
 
     for attempt in range(MAX_RETRIES):
-        seed = random.randint(0, MAX_SEED)
-
         payload = {
             "model": MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            "temperature": temperature,
-            "seed": seed
+            "temperature": temperature
         }
 
         if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            print(f"  Retry {attempt}/{MAX_RETRIES - 1} (waiting {backoff_delay}s)")
             time.sleep(backoff_delay)
 
         try:

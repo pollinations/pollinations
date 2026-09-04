@@ -1,0 +1,247 @@
+{
+  "date": "2025-07-31",
+  "period_start": "2025-07-01",
+  "period_end": "2025-07-31",
+  "title": "The community garden filled out",
+  "summary": "July made Pollinations easier to discover and integrate, while expanding image generation and quietly strengthening the systems underneath.\n\nThe project directory grew across games, chat, creative tools, learning, and hack-and-build projects, with listings, links, repositories, and examples kept navigable. Builders now have a much clearer record of what others have made with the stack.\n\nFlux Kontext and the BPAIGen+Kontext hybrid model joined the image API, while image.pollinations.ai began its TypeScript migration. The image pipeline also gained richer request and response traces for keeping the pixels flowing sensibly.\n\nRevamped API documentation, an OpenAPI specification, and MCP client setup guidance made Pollinations easier to inspect, connect, and build against without reconstructing the service from scattered clues.\n\nRouting, authentication, and request capacity received practical attention: Roblox load balancing, shared tier-based concurrency handling, smoother auth flows, and reduced contention in the authentication path. Usage analytics and more precise Pollen accounting rounded out the operational picture.",
+  "pr_count": 59,
+  "prs": [
+    {
+      "number": 2713,
+      "date": "2025-07-01"
+    },
+    {
+      "number": 2715,
+      "date": "2025-07-01"
+    },
+    {
+      "number": 2708,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2725,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2730,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2737,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2739,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2665,
+      "date": "2025-07-03"
+    },
+    {
+      "number": 2749,
+      "date": "2025-07-03"
+    },
+    {
+      "number": 2759,
+      "date": "2025-07-03"
+    },
+    {
+      "number": 2721,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2766,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2791,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2795,
+      "date": "2025-07-04"
+    },
+    {
+      "number": 2800,
+      "date": "2025-07-05"
+    },
+    {
+      "number": 2806,
+      "date": "2025-07-05"
+    },
+    {
+      "number": 2849,
+      "date": "2025-07-07"
+    },
+    {
+      "number": 2841,
+      "date": "2025-07-08"
+    },
+    {
+      "number": 2927,
+      "date": "2025-07-09"
+    },
+    {
+      "number": 2782,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2984,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2985,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2986,
+      "date": "2025-07-11"
+    },
+    {
+      "number": 2987,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 2992,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 2998,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 2999,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 3003,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 3016,
+      "date": "2025-07-12"
+    },
+    {
+      "number": 3018,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3040,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3053,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3055,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3061,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3064,
+      "date": "2025-07-13"
+    },
+    {
+      "number": 3074,
+      "date": "2025-07-14"
+    },
+    {
+      "number": 3090,
+      "date": "2025-07-14"
+    },
+    {
+      "number": 3101,
+      "date": "2025-07-15"
+    },
+    {
+      "number": 3124,
+      "date": "2025-07-15"
+    },
+    {
+      "number": 3150,
+      "date": "2025-07-16"
+    },
+    {
+      "number": 3158,
+      "date": "2025-07-16"
+    },
+    {
+      "number": 2888,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3197,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3205,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3207,
+      "date": "2025-07-18"
+    },
+    {
+      "number": 3219,
+      "date": "2025-07-22"
+    },
+    {
+      "number": 3229,
+      "date": "2025-07-22"
+    },
+    {
+      "number": 3260,
+      "date": "2025-07-22"
+    },
+    {
+      "number": 3234,
+      "date": "2025-07-23"
+    },
+    {
+      "number": 3261,
+      "date": "2025-07-24"
+    },
+    {
+      "number": 3283,
+      "date": "2025-07-29"
+    },
+    {
+      "number": 3349,
+      "date": "2025-07-29"
+    },
+    {
+      "number": 3350,
+      "date": "2025-07-29"
+    },
+    {
+      "number": 3351,
+      "date": "2025-07-29"
+    },
+    {
+      "number": 3357,
+      "date": "2025-07-29"
+    },
+    {
+      "number": 3364,
+      "date": "2025-07-30"
+    },
+    {
+      "number": 3365,
+      "date": "2025-07-30"
+    },
+    {
+      "number": 3373,
+      "date": "2025-07-30"
+    },
+    {
+      "number": 3384,
+      "date": "2025-07-31"
+    }
+  ],
+  "generated_at": "2026-09-04T15:25:00.951968+00:00"
+}

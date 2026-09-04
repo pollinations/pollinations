@@ -1,0 +1,195 @@
+{
+  "date": "2025-02-28",
+  "period_start": "2025-02-01",
+  "period_end": "2025-02-28",
+  "title": "The project garden kept growing",
+  "summary": "February made the growing Pollinations ecosystem easier to discover while giving the text API more capable, private, and reliable ways to work.\n\nA steady run of community apps joined or refreshed the project directory, from Deep Saga and Abyss Ascending to Pal Chat, Musify, Gacha bot, image tools, bots, and model pickers. Submission dates and shared author links also made the directory a better record of who is building what.\n\nThe text API gained streaming responses and function calling, followed by OpenAI-compatible and SSE formatting fixes. Portkey took over gateway duties, while model handling and text-generation modules were simplified underneath.\n\nGemini Flash 2.0 and its thinking capabilities were surfaced in Text Pollinations, Hormoz 8B joined the lineup, and the docs began clearly marking which text models accept image input. Less model-menu archaeology for builders.\n\nLlamaGuard NSFW detection arrived, OpenAI-compatible requests became private by default, and clients gained explicit private-feed controls. Referral tracking, refreshed sharing assets, analytics events, clearer terms, and quieter infrastructure work helped keep the surrounding system legible.",
+  "pr_count": 46,
+  "prs": [
+    {
+      "number": 1128,
+      "date": "2025-02-01"
+    },
+    {
+      "number": 1136,
+      "date": "2025-02-03"
+    },
+    {
+      "number": 1138,
+      "date": "2025-02-03"
+    },
+    {
+      "number": 1111,
+      "date": "2025-02-04"
+    },
+    {
+      "number": 1146,
+      "date": "2025-02-04"
+    },
+    {
+      "number": 1152,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1154,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1160,
+      "date": "2025-02-05"
+    },
+    {
+      "number": 1155,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1162,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1163,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1165,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1171,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1172,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1174,
+      "date": "2025-02-07"
+    },
+    {
+      "number": 1158,
+      "date": "2025-02-08"
+    },
+    {
+      "number": 1178,
+      "date": "2025-02-10"
+    },
+    {
+      "number": 1179,
+      "date": "2025-02-10"
+    },
+    {
+      "number": 1180,
+      "date": "2025-02-10"
+    },
+    {
+      "number": 1183,
+      "date": "2025-02-12"
+    },
+    {
+      "number": 1187,
+      "date": "2025-02-15"
+    },
+    {
+      "number": 1190,
+      "date": "2025-02-17"
+    },
+    {
+      "number": 1191,
+      "date": "2025-02-17"
+    },
+    {
+      "number": 1193,
+      "date": "2025-02-17"
+    },
+    {
+      "number": 1196,
+      "date": "2025-02-18"
+    },
+    {
+      "number": 1206,
+      "date": "2025-02-19"
+    },
+    {
+      "number": 1209,
+      "date": "2025-02-20"
+    },
+    {
+      "number": 1211,
+      "date": "2025-02-20"
+    },
+    {
+      "number": 1219,
+      "date": "2025-02-22"
+    },
+    {
+      "number": 1213,
+      "date": "2025-02-23"
+    },
+    {
+      "number": 1222,
+      "date": "2025-02-23"
+    },
+    {
+      "number": 1224,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1226,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1228,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1229,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1230,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1231,
+      "date": "2025-02-24"
+    },
+    {
+      "number": 1232,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1233,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1234,
+      "date": "2025-02-25"
+    },
+    {
+      "number": 1236,
+      "date": "2025-02-26"
+    },
+    {
+      "number": 1237,
+      "date": "2025-02-26"
+    },
+    {
+      "number": 1217,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1254,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1257,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1259,
+      "date": "2025-02-28"
+    }
+  ],
+  "generated_at": "2026-09-04T15:15:14.520537+00:00"
+}

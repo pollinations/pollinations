@@ -1,0 +1,1163 @@
+{
+  "date": "2026-07-31",
+  "period_start": "2026-07-01",
+  "period_end": "2026-07-31",
+  "title": "More things than pixels",
+  "summary": "July turned Pollinations into a broader creative workbench: 3D, vectors, music, richer audio, agent tools, and a rapidly expanding model garden all arrived through the same familiar APIs.\n\n3D generation arrived with Trellis 2 and Rodin 2.5, followed by Recraft SVG output, Lyria music clips, richer ElevenLabs dialogue and isolation tools, OCR, transcription, and longer-running Wan video jobs. The API spent the month acquiring formats.\n\nNew GPT, Claude, Gemini, Grok, Qwen, Mistral, Cohere, NVIDIA, image, audio, and video models expanded the unified endpoint, while embeddings gained multimodal and role-aware search support. Better descriptions, search, access labels, and mobile cards made the growing catalog less archaeological.\n\nModel builders gained private testing before publication, readable model titles, image-generation and edit support, configurable fallbacks, and delegated agent tokens. The Greenhouse also added a substantial crop of community apps, from creative studios to chat tools, storybooks, games, and Roblox infrastructure.\n\nPollen activity gained accurate, scrollable history and daily charts; Enter moved to shareable routes; model discovery became faster and clearer; and public media galleries gave tagged creations durable, attributable homes.",
+  "pr_count": 288,
+  "prs": [
+    {
+      "number": 12060,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12061,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12092,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12138,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12139,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12140,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12141,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12143,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12150,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12151,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12154,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12155,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12156,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12161,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12162,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12163,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12164,
+      "date": "2026-07-01"
+    },
+    {
+      "number": 12048,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12159,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12165,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12171,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12177,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12178,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12180,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12188,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 12192,
+      "date": "2026-07-02"
+    },
+    {
+      "number": 11956,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12070,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12210,
+      "date": "2026-07-03"
+    },
+    {
+      "number": 12218,
+      "date": "2026-07-04"
+    },
+    {
+      "number": 12221,
+      "date": "2026-07-04"
+    },
+    {
+      "number": 12222,
+      "date": "2026-07-04"
+    },
+    {
+      "number": 12215,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12237,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12238,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12239,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12241,
+      "date": "2026-07-05"
+    },
+    {
+      "number": 12250,
+      "date": "2026-07-06"
+    },
+    {
+      "number": 12272,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12273,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12282,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12284,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12290,
+      "date": "2026-07-07"
+    },
+    {
+      "number": 12292,
+      "date": "2026-07-08"
+    },
+    {
+      "number": 12293,
+      "date": "2026-07-08"
+    },
+    {
+      "number": 12299,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12303,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12304,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12305,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12306,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12274,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12295,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12309,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12318,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12324,
+      "date": "2026-07-10"
+    },
+    {
+      "number": 12339,
+      "date": "2026-07-11"
+    },
+    {
+      "number": 12340,
+      "date": "2026-07-11"
+    },
+    {
+      "number": 11939,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12246,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12286,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12349,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12350,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12359,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12360,
+      "date": "2026-07-12"
+    },
+    {
+      "number": 12294,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12363,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12364,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12377,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12379,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12380,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12381,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12382,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12383,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12384,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12385,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12386,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12387,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12388,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12389,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12390,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12391,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12392,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12393,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12406,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12407,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12408,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12409,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12410,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12411,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12412,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12413,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12414,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12417,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12419,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12420,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12423,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12424,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12425,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12426,
+      "date": "2026-07-13"
+    },
+    {
+      "number": 12275,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12277,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12287,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12428,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12430,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12431,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12432,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12433,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12444,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12454,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12457,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12465,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12467,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12468,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12469,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12470,
+      "date": "2026-07-14"
+    },
+    {
+      "number": 12333,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12438,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12441,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12450,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12458,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12473,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12478,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12479,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12480,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12481,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12482,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12484,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12491,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12492,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12493,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12494,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12499,
+      "date": "2026-07-15"
+    },
+    {
+      "number": 12208,
+      "date": "2026-07-16"
+    },
+    {
+      "number": 12501,
+      "date": "2026-07-16"
+    },
+    {
+      "number": 12506,
+      "date": "2026-07-16"
+    },
+    {
+      "number": 12508,
+      "date": "2026-07-16"
+    },
+    {
+      "number": 12317,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12510,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12515,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12516,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12519,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12521,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12522,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12523,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12524,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12418,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12531,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12532,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12533,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12534,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12536,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12537,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12538,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12547,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12549,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12551,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12553,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12554,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12555,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12556,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12557,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12558,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12560,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12566,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12567,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12568,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12569,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12571,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12573,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12574,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12575,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12577,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12580,
+      "date": "2026-07-18"
+    },
+    {
+      "number": 12589,
+      "date": "2026-07-19"
+    },
+    {
+      "number": 12590,
+      "date": "2026-07-19"
+    },
+    {
+      "number": 12507,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12594,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12596,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12597,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12598,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12599,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12600,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12601,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12604,
+      "date": "2026-07-20"
+    },
+    {
+      "number": 12605,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12617,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12618,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12622,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12623,
+      "date": "2026-07-21"
+    },
+    {
+      "number": 12206,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12637,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12642,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12643,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12646,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12651,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12655,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12656,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12659,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12662,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12663,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12664,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12666,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12668,
+      "date": "2026-07-22"
+    },
+    {
+      "number": 12647,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12669,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12670,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12671,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12673,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12675,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12678,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12681,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12685,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12695,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12696,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12704,
+      "date": "2026-07-23"
+    },
+    {
+      "number": 12708,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12709,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12710,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12712,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12719,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12720,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12721,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12724,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12725,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12728,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12731,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12733,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12736,
+      "date": "2026-07-24"
+    },
+    {
+      "number": 12692,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12739,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12744,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12750,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12751,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12752,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12753,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12756,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12757,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12760,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12778,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12780,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12781,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12782,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12785,
+      "date": "2026-07-26"
+    },
+    {
+      "number": 12715,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12788,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12793,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12795,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12797,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12798,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12799,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12800,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12802,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12806,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12810,
+      "date": "2026-07-27"
+    },
+    {
+      "number": 12783,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12787,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12813,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12821,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12822,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12823,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12824,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12826,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12827,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12829,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12830,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12831,
+      "date": "2026-07-28"
+    },
+    {
+      "number": 12702,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12814,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12838,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12839,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12844,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12852,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12855,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12857,
+      "date": "2026-07-29"
+    },
+    {
+      "number": 12496,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12776,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12869,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12873,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12875,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12876,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12879,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12883,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12884,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12896,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12904,
+      "date": "2026-07-30"
+    },
+    {
+      "number": 12819,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12962,
+      "date": "2026-07-31"
+    },
+    {
+      "number": 12985,
+      "date": "2026-07-31"
+    }
+  ],
+  "generated_at": "2026-09-04T15:20:27.482870+00:00"
+}

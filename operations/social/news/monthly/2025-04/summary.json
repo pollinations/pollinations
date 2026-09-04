@@ -1,0 +1,439 @@
+{
+  "date": "2025-04-30",
+  "period_start": "2025-04-01",
+  "period_end": "2025-04-30",
+  "title": "The community project garden got real paths",
+  "summary": "April made Pollinations easier to discover, easier to build on, and more dependable across its growing collection of text and image tools.\n\nThe app directory grew steadily, adding projects from fitness coaches and food tools to bots, image generators, and developer interfaces. Dynamic listings, categories, GitHub stars, and popularity sorting made the growing record of community work easier to explore.\n\nGPT-4.1 joined the text API, Mistral gained vision support, and Mistral, QWQ, and DeepSeek Reasoning received refreshed routing and configuration. Model aliases, live model lists, clearer metadata, and cleanup around duplicate entries made one-endpoint access more legible.\n\nText errors and logging became more useful, streaming gained a tested integration path, and controls such as doNotRephrase made requests more predictable. Image generation also gained Dreamshaper and Turbo fallback routes, because the useful property of an API is that it answers.\n\nA new Text Feed opened a small window into direct text creations, while updated Python, TTS, and API documentation gave builders fresher starting points. More dependable social previews, steadier Imagine controls, and cleaner display details removed a little friction from the edges.",
+  "pr_count": 107,
+  "prs": [
+    {
+      "number": 1502,
+      "date": "2025-04-01"
+    },
+    {
+      "number": 1510,
+      "date": "2025-04-01"
+    },
+    {
+      "number": 1477,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1518,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1533,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1536,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1537,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1538,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1540,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1541,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1543,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1545,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1547,
+      "date": "2025-04-03"
+    },
+    {
+      "number": 1552,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1555,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1556,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1558,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1559,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1563,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1564,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1567,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1568,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1569,
+      "date": "2025-04-05"
+    },
+    {
+      "number": 1575,
+      "date": "2025-04-07"
+    },
+    {
+      "number": 1579,
+      "date": "2025-04-07"
+    },
+    {
+      "number": 1580,
+      "date": "2025-04-07"
+    },
+    {
+      "number": 1584,
+      "date": "2025-04-08"
+    },
+    {
+      "number": 1586,
+      "date": "2025-04-08"
+    },
+    {
+      "number": 1588,
+      "date": "2025-04-09"
+    },
+    {
+      "number": 1614,
+      "date": "2025-04-09"
+    },
+    {
+      "number": 1571,
+      "date": "2025-04-10"
+    },
+    {
+      "number": 1621,
+      "date": "2025-04-11"
+    },
+    {
+      "number": 1622,
+      "date": "2025-04-11"
+    },
+    {
+      "number": 1625,
+      "date": "2025-04-11"
+    },
+    {
+      "number": 1488,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1632,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1634,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1635,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1637,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1640,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1642,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1644,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1648,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1649,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1650,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1651,
+      "date": "2025-04-13"
+    },
+    {
+      "number": 1660,
+      "date": "2025-04-14"
+    },
+    {
+      "number": 1662,
+      "date": "2025-04-14"
+    },
+    {
+      "number": 1665,
+      "date": "2025-04-14"
+    },
+    {
+      "number": 1666,
+      "date": "2025-04-14"
+    },
+    {
+      "number": 1667,
+      "date": "2025-04-14"
+    },
+    {
+      "number": 1668,
+      "date": "2025-04-14"
+    },
+    {
+      "number": 1671,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1672,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1674,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1675,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1678,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1679,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1681,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1683,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1686,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1687,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1689,
+      "date": "2025-04-15"
+    },
+    {
+      "number": 1692,
+      "date": "2025-04-16"
+    },
+    {
+      "number": 1699,
+      "date": "2025-04-16"
+    },
+    {
+      "number": 1701,
+      "date": "2025-04-16"
+    },
+    {
+      "number": 1709,
+      "date": "2025-04-16"
+    },
+    {
+      "number": 1716,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1720,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1722,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1724,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1726,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1727,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1729,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1731,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1735,
+      "date": "2025-04-20"
+    },
+    {
+      "number": 1739,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1760,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1762,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1765,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1767,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1770,
+      "date": "2025-04-23"
+    },
+    {
+      "number": 1757,
+      "date": "2025-04-27"
+    },
+    {
+      "number": 1794,
+      "date": "2025-04-27"
+    },
+    {
+      "number": 1798,
+      "date": "2025-04-27"
+    },
+    {
+      "number": 1803,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1807,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1817,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1819,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1820,
+      "date": "2025-04-28"
+    },
+    {
+      "number": 1786,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1822,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1824,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1828,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1829,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1832,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1834,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1836,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1838,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1835,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1841,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1845,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1848,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1850,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1851,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1854,
+      "date": "2025-04-30"
+    },
+    {
+      "number": 1856,
+      "date": "2025-04-30"
+    }
+  ],
+  "generated_at": "2026-09-04T15:22:53.715052+00:00"
+}

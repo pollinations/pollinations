@@ -80,35 +80,32 @@ CREATE TABLE `oauth_refresh_token` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-ALTER TABLE `apikey` ADD `config_id` text DEFAULT 'default' NOT NULL;--> statement-breakpoint
-CREATE INDEX `idx_apikey_config_id` ON `apikey` (`config_id`);
---> statement-breakpoint
 INSERT INTO `oauth_client` (
-	`id`, `client_id`, `disabled`, `skip_consent`, `scopes`, `created_at`,
-	`updated_at`, `name`, `redirect_uris`, `token_endpoint_auth_method`,
-	`grant_types`, `response_types`, `public`, `type`, `require_pkce`
+    `id`, `client_id`, `disabled`, `skip_consent`, `scopes`, `created_at`,
+    `updated_at`, `name`, `redirect_uris`, `token_endpoint_auth_method`,
+    `grant_types`, `response_types`, `public`, `type`, `require_pkce`
 ) VALUES
 (
-	'internal-kpi', 'pk_Bxny9FSNDpousKqW', false, true,
-	'["openid","profile","email"]', unixepoch(), unixepoch(),
-	'Pollinations KPI',
-	'["https://kpi.pollinations.ai/auth/callback","https://kpi.myceli.ai/auth/callback","http://127.0.0.1:3456/auth/callback"]',
-	'none', '["authorization_code"]', '["code"]', true,
-	'user-agent-based', true
+    'internal-kpi', 'pk_Bxny9FSNDpousKqW', false, true,
+    '["openid","profile","email"]', unixepoch(), unixepoch(),
+    'Pollinations KPI',
+    '["https://kpi.pollinations.ai/auth/callback","https://kpi.myceli.ai/auth/callback","http://127.0.0.1:3456/auth/callback"]',
+    'none', '["authorization_code"]', '["code"]', true,
+    'user-agent-based', true
 ),
 (
-	'internal-economics', 'pk_LBL0KnkHI6AZopCc', false, true,
-	'["openid","profile","email"]', unixepoch(), unixepoch(),
-	'Pollinations Economics',
-	'["https://economics.pollinations.ai/auth/callback","https://economics.myceli.ai/auth/callback","http://127.0.0.1:4180/auth/callback"]',
-	'none', '["authorization_code"]', '["code"]', true,
-	'user-agent-based', true
+    'internal-economics', 'pk_LBL0KnkHI6AZopCc', false, true,
+    '["openid","profile","email"]', unixepoch(), unixepoch(),
+    'Pollinations Economics',
+    '["https://economics.pollinations.ai/auth/callback","https://economics.myceli.ai/auth/callback","http://127.0.0.1:4180/auth/callback"]',
+    'none', '["authorization_code"]', '["code"]', true,
+    'user-agent-based', true
 ),
 (
-	'internal-observability', 'pk_vVa38CFt1R1gGScW', false, true,
-	'["openid","profile","email"]', unixepoch(), unixepoch(),
-	'Pollinations Observability',
-	'["https://observability.pollinations.ai/auth/callback","https://observability.myceli.ai/auth/callback","http://127.0.0.1:3000/auth/callback"]',
-	'none', '["authorization_code"]', '["code"]', true,
-	'user-agent-based', true
+    'internal-observability', 'pk_vVa38CFt1R1gGScW', false, true,
+    '["openid","profile","email"]', unixepoch(), unixepoch(),
+    'Pollinations Observability',
+    '["https://observability.pollinations.ai/auth/callback","https://observability.myceli.ai/auth/callback","http://127.0.0.1:3000/auth/callback"]',
+    'none', '["authorization_code"]', '["code"]', true,
+    'user-agent-based', true
 );

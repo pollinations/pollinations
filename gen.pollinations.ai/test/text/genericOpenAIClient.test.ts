@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 
 afterEach(() => {
@@ -390,6 +391,28 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
+    it("maps an unsupported image URL format to a client error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    error: {
+                        message:
+                            "Unsupported image format for URL: https://example.com/video.mp4",
+                    },
+                },
+                { status: 415, statusText: "Unsupported Media Type" },
+            ),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 415, upstreamStatus: 415 });
+    });
+
     it("maps unsupported multimodal input errors to a client error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(
@@ -456,6 +479,63 @@ describe("genericOpenAIClient", () => {
                 { endpoint: "https://portkey.test/chat" },
             ),
         ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
+    });
+
+    it("maps an embedded completion 429 to a retryable upstream error", async () => {
+        const details = {
+            code: 429,
+            message: "Provider rate limited",
+            metadata: { error_type: "rate_limit_exceeded" },
+        };
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                choices: [
+                    {
+                        finish_reason: "error",
+                        error: details,
+                    },
+                ],
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            details,
+        });
+    });
+
+    it("leaves non-rate-limit completion errors unchanged", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                choices: [
+                    {
+                        finish_reason: "error",
+                        error: {
+                            code: 400,
+                            message: "Malformed function call",
+                        },
+                    },
+                ],
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]).toMatchObject({
+            finish_reason: "error",
+            error: { code: 400 },
+        });
     });
 
     it.each([
@@ -673,5 +753,63 @@ describe("genericOpenAIClient", () => {
             status: 502,
             requestUrl: new URL("https://portkey.test/chat"),
         });
+    });
+});
+
+describe("Chat Completions stream usage", () => {
+    const encoder = new TextEncoder();
+
+    it("accepts valid usage followed by the terminal DONE event", () => {
+        const validator = createChatStreamUsageValidator();
+
+        validator.feed(
+            encoder.encode(
+                'data: {"model":"provider-model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\ndata: [DONE]\n',
+            ),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+    });
+
+    it("rejects DONE without valid usage", () => {
+        const validator = createChatStreamUsageValidator();
+
+        expect(() =>
+            validator.feed(encoder.encode("data: [DONE]\n\n")),
+        ).toThrow(/omitted terminal usage/);
+    });
+
+    it("rejects a stream that ends before terminal usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"model":"provider-model","choices":[{"delta":{"content":"ok"}}]}\n\n',
+            ),
+        );
+
+        expect(() => validator.finish()).toThrow(/without terminal usage/);
+    });
+
+    it("accepts an explicit terminal error without usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"error":{"message":"upstream failed","code":"upstream_error"}}\n\ndata: [DONE]\n\n',
+            ),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+    });
+
+    it("does not treat an error:null field as a terminal failure", () => {
+        const validator = createChatStreamUsageValidator();
+
+        expect(() =>
+            validator.feed(
+                encoder.encode(
+                    'data: {"error":null,"choices":[{"delta":{"content":"partial"}}]}\n\ndata: [DONE]\n\n',
+                ),
+            ),
+        ).toThrow(/omitted terminal usage/);
     });
 });

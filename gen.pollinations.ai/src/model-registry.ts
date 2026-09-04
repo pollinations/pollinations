@@ -15,6 +15,7 @@ import {
     type Category,
     getModels,
     getRegistryModelDefinition,
+    isVisibleModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
@@ -29,6 +30,7 @@ import {
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
+import { supportsDirectResponses } from "./text/availableModels.ts";
 
 const REGISTRY_TTL_MS = 60_000;
 // A static-only registry is cached briefly so the community models come back
@@ -113,16 +115,22 @@ function supportedEndpointsForEventType(eventType: EventType): string[] {
 const STATIC_ENTRIES: GenerationModelEntry[] = getModels().map((modelName) => {
     const definition = getRegistryModelDefinition(modelName);
     const eventType = eventTypeForCategory(definition.category);
+    const baseEndpoints =
+        definition.supportedEndpoints ??
+        supportedEndpointsForEventType(eventType);
+    const supportedEndpoints =
+        eventType === "generate.text" && supportsDirectResponses(modelName)
+            ? [...baseEndpoints, "/v1/responses"]
+            : baseEndpoints;
+    const info = modelInfoFromDefinition(modelName, definition);
     return {
         id: modelName,
         aliases: definition.aliases,
         eventType,
-        supportedEndpoints:
-            definition.supportedEndpoints ??
-            supportedEndpointsForEventType(eventType),
+        supportedEndpoints,
         definition,
-        info: modelInfoFromDefinition(modelName, definition),
-        visible: definition.hidden !== true,
+        info: { ...info, supported_endpoints: supportedEndpoints },
+        visible: isVisibleModelDefinition(definition),
     };
 });
 
@@ -130,22 +138,29 @@ function communityEntryToGenerationEntry(
     entry: CommunityModelRegistryEntry,
 ): GenerationModelEntry {
     const eventType = eventTypeForCategory(entry.definition.category);
+    const supportedEndpoints = communityEndpointSupportedEndpoints(
+        entry.communityEndpoint.modality,
+        entry.definition.inputModalities ?? [],
+    );
+    if (
+        entry.communityEndpoint.modality === "text" &&
+        entry.communityEndpoint.responsesUrl
+    ) {
+        supportedEndpoints.push("/v1/responses");
+    }
     return {
         id: entry.id,
         aliases: entry.aliases,
         eventType,
-        supportedEndpoints: communityEndpointSupportedEndpoints(
-            entry.communityEndpoint.modality,
-            entry.definition.inputModalities ?? [],
-        ),
+        supportedEndpoints,
         definition: entry.definition,
-        info: entry.info,
+        info: { ...entry.info, supported_endpoints: supportedEndpoints },
         communityEndpoint: entry.communityEndpoint,
         agentConfig: entry.agentConfig,
         // Public endpoints appear for everyone. Private endpoints are added
         // back for their owner by visibleEntries().
         visible:
-            entry.definition.hidden !== true &&
+            isVisibleModelDefinition(entry.definition) &&
             entry.communityEndpoint.visibility === "public",
     };
 }
@@ -215,7 +230,7 @@ function buildRegistry(
                 if (entry.visible) return true;
                 const endpoint = entry.communityEndpoint;
                 return (
-                    entry.definition.hidden !== true &&
+                    isVisibleModelDefinition(entry.definition) &&
                     endpoint !== undefined &&
                     endpoint.visibility === "private" &&
                     endpoint.ownerUserId === callerUserId

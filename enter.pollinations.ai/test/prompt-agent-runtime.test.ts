@@ -165,7 +165,11 @@ describe("prompt-agent runtime", () => {
                     choices: [
                         { message: { role: "assistant", content: "done" } },
                     ],
-                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
                 });
             }),
         );
@@ -192,6 +196,77 @@ describe("prompt-agent runtime", () => {
         });
     });
 
+    it("authenticates and runs a stateless Responses request", async () => {
+        const db = drizzle(env.DB, { schema });
+        const agentId = crypto.randomUUID();
+        const parent = await createTestApiKey();
+        const token = await agentRunToken(parent.id, agentId);
+        await db.insert(schema.communityEndpoint).values({
+            id: agentId,
+            ownerUserId: await createTestUser(),
+            name: `agent-${agentId}`,
+            title: "Responses agent",
+            type: "prompt_agent",
+            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+            upstreamModel: agentId,
+            payload: JSON.stringify({
+                systemPrompt: "Answer briefly.",
+                baseModel: "openai-fast",
+                mcpServers: [],
+            }),
+            visibility: "private",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    choices: [
+                        { message: { role: "assistant", content: "done" } },
+                    ],
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
+                }),
+            ),
+        );
+
+        const response = await agentRuntimeRoutes.fetch(
+            new Request("https://enter.test/v1/responses", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({
+                    model: agentId,
+                    input: "hello",
+                    store: false,
+                }),
+            }),
+            { ...env, GEN_BASE_URL: "https://gen.test" },
+            createExecutionContext(),
+        );
+
+        expect(response.status).toBe(200);
+        await expect(response.json()).resolves.toMatchObject({
+            object: "response",
+            model: agentId,
+            status: "completed",
+            output: [
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "done" }],
+                },
+            ],
+            usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
+            store: false,
+        });
+    });
+
     it("rejects a run token bound to another agent", async () => {
         const parent = await createTestApiKey();
         const token = await agentRunToken(parent.id, crypto.randomUUID());
@@ -210,7 +285,7 @@ describe("prompt-agent runtime", () => {
         expect(response.status).toBe(403);
     });
 
-    it("reports an invalid internal agent request as 500", async () => {
+    it("reports an invalid internal agent request as 400", async () => {
         const agentId = crypto.randomUUID();
         const parent = await createTestApiKey();
         const token = await agentRunToken(parent.id, agentId);
@@ -226,7 +301,7 @@ describe("prompt-agent runtime", () => {
             env,
             createExecutionContext(),
         );
-        expect(response.status).toBe(500);
+        expect(response.status).toBe(400);
     });
 
     it("passes through messages and accepts unused client fields", async () => {
@@ -349,14 +424,22 @@ describe("prompt-agent runtime", () => {
                                 },
                             },
                         ],
-                        usage: { prompt_tokens: 10, completion_tokens: 5 },
+                        usage: {
+                            prompt_tokens: 10,
+                            completion_tokens: 5,
+                            total_tokens: 15,
+                        },
                     });
                 }
                 return Response.json({
                     choices: [
                         { message: { role: "assistant", content: "done" } },
                     ],
-                    usage: { prompt_tokens: 4, completion_tokens: 2 },
+                    usage: {
+                        prompt_tokens: 4,
+                        completion_tokens: 2,
+                        total_tokens: 6,
+                    },
                 });
             },
         );
@@ -504,14 +587,22 @@ describe("prompt-agent runtime", () => {
                                 finish_reason: "tool_calls",
                             },
                         ],
-                        usage: { prompt_tokens: 1, completion_tokens: 1 },
+                        usage: {
+                            prompt_tokens: 1,
+                            completion_tokens: 1,
+                            total_tokens: 2,
+                        },
                     });
                 }
                 return Response.json({
                     choices: [
                         { message: { role: "assistant", content: "done" } },
                     ],
-                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
                 });
             }),
         );
@@ -553,7 +644,11 @@ describe("prompt-agent runtime", () => {
                             },
                         },
                     ],
-                    usage: { prompt_tokens: 3, completion_tokens: 2 },
+                    usage: {
+                        prompt_tokens: 3,
+                        completion_tokens: 2,
+                        total_tokens: 5,
+                    },
                 });
             }),
         );
@@ -643,7 +738,11 @@ describe("prompt-agent runtime", () => {
                     choices: [
                         { message: { role: "assistant", content: "done" } },
                     ],
-                    usage: { prompt_tokens: 1, completion_tokens: 1 },
+                    usage: {
+                        prompt_tokens: 1,
+                        completion_tokens: 1,
+                        total_tokens: 2,
+                    },
                 });
             }),
         );
@@ -677,7 +776,11 @@ describe("prompt-agent runtime", () => {
             message: Record<string, unknown>,
             finishReason: "stop" | "tool_calls",
         ) => {
-            const usage = { prompt_tokens: 2, completion_tokens: 1 };
+            const usage = {
+                prompt_tokens: 2,
+                completion_tokens: 1,
+                total_tokens: 3,
+            };
             if (!stream) {
                 return Response.json({
                     choices: [
@@ -811,7 +914,7 @@ describe("prompt-agent runtime", () => {
                     return modelResponse(
                         {
                             role: "assistant",
-                            content: "Drawing",
+                            content: "",
                             tool_calls: [
                                 {
                                     index: 0,
@@ -874,7 +977,7 @@ describe("prompt-agent runtime", () => {
         expect(content).toContain(
             "![Generated image](<https://images.example/pirate.png>)",
         );
-        expect(content.startsWith("Drawing\n\n")).toBe(true);
+        expect(content.startsWith('\n\n<details type="tool_calls"')).toBe(true);
         expect(content.endsWith("Finished")).toBe(true);
     });
 
@@ -961,7 +1064,7 @@ describe("prompt-agent runtime", () => {
         expect(finalChunk.usage.prompt_tokens).toBe(6);
     });
 
-    it("streams base-model errors as SSE", async () => {
+    it("streams base-model errors as terminal errors", async () => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async () =>
@@ -978,10 +1081,73 @@ describe("prompt-agent runtime", () => {
         });
 
         expect(response.status).toBe(200);
-        expect(await response.text()).toBe(
-            'data: {"error":{"message":"Insufficient balance"}}\n\n' +
-                "data: [DONE]\n\n",
+        const events = (await response.text())
+            .split("\n\n")
+            .map((block) => block.replace(/^data: /, "").trim())
+            .filter(Boolean);
+        expect(events).toHaveLength(1);
+        expect(JSON.parse(events[0])).toMatchObject({
+            error: {
+                message: "Insufficient balance",
+                code: "agent_error",
+            },
+        });
+    });
+
+    it.each([
+        false,
+        true,
+    ])("reports an empty base-model response when stream:%s", async (stream) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                if (!stream) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: null,
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 1,
+                            completion_tokens: 0,
+                            total_tokens: 1,
+                        },
+                    });
+                }
+                return new Response(
+                    'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":0,"total_tokens":1}}\n\n' +
+                        "data: [DONE]\n\n",
+                    {
+                        headers: {
+                            "content-type": "text/event-stream",
+                        },
+                    },
+                );
+            }),
         );
+
+        const response = await runAgent({
+            messages: [{ role: "user", content: "hello" }],
+            stream,
+        });
+
+        if (stream) {
+            expect(response.status).toBe(200);
+            const body = await response.text();
+            expect(body).toContain("Agent produced no response");
+            expect(body).toContain('data: {"error"');
+            expect(body).not.toContain("[DONE]");
+            return;
+        }
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toEqual({
+            error: { message: "Agent produced no response" },
+        });
     });
 
     it("feeds a failing tool's error back to the model instead of 502", async () => {
@@ -1056,7 +1222,11 @@ describe("prompt-agent runtime", () => {
                                 },
                             },
                         ],
-                        usage: { prompt_tokens: 3, completion_tokens: 1 },
+                        usage: {
+                            prompt_tokens: 3,
+                            completion_tokens: 1,
+                            total_tokens: 4,
+                        },
                     });
                 }
                 // Next model turn recovers and answers.
@@ -1069,7 +1239,11 @@ describe("prompt-agent runtime", () => {
                             },
                         },
                     ],
-                    usage: { prompt_tokens: 2, completion_tokens: 2 },
+                    usage: {
+                        prompt_tokens: 2,
+                        completion_tokens: 2,
+                        total_tokens: 4,
+                    },
                 });
             },
         );

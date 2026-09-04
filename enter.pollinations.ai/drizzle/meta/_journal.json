@@ -418,8 +418,22 @@
     {
       "idx": 59,
       "version": "6",
-      "when": 1788252732520,
-      "tag": "0059_oauth-provider",
+      "when": 1788290821008,
+      "tag": "0059_shared-community-safety",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1788523521324,
+      "tag": "0060_better_auth_1_6",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1788528977109,
+      "tag": "0061_oauth-provider",
       "breakpoints": true
     }
   ]

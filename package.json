@@ -27,6 +27,8 @@
     "concurrently": "^9.2.1"
   },
   "dependencies": {
+    "@better-auth/core": "1.6.30",
+    "drizzle-orm": "0.45.2",
     "wrangler": "^4.59.1",
     "zod": "4.5.4"
   }

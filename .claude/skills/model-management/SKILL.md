@@ -49,11 +49,12 @@ Show one complete row per model:
 | Pollinations GPU | `yes` only if Pollinations operates the production hardware |
 | Registry provider | Configured primary provider |
 | Primary route | Provider, deployment/host, and exact upstream model ID |
-| Pollinations fallback | Complete alternative route or `none` |
+| Best fallback candidate | Provider, deployment/host, exact upstream model ID, and why it is the best viable alternative; or `none found` with the searched routes |
+| Pollinations fallback | `use <candidate>` or `none`, with the reason for declining or lacking a viable candidate |
 
 Ask:
 
-> Please confirm: canonical name **X**, aliases **A/none**, price multiplier **M**, paid-only **yes/no**, Pollinations GPU **yes/no**, registry provider **P**, primary route **R**, and Pollinations fallback **F/none**. Are all of these correct?
+> Please confirm: canonical name **X**, aliases **A/none**, price multiplier **M**, paid-only **yes/no**, Pollinations GPU **yes/no**, registry provider **P**, primary route **R**, best fallback candidate **C/none found**, and Pollinations fallback decision **use C/none**. Are all of these correct?
 
 An answer approves only the values shown. If a value is unknown, inferred, conflicting, or route-dependent, label it `UNKNOWN`, explain the evidence, and wait for that exact decision. A batch approval is valid only when every row is complete.
 
@@ -97,6 +98,7 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 - Deduplicate the canonical model across providers.
 - List material route differences. Equal model names do not prove equal capabilities.
 - Probe the exact deployment and request shape Pollinations will use.
+- For every addition or modification, run a fresh web search across provider catalogs and official documentation to discover viable fallback routes; do not rely only on repository integrations or remembered availability. Verify each serious candidate against its current official model page and pricing, then probe the exact route. Compare checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
 - Inspect provider-managed routing/fallback defaults and controls. Report identity, capability, pricing, residency, and observability tradeoffs.
 
 ### 3. Confirm the contract
@@ -105,8 +107,11 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 ### 4. Implement the smallest complete change
 
+- Canonical public IDs use lowercase
+  `<publisher-slug>/<official-model-slug>` and preserve the official family
+  and version. Keep provider deployment IDs and routing internal.
 - Reuse existing handlers, transforms, provider configs, schemas, and generic fallback infrastructure.
-- Do not add speculative abstractions, compatibility shims, or fallbacks.
+- Implement only the explicitly approved fallback decision. Use the shared generic fallback system for an approved pair; do not add a model-specific retry layer or an unapproved fallback.
 - Expose a confirmed new public capability (per the API-change confirmation above) through two surfaces backed by one implementation: a Pollinations-native route outside `/v1` and a standard-compatible route under `/v1`.
 - Resolve the compatibility contract in this order: (1) current official OpenAI API; (2) if OpenAI defines no equivalent, the current published OpenRouter contract — a protocol-design reference here, not an inference-provider fallback; (3) if neither defines the capability, stop for an explicit API-contract decision. Document the exact reference checked.
 - Treat `/v1` as a compatibility namespace: match the selected standard's route, transport, request, response, streaming, and event contracts exactly, and keep provider-specific protocols behind the route adapters — never a Pollinations-specific or upstream-provider schema under `/v1`.
@@ -131,6 +136,8 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   immediately before the Worker deploy. Keep mappings in migrations only; do
   not add a runtime normalization layer.
 - Update every consumer of a changed public ID at once.
+- Add aliases only for existing compatibility contracts or explicit approval.
+- Add models to `MODEL_SLUGS.md` only when renaming a historical public ID.
 - Keep one PR per model or tightly coupled model-family change.
 - Never edit generated `APIDOCS.md`; update the source schema or route.
 
@@ -139,6 +146,7 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Run the relevant rows in [change-and-test-matrix.md](references/change-and-test-matrix.md).
 - For new models and provider/model-ID changes, run the full declared-modality matrix and [billing-verification.md](references/billing-verification.md).
 - Test aliases, permissions, errors, caching, capacity, and `/models` metadata.
+- When a fallback is configured, probe it directly and run the same applicable E2E matrix through a forced fallback, including capabilities, parameters, permissions, cache behavior, billing, provider attribution, errors, and expected burst. When no fallback is approved, record the researched candidate and rejection reason.
 - Verify all media is fully returned within the supported request-lifetime budget, including the durable-media checks when applicable.
 - Record exact evidence and uncertainty in the PR.
 
@@ -149,7 +157,7 @@ Before publishing:
 - Format changed files with the repository formatter.
 - Run focused tests and type checks for every touched service.
 - Review the complete diff for unrelated changes and dead code.
-- Include the approved contract, exact provider/model ID, pricing source, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
+- Include the approved contract, exact primary and fallback candidates, fallback decision, pricing sources, live probes, E2E results, billing evidence, capacity results, limitations, and deprecation/quota gates.
 - Leave the PR draft when a live, quota, latency, safety, or product decision remains unresolved.
 
 ## Completion gate
@@ -158,6 +166,7 @@ A model change is not complete until all applicable statements are true:
 
 - The configured model, aliases, provider, route, price, access, modalities, and capabilities match the approved contract.
 - Direct-provider and local E2E requests passed for every declared surface.
+- The best fallback candidate and use/decline decision are documented; every configured fallback passed direct and forced-fallback E2E verification.
 - No existing capability disappeared unless explicitly approved.
 - Every non-zero usage field is accounted for and billed at the confirmed rate.
 - Malformed or rejected requests return useful 4xx responses rather than opaque 5xx responses.

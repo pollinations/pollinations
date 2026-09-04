@@ -1,17 +1,17 @@
 import { Scalar } from "@scalar/hono-api-reference";
-import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import {
-    getImageModelIds,
-    getVideoModelIds,
-    IMAGE_SERVICES,
-} from "@shared/registry/image.ts";
+import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
 import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
     DEFAULT_REALTIME_MODEL,
     REALTIME_MODEL_NAMES,
 } from "@shared/registry/realtime.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import {
+    getVisibleAudioModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
@@ -36,7 +36,6 @@ import COMMUNITY_MODELS_MD from "../../../BRING_YOUR_OWN_MODEL.md?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
 import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
 import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
-import MCP_README from "../../../packages/mcp/README.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
@@ -46,6 +45,7 @@ import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
+import MCP_MD from "../docs/mcp.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
@@ -66,7 +66,7 @@ const DOC_TAGS = {
     communityAgents: "Community Agents",
     cli: "CLI",
     codingHarnesses: "Coding Harnesses",
-    mcpServer: "MCP Server",
+    mcpServers: "MCP Servers",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -90,7 +90,7 @@ const LEGACY_DOC_TAGS: Record<string, string> = {
     "🧩 Community Models": DOC_TAGS.communityModels,
     "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
-    "🔌 MCP Server": DOC_TAGS.mcpServer,
+    "🔌 MCP Server": DOC_TAGS.mcpServers,
     "❌ Errors": DOC_TAGS.errors,
     "🛡️ Safety": DOC_TAGS.safety,
     "✍️ Text": DOC_TAGS.text,
@@ -139,7 +139,7 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.codingHarnesses]: docsIcon(
         '<path d="M4 7h16" /><path d="M4 17h16" /><circle cx="9" cy="7" r="2" fill="currentColor" /><circle cx="15" cy="17" r="2" fill="currentColor" />',
     ),
-    [DOC_TAGS.mcpServer]: docsIcon(
+    [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
     ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
@@ -194,13 +194,12 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
 
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
 
-const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
-
 // Strip the leading H1/H2 heading line so the markdown can be embedded under
 // a Scalar tag (which already renders its own title) without double headings.
 const stripLeadingHeading = (md: string) =>
     md.replace(/^#{1,2}\s.*\n+/, "").trim();
 
+const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
 const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
 const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
 const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
@@ -221,49 +220,22 @@ const ACCOUNT_DOCS = ACCOUNT_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
-const IMAGE_ALIASES = new Set(
-    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-);
-const TEXT_ALIASES = new Set(
-    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
-);
-const AUDIO_ALIASES = new Set(
-    Object.values(AUDIO_SERVICES).flatMap((service) => service.aliases),
-);
-const EMBEDDING_ALIASES = new Set(
-    Object.values(EMBEDDING_SERVICES).flatMap((service) => service.aliases),
-);
-const ALL_ALIASES = new Set([
-    ...IMAGE_ALIASES,
-    ...TEXT_ALIASES,
-    ...AUDIO_ALIASES,
-    ...EMBEDDING_ALIASES,
-]);
-const imageModelDisplayNames = getImageModelIds().join(", ");
+const visibleImageIds = new Set<string>(getVisibleImageModels());
+const imageModelDisplayNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
+    .join(", ");
 
-const videoModelDisplayNames = getVideoModelIds().join(", ");
+const videoModelDisplayNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
+    .join(", ");
 
-const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
-const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
+const textModelDisplayNames = getVisibleTextModels().join(", ");
+const audioModelDisplayNames = getVisibleAudioModels().join(", ");
 const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
 const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");
-function filterAliases(schema: OpenApiSchema): OpenApiSchema {
-    return JSON.parse(
-        JSON.stringify(schema, (key, value) => {
-            if (key === "enum" && Array.isArray(value)) {
-                const filtered = value.filter(
-                    (v) => typeof v !== "string" || !ALL_ALIASES.has(v),
-                );
-                return filtered.length !== value.length ? filtered : value;
-            }
-            return value;
-        }),
-    ) as OpenApiSchema;
-}
-
 // Substitute live registry values into the section markdown.
 const MODEL_VARS: Record<string, string> = {
     TEXT_MODELS: textModelDisplayNames,
@@ -359,7 +331,7 @@ const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
 const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
 const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
-const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
+const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
@@ -389,7 +361,7 @@ const GUIDE_REDIRECT_TAGS: Record<string, string> = {
     agents: "publish-an-agent",
     "community-agents": "publish-an-agent",
     cli: "cli",
-    mcp: "mcp-server",
+    mcp: "mcp-servers",
 };
 
 function pollinationsHeaderHtml(): string {
@@ -499,7 +471,7 @@ function generationDocumentation(): OpenApiSchema {
                     DOC_TAGS.userWallets,
                     DOC_TAGS.publishModel,
                     DOC_TAGS.publishAgent,
-                    DOC_TAGS.mcpServer,
+                    DOC_TAGS.mcpServers,
                     DOC_TAGS.cli,
                     DOC_TAGS.codingHarnesses,
                 ],
@@ -571,7 +543,7 @@ function generationDocumentation(): OpenApiSchema {
                 description: CODING_HARNESSES_DOCS,
             },
             {
-                name: DOC_TAGS.mcpServer,
+                name: DOC_TAGS.mcpServers,
                 description: MCP_DOCS,
             },
             {
@@ -680,10 +652,10 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     }
     normalizeOperationTags(paths);
 
-    return filterAliases({
+    return {
         ...schema,
         paths,
-    });
+    };
 }
 
 async function fetchEnterSchema(c: Context<Env>) {
@@ -888,7 +860,7 @@ function mergeSchemas(
     enterSchema?: OpenApiSchema,
     mediaSchema?: OpenApiSchema,
 ): OpenApiSchema {
-    const merged = filterAliases({
+    const merged = {
         ...(enterSchema ?? {}),
         ...generationSchema,
         info: generationSchema.info,
@@ -906,11 +878,11 @@ function mergeSchemas(
             ...asRecord(enterSchema?.paths),
             ...asRecord(generationSchema.paths),
         },
-    });
+    };
 
     if (!mediaSchema) return merged;
 
-    return filterAliases({
+    return {
         ...merged,
         components: mergeComponents(
             asRecord(merged.components),
@@ -920,7 +892,7 @@ function mergeSchemas(
             ...asRecord(merged.paths),
             ...asRecord(mediaSchema.paths),
         },
-    });
+    };
 }
 
 function mergeTags(primary: OpenApiSchema[], secondary: OpenApiSchema[]) {

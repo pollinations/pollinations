@@ -279,6 +279,15 @@ export function PlusIcon(props: IconProps) {
     );
 }
 
+export function SadFaceIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="12" cy="12" r="9" />
+            <path d="M9 9h.01M15 9h.01M8.5 17c.8-2 2-3 3.5-3s2.7 1 3.5 3" />
+        </svg>
+    );
+}
+
 export function TerminalIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

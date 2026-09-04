@@ -25,7 +25,6 @@ import {
     SUPPORTERS,
     useBuildDiary,
     useBuildDiaryAll,
-    useBuildDiaryYear,
     useContributorCount,
     useContributors,
     useDiscordPresence,
@@ -361,18 +360,16 @@ function CommunityParticipation() {
     );
 }
 
-type DiaryZoom = "year" | "month" | "day";
-const DIARY_ZOOMS: DiaryZoom[] = ["year", "month", "day"];
+type DiaryZoom = "all" | "month";
+const DIARY_ZOOMS: DiaryZoom[] = ["all", "month"];
 const DIARY_ZOOM_LABELS: Record<DiaryZoom, string> = {
-    year: "All time",
-    month: "Year",
-    day: "Month",
+    all: "All time",
+    month: "Month",
 };
 
 function BuildDiary() {
-    const [zoom, setZoom] = useState<DiaryZoom>("year");
+    const [zoom, setZoom] = useState<DiaryZoom>("all");
     const [visibleMonth, setVisibleMonth] = useState<string | null>(null);
-    const [visibleYear, setVisibleYear] = useState<number | null>(null);
     const [selectedDate, setSelectedDate] = useState<string | null>(null);
     const {
         data: diary,
@@ -387,17 +384,10 @@ function BuildDiary() {
           }, 0) % entries.length
         : -1;
     const fallbackSelected =
-        zoom !== "day" && representativeIndex >= 0
+        zoom === "all" && representativeIndex >= 0
             ? entries[representativeIndex]
             : entries[entries.length - 1];
     const anchorDate = selectedDate ?? fallbackSelected?.date ?? latestDay;
-    const yearFromMonth = Number((month || anchorDate).slice(0, 4));
-    const requestedYear = visibleYear ?? (yearFromMonth || undefined);
-    const {
-        data: yearDiary,
-        loading: yearLoading,
-        failed: yearFailed,
-    } = useBuildDiaryYear(requestedYear, { enabled: zoom === "month" });
     const {
         data: allDiary,
         loading: allLoading,
@@ -431,47 +421,34 @@ function BuildDiary() {
         });
 
     const chartItems =
-        zoom === "year"
-            ? allDiary.years.map((item) => ({
-                  key: String(item.year),
+        zoom === "all"
+            ? allDiary.months.map((item) => ({
+                  key: item.month,
                   value: item.prCount,
-                  label: String(item.year),
+                  label: new Date(
+                      `${item.month}-01T00:00:00Z`,
+                  ).toLocaleDateString("en-GB", {
+                      month: "short",
+                      year: "2-digit",
+                      timeZone: "UTC",
+                  }),
                   available: item.prCount > 0,
-                  active: item.year === (visibleYear ?? yearFromMonth),
-                  ariaLabel: `${item.year}: ${item.prCount} pull request${item.prCount === 1 ? "" : "s"} merged`,
+                  active: item.month === month,
+                  ariaLabel: `${formatMonth(item.month)}: ${item.prCount} pull request${item.prCount === 1 ? "" : "s"} merged`,
                   onSelect: () => {
-                      setVisibleYear(item.year);
-                      setVisibleMonth(item.representativeDate.slice(0, 7));
+                      setVisibleMonth(item.month);
                       setSelectedDate(item.representativeDate);
                   },
               }))
-            : zoom === "month"
-              ? yearDiary.months.map((item) => ({
-                    key: item.month,
-                    value: item.prCount,
-                    label: new Date(
-                        `${item.month}-01T00:00:00Z`,
-                    ).toLocaleDateString("en-GB", {
-                        month: "short",
-                        timeZone: "UTC",
-                    }),
-                    available: item.prCount > 0,
-                    active: item.month === month,
-                    ariaLabel: `${formatMonth(item.month)}: ${item.prCount} pull request${item.prCount === 1 ? "" : "s"} merged`,
-                    onSelect: () => {
-                        setVisibleMonth(item.month);
-                        setSelectedDate(null);
-                    },
-                }))
-              : days.map((day) => ({
-                    key: day.date,
-                    value: day.prCount,
-                    label: formatDate(day.date),
-                    available: day.title !== null,
-                    active: day.date === selected?.date,
-                    ariaLabel: `${formatDate(day.date, true)}: ${day.prCount} pull request${day.prCount === 1 ? "" : "s"} merged`,
-                    onSelect: () => setSelectedDate(day.date),
-                }));
+            : days.map((day) => ({
+                  key: day.date,
+                  value: day.prCount,
+                  label: formatDate(day.date),
+                  available: day.title !== null,
+                  active: day.date === selected?.date,
+                  ariaLabel: `${formatDate(day.date, true)}: ${day.prCount} pull request${day.prCount === 1 ? "" : "s"} merged`,
+                  onSelect: () => setSelectedDate(day.date),
+              }));
     const periodPrs = chartItems.reduce((sum, item) => sum + item.value, 0);
     const maxPrs = Math.max(...chartItems.map((item) => item.value), 1);
     const points = chartItems.map((item, index) => ({
@@ -491,55 +468,14 @@ function BuildDiary() {
     const area = points.length
         ? `${curve} L ${points[points.length - 1].x} 100 L ${points[0].x} 100 Z`
         : "";
-    const zoomLoading =
-        (zoom === "year" && allLoading) || (zoom === "month" && yearLoading);
-    const zoomFailed =
-        (zoom === "year" && allFailed) || (zoom === "month" && yearFailed);
+    const zoomLoading = zoom === "all" ? allLoading : loading;
+    const zoomFailed = zoom === "all" ? allFailed : failed;
     const bare = failed || entries.length === 0;
-    const periodName =
-        zoom === "year"
-            ? "All time"
-            : zoom === "month"
-              ? String(yearDiary.year || requestedYear || "")
-              : formatMonth(month);
+    const periodName = zoom === "all" ? "All time" : formatMonth(month);
     const chartTitle =
-        zoom === "year"
-            ? "Yearly merged PRs"
-            : zoom === "month"
-              ? "Monthly merged PRs"
-              : "Daily merged PRs";
-    const hasPreviousPeriod =
-        zoom === "year"
-            ? false
-            : zoom === "month"
-              ? yearDiary.hasEarlier
-              : hasEarlier;
-    const hasNextPeriod =
-        zoom === "year"
-            ? false
-            : zoom === "month"
-              ? yearDiary.hasLater
-              : hasLater;
-    const navigationUnit = zoom === "month" ? "year" : "month";
+        zoom === "all" ? "Monthly merged PRs" : "Daily merged PRs";
 
     const shiftPeriod = (amount: number) => {
-        if (zoom === "year") {
-            return;
-        }
-        if (zoom === "month") {
-            const targetYear =
-                (yearDiary.year || requestedYear || allDiary.latestYear) +
-                amount;
-            const representative = allDiary.years.find(
-                (item) => item.year === targetYear,
-            );
-            setVisibleYear(targetYear);
-            if (representative) {
-                setVisibleMonth(representative.representativeDate.slice(0, 7));
-                setSelectedDate(representative.representativeDate);
-            }
-            return;
-        }
         if (!month) return;
         const [year, monthIndex] = month.split("-").map(Number);
         const date = new Date(Date.UTC(year, monthIndex - 1 + amount, 1));
@@ -548,18 +484,10 @@ function BuildDiary() {
     };
 
     const selectZoom = (nextZoom: DiaryZoom) => {
-        if (nextZoom === "year") {
-            setVisibleYear(allDiary.latestYear);
+        if (!visibleMonth) {
             setVisibleMonth(latestDay.slice(0, 7));
-            setSelectedDate(null);
-        } else if (nextZoom === "month") {
-            setVisibleYear(allDiary.latestYear);
-            setVisibleMonth(latestDay.slice(0, 7));
-            setSelectedDate(null);
-        } else {
-            setVisibleMonth(latestDay.slice(0, 7));
-            setSelectedDate(null);
         }
+        setSelectedDate(null);
         setZoom(nextZoom);
     };
 
@@ -600,13 +528,13 @@ function BuildDiary() {
                                 ))}
                             </fieldset>
                             <div className="flex flex-wrap items-center gap-2">
-                                {zoom !== "year" && (
+                                {zoom === "month" && (
                                     <Button
                                         size="sm"
                                         intent="neutral"
-                                        disabled={!hasPreviousPeriod}
+                                        disabled={!hasEarlier}
                                         onClick={() => shiftPeriod(-1)}
-                                        aria-label={`Previous ${navigationUnit}`}
+                                        aria-label="Previous month"
                                         className="h-8 w-8 p-0"
                                     >
                                         <ArrowRightIcon className="h-3.5 w-3.5 rotate-180" />
@@ -631,13 +559,13 @@ function BuildDiary() {
                                         </>
                                     )}
                                 </Chip>
-                                {zoom !== "year" && (
+                                {zoom === "month" && (
                                     <Button
                                         size="sm"
                                         intent="neutral"
-                                        disabled={!hasNextPeriod}
+                                        disabled={!hasLater}
                                         onClick={() => shiftPeriod(1)}
-                                        aria-label={`Next ${navigationUnit}`}
+                                        aria-label="Next month"
                                         className="h-8 w-8 p-0"
                                     >
                                         <ArrowRightIcon className="h-3.5 w-3.5" />

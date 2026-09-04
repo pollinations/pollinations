@@ -1304,13 +1304,13 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
         paidOnly: true,
-        // fal list pricing after the launch promotion ends on 2026-09-07.
+        // fal launch pricing through 2026-09-07; restore list rates on 2026-09-08.
         cost: {
-            completionVideoSeconds: 0.025, // 480p per output second.
+            completionVideoSeconds: 0.00625, // 480p per output second.
         },
         ...defineCostVariants(
             {
-                "768p": { completionVideoSeconds: 0.04 },
+                "768p": { completionVideoSeconds: 0.01 },
             },
             matchResolution("768p"),
             {

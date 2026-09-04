@@ -74,8 +74,10 @@ cd /home/itachi/polli
 REQ_MARKER="$HOME/.polli-last-requirements.txt"
 if ! cmp -s requirements.txt "$REQ_MARKER" 2>/dev/null; then
   ./.venv/bin/python -m pip install -r requirements.txt -q --no-deps
+  ./.venv/bin/python -m playwright install chromium
   cp requirements.txt "$REQ_MARKER"
 fi
+./.venv/bin/python -c 'from playwright.sync_api import sync_playwright; p = sync_playwright().start(); b = p.chromium.launch(headless=True); b.close(); p.stop()'
 sudo systemctl restart polli.service
 sleep 5
 if ! sudo systemctl is-active --quiet polli.service; then

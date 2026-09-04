@@ -33,6 +33,7 @@ import {
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import { promptAgentApiBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
     type FallbackPrimary,
@@ -270,7 +271,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         toCommunityEndpointResponse(
                             endpoint,
                             ownerGithubUsername,
-                            c.env.AGENT_RUNTIME_BASE_URL,
+                            promptAgentApiBaseUrl(c.env),
                         ),
                     ),
                     provider: {
@@ -490,7 +491,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
+                    promptAgentApiBaseUrl(c.env),
                 ),
             );
         },
@@ -588,7 +589,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
+                    promptAgentApiBaseUrl(c.env),
                 ),
             );
         },
@@ -987,7 +988,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
+                    promptAgentApiBaseUrl(c.env),
                 ),
             );
         },

@@ -15,6 +15,10 @@ MAX_FILE_SIZE = "104857600"  # 100MB in bytes
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media-dev"
 
+[[env.development.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
 [[env.development.d1_databases]]
 binding = "DB"
 database_name = "development-pollinations-enter-db"
@@ -60,6 +64,10 @@ custom_domain = true
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
 
+[[env.production.r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
+
 [[env.production.d1_databases]]
 remote = true
 binding = "DB"
@@ -73,6 +81,10 @@ MAX_FILE_SIZE = "104857600"  # 100MB in bytes
 [[r2_buckets]]
 binding = "MEDIA_BUCKET"
 bucket_name = "pollinations-media"
+
+[[r2_buckets]]
+binding = "IMAGE_BUCKET"
+bucket_name = "pollinations-images"
 
 [[d1_databases]]
 binding = "DB"

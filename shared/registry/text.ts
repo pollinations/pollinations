@@ -59,6 +59,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -81,6 +82,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },
@@ -174,6 +176,7 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
+        reasoning: true,
         contextLength: 400000,
         isSpecialized: false,
     },

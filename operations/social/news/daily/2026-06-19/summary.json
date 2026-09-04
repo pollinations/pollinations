@@ -1,0 +1,35 @@
+{
+  "date": "2026-06-19",
+  "period_start": "2026-06-19",
+  "period_end": "2026-06-19",
+  "title": "Quests get their own dashboard",
+  "summary": "A garden-maintenance day: quests gained a dashboard, reasoning controls got clearer, and the public maps were brought up to date.\n\nA new quests dashboard gives contributors a clearer place to find useful actions, track progress, and collect Pollen rewards. The garden now has a noticeboard.\n\nReasoning-effort settings were normalized across the API, while Claude requests that exceed Bedrock's supported thinking budget now return the provider response instead of being silently reshaped. More explicit controls, fewer mysterious compromises.\n\nIdeogram now has its proper brand logo in the interface, and the generated API reference was refreshed so builders can work from the current surface area rather than archaeological evidence.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 11915,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11918,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11921,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11923,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11925,
+      "date": "2026-06-19"
+    },
+    {
+      "number": 11926,
+      "date": "2026-06-19"
+    }
+  ],
+  "generated_at": "2026-09-04T11:55:17.904043+00:00"
+}

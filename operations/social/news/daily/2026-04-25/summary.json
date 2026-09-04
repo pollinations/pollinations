@@ -1,0 +1,27 @@
+{
+  "date": "2026-04-25",
+  "period_start": "2026-04-25",
+  "period_end": "2026-04-25",
+  "title": "Media files can now describe themselves",
+  "summary": "A tidy day for developer visibility: inspect media metadata, read usage charts more closely, and keep the community showcase current.\n\nThe media API gained a `GET /{hash}/metadata` JSON endpoint, so developers can check a stored file's size and content type without downloading it or treating HEAD requests as an oracle.\n\nThe account usage dashboard now supports hourly buckets in daily views and formats charts more cleanly on mobile, making API activity easier to inspect without zooming into a small blue mystery.\n\nAutomated updates refreshed app health and usage metrics in the APPS registry, alongside the README's Latest News and Recent Apps sections. The garden signs have been replaced.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 10449,
+      "date": "2026-04-25"
+    },
+    {
+      "number": 10453,
+      "date": "2026-04-25"
+    },
+    {
+      "number": 10461,
+      "date": "2026-04-25"
+    },
+    {
+      "number": 10463,
+      "date": "2026-04-25"
+    }
+  ],
+  "generated_at": "2026-09-04T11:45:59.864325+00:00"
+}

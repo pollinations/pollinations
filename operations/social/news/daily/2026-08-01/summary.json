@@ -1,0 +1,103 @@
+{
+  "date": "2026-08-01",
+  "period_start": "2026-08-01",
+  "period_end": "2026-08-01",
+  "title": "More models, more ways to talk to them",
+  "summary": "A broad reliability pass: new text and speech models, fallbacks across modalities, clearer community-model capabilities, and safer image infrastructure.\n\nKokoro TTS landed on the existing audio endpoints with 54 voices and five output formats; Inkling Small joined the text API with reasoning, tools, image understanding, and WAV audio input; and the DeepSeek route now points at the 0731 checkpoint. OpenAI-compatible embeddings also moved onto their Azure deployments without changing model names, aliases, dimensions, or request formats.\n\nA shared fallback executor now routes text, image, video, audio, embeddings, and 3D requests through compatible backup models when a declared upstream is unavailable. Routing telemetry records what actually served the request, while server-minted request IDs keep concurrent video lookups and settlement records from getting their wires crossed.\n\nCommunity endpoint owners can now declare whether their models accept text or images, and that metadata appears in the shared model catalog before callers make a request. AkshayCoder48 also joined the approved publisher list, while the dashboard gained a dismissible admin-controlled status notice for the occasional moment when software needs to speak plainly.",
+  "pr_count": 23,
+  "prs": [
+    {
+      "number": 12741,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12745,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12868,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12902,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12908,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12920,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12927,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12930,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12936,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12982,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12986,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12990,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12991,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12994,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 12995,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13002,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13004,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13005,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13007,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13008,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13009,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13010,
+      "date": "2026-08-01"
+    },
+    {
+      "number": 13011,
+      "date": "2026-08-01"
+    }
+  ],
+  "generated_at": "2026-09-04T11:49:13.840256+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "date": "2026-01-30",
+  "period_start": "2026-01-30",
+  "period_end": "2026-01-30",
+  "title": "Image generation paths got a little more dependable",
+  "summary": "A maintenance day: cleaner image generation paths, safer token handling, and deployment details brought back in sync with reality.\n\nThe Instagram image flow now uses the shared image-generation path instead of its old I2I route, while the API model URL parameter was updated to use nanobanana. Fewer special cases hiding in the shrubbery.\n\nToken rotation and separation between backend tokens were added, making credentials easier to manage and reducing the blast radius of any one token.\n\nInfrastructure documentation now reflects the primary 8x L40 io.net deployment, and the Nix dependency was removed from the project.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 7787,
+      "date": "2026-01-30"
+    },
+    {
+      "number": 7789,
+      "date": "2026-01-30"
+    },
+    {
+      "number": 7794,
+      "date": "2026-01-30"
+    },
+    {
+      "number": 7799,
+      "date": "2026-01-30"
+    },
+    {
+      "number": 7807,
+      "date": "2026-01-30"
+    }
+  ],
+  "generated_at": "2026-09-04T11:48:03.298506+00:00"
+}

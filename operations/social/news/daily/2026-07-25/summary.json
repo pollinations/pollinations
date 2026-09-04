@@ -1,0 +1,51 @@
+{
+  "date": "2026-07-25",
+  "period_start": "2026-07-25",
+  "period_end": "2026-07-25",
+  "title": "Claude Opus 5 arrives behind claude-large",
+  "summary": "Claude Opus 5 joined the shared endpoint, community models got names, and larger Quest reward batches stopped meeting database limits.\n\nThe existing claude-large alias now routes to Claude Opus 5 on Bedrock, retaining vision, streaming, tools, opt-in reasoning, and established alias workflows. Developers can also target the new claude-opus-5 model ID directly, while malformed image URLs now return a clear 400.\n\nCommunity endpoint publishers can now give models a short title separate from their longer description, with model cards and polli my-models list showing the readable name. Older listings remain compatible through description and slug fallbacks, while publishing guardrails are enforced consistently across the API and dashboard.\n\nReward processing now inserts pending Quest rewards individually inside a single transaction, avoiding D1 parameter-limit failures without giving up idempotency or inserted-reward reporting. Larger completed Quest batches can now reliably land in users' wallets.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 12692,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12739,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12744,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12750,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12751,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12752,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12753,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12756,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12757,
+      "date": "2026-07-25"
+    },
+    {
+      "number": 12760,
+      "date": "2026-07-25"
+    }
+  ],
+  "generated_at": "2026-09-04T11:48:31.304313+00:00"
+}

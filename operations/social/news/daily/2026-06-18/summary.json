@@ -1,0 +1,83 @@
+{
+  "date": "2026-06-18",
+  "period_start": "2026-06-18",
+  "period_end": "2026-06-18",
+  "title": "Public platform stats and a standard API map",
+  "summary": "A busy day for developer visibility, Polly's multimodal brain, and a community app garden that keeps producing new specimens.\n\nDevelopers can now query live platform health, top weekly apps, and the community app directory through documented read-only stats endpoints. The API schema is also available at the conventional /openapi.json path, so tools can discover the API without archaeological work.\n\nPolly now accepts image_url parts in OpenAI-style multimodal messages, renders tables as images again, and runs on kimi-code with glm fallback and self-correcting tool loops. Embedding caching speeds restarts when a repository has not changed, while dependency updates keep its scraping stack deployable.\n\nThe community showcase gained Pollen Studio for side-by-side image, text, and TTS model comparisons, plus Lingua Memory Card for multilingual writing practice and Cashflower. Wikimind also received its new Wikimind AI name and an updated description of its 29+ models.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 11643,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11872,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11880,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11881,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11882,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11885,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11886,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11888,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11889,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11890,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11891,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11901,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11903,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11904,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11905,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11907,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11909,
+      "date": "2026-06-18"
+    },
+    {
+      "number": 11916,
+      "date": "2026-06-18"
+    }
+  ],
+  "generated_at": "2026-09-04T11:54:34.914447+00:00"
+}

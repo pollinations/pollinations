@@ -1,0 +1,19 @@
+{
+  "date": "2026-07-11",
+  "period_start": "2026-07-11",
+  "period_end": "2026-07-11",
+  "title": "The project front page and app garden got their daily watering",
+  "summary": "A quiet maintenance day: fresh project news and an up-to-date view of the community app garden.\n\nAutomated updates refreshed the README's latest news and the APPS and GREENHOUSE directories' community app metrics and health checks, keeping the public map of the ecosystem current.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 12339,
+      "date": "2026-07-11"
+    },
+    {
+      "number": 12340,
+      "date": "2026-07-11"
+    }
+  ],
+  "generated_at": "2026-09-04T11:45:24.057193+00:00"
+}

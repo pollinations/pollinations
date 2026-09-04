@@ -1,0 +1,15 @@
+{
+  "date": "2026-05-24",
+  "period_start": "2026-05-24",
+  "period_end": "2026-05-24",
+  "title": "The app greenhouse got its daily checkup",
+  "summary": "A quiet maintenance day: the greenhouse metrics are current and the app directory knows what is alive.\n\nAutomated metrics, health checks, and greenhouse status were refreshed, keeping the community app directory accurate without making someone update a spreadsheet by hand.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 11265,
+      "date": "2026-05-24"
+    }
+  ],
+  "generated_at": "2026-09-04T11:51:13.455471+00:00"
+}

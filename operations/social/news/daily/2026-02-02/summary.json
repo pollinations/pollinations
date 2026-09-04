@@ -1,0 +1,63 @@
+{
+  "date": "2026-02-02",
+  "period_start": "2026-02-02",
+  "period_end": "2026-02-02",
+  "title": "Fresh guides for running image models on RTX 5090s",
+  "summary": "A garden-maintenance day: clearer self-hosting guides, live model discovery, stronger shared-infrastructure guardrails, and a fresh round of community updates.\n\nNew Vast.ai deployment guides cover Flux, Z-Image, and TwinFlow on RTX 5090 hardware, giving self-hosters a more direct path from rented GPU to image endpoint.\n\nThe MCP integration dropped its model cache and now fetches available models directly from the API, so connected tools see a more current model catalog without cache archaeology.\n\nA new LLM-based abuse detection script, Microbe tier support, dedicated refill-cron credentials, and dashboard alerting tighten the operational loop around keeping the commons usable.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 7269,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7843,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7845,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7846,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7850,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7854,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7855,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7858,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7861,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7866,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7867,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7869,
+      "date": "2026-02-02"
+    },
+    {
+      "number": 7874,
+      "date": "2026-02-02"
+    }
+  ],
+  "generated_at": "2026-09-04T11:49:16.996941+00:00"
+}

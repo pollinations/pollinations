@@ -1,0 +1,23 @@
+{
+  "date": "2026-06-21",
+  "period_start": "2026-06-21",
+  "period_end": "2026-06-21",
+  "title": "Activity dashboard gets a usage UI refresh",
+  "summary": "A quiet maintenance day: clearer usage data, fresh ecosystem metrics, and audit automation wired in.\n\nThe activity dashboard’s usage interface was refreshed, making it easier to inspect how Pollinations infrastructure is being used without excavating the numbers by hand.\n\nThe daily app metrics update keeps the project’s view of its growing ecosystem current. The garden has been counted.\n\nCredentials for the pollinations-audit GitHub App were added to repository secrets, supporting automated project oversight behind the scenes.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 11933,
+      "date": "2026-06-21"
+    },
+    {
+      "number": 11934,
+      "date": "2026-06-21"
+    },
+    {
+      "number": 11937,
+      "date": "2026-06-21"
+    }
+  ],
+  "generated_at": "2026-09-04T11:56:43.745058+00:00"
+}

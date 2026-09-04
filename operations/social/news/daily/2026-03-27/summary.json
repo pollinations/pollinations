@@ -1,0 +1,19 @@
+{
+  "date": "2026-03-27",
+  "period_start": "2026-03-27",
+  "period_end": "2026-03-27",
+  "title": "Frontend text defaults refreshed",
+  "summary": "A quiet maintenance day: fresher frontend text defaults and an updated read on the community app garden.\n\nThe frontend now points at updated default credentials and a current text model, keeping text generation configuration aligned without anyone needing to hunt through settings.\n\nAutomated community app metrics, health checks, and greenhouse statistics were refreshed so the showcase reflects the latest state of the ecosystem.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 9638,
+      "date": "2026-03-27"
+    },
+    {
+      "number": 9643,
+      "date": "2026-03-27"
+    }
+  ],
+  "generated_at": "2026-09-04T11:52:34.472222+00:00"
+}

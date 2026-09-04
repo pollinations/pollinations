@@ -1,0 +1,35 @@
+{
+  "date": "2026-01-23",
+  "period_start": "2026-01-23",
+  "period_end": "2026-01-23",
+  "title": "API keys can handle game-scale traffic",
+  "summary": "A tuning day: higher-throughput API keys, sturdier model fallbacks, stricter image validation, and more reliable community posting.\n\nAPI key rate limits now reach 10,000 requests per second for high-volume games and other apps that prefer their infrastructure not to blink during a busy moment.\n\nText fallback configurations now receive a default max_tokens value, making Claude fallback behavior more predictable when a primary model takes the scenic route.\n\nThe Enter image flow now validates model selections with a proper enum, catching unsupported choices before they become mysterious downstream behavior.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 7495,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7571,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7601,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7603,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7610,
+      "date": "2026-01-23"
+    },
+    {
+      "number": 7613,
+      "date": "2026-01-23"
+    }
+  ],
+  "generated_at": "2026-09-04T11:43:13.048371+00:00"
+}

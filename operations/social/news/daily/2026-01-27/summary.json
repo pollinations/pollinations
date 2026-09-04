@@ -1,0 +1,39 @@
+{
+  "date": "2026-01-27",
+  "period_start": "2026-01-27",
+  "period_end": "2026-01-27",
+  "title": "A new web-research skill joins the toolbox",
+  "summary": "A maintenance-minded day: a new research skill, steadier account handling, fresher community updates, and better operational visibility.\n\nAdded a web-research skill, giving agents another way to gather context before they start confidently inventing it.\n\nTier management moved to D1, Polar was simplified to webhook-only handling, and a problematic balance-reset cron was disabled so account balances stay more dependable.\n\nFour new community highlights landed alongside a README news update, making recent projects and platform changes easier to find.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 7618,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7671,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7693,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7700,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7703,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7716,
+      "date": "2026-01-27"
+    },
+    {
+      "number": 7718,
+      "date": "2026-01-27"
+    }
+  ],
+  "generated_at": "2026-09-04T11:46:01.517978+00:00"
+}

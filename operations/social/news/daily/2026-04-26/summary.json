@@ -1,0 +1,23 @@
+{
+  "date": "2026-04-26",
+  "period_start": "2026-04-26",
+  "period_end": "2026-04-26",
+  "title": "App identity verification got stricter",
+  "summary": "A quiet maintenance day: tighter app identity checks and fresher maps of the growing community garden.\n\nBYOP authentication now verifies app identity through client IDs rather than redirect URLs, while API key metadata is protected from unauthorized changes. Attribution for developers is more dependable, and a quiet metadata escalation path is closed.\n\nAutomated updates refreshed app metrics, health checks, greenhouse statistics, README news, and recent community apps. The directory remains a reasonably current map of what people are building.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 10447,
+      "date": "2026-04-26"
+    },
+    {
+      "number": 10475,
+      "date": "2026-04-26"
+    },
+    {
+      "number": 10477,
+      "date": "2026-04-26"
+    }
+  ],
+  "generated_at": "2026-09-04T11:46:50.885057+00:00"
+}

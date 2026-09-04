@@ -1,0 +1,47 @@
+{
+  "date": "2026-04-11",
+  "period_start": "2026-04-11",
+  "period_end": "2026-04-11",
+  "title": "Polly now handles issue triage with more context and less guesswork",
+  "summary": "Polly got a fuller set of hands for issue triage while the infrastructure shed received a thorough sweep.\n\nThe GitHub issue workflow now lets Polly dynamically comment, label, and close tickets, while codebase-search requirements, concurrency guards, and circuit breakers keep its decisions grounded and resilient. Contributors should get faster responses, cleaner boards, and fewer AI-flavored assumptions about bugs that do not exist.\n\nFlux and Z-Image provider references were moved from vast.ai to RunPod, with Grafana updated to reflect the current GPU setup. The plumbing remains invisible, which is generally the desired state of plumbing.\n\nUnused configuration secrets, related dead code, and the legacy image `/feed` SSE route were removed across the enter, image, and text services. Fewer dormant paths means a smaller configuration surface and less archaeology later.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 10120,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10122,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10126,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10127,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10128,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10129,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10130,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10132,
+      "date": "2026-04-11"
+    },
+    {
+      "number": 10135,
+      "date": "2026-04-11"
+    }
+  ],
+  "generated_at": "2026-09-04T11:44:41.699660+00:00"
+}

@@ -1,0 +1,47 @@
+{
+  "date": "2026-01-31",
+  "period_start": "2026-01-31",
+  "period_end": "2026-01-31",
+  "title": "Moltbot joins the Social Bots collection",
+  "summary": "A maintenance-minded day: a new social bot example, sturdier tier operations, and some overdue repository tidying.\n\nThe Social_Bots examples now include Moltbot configured with a Pollinations.ai provider, giving builders another open reference for wiring AI into social automation.\n\nTier refill scheduling moved from Cloudflare cron to GitHub Actions, while auth hooks now receive execution context for Tinybird logging. Less invisible machinery, more traceable invisible machinery.\n\nAPI-key secrets were standardized across GitHub workflows, an obsolete fundraising folder was removed, and the latest Instagram posts were prepared. The garden shed has labels again.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 7708,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7719,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7720,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7779,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7801,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7818,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7819,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7821,
+      "date": "2026-01-31"
+    },
+    {
+      "number": 7825,
+      "date": "2026-01-31"
+    }
+  ],
+  "generated_at": "2026-09-04T11:48:40.820665+00:00"
+}

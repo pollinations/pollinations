@@ -1,0 +1,51 @@
+{
+  "date": "2026-01-26",
+  "period_start": "2026-01-26",
+  "period_end": "2026-01-26",
+  "title": "Myceli sites now deploy through one path",
+  "summary": "A garden-maintenance day: unified Myceli deploys, smoother community flows, and fewer API-rate-limit surprises.\n\nThe Myceli websites were consolidated behind a unified deployment workflow, with the old dedicated workflow retired and generic app deploys taught to leave Myceli alone. Fewer overlapping routes for the same websites, which is usually how deployment folklore begins.\n\nSocial prompts, scripts, and documentation were consolidated, alongside the latest Instagram posts and weekly news update. The public-facing garden remains watered; the hose is now less tangled.\n\nSupporter logos now use the zimage model, while the spore-to-seed upgrade flow was optimized to avoid GitHub API rate limits. Recognition and progression should both arrive with less drama.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 7632,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7634,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7651,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7659,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7668,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7673,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7675,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7676,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7677,
+      "date": "2026-01-26"
+    },
+    {
+      "number": 7678,
+      "date": "2026-01-26"
+    }
+  ],
+  "generated_at": "2026-09-04T11:45:19.544788+00:00"
+}

@@ -1,0 +1,83 @@
+{
+  "date": "2026-06-27",
+  "period_start": "2026-06-27",
+  "period_end": "2026-06-27",
+  "title": "Quests got a live scoreboard and clearer language",
+  "summary": "A garden-tending day: live quest activity, open multimodal text inputs, registry-driven model plumbing, and a vigorous removal of old code.\n\nThe new live quest dashboard reads directly from the production rewards ledger, showing completed quests in timestamp order and which ones are earning the most claimed Pollen. The quest catalog also fixed the GitHub contribution quest description, while site copy, docs, and agent prompts now consistently call the system Quests and Pollen.\n\nThe text gateway no longer blocks multimodal inputs with Pollinations-side image validation before providers see them. API configuration is also being standardized around reasoning_effort, and the authentication docs now point developers to the current BYOP flow.\n\nImage and video model availability now comes straight from the shared registry instead of a local duplicate catalog. Tests and frontend model metadata were refactored around shared, structured sources, so adding or changing models should require less archaeological work.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 12012,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12018,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12021,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12022,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12028,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12029,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12030,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12031,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12033,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12034,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12036,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12037,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12038,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12039,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12041,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12043,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12044,
+      "date": "2026-06-27"
+    },
+    {
+      "number": 12046,
+      "date": "2026-06-27"
+    }
+  ],
+  "generated_at": "2026-09-04T11:58:08.599297+00:00"
+}

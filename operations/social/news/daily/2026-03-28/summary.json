@@ -1,0 +1,151 @@
+{
+  "date": "2026-03-28",
+  "period_start": "2026-03-28",
+  "period_end": "2026-03-28",
+  "title": "The Greenhouse gained new ways to build, chat, and make things",
+  "summary": "A community harvest: new workflow, chat, media, learning, and bot projects arrived while the app directory got cleaner and BYOP-powered apps became more reliable.\n\nFlowra brings a visual node-based workflow builder; PolliChatter offers one interface for text, image, and audio; and Pollinations Tools Hub adds browser-based translation and voice tools with no sign-up ritual. The showcase also picked up Copilot ++, Alara AI’s multimodal setup, PollenStudio’s image variations, IdeaPulley’s multi-agent brainstorming, SentIQGPT’s file-aware chat, and PezzAI’s indie tool suite.\n\nThe directory expanded across practical and delightfully specific territory: workflow automation, webpage-to-Markdown conversion, image generators, community feeds, fitness planning, habit tracking, school operations, video-prompt ideas, and Cadavre Exquis-style composite art. Telegram gained Qwex, Samina, and Sera AI News, because apparently bots remain an excellent place to put an image generator.\n\nCatGPT now authenticates users, picks an appropriate image model automatically, preserves model links in URLs, and adds clearer artist credit. Websim moved to gen.pollinations.ai with a model-selecting landing page for Claude, Gemini, GLM, and Kimi. The Elevator Challenge adopted Bring Your Own Pollen login, while attribution fixes make sure third-party apps are recognized reliably across device flows and URL casing.",
+  "pr_count": 35,
+  "prs": [
+    {
+      "number": 9578,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9628,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9657,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9658,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9659,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9662,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9663,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9664,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9666,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9667,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9670,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9671,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9672,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9673,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9675,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9676,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9679,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9680,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9681,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9682,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9683,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9684,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9685,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9686,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9687,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9688,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9691,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9692,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9693,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9695,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9696,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9697,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9699,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9702,
+      "date": "2026-03-28"
+    },
+    {
+      "number": 9704,
+      "date": "2026-03-28"
+    }
+  ],
+  "generated_at": "2026-09-04T11:53:26.251794+00:00"
+}

@@ -1,0 +1,123 @@
+{
+  "date": "2026-08-15",
+  "period_start": "2026-08-15",
+  "period_end": "2026-08-15",
+  "title": "Managed agents became something you can actually publish and operate",
+  "summary": "A busy agent day: publishable prompt agents, a modern MCP endpoint, quests for real app growth, and the usual garden maintenance.\n\nEditable prompt agents landed in My Models and the Polli CLI: pick a base model, write a system prompt, attach public MCP servers, and opt into Pollinations tools without deploying a Worker or keeping long-lived keys around. Agent management was added to Polli, encrypted MCP agent headers were introduced, and the runtime now keeps answering when one configured MCP server is unavailable.\n\nmcp.pollinations.ai now supports the MCP SDK v2 Streamable HTTP flow with request-scoped bearer auth and hosted tools for chat, images, video, audio, model discovery, and balance. The endpoint and deployment checks were consolidated around the live service and its public health route, so clients and agents have a clearer path to current models and authenticated tools.\n\nBYOP builders can earn Pollen when external users make successful paid requests and when an app reaches ten distinct outside users; owner self-spend does not count, because software needs at least one grown-up in the room. A one-time quest also rewards GitHub accounts established for two years, with GitHub App authentication fixing eligibility checks and username sync.",
+  "pr_count": 28,
+  "prs": [
+    {
+      "number": 12336,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13111,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13303,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13396,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13399,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13401,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13402,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13404,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13405,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13407,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13409,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13410,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13412,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13415,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13419,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13420,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13425,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13426,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13427,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13429,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13430,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13432,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13433,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13435,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13436,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13437,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13438,
+      "date": "2026-08-15"
+    },
+    {
+      "number": 13439,
+      "date": "2026-08-15"
+    }
+  ],
+  "generated_at": "2026-09-04T11:52:08.899931+00:00"
+}

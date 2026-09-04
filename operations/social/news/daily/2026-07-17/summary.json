@@ -1,0 +1,47 @@
+{
+  "date": "2026-07-17",
+  "period_start": "2026-07-17",
+  "period_end": "2026-07-17",
+  "title": "Sana Sprint joins the image-model lineup",
+  "summary": "Sana Sprint arrived on a tested image-generation path, 3D routing got cleaner, and the docs and garden received their daily care.\n\nSana Sprint 1.6B is now available through the standard image API, model registry, and authenticated GPU path. Its requests were also moved onto a tested fixed media tunnel, so generation and accounting follow a reliable route while the existing Flux and Z-Image paths stay untouched.\n\nThe 3D integration now calls InferencePort's official API endpoint instead of a Hugging Face Space URL. Less scenic routing for requests that would rather become meshes.\n\nThe model list received a mobile layout fix, while the README news and generated API reference were refreshed to match the current project and production API.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 12317,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12510,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12515,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12516,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12519,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12521,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12522,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12523,
+      "date": "2026-07-17"
+    },
+    {
+      "number": 12524,
+      "date": "2026-07-17"
+    }
+  ],
+  "generated_at": "2026-09-04T11:46:05.355659+00:00"
+}

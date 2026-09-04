@@ -1,0 +1,51 @@
+{
+  "date": "2026-01-24",
+  "period_start": "2026-01-24",
+  "period_end": "2026-01-24",
+  "title": "API keys and request errors are easier to diagnose",
+  "summary": "A garden-maintenance day: clearer API behavior, sturdier model fallbacks, and more paths for community news to escape into the internet.\n\nAdded an endpoint for checking API key status, made invalid-key and missing-auth errors distinct, and corrected rate-limit responses so clients can identify what happened and respond properly.\n\nKlein 4B web editing now follows the same protocol as Klein 9B, while Claude fallback configurations correctly convert image URLs before passing them along.\n\nThe news workflow can now publish through Buffer to LinkedIn and Twitter, Reddit prompt files gained a home of their own, and the latest Instagram post landed alongside documentation and workflow-script cleanup.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 7599,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7600,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7606,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7609,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7614,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7617,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7624,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7628,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7629,
+      "date": "2026-01-24"
+    },
+    {
+      "number": 7631,
+      "date": "2026-01-24"
+    }
+  ],
+  "generated_at": "2026-09-04T11:43:51.331850+00:00"
+}

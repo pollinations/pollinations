@@ -1,0 +1,23 @@
+{
+  "date": "2026-07-04",
+  "period_start": "2026-07-04",
+  "period_end": "2026-07-04",
+  "title": "Claude Fable 5 returns to the text API",
+  "summary": "Claude Fable 5 returns to the unified text API, while the app directory and project news keep themselves current.\n\nClaude Fable 5 is back through Bedrock for paid text workloads, including adaptive thinking support. Developers have another capable model available through the same unified endpoint; software continues its ancient ritual of removing a model and then finding it again.\n\nAutomated updates refreshed community app health and usage data in the directory, while the repository README's Latest News section caught up with the day.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 12218,
+      "date": "2026-07-04"
+    },
+    {
+      "number": 12221,
+      "date": "2026-07-04"
+    },
+    {
+      "number": 12222,
+      "date": "2026-07-04"
+    }
+  ],
+  "generated_at": "2026-09-04T11:42:55.428035+00:00"
+}

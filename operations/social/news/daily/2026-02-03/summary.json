@@ -1,0 +1,47 @@
+{
+  "date": "2026-02-03",
+  "period_start": "2026-02-03",
+  "period_end": "2026-02-03",
+  "title": "GPT-5 Mini routing got a cleaner path",
+  "summary": "A tuning day: cleaner GPT-5 Mini routing, more reliable wallet refills, and a round of deployment and observability maintenance.\n\nGPT-5 Mini moved to its current Azure endpoint, and the OpenAI provider was switched to the azure-2 route. Less archaeology required when asking one endpoint to talk to another endpoint.\n\nTier refills now handle repeated requests safely, with a new microbe tier added. Provider dashboards and Discord alerts were also updated so the systems running behind the API are easier to keep an eye on.\n\nThe apps folder and deployment flow were reorganized, workflow-orchestration guidance landed in AGENTS.md, and the KPI README path was corrected. Small map updates for a codebase that continues to grow roots.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 7857,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7862,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7870,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7875,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7889,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7900,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7904,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7905,
+      "date": "2026-02-03"
+    },
+    {
+      "number": 7907,
+      "date": "2026-02-03"
+    }
+  ],
+  "generated_at": "2026-09-04T11:49:57.034064+00:00"
+}

@@ -1,0 +1,39 @@
+{
+  "date": "2026-08-02",
+  "period_start": "2026-08-02",
+  "period_end": "2026-08-02",
+  "title": "The models dashboard now explains when the catalog is missing",
+  "summary": "A reliability-focused day: clearer model catalog failures, cleaner registry requests, and a few more seeds planted in the community garden.\n\nThe dashboard validates responses from the /models catalog and shows a clear “Could not load models.” message when a regional edge issue, timeout, DNS problem, or malformed response leaves it without usable model entries. Blank tables have been retired from this particular job.\n\nThe model registry stopped reusing one promise across separate requests, and the fix was deployed to production. Each request now gets its own registry lookup path instead of inheriting another request’s unfinished business.\n\nThe model configuration now supports costVariants: request- and usage-conditional variants that let model metadata describe different operating conditions more precisely.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 12631,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13016,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13020,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13022,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13024,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13028,
+      "date": "2026-08-02"
+    },
+    {
+      "number": 13029,
+      "date": "2026-08-02"
+    }
+  ],
+  "generated_at": "2026-09-04T11:49:52.285732+00:00"
+}

@@ -1,0 +1,63 @@
+{
+  "date": "2026-06-13",
+  "period_start": "2026-06-13",
+  "period_end": "2026-06-13",
+  "title": "The dashboard got a quieter, sharper visual language",
+  "summary": "A UI-heavy day: a calmer dashboard, a rebuilt Websim, and Pollinations components that now work straight from a script tag.\n\nThe playground and model monitor now use a single-accent theme, custom icons, and borderless controls for a cleaner dark-mode interface. The models page also brought back one-click model-slug copying, while moving descriptions behind an info control so the table stays useful rather than decorative.\n\nWebsim was rebuilt with the Pollinations SDK and UI kit, adding a responsive centered layout plus dedicated Save and Open actions. It now routes through the app proxy with proper canonical metadata, and the deployment path learned how to handle Worker-backed apps and domain cutovers without getting lost in its own plumbing.\n\nA browser-ready IIFE bundle now exposes Pollinations UI as window.PollinationsUI, so components can be loaded from a CDN in plain HTML, CodePens, and other places where installing a bundler would be an unreasonable amount of ceremony. The package's auth SDK subpath was also exported correctly, keeping React and Vite consumers building cleanly.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 11697,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11764,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11767,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11768,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11775,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11777,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11778,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11779,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11780,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11781,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11782,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11783,
+      "date": "2026-06-13"
+    },
+    {
+      "number": 11784,
+      "date": "2026-06-13"
+    }
+  ],
+  "generated_at": "2026-09-04T11:53:46.254320+00:00"
+}

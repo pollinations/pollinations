@@ -1,0 +1,31 @@
+{
+  "date": "2026-07-09",
+  "period_start": "2026-07-09",
+  "period_end": "2026-07-09",
+  "title": "Text generation production wiring restored",
+  "summary": "A quiet infrastructure day: steadier text generation, cleaner Myceli routing, and fresh app-garden metrics.\n\nThe production gen service received its restored edge traffic controls and was merged into production, keeping text generation stable when traffic gets enthusiastic.\n\nCloudflare Worker configurations now explicitly carry both pollinations.ai and myceli.ai custom domains across gen, enter, media, websim, and the main site, making routing consistent across production and staging.\n\nThe daily automated update refreshed app health, usage, and greenhouse status so the community directory reflects the current state of the garden.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 12299,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12303,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12304,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12305,
+      "date": "2026-07-09"
+    },
+    {
+      "number": 12306,
+      "date": "2026-07-09"
+    }
+  ],
+  "generated_at": "2026-09-04T11:44:47.969143+00:00"
+}

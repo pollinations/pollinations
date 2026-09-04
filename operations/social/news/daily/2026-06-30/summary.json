@@ -1,0 +1,55 @@
+{
+  "date": "2026-06-30",
+  "period_start": "2026-06-30",
+  "period_end": "2026-06-30",
+  "title": "Two new models: Claude Sonnet 5 and Nano Banana 2 Lite",
+  "summary": "A busy day for the model roster and community tooling, with Quests getting terminal support and mobile authorization returning to the basic human right of scrolling.\n\nThe model menu grew at both ends: Claude Sonnet 5 arrives through Bedrock with 1M context, vision, tools, caching, and adaptive thinking, while nanobanana-2-lite adds a lightweight 1K image-generation option powered by Gemini 3.1 Flash-Lite Image.\n\nNew account APIs and polli CLI commands let people inspect completed Quests, earned rewards, and their own community models. Dashboard notices now point people toward Quests and the community-models alpha, while three more contributors received permission to register models.\n\nThe Authorization page no longer locks scrolling on mobile, so approving an app no longer involves negotiating with a page that has decided vertical movement is optional.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 12107,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12113,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12120,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12121,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12123,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12125,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12126,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12127,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12130,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12132,
+      "date": "2026-06-30"
+    },
+    {
+      "number": 12133,
+      "date": "2026-06-30"
+    }
+  ],
+  "generated_at": "2026-09-04T11:58:54.807530+00:00"
+}

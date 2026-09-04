@@ -1,0 +1,15 @@
+{
+  "date": "2026-03-12",
+  "period_start": "2026-03-12",
+  "period_end": "2026-03-12",
+  "title": "The front page caught up with the community",
+  "summary": "A quiet garden day: the README is freshly stocked with community news and apps.\n\nThe README received its daily automated refresh, keeping recent news and community apps visible where new visitors land first.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 9052,
+      "date": "2026-03-12"
+    }
+  ],
+  "generated_at": "2026-09-04T11:51:11.456747+00:00"
+}

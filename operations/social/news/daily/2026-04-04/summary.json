@@ -1,0 +1,59 @@
+{
+  "date": "2026-04-04",
+  "period_start": "2026-04-04",
+  "period_end": "2026-04-04",
+  "title": "Audio APIs gained memory, timing, and speaker labels",
+  "summary": "A media-heavy day: smarter transcripts, cached audio, bigger Klein reference sets, and Nova Reel videos that finally get a full minute.\n\nRepeated text-to-speech and music requests now return from a unified media cache instead of regenerating the same audio. The STT API also gained Scribe speaker diarization and Whisper word-level timestamps through verbose_json, so transcripts can say who spoke and exactly when.\n\nKlein 4B moved to a self-hosted RunPod backend, bringing image generation and editing onto one code path. Klein prompts and edits can now use up to 10 reference images, up from four.\n\nFixed routing for Nova Reel's automated multi-shot tasks and extended the model's maximum video duration to 60 seconds. Longer sequences, fewer mysterious parameter detours.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 9603,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9916,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9920,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9925,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9927,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9928,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9930,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9933,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9937,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9938,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9940,
+      "date": "2026-04-04"
+    },
+    {
+      "number": 9943,
+      "date": "2026-04-04"
+    }
+  ],
+  "generated_at": "2026-09-04T11:42:04.890697+00:00"
+}

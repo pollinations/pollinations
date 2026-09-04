@@ -1,0 +1,107 @@
+{
+  "date": "2026-08-08",
+  "period_start": "2026-08-08",
+  "period_end": "2026-08-08",
+  "title": "The app garden grew into a proper study and planning shelf",
+  "summary": "A community harvest: new learning, creative, gaming, and companion apps landed alongside a more self-hosting-friendly MCP server.\n\nLearn gained Pollen Scope, Pollination EduCard AI, and Studdy for study cards, guides, flashcards, and quizzes. The catalog also picked up AI Blog Articles for quick no-signup drafts, Briefly for turning notes into plans, Promptzy for keeping prompts findable, and Valdy for putting startup ideas through a reality check before they consume a month of weekends.\n\nCreative tooling expanded with Silenos Música for song and sound generation, two video tools for translation and creation, and new image apps including a French-language generator plus GIMP bridges for generating skies and images inside familiar art workflows. FluxFlow CLI and AIOPE Headless also bring Pollinations-powered generation into terminal and self-hosted assistant setups.\n\nBots now include HSCAura and Lucia, while 7visions offers structured dream exploration through seven perspectives. On the games side, Archetype lets small groups build stories with nova-fast and NEON SHADOWS adds an AI-driven RPG. This is what happens when an API gets left near creative people.",
+  "pr_count": 24,
+  "prs": [
+    {
+      "number": 12882,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13171,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13177,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13181,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13184,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13188,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13189,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13190,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13191,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13193,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13194,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13195,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13196,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13199,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13200,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13201,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13202,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13203,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13204,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13205,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13206,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13207,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13208,
+      "date": "2026-08-08"
+    },
+    {
+      "number": 13210,
+      "date": "2026-08-08"
+    }
+  ],
+  "generated_at": "2026-09-04T11:51:19.602702+00:00"
+}

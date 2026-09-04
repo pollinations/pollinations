@@ -33,7 +33,6 @@ interface CloudflareBindings {
         | "dev"
         | "test"
         | "development";
-    AGENT_RUNTIME_BASE_URL: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     STAGING_ALLOWED_EMAILS?: string;
     LOG_LEVEL?: "trace" | "debug";

@@ -16,7 +16,6 @@ interface __BaseEnv_CloudflareBindings {
 	STRIPE_MODE: "sandbox" | "live";
 	STRIPE_SUCCESS_URL: "http://localhost:3000" | "https://enter.pollinations.ai" | "https://staging.enter.pollinations.ai" | "https://dev.enter.pollinations.ai";
 	BETTER_AUTH_URL: "http://localhost:3000" | "https://enter.pollinations.ai" | "https://staging.enter.pollinations.ai" | "https://dev.enter.pollinations.ai";
-	AGENT_RUNTIME_BASE_URL: "http://localhost:3000/api/agent-runtime/v1" | "https://enter.myceli.ai/api/agent-runtime/v1" | "https://staging.enter.myceli.ai/api/agent-runtime/v1" | "https://dev.enter.myceli.ai/api/agent-runtime/v1" | "https://enter-runtime.test/api/agent-runtime/v1";
 	STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg" | "pmc_1TVU4T7rcjS3l7trqtBuve71";
 	STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU" | "pmc_1SrY4O7rcjS3l7trnGXDTuat";
 	BETTER_AUTH_SECRET: string;
@@ -36,7 +35,7 @@ interface __BaseEnv_CloudflareBindings {
 	DASHSCOPE_API_KEY: string;
 	GITHUB_APP_ID: string;
 	GITHUB_APP_PRIVATE_KEY: string;
-	GEN_BASE_URL?: "https://gen.pollinations.ai" | "https://staging.gen.pollinations.ai";
+	GEN_BASE_URL: "http://localhost:8788" | "https://gen.pollinations.ai" | "https://staging.gen.pollinations.ai" | "https://dev.gen.pollinations.ai";
 	STAGING_ALLOWED_GITHUB_IDS?: "36901823,5099901,235942848,248917639,241978997,118118458,189873015";
 	STAGING_ALLOWED_EMAILS?: "elliot@pollinations.ai";
 	USAGE_DEBUG_USER_ID?: "ds1EIz1ELXSNZzzRKJ0jrCsGgLeiVfRh";
@@ -55,7 +54,7 @@ declare namespace Cloudflare {
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "http://localhost:3000";
 		BETTER_AUTH_URL: "http://localhost:3000";
-		AGENT_RUNTIME_BASE_URL: "http://localhost:3000/api/agent-runtime/v1";
+		GEN_BASE_URL: "http://localhost:8788";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		BETTER_AUTH_SECRET: string;
@@ -89,7 +88,6 @@ declare namespace Cloudflare {
 		STRIPE_MODE: "live";
 		STRIPE_SUCCESS_URL: "https://enter.pollinations.ai";
 		BETTER_AUTH_URL: "https://enter.pollinations.ai";
-		AGENT_RUNTIME_BASE_URL: "https://enter.myceli.ai/api/agent-runtime/v1";
 		GEN_BASE_URL: "https://gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TVU4T7rcjS3l7trqtBuve71";
 		STRIPE_PMC: "pmc_1SrY4O7rcjS3l7trnGXDTuat";
@@ -124,7 +122,6 @@ declare namespace Cloudflare {
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "https://staging.enter.pollinations.ai";
 		BETTER_AUTH_URL: "https://staging.enter.pollinations.ai";
-		AGENT_RUNTIME_BASE_URL: "https://staging.enter.myceli.ai/api/agent-runtime/v1";
 		GEN_BASE_URL: "https://staging.gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
@@ -162,7 +159,7 @@ declare namespace Cloudflare {
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "https://dev.enter.pollinations.ai";
 		BETTER_AUTH_URL: "https://dev.enter.pollinations.ai";
-		AGENT_RUNTIME_BASE_URL: "https://dev.enter.myceli.ai/api/agent-runtime/v1";
+		GEN_BASE_URL: "https://dev.gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		BETTER_AUTH_SECRET: string;
@@ -196,7 +193,7 @@ declare namespace Cloudflare {
 		STRIPE_MODE: "sandbox";
 		STRIPE_SUCCESS_URL: "http://localhost:3000";
 		BETTER_AUTH_URL: "http://localhost:3000";
-		AGENT_RUNTIME_BASE_URL: "https://enter-runtime.test/api/agent-runtime/v1";
+		GEN_BASE_URL: "https://gen.pollinations.ai";
 		STRIPE_AUTO_TOP_UP_PMC_ID: "pmc_1TUpob6O03AauPe8EgmA4mvg";
 		STRIPE_PMC: "pmc_1SrYT96O03AauPe8ijLy6sZU";
 		BETTER_AUTH_SECRET: string;
@@ -224,5 +221,5 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "D1_EXPORT_TOKEN_SHA256" | "TINYBIRD_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "AGENT_RUNTIME_BASE_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "DASHSCOPE_API_KEY" | "GITHUB_APP_ID" | "GITHUB_APP_PRIVATE_KEY" | "GEN_BASE_URL" | "STAGING_ALLOWED_GITHUB_IDS" | "STAGING_ALLOWED_EMAILS" | "USAGE_DEBUG_USER_ID">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "ENVIRONMENT" | "CLOUDFLARE_ACCOUNT_ID" | "LOG_LEVEL" | "LOG_FORMAT" | "D1_EXPORT_TOKEN_SHA256" | "TINYBIRD_INGEST_URL" | "TINYBIRD_STRIPE_INGEST_URL" | "STRIPE_MODE" | "STRIPE_SUCCESS_URL" | "BETTER_AUTH_URL" | "STRIPE_AUTO_TOP_UP_PMC_ID" | "STRIPE_PMC" | "BETTER_AUTH_SECRET" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "PLN_ENTER_TOKEN" | "TINYBIRD_READ_TOKEN" | "STRIPE_SECRET_KEY" | "STRIPE_WEBHOOK_SECRET" | "ELEVENLABS_API_KEY" | "OVHCLOUD_API_KEY" | "PLN_GPU_TOKEN" | "SSH_RUNPOD_KLEIN" | "SSH_RUNPOD_FLUX_ZIMAGE" | "SSH_LAMBDA_SANA_LTX2_ACESTEP" | "TINYBIRD_INGEST_TOKEN" | "DASHSCOPE_API_KEY" | "GITHUB_APP_ID" | "GITHUB_APP_PRIVATE_KEY" | "GEN_BASE_URL" | "STAGING_ALLOWED_GITHUB_IDS" | "STAGING_ALLOWED_EMAILS" | "USAGE_DEBUG_USER_ID">> {}
 }

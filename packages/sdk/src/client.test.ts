@@ -751,3 +751,141 @@ describe("Pollinations.accountQuests", () => {
         );
     });
 });
+
+describe("Pollinations.embeddings", () => {
+    it("sends a single string input to POST /v1/embeddings", async () => {
+        const client = newClient();
+        const embeddingResponse = {
+            object: "list",
+            data: [
+                { object: "embedding", embedding: [0.1, 0.2, 0.3], index: 0 },
+            ],
+            model: "gemini-2",
+            usage: { prompt_tokens: 5, total_tokens: 5 },
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(embeddingResponse));
+
+        const result = await client.embeddings("Hello world");
+
+        expect(result).toEqual(embeddingResponse);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock.mock.calls[0][0]).toBe(
+            "https://example.test/v1/embeddings",
+        );
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            input: "Hello world",
+        });
+    });
+
+    it("sends a batch string array input", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                object: "list",
+                data: [
+                    { object: "embedding", embedding: [0.1], index: 0 },
+                    { object: "embedding", embedding: [0.2], index: 1 },
+                ],
+                model: "gemini-2",
+                usage: { prompt_tokens: 10, total_tokens: 10 },
+            }),
+        );
+
+        const result = await client.embeddings(["Hello", "World"]);
+
+        expect(result.data).toHaveLength(2);
+        expect(bodyOf(fetchMock.mock.calls[0]).input).toEqual([
+            "Hello",
+            "World",
+        ]);
+    });
+
+    it("passes model and dimensions options", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                object: "list",
+                data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+                model: "test-model",
+                usage: { prompt_tokens: 3, total_tokens: 3 },
+            }),
+        );
+
+        await client.embeddings("test", {
+            model: "test-model",
+            dimensions: 768,
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            input: "test",
+            model: "test-model",
+            dimensions: 768,
+        });
+    });
+
+    it("passes task_type and input_type provider-specific options", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                object: "list",
+                data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+                model: "gemini-2",
+                usage: { prompt_tokens: 3, total_tokens: 3 },
+            }),
+        );
+
+        await client.embeddings("query text", {
+            taskType: "RETRIEVAL_QUERY",
+            inputType: "query",
+        });
+
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body.task_type).toBe("RETRIEVAL_QUERY");
+        expect(body.input_type).toBe("query");
+    });
+
+    it("throws INVALID_INPUT when input is null", async () => {
+        const client = newClient();
+        await expect(
+            client.embeddings(null as unknown as string),
+        ).rejects.toMatchObject({
+            code: "INVALID_INPUT",
+            status: 400,
+        });
+    });
+
+    it("omits undefined optional fields from the request body", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                object: "list",
+                data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+                model: "test",
+                usage: { prompt_tokens: 1, total_tokens: 1 },
+            }),
+        );
+
+        await client.embeddings("hello");
+
+        const body = bodyOf(fetchMock.mock.calls[0]);
+        expect(body).toEqual({ input: "hello" });
+        expect("model" in body).toBe(false);
+        expect("dimensions" in body).toBe(false);
+        expect("task_type" in body).toBe(false);
+    });
+
+    it("propagates API errors as PollinationsError", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "model not found", code: "NOT_FOUND" } },
+                { ok: false, status: 404 },
+            ),
+        );
+
+        await expect(client.embeddings("test")).rejects.toMatchObject({
+            code: "NOT_FOUND",
+            status: 404,
+        });
+    });
+});

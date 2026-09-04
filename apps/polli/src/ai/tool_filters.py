@@ -263,6 +263,7 @@ DEFAULT_TOOLS = {
     "web_search",
     "web_scrape",
     "discord_search",
+    "render_visual",
     "github_overview",
     "github_issue",
 }
@@ -305,7 +306,7 @@ def filter_tools_by_intent(user_message: str, all_tools: list[dict], is_admin: b
             matched_tools.add("github_pr")
 
     # Always include these tools - AI decides when to use them
-    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search"}
+    AI_CONTROLLED_TOOLS = {"web_search", "code_search", "discord_search", "render_visual"}
 
     # Filter tools list
     filtered = [

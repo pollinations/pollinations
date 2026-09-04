@@ -2,6 +2,7 @@ import inspect
 import unittest
 
 from src.ai.prompts import BASE_SYSTEM_PROMPT, DISCORD_PROMPT_ADDON
+from src.ai.tool_filters import filter_tools_by_intent
 from src.ai.tools import DISCORD_SEARCH_TOOL, RENDER_VISUAL_TOOL
 from src.bot import format_discord_identity
 from src.discord.search import tool_discord_search
@@ -47,6 +48,11 @@ class DiscordToolContractTests(unittest.TestCase):
 
         self.assertIn("Discord does not render Mermaid fences", description)
         self.assertNotIn("rendered inline automatically", description)
+
+    def test_render_capability_question_keeps_visual_tool(self):
+        filtered = filter_tools_by_intent("what all can you render?", [RENDER_VISUAL_TOOL])
+
+        self.assertEqual(filtered, [RENDER_VISUAL_TOOL])
 
 
 if __name__ == "__main__":

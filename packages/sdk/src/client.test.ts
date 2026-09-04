@@ -10,7 +10,7 @@ import {
     generateVideo,
     resetClient,
 } from "./helpers.js";
-import { PollinationsError } from "./types.js";
+import { type EmbeddingInput, PollinationsError } from "./types.js";
 
 // Build a minimal Response-like object good enough for the client paths.
 function makeResponse(
@@ -837,5 +837,20 @@ describe("Pollinations.embeddings", () => {
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/v1/embeddings",
         );
+    });
+        it("passes multimodal content parts through untouched", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(apiResponse));
+
+        const input: EmbeddingInput = [
+            { type: "text", text: "hello" },
+            {
+                type: "image_url",
+                image_url: { url: "https://example.com/photo.jpg" },
+            },
+        ];
+
+        await expect(client.embeddings(input)).resolves.toEqual(apiResponse);
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({ input });
     });
 });

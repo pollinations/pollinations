@@ -46,7 +46,7 @@ function requestForMcp(
     const url = new URL(request.url);
     url.protocol = "https:";
     url.host = "mcp.internal";
-    url.pathname = "/";
+    url.pathname = server.proxyPath ?? "/";
     return new Request(url, {
         method: request.method,
         headers,
@@ -155,7 +155,10 @@ export const mcpRoutes = new Hono<Env>()
                 id: server.id,
                 name: server.name,
                 description: server.description,
-                url: `${getPublicOrigin(c)}/mcp/${server.id}`,
+                url:
+                    "url" in server
+                        ? server.url
+                        : `${getPublicOrigin(c)}/mcp/${server.id}`,
                 pricing: getMcpPricingInfo(server),
             })),
         }),

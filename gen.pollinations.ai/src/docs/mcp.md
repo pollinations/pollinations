@@ -15,12 +15,18 @@ then choose a server:
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Time | `https://mcp.roboticrobot.xyz/mcp/pollinations` | Get the current time in any IANA timezone | [Billing proxy](https://gen.pollinations.ai/mcp/time) |
+| Run JS | `https://mcp.roboticrobot.xyz/mcp/pollinations` | Run JavaScript in an isolated V8 sandbox | [Billing proxy](https://gen.pollinations.ai/mcp/run-js) |
 
-Send the key with every request:
+Send the key with every request to an endpoint on `gen.pollinations.ai`:
 
 ```http
 Authorization: Bearer YOUR_KEY
 ```
+
+Do not send a Pollinations API key to an external MCP domain. Hosted agents
+access the Time and Run JS servers through the Pollinations billing proxies
+linked in the table.
 
 Get current endpoints and pricing from the live catalog:
 
@@ -71,7 +77,7 @@ claude mcp add --transport http pollinations \
 ```
 
 Run `/mcp` in Claude Code to verify the connection. Replace the name and URL
-with another endpoint from the table to use FFmpeg or Exa Search.
+with another endpoint from the table to use a different MCP server.
 
 ### Pollinations MCP
 
@@ -120,11 +126,21 @@ The Composio server discovers tools for the apps you ask to use. When an app is
 not connected, the agent can return a sign-in link. You can also manage
 connections from [MCP Connectors](https://enter.pollinations.ai/account#connectors).
 
+### Time MCP
+
+`time` returns the current date and time in UTC or a requested IANA timezone.
+
+### Run JS MCP
+
+`run-js` runs JavaScript in a network-disabled V8 isolate with selectable RAM and vCPU limits. Runtime is billed per MB-second at the rate shown for the selected vCPU tier.
+
 ### Billing and permissions
 
-Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
-shows each server's current pricing. Pollinations generation tools use the
-selected model's listed rate.
+Calls made through a Pollinations billing proxy use the same Pollen wallet as
+the Pollinations API. Direct calls to an external MCP URL are outside
+Pollinations billing. The catalog endpoint shows each server's current hosted
+agent pricing. Pollinations generation tools use the selected model's listed
+rate.
 
 An MCP server can only use models and account features allowed by the caller's
 key and cannot spend beyond that key's budget. Configure both in

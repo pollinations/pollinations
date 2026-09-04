@@ -15,6 +15,16 @@ const MCP_REQUEST = {
     },
 };
 
+const ROBOTIC_ROBOT_TIME_REQUEST = {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "tools/call",
+    params: {
+        name: "time",
+        arguments: { timezone: "UTC" },
+    },
+};
+
 test("lists the MCP servers exposed through Gen", async () => {
     const response = await SELF.fetch("https://gen.pollinations.ai/mcp");
     expect(response.status).toBe(200);
@@ -99,6 +109,67 @@ test("lists the MCP servers exposed through Gen", async () => {
                             currency: "pollen",
                             quantity: 1,
                             unit: "call",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "time",
+                name: "Time",
+                description:
+                    "Get the current date and time in any IANA timezone.",
+                url: "https://mcp.roboticrobot.xyz/mcp/pollinations",
+                pricing: {
+                    rates: [
+                        {
+                            name: "robotic_robot.time.v1",
+                            label: "Time",
+                            kind: "tool_call",
+                            price: "0.0001",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "run-js",
+                name: "Run JS",
+                description:
+                    "Run JavaScript in a network-disabled V8 isolate with selectable RAM and vCPU limits.",
+                url: "https://mcp.roboticrobot.xyz/mcp/pollinations",
+                pricing: {
+                    rates: [
+                        {
+                            name: "robotic_robot.run_js.0_01_vcpu.v1",
+                            label: "Run JS",
+                            kind: "compute",
+                            price: "0.000025",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "megabyte_second",
+                            option: {
+                                group: "vCPU",
+                                value: "0.01",
+                                label: "0.01 vCPU",
+                                default: true,
+                            },
+                        },
+                        {
+                            name: "robotic_robot.run_js.0_025_vcpu.v1",
+                            label: "Run JS",
+                            kind: "compute",
+                            price: "0.0000625",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "megabyte_second",
+                            option: {
+                                group: "vCPU",
+                                value: "0.025",
+                                label: "0.025 vCPU",
+                                default: false,
+                            },
                         },
                     ],
                 },
@@ -237,6 +308,43 @@ test("routes Composio with the authenticated user", async () => {
         id: 1,
         result: { content: [{ type: "text", text: userId }] },
     });
+});
+
+test.each([
+    {
+        name: "Quest",
+        user: { tierBalance: 1, packBalance: 0 },
+        expected: { tierBalance: 0.9999, packBalance: 0 },
+    },
+    {
+        name: "Paid",
+        user: { tierBalance: 0, packBalance: 1 },
+        expected: { tierBalance: 0, packBalance: 0.9999 },
+    },
+])("bills Time MCP usage from $name Pollen", async ({ user, expected }) => {
+    const { key, userId } = await createTestApiKey({ user });
+    const response = await SELF.fetch("https://gen.pollinations.ai/mcp/time", {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${key}`,
+            Cookie: "session=private",
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ROBOTIC_ROBOT_TIME_REQUEST),
+    });
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "robotic robot proxied" }],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual(expected);
 });
 
 test("rejects MCP batch requests at the proxy", async () => {

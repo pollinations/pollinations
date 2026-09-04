@@ -10,7 +10,8 @@ services = [
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
-    { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" }
+    { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
+    { binding = "ROBOTIC_ROBOT_MCP", service = "pollinations-robotic-robot-mcp" }
 ]
 
 [images]
@@ -113,6 +114,10 @@ service = "pollinations-exa-mcp"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
 
+[[env.production.services]]
+binding = "ROBOTIC_ROBOT_MCP"
+service = "pollinations-robotic-robot-mcp"
+
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
 tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
@@ -212,6 +217,10 @@ service = "pollinations-exa-mcp-staging"
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp-staging"
 
+[[env.staging.services]]
+binding = "ROBOTIC_ROBOT_MCP"
+service = "pollinations-robotic-robot-mcp-staging"
+
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
@@ -296,6 +305,10 @@ service = "pollinations-exa-mcp"
 [[env.test.services]]
 binding = "COMPOSIO_MCP"
 service = "pollinations-composio-mcp"
+
+[[env.test.services]]
+binding = "ROBOTIC_ROBOT_MCP"
+service = "pollinations-robotic-robot-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"

@@ -10,7 +10,71 @@ import {
 import { getMcpPricingInfo, MCP_SERVERS } from "@shared/registry/mcp.ts";
 import type { FC } from "react";
 import { config, genDocsUrl } from "../../config.ts";
-import { UsagePriceRows } from "./price-badge.tsx";
+import {
+    ModelPricingControls,
+    UsagePriceRows,
+    useModelPricingSelection,
+} from "./price-badge.tsx";
+import type { ModelPrice } from "./types.ts";
+
+const McpPricingDetails: FC<{
+    server: (typeof MCP_SERVERS)[number];
+}> = ({ server }) => {
+    const pricing = getMcpPricingInfo(server);
+    const pricingModel: ModelPrice = {
+        name: server.id,
+        displayName: `${server.name} MCP`,
+        type: "text",
+        capabilities: [],
+        prices: [],
+        priceAdjustments: pricing.rates,
+    };
+    const selection = useModelPricingSelection(pricingModel);
+
+    return (
+        <div className="min-w-0 flex-1">
+            <ModelPricingControls
+                model={pricingModel}
+                pricing={selection}
+                className="mb-1.5"
+            />
+            {selection.adjustments.length > 0 && (
+                <div className="grid w-full min-w-0 max-w-full grid-cols-[6rem_12ch_minmax(0,1fr)] gap-x-2">
+                    <UsagePriceRows
+                        adjustments={selection.adjustments}
+                        align="left"
+                        fractionDigits={8}
+                    />
+                </div>
+            )}
+            {pricing.description && (
+                <div className="grid w-full min-w-0 max-w-full grid-cols-[6rem_12ch_minmax(0,1fr)] gap-x-2">
+                    <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
+                        <span className="grid min-w-0 grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-1.5 text-xs text-theme-text-muted">
+                            <BeakerIcon className="h-3.5 w-3.5 shrink-0" />
+                            <span className="truncate whitespace-nowrap">
+                                Generation
+                            </span>
+                        </span>
+                        <span className="col-span-2 whitespace-nowrap">
+                            <Tooltip
+                                triggerAs="span"
+                                content={pricing.description}
+                                ariaLabel={`Generation pricing. ${pricing.description}`}
+                                tapEnabled
+                                displayContents
+                            >
+                                <span className="text-sm font-semibold text-theme-text-strong">
+                                    Usage-based
+                                </span>
+                            </Tooltip>
+                        </span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
 export const McpServerList: FC<{ query: string }> = ({ query }) => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -37,8 +101,10 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
         <div>
             <div className="@container flex flex-col gap-2 pb-1">
                 {servers.map((server) => {
-                    const endpoint = `${config.genBaseUrl}/mcp/${server.id}`;
-                    const pricing = getMcpPricingInfo(server);
+                    const endpoint =
+                        "url" in server
+                            ? server.url
+                            : `${config.genBaseUrl}/mcp/${server.id}`;
                     return (
                         <div
                             key={server.id}
@@ -104,44 +170,7 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
                                     aria-hidden="true"
                                     className="hidden w-[calc(var(--mcp-icon-width)+1px+var(--mcp-card-gap)+var(--mcp-card-gap))] shrink-0 min-[480px]:block @2xl:hidden"
                                 />
-                                <div className="min-w-0 flex-1">
-                                    {pricing.rates.length > 0 && (
-                                        <div className="grid w-full min-w-0 max-w-full grid-cols-[6rem_12ch_minmax(0,1fr)] gap-x-2">
-                                            <UsagePriceRows
-                                                adjustments={pricing.rates}
-                                                align="left"
-                                                fractionDigits={8}
-                                            />
-                                        </div>
-                                    )}
-                                    {pricing.description && (
-                                        <div className="grid w-full min-w-0 max-w-full grid-cols-[6rem_12ch_minmax(0,1fr)] gap-x-2">
-                                            <div className="grid col-span-full grid-cols-subgrid items-center py-0.5">
-                                                <span className="grid min-w-0 grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-1.5 text-xs text-theme-text-muted">
-                                                    <BeakerIcon className="h-3.5 w-3.5 shrink-0" />
-                                                    <span className="truncate whitespace-nowrap">
-                                                        Generation
-                                                    </span>
-                                                </span>
-                                                <span className="col-span-2 whitespace-nowrap">
-                                                    <Tooltip
-                                                        triggerAs="span"
-                                                        content={
-                                                            pricing.description
-                                                        }
-                                                        ariaLabel={`Generation pricing. ${pricing.description}`}
-                                                        tapEnabled
-                                                        displayContents
-                                                    >
-                                                        <span className="text-sm font-semibold text-theme-text-strong">
-                                                            Usage-based
-                                                        </span>
-                                                    </Tooltip>
-                                                </span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                <McpPricingDetails server={server} />
                             </div>
                         </div>
                     );
@@ -150,7 +179,8 @@ export const McpServerList: FC<{ query: string }> = ({ query }) => {
             <p className="mt-4 flex items-start gap-1.5 border-t border-divider pt-4 text-[13px] leading-snug text-theme-text-muted">
                 <KeyIcon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
-                    Connect with your Pollinations API key. See the{" "}
+                    Send your Pollinations API key only to MCP endpoints on
+                    gen.pollinations.ai. See the{" "}
                     <InlineLink href={genDocsUrl("#tag/mcp-servers")}>
                         MCP docs
                     </InlineLink>

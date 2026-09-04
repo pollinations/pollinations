@@ -60,6 +60,24 @@ const ChatCompletionToolChoiceOptionSchema = z.union([
     ChatCompletionNamedToolChoiceSchema,
 ]);
 
+const PromptCacheBreakpointSchema = z
+    .object({ mode: z.literal("explicit") })
+    .strict()
+    .optional()
+    .describe(
+        "Marks the end of a static prompt prefix when prompt_cache_options.mode is explicit.",
+    )
+    .meta({ $id: "PromptCacheBreakpoint" });
+
+const PromptCacheOptionsSchema = z
+    .object({
+        mode: z.enum(["implicit", "explicit"]).optional(),
+        ttl: z.literal("30m").optional(),
+    })
+    .strict()
+    .optional()
+    .meta({ $id: "PromptCacheOptions" });
+
 const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     type: z.literal("image_url"),
     image_url: z.object({
@@ -67,6 +85,7 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
         detail: z.enum(["auto", "low", "high"]).optional(),
         mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
     }),
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 // Video URL content type - currently supported by Gemini models only
@@ -94,6 +113,7 @@ const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
     text: z.string(),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
@@ -103,6 +123,7 @@ const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
         format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
     }),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 // File content for document/file uploads
@@ -116,6 +137,7 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
         mime_type: z.string().optional(),
     }),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 const ChatCompletionRequestMessageContentPartSchema = z
@@ -334,6 +356,9 @@ export const CreateChatCompletionRequestSchema = z
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional().default(true),
         user: z.string().optional(),
+        prompt_cache_key: z.string().optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
+        prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
         function_call: z
             .union([
                 z.enum(["none", "auto"]),
@@ -384,6 +409,7 @@ export const CreateResponseRequestSchema = z
         instructions: z.string().nullish(),
         reasoning: z.record(z.string(), z.any()).nullish(),
         max_output_tokens: z.number().int().positive().nullish(),
+        max_tool_calls: z.number().int().positive().nullish(),
         stream: z.boolean().optional().default(false),
         stream_options: z
             .object({ include_obfuscation: z.boolean().optional() })
@@ -404,13 +430,7 @@ export const CreateResponseRequestSchema = z
         user: z.string().optional(),
         safety_identifier: z.string().max(64).optional(),
         prompt_cache_key: z.string().optional(),
-        prompt_cache_options: z
-            .object({
-                mode: z.enum(["implicit", "explicit"]).optional(),
-                ttl: z.literal("30m").optional(),
-            })
-            .strict()
-            .optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
         prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
         service_tier: z.string().optional(),
         temperature: z.number().min(0).max(2).nullish(),
@@ -478,9 +498,22 @@ export const CreateResponseResponseSchema = z
             "incomplete",
         ]),
         output: z.array(z.object({ type: z.string() }).passthrough()),
-        usage: ResponseUsageSchema,
+        usage: ResponseUsageSchema.nullable(),
     })
     .passthrough()
+    .superRefine((response, context) => {
+        if (
+            (response.status === "completed" ||
+                response.status === "incomplete") &&
+            response.usage === null
+        ) {
+            context.addIssue({
+                code: "custom",
+                path: ["usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    })
     .meta({ $id: "CreateResponseResponse" });
 
 export type CreateResponseResponse = z.infer<
@@ -497,11 +530,20 @@ export const ResponseTerminalEventSchema = z
         response: z
             .object({
                 model: z.string().optional(),
-                usage: ResponseUsageSchema,
+                usage: ResponseUsageSchema.nullable(),
             })
             .passthrough(),
     })
-    .passthrough();
+    .passthrough()
+    .superRefine((event, context) => {
+        if (event.type !== "response.failed" && event.response.usage === null) {
+            context.addIssue({
+                code: "custom",
+                path: ["response", "usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    });
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,

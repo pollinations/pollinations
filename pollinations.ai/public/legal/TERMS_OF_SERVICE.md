@@ -1,6 +1,8 @@
 # Terms of Service
 
-**Updated: 2026-08-22**
+**Updated: 2026-09-04**
+
+_2026-09-04 — Added terms for the Polli Discord bot and related assistant service._
 
 _2026-07-02 — Pollen purchases now include a service fee shown before payment, and prices are shown exclusive of tax; applicable VAT or similar taxes are added at checkout._
 
@@ -149,7 +151,7 @@ When we process personal data on your behalf, you are the **controller** and we 
 
 ## 16) Polli Discord Bot
 
-**Effective date: September 4, 2026**
+**Effective date: 2026-09-04**
 
 Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ**. This section supplements the rest of these Terms. By using Polli, you agree to these Terms and the applicable Discord, GitHub, community, and repository rules.
 
@@ -172,7 +174,7 @@ Authorized security testing must be lawful, scoped, non-destructive, and approve
 
 ### Content, Output, and Actions
 
-You retain your rights in submitted content and permit us to process it only as needed to operate, secure, and improve Polli and fulfill your requests. Content may be sent to the providers described in the [Privacy Policy](/privacy#16-polli-discord-bot).
+You retain your rights in submitted content and permit us to process it only as needed to operate, secure, and improve Polli and fulfill your requests. Content may be sent to the providers described in the [Privacy Policy](/privacy).
 
 Polli uses automated models and tools. Its output may be inaccurate, incomplete, outdated, insecure, or unsuitable for your purpose and is not professional advice. Review consequential output, code, commands, and repository changes before relying on or approving them.
 

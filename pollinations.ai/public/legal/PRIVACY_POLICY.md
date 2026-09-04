@@ -1,10 +1,10 @@
 # Privacy Policy
 
-**Updated: 2026-08-22**
+**Updated: 2026-09-04**
 
 ## 1) Scope & Roles
 
-This policy covers (a) the paid dashboard/API and (b) the pollinations.ai community website. For Discord/GitHub use, their policies also apply.
+This policy covers (a) the paid dashboard/API, (b) the pollinations.ai community website, and (c) the Polli Discord bot and its HTTP API. For Discord/GitHub use, their policies also apply.
 
 **Roles:** For our websites, accounts, billing, wallet, app authorization, and abuse-prevention operations, we are controller. When processing Customer Data on your behalf via the API, we are processor under the DPA.
 
@@ -110,20 +110,9 @@ No decisions producing legal or similarly significant effects. Rate-limiting, ab
 
 We may update this policy; we'll post the new date and, for material changes, give reasonable in-app or email notice.
 
----
-
-**Data Controller:**  
-Myceli.AI OÜ  
-Registry code: 17186693  
-VAT number: EE102877908  
-Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia  
-Email: hello@pollinations.ai
-
----
-
 ## 16) Polli Discord Bot
 
-**Effective date: September 4, 2026**
+**Effective date: 2026-09-04**
 
 Polli is the Pollinations.ai Discord bot and related assistant service operated by **Myceli.AI OÜ**. This section supplements the rest of this Privacy Policy.
 
@@ -135,6 +124,7 @@ Depending on the feature used, Polli may process:
 - Messages directed to Polli, recent conversation context, and Discord content retrieved when a user requests a search.
 - Attachments, images, videos, links, embeds, and related metadata.
 - Public GitHub profiles, repositories, issues, pull requests, comments, projects, and records of requested GitHub actions.
+- GitHub issue subscriptions, including Discord user, channel, and server IDs; issue numbers; notification state; and timestamps. These records remain until the user unsubscribes.
 - API prompts, conversation history, model parameters, authorization results, and technical request metadata.
 - Limited operational data such as timestamps, request status, errors, latency, tool activity, and rate-limit events.
 
@@ -144,16 +134,23 @@ Do not send Polli passwords, tokens, API keys, or unnecessary sensitive informat
 
 We use this information to respond, maintain relevant context, perform requested searches and authorized GitHub actions, process attachments, enforce permissions, prevent abuse, and troubleshoot the service.
 
-Discord search availability and results depend on the identity and permission context available to Polli, the bot's permissions, server configuration, and Discord indexing. Public API callers have no Discord member identity, so Discord search through that interface may be unavailable or limited to content configured for public access.
+Discord search availability and results depend on the identity and permission context available to Polli, the bot's permissions, server configuration, and Discord indexing. Public API callers have no Discord member identity, so Discord search through that interface may be unavailable.
 
 ### Providers and Retention
 
-Requests may be processed by Discord, GitHub, Pollinations.ai, model providers routed through Pollinations.ai, and infrastructure providers needed to operate Polli. Their terms and privacy policies may also apply.
+Requests may be processed by Discord, GitHub, Pollinations.ai, model providers routed through Pollinations.ai, infrastructure providers needed to operate Polli, and web-content services such as Jina AI and FxTwitter when a user asks Polli to read a URL. Their terms and privacy policies may also apply.
 
-Pollinations.ai does not sell personal data or use prompts and outputs to train or fine-tune models without explicit opt-in.
-
-Polli holds active conversation context temporarily in memory. Limited logs and caches follow the retention periods described elsewhere in this Policy. Discord messages, GitHub content, and attachments remain subject to those platforms' retention, deletion, and visibility controls.
+Polli holds active conversation context temporarily in memory. Issue-subscription records remain until the user unsubscribes. Limited logs and caches follow the retention periods described elsewhere in this Policy. Discord messages, GitHub content, and attachments remain subject to those platforms' retention, deletion, and visibility controls.
 
 ### Rights and Contact
 
 The rights and safeguards described elsewhere in this Policy apply to Polli. Some requests must be handled by Discord, GitHub, or a server administrator because they control the original content. For privacy or data requests, contact **hello@pollinations.ai**.
+
+---
+
+**Data Controller:**\
+Myceli.AI OÜ\
+Registry code: 17186693\
+VAT number: EE102877908\
+Registered address: Harju maakond, Tallinn, Kesklinna linnaosa, Tornimäe tn 5, 10145, Estonia\
+Email: hello@pollinations.ai

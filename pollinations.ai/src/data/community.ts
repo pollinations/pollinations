@@ -177,7 +177,7 @@ export function useVotingIssues(limit = 3) {
 const NEWS_RAW =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily";
 const NEWS_REPO_PATH = "operations/social/news/daily";
-const NEWS_START_DAY = "2025-02-28";
+const NEWS_START_DAY = "2025-01-01";
 const FALLBACK_DIARY_IMAGES = [
     "2026-08-03",
     "2026-08-05",
@@ -217,8 +217,6 @@ type DiaryHistory = {
     byDate: Map<string, DiaryPr[]>;
     firstDay: string;
     latestDay: string;
-    firstYear: number;
-    latestYear: number;
 };
 
 type DiaryRange = {
@@ -233,25 +231,11 @@ type DiaryRange = {
 export type DiaryMonth = {
     month: string;
     prCount: number;
-};
-
-type DiaryYear = {
-    year: number;
-    months: DiaryMonth[];
-    hasEarlier: boolean;
-    hasLater: boolean;
-};
-
-export type DiaryYearTotal = {
-    year: number;
-    prCount: number;
     representativeDate: string;
 };
 
 type DiaryAll = {
-    firstYear: number;
-    latestYear: number;
-    years: DiaryYearTotal[];
+    months: DiaryMonth[];
 };
 
 type DailySummary = {
@@ -367,8 +351,6 @@ function loadPullRequestHistory() {
             byDate,
             firstDay,
             latestDay,
-            firstYear: Number(firstDay.slice(0, 4)),
-            latestYear: Number(latestDay.slice(0, 4)),
         };
     })();
     return historyCache;
@@ -497,73 +479,38 @@ export function useBuildDiary(requestedMonth?: string) {
     );
 }
 
-export function useBuildDiaryYear(
-    requestedYear?: number,
-    options?: UseAsyncOptions,
-) {
-    return useAsync<DiaryYear>(
-        async () => {
-            const history = await loadPullRequestHistory();
-            const year = requestedYear ?? history.latestYear;
-            const counts = new Map<string, number>();
-            for (const pr of history.pullRequests) {
-                if (Number(pr.date.slice(0, 4)) !== year) continue;
-                const month = pr.date.slice(0, 7);
-                counts.set(month, (counts.get(month) ?? 0) + 1);
-            }
-
-            return {
-                year,
-                months: Array.from(
-                    {
-                        length:
-                            year === history.latestYear
-                                ? Number(history.latestDay.slice(5, 7))
-                                : 12,
-                    },
-                    (_, index) => {
-                        const month = `${year}-${String(index + 1).padStart(2, "0")}`;
-                        return { month, prCount: counts.get(month) ?? 0 };
-                    },
-                ),
-                hasEarlier: year > history.firstYear,
-                hasLater: year < history.latestYear,
-            };
-        },
-        { year: 0, months: [], hasEarlier: false, hasLater: false },
-        { ...options, key: requestedYear ?? "latest" },
-    );
-}
-
 export function useBuildDiaryAll(options?: UseAsyncOptions) {
     return useAsync<DiaryAll>(
         async () => {
             const history = await loadPullRequestHistory();
-            const years = Array.from(
-                { length: history.latestYear - history.firstYear + 1 },
-                (_, index) => history.firstYear + index,
-            ).map((year) => {
-                const pullRequests = history.pullRequests.filter(
-                    (pullRequest) =>
-                        Number(pullRequest.date.slice(0, 4)) === year,
-                );
+            const byMonth = new Map<string, DiaryPr[]>();
+            for (const pullRequest of history.pullRequests) {
+                const month = pullRequest.date.slice(0, 7);
+                const pullRequests = byMonth.get(month) ?? [];
+                pullRequests.push(pullRequest);
+                byMonth.set(month, pullRequests);
+            }
+
+            const firstMonth = history.firstDay.slice(0, 7);
+            const latestMonth = history.latestDay.slice(0, 7);
+            const months: DiaryMonth[] = [];
+            const cursor = new Date(`${firstMonth}-01T00:00:00Z`);
+            while (cursor.toISOString().slice(0, 7) <= latestMonth) {
+                const month = cursor.toISOString().slice(0, 7);
+                const pullRequests = byMonth.get(month) ?? [];
                 const representative =
-                    pullRequests[
-                        stableIndex(String(year), pullRequests.length)
-                    ];
-                return {
-                    year,
+                    pullRequests[stableIndex(month, pullRequests.length)];
+                months.push({
+                    month,
                     prCount: pullRequests.length,
-                    representativeDate: representative?.date ?? `${year}-01-01`,
-                };
-            });
-            return {
-                firstYear: history.firstYear,
-                latestYear: history.latestYear,
-                years,
-            };
+                    representativeDate: representative?.date ?? `${month}-01`,
+                });
+                cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+            }
+
+            return { months };
         },
-        { firstYear: 0, latestYear: 0, years: [] },
+        { months: [] },
         options,
     );
 }

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14447,
+  "title": "fix: refine zero-pollen authorization notice",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14447",
+  "merged_at": "2026-09-04T15:31:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses a wider, softly highlighted zero-Pollen notice on the authorization screen\n- Aligns the shared wallet icon with the notice title and keeps the text neutral\n- Preserves the existing Quest and Top up links that open in a new tab\n- Fixes the shared Alert title typing for composed React content\n\nChecks:\n- `npm run typecheck --prefix packages/ui`\n- `npx tsc --noEmit`\n- `npx vite build --config frontend/vite.config.ts`",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "A gentler empty wallet",
+    "blurb": "The authorization screen now gives a zero-Pollen wallet a little more room to explain itself. Same useful Quest and Top up exits, fewer cramped pixels.",
+    "summary": "Refined the authorization screen’s zero-Pollen notice with a wider soft highlight, aligned wallet icon and title, neutral copy, and React-content support in the shared Alert title.",
+    "impact": "People authorizing with zero Pollen will see a clearer, calmer notice while retaining the existing Quest and Top up links in new tabs.",
+    "keywords": [
+      "authorization",
+      "zero-pollen",
+      "wallet",
+      "ui",
+      "alert",
+      "quests"
+    ],
+    "visual_concept": "Depict Polli helping a small wallet-shaped notice bloom into a wide, welcoming sign at a cozy authorization desk. A Quest map and a Top up watering can sit nearby as clear, friendly paths forward, with a neatly aligned wallet icon and little code-flowers around the terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, gently straightening a wide softly glowing wallet notice beside a retro authorization terminal; a Quest map and a small Top up watering can lead toward blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) details, warm lighting, retro gaming vibes, with subtle pixel-font text: 'YOU HAVE OPTIONS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14447.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, gently straightening a wide softly glowing wallet notice beside a retro authorization terminal; a Quest map and a small Top up watering can lead toward blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) details, warm lighting, retro gaming vibes, with subtle pixel-font text: 'YOU HAVE OPTIONS'."
+  },
+  "generated_at": "2026-09-04T15:32:11.461455+00:00"
+}

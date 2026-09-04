@@ -40,6 +40,9 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EmbeddingContentPart,
+    EmbeddingResponse,
+    EmbeddingsOptions,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -572,4 +575,24 @@ export async function createKey(
  */
 export async function revokeKey(id: string): Promise<void> {
     return getClient().revokeKey(id);
+}
+
+/**
+ * Create embeddings via the OpenAI-compatible embeddings endpoint.
+ *
+ * @example
+ * ```ts
+ * import { generateEmbeddings } from '@pollinations/sdk';
+ *
+ * const { data, usage } = await generateEmbeddings(['Hello world'], {
+ *   model: 'openai-3-small',
+ * });
+ * console.log(data[0].embedding.length, usage.total_tokens);
+ * ```
+ */
+export async function generateEmbeddings(
+    input: string | string[] | EmbeddingContentPart | EmbeddingContentPart[],
+    options: EmbeddingsOptions = {},
+): Promise<EmbeddingResponse> {
+    return getClient().embeddings(input, options);
 }

@@ -20,6 +20,9 @@ import type {
     DeviceCodeResponse,
     DeviceTokenResponse,
     EarningsOptions,
+    EmbeddingContentPart,
+    EmbeddingResponse,
+    EmbeddingsOptions,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -1040,6 +1043,65 @@ export class Pollinations {
             response.headers.get("content-type") || "audio/mpeg";
 
         return { buffer, contentType };
+    }
+
+    // ============================================================================
+    // Embeddings
+    // ============================================================================
+
+    /**
+     * Create embeddings via the OpenAI-compatible endpoint (POST /v1/embeddings).
+     *
+     * @example
+     * ```ts
+     * const { data, usage } = await pollinations.embeddings('Hello world');
+     * console.log(data[0].embedding.length, usage.total_tokens);
+     *
+     * // Batch input with options
+     * const res = await pollinations.embeddings(['a', 'b'], { model: 'openai-3-small' });
+     * ```
+     */
+    async embeddings(
+        input:
+            | string
+            | string[]
+            | EmbeddingContentPart
+            | EmbeddingContentPart[],
+        options: EmbeddingsOptions = {},
+    ): Promise<EmbeddingResponse> {
+        if (input === undefined || input === null) {
+            throw new PollinationsError(
+                "Input is required",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = {
+            input,
+            model: options.model,
+            dimensions: options.dimensions,
+            task_type: options.task_type,
+            input_type: options.input_type,
+            encoding_format: options.encoding_format,
+        };
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/embeddings`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        return (await response.json()) as EmbeddingResponse;
     }
 
     // ============================================================================

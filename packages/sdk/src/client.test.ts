@@ -4,6 +4,7 @@ import {
     chat,
     configure,
     generateAudio,
+    generateEmbeddings,
     generateImage,
     generateText,
     generateVideo,
@@ -748,6 +749,103 @@ describe("Pollinations.accountQuests", () => {
         await expect(client.accountQuests()).resolves.toEqual(questsResponse);
         expect(fetchMock.mock.calls[0]?.[0]).toBe(
             "https://example.test/account/quests",
+        );
+    });
+});
+
+describe("Pollinations.embeddings", () => {
+    const embeddingResponse = {
+        object: "list",
+        data: [{ object: "embedding", embedding: [0.1, 0.2, 0.3], index: 0 }],
+        model: "openai-3-small",
+        usage: { prompt_tokens: 2, total_tokens: 2 },
+    };
+
+    it("posts a thin pass-through body to /v1/embeddings", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(embeddingResponse));
+
+        const result = await client.embeddings("Hello world", {
+            model: "openai-3-small",
+            dimensions: 768,
+            encoding_format: "float",
+        });
+
+        expect(result).toEqual(embeddingResponse);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/v1/embeddings",
+        );
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        expect(request.method).toBe("POST");
+        expect(
+            (request.headers as Record<string, string>)["Content-Type"],
+        ).toBe("application/json");
+        expect(
+            (request.headers as Record<string, string>)["Authorization"],
+        ).toBe("Bearer sk_test");
+        expect(JSON.parse(request.body as string)).toEqual({
+            input: "Hello world",
+            model: "openai-3-small",
+            dimensions: 768,
+            encoding_format: "float",
+        });
+    });
+
+    it("omits unset options and passes batch arrays through unchanged", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(embeddingResponse));
+
+        await client.embeddings(["a", "b"]);
+
+        expect(
+            JSON.parse(
+                (fetchMock.mock.calls[0][1] as RequestInit).body as string,
+            ),
+        ).toEqual({ input: ["a", "b"] });
+    });
+
+    it("rejects a missing input without making a request", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(makeResponse(embeddingResponse));
+
+        await expect(
+            client.embeddings(undefined as unknown as string),
+        ).rejects.toMatchObject({ code: "INVALID_INPUT", status: 400 });
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("surfaces upstream errors as PollinationsError", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValueOnce(
+            makeResponse(
+                { error: { message: "insufficient balance" } },
+                { ok: false, status: 402 },
+            ),
+        );
+
+        await expect(client.embeddings("hi")).rejects.toMatchObject({
+            status: 402,
+        });
+    });
+});
+
+describe("generateEmbeddings helper", () => {
+    it("delegates to the default client", async () => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+        fetchMock.mockResolvedValueOnce(
+            makeResponse({
+                object: "list",
+                data: [{ object: "embedding", embedding: [0.1], index: 0 }],
+                model: "openai-3-small",
+                usage: { prompt_tokens: 1, total_tokens: 1 },
+            }),
+        );
+
+        const result = await generateEmbeddings("Hello world");
+
+        expect(result.object).toBe("list");
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/v1/embeddings",
         );
     });
 });

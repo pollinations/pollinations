@@ -455,6 +455,34 @@ audioEl.play();
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
+## Embeddings
+
+```javascript
+import { generateEmbeddings } from '@pollinations/sdk';
+
+const { data, usage } = await generateEmbeddings('Hello world');
+
+console.log(data[0].embedding.slice(0, 3)); // first vector components
+console.log(usage.total_tokens);
+
+// Batch inputs with options
+const batch = await generateEmbeddings(['doc one', 'doc two'], {
+  model: 'openai-3-small',
+  dimensions: 768,
+  encoding_format: 'float',
+});
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | string | `'openai-3-small'` | Embedding model (`openai-3-small`, `gemini-2`, ...) |
+| `dimensions` | number | - | Output dimensions (128-4096, model-specific limits apply) |
+| `encoding_format` | `'float'` \| `'base64'` | `'float'` | Vector encoding |
+| `task_type` | string | - | Gemini task hint (e.g. `RETRIEVAL_QUERY`) |
+| `input_type` | `'query'` \| `'document'` | - | Cohere input role for retrieval |
+
 ## Vision (Image Input)
 
 ```javascript
@@ -561,6 +589,7 @@ import type {
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
+| `generateEmbeddings(input, options?)` | Create embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |

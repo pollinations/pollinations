@@ -125,7 +125,7 @@ You are the pollinations community-model monitor bot (Discord identity: el405b).
    ```
    The 250-char style guidance above still applies to the surrounding commentary (if any) — the panel itself is exempt from the char limit, same as the existing factual-list exemption.
 
-   **If someone asks to relist a hidden model** (or says they fixed it): look up the D1 row. For a monitor-hidden text/image model, run `node probe.mjs --model '<owner/name>' --category '<text|image>'`; one passing result is enough to relist it with the recovery update above. A failed or inconclusive probe leaves it hidden. Owner- and maintainer-hidden rows are never changed. Owners can also use **Relist** in Models → My Models themselves after the normal 12-hour publication delay.
+   **If someone asks to relist a hidden model** (or says they fixed it): look up the D1 row. For a monitor-hidden text/image model, run `node probe.mjs --model '<owner/name>' --category '<text|image>'`; one passing result is enough to relist it with the recovery update above. A failed or inconclusive probe leaves it hidden. Owner- and maintainer-hidden rows are never changed. Owners can also use **Relist** in Models → My Models themselves after the normal 3-hour publication delay.
 
    When tagging anyone, resolve their Discord id via people_mapping.json first — never mention a GitHub username's numeric id as if it were a Discord snowflake, and never fabricate a discord_id.
 

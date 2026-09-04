@@ -3593,10 +3593,10 @@ fixtureTest(
         const textExcludeModels = (await textExclude.json()) as ListedModel[];
         const textOnlyModels = (await textOnly.json()) as ListedModel[];
         const openaiExcludeData = (await openaiExclude.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const openaiOnlyData = (await openaiOnly.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
         const imageOnlyModels = (await imageOnly.json()) as ListedModel[];
@@ -3621,9 +3621,15 @@ fixtureTest(
         expect(
             openaiExcludeData.data.find((m) => m.id === textModelId),
         ).toBeUndefined();
+        expect(openaiExcludeData.data.every((m) => m.community === false)).toBe(
+            true,
+        );
         expect(
             openaiOnlyData.data.find((m) => m.id === textModelId),
         ).toBeDefined();
+        expect(openaiOnlyData.data.every((m) => m.community === true)).toBe(
+            true,
+        );
 
         expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
         expect(

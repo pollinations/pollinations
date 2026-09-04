@@ -6,9 +6,9 @@ import {
     ExternalLinkIcon,
     InlineLink,
     MailIcon,
-    SadFaceIcon,
     ScrollArea,
     useScrollLock,
+    WalletIcon,
 } from "@pollinations/ui";
 import {
     AuthInfoCard,
@@ -625,8 +625,8 @@ export function Authorize() {
                                     intent="info"
                                     className="!bg-intent-danger-bg-light"
                                     title={
-                                        <span className="inline-flex items-center gap-1.5">
-                                            <SadFaceIcon className="h-4 w-4 shrink-0" />
+                                        <span className="inline-flex items-center gap-1.5 leading-none">
+                                            <WalletIcon className="h-4 w-4 shrink-0" />
                                             You’re out of Pollen
                                         </span>
                                     }

@@ -102,6 +102,14 @@ export default defineWorkersConfig(async ({ mode }) => {
             globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: ["./test/setup/apply-migrations.ts"],
             exclude: [...configDefaults.exclude],
+            deps: {
+                optimizer: {
+                    ssr: {
+                        enabled: true,
+                        include: ["better-auth", "drizzle-orm"],
+                    },
+                },
+            },
             poolOptions: {
                 workers: {
                     singleWorker: true,

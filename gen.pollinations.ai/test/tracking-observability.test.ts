@@ -14,6 +14,7 @@ import {
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { handleError } from "@shared/error.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     type BillingAdjustment,
@@ -26,6 +27,7 @@ import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
@@ -171,7 +173,7 @@ function createCommunityEntry(
 function createTrackedResponseApp(
     consumePollen: (amount: number) => Promise<void>,
     eventType: "generate.image" | "generate.text" | "generate.audio",
-    response: Response,
+    result: Response | Error,
     model: ModelName = "openai",
 ) {
     const app = new Hono<Env>();
@@ -195,7 +197,11 @@ function createTrackedResponseApp(
         });
         await next();
     });
-    app.all("/upstream", track(eventType), () => response.clone());
+    app.all("/upstream", track(eventType), () => {
+        if (result instanceof Error) throw result;
+        return result.clone();
+    });
+    app.onError(handleError);
 
     return app;
 }
@@ -846,6 +852,81 @@ describe("tracking observability", () => {
                     native_finish_reason: "UPSTREAM_ERROR",
                 },
             ],
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
+    it("tracks infrastructure exceptions through the shared error handler", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            new HTTPException(503, {
+                message: "Generation coordination is unavailable",
+            }),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toMatchObject({
+            success: false,
+            status: 503,
+            error: {
+                code: "SERVICE_UNAVAILABLE",
+                message: "Generation coordination is unavailable",
+            },
+        });
+        await waitOnExecutionContext(ctx);
+
+        const events = await Promise.all(
+            tinybirdRequests.map(async (request) => ({
+                name: new URL(request.url).searchParams.get("name"),
+                body: (await request.json()) as Record<string, unknown>,
+            })),
+        );
+        expect(events).toHaveLength(2);
+        expect(
+            events.find(({ name }) => name === "generation_event_v2")?.body,
+        ).toMatchObject({
+            responseStatus: 503,
+            isBilledUsage: false,
+            errorResponseCode: "SERVICE_UNAVAILABLE",
+            errorMessage: "Generation coordination is unavailable",
+        });
+        expect(
+            events.find(({ name }) => name === "error_event")?.body,
+        ).toMatchObject({
+            kind: "server_error",
+            status: 503,
+            error_code: "SERVICE_UNAVAILABLE",
+            message: "Generation coordination is unavailable",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });

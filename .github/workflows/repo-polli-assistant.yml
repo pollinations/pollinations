@@ -64,12 +64,12 @@ jobs:
               36901823, // ElliotEtag
               158852059, // Itachi-1824
               74301576, // Circuit-Overtime
-              204561696, // tomdacatto
-              182555207, // YoannDev90
               34513273, // fisventurous
-              189873015, // sharktide
             ]);
             const prOnlyUserIds = new Set([
+              204561696, // tomdacatto
+              182555207, // YoannDev90
+              189873015, // sharktide
               228371309, // gggff123
             ]);
             const isPullRequest =

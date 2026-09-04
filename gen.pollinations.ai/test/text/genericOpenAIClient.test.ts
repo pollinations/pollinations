@@ -391,6 +391,28 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
+    it("maps an unsupported image URL format to a client error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    error: {
+                        message:
+                            "Unsupported image format for URL: https://example.com/video.mp4",
+                    },
+                },
+                { status: 415, statusText: "Unsupported Media Type" },
+            ),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 415, upstreamStatus: 415 });
+    });
+
     it("maps unsupported multimodal input errors to a client error", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json(

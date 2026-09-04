@@ -883,7 +883,7 @@ RENDER_VISUAL_TOOL = {
 Types: table, bar, horizontal_bar (long category names), line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
 `diagram` is Mermaid — flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, journey, gantt, pie, quadrantChart, requirementDiagram, gitGraph, mindmap, timeline, sankey, xychart, block, packet, kanban, architecture, radar, treemap, C4Context.
 
-For a diagram you usually do not need this tool: a ```mermaid fence in your reply is rendered inline automatically. Use `type: "diagram"` only for a standalone attachment.
+Discord does not render Mermaid fences. Always use `type: "diagram"` when the user asks for a diagram or flowchart; the tool returns an attached image.
 
 Data shape:
 - table:   {"headers": ["A","B"], "rows": [["1","2"], ...]}

@@ -5,9 +5,8 @@ Every path renders locally — no external model is involved:
   - type=<chart>   -> matplotlib/seaborn in chart_renderer
   - anything else  -> Mermaid in headless Chromium (diagrams.py)
 
-Diagrams generally do not need this tool at all: a ```mermaid fence written in a normal
-reply is rendered inline by ``bot.send_long_message``. The tool exists for numeric charts,
-which a fence cannot express, and for callers that prefer an explicit request.
+Discord does not render Mermaid fences. Diagrams and numeric charts must use this tool;
+the resulting PNG is attached to the reply.
 
 The result dict carries images via the ``_images`` (list) side-channel,
 which `pollinations.py` extracts into content_blocks before the
@@ -118,8 +117,7 @@ def _shape_help(chart_type: str, data: Any) -> dict:
         "  diagram: Mermaid source as a plain string, e.g. "
         '"flowchart TD\\n  A --> B" — any Mermaid type works '
         "(flowchart, sequenceDiagram, gantt, pie, mindmap, timeline, gitGraph, ...).\n"
-        "For a diagram you can also just write a ```mermaid code fence in your reply; "
-        "it is rendered automatically without calling this tool."
+        "Discord does not render Mermaid fences; use this tool for every diagram."
     )
 
 

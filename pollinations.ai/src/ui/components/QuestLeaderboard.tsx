@@ -118,7 +118,7 @@ export function QuestLeaderboardContent({
             </dl>
 
             {visible.length > 0 ? (
-                <ol className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <ol className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2">
                     {visible.map((entry, index) => (
                         <li key={entry.githubLogin}>
                             <Surface
@@ -232,7 +232,7 @@ export function QuestLeaderboard() {
         >
             {state.status === "loading" ? (
                 <output
-                    className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                    className="grid grid-cols-1 gap-3 min-[900px]:grid-cols-2"
                     aria-label="Loading Quest leaderboard"
                     aria-busy="true"
                 >

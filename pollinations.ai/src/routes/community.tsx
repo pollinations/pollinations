@@ -562,7 +562,7 @@ function BuildDiary() {
                     rows={2}
                 />
             ) : (
-                <Surface variant="card-themed" className="overflow-hidden p-0">
+                <Surface variant="card" className="overflow-hidden p-0">
                     <div className="flex flex-col gap-4 p-5 sm:p-6">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <fieldset
@@ -782,80 +782,67 @@ function BuildDiary() {
                     </div>
 
                     {story?.title && (
-                        <div className="grid overflow-hidden bg-surface-opaque md:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)]">
-                            <img
-                                key={story.imageUrl}
-                                src={story.imageUrl ?? undefined}
-                                alt=""
-                                aria-hidden="true"
-                                loading="lazy"
-                                className="aspect-[4/3] h-full min-h-0 w-full bg-theme-bg-subtle object-cover md:aspect-auto md:min-h-72"
-                            />
-                            <div className="flex min-w-0 flex-col gap-4 p-5 sm:p-7">
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                    <div className="flex flex-wrap items-center gap-2.5">
-                                        <Eyebrow size="chrome">
-                                            {showingMonthlyStory
-                                                ? formatMonth(month)
-                                                : formatDate(
-                                                      selected?.date ??
-                                                          latestDay,
-                                                      true,
-                                                  )}
-                                        </Eyebrow>
-                                        <Chip size="sm">
-                                            {story.prCount} PR
-                                            {story.prCount === 1 ? "" : "s"}
-                                        </Chip>
-                                    </div>
-                                    <div className="ml-auto flex items-center gap-2">
-                                        <Button
-                                            size="sm"
-                                            intent="neutral"
-                                            disabled={!previousStory}
-                                            onClick={() =>
-                                                showAdjacentStory("previous")
-                                            }
-                                            aria-label={`Previous ${zoom === "all" ? "month" : "diary entry"}`}
-                                            title={`Previous ${zoom === "all" ? "month" : "day"}`}
-                                            className="h-9 w-9 p-0"
-                                        >
-                                            <ArrowRightIcon className="h-4 w-4 rotate-180" />
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            intent="neutral"
-                                            disabled={!nextStory}
-                                            onClick={() =>
-                                                showAdjacentStory("next")
-                                            }
-                                            aria-label={`Next ${zoom === "all" ? "month" : "diary entry"}`}
-                                            title={`Next ${zoom === "all" ? "month" : "day"}`}
-                                            className="h-9 w-9 p-0"
-                                        >
-                                            <ArrowRightIcon className="h-4 w-4" />
-                                        </Button>
-                                    </div>
+                        <div className="grid overflow-hidden min-[540px]:h-80 min-[540px]:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)]">
+                            <div className="relative min-h-0 overflow-hidden">
+                                <img
+                                    key={story.imageUrl}
+                                    src={story.imageUrl ?? undefined}
+                                    alt=""
+                                    aria-hidden="true"
+                                    loading="lazy"
+                                    className="aspect-[4/3] h-full min-h-0 w-full bg-theme-bg-subtle object-cover min-[540px]:aspect-auto"
+                                />
+                                <div className="absolute right-0 bottom-3 left-0 flex items-center justify-center gap-2">
+                                    <Button
+                                        size="sm"
+                                        intent="neutral"
+                                        disabled={!previousStory}
+                                        onClick={() =>
+                                            showAdjacentStory("previous")
+                                        }
+                                        aria-label={`Previous ${zoom === "all" ? "month" : "diary entry"}`}
+                                        title={`Previous ${zoom === "all" ? "month" : "day"}`}
+                                        className="h-9 w-9 p-0 shadow-well"
+                                    >
+                                        <ArrowRightIcon className="h-4 w-4 rotate-180" />
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        intent="neutral"
+                                        disabled={!nextStory}
+                                        onClick={() =>
+                                            showAdjacentStory("next")
+                                        }
+                                        aria-label={`Next ${zoom === "all" ? "month" : "diary entry"}`}
+                                        title={`Next ${zoom === "all" ? "month" : "day"}`}
+                                        className="h-9 w-9 p-0 shadow-well"
+                                    >
+                                        <ArrowRightIcon className="h-4 w-4" />
+                                    </Button>
                                 </div>
-                                <h3 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
+                            </div>
+                            <div className="flex h-80 min-w-0 flex-col gap-4 p-5 sm:p-7">
+                                <div className="flex flex-wrap items-center gap-2.5">
+                                    <Eyebrow size="chrome">
+                                        {showingMonthlyStory
+                                            ? formatMonth(month)
+                                            : formatDate(
+                                                  selected?.date ?? latestDay,
+                                                  true,
+                                              )}
+                                    </Eyebrow>
+                                    <Chip size="sm">
+                                        <GitPullRequestIcon className="h-3 w-3" />
+                                        {story.prCount} PR
+                                        {story.prCount === 1 ? "" : "s"}
+                                    </Chip>
+                                </div>
+                                <h3 className="line-clamp-2 font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
                                     {story.title}
                                 </h3>
-                                <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
+                                <p className="line-clamp-4 text-sm leading-relaxed text-theme-text-base min-[540px]:line-clamp-3 sm:text-base">
                                     {story.summary}
                                 </p>
-                                <div className="mt-auto pt-2">
-                                    {story.url && (
-                                        <InlineLink href={story.url}>
-                                            {showingMonthlyStory
-                                                ? "See the month’s PRs"
-                                                : story.url.includes(
-                                                        "/tree/news/",
-                                                    )
-                                                  ? "See the day’s PRs"
-                                                  : "Open the pull request"}
-                                        </InlineLink>
-                                    )}
-                                </div>
                             </div>
                         </div>
                     )}

@@ -220,7 +220,7 @@ function CommunityParticipation() {
             >
                 <ContentHeader
                     eyebrow="Open source, open roadmap"
-                    title="Contribute"
+                    title="Community"
                     subtitle={
                         <>
                             <strong>
@@ -567,8 +567,8 @@ function BuildDiary() {
         <section className="flex flex-col gap-5">
             <ContentHeader
                 eyebrow="Build diary"
-                title="What we shipped in the community"
-                subtitle="See the full history by year, the current year by month, or the current month day by day."
+                title="What shipped, day by day"
+                subtitle="Pollinations’ build history from 2025 onward, told through merged pull requests and daily summaries."
             />
             {bare ? (
                 <FeedState

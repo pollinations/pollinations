@@ -177,7 +177,7 @@ export function useVotingIssues(limit = 3) {
 const NEWS_RAW =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily";
 const NEWS_REPO_PATH = "operations/social/news/daily";
-const NEWS_START_DAY = "2026-02-05";
+const NEWS_START_DAY = "2025-02-28";
 const FALLBACK_DIARY_IMAGES = [
     "2026-08-03",
     "2026-08-05",
@@ -342,6 +342,10 @@ function loadPullRequestHistory() {
             uniquePullRequests.set(pullRequest.number, pullRequest);
         }
         const pullRequests = [...uniquePullRequests.values()]
+            .filter(
+                (pullRequest) =>
+                    pullRequest.mergedAt.slice(0, 10) >= NEWS_START_DAY,
+            )
             .map((pullRequest) => ({
                 ...pullRequest,
                 date: pullRequest.mergedAt.slice(0, 10),

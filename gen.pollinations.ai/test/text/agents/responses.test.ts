@@ -1,8 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+    afterAll,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
-} from "../src/services/prompt-agent-responses.ts";
+} from "../../../src/text/agents/responses.ts";
 
 const RUNTIME = {
     config: {
@@ -12,7 +20,18 @@ const RUNTIME = {
     },
     apiKey: "ag_test",
     genBaseUrl: "https://gen.test",
+    fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
+        globalThis.fetch(input, init),
 };
+
+function rethrowUnhandledRejection(reason: unknown): void {
+    throw reason;
+}
+
+// Keep the migrated AI SDK failure-path tests under Enter's existing
+// workerd rejection behavior without weakening Gen's test suite globally.
+beforeAll(() => process.on("unhandledRejection", rethrowUnhandledRejection));
+afterAll(() => process.off("unhandledRejection", rethrowUnhandledRejection));
 
 function request(input: Record<string, unknown>) {
     return PromptAgentResponsesRequestSchema.parse({
@@ -350,138 +369,138 @@ describe("managed agent Responses runtime", () => {
         });
     });
 
-    it.each([
-        false,
-        true,
-    ])("fails closed when stream:%s omits usage", async (stream) => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => {
-                if (!stream) {
-                    return Response.json({
-                        id: "chatcmpl-upstream",
-                        object: "chat.completion",
-                        created: 1,
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: "untrusted",
-                                },
-                                finish_reason: "stop",
-                            },
-                        ],
-                    });
-                }
-                return new Response(
-                    'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
-                        'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n' +
-                        "data: [DONE]\n\n",
-                    { headers: { "content-type": "text/event-stream" } },
-                );
-            }),
-        );
-
-        const response = await handlePromptAgentResponsesRequest(
-            request({ stream }),
-            new AbortController().signal,
-            RUNTIME,
-        );
-        if (!stream) {
-            expect(response.status).toBe(502);
-            await expect(response.json()).resolves.toMatchObject({
-                error: { code: "agent_error" },
-            });
-            return;
-        }
-        const events = streamEvents(await response.text());
-        expect(events.at(-2)).toMatchObject({
-            type: "error",
-            error: { code: "agent_error" },
-        });
-        expect(events.at(-1)).toMatchObject({
-            type: "response.failed",
-            response: { status: "failed", usage: null },
-        });
-        expect(
-            events.some((event) => event.type === "response.completed"),
-        ).toBe(false);
-    });
-
-    it.each([
-        false,
-        true,
-    ])("fails closed when stream:%s returns malformed usage", async (stream) => {
-        const usage = {
-            prompt_tokens: "four",
-            completion_tokens: 1,
-            total_tokens: 5,
-        };
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () => {
-                if (!stream) {
-                    return Response.json({
-                        id: "chatcmpl-upstream",
-                        object: "chat.completion",
-                        created: 1,
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: "untrusted",
-                                },
-                                finish_reason: "stop",
-                            },
-                        ],
-                        usage,
-                    });
-                }
-                return new Response(
-                    'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
-                        `data: ${JSON.stringify({
+    it.each([false, true])(
+        "fails closed when stream:%s omits usage",
+        async (stream) => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => {
+                    if (!stream) {
+                        return Response.json({
+                            id: "chatcmpl-upstream",
+                            object: "chat.completion",
+                            created: 1,
                             choices: [
                                 {
                                     index: 0,
-                                    delta: {},
+                                    message: {
+                                        role: "assistant",
+                                        content: "untrusted",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                        });
+                    }
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
+                            'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}]}\n\n' +
+                            "data: [DONE]\n\n",
+                        { headers: { "content-type": "text/event-stream" } },
+                    );
+                }),
+            );
+
+            const response = await handlePromptAgentResponsesRequest(
+                request({ stream }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            if (!stream) {
+                expect(response.status).toBe(502);
+                await expect(response.json()).resolves.toMatchObject({
+                    error: { code: "agent_error" },
+                });
+                return;
+            }
+            const events = streamEvents(await response.text());
+            expect(events.at(-2)).toMatchObject({
+                type: "error",
+                error: { code: "agent_error" },
+            });
+            expect(events.at(-1)).toMatchObject({
+                type: "response.failed",
+                response: { status: "failed", usage: null },
+            });
+            expect(
+                events.some((event) => event.type === "response.completed"),
+            ).toBe(false);
+        },
+    );
+
+    it.each([false, true])(
+        "fails closed when stream:%s returns malformed usage",
+        async (stream) => {
+            const usage = {
+                prompt_tokens: "four",
+                completion_tokens: 1,
+                total_tokens: 5,
+            };
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => {
+                    if (!stream) {
+                        return Response.json({
+                            id: "chatcmpl-upstream",
+                            object: "chat.completion",
+                            created: 1,
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "untrusted",
+                                    },
                                     finish_reason: "stop",
                                 },
                             ],
                             usage,
-                        })}\n\n` +
-                        "data: [DONE]\n\n",
-                    { headers: { "content-type": "text/event-stream" } },
-                );
-            }),
-        );
+                        });
+                    }
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{"content":"untrusted"},"finish_reason":null}]}\n\n' +
+                            `data: ${JSON.stringify({
+                                choices: [
+                                    {
+                                        index: 0,
+                                        delta: {},
+                                        finish_reason: "stop",
+                                    },
+                                ],
+                                usage,
+                            })}\n\n` +
+                            "data: [DONE]\n\n",
+                        { headers: { "content-type": "text/event-stream" } },
+                    );
+                }),
+            );
 
-        const response = await handlePromptAgentResponsesRequest(
-            request({ stream }),
-            new AbortController().signal,
-            RUNTIME,
-        );
-        if (!stream) {
-            expect(response.status).toBe(502);
-            await expect(response.json()).resolves.toMatchObject({
+            const response = await handlePromptAgentResponsesRequest(
+                request({ stream }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            if (!stream) {
+                expect(response.status).toBe(502);
+                await expect(response.json()).resolves.toMatchObject({
+                    error: { code: "agent_error" },
+                });
+                return;
+            }
+            const events = streamEvents(await response.text());
+            expect(events.at(-2)).toMatchObject({
+                type: "error",
                 error: { code: "agent_error" },
             });
-            return;
-        }
-        const events = streamEvents(await response.text());
-        expect(events.at(-2)).toMatchObject({
-            type: "error",
-            error: { code: "agent_error" },
-        });
-        expect(events.at(-1)).toMatchObject({
-            type: "response.failed",
-            response: { status: "failed", usage: null },
-        });
-        expect(
-            events.some((event) => event.type === "response.completed"),
-        ).toBe(false);
-    });
+            expect(events.at(-1)).toMatchObject({
+                type: "response.failed",
+                response: { status: "failed", usage: null },
+            });
+            expect(
+                events.some((event) => event.type === "response.completed"),
+            ).toBe(false);
+        },
+    );
 
     it("rejects state and caller-supplied tools", async () => {
         expect(

@@ -2658,7 +2658,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "runs managed Responses through a scoped token and bills the inner model once",
+    "runs managed Responses and Chat through Gen and bills each inner model call once",
     async () => {
         const ownerGithubUsername = `agent-owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `managed-${crypto.randomUUID().slice(0, 8)}`;
@@ -2693,12 +2693,6 @@ fixtureTest(
         const balanceBefore = await getUserBalance(db, caller.userId);
         const tinybirdEvents: Record<string, unknown>[] = [];
         let runtimeToken = "";
-        const agentRuntimePath =
-            "../../enter.pollinations.ai/src/routes/agent-runtime.ts";
-        const { agentRuntimeRoutes } = (await import(agentRuntimePath)) as {
-            agentRuntimeRoutes: Hono<Env>;
-        };
-
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
@@ -2711,39 +2705,13 @@ fixtureTest(
                 }
                 if (
                     request.url ===
-                    communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL)
+                    "https://gen.pollinations.ai/v1/chat/completions"
                 ) {
                     runtimeToken =
                         request.headers
                             .get("authorization")
                             ?.replace(/^Bearer\s+/i, "") ?? "";
-                    const context = createExecutionContext();
-                    const response = await agentRuntimeRoutes.fetch(
-                        new Request("https://enter.test/v1/responses", {
-                            method: request.method,
-                            headers: request.headers,
-                            body: await request.text(),
-                        }),
-                        { ...env, GEN_BASE_URL: "https://gen.internal" },
-                        context,
-                    );
-                    const body = await response.arrayBuffer();
-                    await waitOnExecutionContext(context);
-                    return new Response(body, response);
-                }
-                if (
-                    request.url === "https://gen.internal/v1/chat/completions"
-                ) {
-                    return fetchGen(
-                        new Request(
-                            "https://gen.pollinations.ai/v1/chat/completions",
-                            {
-                                method: request.method,
-                                headers: request.headers,
-                                body: await request.text(),
-                            },
-                        ),
-                    );
+                    return fetchGen(request);
                 }
                 if (isPortkeyChatCompletionsRequest(request)) {
                     return Response.json({
@@ -2806,16 +2774,62 @@ fixtureTest(
         expect(balanceAfter.packBalance).toBeLessThan(
             balanceBefore.packBalance,
         );
+        expect(
+            tinybirdEvents.filter(
+                (event) =>
+                    event.modelRequested === "openai-fast" &&
+                    event.isBilledUsage === true,
+            ),
+        ).toHaveLength(1);
+
+        const chatResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "different prompt" }],
+                }),
+            }),
+        );
+        expect(chatResponse.status).toBe(200);
+        await expect(chatResponse.json()).resolves.toMatchObject({
+            object: "chat.completion",
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content: "managed answer",
+                    },
+                },
+            ],
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            },
+        });
+        const balanceAfterChat = await getUserBalance(db, caller.userId);
+        expect(balanceAfterChat.packBalance).toBeLessThan(
+            balanceAfter.packBalance,
+        );
         const billedInnerEvents = tinybirdEvents.filter(
             (event) =>
                 event.modelRequested === "openai-fast" &&
                 event.isBilledUsage === true,
         );
-        expect(billedInnerEvents).toHaveLength(1);
-        expect(billedInnerEvents[0]).toMatchObject({
-            tokenCountPromptText: 10,
-            tokenCountCompletionText: 5,
-        });
+        expect(billedInnerEvents).toHaveLength(2);
+        expect(billedInnerEvents).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    tokenCountPromptText: 10,
+                    tokenCountCompletionText: 5,
+                }),
+            ]),
+        );
     },
 );
 
@@ -6160,7 +6174,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const enterEnv = {
         ...env,
         BETTER_AUTH_URL: "https://enter.test",
-        AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
+        GEN_BASE_URL: "https://gen.pollinations.ai",
     };
     const enterApi = await createEnterFrontendApi();
     const cookie = (await signedSessionCookie(sessionToken)).replace(
@@ -6208,7 +6222,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         name: modelName,
         description: null,
         visibility: "private",
-        baseUrl: env.AGENT_RUNTIME_BASE_URL,
+        baseUrl: "https://gen.pollinations.ai/v1",
         upstreamModel: agent.id,
     });
     const [storedAgent] = await db
@@ -6298,9 +6312,9 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     if (!registration) throw new Error("Agent listing was not created");
     expect(registration.id).toBe(agent.id);
     expect(registration.type).toBe("prompt_agent");
-    expect(registration.baseUrl).toBe(env.AGENT_RUNTIME_BASE_URL);
+    expect(registration.baseUrl).toBe("https://gen.pollinations.ai/v1");
     expect(registration.responsesUrl).toBe(
-        communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL),
+        "https://gen.pollinations.ai/v1/responses",
     );
     expect(registration.upstreamModel).toBe(agent.id);
     expect(registration).not.toHaveProperty("modality");
@@ -6360,8 +6374,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     expect(registryEntry?.communityEndpoint).toMatchObject({
         type: "prompt_agent",
-        baseUrl: env.AGENT_RUNTIME_BASE_URL,
-        responsesUrl: communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL),
+        baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+        responsesUrl: communityResponsesUrl(PROMPT_AGENT_BASE_URL_PLACEHOLDER),
         upstreamModel: agent.id,
     });
     // An agent listing carries no upstream credential of its own.
@@ -6398,9 +6412,11 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         managedAgentId: agent.id,
     });
     expect(gatewayContext.modelConfig).toMatchObject({
-        "custom-host": env.AGENT_RUNTIME_BASE_URL,
+        "custom-host": PROMPT_AGENT_BASE_URL_PLACEHOLDER,
         model: agent.id,
-        responsesEndpoint: communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL),
+        responsesEndpoint: communityResponsesUrl(
+            PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+        ),
     });
 
     const endpointAgentId = `endpoint-${crypto.randomUUID()}`;

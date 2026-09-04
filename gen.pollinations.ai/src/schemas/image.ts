@@ -144,7 +144,7 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max-turbo` also supports `21:9`, `4:3`, `1:1`, and `3:4`.",
+            "Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash`, `seedance-2.5`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max-turbo` also supports `21:9`, `4:3`, `1:1`, and `3:4`.",
     }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:

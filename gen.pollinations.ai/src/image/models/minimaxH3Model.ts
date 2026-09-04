@@ -237,11 +237,13 @@ export async function callMinimaxH3MaxTurboAPI(
                 : {
                       aspect_ratio:
                           requestedAspectRatio ??
-                          closestRatioLogSpace(
-                              safeParams.width,
-                              safeParams.height,
-                              H3_MAX_TURBO_ASPECT_RATIOS,
-                          ),
+                          (safeParams.dimensionsExplicit
+                              ? closestRatioLogSpace(
+                                    safeParams.width,
+                                    safeParams.height,
+                                    H3_MAX_TURBO_ASPECT_RATIOS,
+                                )
+                              : "16:9"),
                   }),
         },
         duration,

@@ -186,6 +186,25 @@ describe("callMinimaxH3MaxTurboAPI", () => {
         });
     });
 
+    it.each([
+        [false, 1024, 1024, "16:9"],
+        [true, 480, 640, "3:4"],
+    ] as const)("uses the expected aspect ratio when dimensionsExplicit is %s", async (dimensionsExplicit, width, height, expectedAspectRatio) => {
+        const requests: ProviderRequest[] = [];
+        mockH3Fetch(requests);
+
+        await callMinimaxH3MaxTurboAPI("a paper windmill", {
+            ...baseParams,
+            model: "minimax/minimax-h3-max-turbo",
+            aspectRatio: undefined,
+            dimensionsExplicit,
+            width,
+            height,
+        });
+
+        expect(requests[0]?.body?.aspect_ratio).toBe(expectedAspectRatio);
+    });
+
     it("forwards first and last frame URLs to the image route", async () => {
         const requests: ProviderRequest[] = [];
         mockH3Fetch(requests);

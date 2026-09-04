@@ -4,11 +4,15 @@ import {
     BeakerIcon,
     Button,
     Callout,
+    CheckIcon,
+    ChevronIcon,
     Chip,
     CodeIcon,
     ContentHeader,
     cn,
     DiscordIcon,
+    Dropdown,
+    DropdownItem,
     ExternalLinkButton,
     Eyebrow,
     GitPullRequestIcon,
@@ -376,7 +380,7 @@ function BuildDiary() {
         loading,
         failed,
     } = useBuildDiary(visibleMonth ?? undefined);
-    const { month, latestDay, days, hasEarlier, hasLater } = diary;
+    const { month, latestDay, days } = diary;
     const entries = days.filter((day) => day.title !== null);
     const representativeIndex = entries.length
         ? [...month].reduce((total, character) => {
@@ -405,6 +409,21 @@ function BuildDiary() {
         selectedIndex >= 0 && selectedIndex < entries.length - 1
             ? entries[selectedIndex + 1]
             : null;
+    const activeMonths = allDiary.months.filter((item) => item.prCount > 0);
+    const selectedMonth = activeMonths.find((item) => item.month === month);
+    const selectedMonthIndex = selectedMonth
+        ? activeMonths.findIndex((item) => item.month === selectedMonth.month)
+        : -1;
+    const previousMonth =
+        selectedMonthIndex > 0 ? activeMonths[selectedMonthIndex - 1] : null;
+    const nextMonth =
+        selectedMonthIndex >= 0 && selectedMonthIndex < activeMonths.length - 1
+            ? activeMonths[selectedMonthIndex + 1]
+            : null;
+    const showingMonthlyStory = zoom === "all" && Boolean(selectedMonth?.title);
+    const story = showingMonthlyStory ? selectedMonth : selected;
+    const previousStory = zoom === "all" ? previousMonth : previous;
+    const nextStory = zoom === "all" ? nextMonth : next;
     const formatDate = (date: string, full = false) =>
         new Date(`${date}T00:00:00Z`).toLocaleDateString("en-GB", {
             day: "numeric",
@@ -437,7 +456,7 @@ function BuildDiary() {
                   ariaLabel: `${formatMonth(item.month)}: ${item.prCount} pull request${item.prCount === 1 ? "" : "s"} merged`,
                   onSelect: () => {
                       setVisibleMonth(item.month);
-                      setSelectedDate(item.representativeDate);
+                      setSelectedDate(null);
                   },
               }))
             : days.map((day) => ({
@@ -474,14 +493,9 @@ function BuildDiary() {
     const periodName = zoom === "all" ? "All time" : formatMonth(month);
     const chartTitle =
         zoom === "all" ? "Monthly merged PRs" : "Daily merged PRs";
-
-    const shiftPeriod = (amount: number) => {
-        if (!month) return;
-        const [year, monthIndex] = month.split("-").map(Number);
-        const date = new Date(Date.UTC(year, monthIndex - 1 + amount, 1));
-        setVisibleMonth(date.toISOString().slice(0, 7));
-        setSelectedDate(null);
-    };
+    const diaryYears = [
+        ...new Set(allDiary.months.map((item) => item.month.slice(0, 4))),
+    ];
 
     const selectZoom = (nextZoom: DiaryZoom) => {
         if (!visibleMonth) {
@@ -489,6 +503,19 @@ function BuildDiary() {
         }
         setSelectedDate(null);
         setZoom(nextZoom);
+    };
+
+    const showAdjacentStory = (direction: "previous" | "next") => {
+        if (zoom === "all") {
+            const adjacent =
+                direction === "previous" ? previousMonth : nextMonth;
+            if (!adjacent) return;
+            setVisibleMonth(adjacent.month);
+            setSelectedDate(null);
+            return;
+        }
+        const adjacent = direction === "previous" ? previous : next;
+        if (adjacent) setSelectedDate(adjacent.date);
     };
 
     return (
@@ -506,11 +533,8 @@ function BuildDiary() {
                     rows={2}
                 />
             ) : (
-                <>
-                    <Surface
-                        variant="card-themed"
-                        className="flex flex-col gap-4 p-5 sm:p-6"
-                    >
+                <Surface variant="card-themed" className="overflow-hidden p-0">
+                    <div className="flex flex-col gap-4 p-5 sm:p-6">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <fieldset
                                 aria-label="Build diary zoom"
@@ -528,21 +552,101 @@ function BuildDiary() {
                                 ))}
                             </fieldset>
                             <div className="flex flex-wrap items-center gap-2">
-                                {zoom === "month" && (
-                                    <Button
-                                        size="sm"
-                                        intent="neutral"
-                                        disabled={!hasEarlier}
-                                        onClick={() => shiftPeriod(-1)}
-                                        aria-label="Previous month"
-                                        className="h-8 w-8 p-0"
+                                {zoom === "month" && !zoomLoading && (
+                                    <Dropdown
+                                        align="end"
+                                        className="polli:max-h-80 polli:w-60 polli:overflow-y-auto polli:p-2"
+                                        trigger={(open) => (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                intent="neutral"
+                                                aria-label={`Choose month, currently ${formatMonth(month)}`}
+                                                className="min-h-8 gap-2 whitespace-nowrap px-3 py-1.5 text-xs"
+                                            >
+                                                {formatMonth(month)}
+                                                <ChevronIcon
+                                                    expanded={open}
+                                                    className="size-3"
+                                                />
+                                            </Button>
+                                        )}
                                     >
-                                        <ArrowRightIcon className="h-3.5 w-3.5 rotate-180" />
-                                    </Button>
+                                        {(close) => (
+                                            <div className="polli:flex polli:flex-col polli:gap-3">
+                                                {diaryYears.map((year) => (
+                                                    <div
+                                                        key={year}
+                                                        className="polli:flex polli:flex-col polli:gap-1"
+                                                    >
+                                                        <Eyebrow
+                                                            size="chrome"
+                                                            className="px-3 pt-1 text-theme-text-muted"
+                                                        >
+                                                            {year}
+                                                        </Eyebrow>
+                                                        {allDiary.months
+                                                            .filter((item) =>
+                                                                item.month.startsWith(
+                                                                    year,
+                                                                ),
+                                                            )
+                                                            .map((item) => (
+                                                                <DropdownItem
+                                                                    key={
+                                                                        item.month
+                                                                    }
+                                                                    aria-current={
+                                                                        item.month ===
+                                                                        month
+                                                                            ? "date"
+                                                                            : undefined
+                                                                    }
+                                                                    onClick={() => {
+                                                                        setVisibleMonth(
+                                                                            item.month,
+                                                                        );
+                                                                        setSelectedDate(
+                                                                            null,
+                                                                        );
+                                                                        close();
+                                                                    }}
+                                                                >
+                                                                    <span className="min-w-0 flex-1">
+                                                                        {new Date(
+                                                                            `${item.month}-01T00:00:00Z`,
+                                                                        ).toLocaleDateString(
+                                                                            "en-GB",
+                                                                            {
+                                                                                month: "long",
+                                                                                timeZone:
+                                                                                    "UTC",
+                                                                            },
+                                                                        )}
+                                                                    </span>
+                                                                    <span className="text-theme-text-muted text-xs tabular-nums">
+                                                                        {item.prCount.toLocaleString()}
+                                                                    </span>
+                                                                    <CheckIcon
+                                                                        className={cn(
+                                                                            "size-3.5",
+                                                                            item.month ===
+                                                                                month
+                                                                                ? "opacity-100"
+                                                                                : "opacity-0",
+                                                                        )}
+                                                                    />
+                                                                </DropdownItem>
+                                                            ))}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </Dropdown>
                                 )}
                                 <Chip
                                     size="lg"
-                                    className="h-8 rounded-full !bg-transparent px-3 text-sm"
+                                    className="h-8 rounded-full !bg-transparent px-2 text-theme-text-muted text-xs"
                                 >
                                     {zoomLoading ? (
                                         "Loading…"
@@ -550,27 +654,14 @@ function BuildDiary() {
                                         "Unavailable"
                                     ) : (
                                         <>
-                                            <span>{periodName}</span>
-                                            <span aria-hidden="true">·</span>
                                             <GitPullRequestIcon className="h-3 w-3" />
                                             <span className="tabular-nums">
-                                                {periodPrs.toLocaleString()}
+                                                {periodPrs.toLocaleString()} PR
+                                                {periodPrs === 1 ? "" : "s"}
                                             </span>
                                         </>
                                     )}
                                 </Chip>
-                                {zoom === "month" && (
-                                    <Button
-                                        size="sm"
-                                        intent="neutral"
-                                        disabled={!hasLater}
-                                        onClick={() => shiftPeriod(1)}
-                                        aria-label="Next month"
-                                        className="h-8 w-8 p-0"
-                                    >
-                                        <ArrowRightIcon className="h-3.5 w-3.5" />
-                                    </Button>
-                                )}
                             </div>
                         </div>
                         {zoomLoading || zoomFailed ? (
@@ -659,58 +750,45 @@ function BuildDiary() {
                                 </div>
                             </div>
                         )}
-                    </Surface>
+                    </div>
 
-                    {selected?.title && (
-                        <Surface
-                            variant="card"
-                            className="grid overflow-hidden p-0 md:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)]"
-                        >
+                    {story?.title && (
+                        <div className="grid overflow-hidden bg-surface-opaque md:grid-cols-[minmax(260px,0.9fr)_minmax(0,1.1fr)]">
                             <img
-                                key={selected.imageUrl}
-                                src={selected.imageUrl ?? undefined}
+                                key={story.imageUrl}
+                                src={story.imageUrl ?? undefined}
                                 alt=""
                                 aria-hidden="true"
                                 loading="lazy"
                                 className="aspect-[4/3] h-full min-h-0 w-full bg-theme-bg-subtle object-cover md:aspect-auto md:min-h-72"
                             />
                             <div className="flex min-w-0 flex-col gap-4 p-5 sm:p-7">
-                                <div className="flex flex-wrap items-center gap-2.5">
-                                    <Eyebrow size="chrome">
-                                        {formatDate(selected.date, true)}
-                                    </Eyebrow>
-                                    <Chip size="sm">
-                                        {selected.prCount} PR
-                                        {selected.prCount === 1 ? "" : "s"}
-                                    </Chip>
-                                </div>
-                                <h3 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
-                                    {selected.title}
-                                </h3>
-                                <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
-                                    {selected.summary}
-                                </p>
-                                <div className="mt-auto flex flex-wrap items-center justify-between gap-4 pt-2">
-                                    {selected.url && (
-                                        <InlineLink href={selected.url}>
-                                            {selected.url.includes(
-                                                "/tree/news/",
-                                            )
-                                                ? "See the day’s PRs"
-                                                : "Open the pull request"}
-                                        </InlineLink>
-                                    )}
+                                <div className="flex flex-wrap items-center justify-between gap-3">
+                                    <div className="flex flex-wrap items-center gap-2.5">
+                                        <Eyebrow size="chrome">
+                                            {showingMonthlyStory
+                                                ? formatMonth(month)
+                                                : formatDate(
+                                                      selected?.date ??
+                                                          latestDay,
+                                                      true,
+                                                  )}
+                                        </Eyebrow>
+                                        <Chip size="sm">
+                                            {story.prCount} PR
+                                            {story.prCount === 1 ? "" : "s"}
+                                        </Chip>
+                                    </div>
                                     <div className="ml-auto flex items-center gap-2">
                                         <Button
                                             size="sm"
                                             intent="neutral"
-                                            disabled={!previous}
+                                            disabled={!previousStory}
                                             onClick={() =>
-                                                previous &&
-                                                setSelectedDate(previous.date)
+                                                showAdjacentStory("previous")
                                             }
-                                            aria-label="Previous diary entry"
-                                            title="Previous day"
+                                            aria-label={`Previous ${zoom === "all" ? "month" : "diary entry"}`}
+                                            title={`Previous ${zoom === "all" ? "month" : "day"}`}
                                             className="h-9 w-9 p-0"
                                         >
                                             <ArrowRightIcon className="h-4 w-4 rotate-180" />
@@ -718,23 +796,41 @@ function BuildDiary() {
                                         <Button
                                             size="sm"
                                             intent="neutral"
-                                            disabled={!next}
+                                            disabled={!nextStory}
                                             onClick={() =>
-                                                next &&
-                                                setSelectedDate(next.date)
+                                                showAdjacentStory("next")
                                             }
-                                            aria-label="Next diary entry"
-                                            title="Next day"
+                                            aria-label={`Next ${zoom === "all" ? "month" : "diary entry"}`}
+                                            title={`Next ${zoom === "all" ? "month" : "day"}`}
                                             className="h-9 w-9 p-0"
                                         >
                                             <ArrowRightIcon className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 </div>
+                                <h3 className="font-subheading text-2xl leading-tight text-theme-text-strong sm:text-3xl">
+                                    {story.title}
+                                </h3>
+                                <p className="text-sm leading-relaxed text-theme-text-base sm:text-base">
+                                    {story.summary}
+                                </p>
+                                <div className="mt-auto pt-2">
+                                    {story.url && (
+                                        <InlineLink href={story.url}>
+                                            {showingMonthlyStory
+                                                ? "See the month’s PRs"
+                                                : story.url.includes(
+                                                        "/tree/news/",
+                                                    )
+                                                  ? "See the day’s PRs"
+                                                  : "Open the pull request"}
+                                        </InlineLink>
+                                    )}
+                                </div>
                             </div>
-                        </Surface>
+                        </div>
                     )}
-                </>
+                </Surface>
             )}
         </section>
     );

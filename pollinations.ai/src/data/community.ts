@@ -177,6 +177,9 @@ export function useVotingIssues(limit = 3) {
 const NEWS_RAW =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily";
 const NEWS_REPO_PATH = "operations/social/news/daily";
+const NEWS_MONTHLY_RAW =
+    "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/monthly";
+const NEWS_MONTHLY_REPO_PATH = "operations/social/news/monthly";
 const NEWS_START_DAY = "2025-01-01";
 const FALLBACK_DIARY_IMAGES = [
     "2026-08-03",
@@ -232,6 +235,10 @@ export type DiaryMonth = {
     month: string;
     prCount: number;
     representativeDate: string;
+    title: string | null;
+    summary: string | null;
+    imageUrl: string | null;
+    url: string | null;
 };
 
 type DiaryAll = {
@@ -244,8 +251,14 @@ type DailySummary = {
     summary: string;
 };
 
+type MonthlySummary = {
+    title: string;
+    summary: string;
+};
+
 const ISO_MONTH = /^\d{4}-\d{2}$/;
 const summaryCache = new Map<string, Promise<DailySummary | null>>();
+const monthlySummaryCache = new Map<string, Promise<MonthlySummary | null>>();
 let historyCache: Promise<DiaryHistory> | null = null;
 
 function stableIndex(value: string, length: number) {
@@ -378,6 +391,19 @@ function loadDailySummary(date: string) {
     return request;
 }
 
+function loadMonthlySummary(month: string) {
+    const existing = monthlySummaryCache.get(month);
+    if (existing) return existing;
+    const request = fetch(`${NEWS_MONTHLY_RAW}/${month}/summary.json`)
+        .then(async (response) => {
+            if (!response.ok) return null;
+            return (await response.json()) as MonthlySummary;
+        })
+        .catch(() => null);
+    monthlySummaryCache.set(month, request);
+    return request;
+}
+
 function toDiaryDay(
     date: string,
     daily: DailySummary | null,
@@ -504,11 +530,31 @@ export function useBuildDiaryAll(options?: UseAsyncOptions) {
                     month,
                     prCount: pullRequests.length,
                     representativeDate: representative?.date ?? `${month}-01`,
+                    title: null,
+                    summary: null,
+                    imageUrl: null,
+                    url: null,
                 });
                 cursor.setUTCMonth(cursor.getUTCMonth() + 1);
             }
 
-            return { months };
+            const monthlySummaries = await Promise.all(
+                months.map((item) => loadMonthlySummary(item.month)),
+            );
+
+            return {
+                months: months.map((item, index) => {
+                    const monthly = monthlySummaries[index];
+                    if (!monthly) return item;
+                    return {
+                        ...item,
+                        title: monthly.title,
+                        summary: monthly.summary.split(/\n\s*\n/)[0].trim(),
+                        imageUrl: `${NEWS_MONTHLY_RAW}/${item.month}/images/cover.jpg`,
+                        url: `${REPO_URL}/tree/news/${NEWS_MONTHLY_REPO_PATH}/${item.month}`,
+                    };
+                }),
+            };
         },
         { months: [] },
         options,

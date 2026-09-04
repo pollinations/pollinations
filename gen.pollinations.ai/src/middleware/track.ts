@@ -148,11 +148,6 @@ type ResponseTrackingData = {
     errorTracking?: ErrorData;
     // Parsed response/SSE output retained for the private 24-hour error log.
     errorOutput?: unknown;
-    // Concrete response metadata retained alongside errorOutput. Upstream
-    // exceptions already emit this through handleError; direct error responses
-    // need the same attribution from their response envelope.
-    errorClass?: string;
-    errorUpstreamStatus?: number;
 };
 
 export type TrackVariables = {
@@ -286,14 +281,6 @@ export const track = (eventType: EventType) =>
         });
 
         await next();
-
-        // Some handlers return a Response instead of throwing, so the central
-        // error handler never gets a chance to build our detailed envelope.
-        // Normalize only those direct server errors; exception responses are
-        // already complete and c.get("error") identifies them.
-        if (c.res.status >= 500 && !c.get("error")) {
-            c.res = await ensureDetailedErrorResponse(c.res);
-        }
 
         // Detached execution already tracked the provider failure. The outer
         // caller only receives that captured result and must not emit it again.
@@ -464,14 +451,7 @@ export const track = (eventType: EventType) =>
                         collectErrorData(response.status, c.get("error")),
                 });
 
-                // Exceptions already emit their full error event in handleError.
-                // Direct error responses do not, so emit the response body here
-                // without duplicating exception telemetry.
-                if (
-                    responseTracking.errorOutput !== undefined &&
-                    responseTracking.responseStatus >= 500 &&
-                    !c.get("error")
-                ) {
+                if (responseTracking.errorOutput !== undefined) {
                     const errorTracking = responseTracking.errorTracking;
                     await sendErrorEventToTinybird(
                         {
@@ -486,14 +466,9 @@ export const track = (eventType: EventType) =>
                             duration_ms:
                                 endTime.getTime() - startTime.getTime(),
                             error_code: errorTracking?.errorResponseCode,
-                            error_class:
-                                responseTracking.errorClass ??
-                                "UpstreamFinishReasonError",
+                            error_class: "UpstreamFinishReasonError",
                             message: errorTracking?.errorMessage,
-                            upstream_host: errorTracking?.errorSource,
-                            upstream_status:
-                                responseTracking.errorUpstreamStatus ??
-                                response.status,
+                            upstream_status: response.status,
                             upstream_body: stringifyErrorOutput(
                                 responseTracking.errorOutput,
                             ),
@@ -659,136 +634,9 @@ function withFinalResponseHeaders(
 function responseForTracking(response: Response): Response {
     const contentType = response.headers.get("content-type") || "";
     const readsBody =
-        response.status >= 400 ||
         contentType.includes("text/event-stream") ||
         contentType.includes("application/json");
     return readsBody ? response.clone() : new Response(null, response);
-}
-
-function asRecord(value: unknown): Record<string, unknown> | undefined {
-    return value !== null && typeof value === "object"
-        ? (value as Record<string, unknown>)
-        : undefined;
-}
-
-function nonEmptyString(value: unknown): string | undefined {
-    return typeof value === "string" && value.trim() ? value : undefined;
-}
-
-type ResponseErrorTracking = {
-    errorTracking: ErrorData;
-    errorOutput: unknown;
-    errorClass: string;
-    errorUpstreamStatus?: number;
-};
-
-function parseErrorResponseTracking(
-    rawBody: string,
-    status: number,
-): ResponseErrorTracking {
-    let output: unknown = rawBody;
-    try {
-        output = JSON.parse(rawBody);
-    } catch {
-        // Plain text and HTML error bodies are useful exactly as returned.
-    }
-
-    const envelope = asRecord(output);
-    const errorValue = envelope?.error;
-    const error = asRecord(errorValue);
-    const details = asRecord(error?.details);
-    const message =
-        nonEmptyString(error?.message) ??
-        nonEmptyString(errorValue) ??
-        nonEmptyString(envelope?.message) ??
-        nonEmptyString(rawBody) ??
-        getDefaultErrorMessage(status);
-    const errorResponseCode =
-        nonEmptyString(error?.code) ??
-        nonEmptyString(envelope?.code) ??
-        getErrorCode(status);
-    const errorSource =
-        nonEmptyString(details?.upstreamHost) ??
-        nonEmptyString(envelope?.upstreamHost);
-    const upstreamStatusValue =
-        details?.upstreamStatus ?? envelope?.upstreamStatus;
-    const errorUpstreamStatus =
-        typeof upstreamStatusValue === "number"
-            ? upstreamStatusValue
-            : undefined;
-    const errorClass =
-        nonEmptyString(details?.name) ??
-        nonEmptyString(envelope?.name) ??
-        "ErrorResponse";
-
-    return {
-        errorTracking: {
-            errorResponseCode,
-            errorSource,
-            errorMessage: message,
-        },
-        errorOutput: output,
-        errorClass,
-        errorUpstreamStatus,
-    };
-}
-
-/** Extracts concrete, safe telemetry without changing the response sent. */
-async function extractErrorResponseTracking(
-    response: Response,
-): Promise<ResponseErrorTracking> {
-    return parseErrorResponseTracking(await response.text(), response.status);
-}
-
-async function ensureDetailedErrorResponse(
-    response: Response,
-): Promise<Response> {
-    const rawBody = await response.clone().text();
-    const parsed = parseErrorResponseTracking(rawBody, response.status);
-    const output = asRecord(parsed.errorOutput);
-    const outputError = asRecord(output?.error);
-
-    // Responses produced by handleError already carry every safe detail.
-    if (
-        output?.success === false &&
-        outputError &&
-        nonEmptyString(outputError.code) &&
-        nonEmptyString(outputError.message)
-    ) {
-        return response;
-    }
-
-    const headers = new Headers(response.headers);
-    headers.set("content-type", "application/json; charset=UTF-8");
-    headers.delete("content-encoding");
-    headers.delete("content-length");
-    const errorTracking = parsed.errorTracking;
-    return new Response(
-        JSON.stringify({
-            success: false,
-            error: {
-                code: errorTracking.errorResponseCode,
-                message: errorTracking.errorMessage,
-                timestamp: new Date().toISOString(),
-                details: {
-                    name: parsed.errorClass,
-                    ...(errorTracking.errorSource && {
-                        upstreamHost: errorTracking.errorSource,
-                    }),
-                    ...(parsed.errorUpstreamStatus !== undefined && {
-                        upstreamStatus: parsed.errorUpstreamStatus,
-                    }),
-                    ...(rawBody && { upstreamBody: rawBody }),
-                },
-            },
-            status: response.status,
-        }),
-        {
-            status: response.status,
-            statusText: response.statusText,
-            headers,
-        },
-    );
 }
 
 export async function trackResponse(
@@ -832,7 +680,6 @@ export async function trackResponse(
     if (!response.ok) {
         return notBilled({
             modelUsed: modelCalled,
-            ...(await extractErrorResponseTracking(response)),
         });
     }
 
@@ -899,7 +746,6 @@ export async function trackResponse(
                     "Upstream ended generation with finish_reason=error",
             },
             errorOutput: output,
-            errorClass: "UpstreamFinishReasonError",
         };
     }
     if (!modelUsage) {
@@ -1009,7 +855,6 @@ function containsFinishReasonError(output: unknown): boolean {
 }
 
 function stringifyErrorOutput(output: unknown): string {
-    if (typeof output === "string") return output.slice(0, 16_000);
     try {
         return JSON.stringify(output).slice(0, 16_000);
     } catch (error) {

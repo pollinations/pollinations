@@ -14,6 +14,7 @@ import {
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
 import { user as userTable } from "@shared/db/better-auth.ts";
+import { handleError } from "@shared/error.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     type BillingAdjustment,
@@ -26,6 +27,7 @@ import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import { HTTPException } from "hono/http-exception";
 import { requestId } from "hono/request-id";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
@@ -171,7 +173,7 @@ function createCommunityEntry(
 function createTrackedResponseApp(
     consumePollen: (amount: number) => Promise<void>,
     eventType: "generate.image" | "generate.text" | "generate.audio",
-    response: Response,
+    result: Response | Error,
     model: ModelName = "openai",
 ) {
     const app = new Hono<Env>();
@@ -195,7 +197,11 @@ function createTrackedResponseApp(
         });
         await next();
     });
-    app.all("/upstream", track(eventType), () => response.clone());
+    app.all("/upstream", track(eventType), () => {
+        if (result instanceof Error) throw result;
+        return result.clone();
+    });
+    app.onError(handleError);
 
     return app;
 }
@@ -850,7 +856,7 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
-    it("preserves direct error response details for callers and telemetry", async () => {
+    it("tracks infrastructure exceptions through the shared error handler", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -858,25 +864,14 @@ describe("tracking observability", () => {
                 return new Response("ok");
             },
         );
-        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
-            async () => {},
-        );
-        const upstreamBody = {
-            error: {
-                code: "provider_queue_full",
-                message: "The image backend queue is full",
-                metadata: { queue: "gpu-1" },
-            },
-            upstreamHost: "dreamshaper.test",
-            upstreamStatus: 503,
-        };
-        const upstream = Response.json(upstreamBody, { status: 503 });
-
+        const consumePollen = vi.fn(async (_amount: number) => {});
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
             consumePollen,
             "generate.text",
-            upstream,
+            new HTTPException(503, {
+                message: "Generation coordination is unavailable",
+            }),
         ).fetch(
             new Request("https://gen.pollinations.ai/upstream", {
                 method: "POST",
@@ -900,74 +895,39 @@ describe("tracking observability", () => {
         );
 
         expect(response.status).toBe(503);
-        const responseBody = (await response.json()) as {
-            success: boolean;
-            status: number;
-            error: {
-                code: string;
-                message: string;
-                timestamp: string;
-                details: {
-                    name: string;
-                    upstreamHost: string;
-                    upstreamStatus: number;
-                    upstreamBody: string;
-                };
-            };
-        };
-        expect(responseBody).toMatchObject({
+        await expect(response.json()).resolves.toMatchObject({
             success: false,
             status: 503,
             error: {
-                code: "provider_queue_full",
-                message: "The image backend queue is full",
-                timestamp: expect.any(String),
-                details: {
-                    name: "ErrorResponse",
-                    upstreamHost: "dreamshaper.test",
-                    upstreamStatus: 503,
-                    upstreamBody: expect.any(String),
-                },
+                code: "SERVICE_UNAVAILABLE",
+                message: "Generation coordination is unavailable",
             },
         });
-        expect(JSON.parse(responseBody.error.details.upstreamBody)).toEqual(
-            upstreamBody,
-        );
         await waitOnExecutionContext(ctx);
 
-        const generationRequest = tinybirdRequests.find(
-            (request) =>
-                new URL(request.url).searchParams.get("name") ===
-                "generation_event_v2",
+        const events = await Promise.all(
+            tinybirdRequests.map(async (request) => ({
+                name: new URL(request.url).searchParams.get("name"),
+                body: (await request.json()) as Record<string, unknown>,
+            })),
         );
-        const errorRequest = tinybirdRequests.find(
-            (request) =>
-                new URL(request.url).searchParams.get("name") === "error_event",
-        );
-        expect(tinybirdRequests).toHaveLength(2);
-        await expect(generationRequest?.json()).resolves.toMatchObject({
+        expect(events).toHaveLength(2);
+        expect(
+            events.find(({ name }) => name === "generation_event_v2")?.body,
+        ).toMatchObject({
             responseStatus: 503,
             isBilledUsage: false,
-            errorResponseCode: "provider_queue_full",
-            errorSource: "dreamshaper.test",
-            errorMessage: "The image backend queue is full",
+            errorResponseCode: "SERVICE_UNAVAILABLE",
+            errorMessage: "Generation coordination is unavailable",
         });
-        const errorEvent = (await errorRequest?.json()) as Record<
-            string,
-            unknown
-        >;
-        expect(errorEvent).toMatchObject({
+        expect(
+            events.find(({ name }) => name === "error_event")?.body,
+        ).toMatchObject({
             kind: "server_error",
             status: 503,
-            upstream_status: 503,
-            upstream_host: "dreamshaper.test",
-            error_code: "provider_queue_full",
-            error_class: "ErrorResponse",
-            message: "The image backend queue is full",
+            error_code: "SERVICE_UNAVAILABLE",
+            message: "Generation coordination is unavailable",
         });
-        expect(JSON.parse(errorEvent.upstream_body as string)).toEqual(
-            responseBody,
-        );
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
@@ -1380,16 +1340,11 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(502);
-        expect(tinybirdRequests).toHaveLength(2);
-        const generationRequest = tinybirdRequests.find(
-            (request) =>
-                new URL(request.url).searchParams.get("name") ===
-                "generation_event_v2",
-        );
+        expect(tinybirdRequests).toHaveLength(1);
         // modelUsed comes from the resolved model, not the upstream
         // x-model-used header, so error rows attribute the failure instead of
         // falling back to the datasource DEFAULT 'undefined'.
-        await expect(generationRequest?.json()).resolves.toMatchObject({
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             responseStatus: 502,
             resolvedModelRequested: "openai",
             modelUsed: "openai",
@@ -2694,29 +2649,6 @@ describe("trackResponse missing usage", () => {
         );
         expect(tracking.isBilledUsage).toBe(true);
         expect(tracking.errorTracking).toBeUndefined();
-    });
-});
-
-describe("trackResponse errors", () => {
-    it("uses a plain-text error body instead of the generic status message", async () => {
-        const tracking = await trackResponse(
-            "generate.image",
-            requestTrackingFixture(false, "dreamshaper"),
-            new Response("Generation coordination is unavailable", {
-                status: 503,
-            }),
-            candidateFixture("dreamshaper"),
-        );
-
-        expect(tracking).toMatchObject({
-            responseStatus: 503,
-            isBilledUsage: false,
-            errorTracking: {
-                errorResponseCode: "SERVICE_UNAVAILABLE",
-                errorMessage: "Generation coordination is unavailable",
-            },
-            errorOutput: "Generation coordination is unavailable",
-        });
     });
 });
 

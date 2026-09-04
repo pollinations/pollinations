@@ -1,0 +1,36 @@
+{
+  "pr_number": 14420,
+  "title": "Add Pollin Uptime (HA Gateway) to build",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14420",
+  "merged_at": "2026-09-04T03:53:38Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Pollin Uptime (HA Gateway)](https://brhost.eu.org) to build\n- Zero-downtime serverless AI gateway and multimodal playground with automatic 4-layer fallback cascade. Never hit 500 errors or rate limits again — seamlessly route Chat, Vision, Images, Video, and Voi\n\nFixes #14411",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Four backup hives",
+    "blurb": "Pollin Uptime has joined the build: a multimodal gateway that keeps a few extra paths through the garden. Chat, vision, images, video, and voice can take the scenic route when a provider gets grumpy.",
+    "summary": "Added Pollin Uptime (HA Gateway) to the app build, providing a serverless multimodal playground with an automatic four-layer fallback cascade for Chat, Vision, Images, Video, and Voice requests.",
+    "impact": "People can discover and use Pollin Uptime through the build for more resilient multimodal AI routing, with fallback paths designed to keep requests moving.",
+    "keywords": [
+      "Pollin Uptime",
+      "HA gateway",
+      "fallback",
+      "multimodal",
+      "community app",
+      "serverless"
+    ],
+    "visual_concept": "Depict Polli as a tiny gateway keeper tending four branching garden paths from a cozy retro terminal, each leading to a different multimodal icon: chat bubble, eye, picture frame, video reel, and speaker. A cheerful CRT Monitor Robot can point at the four healthy routes while small flowers and code-plants grow around the gateway, representing automatic fallback and uptime.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gatekeeper cap, tending a lime green (#ecf874) server garden where four glowing vine-paths branch from a retro gateway terminal to chat, vision, image, video, and voice icons; a chunky CRT Monitor Robot happily points at the routes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-plants and flowers throughout, with small pixel-font text: '4-LAYER FALLBACK' in dark purple (#110518)."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14420.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gatekeeper cap, tending a lime green (#ecf874) server garden where four glowing vine-paths branch from a retro gateway terminal to chat, vision, image, video, and voice icons; a chunky CRT Monitor Robot happily points at the routes. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-plants and flowers throughout, with small pixel-font text: '4-LAYER FALLBACK' in dark purple (#110518)."
+  },
+  "generated_at": "2026-09-04T03:54:47.274446+00:00",
+  "app_name": "Pollin Uptime (HA Gateway)",
+  "app_url": "https://brhost.eu.org"
+}

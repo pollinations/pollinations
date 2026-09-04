@@ -553,6 +553,15 @@ export function SpeakerIcon(props: IconProps) {
     );
 }
 
+export function MegaphoneIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m3 11 18-5v12L3 14v-3z" />
+            <path d="m7 15 1.5 6H14l-2-7" />
+        </svg>
+    );
+}
+
 export function ReasoningIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>

@@ -251,7 +251,11 @@ def is_image_url(url: str) -> bool:
     return False
 
 
-def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> list[discord.File]:
+def decode_base64_images(
+    content_blocks: list[dict],
+    max_images: int = 10,
+    max_bytes: int = 8 * 1024 * 1024,
+) -> list[discord.File]:
     """
     Decode base64 images from content_blocks to discord.File objects.
 
@@ -289,8 +293,17 @@ def decode_base64_images(content_blocks: list[dict], max_images: int = 10) -> li
             if ext == "jpeg":
                 ext = "jpg"
 
-            # Decode base64
-            image_bytes = base64.b64decode(b64_data)
+            if mime_type != "image/png":
+                logger.warning("Rejected unsupported base64 image type: %s", mime_type)
+                continue
+
+            image_bytes = base64.b64decode(b64_data, validate=True)
+            if not image_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+                logger.warning("Rejected malformed PNG attachment")
+                continue
+            if len(image_bytes) > max_bytes:
+                logger.warning("Rejected oversized PNG attachment: %s bytes", len(image_bytes))
+                continue
 
             # Create discord.File
             file_buffer = io.BytesIO(image_bytes)
@@ -1078,7 +1091,9 @@ async def handle_inline_polli_mention(message: discord.Message):
             if msg.author.bot:
                 channel_history.append({"role": "assistant", "content": content})
             else:
-                channel_history.append({"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"})
+                channel_history.append(
+                    {"role": "user", "content": f"[{format_discord_identity(msg.author)}]: {content}"}
+                )
 
         # Reverse to chronological order (oldest to newest)
         channel_history.reverse()
@@ -1501,7 +1516,13 @@ async def send_long_message(
             else:
                 if output_lines:
                     first_message_sent = await _send_chunk(
-                        channel, "\n".join(output_lines), max_length, first_message_sent, reply_to, attachments, mention_author
+                        channel,
+                        "\n".join(output_lines),
+                        max_length,
+                        first_message_sent,
+                        reply_to,
+                        attachments,
+                        mention_author,
                     )
                     output_lines = []
                 if len(code_block_text) > max_length:

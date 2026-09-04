@@ -45,7 +45,7 @@ function App() {
     const [selectedImageModel, setSelectedImageModel] = useState("flux");
     const [selectedVideoModel, setSelectedVideoModel] = useState("veo");
     const [selectedAudioModel, setSelectedAudioModel] =
-        useState("openai-audio");
+        useState("elevenlabs");
     const [theme, setTheme] = useState("dark");
     const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false);
     const [isBYOPModalOpen, setIsBYOPModalOpen] = useState(false);
@@ -123,6 +123,15 @@ function App() {
                 setImageModels(imageModels);
                 setVideoModels(videoModels);
                 setAudioModels(audioModels);
+                setSelectedAudioModel((currentModel) => {
+                    if (audioModels[currentModel]) return currentModel;
+                    const fallbackModel =
+                        audioModels.elevenlabs ||
+                        Object.values(audioModels)[0];
+                    const fallbackId = fallbackModel?.id || "elevenlabs";
+                    localStorage.setItem("selectedAudioModel", fallbackId);
+                    return fallbackId;
+                });
                 setModelsLoaded(true);
             },
         );
@@ -136,7 +145,7 @@ function App() {
         const savedVideoModel =
             localStorage.getItem("selectedVideoModel") || "veo";
         const savedAudioModel =
-            localStorage.getItem("selectedAudioModel") || "openai-audio";
+            localStorage.getItem("selectedAudioModel") || "elevenlabs";
         const savedTheme = getTheme();
         setSelectedModel(savedModel);
         setSelectedImageModel(savedImageModel);
@@ -174,7 +183,7 @@ function App() {
         };
         document.addEventListener("keydown", onKey);
         return () => document.removeEventListener("keydown", onKey);
-    }, [addChat]);
+    }, [addChat, handleThemeToggle]);
 
     const handleModelChange = useCallback((m) => {
         setSelectedModel(m);
@@ -396,6 +405,7 @@ function App() {
             updateMessage,
             selectedModel,
             sessionSettings,
+            setIsGenerating,
         ],
     );
 
@@ -448,6 +458,7 @@ function App() {
             imageGenerationOptions,
             addMessage,
             updateMessage,
+            setIsGenerating,
         ],
     );
 
@@ -499,6 +510,7 @@ function App() {
             videoGenerationOptions,
             addMessage,
             updateMessage,
+            setIsGenerating,
         ],
     );
 
@@ -541,7 +553,13 @@ function App() {
             }
             setIsGenerating(false);
         },
-        [isGenerating, selectedAudioModel, addMessage, updateMessage],
+        [
+            isGenerating,
+            selectedAudioModel,
+            addMessage,
+            updateMessage,
+            setIsGenerating,
+        ],
     );
 
     // ── Regenerate ──────────────────────────────────────────────
@@ -610,6 +628,7 @@ function App() {
         updateMessage,
         selectedModel,
         sessionSettings,
+        setIsGenerating,
     ]);
 
     const activeMessages = getActiveChat()?.messages || [];
@@ -636,6 +655,7 @@ function App() {
                     messages={activeMessages}
                     isGenerating={isGenerating}
                     onRegenerate={handleRegenerateMessage}
+                    onOpenBYOP={() => setIsBYOPModalOpen(true)}
                 />
 
                 <ChatInput

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14454,
+  "title": "fix: ignore caller tools on managed agents instead of rejecting",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14454",
+  "merged_at": "2026-09-04T16:11:18Z",
+  "labels": [],
+  "pr_body_excerpt": "- Managed agents 400'd on any request carrying `tools`. Open WebUI injects builtin tool specs into **every** chat sent from its UI (`use_builtin_tools` defaults on for any session; connection-fetched models have no `meta.capabilities` to disable it), so 100% of agent calls from Open WebUI failed with `Caller-provided tools are not supported by managed agents`.\n- Observed on 3 agents / 3 users in the first day of openwebui.pollinations.ai. No user configuration involved — the tools are Open WebUI's own builtins, not the Pollinations MCP tool server.\n- An agent runs its own tools, so caller tools were never going to be used. Dropping them is no more lossy than erroring, and non-fatal.\n- `tool_choice` and `parallel_tool_calls` keep rejecting — Open WebUI sends neither.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_015mNrP6DkRQmm3YStNjfFv3",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Tools enter, quietly exit",
+    "blurb": "Managed agents now wave past Open WebUI’s automatic tool bundle instead of stopping at the door. The agents already have their own toolbox; no need for the lobby to get crowded.",
+    "summary": "Managed-agent requests now ignore caller-provided `tools` while continuing to reject unsupported `tool_choice` and `parallel_tool_calls`, allowing Open WebUI’s automatically injected builtin tools to coexist with agent chats.",
+    "impact": "Open WebUI users can now send chats to managed agents normally even when the UI includes its default builtin tool specs, restoring calls that previously returned HTTP 400.",
+    "keywords": [
+      "managed-agents",
+      "open-webui",
+      "tools",
+      "chat-api",
+      "compatibility",
+      "bug-fix"
+    ],
+    "visual_concept": "A cozy agent workshop: Polli gently places an oversized stack of caller tool cards into a clearly labeled “not needed” compost bin while a happy managed-agent terminal uses its own small tool belt. The visual metaphor is harmlessly filtering Open WebUI’s automatic tools rather than rejecting the whole chat, with sprouting code-plants showing the request continuing onward.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny mechanic tool belt and gently sorts a stack of tool cards into a lime green (#ecf874) compost box labeled in pixel font “IGNORE TOOLS”; beside her, a cheerful CRT-monitor robot runs happily with its own tiny tool belt, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, lo-fi Stardew Valley or A Short Hike warmth, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14454.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears a tiny mechanic tool belt and gently sorts a stack of tool cards into a lime green (#ecf874) compost box labeled in pixel font “IGNORE TOOLS”; beside her, a cheerful CRT-monitor robot runs happily with its own tiny tool belt, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, lo-fi Stardew Valley or A Short Hike warmth, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-04T16:12:22.730311+00:00"
+}

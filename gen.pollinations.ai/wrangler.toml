@@ -262,6 +262,9 @@ new_classes = ["CommunityModelRateLimiter"]
 [env.staging.vars]
 ENVIRONMENT = "staging"
 AGENT_RUNTIME_BASE_URL = "https://staging.enter.myceli.ai/api/agent-runtime/v1"
+WEFT_FACILITATOR_URL = "https://x402.staging.weft.network"
+WEFT_PAY_TO = "0x3b0b371ae3cb08f272b87319684f6518b3b313a0"
+WEFT_NETWORK = "eip155:84532"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"

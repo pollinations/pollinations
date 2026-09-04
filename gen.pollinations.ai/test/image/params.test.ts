@@ -64,6 +64,14 @@ describe("ImageParamsSchema", () => {
                 }).success,
             ).toBe(true);
         }
+        for (const resolution of ["480p", "768p"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max-turbo",
+                    resolution,
+                }).success,
+            ).toBe(true);
+        }
     });
 
     it("accepts 768p on the OpenAI-compatible image route", () => {
@@ -111,6 +119,30 @@ describe("ImageParamsSchema", () => {
                 fps: 30,
             }).success,
         ).toBe(false);
+    });
+
+    it("enforces the public MiniMax H3 Max Turbo contract", () => {
+        for (const duration of [5, 10, 15]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max-turbo",
+                    duration,
+                }).success,
+            ).toBe(true);
+        }
+        for (const params of [
+            { duration: 6 },
+            { resolution: "2k" },
+            { aspectRatio: "9:21" },
+            { fps: 30 },
+        ]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max-turbo",
+                    ...params,
+                }).success,
+            ).toBe(false);
+        }
     });
 
     it("bounds video duration for every public route", () => {

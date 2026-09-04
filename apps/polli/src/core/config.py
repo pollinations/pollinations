@@ -148,6 +148,17 @@ class ServerConfig:
 
 
 @dataclass(frozen=True)
+class HumanModelConfig:
+    channel_id: int
+    response_timeout_seconds: int
+    api_token: str
+
+    @property
+    def enabled(self) -> bool:
+        return bool(self.channel_id and self.api_token)
+
+
+@dataclass(frozen=True)
 class WebhookConfig:
     enabled: bool
     port: int
@@ -168,6 +179,7 @@ class Config:
     ai: AIConfig
     code_search: CodeSearchConfig
     api: ServerConfig
+    human_model: HumanModelConfig
     webhook: WebhookConfig
     paths: PathsConfig
     log_level: str
@@ -196,8 +208,9 @@ class Config:
         logger.info("GitHub auth: %s", "App" if self.github.use_app_auth else "PAT")
         logger.info("code_search: %s", "on" if self.code_search.is_configured else "off")
         logger.info(
-            "API: %s | webhook: %s",
+            "API: %s | humans: %s | webhook: %s",
             f"port {self.api.port}" if self.api.enabled else "off",
+            "on" if self.human_model.enabled else "off",
             f"port {self.webhook.port}" if self.webhook.enabled else "off",
         )
 
@@ -308,6 +321,11 @@ def load_config() -> Config:
             enabled=raw["api"]["enabled"],
             port=raw["api"]["port"],
             cors_origins=tuple(raw["api"]["cors_origins"]),
+        ),
+        human_model=HumanModelConfig(
+            channel_id=raw["human_model"]["channel_id"],
+            response_timeout_seconds=raw["human_model"]["response_timeout_seconds"],
+            api_token=os.getenv("HUMANS_API_TOKEN", "").strip(),
         ),
         webhook=WebhookConfig(
             enabled=raw["webhook"]["enabled"],

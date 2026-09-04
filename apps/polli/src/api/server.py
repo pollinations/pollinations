@@ -1,21 +1,31 @@
 import logging
 import time
+from pathlib import Path
 from typing import Any
 
+import aiohttp
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel
 
-from ..utils.uuid import uuid4_hex
 from ..ai.client import UpstreamAuthError, _auth_override
+from ..utils.uuid import uuid4_hex
+from .humans import HumanService, stream_completion
 
 logger = logging.getLogger(__name__)
+_HUMAN_UI = Path(__file__).with_name("humans.html").read_text(encoding="utf-8")
+_HUMAN_SESSION_COOKIE = "human_session"
+_POLLINATIONS_USERINFO_URL = "https://enter.pollinations.ai/api/oauth/userinfo"
 
 
 class Message(BaseModel):
     role: str
     content: str | list | None = None
+
+
+class HumanResponse(BaseModel):
+    content: str
 
 
 class ChatRequest(BaseModel):
@@ -26,11 +36,12 @@ class ChatRequest(BaseModel):
     """
 
     messages: list[Message]
-    model: str | None = None  # ignored — always routes to polli
+    model: str | None = None
 
     # Generation parameters — all passed through to the underlying LLM
     temperature: float | None = None
     max_tokens: int | None = None
+    max_completion_tokens: int | None = None
     top_p: float | None = None
     top_k: int | None = None
     frequency_penalty: float | None = None
@@ -72,7 +83,6 @@ class ChatRequest(BaseModel):
     image_urls: list[str] | None = None
     video_urls: list[str] | None = None
     file_urls: list[str] | None = None
-
     model_config = {"extra": "ignore"}
 
 
@@ -104,7 +114,25 @@ _PASSTHROUGH_KEYS = (
 )
 
 
-def create_api_app(pollinations_client, config):
+async def pollinations_profile(pollinations_client, authorization: str) -> dict:
+    if not authorization.lower().startswith("bearer "):
+        raise PermissionError("Pollinations login required")
+    session = await pollinations_client.get_session()
+    try:
+        async with session.get(
+            _POLLINATIONS_USERINFO_URL,
+            headers={"Authorization": authorization},
+            timeout=aiohttp.ClientTimeout(total=10),
+        ) as response:
+            profile = await response.json()
+    except (aiohttp.ClientError, TimeoutError) as error:
+        raise RuntimeError("Pollinations authentication is unavailable") from error
+    if response.status != 200 or not isinstance(profile, dict) or not profile.get("sub"):
+        raise PermissionError("Invalid Pollinations login")
+    return profile
+
+
+def create_api_app(pollinations_client, config, human_service: HumanService | None = None):
     """Create FastAPI app that shares the bot's services.
 
     No lifespan — bot handles init/shutdown.
@@ -122,6 +150,63 @@ def create_api_app(pollinations_client, config):
         allow_headers=["*"],
     )
 
+    def require_human_session(request: Request) -> None:
+        if human_service is None:
+            raise HTTPException(status_code=503, detail="The humans model is not configured")
+        if not human_service.is_authorized(request.cookies.get(_HUMAN_SESSION_COOKIE)):
+            raise HTTPException(status_code=401, detail="Verify your Discord access first")
+
+    @app.get("/humans", response_class=HTMLResponse, include_in_schema=False)
+    async def human_ui():
+        return _HUMAN_UI
+
+    @app.post("/v1/humans/session")
+    async def create_human_session(request: Request):
+        if human_service is None:
+            raise HTTPException(status_code=503, detail="The humans model is not configured")
+        try:
+            profile = await pollinations_profile(
+                pollinations_client,
+                request.headers.get("authorization", ""),
+            )
+            name = profile.get("preferred_username") or profile.get("name") or str(profile["sub"])
+            session_id = human_service.create_session(name)
+        except PermissionError as error:
+            raise HTTPException(status_code=401, detail=str(error))
+        except RuntimeError as error:
+            raise HTTPException(status_code=503, detail=str(error))
+        response = JSONResponse({"authorized": True, "name": name})
+        response.set_cookie(
+            _HUMAN_SESSION_COOKIE,
+            session_id,
+            max_age=12 * 60 * 60,
+            httponly=True,
+            secure=request.url.scheme == "https",
+            samesite="strict",
+        )
+        return response
+
+    @app.get("/v1/humans/session")
+    async def human_session(request: Request):
+        if human_service is None:
+            raise HTTPException(status_code=503, detail="The humans model is not configured")
+        return human_service.session_status(request.cookies.get(_HUMAN_SESSION_COOKIE))
+
+    @app.get("/v1/humans/requests")
+    async def human_requests(request: Request):
+        require_human_session(request)
+        return {"requests": human_service.pending_requests()}
+
+    @app.post("/v1/humans/requests/{request_id}/responses")
+    async def human_response(request_id: str, response: HumanResponse, request: Request):
+        require_human_session(request)
+        content = response.content.strip()
+        if not content or len(content) > 4_000:
+            raise HTTPException(status_code=400, detail="Response must be between 1 and 4,000 characters")
+        if not human_service.respond(request_id, content):
+            raise HTTPException(status_code=409, detail="This request has already been answered or expired")
+        return {"accepted": True}
+
     @app.post("/v1/chat/completions")
     async def chat_completions(request: ChatRequest, raw_request: Request):
         # Pass through user's API key — no cross-contamination with bot's key
@@ -131,6 +216,41 @@ def create_api_app(pollinations_client, config):
                 status_code=401,
                 detail="Authorization header required. Use 'Bearer <your-pollinations-api-key>'",
             )
+
+        if request.model == "humans":
+            if human_service is None:
+                raise HTTPException(status_code=503, detail="The humans model is not configured")
+            try:
+                human_service.authorize(auth_header)
+            except PermissionError:
+                raise HTTPException(status_code=401, detail="Unauthorized")
+            if not request.messages or any(
+                message.role not in {"assistant", "developer", "system", "user"} or not isinstance(message.content, str)
+                for message in request.messages
+            ):
+                raise HTTPException(status_code=400, detail="Only text chat messages are supported")
+            for name, value in (
+                ("max_tokens", request.max_tokens),
+                ("max_completion_tokens", request.max_completion_tokens),
+            ):
+                if value is not None and value <= 0:
+                    raise HTTPException(status_code=400, detail=f"{name} must be a positive integer")
+            try:
+                completion = await human_service.complete(
+                    messages=[message.model_dump() for message in request.messages],
+                    max_tokens=request.max_tokens,
+                    max_completion_tokens=request.max_completion_tokens,
+                    response_url=str(raw_request.url_for("human_ui")),
+                )
+                if request.stream:
+                    return StreamingResponse(stream_completion(completion), media_type="text/event-stream")
+                return JSONResponse(content=completion)
+            except TimeoutError:
+                raise HTTPException(status_code=504, detail="No human response before timeout")
+            except RuntimeError as error:
+                logger.error("Human model unavailable: %s", error)
+                raise HTTPException(status_code=503, detail=str(error))
+
         _auth_override.set(auth_header)
 
         if request.stream:

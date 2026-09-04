@@ -483,6 +483,7 @@ class PolliBot(commands.Bot):
         self.issue_notifier = None
         self.webhook_server = None
         self._api_server = None
+        self.human_service = None
         self._status_bag: list[str] = []
         self._current_status: str | None = None
 
@@ -556,9 +557,19 @@ class PolliBot(commands.Bot):
         if config.api.enabled:
             from granian.server.embed import Server as GranianServer
 
+            from .api.humans import DiscordHumanGateway, HumanService
             from .api.server import create_api_app
 
-            api_app = create_api_app(pollinations_client, config)
+            if config.human_model.enabled:
+                self.human_service = HumanService(
+                    api_token=config.human_model.api_token,
+                    database_path=config.paths.data_dir / "human-model.sqlite",
+                    gateway=DiscordHumanGateway(self, config.discord.guild_id, config.human_model.channel_id),
+                    response_timeout=config.human_model.response_timeout_seconds,
+                )
+                await self.human_service.start()
+
+            api_app = create_api_app(pollinations_client, config, self.human_service)
             self._api_server = GranianServer(
                 target=api_app,
                 address="127.0.0.1",
@@ -594,6 +605,8 @@ class PolliBot(commands.Bot):
         if self._api_server:
             self._api_server.stop()
             logger.info("Polli API stopped")
+        if self.human_service:
+            await self.human_service.close()
         self.cleanup_sessions.cancel()
         self.rotate_status.cancel()
         if self.issue_notifier:

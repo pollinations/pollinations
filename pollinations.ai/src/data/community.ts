@@ -1,10 +1,10 @@
 /**
  * Community signals, all anonymous and all live.
  *
- * GitHub's unauthenticated limit is 60 requests/hour *per client IP*, so each
- * visitor gets their own budget and this page's four calls never pool into a
- * shared ceiling — no token, and no proxy needed. Everything degrades to
- * `failed` and hides rather than showing a stale hardcoded number.
+ * Most GitHub feeds are requested anonymously from each visitor's browser.
+ * The small header signals use cached same-site endpoints so they remain
+ * reliable without credentials. Everything degrades to `failed` and hides
+ * rather than showing a stale hardcoded number.
  */
 import { type UseAsyncOptions, useAsync } from "./useAsync";
 
@@ -13,7 +13,6 @@ const GITHUB = "https://api.github.com";
 export const REPO_URL = `https://github.com/${REPO}`;
 export const DISCORD_URL =
     "https://discord.gg/pollinations-ai-885844321461485618";
-const GUILD_ID = "885844321461485618";
 
 async function github<T>(path: string): Promise<T> {
     const response = await fetch(`${GITHUB}${path}`, {
@@ -28,9 +27,12 @@ async function github<T>(path: string): Promise<T> {
 export function useRepoStars(options?: UseAsyncOptions) {
     return useAsync<number | null>(
         async () => {
-            const repo = await github<{ stargazers_count: number }>(
-                `/repos/${REPO}`,
-            );
+            const response = await fetch("/api/github-stars");
+            if (!response.ok) throw new Error(`github: ${response.status}`);
+            const repo = (await response.json()) as {
+                stargazers_count?: number;
+            };
+            if (typeof repo.stargazers_count !== "number") return null;
             return repo.stargazers_count;
         },
         null,
@@ -42,16 +44,13 @@ export function useRepoStars(options?: UseAsyncOptions) {
 
 /**
  * The widget exposes `presence_count` — members online right now — and not
- * total membership, which needs a bot token. So the page says "online now"
- * rather than repeating the old "17K+ members", which we cannot measure from
- * here and would just be a number we typed once.
+ * total membership, which needs a bot token. The website worker proxies this
+ * public value because Discord's widget response does not allow browser CORS.
  */
 export function useDiscordPresence(options?: UseAsyncOptions) {
     return useAsync<number | null>(
         async () => {
-            const response = await fetch(
-                `https://discord.com/api/guilds/${GUILD_ID}/widget.json`,
-            );
+            const response = await fetch("/api/discord-presence");
             if (!response.ok) throw new Error(`discord: ${response.status}`);
             const widget = (await response.json()) as {
                 presence_count?: number;

@@ -80,8 +80,23 @@
 .site-primary-nav-button[aria-current="page"],
 .site-primary-nav-button[aria-current="page"]:hover {
     border-color: transparent;
-    background-color: var(--polli-color-brand-dark);
-    color: var(--polli-color-brand-accent);
+    background-color: var(--polli-color-brand-accent);
+    color: var(--polli-color-brand-dark);
+}
+
+.site-github-stars,
+.site-github-stars:hover,
+.site-github-stars:focus-visible {
+    border-color: rgb(240 246 252 / 14%);
+    background-color: #0d1117;
+    color: #f0f6fc;
+    filter: none;
+}
+
+.site-github-stars:hover {
+    background-color: #010409;
+    box-shadow: 0 0.2rem 0.65rem rgb(0 0 0 / 24%);
+    transform: translateY(-0.0625rem);
 }
 
 .site-home-nav-group:has(.site-home-logo:hover)

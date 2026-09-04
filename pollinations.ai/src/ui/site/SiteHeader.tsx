@@ -11,6 +11,7 @@ import {
     LinkedInIcon,
     LogInIcon,
     MenuIcon,
+    StarIcon,
     TabButton,
     XIcon,
     XSocialIcon,
@@ -18,9 +19,13 @@ import {
 import lockupUrl from "@pollinations/ui/brand/lockup-horizontal.svg";
 import markUrl from "@pollinations/ui/brand/mark.svg";
 import { Link, useRouterState } from "@tanstack/react-router";
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, Fragment, useState } from "react";
 import { useDiscordPresence, useRepoStars } from "../../data/community";
 import { compact } from "../../data/publicStats";
+import {
+    DISCORD_BLURPLE_STYLE,
+    DiscordPresenceBadge,
+} from "./DiscordPresenceBadge";
 import { useHideOnScroll, useScrolled } from "./useHideOnScroll";
 
 const NAV = [
@@ -112,7 +117,7 @@ function MenuUtilities({
                     {EXTERNAL[1].label}
                 </span>
                 {displayedRepoStars !== null && (
-                    <Chip intent="alpha" size="sm" className="ml-auto">
+                    <Chip intent="neutral" size="sm">
                         {displayedRepoStars} stars
                     </Chip>
                 )}
@@ -123,17 +128,18 @@ function MenuUtilities({
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={close}
+                aria-label={
+                    discordOnline === null
+                        ? "Discord"
+                        : `Discord — ${discordOnline.toLocaleString()} users online now`
+                }
                 className="site-drawer-social-link site-external-link"
             >
                 <DiscordIcon className="h-4 w-4 shrink-0" />
                 <span className="site-drawer-social-label">
                     {EXTERNAL[2].label}
                 </span>
-                {discordOnline !== null && (
-                    <Chip intent="info" size="sm" className="ml-auto">
-                        {discordOnline} online
-                    </Chip>
-                )}
+                <DiscordPresenceBadge online={discordOnline} />
             </DropdownItem>
             <footer className="mt-1 flex items-center gap-2 border-t border-theme-text-strong/10 px-2 pt-2">
                 {SOCIAL.map(({ href, label, Icon }) => (
@@ -157,12 +163,60 @@ function MenuUtilities({
     );
 }
 
+function GitHubStarsButton({ stars }: { stars: number | null }) {
+    if (stars === null) return null;
+
+    const displayedStars = compact(stars);
+    const label = `Star us on GitHub — ${stars.toLocaleString()} stars`;
+
+    return (
+        <Button
+            as="a"
+            href={EXTERNAL[1].href}
+            target="_blank"
+            rel="noopener noreferrer"
+            intent="neutral"
+            size="xs"
+            aria-label={label}
+            title={label}
+            className="site-github-stars hidden gap-2 px-3 min-[1120px]:inline-flex"
+        >
+            <GitHubIcon className="h-3 w-3" />
+            <span>{displayedStars}</span>
+            <StarIcon filled className="h-2.5 w-2.5" />
+        </Button>
+    );
+}
+
+function DiscordLiveButton({ online }: { online: number | null }) {
+    if (online === null) return null;
+
+    const label = `Join Discord — ${online.toLocaleString()} users online now`;
+
+    return (
+        <Button
+            as="a"
+            href={EXTERNAL[2].href}
+            target="_blank"
+            rel="noopener noreferrer"
+            intent="neutral"
+            size="xs"
+            aria-label={label}
+            title={label}
+            style={DISCORD_BLURPLE_STYLE}
+            className="hidden gap-2 px-3 min-[1120px]:inline-flex"
+        >
+            <DiscordIcon className="h-3 w-3" />
+            <span>{compact(online)} online</span>
+        </Button>
+    );
+}
+
 export function SiteHeader() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { data: repoStars } = useRepoStars();
     const displayedRepoStars = repoStars === null ? null : compact(repoStars);
     const { data: discordOnline } = useDiscordPresence({
-        enabled: mobileMenuOpen,
         refreshMs: 30_000,
     });
     const scrolled = useScrolled();
@@ -215,20 +269,31 @@ export function SiteHeader() {
                             {NAV.map((item) => {
                                 const active = isCurrent(item.to, pathname);
                                 return (
-                                    <TabButton
-                                        key={item.to}
-                                        as={Link}
-                                        to={item.to}
-                                        variant="ghost"
-                                        active={active}
-                                        className={`site-primary-nav-button ${
-                                            item.to === "/"
-                                                ? "site-home-nav-button"
-                                                : ""
-                                        }`}
-                                    >
-                                        {item.label}
-                                    </TabButton>
+                                    <Fragment key={item.to}>
+                                        <TabButton
+                                            as={Link}
+                                            to={item.to}
+                                            variant="ghost"
+                                            active={active}
+                                            className={`site-primary-nav-button ${
+                                                item.to === "/"
+                                                    ? "site-home-nav-button"
+                                                    : ""
+                                            }`}
+                                        >
+                                            {item.label}
+                                        </TabButton>
+                                        {item.to === "/community" && (
+                                            <>
+                                                <DiscordLiveButton
+                                                    online={discordOnline}
+                                                />
+                                                <GitHubStarsButton
+                                                    stars={repoStars}
+                                                />
+                                            </>
+                                        )}
+                                    </Fragment>
                                 );
                             })}
                         </nav>

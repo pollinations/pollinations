@@ -1,0 +1,35 @@
+{
+  "pr_number": 14376,
+  "title": "feat: add stateless Responses support across text models",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14376",
+  "merged_at": "2026-09-04T11:02:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds direct stateless `/v1/responses` routing for built-in models with declared native endpoints.\n- Adapts Chat Completions to those Responses endpoints, including tools, structured output, reasoning, streaming, and usage.\n- Stores exact Responses URLs for community models and endpoint agents; managed prompt/MCP agents emit Responses JSON/SSE natively.\n- Preserves delegated auth, fallbacks, attribution, billing, prompt-cache usage, and fails closed on missing or malformed successful usage.\n- Supersedes #11433 and carries forward @ElliotEtag's original Responses work.\n\nAddresses #8931\n\nTests: full Gen and Enter suites; post-merge TypeScript checks and focused routing, agent, billing, and streaming suites.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Responses, no memory required",
+    "blurb": "The text hive now speaks stateless Responses across its built-in models. Tools, streams, reasoning, and neatly structured JSON can all take the same direct route.",
+    "summary": "Added native stateless OpenAI-compatible /v1/responses routing across built-in, community, and agent-backed text models, adapting Chat Completions features including tools, structured output, reasoning, streaming, usage, billing, and prompt-cache tracking.",
+    "impact": "Developers can use /v1/responses with more Pollinations text models and agents while retaining delegated auth, fallbacks, attribution, accurate usage, and native JSON or SSE responses.",
+    "keywords": [
+      "responses-api",
+      "text-models",
+      "openai-compatibility",
+      "streaming",
+      "tools",
+      "agents",
+      "structured-output"
+    ],
+    "visual_concept": "A cozy API-routing garden: Polli, wearing tiny router-technician goggles, guides several labeled response packets from a retro terminal through one clear stateless pipe toward model flowers. The monitor robot eagerly watches JSON blocks, tool icons, a reasoning lightbulb, and SSE stream sparkles emerge from the pipe, while code-vines and flowers make the routing system feel alive.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny router-technician goggles as she guides glowing JSON response packets through a clear stateless pipeline between a retro terminal and blooming model flowers; a chunky CRT-monitor robot watches tool icons, structured braces, reasoning lightbulbs, and gentle streaming sparkles with delight. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, code-plants and pixel flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: '/v1/responses', nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14376.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing tiny router-technician goggles as she guides glowing JSON response packets through a clear stateless pipeline between a retro terminal and blooming model flowers; a chunky CRT-monitor robot watches tool icons, structured braces, reasoning lightbulbs, and gentle streaming sparkles with delight. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, code-plants and pixel flowers, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: '/v1/responses', nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-04T11:03:22.915190+00:00"
+}

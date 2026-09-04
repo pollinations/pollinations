@@ -1,0 +1,35 @@
+{
+  "pr_number": 14448,
+  "title": "fix: restore weekly publishing and add monthly news",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14448",
+  "merged_at": "2026-09-04T15:40:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix daily and weekly publishers to read the canonical operations/social/news paths\n- Generate canonical daily archives every day while keeping daily Buffer staging off Sundays\n- Refresh weekly summaries on Sundays and the current monthly website story weekly\n- Finalize the previous monthly story on the first day of each month\n- Add a resumable monthly backfill command using the shared text, image, and brand tooling",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The news garden keeps growing",
+    "blurb": "The publishing bees found the canonical paths again. Daily archives now bloom every day, weekly recaps refresh on Sundays, and monthly stories get their own careful tending.",
+    "summary": "Restored daily and weekly publishing against the canonical operations/social/news paths, added weekly-refreshed monthly website stories with first-of-month finalization, and introduced a resumable monthly backfill command using the shared content tooling.",
+    "impact": "Readers get reliably refreshed daily archives, Sunday weekly summaries, and a current monthly news story, while Buffer staging remains paused on Sundays.",
+    "keywords": [
+      "social",
+      "news",
+      "publishing",
+      "weekly",
+      "monthly",
+      "automation",
+      "archives"
+    ],
+    "visual_concept": "A cozy editorial garden where Polli tends three labeled calendar-plants for daily, weekly, and monthly news; a CRT robot helps route paper stories into the correct archive paths. The monthly plant is being carefully backfilled with seed packets, representing resumable generation, while Sunday rests quietly beside the Buffer staging desk.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny editor visor, tending a lime green (#ecf874) garden of calendar-plants labeled DAILY, WEEKLY, and MONTHLY while a friendly CRT monitor robot sorts story pages into glowing archive folders. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and code-vines around a quiet Sunday desk; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14448.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny editor visor, tending a lime green (#ecf874) garden of calendar-plants labeled DAILY, WEEKLY, and MONTHLY while a friendly CRT monitor robot sorts story pages into glowing archive folders. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and code-vines around a quiet Sunday desk; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-04T15:41:15.069277+00:00"
+}

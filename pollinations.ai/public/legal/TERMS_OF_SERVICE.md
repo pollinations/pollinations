@@ -161,7 +161,7 @@ If you do not agree, do not use Polli.
 
 ### 2. Eligibility
 
-You may use Polli only if you meet Discord's minimum age requirements in your country and are legally able to agree to these Terms. If you use Polli on behalf of an organization, you represent that you are authorized to do so.
+You must be at least 16 years old and meet Discord's minimum age requirements in your country to use Polli. You must also be legally able to agree to these Terms. If you use Polli on behalf of an organization, you represent that you are authorized to do so.
 
 ### 3. What Polli Does
 
@@ -181,7 +181,7 @@ Some features may be unavailable, limited, delayed, or changed based on permissi
 
 You may request only information and actions that you are authorized to access or perform.
 
-Discord-originated searches are limited by the requesting member's effective access and the bot's permissions. Public API callers do not have a Discord member identity and are restricted to publicly visible channel content; member and role enumeration and private-thread access are unavailable through that path.
+Discord search availability and results depend on the permission context available to Polli, the bot's permissions, server configuration, and Discord indexing. Public API callers do not have a Discord member identity, so Discord search through that interface may be unavailable or limited to content configured for public access.
 
 Polli may perform GitHub actions using credentials controlled by its operator. Those actions remain subject to Polli's internal authorization rules and the permissions of the connected GitHub account or application. A request does not guarantee that Polli will perform an action.
 
@@ -249,7 +249,7 @@ Nothing in these Terms excludes warranties or rights that cannot legally be excl
 
 To the maximum extent permitted by law, Myceli.AI OÜ and its contributors, officers, employees, contractors, and service providers will not be liable for indirect, incidental, special, consequential, exemplary, or punitive damages, or for loss of profits, data, goodwill, business opportunity, or service availability arising from Polli.
 
-Our aggregate liability arising from Polli will not exceed the greater of the amount you paid specifically for Polli during the three months before the event giving rise to the claim or EUR 50. This limitation does not apply where liability cannot legally be limited.
+The liability cap in Section 12 of these Terms applies to claims arising from Polli. This limitation does not apply where liability cannot legally be limited.
 
 ### 14. Indemnity
 

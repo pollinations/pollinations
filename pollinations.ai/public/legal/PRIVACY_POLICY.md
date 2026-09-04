@@ -160,11 +160,9 @@ Polli's source code is publicly available, allowing its implemented behavior and
 
 ### 4. Discord Search and Access Controls
 
-For interactions originating in Discord, Polli uses the requesting member's effective access together with the bot's own permissions. Search results are filtered before being returned. Private threads require appropriate access and membership.
+Polli applies Discord access controls using the identity and permission context available for each interaction. Search availability and results depend on the bot's permissions, server configuration, Discord indexing, and the request context.
 
-When Polli's Discord search is used through its public API, the caller has no Discord member identity. That access is therefore restricted to channels that are visible to the server's default public role. Public API callers cannot use Polli to enumerate Discord members or roles, access private threads, or retrieve content from restricted channels.
-
-Polli disables NSFW message search by default. Access controls may reduce or omit search results. A successful search response does not imply that every matching Discord message was retrieved.
+Public API callers do not have a Discord member identity. Discord search through that interface may therefore be unavailable or limited to content configured for public access. Access controls may reduce or omit results, and a successful search response does not imply that every matching Discord message was retrieved.
 
 ### 5. AI and Service Providers
 
@@ -222,7 +220,7 @@ Some requests may need to be handled through Discord, GitHub, or a server admini
 
 ### 12. Children
 
-Polli is not directed to children below the minimum age required by Discord or applicable law. Do not use Polli if you are not permitted to use Discord in your country.
+Polli is not directed to children under 16. You must also meet Discord's minimum age requirements in your country to use Polli.
 
 ### 13. Automated Output
 

@@ -428,6 +428,12 @@ export const MAX_FALLBACK_TARGETS = 3;
  * listing, and this rule is what guarantees that stays at or below what was
  * charged. It also stops an owner routing traffic to a pricier model whose
  * owner would then earn more than the caller was quoted.
+ *
+ * Used for the write-path check on raw stored `CommunityEndpointPrices`
+ * columns (enter's `fallbackTargetRejection`). The gen-side registry linker
+ * compares resolved `PriceDefinition`s instead — see
+ * `isFallbackPricingAllowed` in `registry.ts`, which also covers a static
+ * registry target and so is not community-prices-shaped.
  */
 export function isCommunityFallbackPricingAllowed(
     primary: CommunityEndpointPrices,

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14440,
+  "title": "feat: upgrade Polli APIs, search, intelligence, visuals, and deployment",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14440",
+  "merged_at": "2026-09-04T17:27:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds OpenAI-compatible Chat Completions, Responses, Models, function calling, and real-time SSE streaming to Polli.\n- Switches Polli to `gpt-5.6-sol` with `glm-5.3` fallback and removes the unused Gemini visualization override.\n- Restores and hardens 4K visual attachments with Mermaid, pagination, aggregation, Chromium provisioning, PNG validation, and native link-embed suppression.\n- Hardens Discord search permissions, API scoping, result counts, filters, retries, and concurrency limits.\n- Adds startup-synchronized code intelligence, symbol resolution, revision provenance, freshness reporting, full-app formatting, and independent deployment from `main`.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli learned some new tricks",
+    "blurb": "Polli can now speak the OpenAI dialect, draw sturdier 4K diagrams, and search Discord without wandering into the wrong garden. The little bee also got a proper independent deployment path, because even mascots deserve to ship on their own schedule.",
+    "summary": "Polli now exposes OpenAI-compatible Chat Completions, Responses, Models, function calling, and real-time SSE streaming; uses gpt-5.6-sol with glm-5.3 fallback; and gains hardened 4K Mermaid/PNG visuals, scoped Discord search, code intelligence, and independent deployment from main.",
+    "impact": "Developers can connect OpenAI-style clients to Polli, receive streamed and tool-enabled responses, get more reliable visual attachments and Discord search results, and query fresher code symbols with revision provenance.",
+    "keywords": [
+      "polli",
+      "openai-compatible-api",
+      "sse-streaming",
+      "function-calling",
+      "discord-search",
+      "code-intelligence",
+      "mermaid"
+    ],
+    "visual_concept": "Depict Polli as the project mascot at a cozy retro workstation with several clearly distinct capabilities growing from one hub: an OpenAI-style API terminal streaming response lines, a crisp Mermaid diagram being rendered into a framed PNG, and a small Discord-search telescope finding neatly scoped message results. Polli wears tiny librarian-engineer glasses and gently tends code-plants labeled with symbols and revision tags; the monitor robot can eagerly hold a deployment stamp to represent Polli shipping independently.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny librarian-engineer glasses while tending code-plants beside a retro terminal streaming API lines and a crisp Mermaid diagram becoming a 4K PNG. A friendly CRT monitor robot holds a little \"DEPLOYED\" stamp, with Discord-search telescope icons, flowers, and vines around a prominent lime green (#ecf874) glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14440.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny librarian-engineer glasses while tending code-plants beside a retro terminal streaming API lines and a crisp Mermaid diagram becoming a 4K PNG. A friendly CRT monitor robot holds a little \"DEPLOYED\" stamp, with Discord-search telescope icons, flowers, and vines around a prominent lime green (#ecf874) glow; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, like Stardew Valley or A Short Hike, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-04T17:29:10.895511+00:00"
+}

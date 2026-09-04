@@ -1,0 +1,34 @@
+{
+  "pr_number": 14309,
+  "title": "fix: show zero-Pollen notice on authorization screen",
+  "author": "gggff123",
+  "url": "https://github.com/pollinations/pollinations/pull/14309",
+  "merged_at": "2026-09-04T14:59:33Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shows a friendly notice when the loaded Pollen balance is zero or negative.\n- Places the notice before the app details on the shared consent screen.\n- Uses shared UI links for Quest and Top up, opening both in new tabs so authorization stays open.\n- Keeps authorization available for both PKCE and device flows.\n\nFixes #14228",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive checks its nectar",
+    "blurb": "The authorization screen now notices when a wallet is empty and points people toward Quests or a top-up without interrupting the flow. A small signpost, placed before anyone wanders into the woods.",
+    "summary": "The shared authorization screen now shows a zero-or-negative Pollen balance notice before app details, with Quest and Top up links that open in new tabs while preserving PKCE and device authorization flows.",
+    "impact": "People authorizing an app with no available Pollen will see clear next steps without losing or closing their in-progress authorization.",
+    "keywords": [
+      "authorization",
+      "pollen",
+      "wallet",
+      "pkce",
+      "device-flow",
+      "quests"
+    ],
+    "visual_concept": "Depict Polli as a warm little guide at a cozy authorization desk, noticing an empty pollen jar beside a retro terminal. A friendly sign points to a blooming Quest garden and a small top-up watering can, while the terminal's authorization path remains clearly open and inviting.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny guide scarf, standing beside a retro authorization terminal and an empty Pollen jar; she points warmly toward a blooming Quest garden and a small watering-can top-up station, while a glowing open path continues from the terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, pixel-font sign: 'QUESTS →'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14309.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny guide scarf, standing beside a retro authorization terminal and an empty Pollen jar; she points warmly toward a blooming Quest garden and a small watering-can top-up station, while a glowing open path continues from the terminal. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes, pixel-font sign: 'QUESTS →'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-04T15:27:44.141714+00:00"
+}

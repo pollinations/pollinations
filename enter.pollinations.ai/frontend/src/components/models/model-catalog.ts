@@ -90,10 +90,23 @@ export function mergeModelCatalogs(
     return [...modelsById.values()];
 }
 
-async function fetchCatalog(url: string): Promise<ApiModelInfo[]> {
+// The official catalog is small and required — if it fails, the whole
+// catalog fetch should fail loudly. Its own request should complete quickly.
+const OFFICIAL_CATALOG_TIMEOUT_MS = 10_000;
+
+// Community models make up the bulk of the payload (~250+ entries with full
+// pricing metadata). They're fetched as a separate request so a slow/large
+// community response can't hold up rendering official models, and so it can
+// be given a more generous timeout without penalizing the common case.
+const COMMUNITY_CATALOG_TIMEOUT_MS = 30_000;
+
+async function fetchCatalog(
+    url: string,
+    { timeoutMs, cache }: { timeoutMs: number; cache: RequestCache },
+): Promise<ApiModelInfo[]> {
     const response = await fetch(url, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(15_000),
+        cache,
+        signal: AbortSignal.timeout(timeoutMs),
     });
     if (!response.ok) {
         throw new Error(`Failed to fetch models (${response.status})`);
@@ -107,11 +120,36 @@ export async function fetchModelCatalog(
     if (options.refresh) modelCatalogPromise = null;
     modelCatalogPromise ??= import("../../config.ts")
         .then(async ({ config }) => {
+            // Previously this fetched one combined endpoint with
+            // `cache: "no-store"`, forcing a full, uncached, ~250+ entry
+            // payload on every dashboard visit and often approaching the
+            // timeout on slower connections. Splitting official/community
+            // apart and allowing the browser to reuse a fresh response
+            // (rather than forcing revalidation every time) fixes both the
+            // size and latency problems. An explicit refresh still bypasses
+            // the cache so the "refresh" action reflects reality.
+            const cache: RequestCache = options.refresh ? "reload" : "default";
+
+            const officialCatalog = fetchCatalog(
+                `${config.genBaseUrl}/models?community=false`,
+                { timeoutMs: OFFICIAL_CATALOG_TIMEOUT_MS, cache },
+            );
+
+            const communityCatalog = fetchCatalog(
+                config.communityCatalogUrl ??
+                    `${config.genBaseUrl}/models?community=true`,
+                { timeoutMs: COMMUNITY_CATALOG_TIMEOUT_MS, cache },
+            ).catch((error) => {
+                // Community models are supplementary: if that request is
+                // slow, times out, or fails, degrade to official models
+                // only rather than failing the whole catalog.
+                console.warn("Failed to load community model catalog", error);
+                return [] as ApiModelInfo[];
+            });
+
             const catalogs = await Promise.all([
-                fetchCatalog(`${config.genBaseUrl}/models`),
-                ...(config.communityCatalogUrl
-                    ? [fetchCatalog(config.communityCatalogUrl)]
-                    : []),
+                officialCatalog,
+                communityCatalog,
             ]);
             return mergeModelCatalogs(catalogs);
         })

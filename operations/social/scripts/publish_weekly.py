@@ -28,6 +28,7 @@ from common import (
     deploy_reddit_news_post,
     get_env,
     get_post_image_urls,
+    NEWS_REL_DIR,
     read_news_file,
 )
 
@@ -165,7 +166,7 @@ def main():
     print(f"  Weekly publish date: {weekly_date}")
     print(f"  Mode: {publish_mode}")
 
-    weekly_dir = os.path.join("social", "news", "weekly", weekly_date)
+    weekly_dir = os.path.join(NEWS_REL_DIR, "weekly", weekly_date)
     results = {}
 
     # ── Buffer staging (Twitter + LinkedIn + Instagram) ───────────

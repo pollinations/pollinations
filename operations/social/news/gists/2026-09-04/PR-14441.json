@@ -1,0 +1,34 @@
+{
+  "pr_number": 14441,
+  "title": "feat: auto-claim first API key quest",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14441",
+  "merged_at": "2026-09-04T15:07:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Auto-claims the 0.25-Pollen first API key quest after dashboard or BYOP key creation\n- Runs only the existing D1 account-setup quest group in the background\n- Keeps every other quest manually claimable\n- Reuses the existing idempotent reward ledger and atomic claim path\n- Adds focused route and quest-checker coverage",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "First key, first pollen",
+    "blurb": "Making your first API key now quietly gathers its own welcome pollen. The hive handled the paperwork while you were busy building.",
+    "summary": "Creating a first API key from the dashboard or BYOP now automatically claims the existing 0.25-Pollen account-setup quest through the idempotent atomic reward path, while all other quests remain manual.",
+    "impact": "New developers receive their 0.25 Pollen welcome reward immediately after creating their first key, with no separate claim step or duplicate-reward risk.",
+    "keywords": [
+      "quests",
+      "pollen",
+      "api-keys",
+      "onboarding",
+      "rewards",
+      "dashboard"
+    ],
+    "visual_concept": "Polli has just created a shiny first API key at a cozy retro terminal, and a small 0.25 Pollen seed-reward drops neatly into her wallet garden on its own. A code-plant labeled \"FIRST KEY\" blooms beside the monitor, representing automatic onboarding while the rest of the quest flowers remain waiting to be picked manually.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, creating a glowing first API key at a retro CRT terminal while a small pouch marked \"0.25 POLLEN\" gently lands in her flower-filled wallet garden; a code-plant beside her blooms with simple pixel text \"FIRST KEY\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14441.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, creating a glowing first API key at a retro CRT terminal while a small pouch marked \"0.25 POLLEN\" gently lands in her flower-filled wallet garden; a code-plant beside her blooms with simple pixel text \"FIRST KEY\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-04T15:34:42.245239+00:00"
+}

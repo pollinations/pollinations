@@ -1,0 +1,63 @@
+{
+  "date": "2026-01-09",
+  "period_start": "2026-01-09",
+  "period_end": "2026-01-09",
+  "title": "Chat got a storyboard engine and clearer model choices",
+  "summary": "A documentation-and-polish day: clearer chat models, a new storyboard tool, a DeepSeek backend move, and less repository moss.\n\nOnyx, an AI storyboard engine, joined chat, while the model picker now shows dual names and more useful tooltips. Less guesswork when choosing the machine that will interpret your prompt.\n\nAPI schemas dropped unused parameters and gained model-specific guidance; BYOP documentation and the authorize UI were refreshed; the unified architecture graduated from ASCII art to Mermaid diagrams. TeleChars listings were consolidated too.\n\nThe DeepSeek V3.2 backend migrated from Azure/Myceli to Google Vertex AI, keeping the model available through the same simple text endpoint while the plumbing changes underneath.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 6572,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6788,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6947,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6949,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6952,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6969,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6973,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6975,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6978,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6979,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6988,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6989,
+      "date": "2026-01-09"
+    },
+    {
+      "number": 6990,
+      "date": "2026-01-09"
+    }
+  ],
+  "generated_at": "2026-09-04T11:30:14.643348+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "date": "2026-01-01",
+  "period_start": "2026-01-01",
+  "period_end": "2026-01-01",
+  "title": "VisionAI joins chat",
+  "summary": "New Year's work: VisionAI arrives in chat while tier, wallet, and submission plumbing gets made less haunted.\n\nPollinations VisionAI is now available in chat, giving conversations another way to look at things before confidently describing them.\n\nAccount initialization now checks Polar when a D1 balance is empty, and benefit-grant webhooks correctly handle tier changes. The less visible parts of access management received their annual watering.\n\nThe tier-app-submission workflow now avoids an infinite loop, so submissions can move through the system without rediscovering themselves indefinitely.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 6631,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6680,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6689,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6694,
+      "date": "2026-01-01"
+    },
+    {
+      "number": 6699,
+      "date": "2026-01-01"
+    }
+  ],
+  "generated_at": "2026-09-04T11:23:41.628795+00:00"
+}

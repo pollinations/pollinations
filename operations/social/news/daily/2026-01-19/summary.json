@@ -1,0 +1,71 @@
+{
+  "date": "2026-01-19",
+  "period_start": "2026-01-19",
+  "period_end": "2026-01-19",
+  "title": "Usage data is easier to read and trust",
+  "summary": "A garden-maintenance day: clearer usage visibility, fresher public updates, and less drama in the deployment plumbing.\n\nA new usage analytics graph gives people a clearer view of activity, while Klein model tracking now records the correct model ID. Fewer mysteries in the dashboard, which is generally preferable to interpretive analytics.\n\nWeekly news, README updates, highlights, and social posts keep the public record current, while improved social metadata makes links to pollinations.ai and enter.pollinations.ai render more usefully when shared.\n\nBYOD and Authorize names now validate correctly, and legal pages have consistent styling and current dates. Not glamorous, but forms and legal pages are where software goes to reveal its personality.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 7062,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7430,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7438,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7439,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7456,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7457,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7459,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7460,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7462,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7467,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7468,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7469,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7473,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7474,
+      "date": "2026-01-19"
+    },
+    {
+      "number": 7475,
+      "date": "2026-01-19"
+    }
+  ],
+  "generated_at": "2026-09-04T11:38:40.272777+00:00"
+}

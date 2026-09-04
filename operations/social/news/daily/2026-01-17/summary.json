@@ -1,0 +1,55 @@
+{
+  "date": "2026-01-17",
+  "period_start": "2026-01-17",
+  "period_end": "2026-01-17",
+  "title": "Two more ways to ask machines for useful things",
+  "summary": "New research and image models landed alongside cleaner chat tooling, better docs, and a tidier control room.\n\nNomNom joined the text lineup as an alpha web-research model, with its naming and attribution cleaned up for a less mysterious launch. Image generation also gained Klein on Modal, now exposed under the shorter `klein` name because model names apparently require pruning too.\n\nChat.pollinations.ai gained BYOP integration support, while a new code-formatting skill gives agents one less excuse to return beautifully chaotic indentation.\n\nBloom Studio's URL was updated and the API documentation now fully describes MessageContentPart, making integration work slightly less dependent on archaeological inference.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 7311,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7360,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7379,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7383,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7386,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7392,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7398,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7399,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7400,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7402,
+      "date": "2026-01-17"
+    },
+    {
+      "number": 7403,
+      "date": "2026-01-17"
+    }
+  ],
+  "generated_at": "2026-09-04T11:37:09.731472+00:00"
+}

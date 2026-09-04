@@ -1,0 +1,55 @@
+{
+  "date": "2026-01-04",
+  "period_start": "2026-01-04",
+  "period_end": "2026-01-04",
+  "title": "More ways to make images",
+  "summary": "A buzzing day for model choice, Gemini tools, image generation, and the small bits of automation that keep the garden growing.\n\nImage generation picked up a SANA-Sprint server and Flux as its own io.net model, giving builders more distinct routes from prompt to pixels.\n\nGemini gained Google Search, URL context, and code execution tools where supported. Gemini Fast was kept on the fast path by leaving code execution out of that variant.\n\nQwen3-Coder is now available through OVHcloud, pricing displays full model names, and response content blocks formally include image URLs so multimodal clients have a less interpretive experience.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 6638,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6794,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6797,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6810,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6818,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6820,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6830,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6832,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6836,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6839,
+      "date": "2026-01-04"
+    },
+    {
+      "number": 6842,
+      "date": "2026-01-04"
+    }
+  ],
+  "generated_at": "2026-09-04T11:25:12.326267+00:00"
+}

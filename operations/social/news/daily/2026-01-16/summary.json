@@ -1,0 +1,47 @@
+{
+  "date": "2026-01-16",
+  "period_start": "2026-01-16",
+  "period_end": "2026-01-16",
+  "title": "Play can now make audio and keep its outputs around",
+  "summary": "A garden-maintenance day: audio arrived in Play, account tooling got clearer, and the API learned to report trouble more honestly.\n\nThe Play experience gained audio generation, a cleaner login UI, and more reliable output persistence. Login also now preselects profile and balance permissions, reducing the amount of permission archaeology required to get started.\n\nAccount endpoint response schemas are now documented, the dashboard shows a service-availability KPI, and usage-data CSV downloads work again. Slightly fewer mysteries hiding behind a button labeled export.\n\nThe gen.pollinations.ai proxy was simplified, while image requests through Azure now return the correct upstream error status codes. APIs should fail with less interpretive dance when something goes wrong.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 7329,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7344,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7351,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7352,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7354,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7359,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7361,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7363,
+      "date": "2026-01-16"
+    },
+    {
+      "number": 7372,
+      "date": "2026-01-16"
+    }
+  ],
+  "generated_at": "2026-09-04T11:36:28.971635+00:00"
+}

@@ -1,0 +1,55 @@
+{
+  "date": "2026-01-05",
+  "period_start": "2026-01-05",
+  "period_end": "2026-01-05",
+  "title": "The project’s public record got a fresh coat of paint",
+  "summary": "A garden-maintenance day: fresher project updates, tidier community tooling, working citations, and a Reddit workflow that survives an empty changelog.\n\nWeekly news, README latest-news entries, four new highlights, and several Instagram updates were published, keeping recent work discoverable without making anyone excavate commit history.\n\nDiscord authors can now be mapped to GitHub users, while AI prompts and support-label conventions were cleaned up and made easier to maintain.\n\nCitation handling and its accompanying tests were repaired, so sourced responses have a better chance of bringing their receipts.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 6673,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6767,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6769,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6833,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6844,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6847,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6852,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6853,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6854,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6855,
+      "date": "2026-01-05"
+    },
+    {
+      "number": 6858,
+      "date": "2026-01-05"
+    }
+  ],
+  "generated_at": "2026-09-04T11:26:52.979196+00:00"
+}

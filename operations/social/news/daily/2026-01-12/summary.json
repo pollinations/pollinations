@@ -1,0 +1,207 @@
+{
+  "date": "2026-01-12",
+  "period_start": "2026-01-12",
+  "period_end": "2026-01-12",
+  "title": "The app garden got substantially larger",
+  "summary": "A community harvest day: dozens of new projects joined the directory while submissions, routing, and public updates got a careful tune-up.\n\n35 newly catalogued projects landed across chat, creative tools, games, learning, social bots, and developer tools. New additions range from text-to-speech, image, and video experiments to recipe finders, language practice, bots, galleries, and a Limnoria plugin. The README now carries the latest ten entries too. The directory continues its quiet transformation into a fairly convincing map of what people build with a simple AI API.\n\nThe submission template received accessibility improvements, namespace validation now handles spaces and @ symbols correctly, and artifact and Claude Skill categories were refreshed. Workflow automation also identifies authors correctly when manually run and keeps review labels in sync, while tier explanations give contributors clearer guidance before they submit.\n\nClaude requests can now fall back from Bedrock to Vertex AI, with cost tracking corrected along the route. Default API-key handling was deduplicated, and a lightweight Python agent replaced the previous Claude Code action. Less ceremony, fewer single points of failure.",
+  "pr_count": 49,
+  "prs": [
+    {
+      "number": 6347,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6783,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6785,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6787,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6789,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6790,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6791,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6792,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6793,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6802,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6806,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6812,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6814,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6824,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6960,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6986,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6992,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 6995,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7012,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7015,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7022,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7035,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7044,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7046,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7050,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7051,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7063,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7069,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7071,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7077,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7081,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7082,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7087,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7089,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7091,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7093,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7094,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7095,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7096,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7097,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7098,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7099,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7100,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7101,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7102,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7111,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7112,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7145,
+      "date": "2026-01-12"
+    },
+    {
+      "number": 7146,
+      "date": "2026-01-12"
+    }
+  ],
+  "generated_at": "2026-09-04T11:33:15.398325+00:00"
+}

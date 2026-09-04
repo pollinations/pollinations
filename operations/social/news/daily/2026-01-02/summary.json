@@ -1,0 +1,27 @@
+{
+  "date": "2026-01-02",
+  "period_start": "2026-01-02",
+  "period_end": "2026-01-02",
+  "title": "Small dashboard fixes, less unnecessary scrolling",
+  "summary": "A quiet maintenance day: cleaner key management, properly named CSVs, and a refreshed GPT-5.2 connection.\n\nThe API keys table is now more compact and no longer traps people in a scrolling panel. CSV downloads also expose their filenames correctly across CORS, because a downloaded file should not arrive as a small administrative mystery.\n\nGPT-5.2 now points at the Sweden Central endpoint, keeping the model connection current.\n\nThe daily Instagram post landed alongside the product maintenance.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 6722,
+      "date": "2026-01-02"
+    },
+    {
+      "number": 6726,
+      "date": "2026-01-02"
+    },
+    {
+      "number": 6732,
+      "date": "2026-01-02"
+    },
+    {
+      "number": 6737,
+      "date": "2026-01-02"
+    }
+  ],
+  "generated_at": "2026-09-04T11:24:08.464353+00:00"
+}

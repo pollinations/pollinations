@@ -1,0 +1,27 @@
+{
+  "date": "2026-01-18",
+  "period_start": "2026-01-18",
+  "period_end": "2026-01-18",
+  "title": "Account details and docs now agree on where things live",
+  "summary": "A small maintenance pass: clearer account information, working Klein edits, and contact details pointed at reality.\n\nThe account endpoint now includes a Pollen reset date, while its documentation was corrected to use the actual endpoint path. Less endpoint archaeology, more knowing when your balance resets.\n\nFixed the request format for the Klein edit endpoint so edit calls can get on with editing rather than debating payload structure.\n\nUpdated the Code of Conduct contact email so reports and questions reach the right place.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 7355,
+      "date": "2026-01-18"
+    },
+    {
+      "number": 7411,
+      "date": "2026-01-18"
+    },
+    {
+      "number": 7431,
+      "date": "2026-01-18"
+    },
+    {
+      "number": 7437,
+      "date": "2026-01-18"
+    }
+  ],
+  "generated_at": "2026-09-04T11:37:55.791738+00:00"
+}

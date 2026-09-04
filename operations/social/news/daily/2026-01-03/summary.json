@@ -1,0 +1,47 @@
+{
+  "date": "2026-01-03",
+  "period_start": "2026-01-03",
+  "period_end": "2026-01-03",
+  "title": "Random seeds are random again",
+  "summary": "A tidy maintenance day: genuinely random generation, self-updating API docs, and a repo that sorts itself a little better.\n\nImage and text generation now correctly treats seed=-1 as a request for fresh output, bypassing cached results where needed. Asking for randomness no longer produces software's favorite kind of surprise: the same thing twice.\n\nDocumentation now consistently points builders to gen.pollinations.ai, while APIDOCS.md can regenerate automatically to stay aligned with the API. Mobile users can also scroll the API key and pricing tables instead of negotiating with a narrow screen.\n\nFour new community highlights and the latest README news were published, while a new workflow automatically organizes issues and PRs into four project categories. More signal on the front page, less archaeological work in the repo.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 6628,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6690,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6744,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6746,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6747,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6752,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6754,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6755,
+      "date": "2026-01-03"
+    },
+    {
+      "number": 6764,
+      "date": "2026-01-03"
+    }
+  ],
+  "generated_at": "2026-09-04T11:24:40.937437+00:00"
+}

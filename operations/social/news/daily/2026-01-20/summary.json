@@ -1,0 +1,27 @@
+{
+  "date": "2026-01-20",
+  "period_start": "2026-01-20",
+  "period_end": "2026-01-20",
+  "title": "Z-Image gets more reliable resolution handling",
+  "summary": "A small tuning day: steadier Z-Image dimensions, clearer API errors, and better instructions for the beings editing the codebase.\n\nUpdated the resolution math for Z-Image so requested dimensions are handled more consistently. Pixels remain stubbornly rectangular, but the calculations now agree.\n\nError responses are consolidated into clearer HTTP status codes, making it easier for apps to distinguish access issues from account-related requests and respond correctly.\n\nAdded Claude Code configuration and improved AGENTS.md so people and coding agents working on the repository have better project-specific guidance from the start.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 7054,
+      "date": "2026-01-20"
+    },
+    {
+      "number": 7478,
+      "date": "2026-01-20"
+    },
+    {
+      "number": 7499,
+      "date": "2026-01-20"
+    },
+    {
+      "number": 7505,
+      "date": "2026-01-20"
+    }
+  ],
+  "generated_at": "2026-09-04T11:39:21.780826+00:00"
+}

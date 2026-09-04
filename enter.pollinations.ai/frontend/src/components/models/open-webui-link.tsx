@@ -14,6 +14,18 @@ export function openWebUiChatUrl(modelId: string): string {
     return `${OPEN_WEBUI_URL}/?model=${encodeURIComponent(modelId)}`;
 }
 
+/**
+ * Open WebUI only speaks /v1/chat/completions. Output modality is too loose a
+ * test: transcription, embedding and realtime models all emit text but cannot
+ * be chatted with. A model that does not declare its endpoints is treated as
+ * not chattable, so it keeps the Play link instead.
+ */
+export function isOpenWebUiChattable(model: {
+    supportedEndpoints?: string[];
+}): boolean {
+    return model.supportedEndpoints?.includes("/v1/chat/completions") ?? false;
+}
+
 type OpenWebUiLinkProps = {
     modelId: string;
     /** icon: sits inline beside a model name. text: a standalone row action. */

@@ -725,10 +725,12 @@ class PollinationsClient:
         payload = {
             "model": config.ai.model,
             "messages": messages,
-            "seed": (api_params or {}).get("seed", 42),
             "stream": True,
             "stream_options": {"include_usage": True},
         }
+        explicit_seed = (api_params or {}).get("seed")
+        if explicit_seed is not None:
+            payload["seed"] = explicit_seed
         for key, value in (api_params or {}).items():
             if key not in {"seed", "stream", "stream_options"} and value is not None:
                 payload[key] = value
@@ -832,9 +834,7 @@ class PollinationsClient:
         """Make API call to Pollinations with tool definitions.
 
         Includes:
-        - Random seed parameter (0 to int32 max) for each request
         - 3 retry attempts with 5s delay between retries
-        - New random seed for each retry attempt
         - Pass-through of OpenAI generation params (temperature, max_tokens, etc.)
         """
         # API mode: MUST use the user's passed-through key, never the bot's internal token.
@@ -859,20 +859,15 @@ class PollinationsClient:
 
         current_model = config.ai.model
         for attempt in range(MAX_RETRIES):
-            # Use caller's seed if provided (default 42), otherwise random per attempt
-            caller_seed = (api_params or {}).get("seed") if api_params else None
-            seed = caller_seed if caller_seed is not None else 42
-
             payload = {
                 "model": current_model,
                 "messages": messages,
-                "seed": seed,
             }
 
             # Merge caller-provided OpenAI params (temperature, max_tokens, etc.)
             if api_params:
                 for k, v in api_params.items():
-                    if k != "seed" and v is not None:
+                    if v is not None:
                         payload[k] = v
 
             if tools:
@@ -881,7 +876,7 @@ class PollinationsClient:
 
             try:
                 session = await self.get_session()
-                logger.debug(f"API attempt {attempt + 1}/{MAX_RETRIES} with seed {seed}")
+                logger.debug(f"API attempt {attempt + 1}/{MAX_RETRIES}")
 
                 async with session.post(
                     url,

@@ -82,6 +82,17 @@ export class OpenWebUIContainer extends Container {
             },
         }),
 
+        // Open WebUI injects its own builtin tools (time, chat history, ask_user)
+        // into every request that originates from its UI, unless the model says
+        // otherwise. Models fetched from a connection have no row in the model
+        // table, so utils/models.py applies this default metadata to them
+        // wholesale. Without it every chat carries tool specs, which managed
+        // agents and community models that do not support tool calling reject.
+        // The MCP tool server below is unaffected: it is opt-in per chat.
+        DEFAULT_MODEL_METADATA: JSON.stringify({
+            capabilities: { builtin_tools: false },
+        }),
+
         // Pollinations MCP as a tool server, on the same per-user consent key as
         // the model connection above: generation from a tool call is billed to
         // the signed-in user, and getBalance reports their own wallet.

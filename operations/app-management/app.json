@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "🛠️",
+    "name": "Pollin Uptime (HA Gateway)",
+    "url": "https://brhost.eu.org",
+    "description": "Zero-downtime serverless AI gateway and multimodal playground with automatic 4-layer fallback cascade. Never hit 500 errors or rate limits again — seamlessly route Chat, Vision, Images, Video, and Voi",
+    "language": "en",
+    "category": "build",
+    "platform": "web",
+    "githubUsername": "samucamg",
+    "githubUserId": "21285687",
+    "repositoryUrl": "https://github.com/samucamg/pollin-uptime",
+    "repositoryStars": null,
+    "discordUsername": "samucatutoriais7350",
+    "other": null,
+    "submittedDate": "2026-09-03",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14411",
+    "approvedDate": "2026-09-04",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "💬",
     "name": "Open WebUI for Pollinations",
     "url": "https://openwebui.pollinations.ai",

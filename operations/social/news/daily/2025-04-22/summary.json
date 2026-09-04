@@ -1,0 +1,31 @@
+{
+  "date": "2025-04-22",
+  "period_start": "2025-04-22",
+  "period_end": "2025-04-22",
+  "title": "The project directory now leads with what the community is using",
+  "summary": "A directory-focused day: better project discovery, cleaner chat history, and a refreshed Mistral model.\n\nProject listings now show GitHub star counts and sort by popularity, making it easier to find the apps people have already put through their paces. ImageGen AI Image also joined the list, while CSV exports were reordered to better match the directory.\n\nConversation history now avoids showing duplicate ads. A small change, but repeated UI furniture is how software slowly becomes haunted.\n\nThe Mistral model configuration was refreshed, keeping the multi-model text endpoint current alongside the rest of the ecosystem.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1739,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1760,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1762,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1765,
+      "date": "2025-04-22"
+    },
+    {
+      "number": 1767,
+      "date": "2025-04-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:30:36.101334+00:00"
+}

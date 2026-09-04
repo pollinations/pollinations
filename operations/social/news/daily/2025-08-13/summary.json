@@ -1,0 +1,15 @@
+{
+  "date": "2025-08-13",
+  "period_start": "2025-08-13",
+  "period_end": "2025-08-13",
+  "title": "Clearer handling when things go sideways",
+  "summary": "A small resilience pass: clearer errors and a fresh sync with master.\n\nError handling was tightened up and the latest upstream changes were merged in, making the affected flow more resilient when software inevitably encounters reality.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3661,
+      "date": "2025-08-13"
+    }
+  ],
+  "generated_at": "2026-09-04T12:21:16.634759+00:00"
+}

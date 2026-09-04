@@ -1,0 +1,55 @@
+{
+  "date": "2025-11-11",
+  "period_start": "2025-11-11",
+  "period_end": "2025-11-11",
+  "title": "Image prompts now survive special characters intact",
+  "summary": "A garden-maintenance day: sturdier chat and image prompting, clearer API behavior, steadier rate limits, and three new community projects.\n\nImage URL parsing was tightened up so wildcard-style prompts and URL-encoded special characters reach the generator as intended. Less accidental prompt mangling, more pixels matching the request.\n\nThe chat interface moved into the main repository, received a corrected Vite base path, and got more reliable sidebar logo handling. CatGPT also moved over to enter.pollinations.ai.\n\nUpstream HTTP status codes now make it through error responses, stray auth debug calls were removed, and the MIDI log monitor learned to recognize 403 and 429 responses. Software remains complicated, but it now says why more clearly.",
+  "pr_count": 11,
+  "prs": [
+    {
+      "number": 5081,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5110,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5144,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5158,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5166,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5169,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5174,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5175,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5178,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5179,
+      "date": "2025-11-11"
+    },
+    {
+      "number": 5182,
+      "date": "2025-11-11"
+    }
+  ],
+  "generated_at": "2026-09-04T12:10:39.134995+00:00"
+}

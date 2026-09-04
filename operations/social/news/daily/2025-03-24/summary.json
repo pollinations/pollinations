@@ -1,0 +1,43 @@
+{
+  "date": "2025-03-24",
+  "period_start": "2025-03-24",
+  "period_end": "2025-03-24",
+  "title": "More ways to build with audio",
+  "summary": "An audio-forward garden-tending day: MCP audio support, speech docs, text endpoint upkeep, and a tidier project map.\n\nAudio got a broader path through the stack: the MCP server can now support audio generation, the API docs include a speech-to-text example, and a text-to-speech project joined the gallery. Less guessing how to get from words to sound, or sound back to words.\n\ntext.pollinations.ai received feature, model, and security updates, keeping the shared text endpoint current while it continues to front a small zoo of models.\n\nFreeAI was added to the README and project list, while an older API Playground listing was retired. The gallery is a little more useful as a map of what people are actually building.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 1422,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1426,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1427,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1429,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1430,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1431,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1432,
+      "date": "2025-03-24"
+    },
+    {
+      "number": 1434,
+      "date": "2025-03-24"
+    }
+  ],
+  "generated_at": "2026-09-04T12:15:13.016587+00:00"
+}

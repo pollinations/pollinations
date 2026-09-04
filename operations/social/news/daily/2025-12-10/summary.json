@@ -1,0 +1,51 @@
+{
+  "date": "2025-12-10",
+  "period_start": "2025-12-10",
+  "period_end": "2025-12-10",
+  "title": "Chat generation and Claude image inputs got their footing back",
+  "summary": "A garden-maintenance day: chat fixes, Claude compatibility, a filled-in news archive, and smoother community workflows.\n\nChat.pollinations.ai generation was restored, Claude Code gained routing support, and Claude/Bedrock image URLs are now converted cleanly to base64. Less ceremony between a prompt, an image, and a usable response.\n\nNews files from late July through early December were backfilled, alongside a workflow and pipeline for keeping updates flowing and a fix for branch filtering. The changelog is becoming less of an archaeological dig.\n\nAdding the app:review label now reliably starts the app-submission workflow, and Lily, an AI Discord companion, joined the socialBots directory.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 5829,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5831,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5845,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5847,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5848,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5849,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5861,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5864,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5865,
+      "date": "2025-12-10"
+    },
+    {
+      "number": 5867,
+      "date": "2025-12-10"
+    }
+  ],
+  "generated_at": "2026-09-04T12:29:35.449856+00:00"
+}

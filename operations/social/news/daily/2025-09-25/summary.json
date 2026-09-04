@@ -1,0 +1,23 @@
+{
+  "date": "2025-09-25",
+  "period_start": "2025-09-25",
+  "period_end": "2025-09-25",
+  "title": "GPT-5 Mini and Nano join the model lineup",
+  "summary": "A small engine-tuning day: more GPT-5 options, smoother queue throughput, and better context for proxied requests.\n\nConfigured GPT-5 Mini and Nano for the text endpoint, giving builders more small-model options through the same familiar API.\n\nFixed a queue concurrency bottleneck and refined rate-limit intervals, so parallel requests can move through more reliably instead of forming an unnecessary little traffic jam.\n\nForwarded x-enter-token and x-github-id headers with proxied requests, preserving the context services need when requests travel through the proxy layer.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 4176,
+      "date": "2025-09-25"
+    },
+    {
+      "number": 4177,
+      "date": "2025-09-25"
+    },
+    {
+      "number": 4182,
+      "date": "2025-09-25"
+    }
+  ],
+  "generated_at": "2026-09-04T12:36:41.716554+00:00"
+}

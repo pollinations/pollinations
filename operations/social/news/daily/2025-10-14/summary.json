@@ -1,0 +1,31 @@
+{
+  "date": "2025-10-14",
+  "period_start": "2025-10-14",
+  "period_end": "2025-10-14",
+  "title": "enter.pollinations.ai is back on the right route",
+  "summary": "A small maintenance day: repaired the enter proxy, cleaned up text model plumbing, and made usage accounting less creative.\n\nThe enter.pollinations.ai proxy endpoint and deployment configuration were corrected, making the hosted entry point behave like an entry point again.\n\nThe text registry was tidied and synchronized with Azure deployments, while an unavailable model was taken out of circulation. Fewer stale entries, less mystery meat in the model list.\n\nCost tracking now maps Azure deployment names to the correct text registry keys and fixes a unit conversion error, so internal usage calculations have one fewer opportunity for interpretive arithmetic.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 4536,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4537,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4541,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4546,
+      "date": "2025-10-14"
+    },
+    {
+      "number": 4549,
+      "date": "2025-10-14"
+    }
+  ],
+  "generated_at": "2026-09-04T12:47:35.579688+00:00"
+}

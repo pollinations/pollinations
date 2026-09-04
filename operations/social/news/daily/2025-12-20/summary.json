@@ -1,0 +1,63 @@
+{
+  "date": "2025-12-20",
+  "period_start": "2025-12-20",
+  "period_end": "2025-12-20",
+  "title": "API docs become easier to read and reuse",
+  "summary": "A garden-maintenance day: cleaner API docs, deduplicated requests, sturdier auth storage, and a few new things people made.\n\nThe API can now generate Markdown documentation, while the OpenAPI spec reuses shared schemas through $ref instead of repeating itself. Less duplicated YAML, more useful docs—the ancient bargain.\n\nNew request-deduplication middleware prevents identical in-flight API requests from doing the same work twice, with recorded VCR snapshots added to keep its behavior tested.\n\nThe community showcase picked up Imgoo and Nosde Space in creative, plus TeleChars AI in socialBots. The directory continues its noble work of proving people will build anything with an API.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 6201,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6202,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6209,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6223,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6230,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6235,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6236,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6237,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6239,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6241,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6243,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6248,
+      "date": "2025-12-20"
+    },
+    {
+      "number": 6250,
+      "date": "2025-12-20"
+    }
+  ],
+  "generated_at": "2026-09-04T12:37:20.391889+00:00"
+}

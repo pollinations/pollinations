@@ -1,0 +1,27 @@
+{
+  "date": "2025-03-15",
+  "period_start": "2025-03-15",
+  "period_end": "2025-03-15",
+  "title": "The project showcase got easier to browse",
+  "summary": "A community-facing day: better project discovery, two new showcase entries, and a refreshed Unity integration.\n\nA featured tab now gives standout community projects their own shelf, while the showcase added CalcuBite AI and a Node.js client library. More things people built with Pollinations, arranged with slightly less archaeological effort.\n\nThe Unity JavaScript integration was refreshed, keeping the path from game project to generative API a little more current.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1202,
+      "date": "2025-03-15"
+    },
+    {
+      "number": 1361,
+      "date": "2025-03-15"
+    },
+    {
+      "number": 1363,
+      "date": "2025-03-15"
+    },
+    {
+      "number": 1364,
+      "date": "2025-03-15"
+    }
+  ],
+  "generated_at": "2026-09-04T12:09:20.900974+00:00"
+}

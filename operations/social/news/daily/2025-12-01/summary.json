@@ -1,0 +1,51 @@
+{
+  "date": "2025-12-01",
+  "period_start": "2025-12-01",
+  "period_end": "2025-12-01",
+  "title": "Video generation lands with Veo and Seedance",
+  "summary": "Video generation joins the garden, while the community gets clearer ways to participate and the public site gets its December tune-up.\n\nPollinations can now generate video through Veo and Seedance, bringing another medium into the same open infrastructure already used for images, text, audio, and assorted experiments.\n\nA new login-provider voting issue gives the community a direct place to weigh in on sign-in options, while tier and Pollen values were refreshed alongside new Claude skills for managing tiers and making issues.\n\nChat.Pollinations.AI was synced with its website code, the site messaging now more clearly describes a community-built project, and a December news banner keeps visitors pointed at what changed.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 5431,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5434,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5452,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5467,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5484,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5512,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5534,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5536,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5544,
+      "date": "2025-12-01"
+    },
+    {
+      "number": 5545,
+      "date": "2025-12-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:21:52.841054+00:00"
+}

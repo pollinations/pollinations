@@ -1,0 +1,15 @@
+{
+  "date": "2025-11-21",
+  "period_start": "2025-11-21",
+  "period_end": "2025-11-21",
+  "title": "Frontend now handles image model data cleanly",
+  "summary": "A small frontend fix keeps image model handling from becoming an object lesson.\n\nThe frontend now properly handles image model objects, keeping image model selection and display behavior aligned with the data coming from the platform.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 5383,
+      "date": "2025-11-21"
+    }
+  ],
+  "generated_at": "2026-09-04T12:16:47.153025+00:00"
+}

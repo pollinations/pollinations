@@ -1,0 +1,47 @@
+{
+  "date": "2025-12-02",
+  "period_start": "2025-12-02",
+  "period_end": "2025-12-02",
+  "title": "Video generation gets a clearer front door",
+  "summary": "Video generation became easier to use, search and tier UI got clearer, and the community and infrastructure paths received a careful tune-up.\n\nChat.Pollinations.AI now includes video generation and a newcomer tutorial, while the Video API received fixes for image-to-video models, duration handling, and its OpenAPI documentation. Making pixels move is easy; making the parameters agree on how long they should move took a little gardening.\n\nPerplexity and Gemini Search models now carry a web-search icon, and the tier interface adds an explanation panel with styling refinements so people can better understand what they are looking at before clicking around.\n\nA new AI-powered workflow reviews project submissions, alongside voting-status diagram tooling and Discord configuration to give community processes a more visible path from contribution to decision.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 5553,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5559,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5565,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5570,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5571,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5572,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5573,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5575,
+      "date": "2025-12-02"
+    },
+    {
+      "number": 5577,
+      "date": "2025-12-02"
+    }
+  ],
+  "generated_at": "2026-09-04T12:22:37.790642+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "date": "2025-11-01",
+  "period_start": "2025-11-01",
+  "period_end": "2025-11-01",
+  "title": "Nanobanana requests get the right access path",
+  "summary": "A small garden-maintenance day: smoother Nanobanana access, more predictable image routing, and cleaner community tooling.\n\nRequests from enter.pollinations.ai now bypass hourly limits for Nanobanana, keeping that experience available without an unnecessary limit check in the way.\n\nThe Cloudflare Flux fallback has been disabled, reducing unexpected fallback behavior and keeping image requests on the intended path.\n\nLogos now come from one source of truth, while Discord Digests can be generated on a time interval—less visual drift, fewer missed community conversations.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 4898,
+      "date": "2025-11-01"
+    },
+    {
+      "number": 4904,
+      "date": "2025-11-01"
+    },
+    {
+      "number": 4909,
+      "date": "2025-11-01"
+    },
+    {
+      "number": 4910,
+      "date": "2025-11-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:02:27.844602+00:00"
+}

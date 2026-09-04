@@ -1,0 +1,83 @@
+{
+  "date": "2025-12-22",
+  "period_start": "2025-12-22",
+  "period_end": "2025-12-22",
+  "title": "The app garden got a few new specimens",
+  "summary": "A community-garden day: new apps, cleaner contribution flows, fresh themes, steadier operations, and a site migration underneath it all.\n\nBhaujAI joined hackAndBuild, Asive AI joined chat, and Multi Image Generator joined creative. The community directory now has a single source of truth, alongside refreshed weekly news and four new highlights.\n\nApp submission enhancements were restored and the generated contribution PRs now include fuller details, readable formatting, repository links, and valid YAML. Less archaeology for maintainers, more useful context for everyone.\n\nGrayscale and plants theme presets landed, giving builders a pair of new visual defaults: one austere, one chlorophyll-adjacent.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 6162,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6308,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6319,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6320,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6321,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6325,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6327,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6330,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6332,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6339,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6340,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6345,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6348,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6349,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6350,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6356,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6359,
+      "date": "2025-12-22"
+    },
+    {
+      "number": 6360,
+      "date": "2025-12-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:38:47.879760+00:00"
+}

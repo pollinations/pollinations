@@ -1,0 +1,15 @@
+{
+  "date": "2025-07-24",
+  "period_start": "2025-07-24",
+  "period_end": "2025-07-24",
+  "title": "TypeScript begins taking root in image.pollinations.ai",
+  "summary": "A small foundation shift: TypeScript is being introduced to the image service.\n\nThe image service is starting a TypeScript migration, giving future image-generation work stronger types and fewer opportunities for JavaScript to invent a new interpretation of reality.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3261,
+      "date": "2025-07-24"
+    }
+  ],
+  "generated_at": "2026-09-04T12:13:04.541290+00:00"
+}

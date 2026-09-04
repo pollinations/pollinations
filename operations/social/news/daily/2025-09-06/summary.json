@@ -1,0 +1,27 @@
+{
+  "date": "2025-09-06",
+  "period_start": "2025-09-06",
+  "period_end": "2025-09-06",
+  "title": "The Creative Projects garden gets two new inhabitants",
+  "summary": "A small garden day: clearer text API docs, two new community projects, and some model configuration pruning.\n\nAI Image Generator and CVRON AI were added to the Creative Projects list, giving visitors two more concrete examples of what people are building with Pollinations.\n\nThe text.pollinations.ai root URL now redirects directly to the API documentation. Less wandering around; more sending prompts to models.\n\nCommunity model cost definitions were removed as part of ongoing configuration housekeeping.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 3973,
+      "date": "2025-09-06"
+    },
+    {
+      "number": 3974,
+      "date": "2025-09-06"
+    },
+    {
+      "number": 3975,
+      "date": "2025-09-06"
+    },
+    {
+      "number": 3976,
+      "date": "2025-09-06"
+    }
+  ],
+  "generated_at": "2026-09-04T12:29:13.483091+00:00"
+}

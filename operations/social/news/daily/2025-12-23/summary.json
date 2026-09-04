@@ -1,0 +1,47 @@
+{
+  "date": "2025-12-23",
+  "period_start": "2025-12-23",
+  "period_end": "2025-12-23",
+  "title": "Fresh image and text models landed",
+  "summary": "New GPT Image and DeepSeek models, clearer Veo video support, and a few practical guardrails for the shared API.\n\nGPT Image 1.5 is now available as gptimage-large, while DeepSeek moved to V3.2. More pixels and a newer reasoning engine, reached through the same pleasantly boring endpoints.\n\nVeo's metadata now correctly advertises Image-to-Video support, so apps and builders can see what the model can actually do instead of treating its capabilities like folklore.\n\nThe current site now points people to old.pollinations.ai when needed, and Shaper AI joined the vibeCoding directory. A small bit of wayfinding for an ecosystem that keeps growing sideways.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 6297,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6328,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6368,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6369,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6373,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6389,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6390,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6393,
+      "date": "2025-12-23"
+    },
+    {
+      "number": 6398,
+      "date": "2025-12-23"
+    }
+  ],
+  "generated_at": "2026-09-04T12:39:32.049896+00:00"
+}

@@ -1,0 +1,59 @@
+{
+  "date": "2025-11-14",
+  "period_start": "2025-11-14",
+  "period_end": "2025-11-14",
+  "title": "Cleaner answers when APIs get weird",
+  "summary": "A garden-maintenance day: cleaner API fallbacks and citations for users, sturdier token access, and fewer little rituals for contributors.\n\nText API failures now fall back to readable text instead of raw error messages, Perplexity citations are enabled again through the correct Portkey header, and Pollen balances refresh on a much shorter cache window.\n\nImage and text services now verify ENTER_TOKEN access, while the internal x-enter-token detail stays out of the public OpenAPI schema. The lock is on the door; the blueprint remains readable.\n\nTier naming and activation logic were cleaned up, alongside updated product-pack wiring, making account access and pack handling less dependent on ambiguous internal labels.",
+  "pr_count": 12,
+  "prs": [
+    {
+      "number": 5248,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5259,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5260,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5261,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5266,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5269,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5274,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5282,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5283,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5284,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5286,
+      "date": "2025-11-14"
+    },
+    {
+      "number": 5287,
+      "date": "2025-11-14"
+    }
+  ],
+  "generated_at": "2026-09-04T12:12:40.175485+00:00"
+}

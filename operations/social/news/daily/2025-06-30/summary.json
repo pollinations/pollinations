@@ -1,0 +1,15 @@
+{
+  "date": "2025-06-30",
+  "period_start": "2025-06-30",
+  "period_end": "2025-06-30",
+  "title": "Model tiers refreshed",
+  "summary": "A small bit of model-catalog gardening: tiers have been refreshed.\n\nThe model tier configuration was updated, keeping the available model lineup organized as the catalog evolves.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 2699,
+      "date": "2025-06-30"
+    }
+  ],
+  "generated_at": "2026-09-04T13:06:33.898842+00:00"
+}

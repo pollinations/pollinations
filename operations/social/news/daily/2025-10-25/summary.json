@@ -1,0 +1,27 @@
+{
+  "date": "2025-10-25",
+  "period_start": "2025-10-25",
+  "period_end": "2025-10-25",
+  "title": "Hacktoberfest projects can land on pollinations subdomains",
+  "summary": "A Hacktoberfest housekeeping day: smoother project deployments, manual workflow controls, and a freshly renamed challenge.\n\nHacktoberfest deployment work now supports publishing projects to pollinations subdomains, with groundwork in place for Turnstile verification. A small bridge between contributing code and putting it somewhere people can actually visit.\n\nThe Hacktoberfest deployment workflow can now be triggered manually, making it easier to rerun or publish work without waiting for the exact right sequence of automation to occur.\n\nThe elevator challenge was renamed and its related workflows were cleaned up, including a follow-up pass to make sure the new identity stuck in the places automation likes to hide.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 4351,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4784,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4785,
+      "date": "2025-10-25"
+    },
+    {
+      "number": 4786,
+      "date": "2025-10-25"
+    }
+  ],
+  "generated_at": "2026-09-04T12:54:15.380587+00:00"
+}

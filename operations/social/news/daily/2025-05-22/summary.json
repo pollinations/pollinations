@@ -1,0 +1,15 @@
+{
+  "date": "2025-05-22",
+  "period_start": "2025-05-22",
+  "period_end": "2025-05-22",
+  "title": "Image generation can now edit, too",
+  "summary": "A small but useful expansion: pollinations images can now be edited as well as generated.\n\nImage support grew beyond generating from scratch: users can now edit existing images through pollinations.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 2051,
+      "date": "2025-05-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:48:17.751504+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "date": "2025-09-24",
+  "period_start": "2025-09-24",
+  "period_end": "2025-09-24",
+  "title": "Image models gained more control, with less dimension archaeology",
+  "summary": "A focused image-model maintenance day: reference inputs, simpler sizing, steadier queues, and clearer logs.\n\nReference images are now supported across image models, and Nanobanana's dimension handling was simplified. More ways to steer an image, fewer parameters requiring a small expedition.\n\nQueue interval handling was fixed, Seedream now runs on a 45-second interval, and model configurations were corrected to keep requests moving through the right paths.\n\nModel tracking and logging were improved, making it easier to follow requests through the infrastructure when software inevitably develops opinions.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 4147,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4156,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4158,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4162,
+      "date": "2025-09-24"
+    },
+    {
+      "number": 4164,
+      "date": "2025-09-24"
+    }
+  ],
+  "generated_at": "2026-09-04T12:35:49.135830+00:00"
+}

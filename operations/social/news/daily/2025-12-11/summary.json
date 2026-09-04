@@ -1,0 +1,43 @@
+{
+  "date": "2025-12-11",
+  "period_start": "2025-12-11",
+  "period_end": "2025-12-11",
+  "title": "The website got a more adaptive coat of paint",
+  "summary": "A garden-maintenance day: a more adaptive site, smarter app curation, and refreshed service plumbing.\n\npollinations.ai was refactored with AI theming, while the Enter dashboard received cleaner header controls and banner styling. The front door and the control room now look a little more like they belong to the same organism.\n\nApp submissions now get smarter review handling, Robatika joined the creative app ecosystem, and the daily highlights and README news were refreshed so people can find what the community has been making.\n\nAPI credentials for chat.polli and the Pollinations service were updated to keep the plumbing current behind the endpoints people use.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 5552,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5844,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5868,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5870,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5872,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5873,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5875,
+      "date": "2025-12-11"
+    },
+    {
+      "number": 5890,
+      "date": "2025-12-11"
+    }
+  ],
+  "generated_at": "2026-09-04T12:30:17.181830+00:00"
+}

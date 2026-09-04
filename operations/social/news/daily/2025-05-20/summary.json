@@ -1,0 +1,35 @@
+{
+  "date": "2025-05-20",
+  "period_start": "2025-05-20",
+  "period_end": "2025-05-20",
+  "title": "Text and tool integrations got less fussy",
+  "summary": "A garden-maintenance day: smoother DeepSeek and MCP integrations, tidier streaming and metrics, and two new community projects on the map.\n\nDeepSeek v3 response formatting now lands correctly, while the MCP server's command-line entry works cleanly with ES module setups. Less format archaeology for people wiring models into tools.\n\nText streaming cleanup and refined UI metrics make the service's live output and status displays more orderly. Software continues its long campaign against slightly confusing interfaces.\n\nEmojiall AI Drawing Platform and MASala were added to the project list, giving the community gallery two more examples of things people are building with the infrastructure.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 2018,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2021,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2023,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2024,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2028,
+      "date": "2025-05-20"
+    },
+    {
+      "number": 2033,
+      "date": "2025-05-20"
+    }
+  ],
+  "generated_at": "2026-09-04T12:46:08.117055+00:00"
+}

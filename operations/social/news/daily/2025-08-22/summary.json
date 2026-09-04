@@ -1,0 +1,15 @@
+{
+  "date": "2025-08-22",
+  "period_start": "2025-08-22",
+  "period_end": "2025-08-22",
+  "title": "A cleaner, more current public surface",
+  "summary": "A small documentation sweep: fewer stale references, less archaeological software marketing.\n\nOld references to gptimage and tier announcements were removed, keeping public-facing copy aligned with the project as it exists now.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3820,
+      "date": "2025-08-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:25:00.814032+00:00"
+}

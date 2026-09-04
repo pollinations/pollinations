@@ -1,0 +1,31 @@
+{
+  "date": "2025-11-29",
+  "period_start": "2025-11-29",
+  "period_end": "2025-11-29",
+  "title": "More control over cached responses",
+  "summary": "A small maintenance day: fresher cache control, a new Chat project, cleaner model names, and fewer old events hanging around.\n\nA new DELETE endpoint lets builders explicitly invalidate cached data when their app needs a fresh result, rather than waiting for the cache to age out on its own.\n\nPolliPalmTop has been added to Chat projects, while model aliases were reorganized and normalized so model naming stays more predictable across the API.\n\nBuffered events now clear after a day, keeping transient system state from accumulating indefinitely. A Zod dependency dedupe also gets CI builds back onto solid ground, because builds enjoy inventing new forms of weather.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 5375,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5463,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5471,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5473,
+      "date": "2025-11-29"
+    },
+    {
+      "number": 5476,
+      "date": "2025-11-29"
+    }
+  ],
+  "generated_at": "2026-09-04T12:20:24.602442+00:00"
+}

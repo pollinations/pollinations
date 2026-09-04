@@ -1,0 +1,19 @@
+{
+  "date": "2025-10-21",
+  "period_start": "2025-10-21",
+  "period_end": "2025-10-21",
+  "title": "Three more community projects in the garden",
+  "summary": "A small community day: three projects joined the directory, and contributing got one label less complicated.\n\nThe Projects directory now includes Telegram AI Chars, FoilAI, and Swapna Shastra Dream Decoder—three more examples of people building strange and useful things on open AI infrastructure.\n\nExternal issues now share one COMMUNITY label, making incoming feedback and contributions easier to recognize without turning the issue tracker into a taxonomy project.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 4659,
+      "date": "2025-10-21"
+    },
+    {
+      "number": 4676,
+      "date": "2025-10-21"
+    }
+  ],
+  "generated_at": "2026-09-04T12:51:24.239280+00:00"
+}

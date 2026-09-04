@@ -1,0 +1,27 @@
+{
+  "date": "2025-04-16",
+  "period_start": "2025-04-16",
+  "period_end": "2025-04-16",
+  "title": "The project directory got easier to navigate",
+  "summary": "A tidy day: clearer project discovery, fresher Python docs, and a less cluttered model shelf.\n\nVibeCoder now lives under Tools & Interfaces, and Generator Text AI joined the project list. Two small map updates for a growing garden of things people have built.\n\nThe website's Python SDK example was updated so developers have a fresher starting point when making their first API call.\n\nRedundant LLM model entries were removed, leaving a cleaner set of choices behind the unified text endpoint.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1692,
+      "date": "2025-04-16"
+    },
+    {
+      "number": 1699,
+      "date": "2025-04-16"
+    },
+    {
+      "number": 1701,
+      "date": "2025-04-16"
+    },
+    {
+      "number": 1709,
+      "date": "2025-04-16"
+    }
+  ],
+  "generated_at": "2026-09-04T12:28:41.166043+00:00"
+}

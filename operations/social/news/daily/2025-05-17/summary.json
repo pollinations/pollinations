@@ -1,0 +1,15 @@
+{
+  "date": "2025-05-17",
+  "period_start": "2025-05-17",
+  "period_end": "2025-05-17",
+  "title": "AI Chat joins the project list",
+  "summary": "A small navigation fix: AI Chat is now where the projects are.\n\nAI Chat is now included in the project list, making it easier to find alongside the rest of the things people are building with pollinations.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1987,
+      "date": "2025-05-17"
+    }
+  ],
+  "generated_at": "2026-09-04T12:44:13.966979+00:00"
+}

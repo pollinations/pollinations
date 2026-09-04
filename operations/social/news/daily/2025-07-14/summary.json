@@ -1,0 +1,19 @@
+{
+  "date": "2025-07-14",
+  "period_start": "2025-07-14",
+  "period_end": "2025-07-14",
+  "title": "Two more community tools in the garden",
+  "summary": "Two community-built tools joined the chat and creative corners of the Pollinations ecosystem.\n\nEvilChat is now listed in the chat category, while Promptgenerator.art joins the creative tools directory. A small round of discovery improvements for people looking for things to build with.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3074,
+      "date": "2025-07-14"
+    },
+    {
+      "number": 3090,
+      "date": "2025-07-14"
+    }
+  ],
+  "generated_at": "2026-09-04T12:09:23.802405+00:00"
+}

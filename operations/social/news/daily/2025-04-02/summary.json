@@ -1,0 +1,35 @@
+{
+  "date": "2025-04-02",
+  "period_start": "2025-04-02",
+  "period_end": "2025-04-02",
+  "title": "Mistral gets eyes, and the docs get a trim",
+  "summary": "A garden-maintenance day: Mistral vision support, cleaner API guidance, and less manual link wrangling.\n\nMistral’s configuration now supports vision capabilities, while the API documentation was refreshed so builders have a clearer map of the available surface area.\n\nA script now generates the affiliate list as JSON, and text.pollinations.ai can consume those JSON affiliate links. Less hand-maintained link archaeology, more structured data.\n\nThe feed-filter CLI gained Commander-based logging for easier operational debugging, while the partner directory was brought up to date.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 1477,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1518,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1533,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1536,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1537,
+      "date": "2025-04-02"
+    },
+    {
+      "number": 1538,
+      "date": "2025-04-02"
+    }
+  ],
+  "generated_at": "2026-09-04T12:20:50.828821+00:00"
+}

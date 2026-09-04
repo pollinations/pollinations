@@ -1,0 +1,15 @@
+{
+  "date": "2025-08-15",
+  "period_start": "2025-08-15",
+  "period_end": "2025-08-15",
+  "title": "More reliable text moderation",
+  "summary": "A small moderation-pipeline repair: fewer rate-limit headaches, as nature intended.\n\nFixed Tinybird datasource partitioning for text moderation, reducing avoidable rate-limit trouble in the moderation pipeline.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3715,
+      "date": "2025-08-15"
+    }
+  ],
+  "generated_at": "2026-09-04T12:22:30.894414+00:00"
+}

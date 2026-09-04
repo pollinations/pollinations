@@ -1,0 +1,35 @@
+{
+  "date": "2025-04-19",
+  "period_start": "2025-04-19",
+  "period_end": "2025-04-19",
+  "title": "April's model lineup got a configuration pass",
+  "summary": "A garden-maintenance day: refreshed model configuration, clearer TTS docs, and three more community projects on the map.\n\nThe AI model list and its configuration were refreshed for April, keeping the shared text endpoint's available setup current.\n\nOkeyAI, BlackWave, and DesmondBot were added to the project list—a small but useful record of what people are building with Pollinations.\n\nText-to-Speech API documentation was updated, while PR tracking moved into its own file so the project’s paper trail stops spreading across the furniture.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 1716,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1720,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1722,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1724,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1726,
+      "date": "2025-04-19"
+    },
+    {
+      "number": 1727,
+      "date": "2025-04-19"
+    }
+  ],
+  "generated_at": "2026-09-04T12:29:19.099120+00:00"
+}

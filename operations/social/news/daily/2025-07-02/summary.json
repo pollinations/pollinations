@@ -1,0 +1,31 @@
+{
+  "date": "2025-07-02",
+  "period_start": "2025-07-02",
+  "period_end": "2025-07-02",
+  "title": "Flux Kontext joins the image toolbox",
+  "summary": "A garden-maintenance day: Flux Kontext arrived, auth got smoother, and another community game made the list.\n\nFlux Kontext support landed in the image service, followed by model-side optimizations and conflict resolution to keep the new path working cleanly. More image-making machinery, because apparently pixels need their own supply chain.\n\nauth.pollinations.ai received UI and UX improvements, making the account flow clearer for people getting set up and returning to their tools.\n\nRETIME - FABRIC OF REALITY was added to the games project list, giving another community-built experiment a place in the public ecosystem.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 2708,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2725,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2730,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2737,
+      "date": "2025-07-02"
+    },
+    {
+      "number": 2739,
+      "date": "2025-07-02"
+    }
+  ],
+  "generated_at": "2026-09-04T12:02:55.425172+00:00"
+}

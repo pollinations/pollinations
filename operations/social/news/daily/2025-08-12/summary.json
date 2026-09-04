@@ -1,0 +1,15 @@
+{
+  "date": "2025-08-12",
+  "period_start": "2025-08-12",
+  "period_end": "2025-08-12",
+  "title": "EasyGen joins the chat project garden",
+  "summary": "A small discovery upgrade: EasyGen AI diagrams now have a place in chatProjects.\n\nEasyGen AI diagram generation is now listed in chatProjects, making the diagram tool easier to discover from the chat ecosystem.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3590,
+      "date": "2025-08-12"
+    }
+  ],
+  "generated_at": "2026-09-04T12:20:40.996319+00:00"
+}

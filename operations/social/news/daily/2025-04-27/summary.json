@@ -1,0 +1,23 @@
+{
+  "date": "2025-04-27",
+  "period_start": "2025-04-27",
+  "period_end": "2025-04-27",
+  "title": "A cleaner, calmer project experience",
+  "summary": "A small garden-maintenance day: cleaner displays, one more community project, and less Cloudflare log clutter.\n\nDisplay rates were corrected, the count glow effect was retired, and Pollinations.ai Enhancer joined the project list. Small interface work, but less visual noise and a more accurate view of what is happening.\n\nCloudflare invocation logs can now be removed with a parameter, giving builders a cleaner response path when they do not need the extra request logging.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1757,
+      "date": "2025-04-27"
+    },
+    {
+      "number": 1794,
+      "date": "2025-04-27"
+    },
+    {
+      "number": 1798,
+      "date": "2025-04-27"
+    }
+  ],
+  "generated_at": "2026-09-04T12:32:03.137162+00:00"
+}

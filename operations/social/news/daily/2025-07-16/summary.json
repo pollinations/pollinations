@@ -1,0 +1,19 @@
+{
+  "date": "2025-07-16",
+  "period_start": "2025-07-16",
+  "period_end": "2025-07-16",
+  "title": "One more project in the ecosystem",
+  "summary": "A small garden day: one more community project surfaced, and the contributor toolchain got tidier.\n\nBerrry Computer joined the project list, making another thing built with pollinations easier to find.\n\nBiome formatter and linter support landed, giving contributors a shared automated baseline for code style and checks.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3150,
+      "date": "2025-07-16"
+    },
+    {
+      "number": 3158,
+      "date": "2025-07-16"
+    }
+  ],
+  "generated_at": "2026-09-04T12:10:37.111111+00:00"
+}

@@ -1,0 +1,15 @@
+{
+  "date": "2025-08-11",
+  "period_start": "2025-08-11",
+  "period_end": "2025-08-11",
+  "title": "Text service configuration is now safely versioned",
+  "summary": "A small bit of infrastructure gardening: safer configuration for text.pollinations.ai.\n\nAdded an encrypted environment configuration file for text.pollinations.ai, making the service easier to maintain and deploy without leaving sensitive settings out in the weeds.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3557,
+      "date": "2025-08-11"
+    }
+  ],
+  "generated_at": "2026-09-04T12:20:05.403067+00:00"
+}

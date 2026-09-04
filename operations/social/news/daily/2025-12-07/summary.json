@@ -1,0 +1,35 @@
+{
+  "date": "2025-12-07",
+  "period_start": "2025-12-07",
+  "period_end": "2025-12-07",
+  "title": "Flux requests get more reliable defaults",
+  "summary": "A reliability day: steadier Flux generation, an auto-deployed model health monitor, and refreshed integration plumbing.\n\nThe io.net Flux path now includes its required x-enter-token header, while Flux generation consistently runs at the maximum four-step setting. Fewer configuration-shaped surprises between a prompt and its pixels.\n\nA model health-status view landed in the Pollinations app, and the model monitor was added to apps.json for automatic deployment. The infrastructure now has a more direct way to report whether it is having a normal day.\n\nThe G4F integration received an update, and bot authentication moved from the POLLI_PAT token to the POLLY_BOT app token.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 5718,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5755,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5768,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5770,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5776,
+      "date": "2025-12-07"
+    },
+    {
+      "number": 5786,
+      "date": "2025-12-07"
+    }
+  ],
+  "generated_at": "2026-09-04T12:26:07.891866+00:00"
+}

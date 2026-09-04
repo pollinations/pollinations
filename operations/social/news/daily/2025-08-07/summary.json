@@ -1,0 +1,23 @@
+{
+  "date": "2025-08-07",
+  "period_start": "2025-08-07",
+  "period_end": "2025-08-07",
+  "title": "More adjustable semantic matching",
+  "summary": "A small garden day: tunable semantic matching, clearer issue guidance, and fewer stray commas in the machinery.\n\nSemantic threshold handling is now variable and covered by tests, giving matching behavior a clearer, more tunable foundation.\n\nThe issue-making guidance was simplified into a clearer document, while small typo and style fixes removed a little more repository grit.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 3450,
+      "date": "2025-08-07"
+    },
+    {
+      "number": 3536,
+      "date": "2025-08-07"
+    },
+    {
+      "number": 3540,
+      "date": "2025-08-07"
+    }
+  ],
+  "generated_at": "2026-09-04T12:18:48.814480+00:00"
+}

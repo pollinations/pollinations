@@ -1,0 +1,63 @@
+{
+  "date": "2025-09-26",
+  "period_start": "2025-09-26",
+  "period_end": "2025-09-26",
+  "title": "Two new image models joined the garden",
+  "summary": "New image models, smarter concurrency, and a round of observability work made the garden more useful and less mysterious.\n\nNanobanana and Seedream are now available through the image service, alongside corrected provider mapping and tracking headers so image requests reach the infrastructure they are meant to reach and remain easier to trace.\n\nModel improvements landed with tier-aware concurrency controls and rate-limit monitoring, giving the platform a clearer view of demand while keeping model access orderly when the queue gets lively.\n\nTelemetry now preserves error events when cost resolution is unavailable, text moderation outcomes are tracked, and a staging deployment plus an environment-file hotfix make it safer to test changes before they wander into production.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 4161,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4167,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4183,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4184,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4185,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4191,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4192,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4194,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4195,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4198,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4202,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4203,
+      "date": "2025-09-26"
+    },
+    {
+      "number": 4204,
+      "date": "2025-09-26"
+    }
+  ],
+  "generated_at": "2026-09-04T12:37:26.329653+00:00"
+}

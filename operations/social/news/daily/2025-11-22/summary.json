@@ -1,0 +1,15 @@
+{
+  "date": "2025-11-22",
+  "period_start": "2025-11-22",
+  "period_end": "2025-11-22",
+  "title": "Website updates are now kept in sync",
+  "summary": "A small bit of garden maintenance: the website update flow now stays in sync.\n\nThe website update flow was synced up, keeping the public-facing site aligned as the project evolves.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 5389,
+      "date": "2025-11-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:17:19.129063+00:00"
+}

@@ -1,0 +1,31 @@
+{
+  "date": "2025-06-12",
+  "period_start": "2025-06-12",
+  "period_end": "2025-06-12",
+  "title": "Reasoning and search models got more useful",
+  "summary": "A small expansion day: sharper search and reasoning models, image-aware o3, better model metadata, and DynaSpark for Hack & Build.\n\nAdded o3 and gpt-4o-mini-search-preview to the text model lineup, fixed the SearchGPT routing map, and gave the o3 reasoning model image input support. Models now have fewer excuses for not looking at the thing you sent them.\n\nAvailable model metadata now includes a tier field, giving apps a clearer way to present and organize the growing catalog.\n\nAdded the DynaSpark API to Hack & Build projects, opening another service for builders experimenting in the open.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 2393,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2415,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2417,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2421,
+      "date": "2025-06-12"
+    },
+    {
+      "number": 2433,
+      "date": "2025-06-12"
+    }
+  ],
+  "generated_at": "2026-09-04T13:00:15.831871+00:00"
+}

@@ -1,0 +1,19 @@
+{
+  "date": "2025-03-16",
+  "period_start": "2025-03-16",
+  "period_end": "2025-03-16",
+  "title": "The community app garden gets a little bigger",
+  "summary": "A small garden day: one more creative app in the showcase and cleaner paths to the projects people are building.\n\nJenny AI joined the Creative & Interactive Applications showcase, while the README and project list were refreshed so people can find what the community is building without archaeology.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1365,
+      "date": "2025-03-16"
+    },
+    {
+      "number": 1372,
+      "date": "2025-03-16"
+    }
+  ],
+  "generated_at": "2026-09-04T12:10:04.770890+00:00"
+}

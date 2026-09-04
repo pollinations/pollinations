@@ -1,0 +1,63 @@
+{
+  "date": "2025-12-08",
+  "period_start": "2025-12-08",
+  "period_end": "2025-12-08",
+  "title": "Z-Image gets its own lane, with upscaling included",
+  "summary": "A tidy tuning day: Z-Image got dedicated infrastructure and upscaling, account state became more reliable, and the site got easier to navigate.\n\nZ-Image now has a simplified single-file server, optional 2x upscaling, and requests routed to a dedicated server pool. The image service also shed its logo path, leaving a more focused generation setup.\n\nSubscription state now syncs even when the local tier already appears correct, while product IDs are resolved from slugs instead of being treated as permanent trivia. Missing snapshots and Polar test fixes add some guardrails around the machinery.\n\nThe site gained community links below the header, a clearer account-options table, cleaner project listings, and Pookie AI in the showcase. A weekly news refresh and an auth service notice keep the public-facing information current.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 5711,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5719,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5753,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5787,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5788,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5792,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5796,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5798,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5800,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5801,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5803,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5808,
+      "date": "2025-12-08"
+    },
+    {
+      "number": 5811,
+      "date": "2025-12-08"
+    }
+  ],
+  "generated_at": "2026-09-04T12:28:20.664233+00:00"
+}

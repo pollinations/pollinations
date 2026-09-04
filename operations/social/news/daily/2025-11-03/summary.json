@@ -1,0 +1,39 @@
+{
+  "date": "2025-11-03",
+  "period_start": "2025-11-03",
+  "period_end": "2025-11-03",
+  "title": "Image generation gets less mysterious",
+  "summary": "A practical tuning pass: clearer image errors, MIDI-aware Enter, safer Pollen balances, and better visibility from staging to system logs.\n\nImage requests now preserve gptimage aspect ratios, Gemini failures include useful details, and the interface shows actual error messages instead of filing everything under \"Oh snap.\" Software has finally agreed to elaborate.\n\nThe enter experience gained MIDI notifications alongside package updates, while its deployment workflow now has an enter.pollinations.ai staging target for testing changes before they wander into production.\n\nBalance checks now prevent Pollen wallets from dropping below zero, while backend services shed access-control and rate-limit layers to make the system more direct to use and maintain.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 4900,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4929,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4932,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4935,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4939,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4953,
+      "date": "2025-11-03"
+    },
+    {
+      "number": 4956,
+      "date": "2025-11-03"
+    }
+  ],
+  "generated_at": "2026-09-04T12:03:49.031451+00:00"
+}

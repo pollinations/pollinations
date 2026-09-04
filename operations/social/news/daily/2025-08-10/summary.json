@@ -1,0 +1,15 @@
+{
+  "date": "2025-08-10",
+  "period_start": "2025-08-10",
+  "period_end": "2025-08-10",
+  "title": "A little less special-link archaeology",
+  "summary": "A quiet cleanup day: old special bee request links have left the garden.\n\nRemoved special bee request links and their remaining references, simplifying the public surface and clearing out an old detour.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3581,
+      "date": "2025-08-10"
+    }
+  ],
+  "generated_at": "2026-09-04T12:19:24.022056+00:00"
+}

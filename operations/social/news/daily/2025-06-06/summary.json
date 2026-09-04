@@ -1,0 +1,35 @@
+{
+  "date": "2025-06-06",
+  "period_start": "2025-06-06",
+  "period_end": "2025-06-06",
+  "title": "DeepSeek R1-0528 and ElixpoSearch join the model shelf",
+  "summary": "New reasoning and search models arrived alongside domain-auth tooling and a round of account-system cleanup.\n\nThe text API picked up DeepSeek R1-0528 for reasoning work and ElixpoSearch for search-oriented tasks. More options through the same endpoint, because model routing is apparently a garden now.\n\nA new domain-management command-line tool makes it easier to configure domains for user authentication without turning the setup process into a browser-tab expedition.\n\nUser metrics, refreshed account-tier descriptions, and per-user interaction tracking add more visibility around how accounts and platform surfaces are used.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 2319,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2323,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2325,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2328,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2341,
+      "date": "2025-06-06"
+    },
+    {
+      "number": 2346,
+      "date": "2025-06-06"
+    }
+  ],
+  "generated_at": "2026-09-04T12:58:20.690838+00:00"
+}

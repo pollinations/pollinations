@@ -1,0 +1,27 @@
+{
+  "date": "2025-11-28",
+  "period_start": "2025-11-28",
+  "period_end": "2025-11-28",
+  "title": "Image output gets its full 4K option back",
+  "summary": "A compact compatibility pass: 4K images, sturdier multi-provider chat calls, clearer errors, and quieter balance checks.\n\nnanobanana-pro can now serve 4K generation requests correctly, restoring high-resolution output for projects that need more than thumbnail-sized pixels.\n\nThe OpenAI-compatible schema is more forgiving across providers, while Azure requests now handle max_tokens correctly and surface upstream error statuses instead of disguising them.\n\nLocal balance tracking reduces repeated Polar API calls and the rate-limit friction that comes with asking the same question too often.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 5453,
+      "date": "2025-11-28"
+    },
+    {
+      "number": 5454,
+      "date": "2025-11-28"
+    },
+    {
+      "number": 5456,
+      "date": "2025-11-28"
+    },
+    {
+      "number": 5460,
+      "date": "2025-11-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:19:48.286323+00:00"
+}

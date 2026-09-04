@@ -1,0 +1,79 @@
+{
+  "date": "2025-12-12",
+  "period_start": "2025-12-12",
+  "period_end": "2025-12-12",
+  "title": "Model routing got less mysterious",
+  "summary": "A garden-maintenance day: sturdier model routing, a repaired app-review pipeline, fresh community listings, and a pile of small fixes that make the machinery less theatrical.\n\nGPT-5.2 mappings were updated, the reasoning endpoint gained a cleaner alias, and Claude response parsing became more resilient. Tool-call tests add a fence around the whole arrangement, because model output remains an adventurous data format.\n\nThe app-submission workflow now reacts to labels, uses the authenticated generation endpoint, handles multiline PR bodies correctly, and sends reviews through claude-large. Less workflow archaeology for people submitting things they built.\n\nHighlights from late July through early December were backfilled, while Aqua AI Generator and NextGenTools joined the social and creative app listings.",
+  "pr_count": 17,
+  "prs": [
+    {
+      "number": 5881,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5891,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5897,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5906,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5911,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5918,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5921,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5922,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5923,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5924,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5926,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5927,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5928,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5929,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5930,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5931,
+      "date": "2025-12-12"
+    },
+    {
+      "number": 5934,
+      "date": "2025-12-12"
+    }
+  ],
+  "generated_at": "2026-09-04T12:31:00.791327+00:00"
+}

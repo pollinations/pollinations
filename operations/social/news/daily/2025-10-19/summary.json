@@ -1,0 +1,31 @@
+{
+  "date": "2025-10-19",
+  "period_start": "2025-10-19",
+  "period_end": "2025-10-19",
+  "title": "Claude 4.5 Haiku joins the text endpoint",
+  "summary": "A community-heavy day: a new Claude model, automatic app deployments, and a larger garden of things people built.\n\nClaude 4.5 Haiku is now available alongside the rest of the model lineup: another fast option for chat, agents, and whatever small linguistic machinery people are building this week.\n\nHacktoberfest projects can now deploy automatically to subdomains, while a new AI Dungeon Master joins the app garden. Less deployment ceremony, more chance of being defeated by an imaginary goblin.\n\nSeven new community projects landed in the showcase, and BeeCoder was added to vibeCoding.js—more evidence that giving people simple AI HTTP calls produces a pleasantly strange amount of software.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 4468,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4506,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4612,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4615,
+      "date": "2025-10-19"
+    },
+    {
+      "number": 4616,
+      "date": "2025-10-19"
+    }
+  ],
+  "generated_at": "2026-09-04T12:50:12.696098+00:00"
+}

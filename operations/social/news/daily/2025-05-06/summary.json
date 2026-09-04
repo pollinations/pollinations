@@ -1,0 +1,31 @@
+{
+  "date": "2025-05-06",
+  "period_start": "2025-05-06",
+  "period_end": "2025-05-06",
+  "title": "Tool calling is now available across the model roster",
+  "summary": "A garden-maintenance day: universal tool parameters, fresh community project listings, and less cryptic cloud authentication.\n\nAll models can now receive a tools parameter, making it easier to build agents and structured workflows without treating each model provider as a separate species.\n\nThe public projects list now includes Define and Polynate, keeping the map of things people are building with pollinations current. One outdated listing was also cleared away.\n\nBidara joined the available personas, while Google Cloud authentication errors became more useful when credentials decide to become a small mystery.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1893,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1898,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1903,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1909,
+      "date": "2025-05-06"
+    },
+    {
+      "number": 1911,
+      "date": "2025-05-06"
+    }
+  ],
+  "generated_at": "2026-09-04T12:37:51.259615+00:00"
+}

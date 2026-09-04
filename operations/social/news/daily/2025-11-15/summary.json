@@ -1,0 +1,39 @@
+{
+  "date": "2025-11-15",
+  "period_start": "2025-11-15",
+  "period_end": "2025-11-15",
+  "title": "A smoother path into Pollen",
+  "summary": "A garden-maintenance day: smoother onboarding, cleaner model plumbing, and fewer environment-specific surprises.\n\nAdded the entry-level Spore tier and cleaned up checkout messaging and cross-origin handling, so getting started should involve fewer browser arguments and clearer beta context.\n\nRemoved the unused bpaigen model and backend model defaults, leaving model selection with fewer stale assumptions hiding in the pipes.\n\nConfigured Polar Sandbox for development and staging, unified ENTER_TOKEN handling across environments, and removed unnecessary header forwarding while making tests more reliable.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 5289,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5295,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5303,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5304,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5305,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5308,
+      "date": "2025-11-15"
+    },
+    {
+      "number": 5310,
+      "date": "2025-11-15"
+    }
+  ],
+  "generated_at": "2026-09-04T12:13:18.984569+00:00"
+}

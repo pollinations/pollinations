@@ -1,0 +1,19 @@
+{
+  "date": "2025-09-04",
+  "period_start": "2025-09-04",
+  "period_end": "2025-09-04",
+  "title": "Text generation transforms got a cleanup pass",
+  "summary": "A small engine-room day: text generation transforms were cleaned up and buttoned down.\n\nThe text generation transform system was refactored and finalized, simplifying the machinery behind how text requests are prepared and handled.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3958,
+      "date": "2025-09-04"
+    },
+    {
+      "number": 3959,
+      "date": "2025-09-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:28:37.875389+00:00"
+}

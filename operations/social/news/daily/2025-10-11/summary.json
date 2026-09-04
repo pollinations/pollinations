@@ -1,0 +1,75 @@
+{
+  "date": "2025-10-11",
+  "period_start": "2025-10-11",
+  "period_end": "2025-10-11",
+  "title": "Image generation got a new Kontext route and less fragile URLs",
+  "summary": "A repair-and-reroute day: new Kontext support, steadier image and text services, cleaner model plumbing, and two more projects in the garden.\n\nAzure Flux Kontext joined the image model lineup, while image URL parameters and generated URLs were made more consistent. Mobile layout also received a pass, because browsers on small rectangles remain surprisingly opinionated.\n\nA reverted prompt-enhancer change removed a syntax error affecting image generation, and a startup regression in text.pollinations.ai was fixed. The result is less time spent discovering that a service has become philosophical about starting.\n\nBedrock-backed models moved onto Scaleway and Azure Myceli, with DeepSeek credentials updated for the new path. The site also completed its Vite migration cleanup, removing duplicate project structure left behind by the move.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 4181,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4458,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4481,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4483,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4484,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4486,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4487,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4488,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4489,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4490,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4496,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4498,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4499,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4501,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4503,
+      "date": "2025-10-11"
+    },
+    {
+      "number": 4504,
+      "date": "2025-10-11"
+    }
+  ],
+  "generated_at": "2026-09-04T12:46:51.481304+00:00"
+}

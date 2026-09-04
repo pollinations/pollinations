@@ -1,0 +1,43 @@
+{
+  "date": "2025-10-15",
+  "period_start": "2025-10-15",
+  "period_end": "2025-10-15",
+  "title": "Image requests spend less time waiting on safety checks",
+  "summary": "A tuning day for image generation: fewer hangs, lighter cache handling, non-blocking telemetry, and better queue access for registered users.\n\nImage and Azure Content Safety checks now time out after 20 seconds instead of leaving requests hanging, with cache eviction added to keep the safety path from accumulating stale state.\n\nRegistered users now receive more favorable image queue limits, helping active community members get through busy periods with less waiting.\n\nProvider lookups moved into the shared registry, an expensive lookup was removed from Cloudflare cache handling, and telemetry now runs fire-and-forget. The image API has fewer reasons to pause and contemplate its own bookkeeping.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 4553,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4554,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4563,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4564,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4565,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4566,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4572,
+      "date": "2025-10-15"
+    },
+    {
+      "number": 4573,
+      "date": "2025-10-15"
+    }
+  ],
+  "generated_at": "2026-09-04T12:48:16.542192+00:00"
+}

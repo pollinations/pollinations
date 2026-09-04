@@ -1,0 +1,51 @@
+{
+  "date": "2025-12-30",
+  "period_start": "2025-12-30",
+  "period_end": "2025-12-30",
+  "title": "Pollen balances and account workflows got more dependable",
+  "summary": "A garden-maintenance day: steadier Pollen accounting, cleaner onboarding, better monitoring, and a few useful signs of life around the ecosystem.\n\nBalance tracking now has a local D1-backed record, while the tier-sync tooling was rebuilt around safer user management. Polar caching and pending-spend handling were tuned to keep account updates responsive without repeatedly bothering the upstream API, and app submissions now handle special characters correctly with clearer rejected-tier labeling.\n\nEnter UI buttons were cleaned up, beta-service terms now have their own section, and the React documentation finally states the actual default seed: 42. The universe remains deterministic, at least on paper.\n\nModel Monitor gained a 60-minute aggregation view for a broader read on service behavior, while Donjon.studio joined the games showcase.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 6571,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6619,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6622,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6623,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6624,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6627,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6632,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6636,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6637,
+      "date": "2025-12-30"
+    },
+    {
+      "number": 6639,
+      "date": "2025-12-30"
+    }
+  ],
+  "generated_at": "2026-09-04T12:44:39.164557+00:00"
+}

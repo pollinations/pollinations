@@ -1,0 +1,31 @@
+{
+  "date": "2025-03-17",
+  "period_start": "2025-03-17",
+  "period_end": "2025-03-17",
+  "title": "Image URLs get a more reliable cache layer",
+  "summary": "A small infrastructure-and-community day: sturdier image caching, clearer domain controls, and two new projects on the map.\n\nimage.pollinations.ai now uses Cloudflare caching with exact URL matches, while richer cache metadata makes cached image behavior easier to inspect and operate.\n\nThe project list now includes Watch TV with neko (Roblox) and PixPax, adding a pair of creative, interactive examples built with Pollinations.\n\nBad-domain handling gained an opposite mode, giving deployments another way to define which domains should be accepted.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1369,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1378,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1379,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1380,
+      "date": "2025-03-17"
+    },
+    {
+      "number": 1382,
+      "date": "2025-03-17"
+    }
+  ],
+  "generated_at": "2026-09-04T12:10:42.906855+00:00"
+}

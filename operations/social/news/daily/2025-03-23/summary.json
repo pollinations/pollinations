@@ -1,0 +1,19 @@
+{
+  "date": "2025-03-23",
+  "period_start": "2025-03-23",
+  "period_end": "2025-03-23",
+  "title": "More reliable feed events and SearchGPT streaming",
+  "summary": "A quiet reliability pass for event consumers and SearchGPT streaming.\n\nTwo small API consistency fixes: feed events now report the enhance field consistently, while SearchGPT streaming requests are correctly separated in the cache. Less ambiguity for clients, fewer mysteriously non-streaming streams.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1406,
+      "date": "2025-03-23"
+    },
+    {
+      "number": 1420,
+      "date": "2025-03-23"
+    }
+  ],
+  "generated_at": "2026-09-04T12:14:36.775064+00:00"
+}

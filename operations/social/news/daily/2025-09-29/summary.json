@@ -1,0 +1,15 @@
+{
+  "date": "2025-09-29",
+  "period_start": "2025-09-29",
+  "period_end": "2025-09-29",
+  "title": "VOHU AI joins chat projects",
+  "summary": "A small expansion of the chat model garden: VOHU AI is now available in projects.\n\nChat projects can now include VOHU AI, adding another option to the shared model playground.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 4229,
+      "date": "2025-09-29"
+    }
+  ],
+  "generated_at": "2026-09-04T12:38:40.393685+00:00"
+}

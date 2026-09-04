@@ -1,0 +1,35 @@
+{
+  "date": "2025-03-31",
+  "period_start": "2025-03-31",
+  "period_end": "2025-03-31",
+  "title": "The project garden gets six new entries",
+  "summary": "A community roll call: six more projects showing pollinations growing through art tools, bots, WordPress, mobile, and audio.\n\nThe community project lists now feature Elixpo Art, LAHGen, the AlphaLLM Discord bot, a WordPress AI Vision Block, a Flutter/Dart SDK, and Podcast #1500. Images, chat, WordPress, mobile, and a podcast: the usual tidy definition of \"API user\" continues to fail.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 1492,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1493,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1496,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1497,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1498,
+      "date": "2025-03-31"
+    },
+    {
+      "number": 1501,
+      "date": "2025-03-31"
+    }
+  ],
+  "generated_at": "2026-09-04T12:19:39.724551+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2025-08-05",
+  "period_start": "2025-08-05",
+  "period_end": "2025-08-05",
+  "title": "Usage observability gets more specific",
+  "summary": "A community-map-and-instrument-panel kind of day: more projects documented, with clearer visibility into where LLM and token traffic comes from.\n\nNew endpoints expose LLM cost data, while hourly token-usage reporting can now break traffic down by referrer. Less guessing which integration is doing the talking.\n\nIsland AI, Botzy AI, and aitoolbox.software joined the project list, making the growing collection of things built with pollinations a little easier to find.\n\nVisiora was added to the project list, documenting another app using AI image generation in the open ecosystem.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 3474,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3488,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3489,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3490,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3491,
+      "date": "2025-08-05"
+    },
+    {
+      "number": 3493,
+      "date": "2025-08-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:17:25.681646+00:00"
+}

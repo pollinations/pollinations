@@ -1,0 +1,23 @@
+{
+  "date": "2025-06-28",
+  "period_start": "2025-06-28",
+  "period_end": "2025-06-28",
+  "title": "Team docs got a clearer map",
+  "summary": "A documentation day: clearer team roles, refreshed internal context, and a developer community team starting to take form.\n\nThe team documentation was refreshed so the people and work behind pollinations are easier to find. Organizational archaeology, but with fewer dusty binders.\n\nDocumentation now outlines a third founder role, updates responsibilities for Thomas and Elliot, and records the formation of a developer community team.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 2680,
+      "date": "2025-06-28"
+    },
+    {
+      "number": 2681,
+      "date": "2025-06-28"
+    },
+    {
+      "number": 2684,
+      "date": "2025-06-28"
+    }
+  ],
+  "generated_at": "2026-09-04T13:05:38.009860+00:00"
+}

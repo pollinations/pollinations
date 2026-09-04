@@ -1,0 +1,15 @@
+{
+  "date": "2025-09-11",
+  "period_start": "2025-09-11",
+  "period_end": "2025-09-11",
+  "title": "Clearer queue visibility and refreshed model handling",
+  "summary": "A small engine-room update: clearer queue logs and refreshed model handling.\n\nQueue logging got more detailed and model updates landed, making the generation pipeline easier to observe and maintain while it does its usual mysterious work.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 4013,
+      "date": "2025-09-11"
+    }
+  ],
+  "generated_at": "2026-09-04T12:31:05.329545+00:00"
+}

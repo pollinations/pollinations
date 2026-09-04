@@ -1,0 +1,47 @@
+{
+  "date": "2025-03-10",
+  "period_start": "2025-03-10",
+  "period_end": "2025-03-10",
+  "title": "More models, with Gemini joining the text endpoint",
+  "summary": "A community-facing day: Gemini support and function-calling docs landed while the project garden became more international.\n\nGemini model support arrived through Vertex AI, alongside updates to the text server and its model roster. Function calling is now documented too, so applications can ask models to do things besides produce another paragraph.\n\nThe community project list added AvatarStudio, Herramientas IA, AI Unlimited Customizable Feature Module, and an AI children's-story project. Non-English projects now carry language and country indicators, because the internet is larger than one locale dropdown.\n\nThe feed loader on pollinations.ai was updated, keeping the project-facing site machinery moving while the directory grows.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 1144,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1297,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1298,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1300,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1301,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1302,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1303,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1305,
+      "date": "2025-03-10"
+    },
+    {
+      "number": 1312,
+      "date": "2025-03-10"
+    }
+  ],
+  "generated_at": "2026-09-04T12:05:46.520637+00:00"
+}

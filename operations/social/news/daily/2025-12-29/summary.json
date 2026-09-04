@@ -1,0 +1,139 @@
+{
+  "date": "2025-12-29",
+  "period_start": "2025-12-29",
+  "period_end": "2025-12-29",
+  "title": "Bigger images, with a simpler route to Z-Image",
+  "summary": "A garden-maintenance day: sharper large images, a React audio hook, better browsing, and sturdier community workflow plumbing.\n\nThe image stack gained SPAN 2x upscaling for large outputs, deployment tuning for Z-Image on IO.net, and a Flux alias that routes to Z-Image. Z-Image requests also now have bounded pixel counts and fixed steps, because unbounded image jobs eventually become a small weather system.\n\nThe React package added usePollinationsAudio for text-to-speech, along with its TypeScript definitions. Frontend builders can now wire generated speech into an app without inventing their own wrapper around the audio endpoint.\n\nThe Play page gained single and grid feed views, while the model monitor became usable on smaller screens with horizontal scrolling. Community discovery also got refreshed with Insight Engine, Myceli links, weekly news, highlights, and README updates.",
+  "pr_count": 32,
+  "prs": [
+    {
+      "number": 6167,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6417,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6453,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6456,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6495,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6527,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6543,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6549,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6557,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6559,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6561,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6564,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6565,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6569,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6570,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6574,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6575,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6577,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6578,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6580,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6582,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6583,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6585,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6586,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6588,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6589,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6590,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6592,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6593,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6595,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6596,
+      "date": "2025-12-29"
+    },
+    {
+      "number": 6599,
+      "date": "2025-12-29"
+    }
+  ],
+  "generated_at": "2026-09-04T12:43:51.477732+00:00"
+}

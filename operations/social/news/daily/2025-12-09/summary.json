@@ -1,0 +1,23 @@
+{
+  "date": "2025-12-09",
+  "period_start": "2025-12-09",
+  "period_end": "2025-12-09",
+  "title": "News gets a fresher delivery path",
+  "summary": "A small garden-maintenance day: fresher project news and faster database lookups.\n\nThe news pipeline was updated and the website's News Highlights were refreshed, keeping the public record of what the project is doing current without requiring anyone to excavate it from commit history.\n\nNew database indexes improve query efficiency behind the scenes, helping the parts of the site that depend on database lookups spend less time wandering through rows.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 5794,
+      "date": "2025-12-09"
+    },
+    {
+      "number": 5814,
+      "date": "2025-12-09"
+    },
+    {
+      "number": 5834,
+      "date": "2025-12-09"
+    }
+  ],
+  "generated_at": "2026-09-04T12:28:58.943277+00:00"
+}

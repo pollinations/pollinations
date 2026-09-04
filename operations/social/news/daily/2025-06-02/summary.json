@@ -1,0 +1,27 @@
+{
+  "date": "2025-06-02",
+  "period_start": "2025-06-02",
+  "period_end": "2025-06-02",
+  "title": "Two community bots got their project pages in order",
+  "summary": "A garden-maintenance day: community bot listings got sharper while admin tools and integrations lost some old plumbing.\n\nThe project list now includes the ImageEditer Telegram bot, while the Gacha Discord bot listing has refreshed details. More small things people built with Pollinations are easier to find.\n\nA new admin user-info endpoint landed alongside image logging cleanup, giving operators a more direct way to inspect account details without making the logs tell the whole story.\n\nThe nex.ad API integration was fixed and the remaining affiliate-system migration work was completed, retiring another piece of transitional plumbing.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2240,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2242,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2244,
+      "date": "2025-06-02"
+    },
+    {
+      "number": 2245,
+      "date": "2025-06-02"
+    }
+  ],
+  "generated_at": "2026-09-04T12:55:37.979398+00:00"
+}

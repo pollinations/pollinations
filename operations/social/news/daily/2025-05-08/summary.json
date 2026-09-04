@@ -1,0 +1,23 @@
+{
+  "date": "2025-05-08",
+  "period_start": "2025-05-08",
+  "period_end": "2025-05-08",
+  "title": "More reliable model selection and structured output",
+  "summary": "A small model-garden pass: one new option, cleaner listings, and JSON Schema responses that behave.\n\nModel handling got a cleanup: openai-roblox is now available, unsupported llama-vision no longer appears in the model list, and OpenAI-compatible JSON Schema response_format requests are handled correctly.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1916,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1924,
+      "date": "2025-05-08"
+    },
+    {
+      "number": 1925,
+      "date": "2025-05-08"
+    }
+  ],
+  "generated_at": "2026-09-04T12:38:27.433729+00:00"
+}

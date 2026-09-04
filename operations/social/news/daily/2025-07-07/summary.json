@@ -1,0 +1,15 @@
+{
+  "date": "2025-07-07",
+  "period_start": "2025-07-07",
+  "period_end": "2025-07-07",
+  "title": "MCP setup now has a map",
+  "summary": "A small documentation pass makes MCP client configuration easier to find and use.\n\nThe README now includes MCP client configuration, giving developers a clearer path to connect compatible clients to pollinations without treating setup like an archaeological dig.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 2849,
+      "date": "2025-07-07"
+    }
+  ],
+  "generated_at": "2026-09-04T12:05:20.103211+00:00"
+}

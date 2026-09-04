@@ -1,0 +1,31 @@
+{
+  "date": "2025-12-26",
+  "period_start": "2025-12-26",
+  "period_end": "2025-12-26",
+  "title": "The playground gets a proper front door",
+  "summary": "A small access-and-usability day: smoother playground login, permission-aware model discovery, live page translation, and a tidier repo.\n\nThe playground now has a login flow, alongside redirect-based authentication using temporary API keys. Apps can move people through auth without making them juggle credentials in the open.\n\nThe /models endpoints can filter results by API key permissions, so clients see the models available to the credentials they actually brought.\n\nPer-page translation now includes a live status indicator, while the monorepo root got cleared of stray files. One makes the interface more legible; the other makes finding things slightly less archaeological.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 6410,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6437,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6464,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6466,
+      "date": "2025-12-26"
+    },
+    {
+      "number": 6467,
+      "date": "2025-12-26"
+    }
+  ],
+  "generated_at": "2026-09-04T12:41:46.368218+00:00"
+}

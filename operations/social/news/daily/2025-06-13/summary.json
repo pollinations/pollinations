@@ -1,0 +1,27 @@
+{
+  "date": "2025-06-13",
+  "period_start": "2025-06-13",
+  "period_end": "2025-06-13",
+  "title": "Four more things people built with Pollinations",
+  "summary": "A gallery day: four community projects joined the list, spanning creative tools, games, and JSON-first building.\n\nThe project gallery gained JSON Pollinations API, StoryBolt, Coloring AI, and the Time Travel Selfie Portal. Creative tools, a game, and a plain JSON interface: the usual reminder that an API will wander off and become whatever someone needed that afternoon.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2449,
+      "date": "2025-06-13"
+    },
+    {
+      "number": 2451,
+      "date": "2025-06-13"
+    },
+    {
+      "number": 2452,
+      "date": "2025-06-13"
+    },
+    {
+      "number": 2453,
+      "date": "2025-06-13"
+    }
+  ],
+  "generated_at": "2026-09-04T13:00:56.135712+00:00"
+}

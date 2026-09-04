@@ -1,0 +1,19 @@
+{
+  "date": "2025-07-01",
+  "period_start": "2025-07-01",
+  "period_end": "2025-07-01",
+  "title": "Roblox requests get steadier routing",
+  "summary": "A small reliability pass: steadier Roblox routing, stronger privacy handling, and saner anonymous-user access defaults.\n\nThe Roblox endpoint now uses load balancing, helping spread requests more reliably instead of asking one endpoint to do all the gardening. Nexad privacy handling was tightened alongside it.\n\nTier-gating defaults for anonymous users were corrected, making access behavior more consistent before anyone has signed in.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 2713,
+      "date": "2025-07-01"
+    },
+    {
+      "number": 2715,
+      "date": "2025-07-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:02:14.333546+00:00"
+}

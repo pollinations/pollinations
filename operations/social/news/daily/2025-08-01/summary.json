@@ -1,0 +1,19 @@
+{
+  "date": "2025-08-01",
+  "period_start": "2025-08-01",
+  "period_end": "2025-08-01",
+  "title": "Ad system repair and model config upkeep",
+  "summary": "A maintenance day: repaired ad-system plumbing, updated model configuration, and retired 53 tests from a previous geological era.\n\nFixed a critical issue in the ad system and refreshed model configurations, keeping the surrounding infrastructure behaving as intended.\n\nRemoved 53 obsolete test files across services, clearing out stale coverage that no longer matched the codebase.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3359,
+      "date": "2025-08-01"
+    },
+    {
+      "number": 3397,
+      "date": "2025-08-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:15:17.095971+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2025-07-30",
+  "period_start": "2025-07-30",
+  "period_end": "2025-07-30",
+  "title": "A new hybrid image model joins the garden",
+  "summary": "A new hybrid image model arrived while the image pipeline learned to leave more useful traces behind.\n\nImage generation now includes the BPAIGen+Kontext hybrid model, giving builders another option for producing images through the same simple API.\n\nImage request logging and Tinybird analytics gained richer request and response data, making it easier to understand how image generation is being used and keep the service tuned.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 3364,
+      "date": "2025-07-30"
+    },
+    {
+      "number": 3365,
+      "date": "2025-07-30"
+    },
+    {
+      "number": 3373,
+      "date": "2025-07-30"
+    }
+  ],
+  "generated_at": "2026-09-04T12:14:12.315511+00:00"
+}

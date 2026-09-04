@@ -1,0 +1,23 @@
+{
+  "date": "2025-04-07",
+  "period_start": "2025-04-07",
+  "period_end": "2025-04-07",
+  "title": "Text streaming got a new integration path",
+  "summary": "A small plumbing day: text streaming integrations were tested and connected, while adjacent platform wiring got tidied up.\n\ntext.pollinations.ai now carries the new integration through streaming responses, extending the work beyond standard request handling.\n\nA focused implementation test landed for text.pollinations.ai, checking that the new delivery path behaves before it becomes invisible infrastructure.\n\nRelated affiliate plumbing was brought into one place, reducing the number of places the system needs to remember how it talks to itself.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1575,
+      "date": "2025-04-07"
+    },
+    {
+      "number": 1579,
+      "date": "2025-04-07"
+    },
+    {
+      "number": 1580,
+      "date": "2025-04-07"
+    }
+  ],
+  "generated_at": "2026-09-04T12:22:48.578104+00:00"
+}

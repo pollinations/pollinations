@@ -1,0 +1,15 @@
+{
+  "date": "2025-05-21",
+  "period_start": "2025-05-21",
+  "period_end": "2025-05-21",
+  "title": "Azure GPT Image can now edit images",
+  "summary": "A small but useful addition: Azure GPT Image now handles edits, not just fresh pixels.\n\nThe Azure GPT Image integration now supports image editing, so apps using that backend can modify existing images as well as generate new ones.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 2035,
+      "date": "2025-05-21"
+    }
+  ],
+  "generated_at": "2026-09-04T12:47:45.769022+00:00"
+}

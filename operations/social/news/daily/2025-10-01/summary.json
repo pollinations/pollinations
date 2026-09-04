@@ -1,0 +1,19 @@
+{
+  "date": "2025-10-01",
+  "period_start": "2025-10-01",
+  "period_end": "2025-10-01",
+  "title": "Clearer nanobanana refusals",
+  "summary": "Clearer image-model errors and a fresh runway for Hacktoberfest contributors.\n\nNanobanana now returns Vertex AI's actual refusal reasons instead of leaving people to decode a generic error. When a prompt gets blocked, the API can finally say why.\n\nThe project has been adapted for Hacktoberfest 2025, making the annual open-source contribution swarm a little easier to navigate.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 4246,
+      "date": "2025-10-01"
+    },
+    {
+      "number": 4247,
+      "date": "2025-10-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:40:00.842863+00:00"
+}

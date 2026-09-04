@@ -1,0 +1,27 @@
+{
+  "date": "2025-05-30",
+  "period_start": "2025-05-30",
+  "period_end": "2025-05-30",
+  "title": "Account preferences get a proper home",
+  "summary": "A small maintenance day: account preferences, steadier hosted redirects, and another project in the garden.\n\nThe auth service now includes user preference management, laying the groundwork for accounts that remember how people want to use the platform instead of making them explain themselves repeatedly.\n\nCloudflare Worker imports now use the local IP utility, while the Netlify redirect function was repaired and brought in line with ad-compliance requirements. The plumbing is behaving more like plumbing.\n\nPixPal was added to the public project list, giving another community-built use of pollinations a place on the map.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 2172,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2174,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2178,
+      "date": "2025-05-30"
+    },
+    {
+      "number": 2184,
+      "date": "2025-05-30"
+    }
+  ],
+  "generated_at": "2026-09-04T12:53:43.902942+00:00"
+}

@@ -1,0 +1,27 @@
+{
+  "date": "2025-03-29",
+  "period_start": "2025-03-29",
+  "period_end": "2025-03-29",
+  "title": "Docs and news links now lead somewhere useful",
+  "summary": "A garden-tending day: repaired links and news, smoother issue triage, and an updated thank-you wall.\n\nFixed errors in the news flow and repaired API documentation links, including a special Bee request path. Small navigation repairs, fewer tiny traps.\n\nAdded a workflow to route new issues into the project system, making community reports easier to keep visible and organized.\n\nUpdated the supporter lists so the people helping keep the garden alive are properly represented.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1481,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1483,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1485,
+      "date": "2025-03-29"
+    },
+    {
+      "number": 1487,
+      "date": "2025-03-29"
+    }
+  ],
+  "generated_at": "2026-09-04T12:18:57.770884+00:00"
+}

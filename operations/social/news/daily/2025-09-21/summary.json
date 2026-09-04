@@ -1,0 +1,43 @@
+{
+  "date": "2025-09-21",
+  "period_start": "2025-09-21",
+  "period_end": "2025-09-21",
+  "title": "Gemini Search can now look things up without ceremony",
+  "summary": "A Gemini-heavy day: grounded search, full Nano Banana support, and DeepSeek V3.1 through Vertex AI.\n\ngemini-search gained automatic Google Search grounding, the Vertex AI tool format was corrected, and the search transform/auth path was tightened up. Ask for current information; the model now has a more reliable route to it.\n\nNano Banana (Gemini) now has full model support, including a simple image-generation prompt prefix so requests reach the image path with less interpretive dance.\n\nDeepSeek V3.1 joined the Google Vertex AI lineup, ChickyTutor gained prompt management alongside model fixes, and ChadGpt was added to the community project list.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 4109,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4110,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4111,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4112,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4114,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4115,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4119,
+      "date": "2025-09-21"
+    },
+    {
+      "number": 4120,
+      "date": "2025-09-21"
+    }
+  ],
+  "generated_at": "2026-09-04T12:33:51.061061+00:00"
+}

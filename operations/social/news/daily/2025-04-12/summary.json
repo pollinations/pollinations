@@ -1,0 +1,35 @@
+{
+  "date": "2025-04-12",
+  "period_start": "2025-04-12",
+  "period_end": "2025-04-12",
+  "title": "A cleaner text feed lands on the site",
+  "summary": "A garden-maintenance day: a new text feed, refreshed model routing, sturdier sharing metadata, and a little more visibility into real-world usage.\n\nThe site now has a Text Feed, with filtering that keeps it focused on direct entries rather than everything that arrived through a referrer. A small window into what people are making with text.\n\nMistral, QWQ, and DeepSeek Reasoning now run through Cloudflare-backed model integrations, keeping several useful text and reasoning options available behind the same simple endpoint.\n\nStatic Open Graph metadata replaces React Helmet for more dependable link previews, while pollinator-agent repository integrations were refreshed. The internet remains largely a network of bots passing metadata to other bots.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 1488,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1632,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1634,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1635,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1637,
+      "date": "2025-04-12"
+    },
+    {
+      "number": 1640,
+      "date": "2025-04-12"
+    }
+  ],
+  "generated_at": "2026-09-04T12:25:49.180631+00:00"
+}

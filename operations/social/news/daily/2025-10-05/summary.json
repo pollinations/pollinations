@@ -1,0 +1,63 @@
+{
+  "date": "2025-10-05",
+  "period_start": "2025-10-05",
+  "period_end": "2025-10-05",
+  "title": "Image models got clearer names and better context",
+  "summary": "A community-maintenance day: clearer model names, easier contributing, more flexible app setup, and a freshly weeded project directory.\n\nThe model catalog now shows more useful information for image models and keeps their original model names visible instead of making people decode aliases. A small victory for knowing what you are actually asking the API to do.\n\nPriority users can now use the nanobanana and seedream models, while referrer authentication accepts wildcard domains for apps that live across subdomains.\n\nA dedicated Hacktoberfest 2025 area and documented app-idea proposal workflow make it easier for new contributors to find the work, propose something useful, and get local development running without archaeology.",
+  "pr_count": 13,
+  "prs": [
+    {
+      "number": 2666,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4276,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4307,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4313,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4315,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4333,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4344,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4346,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4347,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4348,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4353,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4354,
+      "date": "2025-10-05"
+    },
+    {
+      "number": 4356,
+      "date": "2025-10-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:42:17.856444+00:00"
+}

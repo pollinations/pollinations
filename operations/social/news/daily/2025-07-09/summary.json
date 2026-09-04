@@ -1,0 +1,15 @@
+{
+  "date": "2025-07-09",
+  "period_start": "2025-07-09",
+  "period_end": "2025-07-09",
+  "title": "toai.chat is correctly listed",
+  "summary": "A small directory fix to keep the project garden navigable.\n\nFixed the toai.chat project listing so people can find the project where it belongs. Directory metadata: surprisingly capable of becoming a whole bug.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 2927,
+      "date": "2025-07-09"
+    }
+  ],
+  "generated_at": "2026-09-04T12:06:47.516281+00:00"
+}

@@ -1,0 +1,35 @@
+{
+  "date": "2025-05-02",
+  "period_start": "2025-05-02",
+  "period_end": "2025-05-02",
+  "title": "Four more projects join the pollinations garden",
+  "summary": "A garden-maintenance day: four community projects surfaced, Mistral got a new gateway route, and developer tooling was refreshed.\n\nCoNavic, PollinateAI, Mimir AIP, and Dreamscape AI were added to the project lists, making it easier to find things people are building with the infrastructure.\n\nMistral models now run through the Portkey gateway, updating the path behind the shared text API without changing the simple endpoint people build against.\n\nThe Pollinations MCP Server and GitHub authentication service were refreshed, keeping the tooling around AI-assisted development and account access current.",
+  "pr_count": 6,
+  "prs": [
+    {
+      "number": 1745,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1865,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1868,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1869,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1883,
+      "date": "2025-05-02"
+    },
+    {
+      "number": 1884,
+      "date": "2025-05-02"
+    }
+  ],
+  "generated_at": "2026-09-04T12:35:19.556385+00:00"
+}

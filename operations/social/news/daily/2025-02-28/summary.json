@@ -1,0 +1,15 @@
+{
+  "date": "2025-02-28",
+  "period_start": "2025-02-28",
+  "period_end": "2025-02-28",
+  "title": "Text streaming gets a simpler route",
+  "summary": "A small text API cleanup: simpler streaming, with a gateway now handling the traffic.\n\ntext.pollinations.ai now uses the Portkey gateway and has simplified stream handling, making the plumbing behind generated text a little less elaborate.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1259,
+      "date": "2025-02-28"
+    }
+  ],
+  "generated_at": "2026-09-04T12:02:01.006066+00:00"
+}

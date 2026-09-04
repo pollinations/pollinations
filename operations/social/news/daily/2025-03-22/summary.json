@@ -1,0 +1,19 @@
+{
+  "date": "2025-03-22",
+  "period_start": "2025-03-22",
+  "period_end": "2025-03-22",
+  "title": "Two more ways to learn from the project garden",
+  "summary": "A small community-garden update: an API playground and an OpenWebUI tutorial joined the projects list.\n\nThe projects list now includes the OkeyAI API Playground and an OpenWebUI tutorial, giving builders a couple more concrete references for putting Pollinations APIs to work.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1415,
+      "date": "2025-03-22"
+    },
+    {
+      "number": 1417,
+      "date": "2025-03-22"
+    }
+  ],
+  "generated_at": "2026-09-04T12:13:54.249851+00:00"
+}

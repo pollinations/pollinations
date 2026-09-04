@@ -1,0 +1,19 @@
+{
+  "date": "2025-08-16",
+  "period_start": "2025-08-16",
+  "period_end": "2025-08-16",
+  "title": "Moderation data gets its partitions in order",
+  "summary": "A small garden-tending day: moderation data plumbing fixed and a community detail corrected.\n\nTinyBird text moderation partitioning was fixed with a minimal patch, keeping moderation data organized and the plumbing less mysterious.\n\nA Discord nickname correction cleaned up a small but visible community detail.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3697,
+      "date": "2025-08-16"
+    },
+    {
+      "number": 3725,
+      "date": "2025-08-16"
+    }
+  ],
+  "generated_at": "2026-09-04T12:23:06.946398+00:00"
+}

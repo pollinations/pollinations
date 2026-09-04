@@ -1,0 +1,19 @@
+{
+  "date": "2025-10-18",
+  "period_start": "2025-10-18",
+  "period_end": "2025-10-18",
+  "title": "Creative projects and side utilities get a little more room",
+  "summary": "A small garden day: one new creative project in the directory and groundwork for useful side tools.\n\nThe creative projects list now includes Green Hope AI, while backend groundwork landed for side utilities. More things to explore; less reason for them to live in a drawer.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 4512,
+      "date": "2025-10-18"
+    },
+    {
+      "number": 4588,
+      "date": "2025-10-18"
+    }
+  ],
+  "generated_at": "2026-09-04T12:49:28.050158+00:00"
+}

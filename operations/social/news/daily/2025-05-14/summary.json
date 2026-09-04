@@ -1,0 +1,19 @@
+{
+  "date": "2025-05-14",
+  "period_start": "2025-05-14",
+  "period_end": "2025-05-14",
+  "title": "Dynamic images and clearer signals from the edge",
+  "summary": "A small but useful pass on dynamic image delivery, browser-friendly errors, and knowing what reaches the page.\n\nImage generation can now be tailored dynamically, while error responses include CORS headers so browser-based apps can actually inspect them. A tracking-pixel helper also adds a lightweight way to understand how things are being used.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1975,
+      "date": "2025-05-14"
+    },
+    {
+      "number": 1976,
+      "date": "2025-05-14"
+    }
+  ],
+  "generated_at": "2026-09-04T12:42:24.900433+00:00"
+}

@@ -1,0 +1,51 @@
+{
+  "date": "2025-12-03",
+  "period_start": "2025-12-03",
+  "period_end": "2025-12-03",
+  "title": "Chat gained two more places to wander",
+  "summary": "A garden-maintenance day: better chat options, upgraded image models, sturdier integrations, and fewer ways for credentials to escape into the wild.\n\nNoir Ink Tattoo Studio and Synapse joined the chat lineup, while a fix cleaned up issues around thinking-enabled chats. More personalities, fewer mysterious pauses.\n\nSeedream moved to 4.5, Seedance moved to Pro-Fast, and the image path now handles fallback behavior and dimension scaling more reliably.\n\nAqua API was added to vibeCoding, and Telegram image-to-image requests now correctly recognize files served through Telegram's CDN.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 5579,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5586,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5587,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5589,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5597,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5603,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5606,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5609,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5610,
+      "date": "2025-12-03"
+    },
+    {
+      "number": 5621,
+      "date": "2025-12-03"
+    }
+  ],
+  "generated_at": "2026-09-04T12:23:16.203959+00:00"
+}

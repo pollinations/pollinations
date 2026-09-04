@@ -1,0 +1,107 @@
+{
+  "date": "2025-11-05",
+  "period_start": "2025-11-05",
+  "period_end": "2025-11-05",
+  "title": "The API got easier to plug into",
+  "summary": "A broad maintenance pass made the API friendlier, image generation less constrained, and the website substantially less dramatic.\n\nText prompt requests now return the thing they asked for instead of an unexpected JSON wrapper, public endpoints received more browser-friendly CORS handling, and OpenAI-compatible paths were added for projects already speaking that dialect. Model endpoints were moved ahead of auth where needed, while the API docs gained tags and shed a legacy route from view.\n\nImage generation no longer applies dimension scaling limits, Flux step calculation and concurrent-request counting were corrected, and the PWA can generate transparent watermark logos. The model roster was also pruned and renamed into something less like an abandoned group chat.\n\nSign-in and routing received a solid repair pass: a router race behind login loops was removed, broken sign-in was fixed, and the site moved to the enter.pollinations.ai API with centralized key management. Header, footer, social icons, terms-page routing, and a few alignment details were also brought back into line.",
+  "pr_count": 24,
+  "prs": [
+    {
+      "number": 4951,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 4959,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5005,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5008,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5009,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5010,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5011,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5014,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5016,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5017,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5020,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5022,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5025,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5026,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5030,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5032,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5033,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5035,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5038,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5041,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5042,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5046,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5047,
+      "date": "2025-11-05"
+    },
+    {
+      "number": 5053,
+      "date": "2025-11-05"
+    }
+  ],
+  "generated_at": "2026-09-04T12:05:24.884130+00:00"
+}

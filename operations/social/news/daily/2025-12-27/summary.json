@@ -1,0 +1,31 @@
+{
+  "date": "2025-12-27",
+  "period_start": "2025-12-27",
+  "period_end": "2025-12-27",
+  "title": "GPT Image gets more reliable inputs",
+  "summary": "A small reliability pass: sturdier image inputs, compatible Gemini thinking, cleaner links, and clearer alpha-key docs.\n\nGPT Image now resizes incoming images as needed and validates content types before processing, making image requests less fussy at the edges.\n\nGemini thinking mode now speaks Portkey's expected format, while WordMaster has moved from a temporary ngrok address to wordwagon.cloud. Fewer mysterious detours.\n\nPublishable keys are now clearly labeled alpha and their parameter docs are simpler, alongside the latest Instagram post keeping the garden visible beyond the repository.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 6472,
+      "date": "2025-12-27"
+    },
+    {
+      "number": 6475,
+      "date": "2025-12-27"
+    },
+    {
+      "number": 6478,
+      "date": "2025-12-27"
+    },
+    {
+      "number": 6480,
+      "date": "2025-12-27"
+    },
+    {
+      "number": 6492,
+      "date": "2025-12-27"
+    }
+  ],
+  "generated_at": "2026-09-04T12:42:23.892194+00:00"
+}

@@ -1,0 +1,23 @@
+{
+  "date": "2025-03-20",
+  "period_start": "2025-03-20",
+  "period_end": "2025-03-20",
+  "title": "Text API gets another model and a cache",
+  "summary": "A small text-and-audio tooling day: Groq Qwen support, cached text responses, and a Python audio example.\n\ntext.pollinations.ai now supports Groq Qwen, while Cloudflare caching helps repeat text requests return with less waiting around.\n\nThe API docs now include a Python example for audio interaction with the OpenAI model, so developers have one less endpoint-shaped mystery to solve.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1383,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1400,
+      "date": "2025-03-20"
+    },
+    {
+      "number": 1401,
+      "date": "2025-03-20"
+    }
+  ],
+  "generated_at": "2026-09-04T12:12:39.539951+00:00"
+}

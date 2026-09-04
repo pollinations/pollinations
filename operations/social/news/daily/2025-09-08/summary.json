@@ -1,0 +1,15 @@
+{
+  "date": "2025-09-08",
+  "period_start": "2025-09-08",
+  "period_end": "2025-09-08",
+  "title": "Pollen gets its first MVP",
+  "summary": "A small but foundational step: Pollen has an MVP.\n\nThe first MVP for Pollen landed, establishing the groundwork for the community credit system.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 3676,
+      "date": "2025-09-08"
+    }
+  ],
+  "generated_at": "2026-09-04T12:29:49.241206+00:00"
+}

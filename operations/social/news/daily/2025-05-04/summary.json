@@ -1,0 +1,31 @@
+{
+  "date": "2025-05-04",
+  "period_start": "2025-05-04",
+  "period_end": "2025-05-04",
+  "title": "More models, including a faster OpenAI option",
+  "summary": "A garden-maintenance day: new text models, more community projects on the map, and tidier cache plumbing.\n\nThe model roster gained openai-fast and Mirexa, with Workers AI integration underneath. More routes to useful output; fewer reasons to maintain a drawer full of API keys.\n\nPolynate and Pollinations Task Master were added to the project list, giving two community-built tools a proper place in the garden directory.\n\nThe Cloudflare cache layer was refactored for better performance and maintainability. Not glamorous, unless you enjoy faster responses and code that remains legible after midnight.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 1890,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1891,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1892,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1894,
+      "date": "2025-05-04"
+    },
+    {
+      "number": 1896,
+      "date": "2025-05-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:36:07.583282+00:00"
+}

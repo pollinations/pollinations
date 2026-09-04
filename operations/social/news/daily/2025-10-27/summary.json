@@ -1,0 +1,51 @@
+{
+  "date": "2025-10-27",
+  "period_start": "2025-10-27",
+  "period_end": "2025-10-27",
+  "title": "Text API calls got simpler to make and authenticate",
+  "summary": "A garden-maintenance day: easier GET requests, clearer account guidance, more community projects, and one correctly versioned bot.\n\nGET-based text generation now has a simplified endpoint and can accept tokens as query parameters. Frontend API keys are also visible and copyable, with full model access, while pk_ key authentication was repaired. Less ceremony between an idea and an HTTP request.\n\nTier benefits and product mappings were refreshed, auth.pollinations.ai users now see a migration notice, and the FAQ gained a payment-method voting link. Model cost information was also updated so the surrounding documentation better matches the machinery.\n\nFour new community creations joined the Creative Projects list, while the description-condensing workflow was pointed at the correct debouncer version. One is inspiration; the other keeps automation from developing opinions.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 4806,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4808,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4814,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4818,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4819,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4821,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4824,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4828,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4829,
+      "date": "2025-10-27"
+    },
+    {
+      "number": 4830,
+      "date": "2025-10-27"
+    }
+  ],
+  "generated_at": "2026-09-04T12:55:39.504247+00:00"
+}

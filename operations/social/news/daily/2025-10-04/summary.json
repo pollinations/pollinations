@@ -1,0 +1,31 @@
+{
+  "date": "2025-10-04",
+  "period_start": "2025-10-04",
+  "period_end": "2025-10-04",
+  "title": "GPT-5 mini is back on the menu, with docs beside it",
+  "summary": "A maintenance-heavy day: restored GPT-5-mini access, clearer API docs, and sturdier image and queue plumbing.\n\nGPT-5-mini was added to the Enter registry so requests resolve correctly again, and the API documentation got a refresh to make the available paths less of an archaeological dig.\n\nThe image service received model restrictions and supporting enhancements, tightening up how image requests are routed and handled across the service.\n\nRegistry configuration was simplified around DPT handling while the queue system was overhauled for steadier model scheduling. Less special-case machinery, fewer opportunities for the machinery to develop opinions.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 4283,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4305,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4306,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4326,
+      "date": "2025-10-04"
+    },
+    {
+      "number": 4327,
+      "date": "2025-10-04"
+    }
+  ],
+  "generated_at": "2026-09-04T12:41:31.962093+00:00"
+}

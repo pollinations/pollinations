@@ -1,0 +1,19 @@
+{
+  "date": "2025-08-24",
+  "period_start": "2025-08-24",
+  "period_end": "2025-08-24",
+  "title": "Claude can search the web and connect to Sequa",
+  "summary": "A small but useful expansion: Claude workflows can now browse the web and talk to Sequa AI.\n\nClaude workflows now have web search enabled and can integrate with Sequa AI through MCP, giving chats a route to current information and external tools rather than relying entirely on what the model remembers.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 3836,
+      "date": "2025-08-24"
+    },
+    {
+      "number": 3841,
+      "date": "2025-08-24"
+    }
+  ],
+  "generated_at": "2026-09-04T12:25:36.264029+00:00"
+}

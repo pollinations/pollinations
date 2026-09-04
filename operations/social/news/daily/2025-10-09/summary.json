@@ -1,0 +1,31 @@
+{
+  "date": "2025-10-09",
+  "period_start": "2025-10-09",
+  "period_end": "2025-10-09",
+  "title": "Two new ways to play with generated visuals",
+  "summary": "A community-garden day: new visual apps, a clearer interface, and image usage tracking that listens to the headers.\n\nThe app garden grew with a Virtual Makeup Try-On and a Hacktoberfest project that turns maps into 3D isometric buildings. Pixels continue finding strange and useful jobs.\n\nUI refinements improve visual hierarchy and accessibility, making the surrounding tools a little less interested in hiding their own controls.\n\nIssue #4361 now has its implementation, closing out another community-requested addition.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 4282,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4414,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4442,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4443,
+      "date": "2025-10-09"
+    },
+    {
+      "number": 4451,
+      "date": "2025-10-09"
+    }
+  ],
+  "generated_at": "2026-09-04T12:44:55.474508+00:00"
+}

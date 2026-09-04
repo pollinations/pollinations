@@ -1,0 +1,47 @@
+{
+  "date": "2025-04-29",
+  "period_start": "2025-04-29",
+  "period_end": "2025-04-29",
+  "title": "Image generation gets backup routes",
+  "summary": "A garden-maintenance day: more reliable image fallbacks, tighter text controls, clearer contribution docs, and some careful project tending.\n\nDreamshaper and Turbo servers now act as fallbacks for image generation, giving requests more places to land when a primary route is unavailable.\n\nA new doNotRephrase option lets callers preserve wording when they need the model to stop helpfully rewriting it. Sometimes the original sentence is, regrettably, the requirement.\n\nAura Chat joined the project lists, while work continued on the Pollinator agent.",
+  "pr_count": 9,
+  "prs": [
+    {
+      "number": 1786,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1822,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1824,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1828,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1829,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1832,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1834,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1836,
+      "date": "2025-04-29"
+    },
+    {
+      "number": 1838,
+      "date": "2025-04-29"
+    }
+  ],
+  "generated_at": "2026-09-04T12:33:20.771332+00:00"
+}

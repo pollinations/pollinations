@@ -1,0 +1,83 @@
+{
+  "date": "2025-12-15",
+  "period_start": "2025-12-15",
+  "period_end": "2025-12-15",
+  "title": "More visibility and control around API usage",
+  "summary": "A garden-maintenance day: clearer usage tracking, better model controls, repaired app deployments, and fresh community signage.\n\nA new /api/usage endpoint and model-level usage signals give builders clearer ways to track consumption, while pending-spend tracking and data-access repairs make those numbers behave more reliably. The pricing UI also got a clarity pass, because billing information should not require archaeology.\n\nSeedance-Pro now accepts an aspect-ratio parameter for more intentional video framing. API keys can also be scoped by model permissions, giving apps a cleaner way to expose exactly the models they intend to use.\n\nThe app collection was cleaned up and its Hacktoberfest-era structure renamed to simply apps. Model Monitor deployment paths, production-branch publishing, and SPA redirects were fixed, while the changelog generator joined the app registry. Less mystery-meat routing, more working tools.",
+  "pr_count": 18,
+  "prs": [
+    {
+      "number": 5740,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 5869,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 5977,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 5978,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6015,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6019,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6021,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6025,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6026,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6030,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6031,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6033,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6043,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6045,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6051,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6052,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6053,
+      "date": "2025-12-15"
+    },
+    {
+      "number": 6055,
+      "date": "2025-12-15"
+    }
+  ],
+  "generated_at": "2026-09-04T12:33:23.352396+00:00"
+}

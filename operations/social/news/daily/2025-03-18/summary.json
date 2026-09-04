@@ -1,0 +1,27 @@
+{
+  "date": "2025-03-18",
+  "period_start": "2025-03-18",
+  "period_end": "2025-03-18",
+  "title": "Mistral Small joins the OpenAI-compatible text endpoint",
+  "summary": "A compact tuning pass: Mistral Small became available through the familiar OpenAI-compatible text API, with project and server housekeeping alongside it.\n\nMistral Small support was added to text.pollinations.ai through the OpenAI-compatible interface, giving existing API clients another model option without teaching them a new dialect.\n\nThe project directory now points PrivatePollenAI visitors to the right social link, while a server update keeps the service plumbing moving along quietly, as servers prefer.",
+  "pr_count": 4,
+  "prs": [
+    {
+      "number": 1391,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1393,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1395,
+      "date": "2025-03-18"
+    },
+    {
+      "number": 1396,
+      "date": "2025-03-18"
+    }
+  ],
+  "generated_at": "2026-09-04T12:11:24.683359+00:00"
+}

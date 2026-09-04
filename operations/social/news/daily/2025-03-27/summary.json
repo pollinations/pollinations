@@ -1,0 +1,39 @@
+{
+  "date": "2025-03-27",
+  "period_start": "2025-03-27",
+  "period_end": "2025-03-27",
+  "title": "MCP server installation got less dramatic",
+  "summary": "A garden-maintenance day: MCP installs became sturdier and four community-built projects landed in the showcase.\n\nThe MCP server package and docs were refreshed, while install failures were addressed with an AbortController polyfill. Connecting pollinations to MCP-compatible tools should now involve fewer dependency-era surprises.\n\nThe community project list now includes pollinations-tg-bot, toai.chat, IMyself AI, and TeekGenAI—more examples of people building useful, strange, and internet-shaped things with the API.",
+  "pr_count": 7,
+  "prs": [
+    {
+      "number": 1452,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1453,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1454,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1456,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1457,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1458,
+      "date": "2025-03-27"
+    },
+    {
+      "number": 1461,
+      "date": "2025-03-27"
+    }
+  ],
+  "generated_at": "2026-09-04T12:17:27.808884+00:00"
+}

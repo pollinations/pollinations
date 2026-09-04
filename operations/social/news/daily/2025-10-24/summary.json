@@ -1,0 +1,43 @@
+{
+  "date": "2025-10-24",
+  "period_start": "2025-10-24",
+  "period_end": "2025-10-24",
+  "title": "API access got easier to wire into real apps",
+  "summary": "A practical access day: easier API auth, browser connectivity, a more open Enter, and clearer usage signals.\n\nBearer-token authentication is now supported alongside API keys, the authentication docs explain how to use it, and the FAQ has been updated for the simpler platform access model. Less guessing which header goes where.\n\nCORS support now lets browser clients reach Pollinations services, making frontend experiments and client-side integrations considerably less ceremonial.\n\nTier restrictions were removed from enter.pollinations.ai while its queue system was simplified. Generation endpoints also gained a switch for controlling anonymous access when a deployment needs it.",
+  "pr_count": 8,
+  "prs": [
+    {
+      "number": 4716,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4735,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4749,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4751,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4753,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4756,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4757,
+      "date": "2025-10-24"
+    },
+    {
+      "number": 4759,
+      "date": "2025-10-24"
+    }
+  ],
+  "generated_at": "2026-09-04T12:53:27.928496+00:00"
+}

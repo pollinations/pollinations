@@ -1,0 +1,19 @@
+{
+  "date": "2025-04-01",
+  "period_start": "2025-04-01",
+  "period_end": "2025-04-01",
+  "title": "Text models get easier to reach and easier to diagnose",
+  "summary": "A small text-model maintenance day: Gemini upgrades, flexible model aliases, and better clues when requests go sideways.\n\ntext.pollinations.ai received a Gemini upgrade plus improved error logging, while the model layer gained an extended alias system and demo support. More ways to ask for the model you mean; fewer mysteries when it declines to cooperate.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1502,
+      "date": "2025-04-01"
+    },
+    {
+      "number": 1510,
+      "date": "2025-04-01"
+    }
+  ],
+  "generated_at": "2026-09-04T12:20:11.852555+00:00"
+}

@@ -1,0 +1,71 @@
+{
+  "date": "2025-11-12",
+  "period_start": "2025-11-12",
+  "period_end": "2025-11-12",
+  "title": "Image generation got a simpler, sturdier path",
+  "summary": "A tuning day: image generation was simplified, stuck requests were cleared, and the API got more transparent about models and failures.\n\nThe image worker was reduced to a thin proxy while its cache moved directly into enter.pollinations.ai. Empty cached images no longer trigger ORB errors, and refreshed Azure GPT Image credentials improve generation stability. Fewer layers, fewer mysterious pixels.\n\nThe Pollen rate limiter was simplified and its timeout behavior fixed so requests do not remain stuck waiting. Tracking and user-blocking systems were also removed, keeping the path between an idea and an API response notably less bureaucratic.\n\nSirius Cybernetics moved to enter.pollinations.ai with Claude Haiku 4.5, reasoning tokens can now pass through responses, and the model reference table now uses the real model IDs. The mobile view can read its tooltips too.",
+  "pr_count": 15,
+  "prs": [
+    {
+      "number": 5111,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5183,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5186,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5188,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5194,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5195,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5198,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5201,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5209,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5211,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5214,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5217,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5218,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5222,
+      "date": "2025-11-12"
+    },
+    {
+      "number": 5225,
+      "date": "2025-11-12"
+    }
+  ],
+  "generated_at": "2026-09-04T12:11:18.893618+00:00"
+}

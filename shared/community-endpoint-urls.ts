@@ -43,6 +43,10 @@ export function communityChatCompletionsUrl(baseUrl: string): string {
     return communityOpenAIEndpointUrl(baseUrl, "/chat/completions");
 }
 
+export function communityResponsesUrl(baseUrl: string): string {
+    return communityOpenAIEndpointUrl(baseUrl, "/responses");
+}
+
 export function communityImageGenerationsUrl(baseUrl: string): string {
     return communityOpenAIEndpointUrl(baseUrl, "/images/generations");
 }
@@ -75,6 +79,7 @@ const COMMUNITY_OPENAI_ENDPOINT_SUFFIXES = [
     "/images/edits",
     "/audio/transcriptions",
     "/embeddings",
+    "/responses",
 ] as const;
 
 function configuredCommunityEndpointSuffix(url: URL): string | undefined {

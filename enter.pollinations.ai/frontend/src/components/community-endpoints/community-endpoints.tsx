@@ -183,6 +183,7 @@ export function CommunityEndpoints({
                       description: payload.description,
                       visibility: payload.visibility,
                       baseUrl: payload.baseUrl,
+                      responsesUrl: payload.responsesUrl,
                       upstreamModel: payload.upstreamModel,
                       perUserRpm: payload.perUserRpm,
                   }

@@ -18,6 +18,63 @@ function requiredText(value: unknown, parameter: string): string {
     return value;
 }
 
+function promptCacheBreakpoint(value: JsonObject): JsonObject | undefined {
+    if (value.prompt_cache_breakpoint !== undefined) {
+        const breakpoint = value.prompt_cache_breakpoint;
+        if (
+            !breakpoint ||
+            typeof breakpoint !== "object" ||
+            Array.isArray(breakpoint) ||
+            (breakpoint as JsonObject).mode !== "explicit"
+        ) {
+            invalidRequest(
+                "messages.content.prompt_cache_breakpoint",
+                'prompt_cache_breakpoint must be { "mode": "explicit" }',
+            );
+        }
+        return { mode: "explicit" };
+    }
+    if (value.cache_control !== undefined) {
+        const cacheControl = value.cache_control;
+        if (
+            !cacheControl ||
+            typeof cacheControl !== "object" ||
+            Array.isArray(cacheControl) ||
+            (cacheControl as JsonObject).type !== "ephemeral"
+        ) {
+            invalidRequest(
+                "messages.content.cache_control",
+                'cache_control must be { "type": "ephemeral" }',
+            );
+        }
+        return { mode: "explicit" };
+    }
+    return undefined;
+}
+
+function withPromptCacheBreakpoint(
+    content: JsonObject,
+    source: JsonObject,
+): JsonObject {
+    const breakpoint = promptCacheBreakpoint(source);
+    return breakpoint
+        ? { ...content, prompt_cache_breakpoint: breakpoint }
+        : content;
+}
+
+function hasPromptCacheBreakpoint(items: JsonObject[]): boolean {
+    return items.some(
+        (item) =>
+            Array.isArray(item.content) &&
+            item.content.some(
+                (part) =>
+                    part != null &&
+                    typeof part === "object" &&
+                    "prompt_cache_breakpoint" in part,
+            ),
+    );
+}
+
 function messageContent(
     message: ChatMessage,
     output: boolean,
@@ -45,21 +102,27 @@ function messageContent(
         const part = raw as JsonObject;
         if (part.type === "text" || part.type === "input_text") {
             return [
-                {
-                    type: output ? "output_text" : "input_text",
-                    text: requiredText(part.text, "messages.content.text"),
-                },
+                withPromptCacheBreakpoint(
+                    {
+                        type: output ? "output_text" : "input_text",
+                        text: requiredText(part.text, "messages.content.text"),
+                    },
+                    part,
+                ),
             ];
         }
         if (output && part.type === "refusal") {
             return [
-                {
-                    type: "refusal",
-                    refusal: requiredText(
-                        part.refusal,
-                        "messages.content.refusal",
-                    ),
-                },
+                withPromptCacheBreakpoint(
+                    {
+                        type: "refusal",
+                        refusal: requiredText(
+                            part.refusal,
+                            "messages.content.refusal",
+                        ),
+                    },
+                    part,
+                ),
             ];
         }
         if (
@@ -85,11 +148,14 @@ function messageContent(
                     ? (image as JsonObject).detail
                     : part.detail;
             return [
-                {
-                    type: "input_image",
-                    image_url: imageUrl,
-                    ...(typeof detail === "string" ? { detail } : {}),
-                },
+                withPromptCacheBreakpoint(
+                    {
+                        type: "input_image",
+                        image_url: imageUrl,
+                        ...(typeof detail === "string" ? { detail } : {}),
+                    },
+                    part,
+                ),
             ];
         }
         return invalidRequest(
@@ -143,14 +209,16 @@ function functionCalls(message: ChatMessage): JsonObject[] {
 
 function messageItems(message: ChatMessage): JsonObject[] {
     if (["system", "developer", "user"].includes(message.role)) {
+        const content = messageContent(message, false, message.role === "user");
+        const messageBreakpoint = promptCacheBreakpoint(message);
+        if (messageBreakpoint && content.length) {
+            content[content.length - 1].prompt_cache_breakpoint =
+                messageBreakpoint;
+        }
         return [
             {
                 role: message.role,
-                content: messageContent(
-                    message,
-                    false,
-                    message.role === "user",
-                ),
+                content,
             },
         ];
     }
@@ -161,6 +229,11 @@ function messageItems(message: ChatMessage): JsonObject[] {
                 type: "refusal",
                 refusal: requiredText(message.refusal, "messages.refusal"),
             });
+        }
+        const messageBreakpoint = promptCacheBreakpoint(message);
+        if (messageBreakpoint && content.length) {
+            content[content.length - 1].prompt_cache_breakpoint =
+                messageBreakpoint;
         }
         return [
             ...(content.length ? [{ role: "assistant", content }] : []),
@@ -390,6 +463,8 @@ export function chatToResponsesRequest(
     ) {
         request.prompt_cache_options =
             options.prompt_cache_options as CreateResponseRequest["prompt_cache_options"];
+    } else if (hasPromptCacheBreakpoint(input)) {
+        request.prompt_cache_options = { mode: "explicit" };
     }
     if (typeof options.prompt_cache_retention === "string") {
         request.prompt_cache_retention =

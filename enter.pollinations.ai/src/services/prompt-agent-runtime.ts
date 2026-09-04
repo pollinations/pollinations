@@ -81,6 +81,7 @@ export type PromptAgentGenerationSettings = Partial<
     >
 > & {
     providerOptions?: ToolLoopAgentSettings["providerOptions"];
+    promptCacheBreakpoint?: boolean;
 };
 
 const MAX_STEPS = 8;
@@ -242,13 +243,24 @@ async function createAgent(
         },
     });
 
+    const { promptCacheBreakpoint, ...agentSettings } = settings;
     const agent = new ToolLoopAgent({
         model: pollinations(runtime.config.baseModel),
-        instructions: runtime.config.systemPrompt,
+        instructions: promptCacheBreakpoint
+            ? {
+                  role: "system",
+                  content: runtime.config.systemPrompt,
+                  providerOptions: {
+                      openaiCompatible: {
+                          prompt_cache_breakpoint: { mode: "explicit" },
+                      },
+                  },
+              }
+            : runtime.config.systemPrompt,
         allowSystemInMessages: true,
         tools,
         stopWhen: stepCountIs(MAX_STEPS),
-        ...settings,
+        ...agentSettings,
         // Model calls spend the caller's balance, so do not retry billed calls.
         maxRetries: 0,
     });

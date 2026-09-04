@@ -25,6 +25,11 @@ export type PromptAgentResponsesRequest = z.output<
 
 type JsonObject = Record<string, unknown>;
 type UserMessage = Extract<ModelMessage, { role: "user" }>;
+type PromptCacheProviderOptions = {
+    openaiCompatible: {
+        prompt_cache_breakpoint: { mode: "explicit" };
+    };
+};
 
 class AgentResponsesRequestError extends Error {
     constructor(
@@ -53,15 +58,60 @@ function stringValue(value: unknown, param: string): string {
     return value;
 }
 
+function promptCacheProviderOptions(
+    value: JsonObject,
+): PromptCacheProviderOptions | undefined {
+    if (value.prompt_cache_breakpoint === undefined) return undefined;
+    const breakpoint = objectValue(
+        value.prompt_cache_breakpoint,
+        "input.prompt_cache_breakpoint",
+    );
+    if (breakpoint.mode !== "explicit") {
+        invalidRequest(
+            'prompt_cache_breakpoint must be { "mode": "explicit" }',
+            "input.prompt_cache_breakpoint",
+        );
+    }
+    return {
+        openaiCompatible: {
+            prompt_cache_breakpoint: { mode: "explicit" },
+        },
+    };
+}
+
+function hasPromptCacheBreakpoint(
+    input: CreateResponseRequest["input"],
+): boolean {
+    return (
+        Array.isArray(input) &&
+        input.some((raw) => {
+            if (!raw || typeof raw !== "object" || !("content" in raw)) {
+                return false;
+            }
+            const content = (raw as JsonObject).content;
+            return (
+                Array.isArray(content) &&
+                content.some(
+                    (part) =>
+                        part != null &&
+                        typeof part === "object" &&
+                        "prompt_cache_breakpoint" in part,
+                )
+            );
+        })
+    );
+}
+
 function textContent(
     content: unknown,
     role: "assistant" | "developer" | "system",
-): string {
-    if (typeof content === "string") return content;
+): { content: string; providerOptions?: PromptCacheProviderOptions } {
+    if (typeof content === "string") return { content };
     if (!Array.isArray(content)) {
         invalidRequest("Message content must be text", "input");
     }
-    return content
+    let providerOptions: PromptCacheProviderOptions | undefined;
+    const text = content
         .map((raw) => {
             const part = objectValue(raw, "input");
             const validTypes =
@@ -74,9 +124,12 @@ function textContent(
                     "input",
                 );
             }
+            providerOptions =
+                promptCacheProviderOptions(part) ?? providerOptions;
             return stringValue(part.text, "input");
         })
         .join("");
+    return { content: text, ...(providerOptions ? { providerOptions } : {}) };
 }
 
 function userContent(content: unknown): UserMessage["content"] {
@@ -89,16 +142,19 @@ function userContent(content: unknown): UserMessage["content"] {
     }
     return content.map((raw) => {
         const part = objectValue(raw, "input");
+        const providerOptions = promptCacheProviderOptions(part);
         if (part.type === "input_text" || part.type === "text") {
             return {
                 type: "text" as const,
                 text: stringValue(part.text, "input"),
+                ...(providerOptions ? { providerOptions } : {}),
             };
         }
         if (part.type === "input_image") {
             return {
                 type: "image" as const,
                 image: stringValue(part.image_url, "input"),
+                ...(providerOptions ? { providerOptions } : {}),
             };
         }
         return invalidRequest(
@@ -128,9 +184,14 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
         }
         const role = stringValue(item.role, "input");
         if (role === "developer" || role === "system") {
+            const { content, providerOptions } = textContent(
+                item.content,
+                role,
+            );
             messages.push({
                 role: "system",
-                content: textContent(item.content, role),
+                content,
+                ...(providerOptions ? { providerOptions } : {}),
             });
             continue;
         }
@@ -139,9 +200,14 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
             continue;
         }
         if (role === "assistant") {
+            const { content, providerOptions } = textContent(
+                item.content,
+                role,
+            );
             messages.push({
                 role: "assistant",
-                content: textContent(item.content, role),
+                content,
+                ...(providerOptions ? { providerOptions } : {}),
             });
             continue;
         }
@@ -220,6 +286,12 @@ function requestSettings(
         );
     }
 
+    const inputHasPromptCacheBreakpoint = hasPromptCacheBreakpoint(
+        request.input,
+    );
+    const promptCacheOptions =
+        request.prompt_cache_options ??
+        (inputHasPromptCacheBreakpoint ? { mode: "explicit" as const } : null);
     const providerOptions = {
         ...(reasoningEffort ? { reasoningEffort } : {}),
         ...(request.safety_identifier || request.user
@@ -229,14 +301,17 @@ function requestSettings(
         ...(request.prompt_cache_key
             ? { prompt_cache_key: request.prompt_cache_key }
             : {}),
-        ...(request.prompt_cache_options
-            ? { prompt_cache_options: request.prompt_cache_options }
+        ...(promptCacheOptions
+            ? { prompt_cache_options: promptCacheOptions }
             : {}),
         ...(request.prompt_cache_retention
             ? { prompt_cache_retention: request.prompt_cache_retention }
             : {}),
     };
     return {
+        promptCacheBreakpoint:
+            promptCacheOptions?.mode === "explicit" &&
+            !inputHasPromptCacheBreakpoint,
         ...(request.max_output_tokens
             ? { maxOutputTokens: request.max_output_tokens }
             : {}),

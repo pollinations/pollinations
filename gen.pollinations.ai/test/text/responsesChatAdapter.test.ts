@@ -64,6 +64,67 @@ async function streamEvents(completion: ChatCompletion) {
 }
 
 describe("Chat Completions over Responses", () => {
+    it("maps OpenAI and legacy explicit cache breakpoints", () => {
+        expect(
+            chatToResponsesRequest(
+                [
+                    {
+                        role: "system",
+                        content: "Static agent instructions",
+                        prompt_cache_breakpoint: { mode: "explicit" },
+                    },
+                    {
+                        role: "user",
+                        content: [
+                            {
+                                type: "text",
+                                text: "Stable context",
+                                prompt_cache_breakpoint: { mode: "explicit" },
+                            },
+                            {
+                                type: "text",
+                                text: "Legacy stable context",
+                                cache_control: { type: "ephemeral" },
+                            },
+                            { type: "text", text: "Dynamic question" },
+                        ],
+                    },
+                ],
+                { model: "provider-model" },
+            ),
+        ).toMatchObject({
+            prompt_cache_options: { mode: "explicit" },
+            input: [
+                {
+                    role: "system",
+                    content: [
+                        {
+                            type: "input_text",
+                            text: "Static agent instructions",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                    ],
+                },
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "input_text",
+                            text: "Stable context",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                        {
+                            type: "input_text",
+                            text: "Legacy stable context",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                        { type: "input_text", text: "Dynamic question" },
+                    ],
+                },
+            ],
+        });
+    });
+
     it("maps stateless messages, tools, structured output, and parameters", async () => {
         let body: Record<string, unknown> | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(

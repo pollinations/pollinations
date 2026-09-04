@@ -54,9 +54,15 @@ describe("managed agent Responses runtime", () => {
                     temperature: 0.4,
                     reasoning_effort: "low",
                     prompt_cache_key: "stable-prefix",
+                    prompt_cache_options: { mode: "explicit" },
                 });
                 expect(body.messages).toEqual(
                     expect.arrayContaining([
+                        expect.objectContaining({
+                            role: "system",
+                            content: "You are a test agent.",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        }),
                         expect.objectContaining({
                             role: "system",
                             content: "Answer in one sentence.",
@@ -100,6 +106,7 @@ describe("managed agent Responses runtime", () => {
                 temperature: 0.4,
                 reasoning: { effort: "low" },
                 prompt_cache_key: "stable-prefix",
+                prompt_cache_options: { mode: "explicit" },
                 metadata: { trace: "test" },
             }),
             new AbortController().signal,
@@ -150,6 +157,78 @@ describe("managed agent Responses runtime", () => {
             },
             metadata: { trace: "test" },
             store: false,
+        });
+    });
+
+    it("preserves caller cache breakpoints through the managed agent", async () => {
+        let body: Record<string, unknown> | undefined;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                body = (await new Request(input, init).json()) as Record<
+                    string,
+                    unknown
+                >;
+                return Response.json({
+                    id: "chatcmpl-explicit-cache",
+                    object: "chat.completion",
+                    created: 1,
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "done" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 6,
+                        completion_tokens: 2,
+                        total_tokens: 8,
+                    },
+                });
+            }),
+        );
+
+        const response = await handlePromptAgentResponsesRequest(
+            request({
+                input: [
+                    {
+                        type: "message",
+                        role: "user",
+                        content: [
+                            {
+                                type: "input_text",
+                                text: "Stable context",
+                                prompt_cache_breakpoint: {
+                                    mode: "explicit",
+                                },
+                            },
+                            { type: "input_text", text: "Question" },
+                        ],
+                    },
+                ],
+            }),
+            new AbortController().signal,
+            RUNTIME,
+        );
+
+        expect(response.status).toBe(200);
+        expect(body).toMatchObject({
+            prompt_cache_options: { mode: "explicit" },
+            messages: [
+                { role: "system", content: "You are a test agent." },
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "Stable context",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                        { type: "text", text: "Question" },
+                    ],
+                },
+            ],
         });
     });
 

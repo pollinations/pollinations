@@ -33,10 +33,59 @@ Container disk is wiped on every sleep. All state lives in Postgres (Neon):
 files are still on local disk and do not survive a restart; switch to R2 via
 `STORAGE_PROVIDER=s3` when that matters.
 
+RAG embeds locally with the bundled `sentence-transformers/all-MiniLM-L6-v2`
+(`RAG_EMBEDDING_ENGINE` unset). RAG, image and audio all authenticate with a
+single static key rather than the per-user OAuth token the chat connection uses,
+so pointing them at gen would bill every user's documents to one wallet. The
+cost is a ~90 MB model download onto the ephemeral disk after a restart.
+
 Secrets (per environment in `secrets/secrets.vars.json`):
 
 - `WEBUI_SECRET_KEY`: session signing key. Changing it logs everyone out.
 - `DATABASE_URL`: Neon connection string (staging uses a Neon branch).
+
+## Config vars are seeded once, not on every boot
+
+Every setting in `DEFAULT_CONFIG` (`OPENAI_API_CONFIGS`, `TOOL_SERVER_CONNECTIONS`,
+...) is written to the Postgres `config` table only when the key is *missing*:
+`Config.seed_defaults` inserts new keys and `Config.get` reads the stored row
+first. Editing one of those env vars on a database that has already booted does
+nothing. Change the stored row instead, or use the admin API where one exists
+(`POST /api/v1/retrieval/embedding/update` both writes the config and rebuilds
+the in-memory embedding function, which a bare `UPDATE` does not):
+
+```bash
+ssh community-monitor "sudo docker exec openwebui-postgres \
+  psql -U openwebui -d openwebui -c \
+  \"select key, value::text from config where key = 'tool_server.connections';\""
+```
+
+## Restarting the container
+
+`envVars` on the Container class are applied when the container *starts*, and a
+`wrangler deploy` does not restart a running instance (nor does a shorter
+`sleepAfter`). To force a fresh container, delete the container application and
+deploy again — state is in Postgres, so nothing is lost:
+
+```bash
+npx wrangler containers list                     # find the app id
+npx wrangler containers delete <ID>
+npx wrangler deploy --env staging                # retry once; the first
+                                                 # attempt after a delete can
+                                                 # fail on the durable object
+```
+
+The new container cold-starts in a few minutes while it pulls the ~1.5 GB image.
+For production the deploy half must run through `Deploy / Applications`.
+
+## Tool servers
+
+`https://mcp.pollinations.ai/` (the endpoint is the root path; `/mcp` 404s) is
+registered as an MCP tool server with `auth_type: system_oauth`, the same
+per-user consent key as the model connection, so a generation started from a
+tool call is billed to the signed-in user. Two fields are easy to miss:
+`config.enable` must be true, and `config.access_grants` must carry an explicit
+public read grant — an empty grant list means admin-only, not everyone.
 
 ## Update the image
 

@@ -231,13 +231,10 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 ## Git Workflow
 
-- Stay on the current branch and its active PR unless the user asks for a new
-  PR or branch. An explicit request to create, open, or make a PR authorizes
-  creating and switching to its focused branch; do not ask for separate branch
-  approval.
-- Integrate follow-up work directly on the active branch. If continuing would
-  require a new branch or PR that the user did not request, stop and ask before
-  creating it.
+- Creating a branch or worktree needs no approval — branch off the current
+  `origin/main` rather than piling onto an unrelated branch.
+- Integrate follow-up work directly on the active branch and its PR. Opening an
+  additional PR the user did not ask for still needs a check-in first.
 - Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).

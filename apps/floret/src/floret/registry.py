@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx
 
+from floret.complexity import classify_tier
 from floret.config import settings
 
 logger = logging.getLogger(__name__)
@@ -432,8 +433,22 @@ async def warm_registry() -> None:
 
 
 def pick_model(
-    modality: str, tier: str = "balanced", prompt: str = "", paid: bool = True
+    modality: str,
+    tier: str | None = None,
+    prompt: str = "",
+    paid: bool = True,
+    *,
+    auto_tier: bool = True,
 ) -> str:
+    """Select the best model for *modality* at a given complexity *tier*.
+
+    When *tier* is ``None`` (the default) and *auto_tier* is ``True``, the
+    tier is inferred from *prompt* using :mod:`floret.complexity`.
+    Pass an explicit *tier* to override the classifier.
+    """
+    # Infer tier from prompt when not explicitly provided
+    if tier is None:
+        tier = classify_tier(prompt) if (auto_tier and prompt) else "balanced"
     if _registry_cache is None:
         try:
             loop = asyncio.get_event_loop()

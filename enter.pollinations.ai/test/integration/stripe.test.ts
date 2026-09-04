@@ -315,6 +315,72 @@ test("GET /api/stripe/checkout/:packKey reuses the stable Stripe customer", asyn
     expect(checkoutRequest?.body["customer_update[address]"]).toBe("auto");
 });
 
+test("GET /api/stripe/checkout returns an authorize checkout to the consent flow", async ({
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const checkoutUrl = new URL(`${base}/checkout/p5`);
+    checkoutUrl.searchParams.set(
+        "return_to",
+        "/authorize?redirect_url=https%3A%2F%2Fexample.com%2Fcallback&client_id=test-app",
+    );
+
+    const response = await SELF.fetch(checkoutUrl, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+
+    expect(response.status).toBe(302);
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    const successUrl = new URL(body?.success_url ?? "");
+    const cancelUrl = new URL(body?.cancel_url ?? "");
+
+    expect(successUrl.pathname).toBe("/authorize");
+    expect(successUrl.searchParams.get("redirect_url")).toBe(
+        "https://example.com/callback",
+    );
+    expect(successUrl.searchParams.get("client_id")).toBe("test-app");
+    expect(successUrl.searchParams.get("stripe_success")).toBe("true");
+    expect(successUrl.searchParams.get("session_id")).toBe(
+        "{CHECKOUT_SESSION_ID}",
+    );
+    expect(cancelUrl.pathname).toBe("/authorize");
+    expect(cancelUrl.searchParams.get("stripe_canceled")).toBe("true");
+});
+
+test.for([
+    "https://example.com/authorize",
+    "//example.com/authorize",
+    "/keys",
+])("GET /api/stripe/checkout rejects unsafe return path %s", async (returnTo, {
+    sessionToken,
+    mocks,
+}) => {
+    await mocks.enable("stripe", "tinybird");
+    const checkoutUrl = new URL(`${base}/checkout/p5`);
+    checkoutUrl.searchParams.set("return_to", returnTo);
+
+    const response = await SELF.fetch(checkoutUrl, {
+        headers: { cookie: `better-auth.session_token=${sessionToken}` },
+        redirect: "manual",
+    });
+
+    expect(response.status).toBe(302);
+    const body = mocks.stripe.state.requests.find(
+        (request) => request.path === "/v1/checkout/sessions",
+    )?.body;
+    const successUrl = new URL(body?.success_url ?? "");
+    const cancelUrl = new URL(body?.cancel_url ?? "");
+
+    expect(successUrl.pathname).toBe("/pollen");
+    expect(successUrl.searchParams.get("pack")).toBe("p5");
+    expect(cancelUrl.pathname).toBe("/pollen");
+    expect(cancelUrl.searchParams.get("pack")).toBe("p5");
+});
+
 test("GET /api/stripe/checkout/p10 sets pack identity in session metadata", async ({
     sessionToken,
     mocks,

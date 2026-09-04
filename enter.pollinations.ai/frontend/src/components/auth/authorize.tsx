@@ -26,6 +26,12 @@ import {
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
+import {
+    calculateServiceFeeCents,
+    formatUsdCentsCompact,
+    getPollenPackByAmount,
+    POLLEN_PACKS,
+} from "@shared/pollen-packs.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
@@ -40,6 +46,7 @@ import { PollenBudgetInput } from "../keys/pollen-budget-input.tsx";
 import { computeCategoryModalities } from "../models/model-categories.ts";
 import { useModelCategories } from "../models/use-model-categories.ts";
 import { useOwnCommunityModels } from "../models/use-own-community-models.ts";
+import { PollenPackSlider } from "../pollen/pollen-pack-controls.tsx";
 import { AppAttribution } from "./app-attribution.tsx";
 
 type Attribution = {
@@ -101,7 +108,24 @@ export function Authorize() {
         "pending" | "approved" | "denied"
     >("pending");
     const [totalBalance, setTotalBalance] = useState<number | null>(null);
+    const [selectedTopUpAmount, setSelectedTopUpAmount] = useState(5);
     const [permissionsExpanded, setPermissionsExpanded] = useState(false);
+
+    const selectedTopUpPack =
+        getPollenPackByAmount(selectedTopUpAmount) ?? POLLEN_PACKS[0];
+    const selectedTopUpFeeCents = calculateServiceFeeCents(
+        selectedTopUpPack.amountUsd * 100,
+    );
+    const selectedTopUpSubtotal = formatUsdCentsCompact(
+        selectedTopUpPack.amountUsd * 100 + selectedTopUpFeeCents,
+    );
+    const stripeCheckoutUrl = new URL(
+        `${config.baseUrl}/api/stripe/checkout/${selectedTopUpPack.packKey}`,
+    );
+    stripeCheckoutUrl.searchParams.set(
+        "return_to",
+        `${window.location.pathname}${window.location.search}`,
+    );
 
     const parsedRedirectUrl = redirect_url ? safeParseUrl(redirect_url) : null;
     const redirectHostname = parsedRedirectUrl?.hostname ?? "";
@@ -631,19 +655,43 @@ export function Authorize() {
                                         </span>
                                     }
                                 >
-                                    Complete a free{" "}
-                                    <InlineLink
-                                        href={`${config.baseUrl}/quests`}
+                                    <p>
+                                        Complete a free{" "}
+                                        <InlineLink
+                                            href={`${config.baseUrl}/quests`}
+                                        >
+                                            Quest
+                                        </InlineLink>{" "}
+                                        or top up instantly before using this
+                                        app.
+                                    </p>
+                                    <div className="mt-3 pb-14">
+                                        <PollenPackSlider
+                                            value={selectedTopUpPack.amountUsd}
+                                            onChange={setSelectedTopUpAmount}
+                                            label="Choose a Pollen top-up amount"
+                                            showSelectedBadge={false}
+                                        />
+                                    </div>
+                                    <Button
+                                        as="a"
+                                        size="sm"
+                                        className="w-full"
+                                        href={stripeCheckoutUrl.toString()}
+                                        target="_self"
                                     >
-                                        Quest
-                                    </InlineLink>{" "}
-                                    or{" "}
-                                    <InlineLink
-                                        href={`${config.baseUrl}/pollen#buy-pollen`}
-                                    >
-                                        top up instantly
-                                    </InlineLink>{" "}
-                                    before using this app.
+                                        Continue to Stripe ·{" "}
+                                        {selectedTopUpSubtotal}
+                                    </Button>
+                                    <p className="mt-1.5 text-xs text-theme-text-muted">
+                                        Includes a{" "}
+                                        {formatUsdCentsCompact(
+                                            selectedTopUpFeeCents,
+                                        )}{" "}
+                                        service fee. Tax is calculated at
+                                        checkout. You won&apos;t be charged
+                                        until you confirm there.
+                                    </p>
                                 </Alert>
                             </div>
                         )}

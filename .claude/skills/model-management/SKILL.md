@@ -98,7 +98,7 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 - Deduplicate the canonical model across providers.
 - List material route differences. Equal model names do not prove equal capabilities.
 - Probe the exact deployment and request shape Pollinations will use.
-- For every addition or modification, enumerate viable fallback routes and compare exact checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
+- For every addition or modification, run a fresh web search across provider catalogs and official documentation to discover viable fallback routes; do not rely only on repository integrations or remembered availability. Verify each serious candidate against its current official model page and pricing, then probe the exact route. Compare checkpoint identity, capabilities, parameters, formats, safety/privacy, availability, latency, price, permissions, and billing. Recommend the best candidate or state `none found`; never omit the fallback decision because the primary route is healthy.
 - Inspect provider-managed routing/fallback defaults and controls. Report identity, capability, pricing, residency, and observability tradeoffs.
 
 ### 3. Confirm the contract

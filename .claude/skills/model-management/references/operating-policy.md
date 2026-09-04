@@ -21,7 +21,7 @@ These are strategic defaults. The user's explicit, confirmed contract for a spec
 
 ## Fallbacks
 
-- For every model addition or modification, research viable fallback routes and present the best candidate's exact provider, deployment, and upstream model ID. Compare identity, capabilities, parameters, formats, safety/privacy, reliability, latency, price, permissions, billing, and expected load.
+- For every model addition or modification, use a fresh web search to discover viable fallback routes across current provider catalogs. Treat search results as discovery only: verify availability and exact-route pricing with current official provider sources and a live probe. Present the best candidate's exact provider, deployment, and upstream model ID, comparing identity, capabilities, parameters, formats, safety/privacy, reliability, latency, price, permissions, billing, and expected load.
 - Recommend whether to configure the candidate. A fallback is not automatic: use `none found` when no viable route exists, or recommend `none` with the concrete reason when the best candidate is unacceptable. Flag the resulting reliability gap explicitly.
 - Add or change a fallback only after explicit confirmation of the exact pair. Use the shared generic fallback system; do not build a model-specific retry layer.
 - Directly probe both routes and force the configured fallback through the full applicable local E2E matrix. Prove permissions, billing, provider attribution, cache behavior, errors, and burst capacity independently for the fallback.

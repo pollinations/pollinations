@@ -1,0 +1,34 @@
+{
+  "pr_number": 14432,
+  "title": "feat: require fallback proposals for model changes",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14432",
+  "merged_at": "2026-09-04T12:39:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Requires every model addition or modification to run fresh web research, verify candidates against official catalogs/pricing and a live route probe, then present the best exact fallback candidate\n- Keeps fallback configuration as an explicit use/decline decision and flags cases with no acceptable route\n- Requires direct and forced-fallback E2E verification when a fallback is configured\n- Reuses the existing local Pollinations test token read-only from the primary checkout, avoiding repeated copy approval while preserving secret-mutation gates\n- Updates the operating policy and test matrix consistently; skill validation passes\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Every route gets a spare",
+    "blurb": "The model garden now asks for a backup seed before planting anything new. Polli checks the catalog, tests both paths, and keeps the spare route labeled.",
+    "summary": "Updated the model-management policy to require fresh official catalog and pricing research, a live route probe, an explicit fallback use-or-decline decision, and direct plus forced-fallback E2E tests for every model addition or modification.",
+    "impact": "Model changes now arrive with a verified exact fallback candidate when one exists, or a clearly flagged no-route case, making provider routing changes more deliberate and testable.",
+    "keywords": [
+      "model-management",
+      "fallbacks",
+      "routing",
+      "e2e-testing",
+      "operating-policy",
+      "claude-skills"
+    ],
+    "visual_concept": "Depict Polli as a careful route planner in a cozy code garden, comparing a primary model route and a clearly marked fallback route on a small terminal map. Include a friendly CRT monitor robot helping verify both paths, with code-plants and route-sign flowers representing the policy and E2E checks.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer hat, studying a retro terminal route map with two labeled paths: \"PRIMARY\" and \"FALLBACK\"; a cheerful CRT monitor robot checks both routes beside code-plants and signpost flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14432.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny explorer hat, studying a retro terminal route map with two labeled paths: \"PRIMARY\" and \"FALLBACK\"; a cheerful CRT monitor robot checks both routes beside code-plants and signpost flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-04T15:29:40.270022+00:00"
+}

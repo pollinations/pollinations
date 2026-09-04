@@ -67,6 +67,24 @@ test("requires complete Discord configuration", () => {
     expect(auth.options.socialProviders).not.toHaveProperty("discord");
 });
 
+test("checks staging access against the verified GitHub profile", () => {
+    const auth = createAuth({
+        ...env,
+        ENVIRONMENT: "staging",
+        STAGING_ALLOWED_GITHUB_IDS: "12345",
+        STAGING_ALLOWED_EMAILS: "",
+    } as unknown as Cloudflare.Env);
+    const mapProfile = auth.options.socialProviders?.github?.mapProfileToUser;
+    if (!mapProfile) throw new Error("Expected GitHub profile mapper");
+
+    expect(
+        mapProfile({ id: "12345", login: "allowed", email: null } as never),
+    ).toEqual({});
+    expect(() =>
+        mapProfile({ id: "99999", login: "denied", email: null } as never),
+    ).toThrow("staging is invite-only");
+});
+
 test("links a Discord identity to the signed-in GitHub account", async ({
     mocks,
     sessionToken,
@@ -80,6 +98,7 @@ test("links a Discord identity to the signed-in GitHub account", async ({
             headers: {
                 "Content-Type": "application/json",
                 Cookie: `better-auth.session_token=${sessionToken}`,
+                Origin: "http://localhost:3000",
             },
             body: JSON.stringify({
                 provider: "discord",
@@ -137,6 +156,7 @@ test("links a Discord identity to the signed-in GitHub account", async ({
             headers: {
                 "Content-Type": "application/json",
                 Cookie: `better-auth.session_token=${sessionToken}`,
+                Origin: "http://localhost:3000",
             },
             body: JSON.stringify({
                 provider: "discord",

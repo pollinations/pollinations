@@ -958,8 +958,9 @@ describe("API Key Management", () => {
             const key = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
-            expect(key?.userId).toBeTruthy();
-            const ownerUserId = key?.userId as string;
+            expect(key?.configId).toBe("default");
+            expect(key?.referenceId).toBeTruthy();
+            const ownerUserId = key?.referenceId as string;
 
             await db
                 .update(schema.user)

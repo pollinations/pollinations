@@ -479,6 +479,8 @@ Finding things:
 - tree   — directory layout, to explore an unfamiliar area before drilling in.
 
 Following relationships (symbol graph — pass the symbol name as `query`):
+- symbols — resolve matching symbols with stable IDs, qualified names, signatures, ranges,
+            repository revision, and freshness before traversing ambiguous names.
 - callers — functions that call this symbol. More precise than grep: it distinguishes a
             real call from an import or a comment mentioning the name.
 - callees — functions this symbol calls. Use to understand what something depends on.
@@ -505,6 +507,7 @@ impact("atomicDeductUserBalance") to see the blast radius.""",
                         "read",
                         "list",
                         "tree",
+                        "symbols",
                         "callers",
                         "callees",
                         "impact",

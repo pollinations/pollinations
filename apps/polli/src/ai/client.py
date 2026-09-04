@@ -348,7 +348,8 @@ class PollinationsClient:
         all_tool_results = []
 
         # Start with all tools, conditionally including code_search if enabled
-        all_tools = get_tools_with_embeddings(GITHUB_TOOLS.copy(), config.code_search.is_configured)
+        code_search_enabled = config.code_search.is_configured or config.code_search.local_repo_enabled
+        all_tools = get_tools_with_embeddings(GITHUB_TOOLS.copy(), code_search_enabled)
 
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
         client_tools = list((api_params or {}).get("tools") or [])

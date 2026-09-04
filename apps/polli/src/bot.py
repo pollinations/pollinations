@@ -498,6 +498,7 @@ class PolliBot(commands.Bot):
         self._api_server = None
         self._status_bag: list[str] = []
         self._current_status: str | None = None
+        self._code_sync_task: asyncio.Task | None = None
 
     async def setup_hook(self):
         """Called when the bot is starting up."""
@@ -613,6 +614,12 @@ class PolliBot(commands.Bot):
             await self.issue_notifier.stop()
         if self.webhook_server:
             await stop_webhook_server()
+        if self._code_sync_task and not self._code_sync_task.done():
+            self._code_sync_task.cancel()
+            try:
+                await self._code_sync_task
+            except asyncio.CancelledError:
+                pass
         await pollinations_client.close()
         from .discord.search import discord_search_client
 
@@ -736,8 +743,8 @@ async def on_ready():
     except Exception as e:
         logger.error(f"Failed to sync commands: {e}")
 
-    # Code search queries Cloudflare Vectorize directly — nothing to initialize
-    # (the index is populated by CI in pollinations/pollinations, not by Polli).
+    if config.code_search.local_repo_enabled and (bot._code_sync_task is None or bot._code_sync_task.done()):
+        bot._code_sync_task = asyncio.create_task(_sync_local_repo())
 
 
 async def _check_reply_to_bot(

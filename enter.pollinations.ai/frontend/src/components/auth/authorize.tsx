@@ -4,6 +4,7 @@ import {
     Collapsible,
     cn,
     ExternalLinkIcon,
+    InlineLink,
     MailIcon,
     ScrollArea,
     useScrollLock,
@@ -617,6 +618,29 @@ export function Authorize() {
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
                     <div>
+                        {totalBalance !== null && totalBalance <= 0 && (
+                            <div className="px-4 py-4">
+                                <Alert
+                                    intent="info"
+                                    title="You’re out of Pollen"
+                                >
+                                    Complete a free{" "}
+                                    <InlineLink
+                                        href={`${config.baseUrl}/quests`}
+                                    >
+                                        Quest
+                                    </InlineLink>{" "}
+                                    or{" "}
+                                    <InlineLink
+                                        href={`${config.baseUrl}/pollen#buy-pollen`}
+                                    >
+                                        top up instantly
+                                    </InlineLink>{" "}
+                                    before using this app.
+                                </Alert>
+                            </div>
+                        )}
+
                         <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
                             <p
                                 id="authorize-dialog-title"
@@ -631,33 +655,6 @@ export function Authorize() {
                                 redirectHostname={redirectHostname}
                             />
                         </div>
-
-                        {totalBalance === 0 && (
-                            <div className="px-4 pt-4">
-                                <Alert intent="info">
-                                    You don&apos;t have any Pollen yet. Earn
-                                    some through{" "}
-                                    <a
-                                        href={`${config.baseUrl}/quests`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-medium underline hover:no-underline"
-                                    >
-                                        Quests
-                                    </a>{" "}
-                                    or{" "}
-                                    <a
-                                        href={`${config.baseUrl}/pollen#buy-pollen`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="font-medium underline hover:no-underline"
-                                    >
-                                        top up
-                                    </a>{" "}
-                                    before using this app.
-                                </Alert>
-                            </div>
-                        )}
 
                         <div className="p-4">
                             <p className="font-body text-xs font-semibold text-theme-text-soft tracking-wide mb-3">

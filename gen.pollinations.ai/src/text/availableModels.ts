@@ -33,7 +33,7 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
-    /** Route through the Azure Responses API instead of Chat Completions. */
+    /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
 }
 

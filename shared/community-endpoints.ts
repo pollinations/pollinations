@@ -20,7 +20,7 @@ import type { SafetyFeature } from "./schemas/safety.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
+export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
@@ -535,6 +535,7 @@ const StoredCommunityEndpointPricesSchema = z.object(
 export const ProxyListingPayloadSchema = z
     .object({
         bearerTokenCiphertext: z.string().min(1),
+        responsesUrl: z.string().url().nullable().default(null),
         // Owner-set: callers may only spend Paid Pollen on this model. Rows
         // from before paid-only support are public-spend by default.
         paidOnly: z.boolean().default(false),
@@ -593,6 +594,7 @@ export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
+        responsesUrl: z.string().url().nullable().default(null),
     })
     .strict();
 
@@ -725,6 +727,7 @@ type CommunityEndpointRuntimeBase = {
     // All variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
     baseUrl: string;
+    responsesUrl?: string | null;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     requiredSafetyFeatures?: SafetyFeature[];

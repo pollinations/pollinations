@@ -1,0 +1,35 @@
+{
+  "pr_number": 14424,
+  "title": "docs: update README — 2026-09-04",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14424",
+  "merged_at": "2026-09-04T07:22:53Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Fresh news, fresh stars",
+    "blurb": "The README garden got its daily tending: latest hive news and the star-history charts are up to date.",
+    "summary": "Refreshed the README's Latest News section and dark/light GitHub star-history charts for September 4, 2026.",
+    "impact": "Visitors to the repository can see the current project news and an up-to-date view of pollinations.ai's growing GitHub community.",
+    "keywords": [
+      "readme",
+      "news",
+      "github",
+      "star-history",
+      "documentation"
+    ],
+    "visual_concept": "Polli tends a small repository garden beside a retro terminal showing a gently rising star chart, pinning a fresh news note to a bulletin board. Pixel flowers and tiny stars represent the growing open-source community.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, updating a bulletin board beside a retro CRT terminal showing a rising pixel star chart; code-plants, flowers, and little stars grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with small pixel-font text: 'LATEST NEWS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14424.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian scarf, updating a bulletin board beside a retro CRT terminal showing a rising pixel star chart; code-plants, flowers, and little stars grow around the desk. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, with small pixel-font text: 'LATEST NEWS'."
+  },
+  "generated_at": "2026-09-04T07:23:56.488112+00:00"
+}

@@ -483,7 +483,7 @@ describe("managed agent Responses runtime", () => {
         ).toBe(false);
     });
 
-    it("rejects state and caller-supplied tools", async () => {
+    it("rejects state and unsupported parameters", async () => {
         expect(
             PromptAgentResponsesRequestSchema.safeParse({
                 model: crypto.randomUUID(),
@@ -492,17 +492,17 @@ describe("managed agent Responses runtime", () => {
             }).success,
         ).toBe(false);
 
-        const response = await handlePromptAgentResponsesRequest(
+        // Caller tools are ignored, not rejected: Open WebUI attaches builtin
+        // tool specs to every chat sent from its UI, which used to 400 every
+        // managed-agent call.
+        const withTools = await handlePromptAgentResponsesRequest(
             request({
                 tools: [{ type: "function", name: "external", parameters: {} }],
             }),
             new AbortController().signal,
             RUNTIME,
         );
-        expect(response.status).toBe(400);
-        await expect(response.json()).resolves.toMatchObject({
-            error: { code: "unsupported_parameter", param: "tools" },
-        });
+        expect(withTools.status).not.toBe(400);
 
         for (const [field, value] of [
             ["max_tool_calls", { max_tool_calls: 2 }],

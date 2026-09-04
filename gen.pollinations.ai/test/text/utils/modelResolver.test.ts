@@ -278,6 +278,55 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("pins Qwen3.8 Flash to Alibaba on OpenRouter without provider fallbacks", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-flash",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it.each([
+        ["required", "required"],
+        [
+            "function object",
+            {
+                type: "function",
+                function: { name: "get_weather" },
+            },
+        ],
+    ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
+        for (const name of ["qwen/qwen3.8-flash", "qwen3.8-flash-alibaba"]) {
+            const definition = findModelByName(name);
+            const transformed = await definition?.transform?.(messages, {
+                model: name,
+                reasoning_effort: "high",
+                tool_choice: toolChoice,
+            });
+
+            expect(transformed?.options.reasoning_effort).toBe("none");
+        }
+    });
+
+    it("keeps Qwen3.8 Flash reasoning for automatic tool choice", async () => {
+        const definition = findModelByName("qwen/qwen3.8-flash");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-flash",
+            reasoning_effort: "high",
+            tool_choice: "auto",
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("high");
+    });
+
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
         const result = resolveModelConfig(messages, { model: "kimi-k3" });
 

@@ -260,6 +260,22 @@ export const portkeyConfig: PortkeyConfigMap = {
             model: "qwen3.7-flash",
             defaultOptions: { max_tokens: 64000 },
         }),
+    "qwen/qwen3.8-flash": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "qwen3.8-flash-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-flash",
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "poolside/laguna-s-2.1": () =>
         createOpenRouterModelConfig({
             model: "poolside/laguna-s-2.1",

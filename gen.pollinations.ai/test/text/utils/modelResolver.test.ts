@@ -46,11 +46,10 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
-    it.each([
-        "openai/gpt-6-astra",
-        "gpt-6-astra",
-    ])("routes %s to the direct Azure Responses deployment", (model) => {
-        const result = resolveModelConfig(messages, { model });
+    it("routes openai/gpt-6-astra to the direct Azure Responses deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-6-astra",
+        });
 
         expect(result.options.model).toBe("gpt-6-astra");
         expect(result.options.modelConfig).toMatchObject({
@@ -60,6 +59,12 @@ describe("resolveModelConfig", () => {
                 "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         });
         expect(result.options.provider).toBeUndefined();
+    });
+
+    it("does not expose gpt-6-astra as an alias", () => {
+        expect(() =>
+            resolveModelConfig(messages, { model: "gpt-6-astra" }),
+        ).toThrow("Model configuration not found for: gpt-6-astra");
     });
 
     it("routes Claude Fable 5.1 to its global profile", () => {

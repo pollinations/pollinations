@@ -355,7 +355,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-6-astra": {
-        aliases: ["gpt-6-astra"],
+        aliases: [],
         provider: "azure",
         brand: "OpenAI",
         category: "text",

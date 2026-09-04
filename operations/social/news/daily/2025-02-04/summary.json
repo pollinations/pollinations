@@ -1,0 +1,19 @@
+{
+  "date": "2025-02-04",
+  "period_start": "2025-02-04",
+  "period_end": "2025-02-04",
+  "title": "Safer prompts, more projects to find",
+  "summary": "A small garden-maintenance day: safer content handling and one more community app on the map.\n\nLlamaGuard NSFW detection was added to help keep generated content in bounds, while the Pal Chat iOS app joined the project listings—another small piece of the ecosystem made visible.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 1111,
+      "date": "2025-02-04"
+    },
+    {
+      "number": 1146,
+      "date": "2025-02-04"
+    }
+  ],
+  "generated_at": "2026-09-04T13:35:42.865388+00:00"
+}

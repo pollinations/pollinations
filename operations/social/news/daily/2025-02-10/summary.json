@@ -1,0 +1,23 @@
+{
+  "date": "2025-02-10",
+  "period_start": "2025-02-10",
+  "period_end": "2025-02-10",
+  "title": "Referral links get tracking and a test pass",
+  "summary": "A small referral-focused day: tracking, analytics, and tests for seeing how links travel.\n\nReferral tracking gained an analytics route, with follow-up test work and supporting adjustments to make the flow easier to verify.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1178,
+      "date": "2025-02-10"
+    },
+    {
+      "number": 1179,
+      "date": "2025-02-10"
+    },
+    {
+      "number": 1180,
+      "date": "2025-02-10"
+    }
+  ],
+  "generated_at": "2026-09-04T13:38:26.443313+00:00"
+}

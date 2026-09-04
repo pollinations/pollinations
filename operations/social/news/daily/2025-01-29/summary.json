@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-29",
+  "period_start": "2025-01-29",
+  "period_end": "2025-01-29",
+  "title": "Project listings got a new resident",
+  "summary": "A small garden-maintenance day: Pollinations Chat joined the listings and project submissions got clearer instructions.\n\nPollinations Chat has been added to the project listings, making one more piece of the ecosystem easier to find without needing to know the right URL first.\n\nNew submission templates and development guidelines give contributors a more concrete route from idea to project listing. Less interpretive dance around how to submit a thing.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1112,
+      "date": "2025-01-29"
+    },
+    {
+      "number": 1117,
+      "date": "2025-01-29"
+    },
+    {
+      "number": 1118,
+      "date": "2025-01-29"
+    }
+  ],
+  "generated_at": "2026-09-04T14:04:20.977394+00:00"
+}

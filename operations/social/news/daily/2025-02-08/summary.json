@@ -1,0 +1,15 @@
+{
+  "date": "2025-02-08",
+  "period_start": "2025-02-08",
+  "period_end": "2025-02-08",
+  "title": "Vision model support is easier to find",
+  "summary": "A small documentation pass makes it clearer which models can actually see your images.\n\nThe docs now clearly identify which text models accept vision and image inputs, so builders can spend less time guessing at capabilities and more time sending pixels to the right endpoint.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1158,
+      "date": "2025-02-08"
+    }
+  ],
+  "generated_at": "2026-09-04T13:37:51.016404+00:00"
+}

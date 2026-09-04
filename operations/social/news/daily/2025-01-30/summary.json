@@ -1,0 +1,15 @@
+{
+  "date": "2025-01-30",
+  "period_start": "2025-01-30",
+  "period_end": "2025-01-30",
+  "title": "A smoother path through the generation queue",
+  "summary": "A small queueing upgrade makes priority generation requests move with less waiting around.\n\nPriority access can now be handled through token-based queue bypasses, giving eligible requests a more direct route when the system is busy.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1120,
+      "date": "2025-01-30"
+    }
+  ],
+  "generated_at": "2026-09-04T14:04:55.087390+00:00"
+}

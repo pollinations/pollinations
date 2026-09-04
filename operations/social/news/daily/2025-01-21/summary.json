@@ -1,0 +1,15 @@
+{
+  "date": "2025-01-21",
+  "period_start": "2025-01-21",
+  "period_end": "2025-01-21",
+  "title": "Gmail agent gets a cleanup pass",
+  "summary": "A small Gmail agent cleanup day: fewer rough edges, more dependable email automation.\n\nThe Gmail agent received targeted tweaks and fixes, making the email-connected workflow a little less likely to discover a new and inventive way to misbehave.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1056,
+      "date": "2025-01-21"
+    }
+  ],
+  "generated_at": "2026-09-04T13:59:46.907962+00:00"
+}

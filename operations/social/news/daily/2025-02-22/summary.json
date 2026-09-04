@@ -1,0 +1,15 @@
+{
+  "date": "2025-02-22",
+  "period_start": "2025-02-22",
+  "period_end": "2025-02-22",
+  "title": "image1gen joins the project list",
+  "summary": "A small directory update: image1gen is now part of the growing project list.\n\nThe project directory now includes image1gen, making another community-built image tool easier to discover.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1219,
+      "date": "2025-02-22"
+    }
+  ],
+  "generated_at": "2026-09-04T13:59:20.397509+00:00"
+}

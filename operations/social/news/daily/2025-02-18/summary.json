@@ -1,0 +1,15 @@
+{
+  "date": "2025-02-18",
+  "period_start": "2025-02-18",
+  "period_end": "2025-02-18",
+  "title": "A smaller, cleaner user-facing surface",
+  "summary": "A quiet cleanup day: one less obsolete path in the user-facing stack.\n\nCTO2 was removed from the user-facing stack, trimming an obsolete path and leaving fewer things for people to trip over.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1196,
+      "date": "2025-02-18"
+    }
+  ],
+  "generated_at": "2026-09-04T13:40:41.837223+00:00"
+}

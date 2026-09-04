@@ -1,0 +1,15 @@
+{
+  "date": "2025-01-06",
+  "period_start": "2025-01-06",
+  "period_end": "2025-01-06",
+  "title": "DeepSeek Coder V3 joins the text API",
+  "summary": "A new coding model landed in the text API: DeepSeek Coder V3, one endpoint, more ways to make computers write computers.\n\nDeepSeek Coder V3 is now available through text.pollinations.ai, giving builders another coding-focused model behind the same simple text endpoint.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 962,
+      "date": "2025-01-06"
+    }
+  ],
+  "generated_at": "2026-09-04T13:36:20.222656+00:00"
+}

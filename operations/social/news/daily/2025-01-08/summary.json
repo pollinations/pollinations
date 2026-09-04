@@ -1,0 +1,19 @@
+{
+  "date": "2025-01-08",
+  "period_start": "2025-01-08",
+  "period_end": "2025-01-08",
+  "title": "Text service gets sturdier guardrails",
+  "summary": "A small maintenance pass: repaired text-service tests and taught the workflow to check itself.\n\nTest repairs and an initial workflow-checking setup give texxt.pollinations.ai a more reliable path for catching regressions before they wander into production.",
+  "pr_count": 2,
+  "prs": [
+    {
+      "number": 965,
+      "date": "2025-01-08"
+    },
+    {
+      "number": 967,
+      "date": "2025-01-08"
+    }
+  ],
+  "generated_at": "2026-09-04T13:36:51.454538+00:00"
+}

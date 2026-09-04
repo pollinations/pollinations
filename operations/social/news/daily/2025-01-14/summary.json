@@ -1,0 +1,31 @@
+{
+  "date": "2025-01-14",
+  "period_start": "2025-01-14",
+  "period_end": "2025-01-14",
+  "title": "Text API docs now match the routes people can use",
+  "summary": "A small maintenance day: clearer text API maps, repaired analytics, and public references brought up to date.\n\nThe API diagram was updated with the current text endpoints, making the path from prompt to response a little less archaeological.\n\nTwo fixes cleaned up analytics delivery for text.pollinations.ai, so usage signals from the text API should arrive where they are meant to.\n\nOpenHands and the Who We Are component now point to MentatBot, keeping the public-facing project map current.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 997,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1000,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1001,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1003,
+      "date": "2025-01-14"
+    },
+    {
+      "number": 1004,
+      "date": "2025-01-14"
+    }
+  ],
+  "generated_at": "2026-09-04T13:39:49.798415+00:00"
+}

@@ -1,0 +1,15 @@
+{
+  "date": "2025-02-01",
+  "period_start": "2025-02-01",
+  "period_end": "2025-02-01",
+  "title": "Deep Saga joins the project listings",
+  "summary": "A small community update: Deep Saga is now on the project map.\n\nDeep Saga is now listed among projects built with pollinations, giving the community another thing to inspect, borrow from, or accidentally turn into a weekend project.",
+  "pr_count": 1,
+  "prs": [
+    {
+      "number": 1128,
+      "date": "2025-02-01"
+    }
+  ],
+  "generated_at": "2026-09-04T13:33:16.351524+00:00"
+}

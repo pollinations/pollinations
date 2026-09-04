@@ -1,0 +1,23 @@
+{
+  "date": "2025-01-20",
+  "period_start": "2025-01-20",
+  "period_end": "2025-01-20",
+  "title": "A new Claude option, with the machinery watched",
+  "summary": "A small garden day: a new Claude model, better Persian text handling, and a style guide for making images weirder.\n\nClaude Hybridspace joined the text model lineup, alongside rate-limit updates and EC2 monitoring to keep an eye on the hardware doing the unglamorous part.\n\nText sanitization now preserves Persian character encoding correctly, so Persian prompts and output are less likely to be mangled by a helpful-looking cleanup step.\n\nThe tutorials section now includes the Artistic Styles Book, giving image makers a more direct map through the many aesthetic directions pixels can be pushed.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1042,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1046,
+      "date": "2025-01-20"
+    },
+    {
+      "number": 1048,
+      "date": "2025-01-20"
+    }
+  ],
+  "generated_at": "2026-09-04T13:59:08.108269+00:00"
+}

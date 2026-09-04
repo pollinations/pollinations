@@ -1,0 +1,23 @@
+{
+  "date": "2025-02-27",
+  "period_start": "2025-02-27",
+  "period_end": "2025-02-27",
+  "title": "Project directory gets a new music experiment",
+  "summary": "A garden-maintenance day: one new community project, clearer terms, and a link pointed back at reality.\n\nMusify, an AI-enhanced music streaming project, joined the project list—another visible use of Pollinations infrastructure in the wild.\n\nThe terms prompt gained a compliance section, and an outdated URL was refreshed. Not glamorous work, but fewer dead links and clearer terms are how public infrastructure stays usable.",
+  "pr_count": 3,
+  "prs": [
+    {
+      "number": 1217,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1254,
+      "date": "2025-02-27"
+    },
+    {
+      "number": 1257,
+      "date": "2025-02-27"
+    }
+  ],
+  "generated_at": "2026-09-04T14:02:41.595342+00:00"
+}

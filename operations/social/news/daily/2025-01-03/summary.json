@@ -1,0 +1,31 @@
+{
+  "date": "2025-01-03",
+  "period_start": "2025-01-03",
+  "period_end": "2025-01-03",
+  "title": "Image generation gets a performance tune-up",
+  "summary": "A focused image-infrastructure day: faster generation paths, clearer progress signals, and more dependable worker coordination.\n\nImage generation gained profiling and optimization work to identify slow paths and make the pixel factory move with less ceremony.\n\nThe image service now has stronger server registration, check-in integration, progress monitoring, and logging. The machinery is becoming easier to observe while it does its mysterious GPU rituals.",
+  "pr_count": 5,
+  "prs": [
+    {
+      "number": 953,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 955,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 957,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 959,
+      "date": "2025-01-03"
+    },
+    {
+      "number": 960,
+      "date": "2025-01-03"
+    }
+  ],
+  "generated_at": "2026-09-04T13:35:30.683114+00:00"
+}

@@ -850,6 +850,100 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
+    it("preserves direct error response details for callers and telemetry", async () => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const errorBody = {
+            success: false,
+            error: {
+                code: "SERVICE_UNAVAILABLE",
+                message: "The image backend queue is full",
+                details: {
+                    name: "UpstreamError",
+                    upstreamHost: "dreamshaper.test",
+                    upstreamStatus: 503,
+                    upstreamBody: '{"error":"queue full"}',
+                },
+            },
+            status: 503,
+        };
+        const upstream = Response.json(errorBody, { status: 503 });
+
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            upstream,
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+
+        expect(response.status).toBe(503);
+        await expect(response.json()).resolves.toEqual(errorBody);
+        await waitOnExecutionContext(ctx);
+
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
+        const errorRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") === "error_event",
+        );
+        expect(tinybirdRequests).toHaveLength(2);
+        await expect(generationRequest?.json()).resolves.toMatchObject({
+            responseStatus: 503,
+            isBilledUsage: false,
+            errorResponseCode: "SERVICE_UNAVAILABLE",
+            errorSource: "dreamshaper.test",
+            errorMessage: "The image backend queue is full",
+        });
+        const errorEvent = (await errorRequest?.json()) as Record<
+            string,
+            unknown
+        >;
+        expect(errorEvent).toMatchObject({
+            kind: "server_error",
+            status: 503,
+            upstream_status: 503,
+            upstream_host: "dreamshaper.test",
+            error_code: "SERVICE_UNAVAILABLE",
+            error_class: "UpstreamError",
+            message: "The image backend queue is full",
+        });
+        expect(JSON.parse(errorEvent.upstream_body as string)).toEqual(
+            errorBody,
+        );
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
     it("tracks usage after a malformed SSE event", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -1259,11 +1353,16 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(502);
-        expect(tinybirdRequests).toHaveLength(1);
+        expect(tinybirdRequests).toHaveLength(2);
+        const generationRequest = tinybirdRequests.find(
+            (request) =>
+                new URL(request.url).searchParams.get("name") ===
+                "generation_event_v2",
+        );
         // modelUsed comes from the resolved model, not the upstream
         // x-model-used header, so error rows attribute the failure instead of
         // falling back to the datasource DEFAULT 'undefined'.
-        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+        await expect(generationRequest?.json()).resolves.toMatchObject({
             responseStatus: 502,
             resolvedModelRequested: "openai",
             modelUsed: "openai",
@@ -2568,6 +2667,29 @@ describe("trackResponse missing usage", () => {
         );
         expect(tracking.isBilledUsage).toBe(true);
         expect(tracking.errorTracking).toBeUndefined();
+    });
+});
+
+describe("trackResponse errors", () => {
+    it("uses a plain-text error body instead of the generic status message", async () => {
+        const tracking = await trackResponse(
+            "generate.image",
+            requestTrackingFixture(false, "dreamshaper"),
+            new Response("Generation coordination is unavailable", {
+                status: 503,
+            }),
+            candidateFixture("dreamshaper"),
+        );
+
+        expect(tracking).toMatchObject({
+            responseStatus: 503,
+            isBilledUsage: false,
+            errorTracking: {
+                errorResponseCode: "SERVICE_UNAVAILABLE",
+                errorMessage: "Generation coordination is unavailable",
+            },
+            errorOutput: "Generation coordination is unavailable",
+        });
     });
 });
 

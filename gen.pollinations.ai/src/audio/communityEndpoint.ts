@@ -1,15 +1,25 @@
-import { communityAudioTranscriptionsUrl } from "@shared/community-endpoint-urls.ts";
+import {
+    communityAudioSpeechUrl,
+    communityAudioTranscriptionsUrl,
+} from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
     type CommunityEndpointRuntime,
     communityTranscriptionSeconds,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import {
+    MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+    readCommunityAudioResponse,
+} from "@shared/community-media.ts";
 import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
+import { HttpError } from "@shared/http-error.ts";
 import {
     buildUsageHeaders,
     createAudioSecondsUsage,
+    createAudioTokenUsage,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseText } from "@shared/response-bytes.ts";
 import { decryptSecret } from "@shared/secret-encryption.ts";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import {
@@ -27,6 +37,104 @@ export type CommunityTranscriptionOptions = {
     responseFormat?: string;
     temperature?: number;
 };
+
+export type CommunitySpeechOptions = {
+    input: string;
+    voice: string;
+    responseFormat: string;
+};
+
+/**
+ * Forward an OpenAI-compatible `/v1/audio/speech` request to a community
+ * endpoint and relay its audio back. Speech is billed by the characters of the
+ * input text we sent, so the meter is known before the call and the response
+ * only has to be real, non-empty audio to be billable.
+ */
+export async function callCommunitySpeechEndpoint(
+    endpoint: CommunityEndpointRuntime,
+    options: CommunitySpeechOptions,
+    secret: string,
+): Promise<Response> {
+    // Managed agents are text-only, so a speech endpoint is always external.
+    if (endpoint.type !== "proxy") {
+        throw new Error(
+            `Community speech endpoint '${endpoint.modelId}' is a managed agent`,
+        );
+    }
+    const bearerToken = await decryptSecret(
+        endpoint.bearerTokenCiphertext,
+        secret,
+    );
+    const upstreamUrl = communityAudioSpeechUrl(endpoint.baseUrl);
+    let response: Response;
+    try {
+        response = await fetch(upstreamUrl, {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${normalizeCommunityEndpointBearerToken(bearerToken)}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model: endpoint.upstreamModel,
+                input: options.input,
+                voice: options.voice,
+                response_format: options.responseFormat,
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch (error) {
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Community speech endpoint timed out or could not connect",
+            cause: error,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+    if (!response.ok) {
+        // Bound provider error bodies before passing them to the shared error
+        // classifier; an untrusted endpoint must not make us buffer forever.
+        const responseBody = await readResponseText(
+            response,
+            MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+            () =>
+                new HttpError(
+                    "Community speech endpoint response is too large",
+                    502,
+                ),
+        );
+        response = new Response(responseBody, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: response.headers,
+        });
+    }
+    response = await ensureUpstreamOk(response, upstreamUrl);
+    let audio: { bytes: Uint8Array; contentType: string };
+    try {
+        audio = await readCommunityAudioResponse(response);
+    } catch (error) {
+        if (error instanceof HttpError) throw error;
+        throw new UpstreamError(502 as ContentfulStatusCode, {
+            message: "Community speech endpoint returned invalid audio",
+            cause: error,
+            requestUrl: new URL(upstreamUrl),
+        });
+    }
+    // Copy into a plain ArrayBuffer: Cloudflare's Response constructor does
+    // not accept a Uint8Array backed by an arbitrary ArrayBufferLike.
+    const body = new Uint8Array(audio.bytes.byteLength);
+    body.set(audio.bytes);
+    return new Response(body.buffer, {
+        status: 200,
+        headers: {
+            "Content-Type": audio.contentType,
+            ...buildUsageHeaders(
+                endpoint.modelId,
+                createAudioTokenUsage(options.input.length),
+            ),
+        },
+    });
+}
 
 export async function callCommunityTranscriptionEndpoint(
     endpoint: CommunityEndpointRuntime,

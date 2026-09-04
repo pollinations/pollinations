@@ -219,7 +219,9 @@ export function CommunityEndpointDialog({
                           ? "Endpoint responded, but did not return playable video"
                           : form.modality === "transcription"
                             ? "Endpoint responded, but did not return transcription text or usage"
-                            : "Endpoint responded, but did not return billable usage",
+                            : form.modality === "speech"
+                              ? "Endpoint responded, but did not return audio"
+                              : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -442,6 +444,7 @@ export function CommunityEndpointDialog({
                                         "text",
                                         "image",
                                         "video",
+                                        "speech",
                                         "transcription",
                                         "embedding",
                                     ] as const
@@ -506,7 +509,7 @@ export function CommunityEndpointDialog({
                             helper={
                                 form.modality === "video"
                                     ? "The exact URL Pollinations calls to generate a video."
-                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/speech/transcription URL."
                             }
                             alignLabelRow
                         >
@@ -585,11 +588,14 @@ export function CommunityEndpointDialog({
                                     placeholder={
                                         form.modality === "image"
                                             ? "gpt-image-2"
-                                            : form.modality === "transcription"
-                                              ? "whisper-1"
-                                              : form.modality === "embedding"
-                                                ? "text-embedding-3-small"
-                                                : "gpt-4o-mini"
+                                            : form.modality === "speech"
+                                              ? "tts-1"
+                                              : form.modality ===
+                                                  "transcription"
+                                                ? "whisper-1"
+                                                : form.modality === "embedding"
+                                                  ? "text-embedding-3-small"
+                                                  : "gpt-4o-mini"
                                     }
                                     align="end"
                                     open={providerModelMenuOpen}

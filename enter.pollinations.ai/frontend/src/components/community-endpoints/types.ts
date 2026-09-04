@@ -139,6 +139,7 @@ export function publicCommunityFallbackOptions(
         type: string;
         community?: boolean;
         agent?: boolean;
+        outputModalities?: string[];
     }[],
 ): FallbackModelOption[] {
     return models
@@ -160,7 +161,11 @@ export function publicCommunityFallbackOptions(
                     : model.type === "video"
                       ? "video"
                       : model.type === "audio"
-                        ? "transcription"
+                        ? // Both speech and transcription endpoints publish as
+                          // audio models; the output modality tells them apart.
+                          model.outputModalities?.includes("audio")
+                            ? "speech"
+                            : "transcription"
                         : model.type === "embedding"
                           ? "embedding"
                           : "text",

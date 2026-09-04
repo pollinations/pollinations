@@ -352,11 +352,13 @@ export function basePriceKeysForModality(
         ? ["completionImagePrice"]
         : modality === "video"
           ? BASE_VIDEO_PRICE_KEYS
-          : modality === "transcription"
-            ? BASE_TRANSCRIPTION_PRICE_KEYS
-            : modality === "embedding"
-              ? BASE_EMBEDDING_PRICE_KEYS
-              : BASE_TEXT_PRICE_KEYS;
+          : modality === "speech"
+            ? ["completionAudioPrice"]
+            : modality === "transcription"
+              ? BASE_TRANSCRIPTION_PRICE_KEYS
+              : modality === "embedding"
+                ? BASE_EMBEDDING_PRICE_KEYS
+                : BASE_TEXT_PRICE_KEYS;
 }
 
 export function returnedPriceFields(

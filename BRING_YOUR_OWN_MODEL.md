@@ -12,6 +12,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 | Image | `POST /v1/images/generations` | `GET /image/{prompt}` or `POST /v1/images/generations` |
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
 | Video | Exact endpoint URL entered at registration | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
+| Text to speech | `POST /v1/audio/speech` | `POST /v1/audio/speech` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
 | Embeddings | `POST /v1/embeddings` | `POST /v1/embeddings` |
 
@@ -46,7 +47,7 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
 
 Pollinations sends no upstream model id and bills the accepted request duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
-Text-to-speech, realtime, and 3D endpoints cannot currently be registered through this workflow.
+Realtime and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
@@ -60,6 +61,7 @@ Public models appear in the model catalog and can be called by other Pollination
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from the requested duration in seconds.
 - Transcription models are priced from reported audio duration.
+- Speech models are priced by input characters through the existing completion-audio price.
 - Embedding models use the prompt-token count reported by the upstream endpoint.
 - A zero price makes the public model free.
 
@@ -69,7 +71,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For video, enter the exact generation URL and bearer token.
+3. Select text, image, speech, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For video, enter the exact generation URL and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
@@ -109,6 +111,8 @@ Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle
 
 Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
 
+Speech models use `--modality speech`. For example, `--completion-audio-price 0.000015` charges 15 Pollen per 1M input characters.
+
 ## Publishing Controls
 
 Public models support these owner controls in the dashboard or Account API:
@@ -119,7 +123,7 @@ Public models support these owner controls in the dashboard or Account API:
 - The provider profile at `POST /account/my-models/provider` sets the public provider name and service URL shared by your models.
 - Owners can hide or relist their models without deleting them.
 
-Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, video prices cannot exceed 0.5 Pollen per generated second, and transcription prices cannot exceed 0.012 Pollen per minute. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
+Token prices cannot exceed 50 Pollen per 1M tokens. Fixed image prices cannot exceed 0.25 Pollen per image, video prices cannot exceed 0.5 Pollen per generated second, and transcription prices cannot exceed 0.012 Pollen per minute. Speech uses the existing completion-audio price per 1M input characters. See the [Community Models API reference](https://gen.pollinations.ai/docs#tag/community-models) for the exact fields.
 
 ## Call Your Model
 

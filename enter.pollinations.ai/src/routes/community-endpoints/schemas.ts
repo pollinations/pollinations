@@ -21,7 +21,7 @@ import { z } from "zod";
 const ModalitySchema = z
     .enum(COMMUNITY_ENDPOINT_MODALITIES)
     .describe(
-        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits`; "video" calls the exact configured URL; "transcription" uses `/v1/audio/transcriptions`.',
+        'Upstream API family. "text" uses `/v1/chat/completions`; "image" uses `/v1/images/generations` and optionally `/v1/images/edits`; "video" calls the exact configured URL; "speech" uses `/v1/audio/speech`; "transcription" uses `/v1/audio/transcriptions`.',
     );
 const ImagePricingSchema = z
     .enum(COMMUNITY_ENDPOINT_IMAGE_PRICING_MODES)
@@ -113,7 +113,7 @@ const EndpointFieldsSchema = {
         .string()
         .url()
         .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL.",
+            "OpenAI-compatible `/v1` base URL or full chat, image, speech, or transcription URL. For video, the exact generation URL.",
         ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),

@@ -1,4 +1,5 @@
 import {
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
@@ -18,6 +19,7 @@ import {
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+    readCommunityAudioResponse,
 } from "@shared/community-media.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
@@ -336,6 +338,54 @@ export async function testCommunityTranscriptionEndpoint({
         // usage object that may not carry it.
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
+    };
+}
+
+/** Probe an OpenAI-compatible text-to-speech endpoint. */
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const input = "Reply with a short greeting.";
+    let response: Response;
+    try {
+        response = await fetch(communityAudioSpeechUrl(baseUrl), {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input,
+                voice: "alloy",
+                response_format: "mp3",
+            }),
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
+    if (!response.ok) {
+        const body = parseJson(
+            await readResponseText(
+                response,
+                MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+                () => new Error("Endpoint response is too large"),
+            ),
+        );
+        throw new Error(endpointErrorMessage(response.status, body));
+    }
+    // The response must be real audio to be billable: an OpenAI-shaped JSON
+    // body is a provider misconfiguration, not a free pass.
+    await readCommunityAudioResponse(response);
+    return {
+        // The character count of the probe input is what speech is billed on,
+        // so report it directly rather than trusting upstream usage.
+        usage: { characters: input.length },
+        billableUsage: { completionAudioTokens: input.length },
     };
 }
 

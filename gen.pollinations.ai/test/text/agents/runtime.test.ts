@@ -525,219 +525,217 @@ describe("prompt-agent runtime", () => {
         }
     });
 
-    it.each([false, true])(
-        "returns generated image links when stream:%s",
-        async (stream) => {
-            let modelCalls = 0;
-            const modelResponse = (
-                message: Record<string, unknown>,
-                finishReason: "stop" | "tool_calls",
-            ) => {
-                const usage = {
-                    prompt_tokens: 2,
-                    completion_tokens: 1,
-                    total_tokens: 3,
-                };
-                if (!stream) {
-                    return Response.json({
+    it.each([
+        false,
+        true,
+    ])("returns generated image links when stream:%s", async (stream) => {
+        let modelCalls = 0;
+        const modelResponse = (
+            message: Record<string, unknown>,
+            finishReason: "stop" | "tool_calls",
+        ) => {
+            const usage = {
+                prompt_tokens: 2,
+                completion_tokens: 1,
+                total_tokens: 3,
+            };
+            if (!stream) {
+                return Response.json({
+                    choices: [
+                        {
+                            message,
+                            finish_reason: finishReason,
+                        },
+                    ],
+                    usage,
+                });
+            }
+            return new Response(
+                `${[
+                    {
                         choices: [
                             {
-                                message,
+                                index: 0,
+                                delta: message,
+                                finish_reason: null,
+                            },
+                        ],
+                    },
+                    {
+                        choices: [
+                            {
+                                index: 0,
+                                delta: {},
                                 finish_reason: finishReason,
                             },
                         ],
                         usage,
-                    });
-                }
-                return new Response(
-                    `${[
-                        {
-                            choices: [
-                                {
-                                    index: 0,
-                                    delta: message,
-                                    finish_reason: null,
-                                },
-                            ],
-                        },
-                        {
-                            choices: [
-                                {
-                                    index: 0,
-                                    delta: {},
-                                    finish_reason: finishReason,
-                                },
-                            ],
-                            usage,
-                        },
-                    ]
-                        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
-                        .join("")}data: [DONE]\n\n`,
-                    { headers: { "content-type": "text/event-stream" } },
-                );
-            };
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                    const request = new Request(input, init);
-                    if (request.url === POLLINATIONS_MCP_PROXY_URL) {
-                        if (request.method === "GET") {
-                            return new Response(null, { status: 405 });
-                        }
-                        if (request.method === "DELETE") {
-                            return new Response(null, { status: 200 });
-                        }
-                        const body = (await request.json()) as {
-                            id?: string;
-                            method: string;
-                            params?: {
-                                arguments?: Record<string, unknown>;
-                            };
+                    },
+                ]
+                    .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                    .join("")}data: [DONE]\n\n`,
+                { headers: { "content-type": "text/event-stream" } },
+            );
+        };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
+                    if (request.method === "GET") {
+                        return new Response(null, { status: 405 });
+                    }
+                    if (request.method === "DELETE") {
+                        return new Response(null, { status: 200 });
+                    }
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                        params?: {
+                            arguments?: Record<string, unknown>;
                         };
-                        if (body.method === "initialize") {
-                            return Response.json({
-                                jsonrpc: "2.0",
-                                id: body.id,
-                                result: {
-                                    protocolVersion: "2025-06-18",
-                                    capabilities: { tools: {} },
-                                    serverInfo: {
-                                        name: "pollinations",
-                                        version: "1.0.0",
-                                    },
-                                },
-                            });
-                        }
-                        if (body.method === "notifications/initialized") {
-                            return new Response(null, { status: 202 });
-                        }
-                        if (body.method === "tools/list") {
-                            return Response.json({
-                                jsonrpc: "2.0",
-                                id: body.id,
-                                result: {
-                                    tools: [
-                                        {
-                                            name: "generateImage",
-                                            inputSchema: { type: "object" },
-                                        },
-                                    ],
-                                },
-                            });
-                        }
-                        expect(body.params?.arguments).toMatchObject({
-                            prompt: "a pirate",
-                        });
+                    };
+                    if (body.method === "initialize") {
                         return Response.json({
                             jsonrpc: "2.0",
                             id: body.id,
                             result: {
-                                content: [
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: {
+                                    name: "pollinations",
+                                    version: "1.0.0",
+                                },
+                            },
+                        });
+                    }
+                    if (body.method === "notifications/initialized") {
+                        return new Response(null, { status: 202 });
+                    }
+                    if (body.method === "tools/list") {
+                        return Response.json({
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                tools: [
                                     {
-                                        type: "image",
-                                        data: "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
-                                        mimeType: "image/png",
-                                    },
-                                    {
-                                        type: "resource_link",
-                                        uri: "https://images.example/pirate.png",
-                                        name: "Generated image",
-                                    },
-                                    {
-                                        type: "text",
-                                        text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
+                                        name: "generateImage",
+                                        inputSchema: { type: "object" },
                                     },
                                 ],
                             },
                         });
                     }
+                    expect(body.params?.arguments).toMatchObject({
+                        prompt: "a pirate",
+                    });
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: {
+                            content: [
+                                {
+                                    type: "image",
+                                    data: "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
+                                    mimeType: "image/png",
+                                },
+                                {
+                                    type: "resource_link",
+                                    uri: "https://images.example/pirate.png",
+                                    name: "Generated image",
+                                },
+                                {
+                                    type: "text",
+                                    text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
+                                },
+                            ],
+                        },
+                    });
+                }
 
-                    modelCalls++;
-                    const body = (await request.json()) as {
-                        messages: { role: string; content: string }[];
-                    };
-                    if (modelCalls === 2) {
-                        const toolMessage = body.messages.find(
-                            (message) => message.role === "tool",
-                        );
-                        expect(toolMessage?.content).toContain(
-                            "https://images.example/pirate.png",
-                        );
-                        expect(JSON.stringify(toolMessage)).not.toContain(
-                            "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
-                        );
-                    }
-                    if (modelCalls === 1) {
-                        return modelResponse(
-                            {
-                                role: "assistant",
-                                content: "",
-                                tool_calls: [
-                                    {
-                                        index: 0,
-                                        id: "c1",
-                                        type: "function",
-                                        function: {
-                                            name: "mcp__pollinations__generateImage",
-                                            arguments: '{"prompt":"a pirate"}',
-                                        },
-                                    },
-                                ],
-                            },
-                            "tool_calls",
-                        );
-                    }
+                modelCalls++;
+                const body = (await request.json()) as {
+                    messages: { role: string; content: string }[];
+                };
+                if (modelCalls === 2) {
+                    const toolMessage = body.messages.find(
+                        (message) => message.role === "tool",
+                    );
+                    expect(toolMessage?.content).toContain(
+                        "https://images.example/pirate.png",
+                    );
+                    expect(JSON.stringify(toolMessage)).not.toContain(
+                        "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
+                    );
+                }
+                if (modelCalls === 1) {
                     return modelResponse(
                         {
                             role: "assistant",
-                            content: "Finished",
+                            content: "",
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "c1",
+                                    type: "function",
+                                    function: {
+                                        name: "mcp__pollinations__generateImage",
+                                        arguments: '{"prompt":"a pirate"}',
+                                    },
+                                },
+                            ],
                         },
-                        "stop",
+                        "tool_calls",
                     );
-                }),
-            );
-
-            const response = await runAgent(
-                {
-                    messages: [{ role: "user", content: "draw a pirate" }],
-                    stream,
-                },
-                {
-                    ...BASE_RUNTIME,
-                    config: {
-                        ...BASE_RUNTIME.config,
-                        mcpServers: ["pollinations"],
+                }
+                return modelResponse(
+                    {
+                        role: "assistant",
+                        content: "Finished",
                     },
-                },
-            );
-            expect(response.status).toBe(200);
+                    "stop",
+                );
+            }),
+        );
 
-            let content: string;
-            if (stream) {
-                content = responseStreamEvents(await response.text())
-                    .map((event) =>
-                        event.type === "response.output_text.delta"
-                            ? String(event.delta ?? "")
-                            : "",
-                    )
-                    .join("");
-            } else {
-                content = responseOutputText(await response.json());
-            }
-            expect(content).toContain(
-                '<details type="tool_calls" done="true" id="c1" name="generateImage" arguments="{&quot;prompt&quot;:&quot;a pirate&quot;}">',
-            );
-            expect(content).toContain("[image output omitted");
-            expect(content).not.toContain("U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==");
-            expect(content).toContain(
-                "![Generated image](<https://images.example/pirate.png>)",
-            );
-            expect(content.startsWith('\n\n<details type="tool_calls"')).toBe(
-                true,
-            );
-            expect(content.endsWith("Finished")).toBe(true);
-        },
-    );
+        const response = await runAgent(
+            {
+                messages: [{ role: "user", content: "draw a pirate" }],
+                stream,
+            },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: ["pollinations"],
+                },
+            },
+        );
+        expect(response.status).toBe(200);
+
+        let content: string;
+        if (stream) {
+            content = responseStreamEvents(await response.text())
+                .map((event) =>
+                    event.type === "response.output_text.delta"
+                        ? String(event.delta ?? "")
+                        : "",
+                )
+                .join("");
+        } else {
+            content = responseOutputText(await response.json());
+        }
+        expect(content).toContain(
+            '<details type="tool_calls" done="true" id="c1" name="generateImage" arguments="{&quot;prompt&quot;:&quot;a pirate&quot;}">',
+        );
+        expect(content).toContain("[image output omitted");
+        expect(content).not.toContain("U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==");
+        expect(content).toContain(
+            "![Generated image](<https://images.example/pirate.png>)",
+        );
+        expect(content.startsWith('\n\n<details type="tool_calls"')).toBe(true);
+        expect(content.endsWith("Finished")).toBe(true);
+    });
 
     it("streams SSE with usage on the final chunk when stream:true", async () => {
         const upstreamEvents = [
@@ -846,61 +844,61 @@ describe("prompt-agent runtime", () => {
         });
     });
 
-    it.each([false, true])(
-        "reports an empty base-model response when stream:%s",
-        async (stream) => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () => {
-                    if (!stream) {
-                        return Response.json({
-                            choices: [
-                                {
-                                    message: {
-                                        role: "assistant",
-                                        content: null,
-                                    },
-                                    finish_reason: "stop",
+    it.each([
+        false,
+        true,
+    ])("reports an empty base-model response when stream:%s", async (stream) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => {
+                if (!stream) {
+                    return Response.json({
+                        choices: [
+                            {
+                                message: {
+                                    role: "assistant",
+                                    content: null,
                                 },
-                            ],
-                            usage: {
-                                prompt_tokens: 1,
-                                completion_tokens: 0,
-                                total_tokens: 1,
+                                finish_reason: "stop",
                             },
-                        });
-                    }
-                    return new Response(
-                        'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":0,"total_tokens":1}}\n\n' +
-                            "data: [DONE]\n\n",
-                        {
-                            headers: {
-                                "content-type": "text/event-stream",
-                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 1,
+                            completion_tokens: 0,
+                            total_tokens: 1,
                         },
-                    );
-                }),
-            );
+                    });
+                }
+                return new Response(
+                    'data: {"choices":[{"index":0,"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":1,"completion_tokens":0,"total_tokens":1}}\n\n' +
+                        "data: [DONE]\n\n",
+                    {
+                        headers: {
+                            "content-type": "text/event-stream",
+                        },
+                    },
+                );
+            }),
+        );
 
-            const response = await runAgent({
-                messages: [{ role: "user", content: "hello" }],
-                stream,
-            });
+        const response = await runAgent({
+            messages: [{ role: "user", content: "hello" }],
+            stream,
+        });
 
-            if (stream) {
-                expect(response.status).toBe(200);
-                const body = await response.text();
-                expect(body).toContain("Agent produced no response");
-                expect(body).toContain('"type":"error"');
-                expect(body).toContain("data: [DONE]");
-                return;
-            }
-            expect(response.status).toBe(502);
-            await expect(response.json()).resolves.toMatchObject({
-                error: { message: "Agent produced no response" },
-            });
-        },
-    );
+        if (stream) {
+            expect(response.status).toBe(200);
+            const body = await response.text();
+            expect(body).toContain("Agent produced no response");
+            expect(body).toContain('"type":"error"');
+            expect(body).toContain("data: [DONE]");
+            return;
+        }
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toMatchObject({
+            error: { message: "Agent produced no response" },
+        });
+    });
 
     it("feeds a failing tool's error back to the model instead of 502", async () => {
         let modelCalls = 0;

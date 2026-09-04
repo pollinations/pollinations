@@ -34,7 +34,7 @@ from generate_daily import (
     generate_twitter_post,
 )
 
-FIRST_COMPANY_DAY = date(2025, 2, 28)
+FIRST_HISTORY_DAY = date(2025, 1, 1)
 DEFAULT_HISTORY_FILE = (
     Path(__file__).resolve().parents[3]
     / "pollinations.ai/public/data/community-pr-history.json"
@@ -57,8 +57,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--start-date",
         type=parse_iso_day,
-        default=FIRST_COMPANY_DAY,
-        help=f"first merged-PR day to inspect (default: {FIRST_COMPANY_DAY})",
+        default=FIRST_HISTORY_DAY,
+        help=f"first merged-PR day to inspect (default: {FIRST_HISTORY_DAY})",
     )
     parser.add_argument(
         "--end-date",
@@ -349,9 +349,9 @@ def backfill_day(
 
 def main() -> None:
     args = parse_args()
-    if args.start_date < FIRST_COMPANY_DAY:
+    if args.start_date < FIRST_HISTORY_DAY:
         raise SystemExit(
-            f"start date cannot precede the company formation date {FIRST_COMPANY_DAY}"
+            f"start date cannot precede the supported history {FIRST_HISTORY_DAY}"
         )
     if args.end_date < args.start_date:
         raise SystemExit("end date must be on or after start date")

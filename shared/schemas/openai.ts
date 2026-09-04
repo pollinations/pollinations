@@ -1,6 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
+import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
@@ -678,7 +679,12 @@ export const OpenAIModelSchema = z
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
-        owned_by: z.string().optional(),
+        owned_by: z.string(),
+        aliases: z.array(z.string()),
+        category: z.enum(MODEL_CATEGORIES),
+        community: z.boolean(),
+        title: z.string(),
+        description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),

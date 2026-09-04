@@ -3119,10 +3119,10 @@ fixtureTest(
         const textExcludeModels = (await textExclude.json()) as ListedModel[];
         const textOnlyModels = (await textOnly.json()) as ListedModel[];
         const openaiExcludeData = (await openaiExclude.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const openaiOnlyData = (await openaiOnly.json()) as {
-            data: { id: string }[];
+            data: { id: string; community: boolean }[];
         };
         const imageExcludeModels = (await imageExclude.json()) as ListedModel[];
         const imageOnlyModels = (await imageOnly.json()) as ListedModel[];
@@ -3147,9 +3147,15 @@ fixtureTest(
         expect(
             openaiExcludeData.data.find((m) => m.id === textModelId),
         ).toBeUndefined();
+        expect(openaiExcludeData.data.every((m) => m.community === false)).toBe(
+            true,
+        );
         expect(
             openaiOnlyData.data.find((m) => m.id === textModelId),
         ).toBeDefined();
+        expect(openaiOnlyData.data.every((m) => m.community === true)).toBe(
+            true,
+        );
 
         expect(imageExcludeModels.every((m) => !m.community)).toBe(true);
         expect(
@@ -6033,8 +6039,10 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     expect(baseModelInfo).toBeDefined();
     const agentCapabilities = [
-        ...(baseModelInfo?.capabilities ?? []),
-        "pollinations_models",
+        ...new Set([
+            ...(baseModelInfo?.capabilities ?? []),
+            "pollinations_models",
+        ]),
     ];
     expect(agentModelInfo).toMatchObject({
         community: true,
@@ -6043,7 +6051,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: baseModelInfo?.input_modalities,
-        output_modalities: baseModelInfo?.output_modalities,
+        output_modalities: ["text"],
     });
     const openaiBaseModel = openaiModels.data.find(
         (model) => model.id === promptAgent.baseModel,
@@ -6058,7 +6066,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         pricing: baseModelInfo?.pricing,
         capabilities: agentCapabilities,
         input_modalities: openaiBaseModel?.input_modalities,
-        output_modalities: openaiBaseModel?.output_modalities,
+        output_modalities: ["text"],
         tools: openaiBaseModel?.tools,
         context_length: openaiBaseModel?.context_length,
     });

@@ -115,9 +115,12 @@ export class OpenWebUIContainer extends Container {
             },
         ]),
 
-        // Never download local embedding/whisper models onto the ephemeral disk.
-        RAG_EMBEDDING_ENGINE: "openai",
-        RAG_OPENAI_API_BASE_URL: GEN_URL,
+        // RAG embeds with the bundled SentenceTransformers model, not gen.
+        // The RAG, image and audio subsystems all authenticate with a single
+        // static key rather than the per-user OAuth token the chat connection
+        // uses, so pointing them at gen would bill every user's documents to
+        // one wallet. Local embedding keeps that off a shared budget; the cost
+        // is a ~90 MB model download onto the ephemeral disk after a restart.
         ENABLE_VERSION_UPDATE_CHECK: "false",
     };
 }

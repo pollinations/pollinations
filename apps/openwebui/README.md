@@ -33,6 +33,12 @@ Container disk is wiped on every sleep. All state lives in Postgres (Neon):
 files are still on local disk and do not survive a restart; switch to R2 via
 `STORAGE_PROVIDER=s3` when that matters.
 
+RAG embeds locally with the bundled `sentence-transformers/all-MiniLM-L6-v2`
+(`RAG_EMBEDDING_ENGINE` unset). RAG, image and audio all authenticate with a
+single static key rather than the per-user OAuth token the chat connection uses,
+so pointing them at gen would bill every user's documents to one wallet. The
+cost is a ~90 MB model download onto the ephemeral disk after a restart.
+
 Secrets (per environment in `secrets/secrets.vars.json`):
 
 - `WEBUI_SECRET_KEY`: session signing key. Changing it logs everyone out.
@@ -44,7 +50,9 @@ Every setting in `DEFAULT_CONFIG` (`OPENAI_API_CONFIGS`, `TOOL_SERVER_CONNECTION
 ...) is written to the Postgres `config` table only when the key is *missing*:
 `Config.seed_defaults` inserts new keys and `Config.get` reads the stored row
 first. Editing one of those env vars on a database that has already booted does
-nothing. Change the stored row instead:
+nothing. Change the stored row instead, or use the admin API where one exists
+(`POST /api/v1/retrieval/embedding/update` both writes the config and rebuilds
+the in-memory embedding function, which a bare `UPDATE` does not):
 
 ```bash
 ssh community-monitor "sudo docker exec openwebui-postgres \

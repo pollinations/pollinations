@@ -1,0 +1,34 @@
+{
+  "pr_number": 14434,
+  "title": "chore: upgrade Better Auth to 1.6.30",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14434",
+  "merged_at": "2026-09-04T13:00:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Upgrades Better Auth to 1.6.30 and adopts its official API-key package.\n- Adds the required API-key config ID while preserving existing user_id data.\n- Keeps verified GitHub identity fields server-owned under the stricter 1.6 rules.\n- Upgrades Drizzle to 0.45.2 for Better Auth compatibility and its identifier-escaping security fix.\n- Keeps the larger Better Auth 1.7 account-identity migration separate.\n\nTests:\n- Enter: 58 files, 1,116 tests passed\n- Gen: 120 files, 1,600 passed, 6 skipped\n- Enter and Gen typechecks\n- Enter and Gen staging builds\n- Clean npm ci lockfile install",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Keys get official pollen",
+    "blurb": "The auth garden got a careful transplant: Better Auth now uses its official API-key package, while existing user links and verified GitHub identities stay safely rooted.",
+    "summary": "Upgraded Enter to Better Auth 1.6.30 and Drizzle 0.45.2, adopting Better Auth's official API-key package and required config ID while preserving existing user_id data and server-owned verified GitHub identity fields.",
+    "impact": "API keys, account linking, and GitHub verification now run on Better Auth's stricter 1.6-compatible path, with the separate 1.7 account-identity migration intentionally kept out of this release.",
+    "keywords": [
+      "authentication",
+      "api-keys",
+      "better-auth",
+      "drizzle",
+      "github-identity",
+      "account-linking"
+    ],
+    "visual_concept": "A cozy authentication garden transplant: Polli carefully installs an official brass API-key plaque onto a flowering key cabinet, while a CRT monitor robot verifies a GitHub-shaped identity badge behind a small server-owned fence. Fresh roots labeled user_id remain undisturbed beneath the soil, representing preserved account data during the dependency upgrade.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, carefully planting a shiny official API key in a lime green (#ecf874) code garden while a chunky CRT monitor robot checks a small GitHub identity badge; sturdy roots beneath the flower pot are labeled \"user_id.\" Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel flowers and server vines, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14434.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny gardener tool belt, carefully planting a shiny official API key in a lime green (#ecf874) code garden while a chunky CRT monitor robot checks a small GitHub identity badge; sturdy roots beneath the flower pot are labeled \"user_id.\" Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with pixel flowers and server vines, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-04T15:27:50.955138+00:00"
+}

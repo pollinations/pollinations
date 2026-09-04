@@ -12,6 +12,7 @@ from .pull_requests import tool_github_pr
 
 logger = logging.getLogger(__name__)
 
+
 async def tool_github_issue(
     action: str,
     issue_number: int = None,
@@ -564,6 +565,7 @@ async def tool_github_overview(
     Much faster than making separate calls!
     """
     return await github_graphql.get_repo_overview(issues_limit=min(issues_limit, 50), include_projects=include_projects)
+
 
 # =============================================================================
 # SUBSCRIPTION TOOL HANDLERS

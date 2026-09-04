@@ -42,11 +42,12 @@ from common import (
     commit_files_to_branch,
     GISTS_BRANCH,
     IMAGE_SIZE,
+    NEWS_REL_DIR,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
 
-WEEKLY_REL_DIR = "operations/social/news/weekly"
+WEEKLY_REL_DIR = f"{NEWS_REL_DIR}/weekly"
 
 def _weekly_image_context() -> str:
     """Load weekly image identity from weekly.md (everything after '## Weekly Image Identity')."""

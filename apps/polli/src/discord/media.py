@@ -110,10 +110,7 @@ LATEX_TO_EMOJI = {
 }
 
 BLOCK_LATEX_PATTERN = re.compile(
-    r"```(?:latex|tex)[^\`]*?```|"
-    r"\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}|"
-    r"\$\$[\s\S]*?\$\$|"
-    r"\\\[[\s\S]*?\\\]",
+    r"```(?:latex|tex)[^\`]*?```|" r"\\begin\{[^}]+\}[\s\S]*?\\end\{[^}]+\}|" r"\$\$[\s\S]*?\$\$|" r"\\\[[\s\S]*?\\\]",
     flags=re.DOTALL,
 )
 

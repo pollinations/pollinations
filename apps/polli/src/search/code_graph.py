@@ -16,6 +16,7 @@ import json
 import logging
 
 from ..core.config import config
+from . import local_repo
 from .local_repo import REPO_DIR, RepoError
 
 logger = logging.getLogger(__name__)
@@ -58,23 +59,64 @@ async def _run_codegraph(*args: str) -> dict:
 def _format_nodes(nodes: list[dict], limit: int) -> list[dict]:
     return [
         {
-            "symbol": n.get("name"),
-            "kind": n.get("kind"),
-            "file": n.get("filePath"),
-            "line": n.get("startLine"),
+            "id": node.get("id"),
+            "symbol": node.get("name"),
+            "qualified_name": node.get("qualifiedName"),
+            "signature": node.get("signature"),
+            "kind": node.get("kind"),
+            "language": node.get("language"),
+            "file": node.get("filePath"),
+            "start_line": node.get("startLine"),
+            "end_line": node.get("endLine"),
         }
-        for n in nodes[:limit]
+        for node in nodes[:limit]
     ]
+
+
+async def graph_status() -> dict:
+    data = await _run_codegraph("status", "--json")
+    repo = await local_repo.repo_status()
+    changes = data.get("pendingChanges") or {}
+    pending = sum(int(changes.get(key, 0)) for key in ("added", "modified", "removed"))
+    return {
+        "available": bool(data.get("initialized")),
+        "fresh": pending == 0 and not data.get("worktreeMismatch"),
+        "revision": repo["commit"],
+        "indexed_at": data.get("lastIndexed"),
+        "version": data.get("version"),
+        "files": data.get("fileCount"),
+        "nodes": data.get("nodeCount"),
+        "edges": data.get("edgeCount"),
+        "pending_changes": changes,
+    }
+
+
+async def symbols(query: str, *, limit: int = 20) -> dict:
+    limit = max(1, min(limit, MAX_RESULTS))
+    data = await _run_codegraph("query", query, "--json", "--limit", str(limit))
+    status = await graph_status()
+    results = _format_nodes([item.get("node", item) for item in data], limit)
+    return {
+        "query": query,
+        "relation": "symbols",
+        "revision": status["revision"],
+        "fresh": status["fresh"],
+        "count": len(results),
+        "results": results,
+    }
 
 
 async def callers(symbol: str, *, limit: int = 20) -> dict:
     """Which functions call `symbol`."""
     limit = max(1, min(limit, MAX_RESULTS))
     data = await _run_codegraph("callers", symbol, "--json", "--limit", str(limit))
+    status = await graph_status()
     found = _format_nodes(data.get("callers", []), limit)
     return {
         "symbol": symbol,
         "relation": "callers",
+        "revision": status["revision"],
+        "fresh": status["fresh"],
         "count": len(found),
         "results": found,
         "message": f"{len(found)} caller(s) of {symbol}" if found else f"No callers found for {symbol}",
@@ -85,10 +127,13 @@ async def callees(symbol: str, *, limit: int = 20) -> dict:
     """Which functions `symbol` calls."""
     limit = max(1, min(limit, MAX_RESULTS))
     data = await _run_codegraph("callees", symbol, "--json", "--limit", str(limit))
+    status = await graph_status()
     found = _format_nodes(data.get("callees", []), limit)
     return {
         "symbol": symbol,
         "relation": "callees",
+        "revision": status["revision"],
+        "fresh": status["fresh"],
         "count": len(found),
         "results": found,
         "message": f"{symbol} calls {len(found)} symbol(s)" if found else f"No callees found for {symbol}",
@@ -99,10 +144,13 @@ async def impact(symbol: str, *, depth: int = 2) -> dict:
     """Everything transitively affected by changing `symbol`."""
     depth = max(1, min(depth, MAX_IMPACT_DEPTH))
     data = await _run_codegraph("impact", symbol, "--json", "--depth", str(depth))
+    status = await graph_status()
     affected = _format_nodes(data.get("affected", []), MAX_RESULTS)
     return {
         "symbol": symbol,
         "relation": "impact",
+        "revision": status["revision"],
+        "fresh": status["fresh"],
         "depth": data.get("depth", depth),
         "count": len(affected),
         "results": affected,

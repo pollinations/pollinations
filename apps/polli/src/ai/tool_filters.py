@@ -167,6 +167,7 @@ def filter_admin_actions_from_tools(tools: list, is_admin: bool, is_collaborator
 
 # Actions blocked for API users (superset of ADMIN_ACTIONS — also blocks PR comment/review)
 API_RESTRICTED_ACTIONS = {
+    "discord_search": {"members", "roles"},
     "github_issue": ADMIN_ACTIONS["github_issue"]
     | {
         "create",

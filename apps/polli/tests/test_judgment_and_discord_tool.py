@@ -61,6 +61,9 @@ class DiscordToolContractTests(unittest.TestCase):
 
         self.assertIn("discord_search", by_name)
         self.assertNotIn("render_visual", by_name)
+        discord_actions = by_name["discord_search"]["function"]["parameters"]["properties"]["action"]["enum"]
+        self.assertNotIn("members", discord_actions)
+        self.assertNotIn("roles", discord_actions)
         issue_actions = by_name["github_issue"]["function"]["parameters"]["properties"]["action"]["enum"]
         self.assertNotIn("subscribe", issue_actions)
         self.assertNotIn("unsubscribe", issue_actions)

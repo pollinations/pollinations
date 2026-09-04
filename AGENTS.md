@@ -2,15 +2,15 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `apps/APPS.md`.
+Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `operations/app-management/app.json`.
 
-Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the row to `apps/APPS.md`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
+Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `apps/APPS.md`, run `node .github/scripts/app-update-greenhouse.js`.
+Manual edits: edit `operations/app-management/app.json`, then run `node operations/app-management/app.js validate`.
 
-APPS.md columns: `Emoji | Name | Web_URL | Description (~80 chars) | Language (ISO code, no flags) | Category | Platform | GitHub (@user) | GitHub_ID | Repo | Stars (⭐N) | Discord | Other | Submitted_Date (issue created) | Issue_URL (#N) | Approved_Date (PR merged)`.
+Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
 Platforms (auto-detected; comma-separated for multi): `web` (default w/ URL), `android`, `ios` (App Store or routinehub.co), `windows`, `macos`, `desktop` (cross-platform), `cli`, `discord`, `telegram`, `whatsapp`, `library` (npm/PyPI/SDK), `browser-ext`, `roblox`, `wordpress`, `api` (default w/o URL).
 
@@ -24,13 +24,15 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 
 - `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
 - `gen.pollinations.ai/` — Edge router + text generation Worker
-- `image.pollinations.ai/` — Image GPU/backend assets; public gateway code lives in `gen.pollinations.ai/`
+- `operations/infrastructure/gpu/` — Image GPU backends, fleet inventory, and deployment tooling
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
 - `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
-- `apps/` — Community apps + `APPS.md`
-- `social/` — Discord/Reddit/GitHub automation
+- `apps/` — Applications maintained in this repository
+- `operations/app-management/` — Community app catalog and automation
+- `operations/` — Internal dashboards, monitoring, economics, and infrastructure
+- `operations/social/` — Discord/Reddit/GitHub automation
 
 ## API Gateway
 
@@ -40,9 +42,12 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 - Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
-  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the economics ingest
-  connector prompt (`apps/operation/economics/ingest/agent.system.txt`).
+  (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
+  collection skill (`.claude/skills/economics-provider-collection/`).
 - Services: Text (Portkey, multi-provider), Image (gen Worker dispatch to providers/GPU backends), Video (Wan/Veo/LTX), Audio (ElevenLabs, TTM)
+- Successful billable text responses must contain valid provider usage. Reject
+  non-stream responses without it; streamed protocols must contain terminal
+  usage and fail the stream otherwise.
 - Wallet: Pollen is earned by completing Quests; balances live in the `tier_balance` (shown as Quest Pollen) and `pack_balance` (Paid) buckets. The legacy `tier` D1 column and `tier_balance` wire name are kept for compatibility; see `shared/db/better-auth.ts`.
 - Referral links must use the canonical landing page with a short `?ref=` value; record analytics behind the page instead of exposing a tracking API as the destination URL.
 
@@ -67,6 +72,14 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Models: `/image/models`, `/v1/models`
 - See `./APIDOCS.md`, `.claude/skills/enter-services/SKILL.md`
 
+## Durable Media Requests
+
+- Media generation uses the durable generation coordinator so callers can
+  disconnect and rejoin long-running generations. Add a request-wide deadline
+  only when a concrete provider or product contract requires one.
+- Prove identical-request disconnect/rejoin, one upstream execution, completed
+  R2 cache retrieval, one wallet debit, and one billed Tinybird event.
+
 ## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
 
 **Follow YAGNI religiously:**
@@ -75,6 +88,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
 - No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
+- Registry-declared fallback pairs are maintainer-owned; do not add runtime price, compatibility, target availability/privacy, or parameter-normalization guards unless a concrete declared pair requires one.
 
 ## Secret Mutation Safety
 
@@ -97,7 +111,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 **CRITICAL — production Cloudflare deployments must always run through GitHub Actions:**
 
-- Use the service's production deployment workflow, such as `Deploy / gen.pollinations.ai`; use `workflow_dispatch` when path filters do not trigger it.
+- Use the production deployment workflow `Deploy / Cloudflare production`; use `workflow_dispatch` (and its `service` input to target one worker) when path filters do not trigger it.
 - Dispatch production workflows only from the `production` branch. Select a secret-synchronization input only after the Secret Mutation Safety approval gate.
 - Never run `wrangler deploy --env production`, a production deployment npm script, or a direct production Worker upload from a local machine or agent session.
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
@@ -124,6 +138,22 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Forward materialized views cannot use `UNION`; split sources into separate materialized pipes writing to the same datasource.
 - Timeouts: use `uniq()` not `uniqExact()`; avoid CTE+JOIN; single-pass queries; for large time ranges use `start_date` parameter week-by-week
 - Full procedure: `.claude/skills/tinybird-deploy/SKILL.md`
+
+## Economics Environment Safety
+
+- `operations/economics/web` local development must read Tinybird staging
+  (`pollinations_enter_staging`) through
+  `operations/economics/secrets/web.dev.json`.
+- Production Economics deployments read
+  `operations/economics/secrets/web.json`. Never decrypt that production file
+  directly into the local `.dev.vars` file.
+- After switching, merging, or rebasing an Economics branch, rerun
+  `npm run decrypt-vars` before trusting the local dashboard. The generated
+  `.dev.vars` must combine the shared password with the staging-only read
+  token via `scripts/write-dev-vars.mjs`.
+- A local dashboard showing production-only or stale provider rows is an
+  environment-routing failure; fix the local reader before changing ledger
+  data or publishing another correction.
 
 ## Code Style & Workflow
 
@@ -154,13 +184,13 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
 - Don't request PR reviews or comment `polli` unless the user explicitly asks.
 - Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
+- `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
 
 ## Testing
 
 Commands:
 - enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
 - gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
-- image.pollinations.ai: `cd image.pollinations.ai && npm run test` (vitest)
 
 Run individually — full suite is slow:
 ```bash
@@ -176,7 +206,7 @@ npx vitest run test/file.test.ts
 
 ## Architecture & Common Tasks
 
-- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `image.pollinations.ai/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `operations/infrastructure/gpu/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
 - Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update the model registry and OpenAPI source schemas/routes for new models.
@@ -190,37 +220,38 @@ npx vitest run test/file.test.ts
 ## Workflow Orchestration
 
 - Plan mode for any non-trivial task (3+ steps or architectural). If things go sideways, STOP and re-plan. Write specs upfront.
-- Use subagents liberally for research, exploration, parallel analysis — one task per subagent.
+- Delegate to a subagent only for large, genuinely independent tracks of work (e.g. a wide multi-file investigation). Don't delegate what you can finish in a handful of tool calls, and don't use subagents to verify your own work.
+- For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.
 - After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
-- Never mark complete without proving it works — run tests, check logs, diff vs main when relevant.
-- Non-trivial changes: ask "is there a more elegant way?" If fix feels hacky, redo elegantly. Skip for obvious fixes.
 - Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
-
-## Task Management
-
-1. Plan first (todos or plan mode). 2. Verify plan before implementing. 3. Track progress. 4. Summarize changes. 5. Capture lessons in AGENTS.md.
 
 ## Compact Instructions
 
 Preserve during compaction: modified files + line numbers, all code/diffs/impl details, test output + errors + command results, full plan + progress + pending, user preferences/corrections this session, architectural decisions + rationale.
 
-## Core Principles
-
-- Simplicity first — minimal code impact.
-- No laziness — find root causes, no temp fixes, senior standards.
-- Minimal impact — touch only what's necessary.
-
 ## Git Workflow
 
+- Creating a branch or worktree needs no approval — branch off the current
+  `origin/main` rather than piling onto an unrelated branch.
+- Integrate follow-up work directly on the active branch and its PR. Opening an
+  additional PR the user did not ask for still needs a check-in first.
+- Feature branches target `main`. Promote `main` to `production` only through a separate promotion PR; never target `production` directly with feature or fix work.
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
 - Run biome check before committing.
-- If PR already merged: open a new branch/PR for follow-ups.
+- If the active PR is already merged, open a follow-up branch only when the user
+  requests another PR.
 
 ## Communication Style
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
+
+### Pollinations identity
+
+- Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
+- Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
+- Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
 
 - PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
 - Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
@@ -242,3 +273,4 @@ Fixes #issue
 
 - Use "Fixes #issue" or "Addresses #issue" in PRs.
 - Email: `{username} <{user_id}+{username}@users.noreply.github.com>` (user_id from issue API).
+- For publisher-allowlist PRs prompted by an access-request issue, add the requester as a `Co-authored-by` contributor using their numeric GitHub ID.

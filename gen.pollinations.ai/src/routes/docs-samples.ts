@@ -20,6 +20,20 @@ export const CODE_SAMPLES: Record<
   }'`,
         },
     ],
+    "post /account/my-models/endpoint-agents": [
+        {
+            label: "Create endpoint agent",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/account/my-models/endpoint-agents \
+  -H "Authorization: Bearer YOUR_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-agent",
+    "title": "My Agent",
+    "baseUrl": "https://agent.example.com/v1"
+  }'`,
+        },
+    ],
     "post /v1/chat/completions": [
         {
             label: "cURL",
@@ -522,18 +536,30 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
+                aliases: [],
+                category: "text",
+                community: false,
+                title: "OpenAI",
             },
             {
                 id: "claude",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
+                aliases: [],
+                category: "text",
+                community: false,
+                title: "Claude",
             },
             {
                 id: "gemini",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
+                aliases: [],
+                category: "text",
+                community: false,
+                title: "Gemini",
             },
         ],
     },

@@ -1,5 +1,5 @@
 /**
- * Generic fal.ai queue API client for 3D generation models.
+ * Generic fal.ai queue API client for generation models.
  *
  * Contract confirmed against fal.ai docs (no precedent client existed in this
  * repo before this file): submit to POST https://queue.fal.run/{endpoint},
@@ -48,6 +48,7 @@ export interface FalModelMesh {
 export interface RunFalJobOptions {
     endpoint: string;
     input: Record<string, unknown>;
+    pollMaxAttempts?: number;
 }
 
 // Handle returned by submitFalJob — enough to check status and fetch the
@@ -72,8 +73,8 @@ function requireFalApiKey(): string {
 
 export async function submitFalJob(
     opts: RunFalJobOptions,
+    apiKey = requireFalApiKey(),
 ): Promise<FalJobHandle> {
-    const apiKey = requireFalApiKey();
     const submission = await falFetch<FalQueueSubmitResponse>(apiKey, {
         method: "POST",
         url: `${QUEUE_BASE}/${opts.endpoint}`,
@@ -88,8 +89,10 @@ export async function submitFalJob(
 
 // Cheap status-only check (no result fetch) — lets callers claim a job
 // before paying the cost of downloading its (potentially large) result.
-export async function isFalJobReady(handle: FalJobHandle): Promise<boolean> {
-    const apiKey = requireFalApiKey();
+export async function isFalJobReady(
+    handle: FalJobHandle,
+    apiKey = requireFalApiKey(),
+): Promise<boolean> {
     const statusResponse = await falFetch<FalQueueStatusResponse>(apiKey, {
         method: "GET",
         url: handle.statusUrl,
@@ -99,38 +102,43 @@ export async function isFalJobReady(handle: FalJobHandle): Promise<boolean> {
 
 export async function fetchFalJobResult(
     handle: FalJobHandle,
+    apiKey = requireFalApiKey(),
 ): Promise<Record<string, unknown>> {
-    const apiKey = requireFalApiKey();
     return await falFetch<Record<string, unknown>>(apiKey, {
         method: "GET",
         url: handle.responseUrl,
     });
 }
 
-export async function checkFalJob(handle: FalJobHandle): Promise<FalJobState> {
-    if (!(await isFalJobReady(handle))) {
+export async function checkFalJob(
+    handle: FalJobHandle,
+    apiKey = requireFalApiKey(),
+): Promise<FalJobState> {
+    if (!(await isFalJobReady(handle, apiKey))) {
         return { status: "pending", handle };
     }
-    const result = await fetchFalJobResult(handle);
+    const result = await fetchFalJobResult(handle, apiKey);
     return { status: "completed", result };
 }
 
 export async function runFalJob(
     opts: RunFalJobOptions,
+    apiKey = requireFalApiKey(),
 ): Promise<Record<string, unknown>> {
-    const handle = await submitFalJob(opts);
+    const handle = await submitFalJob(opts, apiKey);
 
     let pollAttempts = 0;
+    const pollMaxAttempts = opts.pollMaxAttempts ?? POLL_MAX_ATTEMPTS;
     let state: FalJobState = { status: "pending", handle };
     while (state.status === "pending") {
-        if (pollAttempts >= POLL_MAX_ATTEMPTS) {
+        if (pollAttempts >= pollMaxAttempts) {
             throw new FalError(
-                `fal.ai request ${handle.requestId} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s`,
+                `fal.ai request ${handle.requestId} timed out after ${(pollMaxAttempts * POLL_INTERVAL_MS) / 1000}s`,
                 504,
             );
         }
         await sleep(POLL_INTERVAL_MS);
-        state = await checkFalJob(handle);
+        state = await checkFalJob(handle, apiKey);
         pollAttempts++;
     }
     return state.result;

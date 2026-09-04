@@ -57,7 +57,7 @@ describe("Gemini reasoning_effort model wiring", () => {
 
     it.each([
         "gemini",
-        "gemini-search-large",
+        "google/gemini-3.8-flash",
     ])("maps reasoning_effort=none to low for mandatory-reasoning %s", async (model) => {
         const transform = findModelByName(model)?.transform;
         if (!transform) throw new Error(`${model} transform missing`);

@@ -1,146 +1,63 @@
 # pollinations.ai MCP Server
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server for pollinations.ai. Lets MCP-capable hosts (Claude Desktop, Cursor, Windsurf, …) generate images, videos, text, and audio, plus check the authenticated key's Pollen balance and usage.
+A [Model Context Protocol](https://modelcontextprotocol.io) server that exposes
+Pollinations models and API capabilities as agent tools.
 
-All calls go through `https://gen.pollinations.ai`. Models, voices, and pricing are read live from the registry — no hardcoded enums.
+## Connect
 
-## Quick Start
-
-```bash
-# Run directly with npx (no installation required)
-npx @pollinations/mcp
-```
-
-Or install globally:
-
-```bash
-npm install -g @pollinations/mcp
-pollinations-mcp
-```
-
-## Authentication
-
-Get your API key at [enter.pollinations.ai](https://enter.pollinations.ai/keys), or use [BYOP](../../BRING_YOUR_OWN_POLLEN.md) to let users bring their own pollen (supports web redirects and [device flow](../../BRING_YOUR_OWN_POLLEN.md#clis--headless-apps-device-flow) for CLIs).
-
-**Key types:**
-
-- `pk_` (publishable) — client-safe, rate-limited (1 pollen per IP per hour)
-- `sk_` (secret) — server-side only, no rate limits, can spend Pollen
-
-Set your key via environment variable or the `setApiKey` tool:
-
-```bash
-export POLLINATIONS_API_KEY=sk_your_key_here
-npx @pollinations/mcp
-```
-
-## Available Tools
-
-### Image & Video Generation
-
-| Tool                 | Description                                                |
-| -------------------- | ---------------------------------------------------------- |
-| `generateImageUrl`   | Generate a shareable image URL from a text prompt          |
-| `generateImage`      | Generate an image and return base64 data                   |
-| `generateImageBatch` | Generate multiple images in parallel (best with `sk_` keys)|
-| `generateVideo`      | Generate a video and return base64 data                    |
-| `generateVideoUrl`   | Generate a shareable video URL from a text prompt          |
-| `describeImage`      | Vision analysis of an image URL                            |
-| `analyzeVideo`       | Analyze YouTube videos or video URLs                       |
-| `listImageModels`    | List available image & video models (live)                 |
-
-Common image parameters: `prompt`, `model`, `width`, `height`, `seed`, `quality`, `image` (for image-to-image), `transparent`. Common video parameters: `model`, `duration`, `aspectRatio`, `audio`. Call `listImageModels` for the current model set and per-model capabilities.
-
-### Text Generation
-
-| Tool             | Description                                       |
-| ---------------- | ------------------------------------------------- |
-| `generateText`   | Simple text generation from a prompt              |
-| `chatCompletion` | OpenAI-compatible chat completions + tool calling |
-| `webSearch`      | Web-grounded answers (perplexity, gemini-search)  |
-| `listTextModels` | List available text models (live)                 |
-| `getPricing`     | Per-model pricing (text / image / audio)          |
-
-Call `listTextModels` for the current model set, aliases, and capabilities (reasoning, tools, audio output, etc.).
-
-### Audio
-
-| Tool               | Description                              |
-| ------------------ | ---------------------------------------- |
-| `respondAudio`     | AI responds to a prompt with speech      |
-| `sayText`          | Text-to-speech (verbatim)                |
-| `transcribeAudio`  | Transcribe audio (gemini-large)          |
-| `listAudioVoices`  | List available voices (live)             |
-
-Call `listAudioVoices` for the current voice list. Output formats: mp3, wav, flac, opus, pcm16.
-
-### Auth Tools
-
-| Tool          | Description                          |
-| ------------- | ------------------------------------ |
-| `setApiKey`   | Set the API key for this session     |
-| `getKeyInfo`  | Check stored key type/prefix (local) |
-| `clearApiKey` | Remove the stored key                |
-
-### Account
-
-| Tool         | Description                                                                  |
-| ------------ | ---------------------------------------------------------------------------- |
-| `getBalance` | Remaining Pollen for the authenticated key (requires `account:usage`)        |
-| `getUsage`   | Per-request history, or daily aggregate when `daily: true` (`account:usage`) |
-
-## Claude Desktop Integration
-
-Add to your Claude Desktop config:
-
-```json
-{
-  "mcpServers": {
-    "pollinations": {
-      "command": "npx",
-      "args": ["@pollinations/mcp"],
-      "env": {
-        "POLLINATIONS_API_KEY": "sk_your_key_here"
-      }
-    }
-  }
-}
-```
-
-## Examples
+Connect a Streamable HTTP client to:
 
 ```text
-Generate an image of a sunset over mountains using the flux model.
-
-Create a 6-second video of waves crashing on a beach using veo.
-
-Have a chatCompletion conversation about the weather, with the ability to call a weather API.
-
-Say "Hello, welcome to pollinations.ai!" using the nova voice.
+https://gen.pollinations.ai/mcp/pollinations
 ```
 
-## Testing
+Send a Pollinations API key with every request:
+
+```http
+Authorization: Bearer YOUR_KEY
+```
+
+Get a key from [enter.pollinations.ai](https://enter.pollinations.ai/keys).
+Calls use that key's Pollen wallet, permissions, and budget.
+
+For all Pollinations-hosted MCP servers, see the
+[MCP Servers documentation](https://gen.pollinations.ai/docs#tag/mcp-servers).
+
+## Tools
+
+| Tool | Purpose | API route |
+| --- | --- | --- |
+| `generateText` | Text, search, multimodal input, and tool calling | `/v1/chat/completions` |
+| `generateImage` | Generate or edit images | `/v1/images/generations` |
+| `generateVideo` | Generate video | `/video/{prompt}` |
+| `generateAudio` | Generate speech, music, or sound | `/audio/{text}` |
+| `transcribeAudio` | Transcribe a public HTTPS audio URL | `/v1/audio/transcriptions` |
+| `generate3D` | Generate a GLB model | `/3d/{prompt}` |
+| `createEmbeddings` | Create text or multimodal embeddings | `/v1/embeddings` |
+| `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
+| `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
+| `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
+
+Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
+an MCP resource link, so binary data does not consume model context. Anyone
+with the link can access it, and it expires after 30 days.
+
+Models, voices, capabilities, and pricing come from the live registry. Use
+`listModels` before selecting a model or voice.
+
+## Development
+
+Requires Node.js 20 or newer. Run the tests with:
 
 ```bash
-POLLINATIONS_API_KEY=sk_… npm run test
+npm test
 ```
 
-Spawns the server over stdio, lists tools, and exercises a small live slice (auth, text, image URL, balance). Skips authenticated calls when the env var is unset.
+Set `POLLINATIONS_API_KEY` to add live model, authentication, generation, and
+balance checks.
 
-## System Requirements
+The hosted Cloudflare Worker lives in [`apps/mcp/`](../../apps/mcp/) and is
+routed through Gen.
 
-- Node.js 18.0.0 or higher
-
-## API Reference
-
-All requests go through `https://gen.pollinations.ai`. Full API docs: [gen.pollinations.ai/docs](https://gen.pollinations.ai/docs).
-
-## License
-
+Issues: [GitHub](https://github.com/pollinations/pollinations/issues) · License:
 MIT
-
-## Links
-
-- [pollinations.ai](https://pollinations.ai)
-- [API Documentation](https://gen.pollinations.ai/docs)
-- [GitHub Issues](https://github.com/pollinations/pollinations/issues)

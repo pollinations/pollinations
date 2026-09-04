@@ -210,9 +210,6 @@ The enter.pollinations.ai worker has structured logging enabled. You can query l
 ```bash
 # From wrangler.toml
 grep account_id enter.pollinations.ai/wrangler.toml
-
-# Or from existing .env
-grep CLOUDFLARE_ACCOUNT_ID image.pollinations.ai/.env
 ```
 
 ### 2. Create API Token with Workers Observability Permission
@@ -223,7 +220,7 @@ grep CLOUDFLARE_ACCOUNT_ID image.pollinations.ai/.env
 3. Click **Create Custom Token**
 4. Configure:
    - **Token name**: `Workers Observability Read`
-   - **Permissions**: 
+   - **Permissions**:
      - Account → Workers Scripts → Read
      - Account → Workers Observability → Edit (required for query API)
    - **Account Resources**: Include → Your Account
@@ -417,7 +414,7 @@ For aggregated model health stats, query Tinybird directly.
 > ```bash
 > TB=$(sops -d enter.pollinations.ai/secrets/prod.vars.json | jq -r '.TINYBIRD_READ_TOKEN')
 > ```
-> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). The public read token in `apps/model-monitor/src/hooks/useModelMonitor.js` also works for pipes but is rotated periodically — pull it live, never hardcode (the one previously pinned in this skill went stale).
+> This single token works for **both** pipes (`/v0/pipes/...`) and raw SQL (`/v0/sql`) against the prod workspace (`pollinations_enter`). The public Model Monitor reads cached health data through `gen.pollinations.ai`; it does not expose a Tinybird token.
 
 ```bash
 H="https://api.europe-west2.gcp.tinybird.co"
@@ -477,14 +474,14 @@ curl -s "$H/v0/pipes/recent_server_errors.json?token=$TB&minutes=240&limit=500" 
 5. **Test Model Directly** - Verify if model is actually broken:
    ```bash
    TOKEN=$(grep ENTER_API_TOKEN_REMOTE enter.pollinations.ai/.testingtokens | cut -d= -f2)
-   
+
    # Test text model
    curl -s 'https://gen.pollinations.ai/v1/chat/completions' \
      -H "Authorization: Bearer $TOKEN" \
      -H 'Content-Type: application/json' \
      -d '{"model": "MODEL_NAME", "messages": [{"role": "user", "content": "Test"}]}' \
      -w "\nHTTP: %{http_code}\n"
-   
+
    # Test image model
    curl -s 'https://gen.pollinations.ai/image/test?model=MODEL_NAME&width=256&height=256' \
      -H "Authorization: Bearer $TOKEN" \
@@ -514,7 +511,6 @@ Tinybird provides pre-aggregated model health stats and raw event data.
 ### Token Locations
 
 - **Prod read token (use this)**: `enter.pollinations.ai/secrets/prod.vars.json` → `TINYBIRD_READ_TOKEN` (via SOPS). Works for both pipes and raw `/v0/sql` against prod (`pollinations_enter`).
-- **Public read token** (pipes only, rotates): `apps/model-monitor/src/hooks/useModelMonitor.js`.
 - **`.tinyb`** = **staging** workspace (`pollinations_enter_staging`) — empty of prod traffic. Only use for staging-specific debugging.
 
 ### Basic Queries
@@ -534,40 +530,42 @@ The prod `TINYBIRD_READ_TOKEN` above can query the raw `generation_event_v2` dat
 ```bash
 # Find users with frequent 403 errors (last 24 hours)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT user_id, user_github_username, user_tier, count() as error_403_count
-FROM generation_event_v2
-WHERE response_status = 403
-  AND start_time > now() - interval 24 hour
-  AND user_id != ''
-  AND user_id != 'undefined'
-GROUP BY user_id, user_github_username, user_tier
+  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, argMax(ge.user_tier, ge.start_time) AS user_tier, count() as error_403_count
+FROM generation_event_v2 ge
+LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
+WHERE ge.response_status = 403
+  AND ge.start_time > now() - interval 24 hour
+  AND ge.user_id != ''
+  AND ge.user_id != 'undefined'
+GROUP BY ge.user_id
 ORDER BY error_403_count DESC
 LIMIT 20"
 
 # Find users with 500 errors (actual backend issues)
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT user_github_username, model_requested, error_message, count() as error_count 
-FROM generation_event_v2
-WHERE response_status >= 500 
-  AND start_time > now() - interval 24 hour 
-GROUP BY user_github_username, model_requested, error_message 
-ORDER BY error_count DESC 
+  --data-urlencode "q=SELECT ge.user_id, any(users.github_username) AS github_username, ge.model_requested, ge.error_message, count() as error_count
+FROM generation_event_v2 ge
+LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users ON ge.user_id = users.id
+WHERE ge.response_status >= 500
+  AND ge.start_time > now() - interval 24 hour
+GROUP BY ge.user_id, ge.model_requested, ge.error_message
+ORDER BY error_count DESC
 LIMIT 20"
 
 # Check specific user's recent errors
 curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TB" \
-  --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message 
+  --data-urlencode "q=SELECT start_time, response_status, model_requested, error_message
 FROM generation_event_v2
-WHERE user_github_username = 'USERNAME_HERE' 
-  AND start_time > now() - interval 24 hour 
-ORDER BY start_time DESC 
+WHERE user_id = 'USER_ID_HERE'
+  AND start_time > now() - interval 24 hour
+ORDER BY start_time DESC
 LIMIT 50"
 ```
 
 ### Datasource Schema
 
 The `generation_event_v2` datasource is defined in `enter.pollinations.ai/observability/datasources/generation_event_v2.datasource` and includes:
-- `user_id`, `user_github_username`, `user_tier`
+- `user_id`, `user_tier` (join `d1_user.id` for the current GitHub display name)
 - `response_status`, `error_message`, `error_response_code`
 - `model_requested`, `model_used`
 - `total_price`, `total_cost`
@@ -596,8 +594,8 @@ Helper scripts for common debugging tasks. Run from repo root.
 ## Check Specific User's Errors
 
 ```bash
-# See a user's recent errors
-.claude/skills/model-debugging/scripts/check-user-errors.sh superbrainai 24
+# See a user's recent errors by internal user ID
+.claude/skills/model-debugging/scripts/check-user-errors.sh USER_ID_HERE 24
 ```
 
 ---

@@ -1,4 +1,4 @@
-import type { Modalities, ModelCapability, ModelPrice } from "./types.ts";
+import type { ModelCapability, ModelPrice } from "./types.ts";
 
 const BRAND_LOGOS: Record<string, string> = {
     Alibaba: "alibaba",
@@ -8,13 +8,16 @@ const BRAND_LOGOS: Record<string, string> = {
     "Black Forest Labs": "black-forest-labs",
     ByteDance: "bytedance",
     Cohere: "cohere",
-    Community: "community",
     Deemos: "deemos",
     DeepSeek: "deepseek",
     ElevenLabs: "elevenlabs",
+    "Fish Audio": "fish-audio",
     Google: "google",
+    Hexgrad: "hexgrad",
     Ideogram: "ideogram",
     Inception: "inception",
+    Krea: "krea",
+    Lykon: "lykon",
     Meituan: "meituan",
     Meta: "meta",
     Microsoft: "microsoft",
@@ -32,101 +35,72 @@ const BRAND_LOGOS: Record<string, string> = {
     Sesame: "sesame",
     "Stability AI": "stability",
     StepFun: "stepfun",
+    "Thinking Machines": "thinking-machines",
     Xiaomi: "xiaomi",
     "Z.ai": "zai",
     xAI: "xai",
 };
 
-const MODEL_LOGOS: Record<string, string> = {};
-
-const getSourceDescription = (model: ModelPrice): string | undefined => {
-    if (!model.description) return model.displayName;
-    return model.displayName
-        ? `${model.displayName} - ${model.description}`
-        : model.description;
-};
-
-export const getModalities = (model: ModelPrice): Modalities => {
-    return {
-        input: model.inputModalities || ["text"],
-        output: model.outputModalities || ["text"],
-    };
-};
-
-export const getModelDescription = (model: ModelPrice): string | undefined => {
-    return getSourceDescription(model);
-};
+const getInputModalities = (model: ModelPrice): string[] =>
+    model.inputModalities || ["text"];
 
 export const getModelDisplayName = (model: ModelPrice): string | undefined => {
     if (model.displayName) return model.displayName;
-    const description = getSourceDescription(model);
+    const description = model.description;
     if (!description) return undefined;
     return description.split(" - ")[0];
 };
 
 export const getModelDescriptionWithoutName = (
     model: ModelPrice,
-): string | undefined => {
-    if (model.description) return model.description;
-    const description = getSourceDescription(model);
-    if (!description) return undefined;
-    if (model.displayName && description.trim() === model.displayName.trim()) {
-        return undefined;
-    }
-    const prefix = model.displayName ? `${model.displayName} - ` : "";
-    if (prefix && description.startsWith(prefix)) {
-        return description.slice(prefix.length).trim() || undefined;
-    }
-    const parts = description.split(" - ");
-    if (parts.length < 2) return undefined;
-    return parts.slice(1).join(" - ").trim() || undefined;
-};
+): string | undefined => model.description || undefined;
 
 export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
-    const logoName =
-        MODEL_LOGOS[model.name] ??
-        (model.brand ? BRAND_LOGOS[model.brand] : undefined);
+    if (model.community) return undefined;
+    const logoName = model.brand ? BRAND_LOGOS[model.brand] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 
 export type InputModality = "text" | "image" | "video" | "audio";
 
 export const getModelInputModalities = (model: ModelPrice): InputModality[] => {
-    const modalities = getModalities(model);
+    const modalities = getInputModalities(model);
     const keys: InputModality[] = [];
 
-    if (modalities.input.includes("text")) keys.push("text");
-    if (modalities.input.includes("image")) keys.push("image");
-    if (modalities.input.includes("video")) keys.push("video");
-    if (modalities.input.includes("audio")) keys.push("audio");
+    if (modalities.includes("text")) keys.push("text");
+    if (modalities.includes("image")) keys.push("image");
+    if (modalities.includes("video")) keys.push("video");
+    if (modalities.includes("audio")) keys.push("audio");
 
     return keys;
 };
 
 export const getModelModalityLabel = (model: ModelPrice): string => {
-    const modalities = getModalities(model);
-    const labels: string[] = [];
-
-    if (modalities.input.includes("text")) labels.push("text");
-    if (modalities.input.includes("image")) labels.push("image");
-    if (modalities.input.includes("video")) labels.push("video");
-    if (modalities.input.includes("audio")) labels.push("audio");
-
-    return labels.length > 0 ? `Input: ${labels.join(", ")}` : "Input";
+    const modalities = getModelInputModalities(model);
+    return modalities.length > 0 ? `Input: ${modalities.join(", ")}` : "Input";
 };
 
-export type DisplayCapability = "reasoning" | "web_search" | "code_execution";
+export type DisplayCapability =
+    | "agent"
+    | "tool_calling"
+    | "reasoning"
+    | "web_search"
+    | "code_execution"
+    | "pollinations_models";
 
 export const getModelCapabilities = (
     model: ModelPrice,
 ): DisplayCapability[] => {
     const keys: DisplayCapability[] = [];
 
+    if (model.agent) keys.push("agent");
+    if (hasToolCalling(model)) keys.push("tool_calling");
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
+    if (hasPollinationsTools(model)) keys.push("pollinations_models");
 
     return keys;
 };
@@ -134,9 +108,12 @@ export const getModelCapabilities = (
 export const getModelCapabilityLabel = (model: ModelPrice): string => {
     const labels: string[] = [];
 
+    if (model.agent) labels.push("Agent");
+    if (hasToolCalling(model)) labels.push("Tool calling");
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
+    if (hasPollinationsTools(model)) labels.push("Pollinations models");
 
     return labels.join(", ");
 };
@@ -146,29 +123,20 @@ const hasCapability = (
     capability: ModelCapability,
 ): boolean => model.capabilities.includes(capability);
 
-export const hasReasoning = (model: ModelPrice): boolean =>
+const hasToolCalling = (model: ModelPrice): boolean =>
+    hasCapability(model, "tool_calling");
+
+const hasReasoning = (model: ModelPrice): boolean =>
     hasCapability(model, "reasoning");
 
-export const hasSearch = (model: ModelPrice): boolean =>
+const hasSearch = (model: ModelPrice): boolean =>
     hasCapability(model, "web_search");
 
-export const hasCodeExecution = (model: ModelPrice): boolean =>
+const hasCodeExecution = (model: ModelPrice): boolean =>
     hasCapability(model, "code_execution");
 
-export const hasVision = (model: ModelPrice): boolean => {
-    const modalities = getModalities(model);
-    return modalities.input.includes("image");
-};
-
-export const hasAudioInput = (model: ModelPrice): boolean => {
-    const modalities = getModalities(model);
-    return modalities.input.includes("audio");
-};
-
-export const hasAudioOutput = (model: ModelPrice): boolean => {
-    const modalities = getModalities(model);
-    return modalities.output.includes("audio");
-};
+export const hasPollinationsTools = (model: ModelPrice): boolean =>
+    hasCapability(model, "pollinations_models");
 
 /**
  * Check if a model is "new" (added within the last 7 days).

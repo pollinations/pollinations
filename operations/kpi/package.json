@@ -1,0 +1,31 @@
+{
+    "name": "kpi-dashboard",
+    "private": true,
+    "version": "1.0.0",
+    "type": "module",
+    "scripts": {
+        "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .dev.vars",
+        "predev": "npm run build --prefix ../../packages/ui",
+        "dev": "vite",
+        "test": "vitest run",
+        "prebuild": "npm run build --prefix ../../packages/ui",
+        "build": "vite build",
+        "deploy": "npm run build && npx wrangler deploy",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "@pollinations/ui": "file:../../packages/ui",
+        "hono": "^4.0.0",
+        "react": "^19.2.0",
+        "react-dom": "^19.2.0"
+    },
+    "devDependencies": {
+        "@cloudflare/vite-plugin": "^1.45.0",
+        "@cloudflare/workers-types": "^5.20260715.1",
+        "@tailwindcss/vite": "^4.0.0",
+        "@vitejs/plugin-react": "^5.1.1",
+        "tailwindcss": "^4.0.0",
+        "vite": "^7.0.0",
+        "wrangler": "^4.111.0"
+    }
+}

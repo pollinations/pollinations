@@ -2,6 +2,18 @@
 
 All notable changes to `@pollinations/sdk` will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+- `PolliProvider` now uses OAuth authorization-code + PKCE, keeping delegated
+  API tokens out of callback URLs without changing its public API.
+
+## [5.1.0-alpha.6] - 2026-08-23
+
+### Changed
+- Simple text generation and streaming now delegate to the canonical chat
+  request and SSE implementations without changing their public API.
+
 ## [5.1.0-alpha.5] - 2026-07-14
 
 ### Added

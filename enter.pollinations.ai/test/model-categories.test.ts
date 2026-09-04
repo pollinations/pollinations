@@ -18,6 +18,12 @@ const catalog = [
         category: "image" as const,
         community: true,
     },
+    {
+        name: "community-agent",
+        category: "text" as const,
+        community: true,
+        agent: true,
+    },
 ];
 
 describe("model categories", () => {
@@ -56,6 +62,12 @@ describe("model categories", () => {
                 modality: "images",
                 models: ["community-image"],
             },
+            {
+                category: "community-agent",
+                label: "Community Agents",
+                modality: "text",
+                models: ["community-agent"],
+            },
         ]);
     });
 
@@ -69,6 +81,9 @@ describe("model categories", () => {
             computeCategoryModalities(["community-image"], categories),
         ).toEqual(["images"]);
         expect(
+            computeCategoryModalities(["community-agent"], categories),
+        ).toEqual(["text"]);
+        expect(
             computeCategoryModalities(
                 ["official-text", "community-text", "community-image"],
                 categories,
@@ -80,18 +95,86 @@ describe("model categories", () => {
         ]);
     });
 
-    it("accepts both community category URLs", () => {
-        expect(validateModelSearch({ category: "community-text" })).toEqual({
-            category: "community-text",
+    it("accepts categories independently of the model query", () => {
+        expect(validateModelSearch({})).toEqual({
+            category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: undefined,
-            dir: undefined,
         });
-        expect(validateModelSearch({ category: "community-image" })).toEqual({
-            category: "community-image",
+        for (const category of [
+            "image",
+            "video",
+            "audio",
+            "embedding",
+            "agent",
+            "mcp",
+        ] as const) {
+            expect(validateModelSearch({ category }).category).toBe(category);
+        }
+        expect(validateModelSearch({ category: "image" })).toEqual({
+            category: "image",
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: undefined,
-            dir: undefined,
         });
+        expect(
+            validateModelSearch({
+                category: "agent",
+                q: "source:community",
+                agentQ: "capability:tool-calling",
+                mcpQ: "github",
+            }),
+        ).toEqual({
+            category: "agent",
+            q: "source:community",
+            agentQ: "capability:tool-calling",
+            mcpQ: "github",
+            sort: undefined,
+        });
+    });
+
+    it("accepts model sort options and ignores obsolete values", () => {
+        expect(validateModelSearch({ sort: "brand" })).toEqual({
+            category: undefined,
+            q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
+            sort: "brand",
+        });
+        expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
+            "title-desc",
+        );
+        expect(validateModelSearch({ sort: "oldest" }).sort).toBeUndefined();
+        expect(validateModelSearch({ sort: "brand-desc" }).sort).toBe(
+            "brand-desc",
+        );
+        expect(validateModelSearch({ sort: "recommended" })).toEqual({
+            category: undefined,
+            q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
+            sort: undefined,
+        });
+        expect(validateModelSearch({ sort: "newest" })).toEqual({
+            category: undefined,
+            q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
+            sort: "newest",
+        });
+    });
+
+    it("trims model search queries and drops whitespace-only values", () => {
+        expect(validateModelSearch({ q: "  flux  " }).q).toBe("flux");
+        expect(validateModelSearch({ q: "   " }).q).toBeUndefined();
+        expect(validateModelSearch({ q: " source:community " }).q).toBe(
+            "source:community",
+        );
+        expect(
+            validateModelSearch({ agentQ: " capability:agent ", mcpQ: "  " }),
+        ).toMatchObject({ agentQ: "capability:agent", mcpQ: undefined });
     });
 });

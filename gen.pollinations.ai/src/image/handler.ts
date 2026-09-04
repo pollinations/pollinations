@@ -1,9 +1,19 @@
 import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
+import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
+import {
+    type FallbackCandidate,
+    fallbackCandidates,
+    formatFallbackTarget,
+    isRetryableFallbackError,
+    withModelFallback,
+} from "../fallback.ts";
+import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
 import {
     getRegisteredServers,
     isValidType,
@@ -12,7 +22,10 @@ import {
     setServerRegistryBinding,
     VALID_TYPES,
 } from "./availableServers.ts";
-import { callCommunityImageEndpoint } from "./communityEndpoint.ts";
+import {
+    callCommunityImageEndpoint,
+    callCommunityVideoEndpoint,
+} from "./communityEndpoint.ts";
 import {
     type AuthResult,
     createAndReturnImageCached,
@@ -24,9 +37,13 @@ import {
     type VideoGenerationResult,
 } from "./createAndReturnVideos.ts";
 import { getImageEnv, syncImageEnv } from "./env.ts";
-import { HttpError } from "./httpError.ts";
 import { setKleinVpcBinding } from "./models/fluxKleinModel.ts";
-import { type ImageParams, ImageParamsSchema } from "./params.ts";
+import { clampNovaCanvasDimensions } from "./models/novaCanvasModel.ts";
+import {
+    CommunityReferenceParamsSchema,
+    type ImageParams,
+    ImageParamsSchema,
+} from "./params.ts";
 import { sanitizeString, sleep } from "./util.ts";
 import {
     CONTENT_POLICY_ERROR_CODE,
@@ -34,12 +51,21 @@ import {
     contentPolicyMessage,
     firstContentPolicyMessage,
 } from "./utils/contentModeration.ts";
-import { bufferToUint8Array, detectMimeType } from "./utils/imageDownload.ts";
+import {
+    bufferToUint8Array,
+    detectMimeType,
+    downloadUserImage,
+    readImageDimensions,
+} from "./utils/imageDownload.ts";
 import { setImagesBinding } from "./utils/imageTransform.ts";
 import { buildTrackingHeaders } from "./utils/trackingHeaders.ts";
 
 type ImageContext = Context<Env>;
 type RuntimeImageParams = Omit<ImageParams, "model"> & { model: string };
+
+const EDIT_IMAGE_PROBE_TIMEOUT_MS = 10_000;
+const EDIT_DIMENSION_STEP = 16;
+const MIN_EDIT_DIMENSION = 256;
 
 const IMAGE_ENV_KEYS = [
     "AWS_ACCESS_KEY_ID",
@@ -55,12 +81,15 @@ const IMAGE_ENV_KEYS = [
     "AZURE_MYCELI_PROD_IMG_MINI_WESTUS3_API_KEY",
     "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     "DASHSCOPE_API_KEY",
+    "DEEPINFRA_API_KEY",
     "GOOGLE_CLIENT_EMAIL",
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
+    "FAL_KEY",
     "KLEIN_URL",
     "NOVA_REEL_S3_BUCKET",
+    "OPENAI_API_KEY",
     "OPENROUTER_API_KEY",
     "PLN_GPU_TOKEN",
     "REPLICATE_API_TOKEN",
@@ -79,7 +108,6 @@ function createAuthResult(c: ImageContext): AuthResult {
     return {
         tokenAuth: Boolean(c.var.auth?.apiKey),
         userId: c.var.auth?.user?.id || null,
-        username: c.var.auth?.user?.githubUsername || null,
     };
 }
 
@@ -108,16 +136,31 @@ function parseImageParams(
 ): RuntimeImageParams {
     const queryParams = Object.fromEntries(new URL(c.req.url).searchParams);
     const resolvedModel = c.var.model.resolved;
-    const mergedParams = {
+    const mergedParams: Record<string, unknown> = {
         ...queryParams,
         ...body,
         model: c.var.model.communityEndpoint
             ? DEFAULT_IMAGE_MODEL
             : resolvedModel,
     };
-    delete (mergedParams as Record<string, unknown>).prompt;
-    delete (mergedParams as Record<string, unknown>).key;
+    delete mergedParams.prompt;
+    delete mergedParams.key;
 
+    const communityReferences =
+        c.var.model.communityEndpoint?.modality === "video"
+            ? CommunityReferenceParamsSchema.safeParse(mergedParams)
+            : null;
+    if (communityReferences && !communityReferences.success) {
+        throw new UpstreamError(400, {
+            message: `Invalid parameters: ${communityReferences.error.issues[0]?.message || "validation failed"}`,
+            cause: communityReferences.error.issues,
+        });
+    }
+    if (communityReferences) {
+        delete mergedParams.reference_images;
+        delete mergedParams.reference_videos;
+        delete mergedParams.reference_audios;
+    }
     const parseResult = ImageParamsSchema.safeParse(mergedParams);
     if (!parseResult.success) {
         throw new UpstreamError(400, {
@@ -127,6 +170,7 @@ function parseImageParams(
     }
     return {
         ...parseResult.data,
+        ...(communityReferences?.data ?? {}),
         model: resolvedModel,
     };
 }
@@ -221,6 +265,8 @@ function throwImageError(error: unknown): never {
         const { status, message } = classifyImageHttpError(error);
         throw new UpstreamError(status, {
             message,
+            // Propagate only — the code is decided at the throw site.
+            errorCode: error.errorCode,
             requestUrl: safeUpstreamUrl(error.upstreamUrl),
             upstreamStatus: error.status,
             responseBody: imageResponseBody(error),
@@ -391,6 +437,74 @@ async function generateImageResult(
     return result;
 }
 
+/** Tries the requested model and its fallbacks through one modality-neutral loop. */
+async function generateMediaWithFallback(
+    c: ImageContext,
+    prompt: string,
+    safeParams: RuntimeImageParams,
+): Promise<{
+    result: ImageGenerationResult | VideoGenerationResult;
+    params: RuntimeImageParams;
+    servedIndex: number;
+}> {
+    const shouldFallback = (error: unknown, candidate: FallbackCandidate) => {
+        if (
+            candidate.definition?.provider === "azure" &&
+            candidate.definition.brand === "OpenAI"
+        ) {
+            return (
+                error instanceof Error &&
+                (error as Error & { status?: number }).status === 429
+            );
+        }
+        return isRetryableFallbackError(error);
+    };
+    const { result, index } = await withModelFallback(
+        fallbackCandidates(c.var.model),
+        async (attempt) => {
+            const params = { ...safeParams, model: attempt.id };
+            if (attempt.communityEndpoint) {
+                const isVideo = attempt.communityEndpoint.modality === "video";
+                const generated = isVideo
+                    ? await callCommunityVideoEndpoint(
+                          attempt.communityEndpoint,
+                          prompt,
+                          params,
+                          c.env.BETTER_AUTH_SECRET,
+                      )
+                    : await callCommunityImageEndpoint(
+                          attempt.communityEndpoint,
+                          prompt,
+                          params,
+                          c.env.BETTER_AUTH_SECRET,
+                      );
+                assertNonEmptyMedia(
+                    generated.buffer,
+                    isVideo
+                        ? "Community video endpoint"
+                        : "Community image endpoint",
+                );
+                return { result: generated, params };
+            }
+            if (isVideoModel(params.model)) {
+                const generated = await generateVideoResult(c, prompt, params);
+                assertNonEmptyMedia(generated.buffer, "Video provider");
+                return { result: generated, params };
+            }
+            const generated = await generateImageResult(c, prompt, params);
+            assertNonEmptyMedia(generated.buffer, "Image provider");
+            return { result: generated, params };
+        },
+        c.var.track?.attempts,
+        (attempt) => enforceModelRateLimit(c, attempt),
+        shouldFallback,
+    );
+    return {
+        ...result,
+        servedIndex: index,
+    };
+}
+
 async function generateVideoResult(
     c: ImageContext,
     originalPrompt: string,
@@ -403,6 +517,45 @@ async function generateVideoResult(
     );
 }
 
+/**
+ * Edit requests that omit `size` should preserve the source image's aspect
+ * ratio instead of silently defaulting to the model's square default (e.g.
+ * 1024x1024). Downloads the first reference image, reads its actual
+ * dimensions, and overrides the params. Explicit size requests and video
+ * models are untouched; any failure falls back to the model default.
+ */
+export async function resolveEditDimensionsForImage(
+    safeParams: RuntimeImageParams,
+): Promise<RuntimeImageParams> {
+    if (safeParams.dimensionsExplicit) return safeParams;
+    const imageUrls = safeParams.image;
+    if (!imageUrls?.length) return safeParams;
+    try {
+        const { buffer, mimeType } = await downloadUserImage(
+            imageUrls[0],
+            AbortSignal.timeout(EDIT_IMAGE_PROBE_TIMEOUT_MS),
+        );
+        const source = readImageDimensions(buffer, mimeType);
+        if (!source) return safeParams;
+
+        const targetLongEdge = Math.max(safeParams.width, safeParams.height);
+        const scale = targetLongEdge / Math.max(source.width, source.height);
+        const normalizeSide = (side: number) =>
+            Math.max(
+                MIN_EDIT_DIMENSION,
+                Math.round((side * scale) / EDIT_DIMENSION_STEP) *
+                    EDIT_DIMENSION_STEP,
+            );
+        return {
+            ...safeParams,
+            width: normalizeSide(source.width),
+            height: normalizeSide(source.height),
+        };
+    } catch {
+        // Keep the model default if the source image cannot be read.
+        return safeParams;
+    }
+}
 export async function generateImageOrVideoResponse(
     c: ImageContext,
     prompt: string,
@@ -410,55 +563,49 @@ export async function generateImageOrVideoResponse(
 ): Promise<Response> {
     syncImageEnvironment(c.env);
     const originalPrompt = decodePrompt(prompt || "random_prompt");
-    const safeParams = parseImageParams(c, body);
+    const parsedParams = parseImageParams(c, body);
+    const definition = c.var.model.definition;
+    const safeParams =
+        definition.category === "image" &&
+        definition.inputModalities?.includes("image")
+            ? await resolveEditDimensionsForImage(parsedParams)
+            : parsedParams;
+    const pricingDimensions =
+        c.var.model.resolved === "nova-canvas"
+            ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
+            : safeParams;
+    c.var.track.setPricingInput({
+        resolution: safeParams.resolution,
+        quality: safeParams.quality,
+        hasImage: (safeParams.image?.length ?? 0) > 0,
+        hasReferenceVideo: (safeParams.reference_videos?.length ?? 0) > 0,
+        maxImageDimension: Math.max(
+            pricingDimensions.width,
+            pricingDimensions.height,
+        ),
+        megapixels: (safeParams.width * safeParams.height) / 1_000_000,
+    });
 
     try {
-        const communityEndpoint = c.var.model.communityEndpoint;
-        if (communityEndpoint) {
-            const result = await callCommunityImageEndpoint(
-                communityEndpoint,
-                originalPrompt,
-                safeParams,
-                c.env.BETTER_AUTH_SECRET,
+        const { result, params, servedIndex } = await generateMediaWithFallback(
+            c,
+            originalPrompt,
+            safeParams,
+        );
+        const headers = mediaHeaders(
+            originalPrompt,
+            params,
+            result,
+            result.mimeType || detectMimeType(result.buffer),
+        );
+        if (servedIndex > 0) {
+            // Same shape text emits, so tracking has one fallback marker.
+            headers.set(
+                FALLBACK_TARGET_HEADER,
+                formatFallbackTarget(servedIndex),
             );
-            assertNonEmptyMedia(result.buffer, "Community image endpoint");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    detectMimeType(result.buffer),
-                ),
-            });
         }
-
-        if (isVideoModel(safeParams.model)) {
-            const result = await generateVideoResult(
-                c,
-                originalPrompt,
-                safeParams,
-            );
-            assertNonEmptyMedia(result.buffer, "Video provider");
-            return new Response(bufferToUint8Array(result.buffer), {
-                headers: mediaHeaders(
-                    originalPrompt,
-                    safeParams,
-                    result,
-                    result.mimeType || "video/mp4",
-                ),
-            });
-        }
-
-        const result = await generateImageResult(c, originalPrompt, safeParams);
-        assertNonEmptyMedia(result.buffer, "Image provider");
-        return new Response(bufferToUint8Array(result.buffer), {
-            headers: mediaHeaders(
-                originalPrompt,
-                safeParams,
-                result,
-                result.mimeType || detectMimeType(result.buffer),
-            ),
-        });
+        return new Response(bufferToUint8Array(result.buffer), { headers });
     } catch (error) {
         throwImageError(error);
     }

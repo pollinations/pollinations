@@ -17,7 +17,7 @@ describe("transcribeWithAssemblyAi", () => {
         vi.clearAllMocks();
     });
 
-    it("submits Universal-3 Pro with Universal-2 fallback and bills the model used", async () => {
+    it("submits only Universal-3.5 Pro and bills the canonical model", async () => {
         const fetchMock = vi
             .fn()
             .mockResolvedValueOnce(
@@ -33,7 +33,7 @@ describe("transcribeWithAssemblyAi", () => {
                     text: "hello world",
                     audio_duration: 12,
                     language_code: "en_us",
-                    speech_model_used: "universal-2",
+                    speech_model_used: "universal-3-5-pro",
                     words: [
                         { text: "hello", start: 0, end: 500 },
                         { text: "world", start: 600, end: 1200 },
@@ -44,7 +44,7 @@ describe("transcribeWithAssemblyAi", () => {
 
         const response = await transcribeWithAssemblyAi({
             file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
-            model: "universal-3-pro",
+            model: "universal-3.5-pro",
             apiKey: "test-key",
             responseFormat: "verbose_json",
             language: "en",
@@ -53,7 +53,7 @@ describe("transcribeWithAssemblyAi", () => {
             log,
         });
 
-        expect(response.headers.get("x-model-used")).toBe("universal-2");
+        expect(response.headers.get("x-model-used")).toBe("universal-3.5-pro");
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("12");
         await expect(response.json()).resolves.toMatchObject({
             text: "hello world",
@@ -70,7 +70,7 @@ describe("transcribeWithAssemblyAi", () => {
         );
         expect(submitBody).toMatchObject({
             audio_url: "https://cdn.assemblyai.com/upload/test-audio",
-            speech_models: ["universal-3-pro", "universal-2"],
+            speech_models: ["universal-3-5-pro"],
             language_code: "en_us",
             prompt: "Names include Pollinations.",
             temperature: 0,
@@ -92,7 +92,7 @@ describe("transcribeWithAssemblyAi", () => {
                     status: "completed",
                     text: "hello world",
                     audio_duration: 3,
-                    speech_model_used: "universal-3-pro",
+                    speech_model_used: "universal-3-5-pro",
                 }),
             )
             .mockResolvedValueOnce(new Response("WEBVTT\n\n00:00.000 -->"));
@@ -100,13 +100,13 @@ describe("transcribeWithAssemblyAi", () => {
 
         const response = await transcribeWithAssemblyAi({
             file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
-            model: "universal-3-pro",
+            model: "universal-3.5-pro",
             apiKey: "test-key",
             responseFormat: "vtt",
             log,
         });
 
-        expect(response.headers.get("x-model-used")).toBe("universal-3-pro");
+        expect(response.headers.get("x-model-used")).toBe("universal-3.5-pro");
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("3");
         await expect(response.text()).resolves.toContain("WEBVTT");
         expect(fetchMock.mock.calls[3][0]).toBe(
@@ -130,7 +130,7 @@ describe("transcribeWithAssemblyAi", () => {
                     text: "hello there general kenobi",
                     audio_duration: 8,
                     language_code: "en_us",
-                    speech_model_used: "universal-3-pro",
+                    speech_model_used: "universal-3-5-pro",
                     utterances: [
                         {
                             speaker: "A",
@@ -151,7 +151,7 @@ describe("transcribeWithAssemblyAi", () => {
 
         const response = await transcribeWithAssemblyAi({
             file: new File(["audio"], "audio.mp3", { type: "audio/mpeg" }),
-            model: "universal-3-pro",
+            model: "universal-3.5-pro",
             apiKey: "test-key",
             responseFormat: "diarized_json",
             speakersExpected: 2,
@@ -233,6 +233,7 @@ describe("transcribeWithAssemblyAi", () => {
         const clientErrorMessages = [
             "language_detection cannot be performed on files with no spoken audio.",
             "Transcoding failed. File does not appear to contain audio. File type is text/plain (ASCII text).",
+            "Transcoding failed. File type text/plain (ASCII text) may be unsupported or an unexpected error occurred.",
         ];
 
         for (const message of clientErrorMessages) {

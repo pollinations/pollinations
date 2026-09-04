@@ -6,7 +6,11 @@ account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
 services = [
-    { binding = "ENTER", service = "pollinations-enter" }
+    { binding = "ENTER", service = "pollinations-enter" },
+    { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
+    { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
+    { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
+    { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" }
 ]
 
 [images]
@@ -34,14 +38,31 @@ bucket_name = "pollinations-text-enter"
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[durable_objects.bindings]]
+name = "GENERATION_COORDINATOR"
+class_name = "GenerationCoordinator"
+
 [[migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
+
+[[migrations]]
+tag = "v2"
+new_sqlite_classes = ["GenerationCoordinator"]
+
+[[migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
 
 [vars]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
+AGENT_RUNTIME_BASE_URL = "https://dev.enter.myceli.ai/api/agent-runtime/v1"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
@@ -76,6 +97,22 @@ custom_domain = true
 binding = "ENTER"
 service = "pollinations-enter-production"
 
+[[env.production.services]]
+binding = "POLLINATIONS_MCP"
+service = "pollinations-mcp"
+
+[[env.production.services]]
+binding = "FFMPEG_MCP"
+service = "pollinations-ffmpeg-mcp"
+
+[[env.production.services]]
+binding = "EXA_MCP"
+service = "pollinations-exa-mcp"
+
+[[env.production.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
+
 [[env.production.vpc_networks]]
 binding = "KLEIN_VPC"
 tunnel_id = "c340d8d9-c1f3-4a13-8115-38b59faac3d5"
@@ -109,12 +146,29 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.production.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.production.durable_objects.bindings]]
+name = "GENERATION_COORDINATOR"
+class_name = "GenerationCoordinator"
+
 [[env.production.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
 
+[[env.production.migrations]]
+tag = "v2"
+new_sqlite_classes = ["GenerationCoordinator"]
+
+[[env.production.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
+
 [env.production.vars]
 ENVIRONMENT = "production"
+AGENT_RUNTIME_BASE_URL = "https://enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -141,6 +195,22 @@ custom_domain = true
 [[env.staging.services]]
 binding = "ENTER"
 service = "pollinations-enter-staging"
+
+[[env.staging.services]]
+binding = "POLLINATIONS_MCP"
+service = "pollinations-mcp"
+
+[[env.staging.services]]
+binding = "FFMPEG_MCP"
+service = "pollinations-ffmpeg-mcp-staging"
+
+[[env.staging.services]]
+binding = "EXA_MCP"
+service = "pollinations-exa-mcp-staging"
+
+[[env.staging.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp-staging"
 
 [[env.staging.d1_databases]]
 binding = "DB"
@@ -169,12 +239,29 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.staging.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.staging.durable_objects.bindings]]
+name = "GENERATION_COORDINATOR"
+class_name = "GenerationCoordinator"
+
 [[env.staging.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
 
+[[env.staging.migrations]]
+tag = "v2"
+new_sqlite_classes = ["GenerationCoordinator"]
+
+[[env.staging.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
+
 [env.staging.vars]
 ENVIRONMENT = "staging"
+AGENT_RUNTIME_BASE_URL = "https://staging.enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -193,6 +280,22 @@ binding = "IMAGES"
 [[env.test.services]]
 binding = "ENTER"
 service = "pollinations-enter"
+
+[[env.test.services]]
+binding = "POLLINATIONS_MCP"
+service = "pollinations-mcp"
+
+[[env.test.services]]
+binding = "FFMPEG_MCP"
+service = "pollinations-ffmpeg-mcp"
+
+[[env.test.services]]
+binding = "EXA_MCP"
+service = "pollinations-exa-mcp"
+
+[[env.test.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"
@@ -221,12 +324,29 @@ simple = { limit = 10000, period = 10 }
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
 
+[[env.test.durable_objects.bindings]]
+name = "COMMUNITY_MODEL_RATE_LIMITER"
+class_name = "CommunityModelRateLimiter"
+
+[[env.test.durable_objects.bindings]]
+name = "GENERATION_COORDINATOR"
+class_name = "GenerationCoordinator"
+
 [[env.test.migrations]]
 tag = "v1"
 new_classes = ["PollenRateLimiter"]
 
+[[env.test.migrations]]
+tag = "v2"
+new_sqlite_classes = ["GenerationCoordinator"]
+
+[[env.test.migrations]]
+tag = "v3"
+new_classes = ["CommunityModelRateLimiter"]
+
 [env.test.vars]
 ENVIRONMENT = "test"
+AGENT_RUNTIME_BASE_URL = "https://enter-runtime.test/api/agent-runtime/v1"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"

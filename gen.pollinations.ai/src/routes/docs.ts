@@ -1,33 +1,30 @@
 import { Scalar } from "@scalar/hono-api-reference";
-import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
+import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
+import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
-    getImageModelIds,
-    getVideoModelIds,
-    IMAGE_SERVICES,
-} from "@shared/registry/image.ts";
+    DEFAULT_REALTIME_MODEL,
+    REALTIME_MODEL_NAMES,
+} from "@shared/registry/realtime.ts";
 import {
-    getModel3dModelsInfo,
-    getRealtimeModelsInfo,
-} from "@shared/registry/model-info.ts";
-import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
+    getVisibleAudioModels,
+    getVisibleImageModels,
+    getVisibleTextModels,
+} from "@shared/registry/registry.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
-import { marked } from "marked";
 import { stringify as yamlStringify } from "yaml";
 import type { Env } from "@/env.ts";
 import LOGO_WHITE_SVG from "../../../packages/ui/src/brand/lockup-horizontal-white.svg?raw";
 import { CODE_SAMPLES, RESPONSE_EXAMPLES } from "./docs-samples.ts";
 import {
     API_REFERENCE_CUSTOM_CSS,
-    GUIDES_CSS,
     POLLINATIONS_HEADER_CSS,
     POLLINATIONS_HEADER_SCALAR_CSS,
-    POLLINATIONS_HEADER_STANDALONE_CSS,
 } from "./docs-styles.ts";
-import { docsSocialHeadTags, injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
+import { injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 
 // Same amber favicon as gen.pollinations.ai/public/favicon-32x32.png. Scalar
 // needs this as a data URI, while conventional browser/favicon URLs are served
@@ -35,8 +32,10 @@ import { docsSocialHeadTags, injectDocsSocialHead, SEO_TITLE } from "./seo.ts";
 const FAVICON_DATA_URI =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAAPoAAAD6AG1e1JrAAAEs0lEQVR4nM1Xa2hcVRBeH9Va37ZWxUfVKrWivyqCjx+KxHeLiFURoSo2pjkzmyY1FEWMtkqVoKL1WSvoD0H9U/FR8Fm1PqJGYpO9M7uJJTaCVqXU+raWfnLmnGx29+7GJGuLBy6cvefcM3Nmvu+b2UymjgFxZ0H5pnrOmPBAnk6A8PdQ+ht5vnj3Gu9pOQRCAuU1ULodQtug7vTdY3xdx94QfhPCn6O7cYq9U3oaSl8j13zkrndA6QEobSo1hu7GSVB6D0IfeQd3oXE+23JeoDNTa73ZI6C0GUKtdRqhzVBGxfMbxK2Hcg5Cz9T+1t0CoR+h/BaUtlY5B/+aJtgt2KGw+ET080xodg7UnQehR8Ih1AVxU1Pf5ZoPgNLrtkfoZYhrCN/aMws5PnXsDihflXqfZC+A0l+WZ+EvvMEyDAi9C6UeCPdC+LbU90Ot+9XngLrroDyEjY0HRwquHFnjuwyY4qZCeBWEH/7vHcjT9RAaDPPsuVDebmny4BP6HcJzbU34CSg9VD1FNRxAd+MUr2YQXgqlXyH8EhK+GYWW2SURmAfhn0oc7YLwnVDX4iNSfC+81kek+DvJngxtvhHKDwZ88L0QuqyYQgg/aUaVf4Hyx3FegPJARG4O6prstuEGJ8XvlkJ4HYRe8YcWRUppC/I0H0ILIbQhAtfT87M47zHlFP4DSs/6/K22jVFAoPwalFfYvEDHeEBB6AdzSuhPCC+PDswNEswFJHRNeOcuj05/F2l4v68ZIW18ta8dNsf8vUy4EvdiBrnscZZDdfPCIZSFUl85LtoPDLk1im1DsvgoCF9Y5LY3HG7fXULDMqoaOBN+PuLpHBM04dOG83m3oTjfNg0DTdMtPOIa0gB1TRDeGSjnLio6kKdLINQZQ3wHkNkjrZImZg0RjANQerQUhJMsn+rex+CCyXaYUB4FOijlhHBbNJSUKNyaePPO1H507GkR8eqY69gHSm9Yyr9csn/5Rn97z++EP0TfomMNNF5+823T0pGIBksfXyErb24G+TlPX1NDq6I06M+vPNMGcq2HQfkDazQCJT8JAKR2X+/Nyd5Fh9rc53DE+A6oO8PWvBjl6ZTAAlYIbQyMoUFT0ELr0ZnRBqy08q0Q+hlCX1nuqhWVsT4JfROFajkKtO+oxksH+vnw6PmnZbcN+d9SEf6dkaql73ZY0+JpPNA0PVPPgOWy5XgkzTOMkh7pJlzUHYuTF5V2S4EXLL9vcMHkuowODw+swFtmExafR288yV4K5Reg/JivHUFLDDP3WDn3HXMFKMc9YJrg1gddMCl9FcrLhlEcHAh8ti5ZeYUpadi7HcLveGBP3AGht+1WNUpojMDKqmtBYTd4DZiY8ULLbANXP8+suWcUB8J6do6dUYv3tUZUr8djGK+tnR5f7airlgEkdEVgCK8aHwXVo9x9G7sbn/8rUw4q9QVAUpdpe4UBKJ9v1TP8Z9hUTaZrO+DlWLgtHmRIT+XXRKZ5Rmi1vE5kZ5XtCWxYGy90g+8rxvvnoz/2elv9AWXrvvR6hQvOrfadUmmTOtIbWHOzzKKl9NTYHRiyW90XOiS3pBqffS2PVW5NtT8qMQoLY/XrrHTwfzP+AT7xZOU9QGoaAAAAAElFTkSuQmCC";
 
+import COMMUNITY_MODELS_MD from "../../../BRING_YOUR_OWN_MODEL.md?raw";
 import BYOP_MD from "../../../BRING_YOUR_OWN_POLLEN.md?raw";
-import MCP_README from "../../../packages/mcp/README.md?raw";
+import AGENTS_MD from "../../../BUILD_YOUR_OWN_AGENT.md?raw";
+import CODING_HARNESSES_MD from "../../../CODING_HARNESSES.md?raw";
 import CLI_README from "../../../packages/polli-cli/README.md?raw";
 import MODEL3D_GENERATION_MD from "../docs/3d-generation.md?raw";
 import ACCOUNT_MD from "../docs/account.md?raw";
@@ -46,6 +45,7 @@ import EMBEDDINGS_MD from "../docs/embeddings.md?raw";
 import ERRORS_MD from "../docs/errors.md?raw";
 import IMAGE_GENERATION_MD from "../docs/image-generation.md?raw";
 import INTRODUCTION_MD from "../docs/introduction.md?raw";
+import MCP_MD from "../docs/mcp.md?raw";
 import MEDIA_STORAGE_MD from "../docs/media-storage.md?raw";
 import MODELS_MD from "../docs/models.md?raw";
 import PUBLIC_STATS_MD from "../docs/public-stats.md?raw";
@@ -59,9 +59,14 @@ type OpenApiSchema = Record<string, unknown>;
 const DOC_TAGS = {
     quickStart: "Quick Start",
     authentication: "Authentication",
-    byop: "BYOP",
+    userWallets: "Connect User Wallets",
+    publishModel: "Publish a Model",
+    communityModels: "Community Models",
+    publishAgent: "Publish an Agent",
+    communityAgents: "Community Agents",
     cli: "CLI",
-    mcpServer: "MCP Server",
+    codingHarnesses: "Coding Harnesses",
+    mcpServers: "MCP Servers",
     errors: "Errors",
     safety: "Safety",
     text: "Text",
@@ -81,9 +86,11 @@ const DOC_TAGS = {
 const LEGACY_DOC_TAGS: Record<string, string> = {
     "🚀 Quick Start": DOC_TAGS.quickStart,
     "🔐 Authentication": DOC_TAGS.authentication,
-    "🌸 BYOP": DOC_TAGS.byop,
+    "🌸 BYOP": DOC_TAGS.userWallets,
+    "🧩 Community Models": DOC_TAGS.communityModels,
+    "🤖 Community Agents": DOC_TAGS.communityAgents,
     "🖥 CLI": DOC_TAGS.cli,
-    "🔌 MCP Server": DOC_TAGS.mcpServer,
+    "🔌 MCP Server": DOC_TAGS.mcpServers,
     "❌ Errors": DOC_TAGS.errors,
     "🛡️ Safety": DOC_TAGS.safety,
     "✍️ Text": DOC_TAGS.text,
@@ -111,13 +118,28 @@ const DOC_TAG_ICON_HTML: Record<string, string> = {
     [DOC_TAGS.authentication]: docsIcon(
         '<rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />',
     ),
-    [DOC_TAGS.byop]: docsIcon(
+    [DOC_TAGS.userWallets]: docsIcon(
         '<path d="M3 7a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2v2H5a2 2 0 0 0-2 2V7Z" /><path d="M3 11a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-6Z" /><circle cx="17" cy="14" r="1.25" fill="currentColor" />',
+    ),
+    [DOC_TAGS.communityModels]: docsIcon(
+        '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
+    ),
+    [DOC_TAGS.publishModel]: docsIcon(
+        '<path d="M9 3h6" /><path d="M10 3v6.5L4.5 18a2 2 0 0 0 1.7 3h11.6a2 2 0 0 0 1.7-3L14 9.5V3" /><path d="M7 14h10" />',
+    ),
+    [DOC_TAGS.communityAgents]: docsIcon(
+        '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
+    ),
+    [DOC_TAGS.publishAgent]: docsIcon(
+        '<rect x="4" y="7" width="16" height="13" rx="2" /><path d="M9 3h6" /><path d="M12 3v4" /><circle cx="9" cy="13" r="1" fill="currentColor" /><circle cx="15" cy="13" r="1" fill="currentColor" /><path d="M9 17h6" />',
     ),
     [DOC_TAGS.cli]: docsIcon(
         '<polyline points="4 8 8 12 4 16" /><line x1="12" y1="20" x2="20" y2="20" />',
     ),
-    [DOC_TAGS.mcpServer]: docsIcon(
+    [DOC_TAGS.codingHarnesses]: docsIcon(
+        '<path d="M4 7h16" /><path d="M4 17h16" /><circle cx="9" cy="7" r="2" fill="currentColor" /><circle cx="15" cy="17" r="2" fill="currentColor" />',
+    ),
+    [DOC_TAGS.mcpServers]: docsIcon(
         '<rect x="2" y="7" width="8" height="10" rx="1.5" /><rect x="14" y="7" width="8" height="10" rx="1.5" /><path d="M10 12h4" />',
     ),
     [DOC_TAGS.errors]: docsIcon('<path d="M18 6 6 18M6 6l12 12" />'),
@@ -170,16 +192,18 @@ const DOC_TAG_NAV_ICON_HTML: Record<string, string> = Object.fromEntries(
     ]),
 );
 
-const BYOP_DOCS = BYOP_MD.trim();
-
 const CLI_DOCS = CLI_README.replace(/^# .*\n+/, "").trim();
-
-const MCP_DOCS = MCP_README.replace(/^# .*\n+/, "").trim();
 
 // Strip the leading H1/H2 heading line so the markdown can be embedded under
 // a Scalar tag (which already renders its own title) without double headings.
 const stripLeadingHeading = (md: string) =>
     md.replace(/^#{1,2}\s.*\n+/, "").trim();
+
+const MCP_DOCS = stripLeadingHeading(MCP_MD.trim());
+const USER_WALLETS_DOCS = stripLeadingHeading(BYOP_MD.trim());
+const PUBLISH_MODEL_DOCS = stripLeadingHeading(COMMUNITY_MODELS_MD.trim());
+const PUBLISH_AGENT_DOCS = stripLeadingHeading(AGENTS_MD.trim());
+const CODING_HARNESSES_DOCS = stripLeadingHeading(CODING_HARNESSES_MD.trim());
 
 // Dynamic registry values get injected into the markdown via {{PLACEHOLDER}}
 // substitution. The placeholders live in the .md files so the prose stays in
@@ -196,51 +220,22 @@ const ACCOUNT_DOCS = ACCOUNT_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
-const IMAGE_ALIASES = new Set(
-    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-);
-const TEXT_ALIASES = new Set(
-    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
-);
-const AUDIO_ALIASES = new Set(
-    Object.values(AUDIO_SERVICES).flatMap((service) => service.aliases),
-);
-const EMBEDDING_ALIASES = new Set(
-    Object.values(EMBEDDING_SERVICES).flatMap((service) => service.aliases),
-);
-const ALL_ALIASES = new Set([
-    ...IMAGE_ALIASES,
-    ...TEXT_ALIASES,
-    ...AUDIO_ALIASES,
-    ...EMBEDDING_ALIASES,
-]);
-const imageModelDisplayNames = getImageModelIds().join(", ");
-
-const videoModelDisplayNames = getVideoModelIds().join(", ");
-
-const textModelDisplayNames = Object.keys(TEXT_SERVICES).join(", ");
-const audioModelDisplayNames = Object.keys(AUDIO_SERVICES).join(", ");
-const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
-const realtimeModelDisplayNames = getRealtimeModelsInfo()
-    .map((model) => model.name)
+const visibleImageIds = new Set<string>(getVisibleImageModels());
+const imageModelDisplayNames = getImageModelIds()
+    .filter((id) => visibleImageIds.has(id))
     .join(", ");
+
+const videoModelDisplayNames = getVideoModelIds()
+    .filter((id) => visibleImageIds.has(id))
+    .join(", ");
+
+const textModelDisplayNames = getVisibleTextModels().join(", ");
+const audioModelDisplayNames = getVisibleAudioModels().join(", ");
+const embeddingModelDisplayNames = Object.keys(EMBEDDING_SERVICES).join(", ");
+const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");
-function filterAliases(schema: OpenApiSchema): OpenApiSchema {
-    return JSON.parse(
-        JSON.stringify(schema, (key, value) => {
-            if (key === "enum" && Array.isArray(value)) {
-                const filtered = value.filter(
-                    (v) => typeof v !== "string" || !ALL_ALIASES.has(v),
-                );
-                return filtered.length !== value.length ? filtered : value;
-            }
-            return value;
-        }),
-    ) as OpenApiSchema;
-}
-
 // Substitute live registry values into the section markdown.
 const MODEL_VARS: Record<string, string> = {
     TEXT_MODELS: textModelDisplayNames,
@@ -271,19 +266,20 @@ const MODEL3D_GENERATION_DOCS = interpolate(
     MODEL_VARS,
 );
 const REALTIME_DOCS = [
-    "## Realtime Voice",
+    "## Realtime",
     "",
-    "OpenAI-compatible Realtime WebSocket proxy for voice and multimodal sessions.",
+    "OpenAI-compatible Realtime WebSocket for voice, multimodal, and transcription sessions.",
     "",
     "| Endpoint | Description |",
     "|----------|-------------|",
+    `| \`GET /realtime\` | Pollinations Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     `| \`GET /v1/realtime\` | WebSocket Realtime session (\`model=${DEFAULT_REALTIME_MODEL}\`) |`,
     "",
     "Requires an API key with positive balance. Server clients can use `Authorization: Bearer <key>`; browser WebSocket clients can use `?key=pk_...`.",
     "",
-    "The WebSocket proxy aggregates observed `response.done` usage and settles one billing event when the session closes. Input transcription sessions are not supported yet.",
+    "The WebSocket settles one billing event when the session closes. Selecting `scribe-realtime` creates a transcription session automatically; other realtime models create voice and multimodal sessions.",
     "",
-    "Events sent and received over the socket use the OpenAI Realtime protocol unchanged. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
+    "Events sent and received over both routes use the OpenAI Realtime protocol. See OpenAI's [Realtime WebSocket events guide](https://developers.openai.com/api/docs/guides/realtime-websocket#sending-and-receiving-events).",
     "",
     "```js",
     'import WebSocket from "ws";',
@@ -310,7 +306,7 @@ const EMBEDDINGS_DOCS = interpolate(EMBEDDINGS_MD.trim(), MODEL_VARS);
 
 // Composition: the "api" section copy mirrors the Scalar API Reference page
 // — intro + quick start + auth + all generation modalities + models + media
-// storage + account + safety + errors. BYOP, CLI, MCP are separate guides.
+// storage + account + safety + errors. Wallets, CLI, and MCP are separate sections.
 const GEN_API_DOCS = [
     INTRODUCTION_DOCS,
     QUICK_START_DOCS,
@@ -330,32 +326,47 @@ const GEN_API_DOCS = [
     PUBLIC_STATS_DOCS,
 ].join("\n\n");
 
-const BYOP_SECTION = `## BYOP\n\n${BYOP_DOCS}`;
+const USER_WALLETS_SECTION = `## Connect User Wallets\n\n${USER_WALLETS_DOCS}`;
+const PUBLISH_MODEL_SECTION = `## Publish a Model\n\n${PUBLISH_MODEL_DOCS}`;
+const PUBLISH_AGENT_SECTION = `## Publish an Agent\n\n${PUBLISH_AGENT_DOCS}`;
 const CLI_SECTION = `## CLI\n\n${CLI_DOCS}`;
-const MCP_SECTION = `## MCP Server\n\n${MCP_DOCS}`;
+const CODING_HARNESSES_SECTION = `## Coding Harnesses\n\n${CODING_HARNESSES_DOCS}`;
+const MCP_SECTION = `## MCP Servers\n\n${MCP_DOCS}`;
 
 const LLM_DOC_TEXT = [
     GEN_API_DOCS,
-    BYOP_SECTION,
+    USER_WALLETS_SECTION,
+    PUBLISH_MODEL_SECTION,
+    PUBLISH_AGENT_SECTION,
     CLI_SECTION,
+    CODING_HARNESSES_SECTION,
     MCP_SECTION,
 ].join("\n\n");
 
 const LLM_DOC_SECTIONS: Record<string, string> = {
     api: GEN_API_DOCS,
-    byop: BYOP_SECTION,
+    byop: USER_WALLETS_SECTION,
+    "publish-a-model": PUBLISH_MODEL_SECTION,
+    "publish-an-agent": PUBLISH_AGENT_SECTION,
     cli: CLI_SECTION,
+    "coding-harnesses": CODING_HARNESSES_SECTION,
     mcp: MCP_SECTION,
 };
 
-type GuideId = "byop" | "cli" | "mcp";
+// Scalar tag anchors for the retired /docs/guides/:id pages.
+const GUIDE_REDIRECT_TAGS: Record<string, string> = {
+    byop: "connect-user-wallets",
+    models: "publish-a-model",
+    "community-models": "publish-a-model",
+    agents: "publish-an-agent",
+    "community-agents": "publish-an-agent",
+    cli: "cli",
+    mcp: "mcp-servers",
+};
 
-function pollinationsHeaderHtml(scalarHosted = false): string {
-    const contextCss = scalarHosted
-        ? POLLINATIONS_HEADER_SCALAR_CSS
-        : POLLINATIONS_HEADER_STANDALONE_CSS;
+function pollinationsHeaderHtml(): string {
     const navIcons = JSON.stringify(DOC_TAG_NAV_ICON_HTML);
-    return `<style>${POLLINATIONS_HEADER_CSS}${contextCss}</style>
+    return `<style>${POLLINATIONS_HEADER_CSS}${POLLINATIONS_HEADER_SCALAR_CSS}</style>
 <header class="ph-bar">
   <a href="/" class="ph-brand"><img src="/docs/logo.svg" alt="Pollinations" /></a>
 </header>
@@ -367,6 +378,14 @@ function pollinationsHeaderHtml(scalarHosted = false): string {
 </div>
 <script>
 (function () {
+  function normalizeLegacyHash() {
+    if (window.location.hash === '#tag/byop') {
+      window.history.replaceState(null, '', window.location.pathname + window.location.search + '#tag/connect-user-wallets');
+    }
+  }
+  normalizeLegacyHash();
+  window.addEventListener('hashchange', normalizeLegacyHash);
+
   // Copy for LLMs — always copies the full doc (api + integrations).
   var copy = document.querySelector('.ph-fab-copy');
   if (copy) {
@@ -448,7 +467,14 @@ function generationDocumentation(): OpenApiSchema {
             },
             {
                 name: "Integrations",
-                tags: [DOC_TAGS.byop, DOC_TAGS.cli, DOC_TAGS.mcpServer],
+                tags: [
+                    DOC_TAGS.userWallets,
+                    DOC_TAGS.publishModel,
+                    DOC_TAGS.publishAgent,
+                    DOC_TAGS.mcpServers,
+                    DOC_TAGS.cli,
+                    DOC_TAGS.codingHarnesses,
+                ],
             },
             {
                 name: "Generation",
@@ -466,6 +492,8 @@ function generationDocumentation(): OpenApiSchema {
                 name: "Resources",
                 tags: [
                     DOC_TAGS.models,
+                    DOC_TAGS.communityModels,
+                    DOC_TAGS.communityAgents,
                     DOC_TAGS.quests,
                     DOC_TAGS.mediaStorage,
                     DOC_TAGS.account,
@@ -485,15 +513,37 @@ function generationDocumentation(): OpenApiSchema {
                 description: stripLeadingHeading(AUTHENTICATION_DOCS),
             },
             {
-                name: DOC_TAGS.byop,
-                description: BYOP_DOCS,
+                name: DOC_TAGS.userWallets,
+                description: USER_WALLETS_DOCS,
+            },
+            {
+                name: DOC_TAGS.publishModel,
+                description: PUBLISH_MODEL_DOCS,
+            },
+            {
+                name: DOC_TAGS.communityModels,
+                description:
+                    "Register, test, update, and remove community models owned by the authenticated account.",
+            },
+            {
+                name: DOC_TAGS.publishAgent,
+                description: PUBLISH_AGENT_DOCS,
+            },
+            {
+                name: DOC_TAGS.communityAgents,
+                description:
+                    "Create, inspect, update, and remove managed agents owned by the authenticated account.",
             },
             {
                 name: DOC_TAGS.cli,
                 description: CLI_DOCS,
             },
             {
-                name: DOC_TAGS.mcpServer,
+                name: DOC_TAGS.codingHarnesses,
+                description: CODING_HARNESSES_DOCS,
+            },
+            {
+                name: DOC_TAGS.mcpServers,
                 description: MCP_DOCS,
             },
             {
@@ -602,10 +652,10 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     }
     normalizeOperationTags(paths);
 
-    return filterAliases({
+    return {
         ...schema,
         paths,
-    });
+    };
 }
 
 async function fetchEnterSchema(c: Context<Env>) {
@@ -617,7 +667,9 @@ async function fetchEnterSchema(c: Context<Env>) {
             headers: c.req.raw.headers,
         }),
     );
-    if (!response.ok) return undefined;
+    if (!response.ok) {
+        throw new Error(`Enter OpenAPI schema returned ${response.status}`);
+    }
 
     const schema = (await response.json()) as OpenApiSchema;
     return transformEnterSchema(stripGenerationPaths(schema));
@@ -808,7 +860,7 @@ function mergeSchemas(
     enterSchema?: OpenApiSchema,
     mediaSchema?: OpenApiSchema,
 ): OpenApiSchema {
-    const merged = filterAliases({
+    const merged = {
         ...(enterSchema ?? {}),
         ...generationSchema,
         info: generationSchema.info,
@@ -826,11 +878,11 @@ function mergeSchemas(
             ...asRecord(enterSchema?.paths),
             ...asRecord(generationSchema.paths),
         },
-    });
+    };
 
     if (!mediaSchema) return merged;
 
-    return filterAliases({
+    return {
         ...merged,
         components: mergeComponents(
             asRecord(merged.components),
@@ -840,7 +892,7 @@ function mergeSchemas(
             ...asRecord(merged.paths),
             ...asRecord(mediaSchema.paths),
         },
-    });
+    };
 }
 
 function mergeTags(primary: OpenApiSchema[], secondary: OpenApiSchema[]) {
@@ -886,86 +938,6 @@ function asRecordArray(value: unknown): OpenApiSchema[] {
     );
 }
 
-type Guide = {
-    id: GuideId;
-    title: string;
-    icon: string;
-    summary: string;
-    markdown: string;
-};
-
-const GUIDES: Guide[] = [
-    {
-        id: "byop",
-        title: "BYOP",
-        icon: DOC_TAGS.byop,
-        summary:
-            "Let your users authorize your app to spend their own Pollen on Pollinations requests.",
-        markdown: BYOP_DOCS,
-    },
-    {
-        id: "cli",
-        title: "CLI",
-        icon: DOC_TAGS.cli,
-        summary:
-            "The Pollinations CLI — for humans, AI agents, and everything in between.",
-        markdown: CLI_DOCS,
-    },
-    {
-        id: "mcp",
-        title: "MCP Server",
-        icon: DOC_TAGS.mcpServer,
-        summary:
-            "Wire Pollinations into Claude Desktop, Cursor, and other MCP-compatible clients.",
-        markdown: MCP_DOCS,
-    },
-];
-
-const GUIDES_BY_ID = new Map(GUIDES.map((g) => [g.id, g]));
-
-function guidesPage(c: Context<Env>, body: string): string {
-    return `<!doctype html>
-<html lang="en" class="dark">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${SEO_TITLE}</title>
-<link rel="icon" type="image/png" href="${FAVICON_DATA_URI}" />
-${docsSocialHeadTags(c)}
-<style>${GUIDES_CSS}</style>
-</head>
-<body>
-${pollinationsHeaderHtml()}
-<main class="wrap">${body}</main>
-</body>
-</html>`;
-}
-
-function guidesIndexHtml(c: Context<Env>): string {
-    const cards = GUIDES.map(
-        (g) =>
-            `<a class="guide-card" href="/docs/guides/${g.id}"><h3>${guideIconHtml(g.icon)}<span>${g.title}</span></h3><p>${g.summary}</p></a>`,
-    ).join("");
-    const body = `<h1>Guides</h1><p>Integration paths beyond the raw API.</p><div class="guide-cards">${cards}</div>`;
-    return guidesPage(c, body);
-}
-
-function guideIconHtml(icon: string): string {
-    return DOC_TAG_ICON_HTML[icon] ?? "";
-}
-
-function guideHtml(c: Context<Env>, guide: Guide): string {
-    // Prepend the guide title as an H1 so each guide page has a clear heading.
-    // Source READMEs have their H1 stripped (because we render the page title
-    // separately) — re-adding it here gives the rendered page a proper title
-    // without duplicating it across surfaces.
-    const rendered = marked.parse(guide.markdown, { async: false }) as string;
-    return guidesPage(
-        c,
-        `<h1 class="guide-title">${guideIconHtml(guide.icon)}<span>${guide.title}</span></h1>${rendered}`,
-    );
-}
-
 /**
  * Build the merged OpenAPI spec (generation + public account + media storage,
  * with code samples injected). Single source of truth for both the docs
@@ -977,7 +949,7 @@ export async function buildMergedOpenApiSpec(
 ): Promise<OpenApiSchema> {
     const [generationSchema, enterSchema, mediaSchema] = await Promise.all([
         getGenerationSchema(genApp),
-        fetchEnterSchema(c).catch(() => undefined),
+        fetchEnterSchema(c),
         fetchMediaSchema(c).catch(() => undefined),
     ]);
     return injectSamples(
@@ -986,7 +958,7 @@ export async function buildMergedOpenApiSpec(
 }
 
 export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
-    return new Hono<Env>()
+    const routes = new Hono<Env>()
         .get("/", async (c, next) => {
             const response = await Scalar<Env>({
                 pageTitle: SEO_TITLE,
@@ -1025,7 +997,7 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             const insertAt = bodyOpenMatch.index + bodyOpenMatch[0].length;
             return c.html(
                 htmlWithMeta.slice(0, insertAt) +
-                    pollinationsHeaderHtml(true) +
+                    pollinationsHeaderHtml() +
                     htmlWithMeta.slice(insertAt),
             );
         })
@@ -1042,12 +1014,6 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             if (!content) return c.text("Section not found", 404);
             return c.text(content);
         })
-        .get("/guides", (c) => c.html(guidesIndexHtml(c)))
-        .get("/guides/:id", (c) => {
-            const guide = GUIDES_BY_ID.get(c.req.param("id") as GuideId);
-            if (!guide) return c.text("Guide not found", 404);
-            return c.html(guideHtml(c, guide));
-        })
         .get("/open-api/generate-schema", async (c) => {
             const merged = await buildMergedOpenApiSpec(c, genApp);
             if (c.req.query("format") === "yaml") {
@@ -1056,4 +1022,13 @@ export function createDocsRoutes(genApp: Hono<Env>): Hono<Env> {
             }
             return c.json(merged);
         });
+    // The standalone guide pages moved into the Scalar reference as tag
+    // sections; keep their old URLs redirecting so shared links survive.
+    routes.get("/guides", (c) => c.redirect("/docs", 301));
+    routes.get("/guides/:id", (c) => {
+        const tag = GUIDE_REDIRECT_TAGS[c.req.param("id")];
+        if (!tag) return c.text("Guide not found", 404);
+        return c.redirect(`/docs#tag/${tag}`, 301);
+    });
+    return routes;
 }

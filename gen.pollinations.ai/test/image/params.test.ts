@@ -1,7 +1,18 @@
+import { CreateImageRequestSchema } from "@shared/schemas/openai.ts";
 import { describe, expect, it } from "vitest";
 import { ImageParamsSchema } from "../../src/image/params.ts";
+import { SENTINEL_SEED } from "../../src/util.ts";
 
 describe("ImageParamsSchema", () => {
+    it("normalizes seed -1 to the sentinel seed", () => {
+        const result = ImageParamsSchema.parse({
+            model: "flux",
+            seed: -1,
+        });
+
+        expect(result.seed).toBe(SENTINEL_SEED);
+    });
+
     it("rejects transparent backgrounds for gpt-image-2", () => {
         const result = ImageParamsSchema.safeParse({
             model: "gpt-image-2",
@@ -25,5 +36,228 @@ describe("ImageParamsSchema", () => {
                 transparent: true,
             }).success,
         ).toBe(true);
+    });
+
+    it("accepts resolutions declared by the model", () => {
+        expect(
+            ImageParamsSchema.safeParse({ model: "veo", resolution: "1080p" })
+                .success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-pro",
+                resolution: "480p",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "grok-imagine-image-2.0",
+                resolution: "2k",
+                quality: "low",
+            }).success,
+        ).toBe(true);
+        for (const resolution of ["480p", "768p", "2k"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax-h3",
+                    resolution,
+                }).success,
+            ).toBe(true);
+        }
+    });
+
+    it("accepts 768p on the OpenAI-compatible image route", () => {
+        expect(
+            CreateImageRequestSchema.safeParse({
+                model: "minimax-h3",
+                prompt: "a red wind-up robot",
+                resolution: "768p",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects native-only reference media on OpenAI POST requests", () => {
+        for (const field of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ] as const) {
+            const result = CreateImageRequestSchema.safeParse({
+                model: "seedance-2.0",
+                prompt: "a paper boat",
+                [field]: ["https://media.example/reference.bin"],
+            });
+
+            expect(result.success, field).toBe(false);
+        }
+    });
+
+    it("enforces the public minimax-h3 contract", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax-h3",
+                duration: 6,
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax-h3",
+                aspectRatio: "9:16",
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "minimax-h3",
+                fps: 30,
+            }).success,
+        ).toBe(false);
+    });
+
+    it("bounds video duration for every public route", () => {
+        for (const duration of [1, 120]) {
+            expect(
+                ImageParamsSchema.safeParse({ model: "flux", duration })
+                    .success,
+            ).toBe(true);
+        }
+        for (const duration of [0, 1.5, 121, 1e308]) {
+            expect(
+                ImageParamsSchema.safeParse({ model: "flux", duration })
+                    .success,
+                String(duration),
+            ).toBe(false);
+        }
+    });
+
+    it("enforces the public Gemini Omni 1.1 Flash contract", () => {
+        for (const resolution of ["360p", "720p", "1080p", "4k"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "google/gemini-omni-1.1-flash",
+                    resolution,
+                }).success,
+            ).toBe(true);
+        }
+        for (const params of [{ aspectRatio: "1:1" }, { fps: 30 }]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "google/gemini-omni-1.1-flash",
+                    ...params,
+                }).success,
+            ).toBe(false);
+        }
+    });
+
+    it("rejects unsupported Grok Imagine Image 2.0 quality", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "grok-imagine-image-2.0",
+            quality: "high",
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["quality"],
+                message:
+                    "grok-imagine-image-2.0 supports low or medium quality.",
+            });
+        }
+    });
+
+    it("does not silently upgrade invalid Grok Imagine Image 2.0 quality", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "grok-imagine-image-2.0",
+                quality: "LOW",
+            }).success,
+        ).toBe(false);
+        expect(
+            ImageParamsSchema.parse({ model: "flux", quality: "LOW" }).quality,
+        ).toBe("medium");
+    });
+
+    it("rejects an unsupported resolution", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "veo",
+            resolution: "480p",
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["resolution"],
+                message:
+                    'Resolution "480p" is not supported by veo. Supported: 720p, 1080p.',
+            });
+        }
+    });
+
+    it("rejects resolution on models without resolution tiers", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "flux",
+            resolution: "720p",
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]).toMatchObject({
+                path: ["resolution"],
+                message: "flux does not accept a resolution parameter.",
+            });
+        }
+    });
+
+    it("parses and validates reference media independently from frame images", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.0",
+            reference_images:
+                "https://media.example/image,a.png| |https://media.example/image-b.png|",
+            reference_videos: "https://media.example/video.mp4",
+            reference_audios: "https://media.example/audio.mp3",
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.reference_images).toEqual([
+                "https://media.example/image,a.png",
+                "https://media.example/image-b.png",
+            ]);
+            expect(result.data.reference_videos).toEqual([
+                "https://media.example/video.mp4",
+            ]);
+        }
+    });
+
+    it("rejects reference media on unsupported models", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0-mini",
+                reference_images: "https://media.example/image.png",
+            }).success,
+        ).toBe(false);
+    });
+
+    it("passes provider-specific reference combinations through", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0",
+                image: "https://media.example/frame.png",
+                reference_images: "https://media.example/image.png",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0",
+                reference_audios: "https://media.example/audio.mp3",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects unsafe reference media URLs", () => {
+        const invalidUrl = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            reference_images: "http://127.0.0.1/image.png",
+        });
+        expect(invalidUrl.success).toBe(false);
     });
 });

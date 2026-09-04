@@ -70,8 +70,6 @@ export {
     type FetchModelCatalogOptions,
     fetchModelCatalog,
     type ModelCatalog,
-    type ModelCatalogItem,
-    pricingEntries,
 } from "./models.js";
 
 // Export all types
@@ -80,6 +78,9 @@ export type {
     AccountKey,
     AccountPermission,
     AccountProfile,
+    AccountQuest,
+    AccountQuestReward,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioContentPart,
     AudioFormat,
@@ -100,9 +101,12 @@ export type {
     CreateKeyOptions,
     DailyUsageRecord,
     DailyUsageResponse,
+    DeveloperEarningsResponse,
+    DeveloperEarningsRow,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
     FileContentPart,
     FunctionDefinition,
     ImageContentPart,
@@ -124,6 +128,8 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
+    ModelInputModality,
+    ModelOutputModality,
     // Config
     PollinationsConfig,
     // Errors
@@ -147,6 +153,7 @@ export type {
     UsageRecord,
     UsageResponse,
     UserInfo,
+    VideoCapability,
     VideoContentPart,
     VideoGenerateOptions,
     // Video

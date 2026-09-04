@@ -1,6 +1,7 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { formatActivityChartDate } from "./activity-helpers";
 import type {
     DataPoint,
     Metric,
@@ -263,30 +264,7 @@ export function useEarningsData(
             const isRequestsMetric = filters.metric === "requests";
 
             return {
-                label: isHourly
-                    ? date.toLocaleTimeString("en-US", {
-                          timeZone: "UTC",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                      })
-                    : date.toLocaleDateString("en-US", {
-                          timeZone: "UTC",
-                          month: "short",
-                          day: "numeric",
-                      }),
-                fullDate: date.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    ...(isHourly && {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                    }),
-                }),
+                ...formatActivityChartDate(date, isHourly),
                 value: isRequestsMetric ? bucket.requests : bucket.pollen,
                 tierValue: isRequestsMetric
                     ? bucket.tierRequests

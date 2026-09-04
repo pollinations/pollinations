@@ -17,6 +17,23 @@ export function AppIcon(props: IconProps) {
     );
 }
 
+export function AccountIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21a8 8 0 0 1 16 0" />
+        </svg>
+    );
+}
+
+export function ArrowRightIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+    );
+}
+
 export function BeakerIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -27,11 +44,33 @@ export function BeakerIcon(props: IconProps) {
     );
 }
 
+export function BotIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 8V4H8" />
+            <rect x="4" y="8" width="16" height="12" rx="2" />
+            <path d="M2 14h2M20 14h2" />
+            <path d="M9 13v2M15 13v2" />
+        </svg>
+    );
+}
+
 export function BookIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M4 4h5a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z" />
             <path d="M20 4h-5a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h6z" />
+        </svg>
+    );
+}
+
+export function BugIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="m8 2 1.9 1.9M14.1 3.9 16 2" />
+            <path d="M9 7V6a3 3 0 0 1 6 0v1" />
+            <path d="M12 20c-3.3 0-6-2.7-6-6v-3a6 6 0 0 1 12 0v3c0 3.3-2.7 6-6 6Z" />
+            <path d="M12 20v-9M6.5 9C4.6 8.8 3 7.1 3 5M6 13H2M3 21c0-2.1 1.7-3.9 3.8-4M17.5 9C19.4 8.8 21 7.1 21 5M18 13h4M21 21c0-2.1-1.7-3.9-3.8-4" />
         </svg>
     );
 }
@@ -64,6 +103,16 @@ export function ClockIcon(props: IconProps) {
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <circle cx="12" cy="12" r="9" />
             <path d="M12 7v5l3 2" />
+        </svg>
+    );
+}
+
+export function CloudUploadIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M12 13v8" />
+            <path d="m16 17-4-4-4 4" />
+            <path d="M4.4 15.4A5 5 0 0 1 6.5 6.5h1A7 7 0 1 1 20 11.5" />
         </svg>
     );
 }
@@ -197,8 +246,8 @@ export function MailIcon(props: IconProps) {
 export function McpIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
-            <rect x="2" y="7" width="8" height="10" rx="1.5" />
-            <rect x="14" y="7" width="8" height="10" rx="1.5" />
+            <rect x="2" y="4" width="8" height="16" rx="1.5" />
+            <rect x="14" y="4" width="8" height="16" rx="1.5" />
             <path d="M10 12h4" />
         </svg>
     );
@@ -239,6 +288,14 @@ export function TerminalIcon(props: IconProps) {
     );
 }
 
+export function ToolIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M14.7 6.3a4 4 0 0 0-5-5l2.1 2.1-2.4 2.4-2.1-2.1a4 4 0 0 0 5 5l7.4 7.4a2 2 0 0 1-2.8 2.8l-7.4-7.4" />
+        </svg>
+    );
+}
+
 export function TargetIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -265,6 +322,15 @@ export function UsageIcon(props: IconProps) {
             <path d="M7 18h10" />
             <path d="M7.5 12.5 6 11" />
             <path d="M16.5 12.5 18 11" />
+        </svg>
+    );
+}
+
+export function WarningIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M10.3 3.1 1.8 17a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.1a2 2 0 0 0-3.4 0Z" />
+            <path d="M12 9v4M12 17h.01" />
         </svg>
     );
 }
@@ -322,6 +388,17 @@ export function XIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
             <path d="M18 6 6 18M6 6l12 12" />
+        </svg>
+    );
+}
+
+export function TrashIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M4 7h16" />
+            <path d="M9 7V4h6v3" />
+            <path d="m6 7 1 14h10l1-14" />
+            <path d="M10 11v6M14 11v6" />
         </svg>
     );
 }
@@ -402,6 +479,16 @@ export function SearchIcon(props: IconProps) {
     );
 }
 
+export function SignOutIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <path d="m16 17 5-5-5-5" />
+            <path d="M21 12H9" />
+        </svg>
+    );
+}
+
 export function SparkleIcon(props: IconProps) {
     return (
         <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
@@ -410,6 +497,23 @@ export function SparkleIcon(props: IconProps) {
             <path d="M22 5h-4" />
             <path d="M4 17v2" />
             <path d="M5 18H3" />
+        </svg>
+    );
+}
+
+export function StarIcon({
+    filled = false,
+    ...props
+}: IconProps & { filled?: boolean }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            {...strokeProps}
+            fill={filled ? "currentColor" : "none"}
+            {...props}
+        >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
     );
 }

@@ -12,7 +12,7 @@ COMMENT_IDS=()
 
 for issue in $ISSUES; do
   comments=$(gh api "repos/pollinations/pollinations/issues/${issue}/comments" --paginate --jq \
-    '.[] | select(.user.login == "pollinations-ai[bot]") | select(.body | test("codeberg"; "i")) | "\(.id)|\(.created_at)|\(.body[0:80])"' 2>/dev/null)
+    '.[] | select(.user.id == 247793354) | select(.body | test("codeberg"; "i")) | "\(.id)|\(.created_at)|\(.body[0:80])"' 2>/dev/null)
 
   if [ -n "$comments" ]; then
     while IFS= read -r line; do

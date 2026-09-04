@@ -1,6 +1,9 @@
+import { defineCostVariants, matchResolution } from "./cost-variants";
+import { mergeFallbacks } from "./merge-fallbacks";
+import { MODEL3D_FALLBACKS } from "./model3d-fallbacks";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_3D_MODEL = "trellis-2-low" as const;
+export const DEFAULT_3D_MODEL = "trellis-2" as const;
 
 export type Model3dName = keyof typeof MODEL3D_SERVICES;
 
@@ -8,9 +11,14 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // literal tokens) — same convention as image models — to avoid introducing a
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
-export const MODEL3D_SERVICES = {
-    "trellis-2-low": {
-        aliases: [],
+const MODEL3D_BASE_SERVICES = {
+    "trellis-2": {
+        aliases: [
+            "trellis-2-low",
+            "trellis-2-medium",
+            "trellis-2-high",
+            "microsoft/trellis-2",
+        ],
         provider: "inferenceport",
         brand: "Microsoft",
         category: "3d",
@@ -19,55 +27,35 @@ export const MODEL3D_SERVICES = {
         flatRate: true,
 
         cost: {
-            completionImageTokens: 0.24, // per generation, "low" resolution
+            completionImageTokens: 0.24,
         },
-        title: "Trellis 2 (Low)",
-        description:
-            "Turns a photo into a 3D model — fastest option, lowest detail",
+        ...defineCostVariants(
+            {
+                medium: { completionImageTokens: 0.29 },
+                high: { completionImageTokens: 0.35 },
+            },
+            matchResolution("medium", "high"),
+            {
+                medium: {
+                    label: "Medium resolution",
+                    description: "Balanced output detail and generation cost.",
+                },
+                high: {
+                    label: "High resolution",
+                    description: "Maximum output detail.",
+                },
+            },
+            "Low resolution",
+        ),
+        title: "Trellis 2",
+        description: "Image-to-3D generation with selectable output detail",
         inputModalities: ["image"],
         outputModalities: ["3d"],
         maxReferenceImages: 1,
-    },
-    "trellis-2-medium": {
-        aliases: [],
-        provider: "inferenceport",
-        brand: "Microsoft",
-        category: "3d",
-        addedDate: new Date("2026-06-24").getTime(),
-        priceMultiplier: 1,
-        flatRate: true,
-
-        cost: {
-            completionImageTokens: 0.29, // per generation, "medium" resolution
-        },
-        title: "Trellis 2 (Medium)",
-        description:
-            "Turns a photo into a 3D model with balanced detail and cost",
-        inputModalities: ["image"],
-        outputModalities: ["3d"],
-        maxReferenceImages: 1,
-    },
-    "trellis-2-high": {
-        aliases: [],
-        provider: "inferenceport",
-        brand: "Microsoft",
-        category: "3d",
-        addedDate: new Date("2026-06-24").getTime(),
-        priceMultiplier: 1,
-        flatRate: true,
-
-        cost: {
-            completionImageTokens: 0.35, // per generation, "high" resolution
-        },
-        title: "Trellis 2 (High)",
-        description:
-            "Turns a photo into a 3D model at maximum detail; the priciest tier",
-        inputModalities: ["image"],
-        outputModalities: ["3d"],
-        maxReferenceImages: 1,
+        resolutions: ["low", "medium", "high"],
     },
     "hyper3d-rodin": {
-        aliases: ["rodin"],
+        aliases: ["rodin", "hyper3d/rodin-2.5"],
         provider: "fal",
         brand: "Deemos",
         category: "3d",
@@ -86,5 +74,10 @@ export const MODEL3D_SERVICES = {
         maxReferenceImages: 1,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const MODEL3D_SERVICES = mergeFallbacks(
+    MODEL3D_BASE_SERVICES,
+    MODEL3D_FALLBACKS,
+);
 
 export const getModel3dModelIds = (): string[] => Object.keys(MODEL3D_SERVICES);

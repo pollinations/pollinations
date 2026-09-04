@@ -14,6 +14,7 @@ const genAliases = [
     "content-filter.ts",
     "cache",
     "durable-objects/PollenRateLimiter.ts",
+    "durable-objects/GenerationCoordinator.ts",
     "env.ts",
     "error.ts",
     "events.ts",
@@ -21,6 +22,8 @@ const genAliases = [
     "logger.ts",
     "middleware/auth.ts",
     "middleware/balance.ts",
+    "middleware/generation-cache.ts",
+    "middleware/generation-deduplication.ts",
     "middleware/logger.ts",
     "middleware/media-cache.ts",
     "middleware/model.ts",
@@ -30,15 +33,19 @@ const genAliases = [
     "middleware/text-cache.ts",
     "middleware/track.ts",
     "middleware/validator.ts",
+    "routes/generation-executor.ts",
     "schemas/embeddings.ts",
     "schemas/image.ts",
     "schemas/model3d.ts",
+    "schemas/models.ts",
     "schemas/realtime.ts",
     "schemas/text.ts",
+    "userImage.ts",
     "util",
     "util.ts",
     "utils/api-docs.ts",
     "utils/bedrock-guardrail.ts",
+    "utils/execute-generation.ts",
     "utils/generation-access.ts",
     "utils/media-cache.ts",
     "utils/model-stats.ts",
@@ -48,6 +55,7 @@ const genAliases = [
 
 const baseConfig = defineConfig({
     resolve: {
+        dedupe: ["hono", "hono-openapi"],
         alias: [
             ...genAliases.map((path) => ({
                 find: `@/${path}`,
@@ -125,6 +133,178 @@ export default defineWorkersConfig(async ({ mode }) => {
                                     });
                                 }
                                 return new Response("enter test stub");
+                            },
+                            POLLINATIONS_MCP: async (request: Request) => {
+                                if (
+                                    !request.headers.has("authorization") ||
+                                    request.headers.has("cookie")
+                                ) {
+                                    return new Response(
+                                        "Caller authorization was not forwarded safely",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                };
+                                return Response.json({
+                                    jsonrpc: payload.jsonrpc,
+                                    id: payload.id,
+                                    result: {
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: "pollinations proxied",
+                                            },
+                                        ],
+                                    },
+                                });
+                            },
+                            FFMPEG_MCP: async (request: Request) => {
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie")
+                                ) {
+                                    return new Response(
+                                        "Caller credentials reached MCP",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                };
+                                const headers = new Headers({
+                                    "Content-Type": "application/json",
+                                });
+                                if (payload.method === "tools/call") {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.25",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "runFfmpeg",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "cloudflare.container.basic_runtime.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: "ffmpeg proxied",
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    { headers },
+                                );
+                            },
+                            EXA_MCP: async (request: Request) => {
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie")
+                                ) {
+                                    return new Response(
+                                        "Caller credentials reached MCP",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                };
+                                const headers = new Headers({
+                                    "Content-Type": "application/json",
+                                });
+                                if (payload.method === "tools/call") {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.007",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "web_search_exa",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "exa.search.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: "exa proxied",
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    { headers },
+                                );
+                            },
+                            COMPOSIO_MCP: async (request: Request) => {
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie") ||
+                                    !request.headers.has(
+                                        "x-pollinations-user-id",
+                                    )
+                                ) {
+                                    return new Response(
+                                        "Caller identity was not forwarded safely",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                };
+                                const identity = request.headers.get(
+                                    "x-pollinations-user-id",
+                                );
+                                return Response.json({
+                                    jsonrpc: payload.jsonrpc,
+                                    id: payload.id,
+                                    result: {
+                                        content: [
+                                            {
+                                                type: "text",
+                                                text: identity,
+                                            },
+                                        ],
+                                    },
+                                });
                             },
                         },
                     },

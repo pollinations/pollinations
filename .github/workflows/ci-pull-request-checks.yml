@@ -4,16 +4,20 @@ name: CI / Pull request checks
   pull_request:
     branches: [main, master]
 
+# HEAD is the pull request merge commit. With fetch-depth 2 its first parent
+# (HEAD^1) is the base branch tip, so `git diff HEAD^1 HEAD` is the pull
+# request diff without fetching the full repository history.
+
 jobs:
-  biome:
-    name: Check formatting and linting
+  lint:
+    name: Lint and build
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 2
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,12 +28,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Validate app catalog
+        run: node operations/app-management/app.js validate
+
       - name: Get changed files
         id: changed-files
         run: |
           # Get only added/modified files (exclude deleted files)
           # Also exclude paths that biome.jsonc ignores (node_modules, dist, etc.)
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|dist|build|\.next|\.cache|out|package-lock\.json|secrets)/' | grep -v 'package-lock\.json$' || true)
+          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '\.(js|ts|jsx|tsx|json|jsonc)$' | grep -v -E '(node_modules|dist|build|\.next|\.cache|out|package-lock\.json|secrets)/' | grep -v 'package-lock\.json$' || true)
           echo "Changed files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -39,6 +46,13 @@ jobs:
             echo "any_changed=true" >> $GITHUB_OUTPUT
           else
             echo "any_changed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Verify SDK package lock
+        run: |
+          if ! git diff --quiet HEAD^1 HEAD -- \
+            packages/sdk/package.json packages/sdk/package-lock.json; then
+            npm ci --ignore-scripts --prefix packages/sdk
           fi
 
       - name: Run Biome on changed files
@@ -59,31 +73,44 @@ jobs:
             echo "✅ All files are properly formatted"
           fi
 
-      - name: Get changed GitHub scripts
-        id: github-scripts
+      - name: Test maintenance scripts
+        run: >-
+          node --test
+          enter.pollinations.ai/scripts/*.test.mjs
+          operations/app-management/*.test.js
+          operations/app-management/ingestion/*.test.js
+          operations/deployment/*.test.cjs
+
+      - name: Get changed files that affect the enter frontend build
+        id: enter-frontend
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^\.github/scripts/.*\.js$' || true)
-          echo "Changed GitHub scripts:"
-          echo "$FILES"
-          if [ -n "$FILES" ]; then
+          if git diff --name-only HEAD^1 HEAD | grep -qE '^(enter.pollinations.ai/|shared/|packages/(sdk|ui)/)'; then
             echo "any_changed=true" >> $GITHUB_OUTPUT
           else
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Test GitHub scripts
-        if: steps.github-scripts.outputs.any_changed == 'true'
-        run: |
-          if compgen -G ".github/scripts/*.test.js" > /dev/null; then
-            node --test .github/scripts/*.test.js
-          else
-            echo "No GitHub script tests found"
-          fi
+      # The enter test job stubs the assets directory, so this is the only
+      # pull request check that the enter frontend still bundles.
+      - name: Build enter frontend
+        if: steps.enter-frontend.outputs.any_changed == 'true'
+        working-directory: enter.pollinations.ai
+        run: npm run build:frontend
+
+  enter:
+    name: Test enter.pollinations.ai
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Get changed TypeScript files in enter.pollinations.ai
         id: enter-ts-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(enter.pollinations.ai/|shared/).*\.(ts|tsx)$' || true)
+          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '^(enter.pollinations.ai/|shared/).*\.(ts|tsx)$' || true)
           echo "Changed TypeScript files:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -95,10 +122,21 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Build shared SDK/UI packages for typecheck
+      - name: Setup Node.js
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.enter-ts-files.outputs.any_changed == 'true'
+        run: npm ci
+
+      - name: Test enter.pollinations.ai
         if: steps.enter-ts-files.outputs.any_changed == 'true'
         working-directory: enter.pollinations.ai
-        run: npm run build:ui
+        run: npm test
 
       - name: Typecheck changed files only
         if: steps.enter-ts-files.outputs.any_changed == 'true'
@@ -132,10 +170,20 @@ jobs:
             echo "✅ No type errors in changed files"
           fi
 
+  gen:
+    name: Test gen.pollinations.ai
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
       - name: Get changed files that affect gen.pollinations.ai
         id: gen-files
         run: |
-          FILES=$(git diff --diff-filter=d --name-only origin/${{ github.base_ref }}...HEAD | grep -E '^(gen.pollinations.ai/|shared/)' || true)
+          FILES=$(git diff --diff-filter=d --name-only HEAD^1 HEAD | grep -E '^(gen.pollinations.ai/|shared/)' || true)
           echo "Changed files that affect gen.pollinations.ai:"
           echo "$FILES"
           echo "files<<EOF" >> $GITHUB_OUTPUT
@@ -147,6 +195,17 @@ jobs:
             echo "any_changed=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Setup Node.js
+        if: steps.gen-files.outputs.any_changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        if: steps.gen-files.outputs.any_changed == 'true'
+        run: npm ci
+
       - name: Test gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm test --workspace pollinations-gen
@@ -154,3 +213,18 @@ jobs:
       - name: Typecheck gen.pollinations.ai
         if: steps.gen-files.outputs.any_changed == 'true'
         run: npm run typecheck --workspace pollinations-gen
+
+  # Carries the status-check name required by the main branch ruleset so the
+  # three jobs above gate merges without a ruleset change.
+  gate:
+    name: Check formatting and linting
+    runs-on: ubuntu-latest
+    needs: [lint, enter, gen]
+    if: always()
+
+    steps:
+      - name: Require every job to succeed
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') || contains(needs.*.result, 'skipped')
+        run: |
+          echo "A job did not succeed: ${{ toJSON(needs) }}"
+          exit 1

@@ -1,12 +1,34 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TestEndpointSchema } from "../src/routes/community-endpoints/schemas.ts";
 import {
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
     vi.unstubAllGlobals();
+});
+
+describe("community endpoint test input", () => {
+    const endpoint = {
+        baseUrl: "https://api.example.com/generate-video",
+        bearerToken: "sk_saved_token",
+    };
+
+    it("does not require an upstream model for video", () => {
+        expect(
+            TestEndpointSchema.safeParse({ ...endpoint, modality: "video" })
+                .success,
+        ).toBe(true);
+    });
+
+    it("requires an upstream model for OpenAI-compatible modalities", () => {
+        expect(TestEndpointSchema.safeParse(endpoint).success).toBe(false);
+    });
 });
 
 describe("community endpoint OpenAI service", () => {
@@ -31,6 +53,42 @@ describe("community endpoint OpenAI service", () => {
         ).resolves.toEqual(["gpt-4.1", "gpt-4.1-mini"]);
 
         expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("preserves endpoint query strings when building the models URL", async () => {
+        const fetchMock = vi.fn(async (input) => {
+            expect(String(input)).toBe(
+                "https://api.example.com/v1/models?api-version=2026-08-01",
+            );
+            return Response.json({ data: [{ id: "gpt-4.1" }] });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1/?api-version=2026-08-01",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual(["gpt-4.1"]);
+    });
+
+    it("bounds model-list responses before parsing provider JSON", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response("{}", {
+                        headers: { "content-length": "999999999" },
+                    }),
+            ),
+        );
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+            }),
+        ).rejects.toThrow("Endpoint response is too large");
     });
 
     it("sends the bearer token when testing an endpoint", async () => {
@@ -161,7 +219,7 @@ describe("community endpoint OpenAI service", () => {
                 completionImageTokens: 1056,
             },
             imagePricing: "tokens",
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
         });
 
         expect(fetchMock).toHaveBeenCalledTimes(2);
@@ -194,7 +252,7 @@ describe("community endpoint OpenAI service", () => {
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
             imagePricing: "request",
-            supportsImageEdits: false,
+            inputModalities: ["text"],
         });
     });
 
@@ -225,7 +283,7 @@ describe("community endpoint OpenAI service", () => {
             usage: { images: 1 },
             billableUsage: { completionImageTokens: 1 },
             imagePricing: "request",
-            supportsImageEdits: true,
+            inputModalities: ["text", "image"],
         });
     });
 
@@ -298,6 +356,245 @@ describe("community endpoint OpenAI service", () => {
             }),
         ).rejects.toThrow(
             "Endpoint responded 401 after we sent Authorization: Authentication required",
+        );
+    });
+
+    it("probes the exact synchronous video endpoint", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/generate-video?version=1",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                prompt: "A green sprout gently moving in the breeze.",
+                duration: 5,
+            });
+            return Response.json({
+                data: [
+                    {
+                        b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                    },
+                ],
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/generate-video?version=1",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 5 },
+            billableUsage: { completionVideoSeconds: 5 },
+        });
+    });
+
+    it("probes transcription endpoints with a sample audio file and OpenAI duration usage", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/v1/audio/transcriptions",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            const formData = await request.formData();
+            expect(formData.get("model")).toBe("whisper-1");
+            expect(formData.get("response_format")).toBe("verbose_json");
+            const file = formData.get("file");
+            expect(file).toBeInstanceOf(File);
+            expect((file as File).type).toBe("audio/wav");
+            // A structurally valid WAV carrying actual speech: 44-byte
+            // RIFF/WAVE header + ~0.9s of PCM at 8 kHz mono 16-bit. The
+            // non-silence assertion is the point — probing with silence would
+            // reject endpoints that legitimately report no duration for it.
+            const wav = new Uint8Array(await (file as File).arrayBuffer());
+            expect(wav.length).toBe(14518);
+            expect(new TextDecoder().decode(wav.subarray(0, 4))).toBe("RIFF");
+            expect(new TextDecoder().decode(wav.subarray(8, 12))).toBe("WAVE");
+            expect(wav.subarray(44).some((byte) => byte !== 0)).toBe(true);
+            return Response.json({
+                text: "Hello",
+                usage: { duration: 0.5 },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 0.5 },
+            billableUsage: { promptAudioSeconds: 0.5 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("accepts whisper-style usage.seconds from transcription upstreams", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    text: "Hello",
+                    usage: { seconds: 3 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 3 },
+            billableUsage: { promptAudioSeconds: 3 },
+        });
+    });
+
+    it("accepts a top-level duration, which is where whisper verbose_json puts it", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ text: "Hello", duration: 4.5 })),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).resolves.toMatchObject({
+            billableUsage: { promptAudioSeconds: 4.5 },
+        });
+    });
+
+    it("refuses to register a transcription endpoint that omits duration", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ text: "Hello" })),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).rejects.toThrow("did not report the audio duration");
+    });
+
+    it("rejects an empty transcript, since the sample is real speech", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({ text: "   ", duration: 0.9 })),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).rejects.toThrow("did not return OpenAI transcription text");
+    });
+
+    it("explains the verbose_json requirement when the endpoint rejects it", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json(
+                    { error: { message: "unsupported response_format" } },
+                    { status: 400 },
+                ),
+            ),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-4o-transcribe",
+            }),
+        ).rejects.toThrow("response_format=verbose_json");
+    });
+
+    it("rejects transcription responses without text", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => Response.json({})),
+        );
+
+        await expect(
+            testCommunityTranscriptionEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "whisper-1",
+            }),
+        ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes embedding endpoints and returns billable prompt tokens", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                    usage: { prompt_tokens: 12, total_tokens: 12 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).resolves.toEqual({
+            usage: { prompt_tokens: 12, total_tokens: 12 },
+            billableUsage: { promptTextTokens: 12 },
+        });
+    });
+
+    it("rejects embedding upstreams that omit billable token usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return billable OpenAI token usage",
         );
     });
 });

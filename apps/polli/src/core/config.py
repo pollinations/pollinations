@@ -50,7 +50,7 @@ class DiscordConfig:
 @dataclass(frozen=True)
 class GitHubConfig:
     bot_username: str
-    admin_users: tuple[str, ...]
+    admin_user_ids: frozenset[int]
     whitelisted_repos: tuple[str, ...]
     admin_only_mentions: bool
     api_base: str
@@ -75,8 +75,8 @@ class GitHubConfig:
     def has_project_access(self) -> bool:
         return bool(self.project_pat)
 
-    def is_admin(self, username: str) -> bool:
-        return bool(username) and username.lower() in self.admin_users
+    def is_admin(self, user_id: int | None) -> bool:
+        return user_id is not None and user_id in self.admin_user_ids
 
     def is_repo_whitelisted(self, repo: str) -> bool:
         if not self.whitelisted_repos:
@@ -260,7 +260,7 @@ def load_config() -> Config:
         ),
         github=GitHubConfig(
             bot_username=github_raw["bot_username"],
-            admin_users=tuple(u.lower() for u in github_raw["admin_users"]),
+            admin_user_ids=frozenset(int(user_id) for user_id in github_raw["admin_user_ids"]),
             whitelisted_repos=tuple(r.lower() for r in github_raw["whitelisted_repos"]),
             admin_only_mentions=github_raw["admin_only_mentions"],
             api_base=github_raw["api_base"],

@@ -1,5 +1,10 @@
 interface CloudflareBindings {
     ENTER: Fetcher;
+    POLLINATIONS_MCP: Fetcher;
+    FFMPEG_MCP: Fetcher;
+    EXA_MCP: Fetcher;
+    COMPOSIO_MCP: Fetcher;
+    PORTKEY?: Fetcher;
     KLEIN_VPC?: Fetcher;
     BETTER_AUTH_SECRET: string;
     TINYBIRD_INGEST_TOKEN: string;
@@ -16,6 +21,9 @@ interface CloudflareBindings {
     KV: KVNamespace;
     IMAGE_BUCKET: R2Bucket;
     TEXT_BUCKET: R2Bucket;
+    GENERATION_COORDINATOR: DurableObjectNamespace<
+        import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
+    >;
     DB: D1Database;
     ENVIRONMENT:
         | "local"
@@ -24,6 +32,7 @@ interface CloudflareBindings {
         | "dev"
         | "test"
         | "development";
+    AGENT_RUNTIME_BASE_URL: string;
     STAGING_ALLOWED_GITHUB_IDS?: string;
     STAGING_ALLOWED_EMAILS?: string;
     LOG_LEVEL?: "trace" | "debug";
@@ -69,6 +78,7 @@ interface CloudflareBindings {
     XAI_API_KEY: string;
     POLLEN_REFILL_PER_HOUR?: number;
     POLLEN_RATE_LIMITER?: DurableObjectNamespace;
+    COMMUNITY_MODEL_RATE_LIMITER: DurableObjectNamespace;
     EDGE_RATE_LIMITER?: RateLimit;
 }
 

@@ -1,8 +1,10 @@
 import {
+    Alert,
     Button,
     Collapsible,
     cn,
     ExternalLinkIcon,
+    InlineLink,
     MailIcon,
     ScrollArea,
     useScrollLock,
@@ -616,6 +618,29 @@ export function Authorize() {
                     <ErrorBanner>{error}</ErrorBanner>
                 ) : (
                     <div>
+                        {totalBalance !== null && totalBalance <= 0 && (
+                            <div className="px-4 py-4">
+                                <Alert
+                                    intent="info"
+                                    title="You’re out of Pollen"
+                                >
+                                    Complete a free{" "}
+                                    <InlineLink
+                                        href={`${config.baseUrl}/quests`}
+                                    >
+                                        Quest
+                                    </InlineLink>{" "}
+                                    or{" "}
+                                    <InlineLink
+                                        href={`${config.baseUrl}/pollen#buy-pollen`}
+                                    >
+                                        top up instantly
+                                    </InlineLink>{" "}
+                                    before using this app.
+                                </Alert>
+                            </div>
+                        )}
+
                         <div className="-mx-6 px-6 py-4 bg-theme-bg-pale border-y border-theme-border">
                             <p
                                 id="authorize-dialog-title"

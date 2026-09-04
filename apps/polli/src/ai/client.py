@@ -1,10 +1,10 @@
 import asyncio
+import codecs
 import json
 import logging
 import random
 import time
-from collections.abc import Callable
-from contextvars import ContextVar
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from ..utils.cache import TTLCache
 from ..utils.json import dumps as _json_dumps
@@ -75,10 +75,11 @@ class UpstreamAuthError(Exception):
 
 import aiohttp
 
-# Per-request auth override (used by API mode to pass through user's key)
-_auth_override: ContextVar[str] = ContextVar("auth_override", default="")
-
 from ..core.config import config
+from ..core.request_auth import authorization_or, request_authorization
+
+# Backward-compatible alias for the API layer.
+_auth_override = request_authorization
 from .prompts import get_tool_system_prompt
 from .tool_filters import (
     filter_admin_actions_from_tools,
@@ -139,7 +140,7 @@ class PollinationsClient:
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": f"Bearer {config.ai.token}",
+            "Authorization": authorization_or(config.ai.token),
         }
 
         url = f"{config.ai.api_base}/v1/chat/completions"
@@ -190,6 +191,8 @@ class PollinationsClient:
         tool_context: dict | None = None,
         mode: str = "discord",
         api_params: dict | None = None,
+        event_handler: Callable[[dict], Awaitable[None]] | None = None,
+        raw_messages: list[dict] | None = None,
     ) -> dict:
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
         system_content = get_tool_system_prompt(is_admin=is_admin, is_collaborator=is_collaborator, mode=mode)
@@ -200,7 +203,22 @@ class PollinationsClient:
         else:
             system_content += "\n\n## USER MODE\nUser is NOT admin. Read-only + create/comment only. Admin actions will return permission error."
 
-        # Build messages
+        # API callers supply an OpenAI conversation verbatim. Polli adds only its
+        # private system prompt; Discord keeps its richer thread framing below.
+        if raw_messages is not None:
+            messages = [{"role": "system", "content": system_content}, *raw_messages]
+            return await self._call_with_tools(
+                messages,
+                discord_username,
+                is_admin=is_admin,
+                user_message=user_message,
+                tool_context=tool_context,
+                mode=mode,
+                api_params=api_params,
+                event_handler=event_handler,
+            )
+
+        # Build Discord messages
         messages = [{"role": "system", "content": system_content}]
         if thread_history:
             # Separate system messages from conversation messages
@@ -274,9 +292,7 @@ class PollinationsClient:
         if video_urls:
             notices.append(
                 f"[User attached or linked {len(video_urls)} video/GIF(s). "
-                "These URLs are context, not image inputs:\n"
-                + "\n".join(f"- {url}" for url in video_urls[:5])
-                + "]"
+                "These URLs are context, not image inputs:\n" + "\n".join(f"- {url}" for url in video_urls[:5]) + "]"
             )
         file_notice = "\n\n" + "\n\n".join(notices) if notices else ""
 
@@ -310,6 +326,7 @@ class PollinationsClient:
             tool_context=tool_context,
             mode=mode,
             api_params=api_params,
+            event_handler=event_handler,
         )
         return result
 
@@ -323,6 +340,7 @@ class PollinationsClient:
         tool_context: dict | None = None,
         mode: str = "discord",
         api_params: dict | None = None,
+        event_handler: Callable[[dict], Awaitable[None]] | None = None,
     ) -> dict:
         """Make API call with tool support and handle tool calls."""
 
@@ -330,18 +348,23 @@ class PollinationsClient:
         all_tool_results = []
 
         # Start with all tools, conditionally including code_search if enabled
-        all_tools = get_tools_with_embeddings(
-            GITHUB_TOOLS.copy(), config.code_search.is_configured
-        )
+        all_tools = get_tools_with_embeddings(GITHUB_TOOLS.copy(), config.code_search.is_configured)
 
         is_collaborator = (tool_context or {}).get("is_collaborator", False)
+        client_tools = list((api_params or {}).get("tools") or [])
         if mode == "api":
             all_tools = filter_api_tools(all_tools)
         else:
             all_tools = filter_admin_actions_from_tools(all_tools, is_admin, is_collaborator)
+        internal_tool_names = {tool.get("function", {}).get("name") for tool in all_tools}
+        client_tools = [
+            tool for tool in client_tools if tool.get("function", {}).get("name") not in internal_tool_names
+        ]
+        client_tool_names = {tool.get("function", {}).get("name") for tool in client_tools}
         tools = (
             filter_tools_by_intent(user_message, all_tools, is_admin or is_collaborator) if user_message else all_tools
         )
+        tools.extend(client_tools)
 
         # Log available tools for debugging
         all_tool_names = [t["function"]["name"] for t in all_tools]
@@ -364,6 +387,8 @@ class PollinationsClient:
 
         for iteration in range(max_iterations):
             start_time = time.time()
+            # Tool-selection rounds stay buffered so private planning text cannot leak.
+            # Once no private tools remain, the final answer streams in real time.
             response = await self._call_api_with_tools(messages, tools=tools, mode=mode, api_params=api_params)
             api_time = time.time() - start_time
             logger.info(f"AI API call took {api_time:.1f}s (iteration {iteration + 1})")
@@ -394,13 +419,50 @@ class PollinationsClient:
             tool_calls = response.get("tool_calls", [])
 
             if not tool_calls:
-                # No tool calls, return the text response
+                if event_handler:
+                    final_response = await self._call_api_with_tools_stream(
+                        messages,
+                        tools=None,
+                        mode=mode,
+                        api_params=api_params,
+                        event_handler=event_handler,
+                    )
+                    if final_response:
+                        final_usage = final_response.get("usage")
+                        if final_usage:
+                            for key in total_usage:
+                                total_usage[key] += final_usage.get(key, 0)
+                        return {
+                            "response": final_response.get("content", ""),
+                            "tool_calls": all_tool_calls,
+                            "tool_results": all_tool_results,
+                            "content_blocks": all_content_blocks,
+                            "usage": total_usage,
+                            "finish_reason": final_response.get("finish_reason") or "stop",
+                        }
                 return {
                     "response": response.get("content", ""),
                     "tool_calls": all_tool_calls,
                     "tool_results": all_tool_results,
                     "content_blocks": all_content_blocks,
                     "usage": total_usage,
+                    "finish_reason": response.get("finish_reason") or "stop",
+                }
+
+            caller_tool_calls = [
+                tool_call
+                for tool_call in tool_calls
+                if tool_call.get("function", {}).get("name", "").split(":")[-1] in client_tool_names
+            ]
+            if caller_tool_calls:
+                return {
+                    "response": response.get("content", ""),
+                    "client_tool_calls": caller_tool_calls,
+                    "tool_calls": all_tool_calls,
+                    "tool_results": all_tool_results,
+                    "content_blocks": all_content_blocks,
+                    "usage": total_usage,
+                    "finish_reason": "tool_calls",
                 }
 
             # Execute tool calls in parallel
@@ -642,7 +704,121 @@ class PollinationsClient:
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Convert exceptions to error dicts
-        return [r if not isinstance(r, Exception) else {"error": str(r)} for r in results]
+        return [r if isinstance(r, dict) else {"error": str(r)} for r in results]
+
+    async def _call_api_with_tools_stream(
+        self,
+        messages: list[dict],
+        tools: list | None,
+        mode: str,
+        api_params: dict | None,
+        event_handler: Callable[[dict], Awaitable[None]],
+    ) -> dict | None:
+        override = _auth_override.get()
+        if mode == "api" and not override:
+            return None
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": authorization_or(config.ai.token),
+        }
+        payload = {
+            "model": config.ai.model,
+            "messages": messages,
+            "seed": (api_params or {}).get("seed", 42),
+            "stream": True,
+            "stream_options": {"include_usage": True},
+        }
+        for key, value in (api_params or {}).items():
+            if key not in {"seed", "stream", "stream_options"} and value is not None:
+                payload[key] = value
+        if tools:
+            payload["tools"] = tools
+            payload["tool_choice"] = "auto"
+
+        session = await self.get_session()
+        url = f"{config.ai.api_base}/v1/chat/completions"
+        content = ""
+        tool_calls: dict[int, dict] = {}
+        usage = None
+        finish_reason = None
+        async with session.post(url, json=payload, headers=headers) as response:
+            if response.status in (401, 403) and mode == "api":
+                raise UpstreamAuthError(response.status, await response.text())
+            if response.status != 200:
+                logger.warning("Streaming API error: HTTP %s: %s", response.status, (await response.text())[:100])
+                return None
+            decoder = codecs.getincrementaldecoder("utf-8")()
+            buffer = ""
+
+            async def consume(block: str) -> None:
+                nonlocal content, usage, finish_reason
+                data_lines = [line[5:].lstrip() for line in block.splitlines() if line.startswith("data:")]
+                if not data_lines:
+                    return
+                payload = "\n".join(data_lines)
+                if payload == "[DONE]":
+                    return
+                data = _json_loads(payload)
+                if data.get("usage"):
+                    usage = data["usage"]
+                choice = (data.get("choices") or [{}])[0]
+                delta = choice.get("delta") or {}
+                if delta.get("content"):
+                    content += delta["content"]
+                    await event_handler({"type": "content.delta", "delta": delta["content"]})
+                for partial in delta.get("tool_calls") or []:
+                    index = partial.get("index", 0)
+                    call = tool_calls.setdefault(
+                        index,
+                        {"id": "", "type": "function", "function": {"name": "", "arguments": ""}},
+                    )
+                    call["id"] += partial.get("id", "")
+                    function = partial.get("function") or {}
+                    call["function"]["name"] += function.get("name", "")
+                    call["function"]["arguments"] += function.get("arguments", "")
+                if choice.get("finish_reason"):
+                    finish_reason = choice["finish_reason"]
+
+            async for chunk in response.content.iter_any():
+                buffer += decoder.decode(chunk).replace("\r\n", "\n").replace("\r", "\n")
+                while "\n\n" in buffer:
+                    block, buffer = buffer.split("\n\n", 1)
+                    await consume(block)
+            buffer += decoder.decode(b"", final=True)
+            if buffer.strip():
+                await consume(buffer)
+        return {
+            "content": content,
+            "tool_calls": [tool_calls[index] for index in sorted(tool_calls)],
+            "content_blocks": [],
+            "usage": usage,
+            "finish_reason": finish_reason,
+        }
+
+    async def stream_with_tools(self, **kwargs) -> AsyncIterator[dict]:
+        queue: asyncio.Queue[dict] = asyncio.Queue()
+
+        async def emit(event: dict) -> None:
+            await queue.put(event)
+
+        task = asyncio.create_task(self.process_with_tools(**kwargs, event_handler=emit))
+        try:
+            while not task.done() or not queue.empty():
+                try:
+                    yield await asyncio.wait_for(queue.get(), timeout=0.1)
+                except TimeoutError:
+                    continue
+            result = await task
+            for tool_call in result.get("client_tool_calls", []):
+                yield {"type": "client.tool_call.delta", "tool_call": tool_call}
+            yield {
+                "type": "completed",
+                "usage": result.get("usage"),
+                "finish_reason": result.get("finish_reason", "stop"),
+            }
+        finally:
+            if not task.done():
+                task.cancel()
 
     async def _call_api_with_tools(
         self,
@@ -671,7 +847,7 @@ class PollinationsClient:
                 return None
             auth_token = override
         else:
-            auth_token = override or f"Bearer {config.ai.token}"
+            auth_token = authorization_or(config.ai.token)
         headers = {
             "Content-Type": "application/json",
             "Authorization": auth_token,
@@ -913,7 +1089,7 @@ async def web_search_handler(query: str, **kwargs) -> dict:
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": f"Bearer {config.ai.token}",
+        "Authorization": authorization_or(config.ai.token),
     }
 
     payload = {

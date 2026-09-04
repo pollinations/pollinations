@@ -1,0 +1,36 @@
+{
+  "pr_number": 14461,
+  "title": "Add Nectar MCP to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14461",
+  "merged_at": "2026-09-04T18:27:19Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [Nectar MCP](https://github.com/pinkpixel-dev/nectar-mcp) to image\n- Nectar is a stdio MCP server for Pollinations image, video, and audio generation. It gives MCP clients a focused set of creative media tools. Generate and edit images, create videos, and generate spee\n\nFixes #14437",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Nectar joins the garden",
+    "blurb": "Nectar MCP has landed in the image, bringing a compact creative toolkit for MCP clients. Ask an agent for pixels, video, or speech; the little media greenhouse is now stocked.",
+    "summary": "Added Nectar MCP, a stdio MCP server that gives compatible clients focused Pollinations tools for generating and editing images, creating videos, and generating speech.",
+    "impact": "Developers using MCP clients can now access Pollinations image, video, and audio generation through Nectar's dedicated creative-media toolset.",
+    "keywords": [
+      "mcp",
+      "nectar",
+      "image-generation",
+      "video-generation",
+      "audio-generation",
+      "creative-tools"
+    ],
+    "visual_concept": "Depict Nectar as a cozy nectar jar or flowering creative-tool station connected to a retro terminal, with separate pixel blossoms representing images, video frames, and sound waves. Polli, wearing tiny maker goggles, helps the eager CRT Monitor Robot route these creative outputs through glowing garden pipes, making the MCP connection feel like a friendly media greenhouse.",
+    "image_prompt": "A cozy pixel art garden-workshop where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny maker goggles while tending a glowing Nectar jar connected to a retro CRT terminal; image flowers, tiny film frames, and musical-note sprouts grow from lime green (#ecf874) code-plants as a helpful monitor robot watches. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"NECTAR MCP\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14461.jpg",
+    "prompt": "A cozy pixel art garden-workshop where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny maker goggles while tending a glowing Nectar jar connected to a retro CRT terminal; image flowers, tiny film frames, and musical-note sprouts grow from lime green (#ecf874) code-plants as a helpful monitor robot watches. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, pixel-font text: \"NECTAR MCP\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-04T18:28:28.343849+00:00",
+  "app_name": "Nectar MCP",
+  "app_url": "https://github.com/pinkpixel-dev/nectar-mcp"
+}

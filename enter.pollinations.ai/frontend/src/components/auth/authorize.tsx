@@ -8,6 +8,7 @@ import {
     MailIcon,
     ScrollArea,
     useScrollLock,
+    WalletIcon,
 } from "@pollinations/ui";
 import {
     AuthInfoCard,
@@ -619,10 +620,16 @@ export function Authorize() {
                 ) : (
                     <div>
                         {totalBalance !== null && totalBalance <= 0 && (
-                            <div className="px-4 py-4">
+                            <div className="py-4">
                                 <Alert
                                     intent="info"
-                                    title="You’re out of Pollen"
+                                    className="!bg-intent-danger-bg-light"
+                                    title={
+                                        <span className="inline-flex items-center gap-1.5 leading-none">
+                                            <WalletIcon className="h-4 w-4 shrink-0" />
+                                            You’re out of Pollen
+                                        </span>
+                                    }
                                 >
                                     Complete a free{" "}
                                     <InlineLink

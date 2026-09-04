@@ -1,5 +1,25 @@
 [
   {
+    "emoji": "💬",
+    "name": "Open WebUI for Pollinations",
+    "url": "https://openwebui.pollinations.ai",
+    "description": "Open WebUI chat frontend with Pollinations login. All Pollinations text models in the picker, plus the Pollinations MCP server as a tool server for image, video and audio.",
+    "language": "en",
+    "category": "chat",
+    "platform": "web",
+    "githubUsername": "voodoohop",
+    "githubUserId": "5099901",
+    "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/apps/openwebui",
+    "repositoryStars": null,
+    "discordUsername": null,
+    "other": null,
+    "submittedDate": "2026-09-03",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/14416",
+    "approvedDate": "2026-09-03",
+    "byop": false,
+    "requests24h": 0
+  },
+  {
     "emoji": "📚",
     "name": "AI Homework Solver",
     "url": "https://zizoisu.github.io/ai-homework-solver",

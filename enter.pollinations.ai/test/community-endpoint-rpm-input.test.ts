@@ -39,6 +39,7 @@ describe("community endpoint per-user RPM input", () => {
         ).toEqual({
             systemPrompt: "Help",
             baseModel: "openai",
+            requiredSafetyFeatures: [],
             mcpServers: ["pollinations"],
         });
     });

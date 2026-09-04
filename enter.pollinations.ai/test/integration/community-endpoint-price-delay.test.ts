@@ -36,7 +36,7 @@ async function postModel(
     return response.json<Record<string, unknown>>();
 }
 
-async function advancePendingPast12Hours(id: string): Promise<void> {
+async function advancePendingPastDelay(id: string): Promise<void> {
     await drizzle(env.DB)
         .update(schema.communityEndpoint)
         .set({
@@ -51,12 +51,16 @@ async function publishPendingModel(
     sessionToken: string,
     id: string,
 ): Promise<Record<string, unknown>> {
-    await advancePendingPast12Hours(id);
+    await advancePendingPastDelay(id);
     return postModel(sessionToken, `/${id}/update`, {});
 }
 
-describe("community endpoint 12-hour price-change delay", () => {
-    test("first public model creation is queued for 12 hours", async ({
+describe("community endpoint 3-hour price-change delay", () => {
+    test("uses a 3-hour delay", () => {
+        expect(COMMUNITY_ENDPOINT_CHANGE_DELAY_MS).toBe(3 * 60 * 60 * 1000);
+    });
+
+    test("first public model creation is queued for 3 hours", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -78,7 +82,7 @@ describe("community endpoint 12-hour price-change delay", () => {
             },
         });
 
-        await advancePendingPast12Hours(created.id as string);
+        await advancePendingPastDelay(created.id as string);
         const visibleModels = await getVisibleModelIdsForUser(
             env.DB,
             "another-user",
@@ -134,7 +138,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         });
     });
 
-    test("price change on a public model is queued for 12 hours", async ({
+    test("price change on a public model is queued for 3 hours", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -183,7 +187,7 @@ describe("community endpoint 12-hour price-change delay", () => {
             promptTextPrice: 0.000003,
         });
 
-        await advancePendingPast12Hours(created.id as string);
+        await advancePendingPastDelay(created.id as string);
 
         // Read the model list; the effective price should now reflect the pending change.
         const listResponse = await SELF.fetch(endpointUrl, {
@@ -226,7 +230,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         );
     });
 
-    test("private-to-public transition is queued for 12 hours", async ({
+    test("private-to-public transition is queued for 3 hours", async ({
         sessionToken,
     }) => {
         await approveCommunityModels();
@@ -268,7 +272,7 @@ describe("community endpoint 12-hour price-change delay", () => {
             visibility: "public",
         });
 
-        await advancePendingPast12Hours(created.id as string);
+        await advancePendingPastDelay(created.id as string);
 
         const listResponse = await SELF.fetch(endpointUrl, {
             headers: { Cookie: `better-auth.session_token=${sessionToken}` },
@@ -359,7 +363,7 @@ describe("community endpoint 12-hour price-change delay", () => {
         });
         expect(early.status).toBe(400);
         expect(await early.text()).toContain(
-            "can be relisted 12 hours after they were hidden",
+            "can be relisted 3 hours after they were hidden",
         );
 
         await db

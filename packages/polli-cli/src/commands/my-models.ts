@@ -50,6 +50,7 @@ interface MyModelBase {
     title: string;
     description: string | null;
     baseUrl: string;
+    responsesUrl: string | null;
     upstreamModel: string;
     visibility: "private" | "public";
     createdAt: string;
@@ -66,6 +67,7 @@ interface ProxyMyModel extends MyModelBase {
     completionVideoPrice: number;
     // /account/my-models/test detects edit support from endpoint probes.
     inputModalities: string[];
+    requiredSafetyFeatures: string[];
     fallbacks: string[];
 }
 
@@ -102,6 +104,13 @@ function readPriceOptions(opts: Record<string, unknown>) {
     return prices;
 }
 
+function commaSeparatedList(value: unknown): string[] {
+    return String(value)
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
 export function modelBody(
     opts: Record<string, unknown>,
     includeRequired: boolean,
@@ -119,6 +128,10 @@ export function modelBody(
 
     for (const [optionKey, bodyKey] of fields) {
         if (opts[optionKey] !== undefined) body[bodyKey] = opts[optionKey];
+    }
+    if (opts.responses === false) body.responsesUrl = null;
+    else if (opts.responsesUrl !== undefined) {
+        body.responsesUrl = opts.responsesUrl;
     }
 
     if (opts.visibility !== undefined) {
@@ -155,17 +168,18 @@ export function modelBody(
     // An empty string clears the list, which is why this checks for the flag
     // being present rather than for a truthy value.
     if (opts.fallbacks !== undefined) {
-        body.fallbacks = String(opts.fallbacks)
-            .split(",")
-            .map((id) => id.trim())
-            .filter((id) => id.length > 0);
+        body.fallbacks = commaSeparatedList(opts.fallbacks);
     }
 
     if (opts.inputModalities !== undefined) {
-        body.inputModalities = String(opts.inputModalities)
-            .split(",")
-            .map((modality) => modality.trim())
-            .filter((modality) => modality.length > 0);
+        body.inputModalities = commaSeparatedList(opts.inputModalities);
+    }
+
+    if (opts.requiredSafety !== undefined) {
+        body.requiredSafetyFeatures =
+            String(opts.requiredSafety).trim() === "none"
+                ? []
+                : commaSeparatedList(opts.requiredSafety);
     }
 
     if (includeRequired) {
@@ -218,6 +232,7 @@ function printModels(models: MyModel[]) {
                     ? "-"
                     : model.upstreamModel,
             base_url: model.baseUrl,
+            responses_url: model.responsesUrl ?? "-",
             fallbacks:
                 model.type === "proxy"
                     ? model.fallbacks?.join(", ") || "-"
@@ -236,6 +251,7 @@ function printModels(models: MyModel[]) {
             "visibility",
             "upstream",
             "base_url",
+            "responses_url",
             "fallbacks",
             "description",
         ],
@@ -267,6 +283,11 @@ const create = addPriceOptions(
             "OpenAI-compatible base URL, or exact video endpoint URL",
         )
         .option(
+            "--responses-url <url>",
+            "Exact OpenAI-compatible /v1/responses URL for text models",
+        )
+        .option("--no-responses", "Disable Responses support")
+        .option(
             "--upstream-model <model>",
             "Upstream model id (not used for video)",
         )
@@ -287,6 +308,10 @@ const create = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
         )
         .option(
             "--modality <modality>",
@@ -326,6 +351,11 @@ const update = addPriceOptions(
             "OpenAI-compatible base URL, or exact video endpoint URL",
         )
         .option(
+            "--responses-url <url>",
+            "Exact OpenAI-compatible /v1/responses URL for text models",
+        )
+        .option("--no-responses", "Disable Responses support")
+        .option(
             "--upstream-model <model>",
             "Upstream model id (not used for video)",
         )
@@ -346,6 +376,10 @@ const update = addPriceOptions(
         .option(
             "--input-modalities <types>",
             "Comma-separated accepted inputs: text,image,audio,video",
+        )
+        .option(
+            "--required-safety <features>",
+            "Comma-separated required checks: privacy,secrets,sexual,violence,shield; none clears them",
         )
         // No --modality here on purpose: UpdateEndpointSchema has no modality
         // field, so a registered model's family is fixed at creation.

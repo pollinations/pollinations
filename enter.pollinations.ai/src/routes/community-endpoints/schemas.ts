@@ -15,6 +15,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import { ValidationError } from "@shared/http/validation-error.ts";
 import { MODEL_INPUT_MODALITIES } from "@shared/registry/registry.ts";
+import { SAFETY_FEATURES } from "@shared/schemas/safety.ts";
 import { z } from "zod";
 
 const ModalitySchema = z
@@ -33,6 +34,12 @@ const InputModalitiesSchema = z
     .min(1)
     .describe(
         "Input types accepted by the model. Select every supported modality so the model catalog can advertise them accurately.",
+    );
+export const RequiredSafetyFeaturesSchema = z
+    .array(z.enum(SAFETY_FEATURES))
+    .max(SAFETY_FEATURES.length)
+    .describe(
+        "Input safety checks callers cannot disable. Use sexual and violence to block harmful prompts before they reach the provider.",
     );
 const AdvertisedSchema = z
     .object(CommunityEndpointAdvertisedSchema.shape)
@@ -108,6 +115,13 @@ const EndpointFieldsSchema = {
         .describe(
             "OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL.",
         ),
+    responsesUrl: z
+        .string()
+        .url()
+        .nullable()
+        .describe(
+            "Exact OpenAI-compatible Responses endpoint URL. Null disables Responses support.",
+        ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
 } as const;
@@ -119,18 +133,33 @@ const ProxyCreateSchema = z
         description: EndpointFieldsSchema.description,
         visibility: VisibilitySchema.optional().default("private"),
         baseUrl: EndpointFieldsSchema.baseUrl,
+        responsesUrl: EndpointFieldsSchema.responsesUrl
+            .optional()
+            .default(null),
         bearerToken: EndpointFieldsSchema.bearerToken,
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         modality: ModalitySchema.optional().default("text"),
         imagePricing: ImagePricingSchema.optional().default("request"),
         inputModalities: InputModalitiesSchema.optional(),
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
+            [],
+        ),
         advertised: AdvertisedSchema.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
         paidOnly: PaidOnlySchema.optional().default(false),
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
-    .strict();
+    .strict()
+    .superRefine((input, ctx) => {
+        if (input.responsesUrl && input.modality !== "text") {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["responsesUrl"],
+                message: "responsesUrl is supported only for text models",
+            });
+        }
+    });
 export const CreateEndpointSchema = ProxyCreateSchema;
 export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 
@@ -141,7 +170,13 @@ export const CreateEndpointAgentSchema = z
         description: EndpointFieldsSchema.description,
         visibility: VisibilitySchema.optional().default("private"),
         baseUrl: EndpointFieldsSchema.baseUrl,
+        responsesUrl: EndpointFieldsSchema.responsesUrl
+            .optional()
+            .default(null),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
+        requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
+            [],
+        ),
         perUserRpm: PerUserRpmSchema.optional().default(null),
     })
     .strict();
@@ -151,12 +186,14 @@ const CommonUpdateFieldsSchema = {
     title: EndpointFieldsSchema.title.optional(),
     description: EndpointFieldsSchema.description,
     visibility: VisibilitySchema.optional(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
     hidden: z.boolean().optional(),
 } as const;
 const ProxyUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        responsesUrl: EndpointFieldsSchema.responsesUrl.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
@@ -174,6 +211,7 @@ const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        responsesUrl: EndpointFieldsSchema.responsesUrl.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         perUserRpm: PerUserRpmSchema.optional(),
     })
@@ -246,8 +284,10 @@ const CommunityEndpointResponseFieldsSchema = {
     title: z.string(),
     description: z.string().nullable(),
     baseUrl: z.string().url(),
+    responsesUrl: z.string().url().nullable(),
     upstreamModel: z.string().min(1),
     visibility: VisibilitySchema,
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
     pending: PendingCommunityEndpointChangeSchema,
     hidden: z.boolean(),
     hiddenReason: z.string().nullable(),

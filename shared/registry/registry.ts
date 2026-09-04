@@ -1,4 +1,5 @@
 import { roundPollenLedgerAmount } from "../billing/precision.ts";
+import type { SafetyFeature } from "../schemas/safety.ts";
 import { AUDIO_SERVICES, type AudioModelName } from "./audio";
 import type { CostVariantContext, PricingInput } from "./cost-variants";
 
@@ -154,8 +155,8 @@ export type ModelDefinition = {
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */
     fallbacks?: string[];
-    /** Override the shared fallback status list for this model. Network failures always retry. */
-    fallbackOnStatusCodes?: number[];
+    /** Input safety features callers cannot disable for this model. */
+    requiredSafetyFeatures?: SafetyFeature[];
     brand: string;
     category: Category;
     cost: CostDefinition;
@@ -191,6 +192,8 @@ export type ModelDefinition = {
     inputModalities?: ModelInputModality[];
     outputModalities?: ModelOutputModality[];
     tools?: boolean;
+    /** Internal route limitation: false when forced/named tool selection fails. */
+    supportsForcedToolChoice?: boolean;
     reasoning?: boolean;
     search?: boolean;
     // Supported Perplexity search-context sizes; first entry is the default.
@@ -208,6 +211,8 @@ export type ModelDefinition = {
     // audio (e.g. Stable Audio) from per-character TTS, which share cost fields.
     flatRate?: boolean;
     hidden?: boolean; // Hidden from /models endpoints and dashboard, but still usable via API
+    /** Internal provider route: hidden from discovery and rejected when selected by a caller. */
+    fallbackOnly?: boolean;
     supportedEndpoints?: string[]; // Override the default endpoints for specialized models
     // Supported output resolutions; first entry is the default.
     resolutions?: string[];
@@ -219,6 +224,8 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    /** Internal provider-route output-token cap used for fallback compatibility. */
+    maxCompletionTokens?: number;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.
@@ -532,7 +539,7 @@ export function resolveModelName(model: string): ModelName {
 }
 
 /**
- * Get all public model names
+ * Get all bundled registry model names, including hidden provider routes.
  */
 export function getModels(): ModelName[] {
     return Object.keys(MODEL_REGISTRY) as ModelName[];
@@ -569,8 +576,14 @@ function getModel3dModels(): Model3dName[] {
 function filterVisible<TModelName extends ModelName>(
     ids: TModelName[],
 ): TModelName[] {
-    return ids.filter((id) => !MODEL_REGISTRY[id]?.hidden);
+    return ids.filter((id) =>
+        isVisibleModelDefinition(MODEL_REGISTRY[id] as ModelDefinition),
+    );
 }
+
+export const isVisibleModelDefinition = (
+    definition: ModelDefinition,
+): boolean => definition.hidden !== true && definition.fallbackOnly !== true;
 
 export const getVisibleTextModels = () => filterVisible(getTextModels());
 export const getVisibleImageModels = () => filterVisible(getImageModels());

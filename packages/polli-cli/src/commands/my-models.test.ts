@@ -14,6 +14,7 @@ describe("modelBody", () => {
                     imagePricing: "request",
                     inputModalities: "text,image",
                     fallbacks: "owner/backup, owner/secondary",
+                    requiredSafety: "sexual,violence",
                     completionImagePrice: "0.01",
                 },
                 true,
@@ -27,6 +28,7 @@ describe("modelBody", () => {
             imagePricing: "request",
             inputModalities: ["text", "image"],
             fallbacks: ["owner/backup", "owner/secondary"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             completionImagePrice: 0.01,
         });
     });
@@ -40,6 +42,32 @@ describe("modelBody", () => {
         });
         expect(modelBody({ paidOnly: false }, false)).toEqual({
             paidOnly: false,
+        });
+    });
+
+    it("sets and clears the exact Responses endpoint", () => {
+        expect(
+            modelBody(
+                { responsesUrl: "https://example.com/v1/responses" },
+                false,
+            ),
+        ).toEqual({ responsesUrl: "https://example.com/v1/responses" });
+        expect(modelBody({ responses: false }, false)).toEqual({
+            responsesUrl: null,
+        });
+    });
+
+    it("maps required safety features and clears them with none", () => {
+        expect(
+            modelBody(
+                { requiredSafety: "privacy, sexual,violence,shield" },
+                false,
+            ),
+        ).toEqual({
+            requiredSafetyFeatures: ["privacy", "sexual", "violence", "shield"],
+        });
+        expect(modelBody({ requiredSafety: "none" }, false)).toEqual({
+            requiredSafetyFeatures: [],
         });
     });
 

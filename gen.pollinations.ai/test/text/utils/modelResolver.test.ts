@@ -22,6 +22,11 @@ describe("resolveModelConfig", () => {
             resolveModelConfig(messages, { model: "claude-fable-5" }).options
                 .max_tokens,
         ).toBe(128000);
+        expect(
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-fable-5.1",
+            }).options.max_tokens,
+        ).toBe(128000);
     });
 
     it("lets callers override Anthropic max_tokens", () => {
@@ -39,6 +44,14 @@ describe("resolveModelConfig", () => {
         });
 
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
+    });
+
+    it("routes Claude Fable 5.1 to its global profile", () => {
+        expect(
+            resolveModelConfig(messages, {
+                model: "anthropic/claude-fable-5.1",
+            }).options.model,
+        ).toBe("global.anthropic.claude-fable-5-1");
     });
 
     it("does not set max_tokens for non-Anthropic models", () => {
@@ -77,6 +90,19 @@ describe("resolveModelConfig", () => {
         const result = resolveModelConfig(messages, { model: "mercury" });
 
         expect(result.options.model).toBe("inception/mercury-2");
+        expect(result.options.provider).toEqual({
+            only: ["Inception"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it("pins Mercury 2.5 Preview to Inception on OpenRouter without fallback", () => {
+        const result = resolveModelConfig(messages, {
+            model: "inception/mercury-2.5-preview",
+        });
+
+        expect(result.options.model).toBe("inception/mercury-2.5-preview");
+        expect(result.options.max_tokens).toBe(64000);
         expect(result.options.provider).toEqual({
             only: ["Inception"],
             allow_fallbacks: false,
@@ -150,6 +176,54 @@ describe("resolveModelConfig", () => {
             only: ["Alibaba"],
             allow_fallbacks: false,
         });
+    });
+
+    it("routes Qwen3.8 Max 0902 directly to Alibaba", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-max-0902",
+        });
+
+        expect(result.options.model).toBe("qwen3.8-max-0902");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it.each([
+        ["required", "required"],
+        [
+            "function object",
+            {
+                type: "function",
+                function: { name: "get_weather" },
+            },
+        ],
+    ])("disables Qwen3.8 Max 0902 thinking for %s tool choice", async (_label, toolChoice) => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-max-0902",
+            reasoning_effort: "high",
+            tool_choice: toolChoice,
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("none");
+    });
+
+    it("keeps Qwen3.8 Max 0902 reasoning for automatic tool choice", async () => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-max-0902",
+            reasoning_effort: "high",
+            tool_choice: "auto",
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
     it("routes Qwen3.8 2.4T A95B directly to Fireworks", () => {
@@ -287,6 +361,7 @@ describe("resolveModelConfig", () => {
         ["gemma-4-31b", "google/gemma-4-31b-it", "novita/bf16"],
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
+        ["minimax-m2.7", "minimax/minimax-m2.7", "deepinfra/fp8"],
         ["llama-scout", "meta-llama/llama-4-scout", "deepinfra/fp8"],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });
@@ -328,6 +403,21 @@ describe("resolveModelConfig", () => {
 
         expect(result.options.model).toBe(
             "accounts/fireworks/models/deepseek-v4-flash-0731",
+        );
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            "custom-host": "https://api.fireworks.ai/inference/v1",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("routes DeepSeek Vision to the exact Fireworks vision checkpoint", () => {
+        const result = resolveModelConfig(messages, {
+            model: "deepseek/deepseek-v4-flash-vision-exp",
+        });
+
+        expect(result.options.model).toBe(
+            "accounts/fireworks/models/deepseek-v4-flash-vision-exp",
         );
         expect(result.options.modelConfig).toMatchObject({
             provider: "openai",

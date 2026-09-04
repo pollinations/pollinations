@@ -36,6 +36,7 @@ import {
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
+import { isOpenWebUiChattable, OpenWebUiLink } from "./open-webui-link.tsx";
 import {
     ModelPricingControls,
     ModelPricingLedger,
@@ -75,13 +76,8 @@ export const ModelId: FC<ModelIdProps> = ({ name, showCopyIcon = false }) => (
         value={name}
         tooltip={
             showCopyIcon ? null : (
-                <span className="flex min-w-0 max-w-full flex-col items-start gap-1.5 text-left">
-                    <span className="font-sans text-xs font-semibold text-theme-text-strong">
-                        Click to copy
-                    </span>
-                    <span className="max-w-full break-all font-mono text-xs text-theme-text-muted">
-                        {name}
-                    </span>
+                <span className="font-sans text-xs font-semibold text-theme-text-strong">
+                    Click to copy
                 </span>
             )
         }
@@ -244,7 +240,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    // One launcher per row: anything you can chat with opens in Open WebUI,
+    // everything else keeps the Play playground.
+    const openWebUiSupported = isOpenWebUiChattable(model);
     const playSupported =
+        !openWebUiSupported &&
         model.type !== "3d" &&
         model.type !== "embedding" &&
         model.type !== "realtime";
@@ -339,6 +339,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                 </a>
                             </Tooltip>
                         )}
+                        {openWebUiSupported && (
+                            <OpenWebUiLink modelId={model.name} />
+                        )}
                     </div>
                     <ModelId name={model.name} />
                     {model.brandUrl && model.brand && (
@@ -354,10 +357,12 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                     <div className="flex min-w-0 flex-col gap-0.5">
                         {(inputModalities.length > 0 ||
                             capabilities.length > 0 ||
+                            model.perUserRpm != null ||
                             pricing.dropdowns.length > 0) && (
                             <div className="flex min-w-0 flex-wrap items-center gap-2">
                                 {(inputModalities.length > 0 ||
-                                    capabilities.length > 0) && (
+                                    capabilities.length > 0 ||
+                                    model.perUserRpm != null) && (
                                     <div className="inline-flex items-center gap-2.5 text-theme-text-muted">
                                         {inputModalities.length > 0 && (
                                             <Tooltip
@@ -424,17 +429,20 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                                 </span>
                                             </Tooltip>
                                         )}
+                                        {(inputModalities.length > 0 ||
+                                            capabilities.length > 0) &&
+                                            model.perUserRpm != null && (
+                                                <span className="h-3.5 w-px bg-current opacity-30" />
+                                            )}
+                                        <PerUserRateLimit
+                                            value={model.perUserRpm}
+                                        />
                                     </div>
                                 )}
                                 <ModelPricingControls
                                     model={model}
                                     pricing={pricing}
                                 />
-                            </div>
-                        )}
-                        {model.perUserRpm != null && (
-                            <div className="flex min-w-0 items-center">
-                                <PerUserRateLimit value={model.perUserRpm} />
                             </div>
                         )}
                     </div>
@@ -451,7 +459,7 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                 </div>
             </div>
 
-            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] shrink-0 py-3 pl-3 pr-1">
+            <div className="w-[clamp(312px,calc(32%_-_8px),352px)] min-w-0 shrink-0 overflow-hidden py-3 pl-3 pr-1">
                 <ModelPricingLedger
                     pricing={pricing}
                     hasTools={pollinationsTools}

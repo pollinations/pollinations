@@ -430,7 +430,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🤖 Community Agents"],
             summary: "Create Endpoint Agent",
             description:
-                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account and become public after 12 hours. API keys require `account:keys`.",
+                "Register an agent running on an external OpenAI-compatible endpoint. Pollinations sends a short-lived agent run token instead of a stored bearer credential. Private is the default; public agents require an allowlisted account and become public after 3 hours. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Created endpoint agent",
@@ -460,6 +460,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
+                responsesUrl: input.responsesUrl
+                    ? validateInputEndpointUrl(input.responsesUrl)
+                    : null,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -477,6 +480,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     type: "endpoint_agent",
                     baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
                     createdAt: new Date(),
                     updatedAt: new Date(),
@@ -497,7 +501,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, video, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 12 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -533,6 +537,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 normalizeInputBearerToken(input.bearerToken),
                 c.env.BETTER_AUTH_SECRET,
             );
+            const responsesUrl = input.responsesUrl
+                ? validateInputEndpointUrl(input.responsesUrl)
+                : null;
             const fallbacks = input.fallbacks
                 ? await resolveFallbacks(db, input.fallbacks, {
                       modelId,
@@ -542,6 +549,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 : [];
             const payload: ProxyListingPayload = {
                 bearerTokenCiphertext,
+                responsesUrl,
                 ...policy,
                 fallbacks,
             };
@@ -560,10 +568,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     type: "proxy",
                     baseUrl: validateInputEndpointUrl(input.baseUrl),
                     upstreamModel: input.upstreamModel ?? input.name,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
                     pendingPayload: queuesPublication
                         ? JSON.stringify({
                               bearerTokenCiphertext,
+                              responsesUrl,
                               ...targetPolicy,
                               fallbacks,
                           } satisfies ProxyListingPayload)
@@ -717,7 +727,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Update My Model",
             description:
-                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 12 hours; public models may be free or priced. API keys require `account:keys`.",
+                "Update a community model owned by the authenticated account. Changing visibility to public requires an allowlisted account and takes effect after 3 hours; public models may be free or priced. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Updated community model",
@@ -779,6 +789,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             if (input.description !== undefined) {
                 update.description = input.description || null;
             }
+            if (input.requiredSafetyFeatures !== undefined) {
+                update.requiredSafetyFeatures = input.requiredSafetyFeatures;
+            }
             if (input.hidden !== undefined) {
                 if (
                     !input.hidden &&
@@ -790,7 +803,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 ) {
                     throw new HTTPException(400, {
                         message:
-                            "Community models can be relisted 12 hours after they were hidden",
+                            "Community models can be relisted 3 hours after they were hidden",
                     });
                 }
                 update.hiddenAt = input.hidden ? new Date() : null;
@@ -820,7 +833,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 // Prompt configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
-                if (!parseListingPayload("endpoint_agent", endpoint.payload)) {
+                const current = parseListingPayload(
+                    "endpoint_agent",
+                    endpoint.payload,
+                );
+                if (!current) {
                     throw new Error(
                         `Invalid endpoint_agent payload for ${endpoint.id}`,
                     );
@@ -831,9 +848,20 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (input.perUserRpm !== undefined) {
+                if (
+                    input.perUserRpm !== undefined ||
+                    input.responsesUrl !== undefined
+                ) {
                     update.payload = JSON.stringify({
-                        perUserRpm: input.perUserRpm,
+                        perUserRpm: input.perUserRpm ?? current.perUserRpm,
+                        responsesUrl:
+                            input.responsesUrl === undefined
+                                ? current.responsesUrl
+                                : input.responsesUrl === null
+                                  ? null
+                                  : validateInputEndpointUrl(
+                                        input.responsesUrl,
+                                    ),
                     });
                 }
             } else {
@@ -853,6 +881,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 }).payload;
                 const queued = parseListingPayload("proxy", pendingPayload);
                 const targetBase = queued ?? stored;
+                if (input.responsesUrl != null && stored.modality !== "text") {
+                    throw new HTTPException(400, {
+                        message:
+                            "responsesUrl is supported only for text models",
+                    });
+                }
                 const targetVisibility = pendingVisibility ?? nextVisibility;
                 const targetPolicy = deriveUpdatedProxyPolicy(
                     targetBase,
@@ -894,6 +928,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               normalizeInputBearerToken(input.bearerToken),
                               c.env.BETTER_AUTH_SECRET,
                           );
+                const responsesUrl =
+                    input.responsesUrl === undefined
+                        ? stored.responsesUrl
+                        : input.responsesUrl === null
+                          ? null
+                          : validateInputEndpointUrl(input.responsesUrl);
                 if (input.baseUrl !== undefined) {
                     update.baseUrl = validateInputEndpointUrl(input.baseUrl);
                 }
@@ -903,6 +943,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (pendingReady || changesProxyPayload(input)) {
                     const payload: ProxyListingPayload = {
                         bearerTokenCiphertext,
+                        responsesUrl,
                         ...policy,
                         fallbacks,
                     };
@@ -914,6 +955,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if ((delayPricing && pricingChanged) || queuesPublication) {
                     const targetPayload: ProxyListingPayload = {
                         bearerTokenCiphertext,
+                        responsesUrl,
                         ...targetPolicy,
                         fallbacks,
                     };
@@ -921,6 +963,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     if (pricingChanged) {
                         pendingAt = new Date();
                     }
+                } else if (queued && input.responsesUrl !== undefined) {
+                    pendingPayload = JSON.stringify({
+                        ...queued,
+                        responsesUrl,
+                    } satisfies ProxyListingPayload);
                 }
             }
             update.pendingPayload = pendingPayload;

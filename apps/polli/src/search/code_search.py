@@ -99,6 +99,7 @@ async def search_code(query: str, top_k: int | None = None) -> list[dict]:
                 "language": metadata.get("language"),
                 "app": metadata.get("app"),
                 "similarity": round(match["score"], 3),
+                "revision": metadata.get("git_sha"),
             }
         )
 

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14451,
+  "title": "fix: generate monthly diary once",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14451",
+  "merged_at": "2026-09-04T16:31:59Z",
+  "labels": [],
+  "pr_body_excerpt": "- Runs the monthly website diary only on the first day of each month\n- Keeps manual monthly generation available for recovery\n- Leaves daily, weekly, Buffer, Discord, and Reddit behavior unchanged",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One moon, one diary",
+    "blurb": "The monthly diary has learned the calendar. It now blooms once on the first day of each month, while the manual watering can remains close at hand.",
+    "summary": "Updated the news summary workflow so the monthly website diary generates only on the first day of each month, while manual monthly runs remain available for recovery.",
+    "impact": "Diary readers get one clean monthly recap instead of repeat entries, with daily, weekly, Buffer, Discord, and Reddit schedules unchanged.",
+    "keywords": [
+      "monthly diary",
+      "news workflow",
+      "GitHub Actions",
+      "automation",
+      "website"
+    ],
+    "visual_concept": "A cozy calendar garden represents the scheduling fix: Polli carefully circles the first day of a pixel month while a single diary flower blooms beside it. A small retro terminal and a manual watering can show that automated monthly publishing is precise but recovery runs are still possible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny calendar-keeper visor, circling day 1 on a large pixel calendar as one diary-shaped flower blooms from a lime green (#ecf874) pot; a retro terminal and small watering can sit nearby among vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'ONCE A MONTH'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14451.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee with pink blush, light blue wings, and a tiny calendar-keeper visor, circling day 1 on a large pixel calendar as one diary-shaped flower blooms from a lime green (#ecf874) pot; a retro terminal and small watering can sit nearby among vines. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text: 'ONCE A MONTH'."
+  },
+  "generated_at": "2026-09-04T16:33:03.047460+00:00"
+}

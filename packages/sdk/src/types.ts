@@ -1003,6 +1003,54 @@ export interface ImageGenerateV1Options extends RequestOptions {
 }
 
 // ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Content part for multimodal embeddings */
+export interface EmbeddingContentPart {
+    type: "text" | "image_url" | "input_audio" | "video_url";
+    text?: string;
+    image_url?: { url: string };
+    input_audio?: { data: string; format: string };
+    video_url?: { url: string; mime_type?: string };
+}
+
+/** Options for creating embeddings (POST /v1/embeddings) */
+export interface EmbeddingOptions extends RequestOptions {
+    /** Embedding model to use (default: server default) */
+    model?: string;
+    /** Output dimensions (128-4096, model-specific) */
+    dimensions?: number;
+    /** Gemini task type hint */
+    taskType?: string;
+    /** Cohere input role: "query" or "document" */
+    inputType?: "query" | "document";
+    /** Output encoding: "float" (default) or "base64" */
+    encodingFormat?: "float" | "base64";
+}
+
+/** An embedding vector returned by the API */
+export interface EmbeddingObject {
+    object: "embedding";
+    embedding: number[] | string;
+    index: number;
+}
+
+/** Token usage for embeddings */
+export interface EmbeddingUsage {
+    prompt_tokens: number;
+    total_tokens: number;
+}
+
+/** Response from POST /v1/embeddings */
+export interface EmbeddingResponse {
+    object: "list";
+    data: EmbeddingObject[];
+    model: string;
+    usage: EmbeddingUsage;
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 

@@ -20,6 +20,9 @@ import type {
     DeviceCodeResponse,
     DeviceTokenResponse,
     EarningsOptions,
+    EmbeddingContentPart,
+    EmbeddingOptions,
+    EmbeddingResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -1011,6 +1014,72 @@ export class Pollinations {
             response.headers.get("content-type") || "audio/mpeg";
 
         return { buffer, contentType };
+    }
+
+    // ============================================================================
+    // Embeddings
+    // ============================================================================
+
+    /**
+     * Create embeddings from text or multimodal input (OpenAI-compatible POST /v1/embeddings).
+     *
+     * @example
+     * ```ts
+     * const result = await pollinations.embeddings('Hello world');
+     * console.log(result.data[0].embedding); // number[]
+     *
+     * // Batch input
+     * const batch = await pollinations.embeddings(['Hello', 'World']);
+     *
+     * // With model and dimensions
+     * const result = await pollinations.embeddings('test', {
+     *   model: 'gemini-2',
+     *   dimensions: 768,
+     * });
+     * ```
+     */
+    async embeddings(
+        input:
+            | string
+            | string[]
+            | EmbeddingContentPart
+            | EmbeddingContentPart[],
+        options: EmbeddingOptions = {},
+    ): Promise<EmbeddingResponse> {
+        if (input === undefined || input === null) {
+            throw new PollinationsError(
+                "Input is required",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = { input };
+        if (options.model !== undefined) body.model = options.model;
+        if (options.dimensions !== undefined)
+            body.dimensions = options.dimensions;
+        if (options.taskType !== undefined) body.task_type = options.taskType;
+        if (options.inputType !== undefined)
+            body.input_type = options.inputType;
+        if (options.encodingFormat !== undefined)
+            body.encoding_format = options.encodingFormat;
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/embeddings`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        return response.json() as Promise<EmbeddingResponse>;
     }
 
     // ============================================================================

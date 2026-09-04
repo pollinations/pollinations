@@ -23,16 +23,19 @@ function applyBaseModelMetadata(
 ): void {
     const config = entry.agentConfig;
     if (!config) return;
-    const agentCapabilities: ModelCapability[] = config.mcpServers.includes(
-        "pollinations",
-    )
-        ? ["pollinations_models"]
-        : [];
+    const agentCapabilities: ModelCapability[] = [
+        ...(config.mcpServers.includes("pollinations")
+            ? (["pollinations_models"] as const)
+            : []),
+        ...(config.mcpServers.includes("exa") ? (["web_search"] as const) : []),
+    ];
 
     entry.info = {
         ...entry.info,
         base_model: config.baseModel,
-        capabilities: [...entry.info.capabilities, ...agentCapabilities],
+        capabilities: [
+            ...new Set([...entry.info.capabilities, ...agentCapabilities]),
+        ],
     };
     if (
         !baseEntry ||
@@ -50,8 +53,12 @@ function applyBaseModelMetadata(
         pricing_default_label: base.pricing_default_label,
         pricing_adjustments: base.pricing_adjustments,
         input_modalities: base.input_modalities,
-        output_modalities: base.output_modalities,
-        capabilities: [...base.capabilities, ...agentCapabilities],
+        // The agent runtime always returns an OpenAI chat text response. Media
+        // produced by tools is represented as a link inside that response.
+        output_modalities: ["text"],
+        capabilities: [
+            ...new Set([...base.capabilities, ...agentCapabilities]),
+        ],
         tools: base.tools,
         reasoning: base.reasoning,
         context_length: base.context_length,

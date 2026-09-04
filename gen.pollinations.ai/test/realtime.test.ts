@@ -1752,7 +1752,7 @@ test("Tinybird event total equals actual wallet debit with BYOP markup and ledge
     });
     await db.insert(apiKeyTable).values({
         id: pkId,
-        userId: devId,
+        referenceId: devId,
         name: "markup-app",
         prefix: "pk",
         key: `hashed-${pkId}`,

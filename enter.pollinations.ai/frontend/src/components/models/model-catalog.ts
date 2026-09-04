@@ -203,6 +203,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,
+        supportedEndpoints: model.supported_endpoints,
         capabilities: model.capabilities ?? [],
         paidOnly: model.paid_only,
         free:

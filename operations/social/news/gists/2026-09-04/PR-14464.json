@@ -1,0 +1,35 @@
+{
+  "pr_number": 14464,
+  "title": "feat: add GPT-6 Astra",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14464",
+  "merged_at": "2026-09-04T21:07:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the approved contract: canonical `openai/gpt-6-astra`, no aliases, multiplier `0.75`, Quest-Pollen access, and no fallback. The internal Azure deployment remains `gpt-6-astra`.\n- Routes to Azure Global model version `2026-09-03` with 15M TPM. The same-version `gpt-6-astra-datazone` deployment is the best fallback candidate (5M TPM), but remains reserved and unconfigured under the approved single-route decision.\n- Uses [Microsoft’s published Global pricing](https://azure.microsoft.com/en-us/blog/gpt-6-astra-frontier-intelligence-for-work-now-available-in-microsoft-foundry/): $10/$1/$12.50/$50 per million tokens, then $20/$2/$25/$75 above 272K. Azure Retail Prices API meters are not published yet; recheck Cost Management after first billed usage.\n- Live adapter checks passed text, tools, structured output, vision, streaming, unsupported-parameter errors, and a 30-request burst with zero failures. Prompt caching reported `cache_write_tokens: 3208`, then `cached_tokens: 3208`.\n- Adds canonical-only routing, alias rejection, strict-boundary, and effective-price snapshot coverage. Latest focused tests pass: Enter 537, Gen 55; Gen typecheck and Biome are clean. Full wallet/output-cache/Tinybird E2E awaits an existing local test token.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Astra joins the hive",
+    "blurb": "A new frontier bee has landed: GPT-6 Astra now has one clean, canonical route through pollinations. No aliases wandering the garden, no fallback vines to untangle.",
+    "summary": "Added canonical-only `openai/gpt-6-astra` access through Azure Global version `2026-09-03`, with Quest-Pollen availability, a 0.75 multiplier, no aliases or fallback route, and support verified for tools, structured output, vision, streaming, and prompt caching.",
+    "impact": "Developers can call `openai/gpt-6-astra` as a single predictable model identifier, backed by Azure Global’s 15M TPM deployment and tested across 30-request bursts with zero failures.",
+    "keywords": [
+      "gpt-6-astra",
+      "openai",
+      "azure",
+      "text-generation",
+      "models",
+      "quest-pollen",
+      "api"
+    ],
+    "visual_concept": "Depict GPT-6 Astra as a bright new star-shaped code flower growing from a carefully labeled `openai/gpt-6-astra` pot, with a single clear glowing path from a cozy Azure-like cloud terminal rather than branching alias paths. Polli, wearing tiny astronomer glasses, warmly inspects the flower and its cache-token sparkle trail among a small garden of code-plants.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny astronomer glasses as she tends a star-shaped code flower labeled `openai/gpt-6-astra` in a prominent lime green (#ecf874) pot; one clear glowing path leads from a retro cloud terminal while cache-token sparkles drift through a garden of flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14464.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs and antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings, wearing tiny astronomer glasses as she tends a star-shaped code flower labeled `openai/gpt-6-astra` in a prominent lime green (#ecf874) pot; one clear glowing path leads from a retro cloud terminal while cache-token sparkles drift through a garden of flowers and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-04T21:08:41.222342+00:00"
+}

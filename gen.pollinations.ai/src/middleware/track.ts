@@ -287,6 +287,14 @@ export const track = (eventType: EventType) =>
 
         await next();
 
+        // Some handlers return a Response instead of throwing, so the central
+        // error handler never gets a chance to build our detailed envelope.
+        // Normalize only those direct server errors; exception responses are
+        // already complete and c.get("error") identifies them.
+        if (c.res.status >= 500 && !c.get("error")) {
+            c.res = await ensureDetailedErrorResponse(c.res);
+        }
+
         // Detached execution already tracked the provider failure. The outer
         // caller only receives that captured result and must not emit it again.
         if (c.var.track.detachedExecutionTracked) return;
@@ -667,16 +675,17 @@ function nonEmptyString(value: unknown): string | undefined {
     return typeof value === "string" && value.trim() ? value : undefined;
 }
 
-/** Extracts concrete, safe telemetry without changing the response sent. */
-async function extractErrorResponseTracking(
-    response: Response,
-): Promise<
-    Pick<
-        ResponseTrackingData,
-        "errorTracking" | "errorOutput" | "errorClass" | "errorUpstreamStatus"
-    >
-> {
-    const rawBody = await response.text();
+type ResponseErrorTracking = {
+    errorTracking: ErrorData;
+    errorOutput: unknown;
+    errorClass: string;
+    errorUpstreamStatus?: number;
+};
+
+function parseErrorResponseTracking(
+    rawBody: string,
+    status: number,
+): ResponseErrorTracking {
     let output: unknown = rawBody;
     try {
         output = JSON.parse(rawBody);
@@ -693,11 +702,11 @@ async function extractErrorResponseTracking(
         nonEmptyString(errorValue) ??
         nonEmptyString(envelope?.message) ??
         nonEmptyString(rawBody) ??
-        getDefaultErrorMessage(response.status);
+        getDefaultErrorMessage(status);
     const errorResponseCode =
         nonEmptyString(error?.code) ??
         nonEmptyString(envelope?.code) ??
-        getErrorCode(response.status);
+        getErrorCode(status);
     const errorSource =
         nonEmptyString(details?.upstreamHost) ??
         nonEmptyString(envelope?.upstreamHost);
@@ -722,6 +731,64 @@ async function extractErrorResponseTracking(
         errorClass,
         errorUpstreamStatus,
     };
+}
+
+/** Extracts concrete, safe telemetry without changing the response sent. */
+async function extractErrorResponseTracking(
+    response: Response,
+): Promise<ResponseErrorTracking> {
+    return parseErrorResponseTracking(await response.text(), response.status);
+}
+
+async function ensureDetailedErrorResponse(
+    response: Response,
+): Promise<Response> {
+    const rawBody = await response.clone().text();
+    const parsed = parseErrorResponseTracking(rawBody, response.status);
+    const output = asRecord(parsed.errorOutput);
+    const outputError = asRecord(output?.error);
+
+    // Responses produced by handleError already carry every safe detail.
+    if (
+        output?.success === false &&
+        outputError &&
+        nonEmptyString(outputError.code) &&
+        nonEmptyString(outputError.message)
+    ) {
+        return response;
+    }
+
+    const headers = new Headers(response.headers);
+    headers.set("content-type", "application/json; charset=UTF-8");
+    headers.delete("content-encoding");
+    headers.delete("content-length");
+    const errorTracking = parsed.errorTracking;
+    return new Response(
+        JSON.stringify({
+            success: false,
+            error: {
+                code: errorTracking.errorResponseCode,
+                message: errorTracking.errorMessage,
+                timestamp: new Date().toISOString(),
+                details: {
+                    name: parsed.errorClass,
+                    ...(errorTracking.errorSource && {
+                        upstreamHost: errorTracking.errorSource,
+                    }),
+                    ...(parsed.errorUpstreamStatus !== undefined && {
+                        upstreamStatus: parsed.errorUpstreamStatus,
+                    }),
+                    ...(rawBody && { upstreamBody: rawBody }),
+                },
+            },
+            status: response.status,
+        }),
+        {
+            status: response.status,
+            statusText: response.statusText,
+            headers,
+        },
+    );
 }
 
 export async function trackResponse(

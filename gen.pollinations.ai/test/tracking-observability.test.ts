@@ -861,21 +861,16 @@ describe("tracking observability", () => {
         const consumePollen = vi.fn<(amount: number) => Promise<void>>(
             async () => {},
         );
-        const errorBody = {
-            success: false,
+        const upstreamBody = {
             error: {
-                code: "SERVICE_UNAVAILABLE",
+                code: "provider_queue_full",
                 message: "The image backend queue is full",
-                details: {
-                    name: "UpstreamError",
-                    upstreamHost: "dreamshaper.test",
-                    upstreamStatus: 503,
-                    upstreamBody: '{"error":"queue full"}',
-                },
+                metadata: { queue: "gpu-1" },
             },
-            status: 503,
+            upstreamHost: "dreamshaper.test",
+            upstreamStatus: 503,
         };
-        const upstream = Response.json(errorBody, { status: 503 });
+        const upstream = Response.json(upstreamBody, { status: 503 });
 
         const ctx = createExecutionContext();
         const response = await createTrackedResponseApp(
@@ -905,7 +900,39 @@ describe("tracking observability", () => {
         );
 
         expect(response.status).toBe(503);
-        await expect(response.json()).resolves.toEqual(errorBody);
+        const responseBody = (await response.json()) as {
+            success: boolean;
+            status: number;
+            error: {
+                code: string;
+                message: string;
+                timestamp: string;
+                details: {
+                    name: string;
+                    upstreamHost: string;
+                    upstreamStatus: number;
+                    upstreamBody: string;
+                };
+            };
+        };
+        expect(responseBody).toMatchObject({
+            success: false,
+            status: 503,
+            error: {
+                code: "provider_queue_full",
+                message: "The image backend queue is full",
+                timestamp: expect.any(String),
+                details: {
+                    name: "ErrorResponse",
+                    upstreamHost: "dreamshaper.test",
+                    upstreamStatus: 503,
+                    upstreamBody: expect.any(String),
+                },
+            },
+        });
+        expect(JSON.parse(responseBody.error.details.upstreamBody)).toEqual(
+            upstreamBody,
+        );
         await waitOnExecutionContext(ctx);
 
         const generationRequest = tinybirdRequests.find(
@@ -921,7 +948,7 @@ describe("tracking observability", () => {
         await expect(generationRequest?.json()).resolves.toMatchObject({
             responseStatus: 503,
             isBilledUsage: false,
-            errorResponseCode: "SERVICE_UNAVAILABLE",
+            errorResponseCode: "provider_queue_full",
             errorSource: "dreamshaper.test",
             errorMessage: "The image backend queue is full",
         });
@@ -934,12 +961,12 @@ describe("tracking observability", () => {
             status: 503,
             upstream_status: 503,
             upstream_host: "dreamshaper.test",
-            error_code: "SERVICE_UNAVAILABLE",
-            error_class: "UpstreamError",
+            error_code: "provider_queue_full",
+            error_class: "ErrorResponse",
             message: "The image backend queue is full",
         });
         expect(JSON.parse(errorEvent.upstream_body as string)).toEqual(
-            errorBody,
+            responseBody,
         );
         expect(consumePollen).toHaveBeenCalledWith(0);
     });

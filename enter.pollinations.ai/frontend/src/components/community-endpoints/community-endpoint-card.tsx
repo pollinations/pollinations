@@ -20,10 +20,12 @@ import {
 import { communityEndpointPriceFieldsForModality } from "@shared/community-endpoints.ts";
 import { Link } from "@tanstack/react-router";
 import type { ReactNode } from "react";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { PriceBadge, type PriceBadgeConfig } from "../models/price-badge.tsx";
 import type { PriceKind } from "../models/types.ts";
 import {
     type CommunityEndpoint,
+    openWebUiTestableModelId,
     type ProxyCommunityEndpoint,
     storedPriceToFormValue,
     VISIBILITY_LABELS,
@@ -48,6 +50,7 @@ export function CommunityEndpointCard({
     const isAgent = endpoint.type !== "proxy";
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
+    const testableModelId = openWebUiTestableModelId(endpoint);
 
     return (
         <Surface
@@ -180,7 +183,7 @@ export function CommunityEndpointCard({
                     />
                 ))}
             </div>
-            <div className="mt-3">
+            <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1">
                 <Link
                     to="/activity"
                     search={{
@@ -196,6 +199,9 @@ export function CommunityEndpointCard({
                 >
                     View activity
                 </Link>
+                {testableModelId && (
+                    <OpenWebUiLink modelId={testableModelId} variant="text" />
+                )}
             </div>
         </Surface>
     );

@@ -65,6 +65,8 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            responsesUrl:
+                "https://agent.example.com/custom/responses?version=1",
             requiredSafetyFeatures: ["sexual"],
         });
 
@@ -76,6 +78,8 @@ describe("community endpoint configuration policy", () => {
             description: "Runs on its owner's server",
             visibility: "private",
             baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            responsesUrl:
+                "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
             requiredSafetyFeatures: ["sexual"],
             perUserRpm: null,
@@ -98,7 +102,11 @@ describe("community endpoint configuration policy", () => {
         });
         expect(
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
-        ).toEqual({ perUserRpm: null });
+        ).toEqual({
+            perUserRpm: null,
+            responsesUrl:
+                "https://agent.example.com/custom/responses?version=1",
+        });
 
         const updated = await postModel(
             sessionToken,
@@ -106,6 +114,9 @@ describe("community endpoint configuration policy", () => {
             { requiredSafetyFeatures: ["violence"] },
         );
         expect(updated.requiredSafetyFeatures).toEqual(["violence"]);
+        expect(updated.responsesUrl).toBe(
+            "https://agent.example.com/custom/responses?version=1",
+        );
     });
 
     test("rejects proxy-only fields and unapproved public endpoint agents", async ({

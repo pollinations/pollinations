@@ -69,6 +69,7 @@ type CommunityEndpointBase = {
     title: string;
     description: string | null;
     baseUrl: string;
+    responsesUrl: string | null;
     upstreamModel: string;
     requiredSafetyFeatures: SafetyFeature[];
     // private → owner-only, shown only to the owner, no owner-set price;
@@ -109,6 +110,19 @@ export type CommunityEndpoint =
 export type EditableEndpoint =
     | ProxyCommunityEndpoint
     | EndpointAgentCommunityEndpoint;
+
+/**
+ * The model id to offer as an Open WebUI test link, or null when Open WebUI
+ * cannot chat with it: a hidden model is not served, and image, video,
+ * transcription and embedding models never reach its chat picker.
+ */
+export function openWebUiTestableModelId(
+    endpoint: CommunityEndpoint,
+): string | null {
+    if (endpoint.hidden) return null;
+    if (endpoint.type === "proxy" && endpoint.modality !== "text") return null;
+    return endpoint.modelId;
+}
 
 export type FallbackModelOption = {
     modelId: string;
@@ -173,6 +187,7 @@ export type EndpointFormState = ModelListingFormState & {
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
+    responsesUrl: string;
     upstreamModel: string;
     bearerToken: string;
     // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
@@ -196,6 +211,7 @@ export type EndpointPayload = ModelListingPayload & {
     modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
     baseUrl: string;
+    responsesUrl: string | null;
     upstreamModel: string;
     paidOnly: boolean;
     requiredSafetyFeatures: SafetyFeature[];
@@ -247,6 +263,7 @@ export const emptyForm: EndpointFormState = {
     modality: "text",
     imagePricing: "request",
     baseUrl: "",
+    responsesUrl: "",
     upstreamModel: "",
     bearerToken: "",
     paidOnly: false,
@@ -343,6 +360,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
             visibility,
             perUserRpm: endpoint.perUserRpm?.toString() ?? "",
             baseUrl: endpoint.baseUrl,
+            responsesUrl: endpoint.responsesUrl ?? "",
             upstreamModel: endpoint.upstreamModel,
             requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         };
@@ -366,6 +384,7 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         visibility,
         perUserRpm: endpoint.perUserRpm?.toString() ?? "",
         baseUrl: endpoint.baseUrl,
+        responsesUrl: endpoint.responsesUrl ?? "",
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         paidOnly: pending?.paidOnly ?? endpoint.paidOnly,
@@ -522,6 +541,10 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             modality,
         ),
         baseUrl: form.baseUrl,
+        responsesUrl:
+            modality === "text" && form.responsesUrl.trim()
+                ? form.responsesUrl.trim()
+                : null,
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
         requiredSafetyFeatures: form.requiredSafetyFeatures,

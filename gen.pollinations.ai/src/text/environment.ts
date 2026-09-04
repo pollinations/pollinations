@@ -18,6 +18,9 @@ const TEXT_ENV_KEYS = [
     "PORTKEY_GATEWAY_URL",
 ] as const satisfies readonly (keyof CloudflareBindings)[];
 
+type TextEnvironmentKey = (typeof TEXT_ENV_KEYS)[number];
+const syncedTextEnvironment: Partial<Record<TextEnvironmentKey, string>> = {};
+
 export function syncTextEnvironment(env: CloudflareBindings): void {
     // Text provider config still reads process.env. In Workers all bindings are
     // stable per deployment, so copying known string bindings before generation
@@ -25,7 +28,14 @@ export function syncTextEnvironment(env: CloudflareBindings): void {
     for (const key of TEXT_ENV_KEYS) {
         const value = env[key];
         if (typeof value === "string") {
+            syncedTextEnvironment[key] = value;
             process.env[key] = value;
         }
     }
+}
+
+export function textEnvironmentValue(
+    key: TextEnvironmentKey,
+): string | undefined {
+    return syncedTextEnvironment[key] ?? process.env[key];
 }

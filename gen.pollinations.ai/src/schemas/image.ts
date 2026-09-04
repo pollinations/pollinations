@@ -140,15 +140,15 @@ const GenerateImageRequestQueryParamsBaseSchema = z.object({
         }),
     duration: z.coerce.number().int().min(1).max(120).optional().meta({
         description:
-            "Video duration in seconds. Only applies to video models. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6).",
+            "Video duration in seconds. Only applies to video models. `google/gemini-omni-1.1-flash`: 3-10s. `veo`: 4, 6, or 8s. `seedance-pro`: 2-10s. `seedance-2.0`: 4-15s; Mini: 4-10s; Fast: 4-5s. `seedance-2.5`: exactly 4s. `minimax-h3`: exactly 5s. `minimax/minimax-h3-max-turbo`: 5, 10, or 15s. `wan`: 2-15s. `wan-3.0`: exactly 5s. `nova-reel`: 6-120s (multiples of 6).",
     }),
     aspectRatio: z.string().optional().meta({
         description:
-            "Video aspect ratio (`16:9` or `9:16`). Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash` and `seedance-2.5` otherwise default to `16:9`. `minimax-h3` supports only `16:9`.",
+            "Video aspect ratio. Only applies to video models. If not set, determined by explicit width/height; `google/gemini-omni-1.1-flash`, `seedance-2.5`, and `minimax/minimax-h3-max-turbo` otherwise default to `16:9`. Most models support `16:9` or `9:16`; `minimax-h3` supports only `16:9`, while `minimax/minimax-h3-max-turbo` also supports `21:9`, `4:3`, `1:1`, and `3:4`.",
     }),
     audio: z.coerce.boolean().optional().default(false).meta({
         description:
-            "Generate audio for the video. Only applies to video models. `google/gemini-omni-1.1-flash`, `wan`, and `minimax-h3` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio.",
+            "Generate audio for the video. Only applies to video models. `google/gemini-omni-1.1-flash`, `wan`, `minimax-h3`, and `minimax/minimax-h3-max-turbo` always generate audio regardless of this flag. For `veo` and `wan-3.0`, set to `true` to enable audio.",
     }),
 });
 

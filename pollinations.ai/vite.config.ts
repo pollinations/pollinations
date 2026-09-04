@@ -32,7 +32,8 @@ export default defineConfig({
             "@shared": path.resolve(__dirname, "../shared"),
             "@pollinations/ui/brand": uiBrand,
         },
-        dedupe: ["react", "react-dom"],
+        // Linked UI packages must share the app's SDK auth context.
+        dedupe: ["react", "react-dom", "@pollinations/sdk"],
     },
     build: {
         reportCompressedSize: true,

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14430,
+  "title": "fix: preserve upstream unsupported media status",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14430",
+  "merged_at": "2026-09-04T11:49:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps upstream HTTP 415 responses as caller-facing 415 errors instead of remapping them to 502\n- Adds the stable `UNSUPPORTED_MEDIA_TYPE` error code and default message\n- Covers the OpenRouter unsupported-image-URL response and shared status mapping\n\nFixes misleading model-health failures for invalid media URLs.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "415s keep their wings",
+    "blurb": "Invalid image URLs now get the honest little error they earned. The hive preserves upstream 415 responses instead of dressing them up as mysterious 502 model-health trouble.",
+    "summary": "Preserved upstream HTTP 415 responses as caller-facing 415 errors, added the stable UNSUPPORTED_MEDIA_TYPE code and default message, and covered OpenRouter unsupported image URLs in shared status mapping.",
+    "impact": "Apps sending an unsupported or invalid image URL now receive a clear 415 UNSUPPORTED_MEDIA_TYPE response instead of a misleading 502 that suggests the model is unhealthy.",
+    "keywords": [
+      "error-handling",
+      "http-415",
+      "unsupported-media-type",
+      "OpenRouter",
+      "image-urls",
+      "API"
+    ],
+    "visual_concept": "A cozy API garden scene where Polli acts as a careful mail carrier, routing an image URL envelope to the correct clearly labeled 415 mailbox rather than the ominous-but-wrong 502 bin. A small CRT monitor robot can display a supported-image checkmark, with code-plants and flowers making the error-routing system feel orderly and friendly.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny postal cap as she carefully delivers an image-URL envelope into a lime green (#ecf874) mailbox labeled \"415\" while a cute CRT monitor robot shows a friendly \"UNSUPPORTED MEDIA\" notice; code-plants, flowers, and a crossed-out wrong \"502\" bin sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) pixel outlines, emotionally warm and gently amused."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-04/PR-14430.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny postal cap as she carefully delivers an image-URL envelope into a lime green (#ecf874) mailbox labeled \"415\" while a cute CRT monitor robot shows a friendly \"UNSUPPORTED MEDIA\" notice; code-plants, flowers, and a crossed-out wrong \"502\" bin sit nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, dark purple (#110518) pixel outlines, emotionally warm and gently amused."
+  },
+  "generated_at": "2026-09-04T15:25:49.798568+00:00"
+}

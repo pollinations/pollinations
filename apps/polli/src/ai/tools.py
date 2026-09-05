@@ -948,9 +948,11 @@ RENDER_VISUAL_TOOL = {
     "type": "function",
     "function": {
         "name": "render_visual",
-        "description": """Render data as an image attached to your reply, instead of writing a markdown table or describing a chart in text.
+        "description": """Create a premium, editorial-quality visual as a high-resolution image attachment. Treat every visual as a finished deliverable: elegant composition, dramatic but truthful hierarchy, descriptive title, precise labels, generous spacing, restrained accessible color, and no clutter.
 
-Types: table, bar, horizontal_bar (long category names), line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
+Choose the form autonomously by the data's job: bar for magnitude/ranking, horizontal_bar for long labels, line/area for change over time, scatter for relationships, histogram for distributions, heatmap for a matrix, pie/donut only for ≤8 meaningful parts of a whole, table for exact lookup, and diagram for systems/flows. Never use dual axes, rainbow scales, decorative 3D effects, or color alone to carry meaning. Aggregate excess detail without hiding the conclusion. Keep accompanying prose brief.
+
+Types: table, bar, horizontal_bar, line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
 `diagram` is Mermaid — flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, journey, gantt, pie, quadrantChart, requirementDiagram, gitGraph, mindmap, timeline, sankey, xychart, block, packet, kanban, architecture, radar, treemap, C4Context.
 
 Discord does not render Mermaid fences. Always use `type: "diagram"` when the user asks for a diagram or flowchart; the tool returns an attached image.

@@ -636,7 +636,13 @@ async def tool_discord_search(
 
     def can_view_channel(channel) -> bool:
         if isinstance(channel, discord.Thread):
-            return bot_can_access(channel) and _thread_is_accessible(channel, requesting_member)
+            member = None if _context.get("is_http_api") else requesting_member
+            return bot_can_access(channel) and _thread_is_accessible(channel, member)
+        if _context.get("is_http_api"):
+            everyone_role = guild.default_role
+            return (
+                bool(everyone_role) and bot_can_access(channel) and channel.permissions_for(everyone_role).view_channel
+            )
         return bot_can_access(channel) and user_can_view(channel)
 
     accessible_channel_ids = set()

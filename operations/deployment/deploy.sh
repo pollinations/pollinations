@@ -52,7 +52,7 @@ deploy_vps() {
 
     local key_file
     key_file=$(mktemp)
-    trap 'rm -f "$key_file"' EXIT
+    trap "rm -f '$key_file'" EXIT
     printf '%s\n' "$POLLI_AZURE_SSH_KEY" > "$key_file"
     chmod 600 "$key_file"
     local ssh_options=(-i "$key_file" -o StrictHostKeyChecking=accept-new)

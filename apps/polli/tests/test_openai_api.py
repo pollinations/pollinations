@@ -2,7 +2,7 @@ import asyncio
 import json
 import unittest
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 from fastapi.testclient import TestClient
 
@@ -202,7 +202,45 @@ class OpenAIAPITests(unittest.TestCase):
         self.assertEqual(added["item"]["id"], completed["response"]["output"][0]["id"])
 
 
+class FakeHTTPResponse:
+    status = 200
+
+    def __init__(self, payload):
+        self.payload = payload
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *_args):
+        return None
+
+    async def json(self):
+        return self.payload
+
+
 class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
+    async def test_buffered_request_omits_seed_by_default(self):
+        client = PollinationsClient()
+        response = FakeHTTPResponse({"choices": [{"message": {"content": "ok", "tool_calls": []}}], "usage": {}})
+        session = SimpleNamespace(post=MagicMock(return_value=response))
+        client.get_session = AsyncMock(return_value=session)
+
+        await client._call_api_with_tools([{"role": "user", "content": "hi"}])
+
+        payload = session.post.call_args.kwargs["json"]
+        self.assertNotIn("seed", payload)
+
+    async def test_buffered_request_preserves_explicit_seed(self):
+        client = PollinationsClient()
+        response = FakeHTTPResponse({"choices": [{"message": {"content": "ok", "tool_calls": []}}], "usage": {}})
+        session = SimpleNamespace(post=MagicMock(return_value=response))
+        client.get_session = AsyncMock(return_value=session)
+
+        await client._call_api_with_tools([{"role": "user", "content": "hi"}], api_params={"seed": 7})
+
+        payload = session.post.call_args.kwargs["json"]
+        self.assertEqual(payload["seed"], 7)
+
     async def test_internal_tool_round_content_is_not_streamed(self):
         client = PollinationsClient()
         client.register_tool_handler("internal", AsyncMock(return_value={"ok": True}))
@@ -235,7 +273,6 @@ class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
                 return_value=[{"type": "function", "function": {"name": "internal"}}],
             ),
             patch("src.ai.client.filter_api_tools", side_effect=lambda tools: tools),
-            patch("src.ai.client.filter_tools_by_intent", side_effect=lambda _message, tools, _admin: tools),
         ):
             events = [
                 event
@@ -273,7 +310,6 @@ class StreamingClientTests(unittest.IsolatedAsyncioTestCase):
             patch.object(client, "_call_api_with_tools", upstream),
             patch("src.ai.client.get_tools_with_embeddings", return_value=[]),
             patch("src.ai.client.filter_api_tools", side_effect=lambda tools: tools),
-            patch("src.ai.client.filter_tools_by_intent", side_effect=lambda _message, tools, _admin: tools),
         ):
             result = await client.process_with_tools(
                 user_message="weather",

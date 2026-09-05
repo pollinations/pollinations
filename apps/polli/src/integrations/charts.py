@@ -98,7 +98,8 @@ async def _render_table(title: str, data: dict, options: dict) -> dict:
     pages = _paginate_table(rows)
     images = []
     for page in pages:
-        buffer, _links = await render_table_image(headers, page)
+        page_title = title if len(pages) == 1 else f"{title} · {len(images) + 1}/{len(pages)}"
+        buffer, _links = await render_table_image(headers, page, title=page_title)
         if buffer is None:
             return _err("Table rendering failed (PIL unavailable or invalid input).")
         images.append(_png_to_data_url(buffer))

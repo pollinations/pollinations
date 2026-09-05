@@ -41,28 +41,26 @@ if not CHARTS_AVAILABLE:
 # =============================================================================
 
 PALETTE = {
-    "bg": "#313338",
-    "axes_bg": "#2b2d31",
-    "grid": "#40444b",
-    "border": "#40444b",
-    "text": "#dcddde",
-    "muted": "#b9bbbe",
+    "bg": "#0d0d0d",
+    "axes_bg": "#1a1a19",
+    "grid": "#2c2c2a",
+    "border": "#383835",
+    "text": "#ffffff",
+    "muted": "#c3c2b7",
     "title": "#ffffff",
-    # Categorical accent series (Discord brand + extended)
+    # Fixed CVD-safe order, validated against the dark chart surface.
     "series": [
-        "#5865f2",  # blurple
-        "#57f287",  # green
-        "#faa61a",  # gold
-        "#ed4245",  # red
-        "#eb459e",  # fuchsia
-        "#3ba55d",  # mint
-        "#5dade2",  # cyan
-        "#a569bd",  # purple
-        "#f1c40f",  # yellow
-        "#e67e22",  # orange
+        "#3987e5",
+        "#d95926",
+        "#199e70",
+        "#c98500",
+        "#d55181",
+        "#008300",
+        "#9085e9",
+        "#e66767",
     ],
-    "positive": "#57f287",
-    "negative": "#ed4245",
+    "positive": "#0ca30c",
+    "negative": "#d03b3b",
 }
 
 
@@ -77,13 +75,15 @@ def _apply_theme() -> None:
             "axes.edgecolor": PALETTE["border"],
             "axes.labelcolor": PALETTE["text"],
             "axes.titlecolor": PALETTE["title"],
-            "axes.titlesize": 14,
+            "axes.titlesize": 18,
             "axes.titleweight": "bold",
+            "axes.titlepad": 18,
             "axes.labelsize": 11,
             "axes.grid": True,
+            "axes.axisbelow": True,
             "grid.color": PALETTE["grid"],
-            "grid.alpha": 0.5,
-            "grid.linewidth": 0.6,
+            "grid.alpha": 0.7,
+            "grid.linewidth": 0.5,
             "xtick.color": PALETTE["muted"],
             "ytick.color": PALETTE["muted"],
             "xtick.labelsize": 10,
@@ -251,7 +251,20 @@ def _color_cycle(n: int) -> list[str]:
     base = PALETTE["series"]
     if n <= len(base):
         return base[:n]
-    return [base[i % len(base)] for i in range(n)]
+    return base[:7] + [base[7]] * (n - 7)
+
+
+def _finish_axes(ax) -> None:
+    ax.spines["left"].set_color(PALETTE["border"])
+    ax.spines["bottom"].set_color(PALETTE["border"])
+    ax.tick_params(length=0, pad=8)
+    ax.margins(x=0.04, y=0.12)
+
+
+def _label_bar_ends(ax, containers, horizontal: bool) -> None:
+    for container in containers:
+        labels = [f"{bar.get_width():,.3g}" if horizontal else f"{bar.get_height():,.3g}" for bar in container]
+        ax.bar_label(container, labels=labels, padding=5, color=PALETTE["text"], fontsize=9)
 
 
 # =============================================================================
@@ -331,9 +344,12 @@ def _render_bar(title: str, data: dict, options: dict, horizontal: bool) -> plt.
         if options.get("y_label"):
             ax.set_ylabel(options["y_label"])
 
-    if n_series > 1 or any(d["label"] for d in datasets):
-        ax.legend(loc="best")
+    if n_series > 1:
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=min(n_series, 4), frameon=False)
+    elif n_groups <= 16:
+        _label_bar_ends(ax, ax.containers, horizontal)
 
+    _finish_axes(ax)
     fig.tight_layout()
     return fig
 
@@ -359,9 +375,20 @@ def _render_line(title: str, data: dict, options: dict, fill: bool) -> plt.Figur
                 vals = np.concatenate([vals, np.full(n - len(vals), np.nan)])
             else:
                 vals = vals[:n]
-        ax.plot(x, vals, color=colors[i], linewidth=2.0, marker="o", markersize=5, label=ds["label"])
+        ax.plot(
+            x,
+            vals,
+            color=colors[i],
+            linewidth=2.2,
+            solid_capstyle="round",
+            marker="o",
+            markersize=8,
+            markeredgecolor=PALETTE["axes_bg"],
+            markeredgewidth=2,
+            label=ds["label"],
+        )
         if fill:
-            ax.fill_between(x, vals, color=colors[i], alpha=0.25)
+            ax.fill_between(x, vals, color=colors[i], alpha=0.1)
 
     ax.set_xticks(x)
     ax.set_xticklabels(
@@ -373,9 +400,21 @@ def _render_line(title: str, data: dict, options: dict, fill: bool) -> plt.Figur
         ax.set_xlabel(options["x_label"])
     if options.get("y_label"):
         ax.set_ylabel(options["y_label"])
-    if len(datasets) > 1 or any(d["label"] for d in datasets):
-        ax.legend(loc="best")
+    if len(datasets) > 1:
+        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.14), ncol=min(len(datasets), 4), frameon=False)
+    elif n and datasets[0]["values"]:
+        value = datasets[0]["values"][-1]
+        ax.annotate(
+            f"{value:,.3g}",
+            (x[-1], value),
+            xytext=(10, 0),
+            textcoords="offset points",
+            color=PALETTE["text"],
+            va="center",
+            fontweight="bold",
+        )
 
+    _finish_axes(ax)
     fig.tight_layout()
     return fig
 

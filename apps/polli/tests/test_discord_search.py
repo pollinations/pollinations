@@ -1,6 +1,6 @@
 import unittest
 from types import SimpleNamespace
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, patch
 
 from src.discord.search import DiscordSearchClient, _thread_is_accessible, tool_discord_search
 
@@ -41,6 +41,28 @@ class ApiScopeTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("only from Discord", members["error"])
         self.assertIn("only from Discord", roles["error"])
+
+    async def test_api_message_search_is_limited_to_public_channels(self):
+        public = SimpleNamespace(id=10, permissions_for=lambda _role: FakePermissions(view_channel=True))
+        private = SimpleNamespace(id=20, permissions_for=lambda _role: FakePermissions(view_channel=False))
+        guild = SimpleNamespace(
+            id=1,
+            me=None,
+            channels=[public, private],
+            threads=[],
+            default_role=object(),
+            get_member=lambda _id: None,
+        )
+        context = {"is_http_api": True, "discord_guild": guild}
+
+        search = AsyncMock(return_value={"success": True, "messages": []})
+        with patch("src.discord.search.discord_search_client.search_messages", search):
+            await tool_discord_search("messages", 5, query="hello", _context=context)
+
+        call = search.await_args
+        self.assertIsNotNone(call)
+        assert call is not None
+        self.assertEqual(call.kwargs["accessible_channel_ids"], {10})
 
 
 class SearchClientTests(unittest.IsolatedAsyncioTestCase):

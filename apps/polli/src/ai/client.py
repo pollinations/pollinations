@@ -84,7 +84,6 @@ from .prompts import get_tool_system_prompt
 from .tool_filters import (
     filter_admin_actions_from_tools,
     filter_api_tools,
-    filter_tools_by_intent,
     get_tools_with_embeddings,
 )
 from .tools import GITHUB_TOOLS
@@ -362,17 +361,10 @@ class PollinationsClient:
             tool for tool in client_tools if tool.get("function", {}).get("name") not in internal_tool_names
         ]
         client_tool_names = {tool.get("function", {}).get("name") for tool in client_tools}
-        tools = (
-            filter_tools_by_intent(user_message, all_tools, is_admin or is_collaborator) if user_message else all_tools
-        )
-        tools.extend(client_tools)
+        tools = [*all_tools, *client_tools]
 
-        # Log available tools for debugging
-        all_tool_names = [t["function"]["name"] for t in all_tools]
-        filtered_tool_names = [t["function"]["name"] for t in tools]
-        logger.info(f"Available tools (is_admin={is_admin}): {', '.join(all_tool_names)}")
-        if len(tools) < len(all_tools):
-            logger.info(f"Filtered tools to: {', '.join(filtered_tool_names)}")
+        tool_names = [tool["function"]["name"] for tool in tools]
+        logger.info("Available tools (is_admin=%s): %s", is_admin, ", ".join(tool_names))
 
         all_content_blocks = []
         total_usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
@@ -725,10 +717,12 @@ class PollinationsClient:
         payload = {
             "model": config.ai.model,
             "messages": messages,
-            "seed": (api_params or {}).get("seed", 42),
             "stream": True,
             "stream_options": {"include_usage": True},
         }
+        explicit_seed = (api_params or {}).get("seed")
+        if explicit_seed is not None:
+            payload["seed"] = explicit_seed
         for key, value in (api_params or {}).items():
             if key not in {"seed", "stream", "stream_options"} and value is not None:
                 payload[key] = value
@@ -832,9 +826,7 @@ class PollinationsClient:
         """Make API call to Pollinations with tool definitions.
 
         Includes:
-        - Random seed parameter (0 to int32 max) for each request
         - 3 retry attempts with 5s delay between retries
-        - New random seed for each retry attempt
         - Pass-through of OpenAI generation params (temperature, max_tokens, etc.)
         """
         # API mode: MUST use the user's passed-through key, never the bot's internal token.
@@ -859,20 +851,15 @@ class PollinationsClient:
 
         current_model = config.ai.model
         for attempt in range(MAX_RETRIES):
-            # Use caller's seed if provided (default 42), otherwise random per attempt
-            caller_seed = (api_params or {}).get("seed") if api_params else None
-            seed = caller_seed if caller_seed is not None else 42
-
             payload = {
                 "model": current_model,
                 "messages": messages,
-                "seed": seed,
             }
 
             # Merge caller-provided OpenAI params (temperature, max_tokens, etc.)
             if api_params:
                 for k, v in api_params.items():
-                    if k != "seed" and v is not None:
+                    if v is not None:
                         payload[k] = v
 
             if tools:
@@ -881,7 +868,7 @@ class PollinationsClient:
 
             try:
                 session = await self.get_session()
-                logger.debug(f"API attempt {attempt + 1}/{MAX_RETRIES} with seed {seed}")
+                logger.debug(f"API attempt {attempt + 1}/{MAX_RETRIES}")
 
                 async with session.post(
                     url,

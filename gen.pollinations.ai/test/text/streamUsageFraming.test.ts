@@ -61,10 +61,11 @@ describe.each([
                 .split(/\r\n|\r|\n/)
                 .filter((line) => line.startsWith("data:"))
                 .map((line) => JSON.parse(line.slice(5)));
-            expect(events).toHaveLength(2);
-            expect(events[1].error?.code ?? events[1].code).toBe(
-                "usage_missing",
-            );
+            // Chat forwards provisional usage and validates it at DONE;
+            // Responses validates its terminal event before forwarding it.
+            expect(events).toHaveLength(_name === "Chat" ? 3 : 2);
+            const error = events.at(-1);
+            expect(error.error?.code ?? error.code).toBe("usage_missing");
             expect(output).not.toContain("[DONE]");
         }
     });

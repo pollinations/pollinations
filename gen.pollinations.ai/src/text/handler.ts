@@ -381,8 +381,11 @@ async function generateTextResponse(
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);
             }
-            const [clientBody, trackingBody] = completion.responseStream.tee();
-            completion.responseStream = requireChatStreamUsage(clientBody);
+            // Client and billing must see the same validation errors.
+            const [clientBody, trackingBody] = requireChatStreamUsage(
+                completion.responseStream,
+            ).tee();
+            completion.responseStream = clientBody;
             const response = sendTextStreamResponse(completion, servedModelId);
             c.var.track?.overrideResponseTracking(
                 new Response(trackingBody, { headers: response.headers }),

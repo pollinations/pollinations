@@ -1,0 +1,35 @@
+{
+  "pr_number": 14469,
+  "title": "feat: add MAI Image 2.5 Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14469",
+  "merged_at": "2026-09-05T09:28:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `microsoft/mai-image-2.5-flash` on the existing Azure East US Foundry deployment `MAI-Image-2.5-Flash` (Global Standard, 12 RPM): text-to-image and one-reference JPEG/PNG editing. No aliases, no fallback (no provider serves the Flash checkpoint; fal/OpenRouter only carry non-Flash 2.5 at $47/M output), no Pollinations GPU, no secret change (reuses `AZURE_MYCELI_PROD_API_KEY`).\n- Contract: `priceMultiplier` 0.75, `paidOnly: false`, `perUserRpm: 12` (= deployment quota). Cost $1.75/M text and image input, $19.50/M image output (1,024 tokens per 1024×1024). Azure retail meters and Cost Management invoices agree on $19.50; the Aug 12 blog's $33/M is not what Azure bills.\n- Handler forwards only `model`/`prompt`/`width`/`height` (Azure 400s on `seed`; edits reject width/height). 400 for sides < 768 px, non-16 multiples, > 1,048,576 px, `transparent`, or > 1 reference. Azure `content_safety_violation` maps to 422 `content_policy_violation`; a response without usage is a 502.\n- Verified: 65 unit tests (MAI, FLUX helper rename, moderation), full gen `test/image` (508), enter registry/pricing (545), typecheck, biome. Local E2E through gen on `/image`, `/v1/images/generations`, `/v1/images/edits` (URL and multipart): cache replay, all 400 cases, 422 moderation, disconnect/rejoin with one upstream call (Azure Monitor) and one debit, 13-request burst → 12×200 + one per-user 429 (`Retry-After`), zero Azure 429/5xx. Tinybird `generation_event_v2` rows match wallet debits and registry rates exactly. Latency 12.5–18 s generation, 18–22 s edit.\n- Known: the moderation reason shows Azure's raw JSON because the image error funnel matches the body before the message (pre-existing for every provider). Supersedes #12676.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A flash in the flowerbed",
+    "blurb": "MAI Image 2.5 Flash has landed in the hive: quick text-to-image generation and one-reference edits, served from Azure's East US garden. Polli brought exactly one reference picture, because the API has boundaries and apparently good taste.",
+    "summary": "Added the Azure-hosted `microsoft/mai-image-2.5-flash` image model for text-to-image and single-reference JPEG/PNG editing, with a 12 RPM per-user limit and 0.75 price multiplier.",
+    "impact": "Users can now generate or edit images with MAI Image 2.5 Flash through `/image`, `/v1/images/generations`, and `/v1/images/edits`, including clear validation and content-policy responses for unsupported requests.",
+    "keywords": [
+      "MAI Image 2.5 Flash",
+      "Azure",
+      "image generation",
+      "image editing",
+      "API",
+      "models",
+      "rate limits"
+    ],
+    "visual_concept": "Depict MAI Image 2.5 Flash as a cozy, fast image workshop: Polli uses a tiny artist's visor and carefully feeds one framed reference image into a warm Azure-like cloud-and-terminal machine, while a second canvas blooms into a new picture. Use a visible 12-leaf flower clock or twelve glowing garden lanterns to represent the per-user 12 RPM deployment quota, with code-plants and a small retro monitor showing simple image tiles.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, black oval eyes, antennae, and a tiny artist visor, placing one framed pixel landscape into a warm cloud-powered retro image terminal as a fresh canvas blooms beside it; twelve small lime green (#ecf874) garden lanterns glow around code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and simple pixel-font text reading “MAI FLASH”; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14469.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, black oval eyes, antennae, and a tiny artist visor, placing one framed pixel landscape into a warm cloud-powered retro image terminal as a fresh canvas blooms beside it; twelve small lime green (#ecf874) garden lanterns glow around code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and simple pixel-font text reading “MAI FLASH”; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-05T09:29:49.602320+00:00"
+}

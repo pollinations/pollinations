@@ -216,7 +216,9 @@ describe("RunwayTab labels", () => {
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
         expect(html).not.toContain(">aws<");
-        expect(html).toContain("Cash change");
+        expect(html).toContain(">Expenses</td>");
+        expect(html.match(/>Cash change<\/td>/g)).toHaveLength(1);
+        expect(html).not.toContain("Revenue less expenses");
         expect(html).toContain("Cash balance");
         expect(html).toContain('class="sr-only">Line item</span>');
         expect(html).not.toContain(">Actual</span>");

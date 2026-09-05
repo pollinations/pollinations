@@ -465,15 +465,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                             }
                         />
                         <SummaryRow
-                            label="Revenue less expenses"
-                            columns={columns}
-                            value={(column) =>
-                                column.forecastComplete === false
-                                    ? null
-                                    : column.operatingResultUsd
-                            }
-                        />
-                        <SummaryRow
                             label="Cash change"
                             columns={columns}
                             value={(column) =>

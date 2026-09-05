@@ -452,48 +452,6 @@ export interface ChatStreamChunk {
     system_fingerprint?: string;
 }
 
-/** A server-executed managed-agent tool lifecycle event. */
-export interface PollinationsAgentToolEvent {
-    type: "tool.started" | "tool.completed" | "tool.failed";
-    call_id: string;
-    name: string;
-}
-
-interface PollinationsAgentResource {
-    call_id: string;
-    url: string;
-    kind: "image" | "video" | "audio";
-    media_type?: string;
-    name?: string;
-}
-
-/** A media candidate produced during managed-agent work. */
-export interface PollinationsAgentResourceCreatedEvent
-    extends PollinationsAgentResource {
-    type: "resource.created";
-}
-
-/** A media resource selected for the managed agent's final response. */
-export interface PollinationsAgentResourceFinalizedEvent
-    extends PollinationsAgentResource {
-    type: "resource.finalized";
-}
-
-/** A managed-agent resource candidate or selected final result. */
-export type PollinationsAgentResourceEvent =
-    | PollinationsAgentResourceCreatedEvent
-    | PollinationsAgentResourceFinalizedEvent;
-
-/** Pollinations metadata carried in ignorable SSE comments beside OpenAI chunks. */
-export type PollinationsAgentEvent =
-    | PollinationsAgentToolEvent
-    | PollinationsAgentResourceEvent;
-
-/** A typed item from a chat stream including optional Pollinations metadata. */
-export type ChatStreamEvent =
-    | { type: "chunk"; chunk: ChatStreamChunk }
-    | { type: "agent"; event: PollinationsAgentEvent };
-
 // ============================================================================
 // Audio Generation
 // ============================================================================

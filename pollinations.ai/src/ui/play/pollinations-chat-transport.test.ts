@@ -1,4 +1,4 @@
-import type { ChatStreamEvent, Pollinations } from "@pollinations/sdk";
+import type { ChatStreamChunk, Pollinations } from "@pollinations/sdk";
 import { describe, expect, it } from "vitest";
 import {
     messagesForPollinations,
@@ -6,12 +6,12 @@ import {
     type PollinationsUIMessage,
 } from "./pollinations-chat-transport";
 
-async function chunksFrom(events: ChatStreamEvent[]) {
+async function chunksFrom(events: ChatStreamChunk[]) {
     const client = {
-        async *chatEventStream() {
+        async *chatStream() {
             yield* events;
         },
-    } as unknown as Pick<Pollinations, "chatEventStream">;
+    } as unknown as Pick<Pollinations, "chatStream">;
     const transport = new PollinationsChatTransport({
         client,
         model: "floret",
@@ -39,22 +39,19 @@ async function chunksFrom(events: ChatStreamEvent[]) {
     return chunks;
 }
 
-function contentChunk(content: string, id: string): ChatStreamEvent {
+function contentChunk(content: string, id: string): ChatStreamChunk {
     return {
-        type: "chunk",
-        chunk: {
-            id,
-            object: "chat.completion.chunk",
-            created: 1,
-            model: "floret",
-            choices: [
-                {
-                    index: 0,
-                    delta: { content },
-                    finish_reason: null,
-                },
-            ],
-        },
+        id,
+        object: "chat.completion.chunk",
+        created: 1,
+        model: "floret",
+        choices: [
+            {
+                index: 0,
+                delta: { content },
+                finish_reason: null,
+            },
+        ],
     };
 }
 
@@ -138,7 +135,7 @@ describe("messagesForPollinations", () => {
 });
 
 describe("PollinationsChatTransport", () => {
-    it("normalizes agent tools and media into UI Message Stream chunks", async () => {
+    it("normalizes tool markup and media into UI Message Stream chunks", async () => {
         const content =
             "Found it.\n\n" +
             '<details type="tool_calls" done="true" id="call-1" ' +
@@ -147,62 +144,19 @@ describe("PollinationsChatTransport", () => {
             "{&quot;count&quot;:1}\n</details>\n\n" +
             "![Result](<https://example.test/result.png>)";
         const chunks = await chunksFrom([
+            contentChunk(content, "chunk-1"),
             {
-                type: "agent",
-                event: {
-                    type: "tool.started",
-                    call_id: "call-1",
-                    name: "SEARCH_WEB",
-                },
-            },
-            {
-                type: "chunk",
-                chunk: {
-                    id: "chunk-1",
-                    object: "chat.completion.chunk",
-                    created: 1,
-                    model: "floret",
-                    choices: [
-                        {
-                            index: 0,
-                            delta: { content },
-                            finish_reason: null,
-                        },
-                    ],
-                },
-            },
-            {
-                type: "agent",
-                event: {
-                    type: "resource.finalized",
-                    call_id: "call-1",
-                    kind: "image",
-                    url: "https://example.test/result.png",
-                    name: "Result",
-                },
-            },
-            {
-                type: "chunk",
-                chunk: {
-                    id: "chunk-2",
-                    object: "chat.completion.chunk",
-                    created: 1,
-                    model: "floret",
-                    choices: [
-                        {
-                            index: 0,
-                            delta: {},
-                            finish_reason: "stop",
-                        },
-                    ],
-                },
+                id: "chunk-2",
+                object: "chat.completion.chunk",
+                created: 1,
+                model: "floret",
+                choices: [{ index: 0, delta: {}, finish_reason: "stop" }],
             },
         ]);
 
         expect(chunks.map((chunk) => chunk.type)).toEqual([
             "start",
             "start-step",
-            "data-activity",
             "text-start",
             "text-delta",
             "text-end",

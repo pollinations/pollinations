@@ -4,7 +4,6 @@ import type {
     Message,
     MessageContentPart,
     Pollinations,
-    PollinationsAgentEvent,
 } from "@pollinations/sdk";
 import type {
     ChatTransport,
@@ -49,7 +48,7 @@ export type PollinationsUIMessage = UIMessage<
     PollinationsChatData
 >;
 
-type PollinationsChatClient = Pick<Pollinations, "chatEventStream">;
+type PollinationsChatClient = Pick<Pollinations, "chatStream">;
 
 interface PollinationsChatTransportOptions {
     client: PollinationsChatClient | null;
@@ -159,21 +158,6 @@ function finishReason(chunk: ChatStreamChunk): FinishReason | undefined {
     }
 }
 
-function safeMedia(event: PollinationsAgentEvent): RenderedMedia | null {
-    if (event.type !== "resource.finalized") return null;
-    try {
-        const url = new URL(event.url);
-        if (url.protocol !== "https:") return null;
-        return {
-            kind: event.kind,
-            url: url.href,
-            ...(event.name ? { label: event.name } : {}),
-        };
-    } catch {
-        return null;
-    }
-}
-
 function errorMessage(error: unknown): string {
     return error instanceof Error ? error.message : "The response failed.";
 }
@@ -186,25 +170,6 @@ function isCancellation(error: unknown): boolean {
             "code" in error &&
             error.code === "CANCELLED")
     );
-}
-
-function activityChunk(
-    event: Extract<PollinationsAgentEvent, { type: `tool.${string}` }>,
-): UIMessageChunk<unknown, PollinationsChatData> {
-    return {
-        type: "data-activity",
-        id: event.call_id,
-        data: {
-            callId: event.call_id,
-            name: event.name,
-            status:
-                event.type === "tool.started"
-                    ? "running"
-                    : event.type === "tool.failed"
-                      ? "failed"
-                      : "complete",
-        },
-    };
 }
 
 /**
@@ -413,29 +378,10 @@ export class PollinationsChatTransport
                 controller.enqueue({ type: "start", messageId });
                 controller.enqueue({ type: "start-step" });
                 try {
-                    for await (const streamEvent of client.chatEventStream(
+                    for await (const chunk of client.chatStream(
                         messagesForPollinations(messages),
                         { model, routing, signal: abortSignal },
                     )) {
-                        if (streamEvent.type === "agent") {
-                            const event = streamEvent.event;
-                            if (event.type.startsWith("tool.")) {
-                                controller.enqueue(
-                                    activityChunk(
-                                        event as Extract<
-                                            PollinationsAgentEvent,
-                                            { type: `tool.${string}` }
-                                        >,
-                                    ),
-                                );
-                            }
-                            const media = safeMedia(event);
-                            if (media)
-                                emitMedia(media, `resource:${event.call_id}`);
-                            continue;
-                        }
-
-                        const chunk = streamEvent.chunk;
                         finalReason = finishReason(chunk) ?? finalReason;
                         const delta = chunk.choices[0]?.delta;
                         for (const toolCall of delta?.tool_calls ?? []) {

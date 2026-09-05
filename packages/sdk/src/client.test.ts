@@ -518,8 +518,8 @@ describe("Pollinations chat routing", () => {
     });
 });
 
-describe("Pollinations chat event streaming", () => {
-    it("decodes standard SSE and typed agent comments across chunk boundaries", async () => {
+describe("Pollinations chat streaming", () => {
+    it("decodes SSE across chunk boundaries and ignores comment lines", async () => {
         const client = newClient();
         const chunk = {
             id: "chatcmpl-test",
@@ -539,8 +539,8 @@ describe("Pollinations chat event streaming", () => {
         fetchMock.mockResolvedValue(
             makeResponse(
                 [
-                    ': pollinations-agent-event/v1 {"type":"tool.started","call_id":"call-1","name":"transcribeAudio"}\r',
-                    `\n: pollinations-agent-event/v1 {"type":"resource.finalized","call_id":"call-1","url":"https://media.pollinations.ai/audio-1","kind":"audio"}\r\n\r\ndata: ${json.slice(0, split)}\r\ndata:${json.slice(split)}\r\n\r\ndata:[DONE]\r\n\r\n`,
+                    ": keep-alive\r",
+                    `\n: ping\r\n\r\ndata: ${json.slice(0, split)}\r\ndata:${json.slice(split)}\r\n\r\ndata:[DONE]\r\n\r\n`,
                 ],
                 {
                     kind: "stream",
@@ -549,61 +549,14 @@ describe("Pollinations chat event streaming", () => {
             ),
         );
 
-        const events = [];
-        for await (const event of client.chatEventStream([
-            { role: "user", content: "transcribe this" },
-        ])) {
-            events.push(event);
-        }
-
-        expect(events).toEqual([
-            {
-                type: "agent",
-                event: {
-                    type: "tool.started",
-                    call_id: "call-1",
-                    name: "transcribeAudio",
-                },
-            },
-            {
-                type: "agent",
-                event: {
-                    type: "resource.finalized",
-                    call_id: "call-1",
-                    url: "https://media.pollinations.ai/audio-1",
-                    kind: "audio",
-                },
-            },
-            { type: "chunk", chunk },
-        ]);
-    });
-
-    it("keeps agent comments out of the OpenAI-only chat stream", async () => {
-        const client = newClient();
-        const stream = [
-            ': pollinations-agent-event/v1 {"type":"tool.started","call_id":"call-1","name":"searchWeb"}',
-            "",
-            'data: {"choices":[{"index":0,"delta":{"content":"hello"},"finish_reason":null}]}',
-            "",
-            "data: [DONE]",
-            "",
-        ].join("\n");
-        fetchMock.mockResolvedValue(
-            makeResponse(stream, {
-                kind: "stream",
-                contentType: "text/event-stream",
-            }),
-        );
-
         const chunks = [];
         for await (const chunk of client.chatStream([
-            { role: "user", content: "hello" },
+            { role: "user", content: "transcribe this" },
         ])) {
             chunks.push(chunk);
         }
 
-        expect(chunks).toHaveLength(1);
-        expect(chunks[0].choices[0].delta.content).toBe("hello");
+        expect(chunks).toEqual([chunk]);
     });
 
     it("surfaces stream errors instead of silently completing", async () => {
@@ -655,18 +608,12 @@ describe("Pollinations chat event streaming", () => {
             }),
         );
         const controller = new AbortController();
-        const stream = client.chatEventStream(
-            [{ role: "user", content: "hello" }],
-            { signal: controller.signal },
-        );
+        const stream = client.chatStream([{ role: "user", content: "hello" }], {
+            signal: controller.signal,
+        });
 
         await expect(stream.next()).resolves.toMatchObject({
-            value: {
-                type: "chunk",
-                chunk: {
-                    choices: [{ delta: { content: "started" } }],
-                },
-            },
+            value: { choices: [{ delta: { content: "started" } }] },
         });
         const pending = stream.next();
         controller.abort();

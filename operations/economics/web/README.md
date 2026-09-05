@@ -22,12 +22,14 @@ Enter checks administrator permission through Better Auth at token exchange;
 the dashboard receives a profile, not a role claim or generation key. Its signed
 HttpOnly session expires after 12 hours and signs out independently of Enter.
 
-OAuth session-secret provisioning is a separate, approval-gated prerequisite.
-The existing local configuration script has not been changed to copy
-`POLLINATIONS_AUTH_SESSION_SECRET`; provision it only through the approved secret
-workflow before enabling local authenticated access or production deployment.
-Keep local Tinybird reads on the staging-only `../secrets/web.dev.json` reader.
-Fixtures remain available without credentials.
+`npm run decrypt-vars` writes `.dev.vars` with the staging-only Tinybird reader
+from `../secrets/web.dev.json` and a locally generated
+`POLLINATIONS_AUTH_SESSION_SECRET` (reused across runs so you stay signed in).
+The production session secret is provisioned separately through the approved
+secret workflow. Login goes through Enter, so the local callback
+(`http://127.0.0.1:4180/auth/callback`) must be registered on the Economics
+`pk_` client, or set `POLLINATIONS_AUTH_BASE_URL` to a local Enter. Fixtures
+remain available without credentials.
 
 ## Fixtures Mode
 

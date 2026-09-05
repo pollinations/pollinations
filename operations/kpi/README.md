@@ -22,9 +22,15 @@ North star: weekly active paying customers.
 
 ```bash
 npm ci --prefix ../.. && npm ci
-npm run decrypt-vars          # Worker configuration → .dev.vars (needs the age key)
+npm run decrypt-vars          # TINYBIRD_READ_TOKEN → .dev.vars (needs the age key)
+echo "POLLINATIONS_AUTH_SESSION_SECRET=$(openssl rand -hex 32)" >> .dev.vars
 npm run dev                   # http://127.0.0.1:3456
 ```
+
+The session secret only signs this Worker's local cookie; any 32+ character
+value works. Login still goes through Enter, so the local callback
+(`http://127.0.0.1:3456/auth/callback`) must be registered on the KPI `pk_`
+client, or point `POLLINATIONS_AUTH_BASE_URL` at a local Enter.
 
 Enter checks administrator permission through Better Auth at token exchange,
 including its configured admin users. The app receives profile data and creates

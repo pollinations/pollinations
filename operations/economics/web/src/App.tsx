@@ -694,7 +694,10 @@ export default function App() {
                 if (cancelled || retryKey !== attempt) return;
 
                 if (caught instanceof TbError && caught.authRequired) {
-                    window.location.assign("/auth/login");
+                    const returnTo = `${window.location.pathname}${window.location.search}`;
+                    window.location.assign(
+                        `/auth/login?return_to=${encodeURIComponent(returnTo)}`,
+                    );
                 } else {
                     setError(
                         caught instanceof Error

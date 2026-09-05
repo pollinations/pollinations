@@ -1,4 +1,4 @@
-import { assertNotBanned } from "@shared/auth/api-key.ts";
+import { assertNotBanned, BannedAccountError } from "@shared/auth/api-key.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
@@ -374,7 +374,16 @@ export async function getUserinfoForUser(
     if (!row) {
         throw new HTTPException(404, { message: "User not found" });
     }
-    assertNotBanned(row);
+    // Session and API-key callers were already screened by the auth
+    // middleware; this covers the identity-token path, which has no middleware.
+    try {
+        assertNotBanned(row);
+    } catch (error) {
+        if (error instanceof BannedAccountError) {
+            throw new HTTPException(403, { message: error.message });
+        }
+        throw error;
+    }
     return {
         sub: row.id,
         ...(includeProfilePII && { name: row.name, email: row.email }),

@@ -582,6 +582,31 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(replay.status).toBe(401);
     });
 
+    test("rejects an identity token for a banned account with 403", async () => {
+        const db = drizzle(env.DB, { schema });
+        const id = `banned-${crypto.randomUUID()}`;
+        await db.insert(schema.user).values({
+            id,
+            name: "Banned administrator",
+            email: `${id}@example.test`,
+            role: "admin",
+            banned: true,
+            banReason: "test",
+        });
+        const accessToken = `oauth_${crypto.randomUUID()}`;
+        await env.KV.put(
+            `oauth-login-token:${accessToken}`,
+            JSON.stringify({ userId: id }),
+            { expirationTtl: 60 },
+        );
+
+        const response = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        expect(response.status).toBe(403);
+    });
+
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,
         mocks,

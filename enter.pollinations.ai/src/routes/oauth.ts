@@ -3,6 +3,7 @@ import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
 import { isDashboardClient } from "@shared/auth/dashboard-clients.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { APIError } from "better-auth/api";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -258,7 +259,13 @@ export const oauthRoutes = new Hono<Env>()
                         permissions: { user: ["list"] },
                     },
                 })
-                .catch(() => ({ success: false }));
+                .catch((error: unknown) => {
+                    // Policy answers (unknown user, no role) are denials. Any
+                    // other failure is an outage and must surface as a 5xx
+                    // rather than masquerade as "not an administrator".
+                    if (error instanceof APIError) return { success: false };
+                    throw error;
+                });
             if (!permission.success) {
                 return tokenError(
                     c,
@@ -270,7 +277,10 @@ export const oauthRoutes = new Hono<Env>()
                 c.env,
                 stored.userId,
                 true,
-            ).catch(() => null);
+            ).catch((error: unknown) => {
+                if (error instanceof HTTPException) return null;
+                throw error;
+            });
             if (!activeUser)
                 return tokenError(c, "access_denied", "Account unavailable");
             const accessToken = `oauth_${generateCode(CODE_LENGTH)}`;

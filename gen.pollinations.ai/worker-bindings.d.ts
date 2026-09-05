@@ -12,6 +12,11 @@ interface CloudflareBindings {
     ASSEMBLYAI_API_KEY?: string;
     OVHCLOUD_API_KEY: string;
     PLN_ENTER_TOKEN: string;
+    // x402 pay-per-call rail. Absent WEFT_PAY_TO the rail stays closed.
+    WEFT_SELLER_API_KEY?: string;
+    WEFT_PAY_TO?: string;
+    WEFT_NETWORK?: string;
+    WEFT_FACILITATOR_URL?: string;
     PLN_GPU_TOKEN: string;
     DASHSCOPE_API_KEY: string;
     DEEPINFRA_API_KEY: string;

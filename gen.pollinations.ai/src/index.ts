@@ -31,6 +31,7 @@ import { mcpRoutes } from "./routes/mcp.ts";
 import { modelStatusRoutes } from "./routes/model-status.ts";
 import { proxyRoutes } from "./routes/proxy.ts";
 import { docsLandingHtml, manifestResponse } from "./routes/seo.ts";
+import { x402Routes } from "./routes/x402.ts";
 
 export { CommunityModelRateLimiter } from "./durable-objects/CommunityModelRateLimiter.ts";
 export { GenerationCoordinator } from "./durable-objects/GenerationCoordinator.ts";
@@ -146,6 +147,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         }
     })
     .route("/docs", createDocsRoutes(app))
+    .route("/", x402Routes)
     .route("/v1/audio", audioRoutes)
     .route("/", mcpRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;

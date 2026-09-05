@@ -6,8 +6,11 @@ import {
     getRegistryModelDefinition,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
+import { Hono } from "hono";
 import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
+import type { Env } from "../src/env.ts";
+import { enforceModelRateLimit } from "../src/utils/model-rate-limit.ts";
 
 // Azure image deployments with a small quota cap each user at the deployment's
 // own request limit instead of the 60 RPM floor.
@@ -17,6 +20,28 @@ const QUOTA_BOUND_MODELS = new Set([
 ]);
 
 describe("model rate limiting", () => {
+    it("limits verified x402 payers without inventing a Pollinations user", async () => {
+        let payer = crypto.randomUUID();
+        const app = new Hono<Env>().get("/", async (c) => {
+            c.set("auth", {
+                paymentPayer: payer,
+                requireUser: () => {
+                    throw new Error("No Pollinations user");
+                },
+                requireModelAccess: () => {},
+            });
+            await enforceModelRateLimit(c, {
+                id: "flux",
+                definition: { ...IMAGE_SERVICES.flux, perUserRpm: 1 },
+            });
+            return c.text("allowed");
+        });
+        expect((await app.request("/", {}, env)).status).toBe(200);
+        expect((await app.request("/", {}, env)).status).toBe(429);
+        payer = crypto.randomUUID();
+        expect((await app.request("/", {}, env)).status).toBe(200);
+    });
+
     it("limits the self-hosted image models", () => {
         expect(IMAGE_SERVICES.flux.perUserRpm).toBe(60);
         expect(IMAGE_SERVICES.zimage.perUserRpm).toBe(60);

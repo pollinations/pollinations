@@ -8,11 +8,13 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 
 | Model family | Required upstream endpoint | Pollinations endpoint |
 |---|---|---|
-| Text | `POST /v1/chat/completions`; optional exact `POST /v1/responses` URL | `POST /v1/chat/completions`; `POST /v1/responses` when configured |
+| Text: Chat Completions | One exact Chat Completions endpoint URL | `POST /v1/chat/completions` |
+| Text: Responses | One exact Responses endpoint URL | `POST /v1/responses` and `POST /v1/chat/completions` |
 | Image | `POST /v1/images/generations` | `GET /image/{prompt}` or `POST /v1/images/generations` |
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
 | Video | Exact endpoint URL entered at registration | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
 | Speech to text | `POST /v1/audio/transcriptions` | `POST /v1/audio/transcriptions` |
+| Text to speech | `POST /v1/audio/speech` | `POST /v1/audio/speech` |
 | Embeddings | `POST /v1/embeddings` | `POST /v1/embeddings` |
 
 Image providers must return `b64_json`. During testing, Pollinations checks whether an image provider supports edits and whether it reports OpenAI image-token usage.
@@ -46,7 +48,9 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
 
 Pollinations sends no upstream model id and bills the accepted request duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
-Text-to-speech, realtime, and 3D endpoints cannot currently be registered through this workflow.
+Text-to-speech is synchronous and OpenAI-shaped. Pollinations calls your `/v1/audio/speech` with `{ model, input, voice, response_format }` and streams the returned binary audio back to the caller with its content type preserved. Registration sends a short sample and accepts any non-empty `audio/*` response. Billing charges the input text by character against your per-1M completion-audio price. Voice cloning, speech-to-speech, and timestamps are out of scope.
+
+Realtime and 3D endpoints cannot currently be registered through this workflow.
 
 ## Private and Public Models
 
@@ -69,8 +73,8 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For a text model with native Responses support, also enter its exact Responses URL. For video, enter the exact generation URL and bearer token.
-4. Fetch the upstream model list or run the endpoint test before saving.
+3. For text, choose **Chat Completions** or **Responses** and enter that API's exact endpoint URL, model id, and bearer token. Other model families use a base URL; video uses an exact generation URL.
+4. Run the endpoint test before publishing. Model discovery is optional; Responses endpoints do not need `/models` or a Chat Completions endpoint.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
 
@@ -107,7 +111,7 @@ npx @pollinations/cli my-models create \
 
 Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle. API keys used for model management require the `account:keys` permission.
 
-For a text provider with native Responses support, add the exact URL with `--responses-url https://api.example.com/v1/responses`. Use `polli my-models update <id> --no-responses` to clear it. Pollinations does not derive or probe this URL: its presence declares the capability, and query parameters are preserved exactly.
+Text models use `--api responses --url https://api.example.com/v1/responses` or `--api chat_completions --url https://api.example.com/v1/chat/completions` instead of `--base-url`. Supply both flags when changing an existing text target. The selected URL is used exactly, including query parameters. The text endpoint test checks JSON and streaming responses for valid usage.
 
 Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
 
@@ -139,7 +143,9 @@ curl https://gen.pollinations.ai/v1/chat/completions \
 
 Authenticated model-list requests include your own private models. Public discovery endpoints accept `community=true` to return only community models.
 
-When the registration includes `responsesUrl`, the model advertises `/v1/responses` in `supported_endpoints`. Responses calls are proxied to that exact URL, and Chat Completions calls use the same upstream through Pollinations' stateless adapter. Both paths require valid terminal usage for billing; a response with missing or malformed usage fails and remains unbilled.
+Each text registration declares one upstream API with `{ "api": "responses" | "chat_completions", "url": "https://…" }`. A Responses model advertises both `/v1/responses` and `/v1/chat/completions` in `supported_endpoints`. Responses calls go to the registered URL; Chat Completions calls use that same upstream through Pollinations' stateless adapter. A Chat Completions registration advertises only Chat Completions. Both paths require valid terminal usage for billing; missing or malformed usage fails the request and produces no charge for that model request.
+
+Endpoint agents also select one upstream API and exact URL. Managed prompt agents use Pollinations' Responses runtime and have no publisher-configured endpoint URL. Both kinds of agent use the outer request ID to group child model and tool calls: the outer wrapper is free, and each completed child operation is billed once even if a later step fails.
 
 ## Fallbacks and Health
 

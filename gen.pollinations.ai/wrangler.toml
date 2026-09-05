@@ -1,7 +1,16 @@
 name = "pollinations-gen"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
-compatibility_flags = ["nodejs_compat", "nodejs_als"]
+# Managed-agent model and MCP calls loop through the public Gen routes so each
+# child request receives its own authentication, billing, and tracking.
+# Defer rejection reporting until all microtasks settle: AI SDK tracing creates
+# handled promise chains that older Workers semantics report as unhandled.
+compatibility_flags = [
+    "nodejs_compat",
+    "nodejs_als",
+    "global_fetch_strictly_public",
+    "unhandled_rejection_after_microtask_checkpoint"
+]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)
@@ -62,7 +71,6 @@ new_classes = ["CommunityModelRateLimiter"]
 ENVIRONMENT = "development"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
-AGENT_RUNTIME_BASE_URL = "https://dev.enter.myceli.ai/api/agent-runtime/v1"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 AWS_BEDROCK_REGION = "us-east-1"
 BEDROCK_GUARDRAIL_ID = "utmttwfzrzp8"
@@ -168,7 +176,6 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.production.vars]
 ENVIRONMENT = "production"
-AGENT_RUNTIME_BASE_URL = "https://enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -261,7 +268,6 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
-AGENT_RUNTIME_BASE_URL = "https://staging.enter.myceli.ai/api/agent-runtime/v1"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
@@ -346,7 +352,6 @@ new_classes = ["CommunityModelRateLimiter"]
 
 [env.test.vars]
 ENVIRONMENT = "test"
-AGENT_RUNTIME_BASE_URL = "https://enter-runtime.test/api/agent-runtime/v1"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"

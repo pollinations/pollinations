@@ -1437,6 +1437,18 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000025,
     },
   },
+  "microsoft/mai-image-2.5-flash": {
+    "cost": {
+      "completionImageTokens": 0.0000195,
+      "promptImageTokens": 0.00000175,
+      "promptTextTokens": 0.00000175,
+    },
+    "price": {
+      "completionImageTokens": 0.000014625,
+      "promptImageTokens": 0.0000013125,
+      "promptTextTokens": 0.0000013125,
+    },
+  },
   "midijourney": {
     "cost": {
       "completionTextTokens": 0.0000045,
@@ -1925,6 +1937,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
+  "openai/gpt-6-astra": {
+    "cost": {
+      "completionTextTokens": 0.00005,
+      "promptCacheWriteTokens": 0.0000125,
+      "promptCachedTokens": 0.000001,
+      "promptTextTokens": 0.00001,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.000075,
+        "promptCacheWriteTokens": 0.000025,
+        "promptCachedTokens": 0.000002,
+        "promptTextTokens": 0.00002,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.0000375,
+      "promptCacheWriteTokens": 0.000009375,
+      "promptCachedTokens": 0.00000075,
+      "promptTextTokens": 0.0000075,
+    },
+  },
   "p-image": {
     "cost": {
       "completionImageTokens": 0.005,
@@ -2157,6 +2191,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000098,
     },
   },
+  "qwen/qwen3.8-flash": {
+    "cost": {
+      "completionTextTokens": 0.00000047,
+      "promptCacheWriteTokens": 0.0000002,
+      "promptCachedTokens": 0.000000016,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
+      "promptVideoTokens": 0.00000015,
+    },
+    "price": {
+      "completionTextTokens": 0.00000047,
+      "promptCacheWriteTokens": 0.0000002,
+      "promptCachedTokens": 0.000000016,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
+      "promptVideoTokens": 0.00000015,
+    },
+  },
   "qwen/qwen3.8-max-0902": {
     "cost": {
       "completionTextTokens": 0.000006,
@@ -2342,6 +2394,24 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.00000032,
       "promptTextTokens": 0.00000032,
       "promptVideoTokens": 0.00000032,
+    },
+  },
+  "qwen3.8-flash-alibaba": {
+    "cost": {
+      "completionTextTokens": 0.00000047,
+      "promptCacheWriteTokens": 0.0000002,
+      "promptCachedTokens": 0.000000016,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
+      "promptVideoTokens": 0.00000015,
+    },
+    "price": {
+      "completionTextTokens": 0.00000047,
+      "promptCacheWriteTokens": 0.0000002,
+      "promptCachedTokens": 0.000000016,
+      "promptImageTokens": 0.00000015,
+      "promptTextTokens": 0.00000015,
+      "promptVideoTokens": 0.00000015,
     },
   },
   "qwen3.8-max": {

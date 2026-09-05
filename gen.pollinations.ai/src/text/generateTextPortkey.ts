@@ -66,6 +66,7 @@ export async function generateTextPortkey(
         string,
         string
     >;
+    const responsesFetcher = state.options.responsesFetcher;
     const requestConfig =
         typeof directEndpoint === "string"
             ? {
@@ -92,11 +93,15 @@ export async function generateTextPortkey(
         !modelDef &&
         typeof state.options.modelConfig?.responsesEndpoint === "string";
     if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
-        return await callChatViaResponses(state.messages, state.options);
+        return await callChatViaResponses(
+            state.messages,
+            state.options,
+            responsesFetcher,
+        );
     }
 
-    // Only the Responses adapter owns this parameter. Keep generic provider
-    // requests unchanged because some OpenAI-compatible backends reject it.
+    // These options belong to the Responses adapter, not generic providers.
+    delete state.options.responsesFetcher;
     delete state.options.parallel_tool_calls;
 
     const completion = await genericOpenAIClient(

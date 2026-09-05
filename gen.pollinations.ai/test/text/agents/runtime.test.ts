@@ -1,26 +1,19 @@
-import { createExecutionContext, env } from "cloudflare:test";
-import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
-import {
-    PROMPT_AGENT_BASE_URL_PLACEHOLDER,
-    PromptAgentConfigSchema,
-} from "@shared/community-endpoints.ts";
-import * as schema from "@shared/db/better-auth.ts";
-import { MCP_SERVER_IDS } from "@shared/registry/mcp.ts";
-import {
-    createTestApiKey,
-    createTestUser,
-} from "@shared/test/fixtures/index.ts";
-import { drizzle } from "drizzle-orm/d1";
+import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { agentRuntimeRoutes } from "../src/routes/agent-runtime.ts";
-import { PromptAgentInputSchema } from "../src/services/prompt-agent.ts";
 import {
-    handlePromptAgentRequest,
-    type PromptAgentRequest,
-    PromptAgentRuntimeRequestSchema,
-} from "../src/services/prompt-agent-runtime.ts";
+    handlePromptAgentResponsesRequest,
+    PromptAgentResponsesRequestSchema,
+} from "../../../src/text/agents/responses.ts";
+import type { PromptAgentRuntime } from "../../../src/text/agents/runtime.ts";
+import {
+    responsesToChatCompletion,
+    responsesToChatStream,
+} from "../../../src/text/responses/chatResponse.ts";
 
-type PromptAgentRuntime = Parameters<typeof handlePromptAgentRequest>[2];
+type PromptAgentRequest = {
+    messages?: unknown[];
+    stream?: boolean;
+};
 
 const BASE_RUNTIME: PromptAgentRuntime = {
     config: {
@@ -30,294 +23,64 @@ const BASE_RUNTIME: PromptAgentRuntime = {
     },
     apiKey: "sk_test",
     genBaseUrl: "https://gen.test.example",
+    fetcher: (input, init) => globalThis.fetch(input, init),
 };
 const POLLINATIONS_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/pollinations`;
-const BROWSER_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/browser`;
-
-async function agentRunToken(parentApiKeyId: string, managedAgentId: string) {
-    return signAgentRunToken({
-        secret: env.BETTER_AUTH_SECRET,
-        parentApiKeyId,
-        parentRequestId: crypto.randomUUID(),
-        managedAgentId,
-    });
-}
+const EXA_MCP_PROXY_URL = `${BASE_RUNTIME.genBaseUrl}/mcp/exa`;
 
 async function runAgent(
     body: PromptAgentRequest,
     runtime: PromptAgentRuntime = BASE_RUNTIME,
 ): Promise<Response> {
-    return await handlePromptAgentRequest(
-        body,
+    return handlePromptAgentResponsesRequest(
+        PromptAgentResponsesRequestSchema.parse({
+            model: "00000000-0000-4000-8000-000000000001",
+            input: body.messages ?? [],
+            stream: body.stream ?? false,
+        }),
         new AbortController().signal,
         runtime,
     );
 }
 
-describe("prompt-agent config", () => {
-    const config = {
-        systemPrompt: "You are a test agent.",
-        baseModel: "openai",
-        mcpServers: [],
-    };
+function responseOutputText(body: unknown): string {
+    return (
+        body as {
+            output: { type: string; content?: { text: string }[] }[];
+        }
+    ).output
+        .filter((item) => item.type === "message")
+        .flatMap((item) => item.content ?? [])
+        .map((part) => part.text)
+        .join("");
+}
 
-    it("rejects custom MCP configuration on write", () => {
-        expect(
-            PromptAgentInputSchema.safeParse({
-                ...config,
-                mcpServers: [{ name: "docs", url: "https://mcp.example.com" }],
-            }).success,
-        ).toBe(false);
-    });
+function chatOutputText(body: unknown): string {
+    const completion = responsesToChatCompletion(
+        body,
+        "test-agent",
+        new URL("https://gen.test/v1/responses"),
+    );
+    const content = completion.choices?.[0]?.message?.content;
+    if (typeof content !== "string") throw new Error("Missing Chat content");
+    return content;
+}
 
-    it("accepts MCP servers from the built-in registry", () => {
-        expect(
-            PromptAgentConfigSchema.parse({
-                ...config,
-                mcpServers: MCP_SERVER_IDS,
-            }),
-        ).toEqual({ ...config, mcpServers: MCP_SERVER_IDS });
-    });
+function responseStreamEvents(body: string): Record<string, unknown>[] {
+    return body
+        .split("\n\n")
+        .map((block) =>
+            block.split("\n").find((line) => line.startsWith("data: ")),
+        )
+        .filter(
+            (line): line is string => Boolean(line) && line !== "data: [DONE]",
+        )
+        .map((line) => JSON.parse(line.slice(6)) as Record<string, unknown>);
+}
 
-    it("rejects duplicate built-in MCP servers", () => {
-        const result = PromptAgentInputSchema.safeParse({
-            ...config,
-            mcpServers: ["pollinations", "pollinations"],
-        });
-
-        expect(result.error?.issues).toContainEqual(
-            expect.objectContaining({
-                message: "Duplicate MCP servers are not allowed",
-            }),
-        );
-    });
-});
 describe("prompt-agent runtime", () => {
     beforeEach(() => {
         vi.unstubAllGlobals();
-    });
-
-    it("rejects calls without an agent run token", async () => {
-        const response = await agentRuntimeRoutes.fetch(
-            new Request("https://enter.example/v1/chat/completions", {
-                method: "POST",
-                headers: { "content-type": "application/json" },
-                body: JSON.stringify({ model: crypto.randomUUID() }),
-            }),
-            env,
-            createExecutionContext(),
-        );
-        expect(response.status).toBe(401);
-    });
-
-    it("selects agents by the request model", async () => {
-        const agentId = crypto.randomUUID();
-        const parent = await createTestApiKey();
-        const token = await agentRunToken(parent.id, agentId);
-        const response = await agentRuntimeRoutes.fetch(
-            new Request("https://enter.example/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ model: agentId }),
-            }),
-            env,
-            createExecutionContext(),
-        );
-        expect(response.status).toBe(404);
-    });
-
-    it("uses the caller's run token for the selected agent", async () => {
-        const db = drizzle(env.DB, { schema });
-        const agentId = crypto.randomUUID();
-        const parent = await createTestApiKey();
-        const token = await agentRunToken(parent.id, agentId);
-        await db.insert(schema.communityEndpoint).values({
-            id: agentId,
-            ownerUserId: await createTestUser(),
-            name: `agent-${agentId}`,
-            title: "Test agent",
-            type: "prompt_agent",
-            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
-            upstreamModel: agentId,
-            payload: JSON.stringify({
-                systemPrompt: "Answer briefly.",
-                baseModel: "openai-fast",
-                mcpServers: [],
-            }),
-            visibility: "private",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
-                const request = new Request(input, init);
-                expect(request.url).toBe(
-                    "https://gen.test/v1/chat/completions",
-                );
-                expect(request.headers.get("Authorization")).toBe(
-                    `Bearer ${token}`,
-                );
-                return Response.json({
-                    choices: [
-                        { message: { role: "assistant", content: "done" } },
-                    ],
-                    usage: {
-                        prompt_tokens: 1,
-                        completion_tokens: 1,
-                        total_tokens: 2,
-                    },
-                });
-            }),
-        );
-
-        const response = await agentRuntimeRoutes.fetch(
-            new Request("https://enter.test/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    model: agentId,
-                    messages: [{ role: "user", content: "hello" }],
-                }),
-            }),
-            { ...env, GEN_BASE_URL: "https://gen.test" },
-            createExecutionContext(),
-        );
-        expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toMatchObject({
-            model: "openai-fast",
-            choices: [{ message: { content: "done" } }],
-        });
-    });
-
-    it("authenticates and runs a stateless Responses request", async () => {
-        const db = drizzle(env.DB, { schema });
-        const agentId = crypto.randomUUID();
-        const parent = await createTestApiKey();
-        const token = await agentRunToken(parent.id, agentId);
-        await db.insert(schema.communityEndpoint).values({
-            id: agentId,
-            ownerUserId: await createTestUser(),
-            name: `agent-${agentId}`,
-            title: "Responses agent",
-            type: "prompt_agent",
-            baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
-            upstreamModel: agentId,
-            payload: JSON.stringify({
-                systemPrompt: "Answer briefly.",
-                baseModel: "openai-fast",
-                mcpServers: [],
-            }),
-            visibility: "private",
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () =>
-                Response.json({
-                    choices: [
-                        { message: { role: "assistant", content: "done" } },
-                    ],
-                    usage: {
-                        prompt_tokens: 1,
-                        completion_tokens: 1,
-                        total_tokens: 2,
-                    },
-                }),
-            ),
-        );
-
-        const response = await agentRuntimeRoutes.fetch(
-            new Request("https://enter.test/v1/responses", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    model: agentId,
-                    input: "hello",
-                    store: false,
-                }),
-            }),
-            { ...env, GEN_BASE_URL: "https://gen.test" },
-            createExecutionContext(),
-        );
-
-        expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toMatchObject({
-            object: "response",
-            model: agentId,
-            status: "completed",
-            output: [
-                {
-                    type: "message",
-                    content: [{ type: "output_text", text: "done" }],
-                },
-            ],
-            usage: { input_tokens: 1, output_tokens: 1, total_tokens: 2 },
-            store: false,
-        });
-    });
-
-    it("rejects a run token bound to another agent", async () => {
-        const parent = await createTestApiKey();
-        const token = await agentRunToken(parent.id, crypto.randomUUID());
-        const response = await agentRuntimeRoutes.fetch(
-            new Request("https://enter.test/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ model: crypto.randomUUID() }),
-            }),
-            env,
-            createExecutionContext(),
-        );
-        expect(response.status).toBe(403);
-    });
-
-    it("reports an invalid internal agent request as 400", async () => {
-        const agentId = crypto.randomUUID();
-        const parent = await createTestApiKey();
-        const token = await agentRunToken(parent.id, agentId);
-        const response = await agentRuntimeRoutes.fetch(
-            new Request("https://enter.test/v1/chat/completions", {
-                method: "POST",
-                headers: {
-                    "content-type": "application/json",
-                    authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ model: agentId, stream: "yes" }),
-            }),
-            env,
-            createExecutionContext(),
-        );
-        expect(response.status).toBe(400);
-    });
-
-    it("passes through messages and accepts unused client fields", async () => {
-        const agentId = crypto.randomUUID();
-        const messages = [
-            { role: "system", content: "Client context" },
-            { role: "user", content: "hello" },
-        ];
-        const body = PromptAgentRuntimeRequestSchema.parse({
-            model: agentId,
-            messages,
-            max_tokens: 1000,
-            tools: [{ type: "function", function: { name: "client_tool" } }],
-            stream_options: { include_usage: true },
-        });
-        expect(body.messages).toEqual(messages);
     });
 
     it("propagates base-model HTTP errors", async () => {
@@ -336,7 +99,7 @@ describe("prompt-agent runtime", () => {
         });
 
         expect(response.status).toBe(402);
-        await expect(response.json()).resolves.toEqual({
+        await expect(response.json()).resolves.toMatchObject({
             error: { message: "Insufficient balance" },
         });
     });
@@ -348,8 +111,8 @@ describe("prompt-agent runtime", () => {
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
                 const url = new URL(request.url);
-                if (request.url === BROWSER_MCP_PROXY_URL) {
-                    mcpRequests.push(request.clone());
+                if (request.url === EXA_MCP_PROXY_URL) {
+                    mcpRequests.push(request.clone() as unknown as Request);
                     if (request.method === "GET") {
                         return new Response(null, { status: 405 });
                     }
@@ -416,7 +179,7 @@ describe("prompt-agent runtime", () => {
                                         {
                                             id: "c1",
                                             function: {
-                                                name: "mcp__browser__listModels",
+                                                name: "mcp__exa__listModels",
                                                 arguments: "{}",
                                             },
                                         },
@@ -451,7 +214,7 @@ describe("prompt-agent runtime", () => {
                 ...BASE_RUNTIME,
                 config: {
                     ...BASE_RUNTIME.config,
-                    mcpServers: ["browser"],
+                    mcpServers: ["exa"],
                 },
             },
         );
@@ -459,13 +222,32 @@ describe("prompt-agent runtime", () => {
         const responseText = await res.text();
         expect(res.status, responseText).toBe(200);
         const json = JSON.parse(responseText) as {
-            choices: { message: { content: string }; finish_reason: string }[];
+            output: { type: string; content: { text: string }[] }[];
+            status: string;
             usage: {
-                prompt_tokens: number;
+                input_tokens: number;
                 tool_call_counts: Record<string, number>;
             };
         };
-        expect(json.choices[0].message.content).toBe(
+        expect(responseOutputText(json)).toBe("checking done");
+        expect(json.output.map((item) => item.type)).toEqual([
+            "message",
+            "mcp_call",
+            "message",
+        ]);
+        expect(json.output[1]).toMatchObject({
+            id: "c1",
+            type: "mcp_call",
+            server_label: "exa",
+            name: "listModels",
+            arguments: "{}",
+            status: "completed",
+            output: JSON.stringify({
+                content: [{ type: "text", text: "found" }],
+            }),
+            error: null,
+        });
+        expect(chatOutputText(json)).toBe(
             "checking \n\n" +
                 '<details type="tool_calls" done="true" id="c1" name="listModels" arguments="{}">\n' +
                 "<summary>Tool Executed</summary>\n" +
@@ -473,10 +255,10 @@ describe("prompt-agent runtime", () => {
                 "</details>\n\n" +
                 "done",
         );
-        expect(json.choices[0].finish_reason).toBe("stop");
+        expect(json.status).toBe("completed");
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
         // Usage from both model rounds is summed into the total.
-        expect(json.usage.prompt_tokens).toBe(14);
+        expect(json.usage.input_tokens).toBe(14);
         const mcpPosts = mcpRequests.filter(
             (request) => request.method === "POST",
         );
@@ -622,7 +404,7 @@ describe("prompt-agent runtime", () => {
         };
         expect(response.status).toBe(200);
         expect(mcpToolCalls).toBe(16);
-        expect(body.usage.tool_call_counts.mcp_call).toBe(17);
+        expect(body.usage.tool_call_counts.mcp_call).toBe(16);
     });
 
     it("keeps running when the Pollinations MCP fails to load", async () => {
@@ -667,7 +449,7 @@ describe("prompt-agent runtime", () => {
         const text = await res.text();
         expect(res.status, text).toBe(200);
         expect(modelCalls).toBeGreaterThan(0);
-        expect(JSON.parse(text).choices[0].message.content).toBe("still here");
+        expect(responseOutputText(JSON.parse(text))).toBe("still here");
     });
 
     it("passes the caller token and exposes the Pollinations MCP tools", async () => {
@@ -682,7 +464,7 @@ describe("prompt-agent runtime", () => {
                 const request = new Request(input, init);
                 if (request.url === POLLINATIONS_MCP_PROXY_URL) {
                     expect(this).toBe(globalThis);
-                    mcpRequests.push(request.clone());
+                    mcpRequests.push(request.clone() as unknown as Request);
                     const body = (await request.json()) as {
                         id?: string;
                         method: string;
@@ -956,19 +738,85 @@ describe("prompt-agent runtime", () => {
         expect(response.status).toBe(200);
 
         let content: string;
+        let body: unknown;
         if (stream) {
-            content = (await response.text())
-                .split("\n\n")
-                .filter((block) => block.startsWith("data: {"))
-                .map((block) => JSON.parse(block.slice(6)))
-                .map((event) => event.choices?.[0]?.delta?.content ?? "")
+            const sdkResponse = response.clone();
+            const sdk = new OpenAI({
+                apiKey: "test",
+                fetch: async () => sdkResponse,
+            });
+            const aggregated = sdk.responses
+                .stream({
+                    model: "test-agent",
+                    input: "draw a pirate",
+                    store: false,
+                })
+                .finalResponse();
+            const source = response.clone().body;
+            if (!source) throw new Error("Missing response stream");
+            const chatStream = responsesToChatStream(source, "test-agent");
+            const events = responseStreamEvents(await response.text());
+            expect(events.map((event) => event.sequence_number)).toEqual(
+                events.map((_, index) => index),
+            );
+            expect(events.map((event) => event.type)).toEqual([
+                "response.created",
+                "response.output_item.added",
+                "response.mcp_call.in_progress",
+                "response.mcp_call_arguments.done",
+                "response.mcp_call.completed",
+                "response.output_item.done",
+                "response.output_item.added",
+                "response.content_part.added",
+                "response.output_text.delta",
+                "response.output_text.done",
+                "response.content_part.done",
+                "response.output_item.done",
+                "response.completed",
+            ]);
+            body = events.at(-1)?.response;
+            expect((await aggregated).output).toMatchObject(
+                (body as { output: unknown[] }).output,
+            );
+            const chunks = responseStreamEvents(
+                await new Response(chatStream).text(),
+            );
+            content = chunks
+                .map((chunk) => {
+                    const choices = chunk.choices as {
+                        delta: { content?: string };
+                    }[];
+                    return choices?.[0]?.delta.content ?? "";
+                })
                 .join("");
         } else {
-            const json = (await response.json()) as {
-                choices: { message: { content: string } }[];
-            };
-            content = json.choices[0].message.content;
+            body = await response.json();
+            content = chatOutputText(body);
         }
+        expect(responseOutputText(body)).toBe("Finished");
+        expect(body).toMatchObject({
+            output: [
+                {
+                    type: "mcp_call",
+                    id: "c1",
+                    server_label: "pollinations",
+                    name: "generateImage",
+                    arguments: '{"prompt":"a pirate"}',
+                    status: "completed",
+                    output: expect.stringContaining(
+                        "https://images.example/pirate.png",
+                    ),
+                    error: null,
+                },
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "Finished" }],
+                },
+            ],
+        });
+        expect(JSON.stringify(body)).not.toContain(
+            "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
+        );
         expect(content).toContain(
             '<details type="tool_calls" done="true" id="c1" name="generateImage" arguments="{&quot;prompt&quot;:&quot;a pirate&quot;}">',
         );
@@ -1040,28 +888,26 @@ describe("prompt-agent runtime", () => {
         expect(res.status).toBe(200);
         expect(res.headers.get("content-type")).toContain("text/event-stream");
         const text = await res.text();
-        const events = text
-            .split("\n\n")
-            .map((block) => block.replace(/^data: /, "").trim())
-            .filter((line) => line.length > 0);
-        expect(events.at(-1)).toBe("[DONE]");
-        const dataEvents = events
-            .filter((e) => e !== "[DONE]")
-            .map((e) => JSON.parse(e));
+        expect(text.trimEnd().endsWith("data: [DONE]")).toBe(true);
+        const dataEvents = responseStreamEvents(text);
         expect(dataEvents.find((event) => event.error)).toBeUndefined();
         const contentEvents = dataEvents.filter(
-            (event) => event.choices[0].delta.content,
+            (event) => event.type === "response.output_text.delta",
         );
         expect(contentEvents).toHaveLength(2);
-        expect(
-            contentEvents
-                .map((event) => event.choices[0].delta.content)
-                .join(""),
-        ).toBe("hello world");
+        expect(contentEvents.map((event) => event.delta).join("")).toBe(
+            "hello world",
+        );
         const finalChunk = dataEvents.at(-1);
-        expect(finalChunk.choices[0].finish_reason).toBe("stop");
-        expect(finalChunk.usage.tool_call_counts).toEqual({});
-        expect(finalChunk.usage.prompt_tokens).toBe(6);
+        expect(finalChunk?.type).toBe("response.completed");
+        const completed = finalChunk?.response as {
+            usage: {
+                input_tokens: number;
+                tool_call_counts: Record<string, number>;
+            };
+        };
+        expect(completed.usage.tool_call_counts).toEqual({});
+        expect(completed.usage.input_tokens).toBe(6);
     });
 
     it("streams base-model errors as terminal errors", async () => {
@@ -1081,16 +927,21 @@ describe("prompt-agent runtime", () => {
         });
 
         expect(response.status).toBe(200);
-        const events = (await response.text())
-            .split("\n\n")
-            .map((block) => block.replace(/^data: /, "").trim())
-            .filter(Boolean);
-        expect(events).toHaveLength(1);
-        expect(JSON.parse(events[0])).toMatchObject({
-            error: {
-                message: "Insufficient balance",
-                code: "agent_error",
-            },
+        const sdkResponse = response.clone();
+        const sdk = new OpenAI({
+            apiKey: "test",
+            fetch: async () => sdkResponse,
+        });
+        await expect(
+            sdk.responses
+                .stream({ model: "test-agent", input: "hello", store: false })
+                .finalResponse(),
+        ).rejects.toThrow("Insufficient balance");
+        const events = responseStreamEvents(await response.text());
+        expect(events.find((event) => event.type === "error")).toMatchObject({
+            message: "Insufficient balance",
+            code: "agent_error",
+            param: null,
         });
     });
 
@@ -1140,14 +991,204 @@ describe("prompt-agent runtime", () => {
             expect(response.status).toBe(200);
             const body = await response.text();
             expect(body).toContain("Agent produced no response");
-            expect(body).toContain('data: {"error"');
-            expect(body).not.toContain("[DONE]");
+            expect(body).toContain('"type":"error"');
+            expect(body).toContain("data: [DONE]");
             return;
         }
         expect(response.status).toBe(502);
-        await expect(response.json()).resolves.toEqual({
+        await expect(response.json()).resolves.toMatchObject({
             error: { message: "Agent produced no response" },
         });
+    });
+
+    it.each(
+        [false, true].flatMap((stream) =>
+            [
+                { kind: "unknown tool", name: "search", arguments: "{}" },
+                {
+                    kind: "malformed arguments",
+                    name: "mcp__pollinations__listModels",
+                    arguments: "{",
+                },
+            ].map((attempt) => ({ stream, ...attempt })),
+        ),
+    )("recovers from $kind with stream=$stream and returns replayable history", async ({
+        stream,
+        name,
+        arguments: toolArguments,
+    }) => {
+        let modelCalls = 0;
+        let toolCalls = 0;
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
+                    if (request.method === "GET")
+                        return new Response(null, { status: 405 });
+                    if (request.method === "DELETE")
+                        return new Response(null, { status: 200 });
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                    };
+                    if (body.method === "notifications/initialized")
+                        return new Response(null, { status: 202 });
+                    if (body.method === "tools/call") {
+                        toolCalls++;
+                        throw new Error("Invalid tool must not execute");
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result:
+                            body.method === "initialize"
+                                ? {
+                                      protocolVersion: "2025-06-18",
+                                      capabilities: { tools: {} },
+                                      serverInfo: {
+                                          name: "test-mcp",
+                                          version: "1.0.0",
+                                      },
+                                  }
+                                : {
+                                      tools: [
+                                          {
+                                              name: "listModels",
+                                              inputSchema: {
+                                                  type: "object",
+                                              },
+                                          },
+                                      ],
+                                  },
+                    });
+                }
+                modelCalls++;
+                const body = (await request.json()) as {
+                    stream?: boolean;
+                    messages: { role: string; content?: unknown }[];
+                };
+                if (modelCalls === 2) {
+                    expect(body.messages).toEqual(
+                        expect.arrayContaining([
+                            expect.objectContaining({
+                                role: "tool",
+                                content: expect.any(String),
+                            }),
+                        ]),
+                    );
+                }
+                if (modelCalls === 3) {
+                    expect(
+                        body.messages.some((item) => item.role === "tool"),
+                    ).toBe(false);
+                }
+                const message = {
+                    role: "assistant",
+                    content:
+                        modelCalls === 1 ? "checking " : "Recovered answer",
+                    ...(modelCalls === 1
+                        ? {
+                              tool_calls: [
+                                  {
+                                      index: 0,
+                                      id: "invalid-call",
+                                      type: "function",
+                                      function: {
+                                          name,
+                                          arguments: toolArguments,
+                                      },
+                                  },
+                              ],
+                          }
+                        : {}),
+                };
+                const finishReason = modelCalls === 1 ? "tool_calls" : "stop";
+                const usage = {
+                    prompt_tokens: 3,
+                    completion_tokens: 2,
+                    total_tokens: 5,
+                };
+                if (!body.stream) {
+                    return Response.json({
+                        choices: [{ message, finish_reason: finishReason }],
+                        usage,
+                    });
+                }
+                return new Response(
+                    `${[
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: message,
+                                    finish_reason: null,
+                                },
+                            ],
+                        },
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: {},
+                                    finish_reason: finishReason,
+                                },
+                            ],
+                            usage,
+                        },
+                    ]
+                        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                        .join("")}data: [DONE]\n\n`,
+                    { headers: { "content-type": "text/event-stream" } },
+                );
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const runtime: PromptAgentRuntime = {
+            ...BASE_RUNTIME,
+            config: { ...BASE_RUNTIME.config, mcpServers: ["pollinations"] },
+        };
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "look up cats" }], stream },
+            runtime,
+        );
+        expect(response.status).toBe(200);
+        let result: {
+            output: unknown[];
+            usage: { tool_call_counts: Record<string, number> };
+        };
+        if (stream) {
+            const events = responseStreamEvents(await response.text());
+            expect(events.some((event) => event.type === "error")).toBe(false);
+            expect(
+                events.some((event) => event.type === "response.failed"),
+            ).toBe(false);
+            result = events.find((event) => event.type === "response.completed")
+                ?.response as typeof result;
+        } else {
+            result = await response.json();
+        }
+        expect(modelCalls).toBe(2);
+        expect(toolCalls).toBe(0);
+        expect(responseOutputText(result)).toBe("checking Recovered answer");
+        expect(result.output).toEqual([
+            expect.objectContaining({ type: "message", status: "completed" }),
+        ]);
+        expect(result.usage.tool_call_counts).toEqual({});
+        const replay = await runAgent(
+            {
+                messages: [
+                    ...result.output,
+                    { role: "user", content: "Continue" },
+                ],
+            },
+            runtime,
+        );
+        expect(replay.status).toBe(200);
+        expect(responseOutputText(await replay.json())).toBe(
+            "Recovered answer",
+        );
+        expect(modelCalls).toBe(3);
+        expect(toolCalls).toBe(0);
     });
 
     it("feeds a failing tool's error back to the model instead of 502", async () => {
@@ -1265,21 +1306,24 @@ describe("prompt-agent runtime", () => {
         const responseText = await res.text();
         expect(res.status, responseText).toBe(200);
         const json = JSON.parse(responseText) as {
-            choices: { message: { content: string } }[];
+            output: { content: { text: string }[] }[];
             usage: { tool_call_counts: Record<string, number> };
         };
-        expect(json.choices[0].message.content).toContain(
+        expect(responseOutputText(json)).toBe("sorry, lookup failed");
+        expect(json.output[0]).toMatchObject({
+            type: "mcp_call",
+            id: "c1",
+            status: "failed",
+            error: expect.stringContaining("MCP HTTP Transport Error"),
+            output: null,
+        });
+        const content = chatOutputText(json);
+        expect(content).toContain(
             '<details type="tool_calls" done="true" id="c1" name="listModels" arguments="{}">',
         );
-        expect(json.choices[0].message.content).toContain(
-            "<summary>Tool Failed</summary>",
-        );
-        expect(json.choices[0].message.content).toContain(
-            "MCP HTTP Transport Error",
-        );
-        expect(
-            json.choices[0].message.content.endsWith("sorry, lookup failed"),
-        ).toBe(true);
+        expect(content).toContain("<summary>Tool Failed</summary>");
+        expect(content).toContain("MCP HTTP Transport Error");
+        expect(content.endsWith("sorry, lookup failed")).toBe(true);
         // The (failed) tool call is still counted — the owner's tool ran.
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
     });

@@ -23,6 +23,7 @@ import {
 } from "../../fallback.ts";
 import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
+import { createPromptAgentResponsesClient } from "../agents/client.ts";
 import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
@@ -69,7 +70,9 @@ function directResponsesCandidates(
         if (!candidate.communityEndpoint) {
             return resolveDirectResponsesTarget(candidate.id, request);
         }
-        return candidate.communityEndpoint.responsesUrl ? undefined : null;
+        return candidate.communityEndpoint.api === "responses"
+            ? undefined
+            : null;
     };
     const primaryTarget = targetFor(primary);
     if (primaryTarget === null) {
@@ -101,13 +104,13 @@ function directResponsesCandidates(
     return supported;
 }
 
-async function responsesTargetForAttempt(
+async function responsesClientForAttempt(
     c: ResponsesContext,
     attempt: DirectResponsesCandidate,
-): Promise<DirectResponsesTarget> {
-    if (attempt.responsesTarget) return attempt.responsesTarget;
+): Promise<{ target: DirectResponsesTarget; fetcher?: typeof fetch }> {
+    if (attempt.responsesTarget) return { target: attempt.responsesTarget };
     const endpoint = attempt.communityEndpoint;
-    if (!endpoint?.responsesUrl) {
+    if (endpoint?.api !== "responses") {
         throw new ResponsesInvalidRequestError(
             `Model ${attempt.id} does not support the stateless Responses API`,
         );
@@ -118,13 +121,20 @@ async function responsesTargetForAttempt(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
     });
+    if (endpoint.type === "prompt_agent") {
+        const apiKey = config.authKey;
+        if (typeof apiKey !== "string" || !apiKey) {
+            throw new Error("Managed agent request has no agent run token");
+        }
+        return createPromptAgentResponsesClient(c, endpoint, apiKey);
+    }
     const target = responsesTargetFromConfig(endpoint.upstreamModel, config);
     if (!target) {
         throw new ResponsesInvalidRequestError(
             `Model ${attempt.id} does not support the stateless Responses API`,
         );
     }
-    return target;
+    return { target };
 }
 
 async function handleDirectResponse(
@@ -138,13 +148,14 @@ async function handleDirectResponse(
         const { result, candidate } = await withModelFallback(
             directResponsesCandidates(c, request),
             async (attempt): Promise<DirectResponsesResult> => {
-                const responsesTarget = await responsesTargetForAttempt(
+                const responsesClient = await responsesClientForAttempt(
                     c,
                     attempt,
                 );
                 const result = await callDirectResponses(
                     request,
-                    responsesTarget,
+                    responsesClient.target,
+                    responsesClient.fetcher,
                 );
                 if (request.stream) {
                     assertStreamContentType(

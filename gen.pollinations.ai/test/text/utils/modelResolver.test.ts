@@ -46,6 +46,27 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
+    it("routes openai/gpt-6-astra to the direct Azure Responses deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-6-astra",
+        });
+
+        expect(result.options.model).toBe("gpt-6-astra");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-deployment-id": "gpt-6-astra",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("does not expose gpt-6-astra as an alias", () => {
+        expect(() =>
+            resolveModelConfig(messages, { model: "gpt-6-astra" }),
+        ).toThrow("Model configuration not found for: gpt-6-astra");
+    });
+
     it("routes Claude Fable 5.1 to its global profile", () => {
         expect(
             resolveModelConfig(messages, {
@@ -255,6 +276,55 @@ describe("resolveModelConfig", () => {
             only: ["Chutes"],
             allow_fallbacks: false,
         });
+    });
+
+    it("pins Qwen3.8 Flash to Alibaba on OpenRouter without provider fallbacks", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-flash",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it.each([
+        ["required", "required"],
+        [
+            "function object",
+            {
+                type: "function",
+                function: { name: "get_weather" },
+            },
+        ],
+    ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
+        for (const name of ["qwen/qwen3.8-flash", "qwen3.8-flash-alibaba"]) {
+            const definition = findModelByName(name);
+            const transformed = await definition?.transform?.(messages, {
+                model: name,
+                reasoning_effort: "high",
+                tool_choice: toolChoice,
+            });
+
+            expect(transformed?.options.reasoning_effort).toBe("none");
+        }
+    });
+
+    it("keeps Qwen3.8 Flash reasoning for automatic tool choice", async () => {
+        const definition = findModelByName("qwen/qwen3.8-flash");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-flash",
+            reasoning_effort: "high",
+            tool_choice: "auto",
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
     it("routes Kimi K3 directly to Fireworks without fallback", () => {

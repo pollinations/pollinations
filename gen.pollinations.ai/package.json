@@ -21,12 +21,13 @@
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.33.2",
-        "@cloudflare/vitest-pool-workers": "^0.10.15",
+        "@cloudflare/vitest-pool-workers": "^0.12.21",
         "@cloudflare/workers-types": "^4.20251202.0",
         "@hono/node-server": "^1.19.14",
         "@scalar/openapi-to-markdown": "0.3.23",
         "@types/debug": "^4.1.13",
         "@types/node": "24.10.1",
+        "openai": "6.34.0",
         "tsx": "4.20.6",
         "typescript": "^5.9.3",
         "vite": "^7.2.4",
@@ -35,6 +36,8 @@
         "wrangler": "^4.52.1"
     },
     "dependencies": {
+        "@ai-sdk/mcp": "^2.0.32",
+        "@ai-sdk/openai-compatible": "^3.0.30",
         "@aws-sdk/client-bedrock-runtime": "^3.1040.0",
         "@aws-sdk/client-s3": "^3.1040.0",
         "@hono/standard-validator": "^0.2.2",
@@ -51,6 +54,7 @@
         "jose": "^6.2.3",
         "piexif-ts": "^2.1.0",
         "yaml": "^2.9.0",
+        "ai": "^7.0.66",
         "zod": "4.5.4"
     }
 }

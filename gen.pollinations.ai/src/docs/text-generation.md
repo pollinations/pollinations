@@ -25,11 +25,15 @@ curl https://gen.pollinations.ai/v1/responses \
   }'
 ```
 
-The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and encrypted content or reusable item references are rejected. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. Missing or malformed usage on a completed or incomplete response fails closed and is not billed; failed responses may report null usage and remain unbilled.
+The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and encrypted content or reusable item references are rejected. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. Missing or malformed usage on a completed or incomplete response fails the request. Failed responses may report null usage. These failed requests are not billed, but completed child model calls and charged MCP operations within an agent run remain billable; the outer agent request adds no charge.
 
 The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
 
-For models backed by a native Responses endpoint, Pollinations forwards Responses requests directly and adapts Chat Completions requests to that endpoint. Managed prompt agents return native Responses JSON/SSE around their configured agent loop; their configured MCP tools remain available, while caller-supplied tools are rejected.
+Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+
+Managed prompt agents use Pollinations' configured Responses runtime and have no publisher-configured endpoint URL. They use their configured MCP tools and ignore caller-supplied function tool definitions. Their Responses output contains assistant messages and `mcp_call` items describing tools already executed by the server. Chat clients receive those results as text and media links, not function calls to execute. For stateless continuation, send previous output items with the next input; completed MCP items are treated as history and are not executed again.
+
+Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
 
 ### Reasoning
 

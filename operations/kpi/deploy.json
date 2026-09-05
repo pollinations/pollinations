@@ -4,7 +4,12 @@
   "sops": "default",
   "install": "npm ci --prefix ../.. && npm ci",
   "deploy": "npm run deploy && sops exec-file --no-fifo secrets/env.json 'npx wrangler secret bulk {}'",
+  "verify": [
+    "https://kpi.myceli.ai/api/health",
+    "https://kpi.pollinations.ai/api/health"
+  ],
   "watch": [
+    "packages/auth/",
     "packages/ui/",
     "package.json",
     "package-lock.json"

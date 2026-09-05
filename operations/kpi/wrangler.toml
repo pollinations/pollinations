@@ -2,14 +2,14 @@ name = "myceli-kpi"
 # account_id is set via CLOUDFLARE_ACCOUNT_ID env var in CI
 main = "worker/index.ts"
 compatibility_date = "2026-07-15"
-workers_dev = true
+workers_dev = false
 
 routes = [
     { pattern = "kpi.myceli.ai", zone_name = "myceli.ai", custom_domain = true },
     { pattern = "kpi.pollinations.ai", zone_name = "pollinations.ai", custom_domain = true }
 ]
 
-# The whole dashboard sits behind Basic auth, so the Worker runs before any
+# The whole dashboard sits behind Pollinations OAuth, so the Worker runs before any
 # asset is served — including the SPA shell.
 [assets]
 binding = "ASSETS"
@@ -19,8 +19,9 @@ run_worker_first = true
 [vars]
 TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
 GITHUB_REPO = "pollinations/pollinations"
+POLLINATIONS_OAUTH_CLIENT_ID = "pk_Bxny9FSNDpousKqW"
 
 # Secrets:
 # - TINYBIRD_READ_TOKEN (read-only, in secrets/env.json)
-# - DASHBOARD_PASSWORD (set with `wrangler secret put`)
+# - POLLINATIONS_AUTH_SESSION_SECRET
 # - GITHUB_TOKEN (optional, for higher API rate limits)

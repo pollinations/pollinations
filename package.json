@@ -6,6 +6,7 @@
     "enter.pollinations.ai",
     "gen.pollinations.ai",
     "packages/sdk",
+    "packages/auth",
     "packages/ui",
     "apps/react",
     "operations/economics/web"

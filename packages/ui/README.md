@@ -157,11 +157,11 @@ Wallet colors and utilities are bundled into the main stylesheet
   `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
   plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
 - **Design primitives** — `Button`, `ButtonGroup`, `Chip`, `ChevronIcon`,
-  `Dialog`, `DialogTitle`, `Dropdown`, `DropdownItem`, `Field`, `Heading`,
+  `Dialog`, `DialogTitle`, `Drawer`, `Dropdown`, `DropdownItem`, `Field`, `Heading`,
   `IconButton`, `InlineLink`, `Input`, `ScrollArea`, `Slider`, `Surface`,
   `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
-  `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
-- **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
+  `TableHeaderCell`, `TableRow`, `TableDisclosureButton`, `Text`, `Textarea`, `Tooltip`.
+- **Design compositions** — `AccountMenu`, `Alert`, `AppHeader`, `CodeBlock`, `Collapsible`,
   `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
   `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`,
@@ -176,6 +176,36 @@ Wallet colors and utilities are bundled into the main stylesheet
 For per-request usage data and other dynamic queries, call the opt-in hooks
 from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
 `useAccountBalance`, etc.) directly.
+
+## Account menus and access contexts
+
+`AccountMenu` belongs to the SDK-free compositions. Supply a display name,
+optional avatar and secondary text, and the menu content. The caller owns all
+navigation and sign-out actions. It does not read a session or an API key.
+
+```tsx
+import { AccountMenu, DropdownItem } from "@pollinations/ui";
+
+<AccountMenu name={user.name} avatarUrl={user.image}>
+    {(close) => (
+        <DropdownItem onClick={() => { close(); signOut(); }}>
+            Sign out of this dashboard
+        </DropdownItem>
+    )}
+</AccountMenu>
+```
+
+- Enter composes account navigation and its owner-session sign-out.
+- `AppUserMenu` uses the same composition with SDK hooks for an app's delegated
+  key. Its logout clears the locally stored key, not the Enter session or the
+  authorization in Enter. A key allowance is not the full wallet balance.
+- First-party operations apps use server-only `@pollinations/auth` for an
+  identity-only dashboard session. Enter checks administrator permission through
+  Better Auth; UI components never make that authorization decision.
+- Open WebUI keeps its upstream native UI and its delegated API connection.
+
+Interactive examples and the permission boundaries are shown in
+`react.pollinations.ai/?view=modules`; the bare composition is under Compositions.
 
 ## Source Layout
 

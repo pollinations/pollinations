@@ -1,5 +1,6 @@
 import { env as workerEnv } from "cloudflare:workers";
 import { Container } from "@cloudflare/containers";
+import { createPollinationsAuth } from "@pollinations/auth";
 
 const CONTAINER_NAME = "primary";
 const ROOT_URL =
@@ -52,7 +53,13 @@ export class ObservabilityGrafana extends Container {
         GF_SERVER_DOMAIN: DOMAIN,
         GF_USERS_ALLOW_SIGN_UP: "false",
         GF_AUTH_ANONYMOUS_ENABLED: "false",
-        GF_AUTH_DISABLE_LOGIN_FORM: "false",
+        GF_AUTH_DISABLE_LOGIN_FORM: "true",
+        GF_AUTH_PROXY_ENABLED: "true",
+        GF_AUTH_PROXY_HEADER_NAME: "X-WEBAUTH-USER",
+        GF_AUTH_PROXY_HEADER_PROPERTY: "email",
+        GF_AUTH_PROXY_AUTO_SIGN_UP: "true",
+        GF_USERS_AUTO_ASSIGN_ORG_ROLE: "Editor",
+        GF_AUTH_SIGNOUT_REDIRECT_URL: `${ROOT_URL}/auth/logout`,
         GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH:
             "/etc/grafana/provisioning/dashboards/platform-usage-rebuild.json",
         TINYBIRD_READ_TOKEN: requiredSecret("TINYBIRD_READ_TOKEN"),
@@ -69,6 +76,22 @@ async function grafana(env) {
     return container;
 }
 
+function auth(env) {
+    return createPollinationsAuth({
+        clientId: env.POLLINATIONS_OAUTH_CLIENT_ID,
+        sessionSecret: env.POLLINATIONS_AUTH_SESSION_SECRET,
+        baseUrl: env.POLLINATIONS_AUTH_BASE_URL,
+    });
+}
+
+function withGrafanaIdentity(request, email) {
+    const headers = new Headers(request.headers);
+    headers.delete("X-WEBAUTH-EMAIL");
+    headers.delete("X-WEBAUTH-ROLE");
+    headers.set("X-WEBAUTH-USER", email);
+    return new Request(request, { headers });
+}
+
 class BrandHeadInjector {
     element(element) {
         element.append(BRAND_HEAD_TAGS, { html: true });
@@ -77,15 +100,56 @@ class BrandHeadInjector {
 
 export default {
     async fetch(request, env) {
-        const container = await grafana(env);
         const url = new URL(request.url);
+        let pollinationsAuth;
+        try {
+            pollinationsAuth = auth(env);
+        } catch {
+            return Response.json(
+                { error: "Observability configuration unavailable" },
+                { status: 500 },
+            );
+        }
+
+        if (url.pathname === "/api/health") {
+            await grafana(env);
+            return Response.json(
+                { ok: true },
+                { headers: { "Cache-Control": "no-store" } },
+            );
+        }
+
+        const authResponse = await pollinationsAuth.handle(request);
+        if (authResponse) return authResponse;
+
+        const user = await pollinationsAuth.getUser(request);
+        if (!user) return pollinationsAuth.signIn(request);
+
+        const container = await grafana(env);
+        const authenticatedRequest = withGrafanaIdentity(request, user.email);
 
         if (BRAND_ASSET_PATHS.has(url.pathname)) {
             url.pathname = `/public/img${url.pathname}`;
-            return container.fetch(new Request(url, request));
+            return container.fetch(new Request(url, authenticatedRequest));
         }
 
-        const response = await container.fetch(request);
+        const response = await container.fetch(authenticatedRequest);
+        if (
+            url.pathname === "/logout" &&
+            response.status >= 300 &&
+            response.status < 400
+        ) {
+            const headers = new Headers(response.headers);
+            headers.set(
+                "Location",
+                new URL("/auth/logout", url.origin).toString(),
+            );
+            return new Response(response.body, {
+                status: response.status,
+                statusText: response.statusText,
+                headers,
+            });
+        }
         const contentType = response.headers.get("content-type") || "";
         if (contentType.includes("text/html")) {
             return new HTMLRewriter()

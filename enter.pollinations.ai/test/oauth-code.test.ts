@@ -1,5 +1,8 @@
 import { env, SELF } from "cloudflare:test";
+import { defaultKeyHasher } from "@better-auth/api-key";
+import { DASHBOARD_CLIENT_IDS } from "@shared/auth/dashboard-clients.ts";
 import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { test } from "./fixtures.ts";
@@ -364,6 +367,220 @@ describe("POST /api/oauth/code (consent-side code creation)", () => {
         expect(token.expires_in).toBe(3600);
         expect(token.scope).toBe("profile");
     }, 30000);
+
+    test("account login exchanges for a one-time identity token, not an API key", async ({
+        sessionToken,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "github");
+        const db = drizzle(env.DB, { schema });
+        await db.update(schema.user).set({ role: "admin" });
+
+        const createRes = await SELF.fetch(`${BASE}/api/api-keys`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                name: "internal-login-test",
+                type: "publishable",
+            }),
+        });
+        expect(createRes.status).toBe(200);
+        const client = (await createRes.json()) as { id: string; key: string };
+        await SELF.fetch(`${BASE}/api/api-keys/${client.id}/metadata`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({ redirectUris: [REDIRECT_URI] }),
+        });
+
+        // Use a trusted public client identifier only inside the isolated test DB.
+        client.key = DASHBOARD_CLIENT_IDS[0];
+        await db
+            .update(schema.apikey)
+            .set({ key: await defaultKeyHasher(client.key) })
+            .where(eq(schema.apikey.id, client.id));
+
+        const codeRes = await SELF.fetch(`${BASE}/api/oauth/code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                purpose: "login",
+                clientId: client.key,
+                redirectUri: REDIRECT_URI,
+                codeChallenge: await s256(VERIFIER),
+                codeChallengeMethod: "S256",
+            }),
+        });
+        expect(codeRes.status).toBe(200);
+        const { code } = (await codeRes.json()) as { code: string };
+
+        const tokenRes = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                grant_type: "authorization_code",
+                code,
+                client_id: client.key,
+                redirect_uri: REDIRECT_URI,
+                code_verifier: VERIFIER,
+            }),
+        );
+        expect(tokenRes.status).toBe(200);
+        const token = (await tokenRes.json()) as {
+            access_token: string;
+            expires_in: number;
+            scope: string;
+        };
+        expect(token.access_token).toMatch(/^oauth_/);
+        expect(token.access_token).not.toMatch(/^sk_/);
+        expect(token.expires_in).toBe(60);
+        expect(token.scope).toBe("profile");
+
+        const accountApi = await SELF.fetch(`${BASE}/api/account/profile`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
+        expect(accountApi.status).toBe(401);
+
+        const loginUserinfo = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
+        expect(loginUserinfo.status).toBe(200);
+        expect(loginUserinfo.headers.get("Cache-Control")).toBe("no-store");
+        const profile = (await loginUserinfo.json()) as Record<string, unknown>;
+        expect(profile.sub).toBeTruthy();
+        expect(profile.email).toBeTruthy();
+        expect(profile).not.toHaveProperty("role");
+        expect(profile).toHaveProperty("preferred_username");
+
+        const replay = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${token.access_token}` },
+        });
+        expect(replay.status).toBe(401);
+    }, 30000);
+
+    test("identity login rejects untrusted clients at issuance and exchange", async ({
+        sessionToken,
+    }) => {
+        const issuance = await SELF.fetch(`${BASE}/api/oauth/code`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+            },
+            body: JSON.stringify({
+                purpose: "login",
+                clientId: "pk_untrusted",
+                redirectUri: REDIRECT_URI,
+                codeChallenge: await s256(VERIFIER),
+                codeChallengeMethod: "S256",
+            }),
+        });
+        expect(issuance.status).toBe(403);
+        const code = crypto.randomUUID();
+        await putCode(code, { purpose: "login", userId: "irrelevant" });
+        const exchange = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost(validTokenParams(code)),
+        );
+        expect(exchange.status).toBe(400);
+        expect(await exchange.json()).toMatchObject({ error: "invalid_grant" });
+    });
+
+    test("identity exchange checks Better Auth permissions and account bans at exchange time", async ({
+        sessionToken,
+    }) => {
+        const session = await SELF.fetch(`${BASE}/api/auth/get-session`, {
+            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        });
+        const { user } = (await session.json()) as { user: { id: string } };
+        const db = drizzle(env.DB, { schema });
+        async function exchange() {
+            const code = crypto.randomUUID();
+            await putCode(code, {
+                purpose: "login",
+                clientId: DASHBOARD_CLIENT_IDS[0],
+                userId: user.id,
+            });
+            return SELF.fetch(
+                `${BASE}/api/oauth/token`,
+                formPost({
+                    ...validTokenParams(code),
+                    client_id: DASHBOARD_CLIENT_IDS[0],
+                }),
+            );
+        }
+        // A session alone does not grant dashboard access.
+        expect((await exchange()).status).toBe(400);
+        await db
+            .update(schema.user)
+            .set({ role: "admin" })
+            .where(eq(schema.user.id, user.id));
+        expect((await exchange()).status).toBe(200);
+        await db
+            .update(schema.user)
+            .set({ banned: true })
+            .where(eq(schema.user.id, user.id));
+        expect((await exchange()).status).toBe(400);
+        await db
+            .update(schema.user)
+            .set({ banned: false, role: "user" })
+            .where(eq(schema.user.id, user.id));
+        expect((await exchange()).status).toBe(400);
+    });
+
+    test("identity exchange respects Better Auth adminUserIds without a database admin role", async () => {
+        const db = drizzle(env.DB, { schema });
+        const id = "Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv";
+        await db.insert(schema.user).values({
+            id,
+            name: "Configured administrator",
+            email: "configured-admin@example.test",
+            role: "user",
+        });
+        const code = crypto.randomUUID();
+        await putCode(code, {
+            purpose: "login",
+            clientId: DASHBOARD_CLIENT_IDS[1],
+            userId: id,
+        });
+        const response = await SELF.fetch(
+            `${BASE}/api/oauth/token`,
+            formPost({
+                ...validTokenParams(code),
+                client_id: DASHBOARD_CLIENT_IDS[1],
+            }),
+        );
+        expect(response.status).toBe(200);
+    });
+
+    test("consumes an identity token before loading its user", async () => {
+        const accessToken = `oauth_${crypto.randomUUID()}`;
+        const kvKey = `oauth-login-token:${accessToken}`;
+        await env.KV.put(
+            kvKey,
+            JSON.stringify({ userId: `missing-${crypto.randomUUID()}` }),
+            { expirationTtl: 60 },
+        );
+
+        const response = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        expect(response.status).toBe(404);
+        expect(await env.KV.get(kvKey)).toBeNull();
+
+        const replay = await SELF.fetch(`${BASE}/api/oauth/userinfo`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        expect(replay.status).toBe(401);
+    });
 
     test("rejects an unregistered redirect_uri", async ({
         sessionToken,

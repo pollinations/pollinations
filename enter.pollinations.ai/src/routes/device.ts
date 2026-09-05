@@ -1,3 +1,4 @@
+import { assertNotBanned } from "@shared/auth/api-key.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { getPublicOrigin } from "@shared/public-origin.ts";
 import { eq } from "drizzle-orm";
@@ -340,7 +341,7 @@ export async function exchangeDeviceCode(
  * name/email are PII gated behind the `profile` scope, same as
  * GET /api/account/profile: sessions always see them, API keys only when
  * they carry account:profile. sub/picture/preferred_username (public GitHub
- * identity) are always returned.
+ * identity) are always returned. Authorization roles are never profile claims.
  */
 export async function handleUserinfo(c: AuthedContext) {
     const user = c.var.auth.requireUser();
@@ -348,24 +349,36 @@ export async function handleUserinfo(c: AuthedContext) {
         c.var.auth.apiKey,
         "profile",
     );
-    const db = drizzle(c.env.DB, { schema });
+    return c.json(await getUserinfoForUser(c.env, user.id, includeProfilePII));
+}
+
+export async function getUserinfoForUser(
+    env: Env["Bindings"],
+    userId: string,
+    includeProfilePII: boolean,
+) {
+    const db = drizzle(env.DB, { schema });
     const row = await db.query.user.findFirst({
-        where: eq(schema.user.id, user.id),
+        where: eq(schema.user.id, userId),
         columns: {
             id: true,
             name: true,
             email: true,
             image: true,
             githubUsername: true,
+            banned: true,
+            banExpires: true,
+            banReason: true,
         },
     });
     if (!row) {
         throw new HTTPException(404, { message: "User not found" });
     }
-    return c.json({
+    assertNotBanned(row);
+    return {
         sub: row.id,
         ...(includeProfilePII && { name: row.name, email: row.email }),
         picture: row.image,
         preferred_username: row.githubUsername,
-    });
+    };
 }

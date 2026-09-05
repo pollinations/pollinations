@@ -26,6 +26,7 @@ export const Route = createFileRoute("/authorize")({
             app_key?: string;
             state?: string;
             response_type?: string;
+            purpose?: "login";
             code_challenge?: string;
             code_challenge_method?: string;
             models?: string[] | null;
@@ -63,6 +64,9 @@ export const Route = createFileRoute("/authorize")({
         // PKCE (S256) is mandatory for this flow.
         if (search.response_type && typeof search.response_type === "string") {
             result.response_type = search.response_type;
+        }
+        if (search.purpose === "login") {
+            result.purpose = "login";
         }
         if (
             search.code_challenge &&

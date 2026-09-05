@@ -245,7 +245,21 @@ console.log('Save now — will not be shown again:', created.key);
 await revokeKey(created.id);
 ```
 
-Without `accountPermissions`, scoped keys can generate media but cannot read account state (balance, usage).
+Without optional `accountPermissions`, scoped keys can still read their own key
+details, remaining allowance, per-key usage and public profile identity.
+`profile` adds name/email; `usage` adds account-wide balance and usage; `keys`
+allows account key management. Request only the permissions the app needs.
+
+For a budgeted key, `getBalance().balance` is the key's remaining allowance.
+The full wallet breakdown in `accountBalance` requires `usage` permission (or
+an Enter session). Buying Pollen funds the wallet but does not raise an app's
+key allowance.
+
+`PolliProvider` Connect uses OAuth authorization code + PKCE to receive a
+delegated secret key. The public app key identifies the app; it is not the
+user's account credential. By default the delegated key is kept in localStorage.
+`logout()` forgets it locally; it does not revoke it or sign out of Enter.
+Revoke unwanted authorizations from the account dashboard.
 
 ## Image Generation
 

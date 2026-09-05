@@ -1,5 +1,5 @@
+import { createPollinationsAuth } from "@pollinations/auth";
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 
 // Data start date - Oct 1, 2025
 const DATA_START_DATE = "2025-10-01";
@@ -13,7 +13,9 @@ type Env = {
     TINYBIRD_API: string;
     GITHUB_TOKEN?: string;
     GITHUB_REPO: string;
-    DASHBOARD_PASSWORD?: string;
+    POLLINATIONS_AUTH_BASE_URL?: string;
+    POLLINATIONS_AUTH_SESSION_SECRET: string;
+    POLLINATIONS_OAUTH_CLIENT_ID: string;
     ASSETS: Fetcher;
 };
 
@@ -152,32 +154,30 @@ async function fetchTinybirdByWeek(
 
 const app = new Hono<{ Bindings: Env }>();
 
-app.use("*", cors());
-
-// Basic Auth middleware — password set via `wrangler secret put DASHBOARD_PASSWORD`
 app.use("*", async (c, next) => {
-    const password = c.env.DASHBOARD_PASSWORD;
-    if (!password) {
-        return new Response("Dashboard password not configured", {
-            status: 500,
+    let auth: ReturnType<typeof createPollinationsAuth>;
+    try {
+        auth = createPollinationsAuth({
+            clientId: c.env.POLLINATIONS_OAUTH_CLIENT_ID,
+            sessionSecret: c.env.POLLINATIONS_AUTH_SESSION_SECRET,
+            baseUrl: c.env.POLLINATIONS_AUTH_BASE_URL,
         });
+    } catch {
+        return c.json({ error: "KPI configuration unavailable" }, 500);
     }
 
-    const auth = c.req.header("Authorization");
-    if (auth) {
-        const [scheme, encoded] = auth.split(" ");
-        if (scheme === "Basic" && encoded) {
-            const decoded = atob(encoded);
-            const [, pwd] = decoded.split(":");
-            if (pwd === password) return next();
-        }
-    }
+    if (c.req.path === "/api/health") return next();
 
-    return new Response("Unauthorized", {
-        status: 401,
-        headers: { "WWW-Authenticate": 'Basic realm="KPI Dashboard"' },
-    });
+    const authResponse = await auth.handle(c.req.raw);
+    if (authResponse) return authResponse;
+    if (await auth.getUser(c.req.raw)) return next();
+
+    return c.req.path.startsWith("/api/")
+        ? c.json({ error: "Unauthorized" }, 401)
+        : auth.signIn(c.req.raw);
 });
+
+app.get("/api/health", (c) => c.json({ ok: true }));
 
 // Tinybird: Weekly registrations (from Oct 1, 2025)
 app.get("/api/kpi/registrations", async (c) => {
@@ -396,8 +396,7 @@ app.get("/api/kpi/github", async (c) => {
     });
 });
 
-// Everything else is the SPA shell, served from the assets binding once the
-// Basic-auth middleware above has let the request through.
+// Everything else is the SPA shell, served only after OAuth authentication.
 app.get("*", (c) => c.env.ASSETS.fetch(c.req.raw));
 
 export default app;

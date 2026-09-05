@@ -17,15 +17,21 @@ npm run dev
 
 The dev server is pinned to `http://127.0.0.1:4180`.
 
-Auth uses a password gate backed by the Cloudflare Worker. For local development,
-the shared password and the staging-only Tinybird reader are assembled from
-`../secrets/web.json` and `../secrets/web.dev.json` into the ignored `.dev.vars`
-file. Production deployment continues to use `../secrets/web.json`. No secret is
-bundled or stored in the browser.
+Auth uses identity-only Pollinations OAuth backed by the Cloudflare Worker.
+Enter checks administrator permission through Better Auth at token exchange;
+the dashboard receives a profile, not a role claim or generation key. Its signed
+HttpOnly session expires after 12 hours and signs out independently of Enter.
+
+OAuth session-secret provisioning is a separate, approval-gated prerequisite.
+The existing local configuration script has not been changed to copy
+`POLLINATIONS_AUTH_SESSION_SECRET`; provision it only through the approved secret
+workflow before enabling local authenticated access or production deployment.
+Keep local Tinybird reads on the staging-only `../secrets/web.dev.json` reader.
+Fixtures remain available without credentials.
 
 ## Fixtures Mode
 
-`http://127.0.0.1:4180/?fixtures=1` renders bundled sample data with no password
+`http://127.0.0.1:4180/?fixtures=1` renders bundled sample data with no login
 and no network calls.
 
 ## Data Contract

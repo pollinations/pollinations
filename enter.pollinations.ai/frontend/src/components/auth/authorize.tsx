@@ -25,9 +25,10 @@ import {
     PKCE_S256_CHALLENGE_REGEX,
     sanitizeAuthorizeAccountPermissions,
 } from "@shared/auth/authorize-config.ts";
+import { isDashboardClient } from "@shared/auth/dashboard-clients.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { authClient, type User } from "../../auth.ts";
 import { config } from "../../config.ts";
@@ -73,6 +74,7 @@ export function Authorize() {
         app_key,
         state,
         response_type,
+        purpose,
         code_challenge,
         code_challenge_method,
         models,
@@ -86,6 +88,8 @@ export function Authorize() {
     // OAuth 2.1 authorization-code flow: the callback carries ?code=...
     // instead of the legacy #api_key=... fragment.
     const isCodeFlow = !isDeviceMode && response_type === "code";
+    const isAccountLogin = purpose === "login";
+    const loginStarted = useRef(false);
 
     const { data: session, isPending } = authClient.useSession();
     const user = session?.user as User | undefined;
@@ -119,7 +123,9 @@ export function Authorize() {
     // The minted key is the signed-in user's, so it reaches their own private
     // models just as their dashboard keys do — but the anonymous catalog omits
     // them, so the consent screen has to learn them separately.
-    const modelCategories = useModelCategories(useOwnCommunityModels(!!user));
+    const modelCategories = useModelCategories(
+        useOwnCommunityModels(!!user && !isAccountLogin),
+    );
     const modalities = computeCategoryModalities(
         keyPermissions.permissions.allowedModels,
         modelCategories,
@@ -151,6 +157,12 @@ export function Authorize() {
 
     useEffect(() => {
         setRedirectValidationState("unchecked");
+        if (isAccountLogin && (!isCodeFlow || !isDashboardClient(app_key))) {
+            setError(
+                "Identity login is only available to first-party dashboards.",
+            );
+            return;
+        }
         if (isDeviceMode) {
             // device.tsx forwards the server-stored scope as `scope=` in the
             // URL, which flows into `urlScope` and preselects the
@@ -314,6 +326,7 @@ export function Authorize() {
     }, [
         isDeviceMode,
         isCodeFlow,
+        isAccountLogin,
         user_code,
         urlScope,
         app_key,
@@ -325,7 +338,7 @@ export function Authorize() {
     ]);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || isAccountLogin) return;
 
         apiClient.customer.balance
             .$get()
@@ -337,10 +350,66 @@ export function Authorize() {
                 );
             })
             .catch(() => {});
-    }, [user]);
+    }, [user, isAccountLogin]);
+
+    // Trusted dashboard login delegates identity only. Enter checks the admin
+    // policy at token exchange; this path never creates an API key or consent.
+    useEffect(() => {
+        if (
+            !isAccountLogin ||
+            !user ||
+            !canAuthorize ||
+            error ||
+            loginStarted.current ||
+            !app_key ||
+            !redirect_url ||
+            !code_challenge
+        )
+            return;
+        loginStarted.current = true;
+        setIsAuthorizing(true);
+        void (async () => {
+            try {
+                const response = await apiClient.oauth.code.$post({
+                    json: {
+                        purpose: "login",
+                        clientId: app_key,
+                        redirectUri: redirect_url,
+                        codeChallenge: code_challenge,
+                        codeChallengeMethod: "S256",
+                    },
+                });
+                if (!response.ok)
+                    throw new Error(
+                        "Dashboard login could not be authorized. Please start again from the dashboard.",
+                    );
+                const { code } = await response.json();
+                const url = new URL(redirect_url);
+                url.searchParams.set("code", code);
+                if (state) url.searchParams.set("state", state);
+                window.location.assign(url.toString());
+            } catch (cause) {
+                setError(
+                    cause instanceof Error
+                        ? cause.message
+                        : "Dashboard login failed",
+                );
+                setIsAuthorizing(false);
+            }
+        })();
+    }, [
+        isAccountLogin,
+        user,
+        canAuthorize,
+        error,
+        app_key,
+        redirect_url,
+        code_challenge,
+        state,
+    ]);
 
     async function handleAuthorize(): Promise<void> {
-        if (!canAuthorize || isAuthorizing) return;
+        if (!canAuthorize || isAuthorizing || isAccountLogin) return;
 
         setIsAuthorizing(true);
         setError(null);
@@ -487,6 +556,34 @@ export function Authorize() {
         }
     }
 
+    if (isAccountLogin && user) {
+        return (
+            <AuthModal
+                dialog={{ label: "Dashboard sign in" }}
+                tone={error ? "error" : undefined}
+            >
+                <AuthModalHeader />
+                <div className="px-6 pb-6 pt-4 space-y-4">
+                    {error ? (
+                        <ErrorBanner>{error}</ErrorBanner>
+                    ) : (
+                        <AuthInfoCard>
+                            <p>
+                                Signing in to{" "}
+                                {attribution?.appName || "your dashboard"}…
+                            </p>
+                            <p className="mt-2 text-sm">
+                                Identity only. No API key, wallet access or
+                                generation permission is granted.
+                            </p>
+                        </AuthInfoCard>
+                    )}
+                    <Button onClick={handleDeny}>Cancel</Button>
+                </div>
+            </AuthModal>
+        );
+    }
+
     if (deviceOutcome !== "pending") {
         const denied = deviceOutcome === "denied";
         return (
@@ -531,8 +628,9 @@ export function Authorize() {
                                 redirectHostname={redirectHostname}
                             />
                             <p className="text-sm text-theme-text-base mt-3">
-                                Sign in to review and approve the requested
-                                access.
+                                {isAccountLogin
+                                    ? "Sign in to this dashboard. Administrator access is checked by Pollinations; no API key or generation access is granted."
+                                    : "Sign in to review and approve the requested access."}
                             </p>
                         </AuthInfoCard>
                     )}

@@ -6,10 +6,11 @@
   "build": "npm run build --prefix web",
   "deploy": "sops exec-file --no-fifo secrets/web.json 'node web/scripts/check-tinybird-contract.mjs --secrets-file {} && cd web && npx wrangler deploy --secrets-file {}'",
   "verify": [
-    "https://economics.myceli.ai/api/auth/session",
-    "https://economics.pollinations.ai/api/auth/session"
+    "https://economics.myceli.ai/api/health",
+    "https://economics.pollinations.ai/api/health"
   ],
   "watch": [
+    "packages/auth/",
     "packages/ui/",
     "packages/sdk/",
     "package.json",

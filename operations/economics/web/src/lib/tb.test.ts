@@ -5,6 +5,7 @@ import {
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
+    TbError,
     validatePipeRows,
 } from "./tb";
 
@@ -72,6 +73,41 @@ describe("loadAll", () => {
         await expect(loadAll()).rejects.toThrow(
             "economics_private_config_api: expected one row, received 0",
         );
+    });
+
+    it("marks only dashboard authentication failures for login", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() =>
+                Promise.resolve(
+                    Response.json(
+                        { error: "Unauthorized", code: "AUTH_REQUIRED" },
+                        { status: 401 },
+                    ),
+                ),
+            ),
+        );
+
+        const error = await loadAll().catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(TbError);
+        expect((error as TbError).authRequired).toBe(true);
+    });
+
+    it("does not treat an upstream Tinybird denial as a login failure", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() =>
+                Promise.resolve(
+                    Response.json({ error: "Forbidden" }, { status: 403 }),
+                ),
+            ),
+        );
+
+        const error = await loadAll().catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(TbError);
+        expect((error as TbError).authRequired).toBe(false);
     });
 });
 

@@ -360,15 +360,19 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
             };
         },
     );
+    // A ledger line with no cash and no credit (for example a corrected fact
+    // re-appended at zero) records no usage and is not a residual.
     for (const [model, funding] of entry.providerModels) {
-        if (!entry.pollenModels.has(model)) {
+        if (!entry.pollenModels.has(model) && hasFunding(funding)) {
             models.push(residualRow(model, "provider only", funding));
         }
     }
     for (const [label, funding] of entry.providerOnlyLabels) {
+        if (!hasFunding(funding)) continue;
         models.push(residualRow(label, "provider only", funding));
     }
     for (const [key, group] of entry.sharedGroups) {
+        if (!hasFunding(group)) continue;
         models.push({
             ...residualRow(key, "shared upstream", group),
             lines: [...group.lines].map(([label, usd]) => ({ label, usd })),

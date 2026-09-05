@@ -662,6 +662,39 @@ describe("modelReconcileRows", () => {
         ).toMatchObject({ status: "provider only", providerCashUsd: 5 });
     });
 
+    it("drops a zero-cost ledger line instead of showing it as provider only", () => {
+        // A corrected fact re-appended with credit 0 and paid 0 records no
+        // usage; it must not surface as a residual row.
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "pointsflyer",
+                        model: "gptimage",
+                        credit: 0,
+                        paid: 0,
+                    }),
+                    cloud({
+                        entry_id: "cloud-test-2",
+                        vendor: "pointsflyer",
+                        model: "gpt-5.4-nano",
+                        credit: -5,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "pointsflyer",
+                        model: "gpt-5.4-nano",
+                        cost_paid: 5,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models.map((m) => m.model)).toEqual(["gpt-5.4-nano"]);
+        expect(row.buckets.providerOnlyUsd).toBe(0);
+    });
+
     it("identifies paid and Quest Pollen spent on credit-funded usage", () => {
         const [row] = modelReconcileRows(
             data({

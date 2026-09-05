@@ -20,7 +20,7 @@ import type { SafetyFeature } from "./schemas/safety.ts";
 
 export const LEGACY_COMMUNITY_MODEL_PREFIX = "community/";
 export const COMMUNITY_MODEL_REWARD_RATE = 0.75;
-export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 12 * 60 * 60 * 1000;
+export const COMMUNITY_ENDPOINT_CHANGE_DELAY_MS = 3 * 60 * 60 * 1000;
 export const COMMUNITY_ENDPOINT_MODALITIES = [
     "text",
     "image",
@@ -507,11 +507,10 @@ export const LISTING_TYPES = [
     "endpoint_agent",
 ] as const;
 
-// Prompt agents all share one deployment-specific worker. Store this safe,
-// environment-neutral URL in the common target column, then replace it with
-// AGENT_RUNTIME_BASE_URL when a row crosses the API/runtime boundary. The
-// reserved .invalid host guarantees a missed replacement cannot call another
-// environment by accident.
+// Prompt agents execute inside Gen and have no upstream URL. The common target
+// column remains required for every listing, so store this safe sentinel and
+// replace it with Gen's public API URL only when presenting the row to callers.
+// The reserved .invalid host guarantees it can never become a real target.
 export const PROMPT_AGENT_BASE_URL_PLACEHOLDER =
     "https://agent-runtime.invalid/api/agent-runtime/v1";
 
@@ -535,6 +534,7 @@ const StoredCommunityEndpointPricesSchema = z.object(
 export const ProxyListingPayloadSchema = z
     .object({
         bearerTokenCiphertext: z.string().min(1),
+        responsesUrl: z.string().url().nullable().default(null),
         // Owner-set: callers may only spend Paid Pollen on this model. Rows
         // from before paid-only support are public-spend by default.
         paidOnly: z.boolean().default(false),
@@ -566,8 +566,8 @@ export const ProxyListingPayloadSchema = z
 export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
 /**
- * An agent Enter runs itself. Its row id is also the model sent to the shared
- * runtime, which loads this configuration from the same row.
+ * A managed prompt agent Gen runs locally. Its row id is also the model used
+ * to load this configuration from the same row.
  */
 export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
@@ -593,6 +593,7 @@ export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
+        responsesUrl: z.string().url().nullable().default(null),
     })
     .strict();
 
@@ -725,6 +726,7 @@ type CommunityEndpointRuntimeBase = {
     // All variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
     baseUrl: string;
+    responsesUrl?: string | null;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     requiredSafetyFeatures?: SafetyFeature[];
@@ -746,7 +748,7 @@ export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     advertised?: CommunityEndpointAdvertised;
 };
 
-/** An agent Enter runs on its own runtime, named by its listing id. */
+/** An agent Gen runs locally, named by its listing id. */
 export type PromptAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "prompt_agent";

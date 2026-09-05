@@ -123,6 +123,15 @@ def get_executor() -> ThreadPoolExecutor:
 # Render dispatch
 # =============================================================================
 
+MAX_OUTPUT_WIDTH = 3840
+MAX_OUTPUT_HEIGHT = 2160
+DEFAULT_OUTPUT_DPI = 240
+
+
+def _output_dpi(width_inches: float, height_inches: float) -> int:
+    return int(min(DEFAULT_OUTPUT_DPI, MAX_OUTPUT_WIDTH / width_inches, MAX_OUTPUT_HEIGHT / height_inches))
+
+
 SUPPORTED_TYPES = {
     "bar",
     "horizontal_bar",
@@ -194,7 +203,8 @@ def render_chart(
             )
 
         buf = io.BytesIO()
-        fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
+        width, height = fig.get_size_inches()
+        fig.savefig(buf, format="png", dpi=_output_dpi(width, height), bbox_inches="tight")
         buf.seek(0)
         return buf
 

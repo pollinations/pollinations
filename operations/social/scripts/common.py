@@ -34,10 +34,11 @@ LINKEDIN_MAX_CHARS = 1248
 OWNER = "pollinations"
 REPO = "pollinations"
 GISTS_BRANCH = "news"  # Unprotected branch for gist data (avoids main branch protection)
+NEWS_REL_DIR = "operations/social/news"
 
 
 # Models-weekly staging
-MODELS_NEWS_DIR = "operations/social/news/models"
+MODELS_NEWS_DIR = f"{NEWS_REL_DIR}/models"
 
 
 def models_news_staging_dir(date_str: str) -> str:
@@ -306,21 +307,18 @@ def call_pollinations_api(
     last_error = None
 
     for attempt in range(MAX_RETRIES):
-        seed = random.randint(0, MAX_SEED)
-
         payload = {
             "model": MODEL,
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            "temperature": temperature,
-            "seed": seed
+            "temperature": temperature
         }
 
         if attempt > 0:
             backoff_delay = INITIAL_RETRY_DELAY * (2 ** attempt)
-            print(f"  Retry {attempt}/{MAX_RETRIES - 1} with new seed: {seed} (waiting {backoff_delay}s)")
+            print(f"  Retry {attempt}/{MAX_RETRIES - 1} (waiting {backoff_delay}s)")
             time.sleep(backoff_delay)
 
         try:
@@ -514,7 +512,7 @@ def get_file_sha(github_token: str, owner: str, repo: str, file_path: str, branc
 # ── Gist I/O helpers ─────────────────────────────────────────────────
 
 # Directory where gist JSONs live, relative to repo root
-GISTS_REL_DIR = "operations/social/news/gists"
+GISTS_REL_DIR = f"{NEWS_REL_DIR}/gists"
 
 # Required top-level keys for a valid gist
 _GIST_REQUIRED_KEYS = {"pr_number", "title", "author", "url", "merged_at"}

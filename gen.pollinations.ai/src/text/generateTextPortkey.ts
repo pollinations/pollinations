@@ -1,8 +1,8 @@
 import debug from "debug";
 import { findModelByName } from "./availableModels.js";
-import { callAzureResponses } from "./azureResponsesClient.js";
 import { sanitizeCohereResponse } from "./cohereCommandAPlus.js";
 import { genericOpenAIClient } from "./genericOpenAIClient.js";
+import { callChatViaResponses } from "./responses/chatClient.js";
 import { normalizeOptions } from "./textGenerationUtils.js";
 import { generateHeaders } from "./transforms/headerGenerator.js";
 import { imageUrlToBase64Transform } from "./transforms/imageUrlToBase64Transform.js";
@@ -66,6 +66,7 @@ export async function generateTextPortkey(
         string,
         string
     >;
+    const responsesFetcher = state.options.responsesFetcher;
     const requestConfig =
         typeof directEndpoint === "string"
             ? {
@@ -85,30 +86,19 @@ export async function generateTextPortkey(
 
     delete state.options.additionalHeaders;
     delete state.options.portkeyGatewayUrl;
+    delete state.options.responsesFetcher;
 
-    // GPT-5-family models on Azure only honor reasoning.effort through the
-    // Responses API, which has a different request/response/stream shape.
-    // Route them through the dedicated client (direct Azure call — Portkey
-    // cannot translate a Responses API request). Note: `additionalHeaders`
-    // (Portkey-specific, e.g. the request-timeout header) is intentionally not
-    // forwarded to Azure — the Responses client sets its own headers/timeout.
-    const needsResponsesApi =
-        modelDef?.useResponsesApi &&
-        (state.options.seed === undefined ||
-            state.options.reasoning_effort !== undefined ||
-            (Array.isArray(state.options.tools) &&
-                state.options.tools.length > 0));
-
-    // Azure Responses has no seed parameter. Preserve existing deterministic
-    // behavior for plain seeded requests, but let tools/reasoning win when the
-    // otherwise-unsupported combination is explicitly requested.
-    if (needsResponsesApi) {
-        if (state.options.seed !== undefined) {
-            log(
-                "Ignoring seed because Azure Responses is required for tools/reasoning",
-            );
-        }
-        return callAzureResponses(state.messages, state.options);
+    // Models marked for Responses use their declared direct Responses target;
+    // the adapter keeps the public Chat Completions contract stateless.
+    const communityResponsesEndpoint =
+        !modelDef &&
+        typeof state.options.modelConfig?.responsesEndpoint === "string";
+    if (modelDef?.useResponsesApi || communityResponsesEndpoint) {
+        return await callChatViaResponses(
+            state.messages,
+            state.options,
+            responsesFetcher,
+        );
     }
 
     // Only the Responses adapter owns this parameter. Keep generic provider

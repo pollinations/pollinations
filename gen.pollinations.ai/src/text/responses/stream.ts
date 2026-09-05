@@ -38,6 +38,10 @@ export function createResponsesStreamUsageValidator() {
             }
 
             const type = eventType(event) ?? message.event;
+            if (type === "error" || type === "response.failed") {
+                terminalSeen = true;
+                return;
+            }
             if (!type || !RESPONSE_TERMINAL_EVENT_TYPES.has(type)) return;
             terminalSeen = true;
 

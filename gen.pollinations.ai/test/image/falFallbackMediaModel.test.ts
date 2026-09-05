@@ -134,6 +134,46 @@ describe("Fal fallback media models", () => {
         );
     });
 
+    it("sends Wan 2.2 text-to-video through Fal Turbo", async () => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("a blue circle", {
+            ...baseParams,
+            model: "wan-fast-fal",
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
+
+        expect(requests[0]).toEqual({
+            url: "https://queue.fal.run/fal-ai/wan/v2.2-a14b/text-to-video/turbo",
+            body: {
+                prompt: "a blue circle",
+                resolution: "480p",
+                aspect_ratio: "1:1",
+                seed: 42,
+            },
+        });
+        expect(result.durationSeconds).toBe(5);
+        expect(result.trackingData.usage.completionVideoSeconds).toBe(5);
+    });
+
+    it("maps unsupported 4:3 input to a Wan 2.2 Turbo ratio", async () => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("a blue circle", {
+            ...baseParams,
+            model: "wan-fast-fal",
+            width: 1024,
+            height: 768,
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        await resultPromise;
+
+        expect(requests[0].body?.aspect_ratio).toBe("1:1");
+    });
+
     it("omits aspect ratio where Grok 1.5 image-to-video follows the source", async () => {
         const requests = mockFal({
             video: { url: MEDIA_URL, content_type: "video/mp4" },
@@ -154,6 +194,38 @@ describe("Fal fallback media models", () => {
             resolution: "720p",
             image_url: "https://example.com/input.png",
             seed: 42,
+        });
+    });
+
+    it("maps Wan 2.2 start and end frames to the Fal turbo endpoint", async () => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("move", {
+            ...baseParams,
+            model: "wan-fast-fal",
+            image: [
+                "https://example.com/start.png",
+                "https://example.com/end.png",
+            ],
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
+
+        expect(requests[0]).toEqual({
+            url: "https://queue.fal.run/fal-ai/wan/v2.2-a14b/image-to-video/turbo",
+            body: {
+                prompt: "move",
+                resolution: "480p",
+                end_image_url: "https://example.com/end.png",
+                image_url: "https://example.com/start.png",
+                seed: 42,
+            },
+        });
+        expect(result.durationSeconds).toBe(5);
+        expect(result.trackingData).toEqual({
+            actualModel: "wan-fast-fal",
+            usage: { promptImageTokens: 2, completionVideoSeconds: 5 },
         });
     });
 });

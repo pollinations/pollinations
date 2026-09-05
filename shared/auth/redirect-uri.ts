@@ -6,7 +6,10 @@
  * and does not re-check the scheme.
  *
  * Comparison rules:
- * - Scheme + hostname + path are matched exactly (after lowercasing host).
+ * - Scheme + hostname + path are matched exactly (after lowercasing host),
+ *   except that loopback hostnames (localhost, 127.x.x.x, [::1]) are
+ *   interchangeable: a registered "http://localhost/play" entry also covers
+ *   "http://127.0.0.1/play" and vice versa (RFC 8252 loopback aliases).
  * - Trailing slash on the path is insignificant: `/cb` and `/cb/` match.
  * - Query strings are ignored when the registered URI has no query: apps
  *   round-trip state (e.g. `?prompt=...`) and the auth code/token rides the URL
@@ -77,6 +80,21 @@ function normalizeHostname(hostname: string): string {
         .replace(/\.$/, "");
 }
 
+/** Hosts are equal, or both are loopback aliases of each other. */
+function hostnamesMatch(
+    incomingHostname: string,
+    entryHostname: string,
+): boolean {
+    if (
+        normalizeHostname(incomingHostname) === normalizeHostname(entryHostname)
+    )
+        return true;
+    return (
+        isLoopbackHostname(incomingHostname) &&
+        isLoopbackHostname(entryHostname)
+    );
+}
+
 function normalizePathname(pathname: string): string {
     return pathname.length > 1 && pathname.endsWith("/")
         ? pathname.slice(0, -1)
@@ -92,10 +110,7 @@ function matchesEntry(
     if (!entry) return false;
     if (incoming.hash || entry.hash) return false;
     if (incoming.protocol !== entry.protocol) return false;
-    if (
-        normalizeHostname(incoming.hostname) !==
-        normalizeHostname(entry.hostname)
-    ) {
+    if (!hostnamesMatch(incoming.hostname, entry.hostname)) {
         return false;
     }
     if (

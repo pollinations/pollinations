@@ -143,6 +143,38 @@ describe("redirectUriMatchesAllowlist", () => {
         ).toBe(true);
     });
 
+    test("treats loopback hostnames as interchangeable", () => {
+        // A registered localhost entry covers 127.0.0.1 (and vice versa), so
+        // `npm run dev -- --host 127.0.0.1` authorizes with the website key.
+        expect(
+            redirectUriMatchesAllowlist("http://127.0.0.1:5173/play", [
+                "http://localhost/play",
+            ]),
+        ).toBe(true);
+        expect(
+            redirectUriMatchesAllowlist("http://localhost:5173/play", [
+                "http://127.0.0.1/play",
+            ]),
+        ).toBe(true);
+        expect(
+            redirectUriMatchesAllowlist("http://[::1]:5173/play", [
+                "http://localhost/play",
+            ]),
+        ).toBe(true);
+        // A non-loopback host never matches a loopback entry.
+        expect(
+            redirectUriMatchesAllowlist("http://example.com/play", [
+                "http://localhost/play",
+            ]),
+        ).toBe(false);
+        // The path still has to match.
+        expect(
+            redirectUriMatchesAllowlist("http://127.0.0.1:5173/other", [
+                "http://localhost/play",
+            ]),
+        ).toBe(false);
+    });
+
     test("loopback port-agnostic match still requires path", () => {
         expect(
             redirectUriMatchesAllowlist("http://localhost:3000/other", [

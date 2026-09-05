@@ -402,10 +402,12 @@ function AppsPage() {
             .sort(compareApps(sort));
     }, [apps, category, platform, pollenPay, q, sort]);
 
-    // resetScroll: false — the filters sit halfway down, and jumping to the
-    // top on every selection made combining them unusable.
+    // replace: true — filter changes refine one view, not a history of
+    // keystrokes. resetScroll: false — the filters sit halfway down, and
+    // jumping to the top on every selection made combining them unusable.
     const selectCategory = (value: AppCategory) =>
         navigate({
+            replace: true,
             resetScroll: false,
             search: (prev) => ({
                 ...prev,
@@ -414,6 +416,7 @@ function AppsPage() {
         });
     const clearCategories = () =>
         navigate({
+            replace: true,
             resetScroll: false,
             search: (prev) => ({ ...prev, category: undefined }),
         });
@@ -531,6 +534,7 @@ function AppsPage() {
                                     pollenPay={pollenPay}
                                     onQueryChange={(next) =>
                                         navigate({
+                                            replace: true,
                                             resetScroll: false,
                                             search: (prev) => ({
                                                 ...prev,
@@ -540,6 +544,7 @@ function AppsPage() {
                                     }
                                     onPlatformsChange={(next) =>
                                         navigate({
+                                            replace: true,
                                             resetScroll: false,
                                             search: (prev) => ({
                                                 ...prev,
@@ -552,6 +557,7 @@ function AppsPage() {
                                     }
                                     onPollenPayChange={(next) =>
                                         navigate({
+                                            replace: true,
                                             resetScroll: false,
                                             search: (prev) => ({
                                                 ...prev,
@@ -618,6 +624,7 @@ function AppsPage() {
                                                     className="w-full justify-start gap-2"
                                                     onClick={() => {
                                                         navigate({
+                                                            replace: true,
                                                             resetScroll: false,
                                                             search: (prev) => ({
                                                                 ...prev,

@@ -21,6 +21,7 @@ import {
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -76,11 +77,11 @@ function prepareRequestParameters(
  * Built per attempt rather than once up front, so a delegating fallback mints
  * its own run token and no attempt ever carries another endpoint's credential.
  */
-function gatewayContext(
+async function gatewayContext(
     c: TextContext,
     requestData: RequestData,
     candidate: FallbackCandidate,
-): Promise<TransformOptions> | TransformOptions {
+): Promise<TransformOptions> {
     const { communityEndpoint, definition } = candidate;
     // A fallback must resolve transforms from the model that will actually run.
     const candidateRequest = candidate.entry
@@ -92,7 +93,7 @@ function gatewayContext(
     if (!communityEndpoint || !definition) {
         return withGatewayContext(c, candidateRequest);
     }
-    return communityEndpointGatewayContext({
+    const context = await communityEndpointGatewayContext({
         endpoint: communityEndpoint,
         modelDefinition: definition,
         requestData: candidateRequest,
@@ -102,6 +103,25 @@ function gatewayContext(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
     });
+    if (communityEndpoint.type !== "prompt_agent") return context;
+
+    const apiKey = context.modelConfig?.authKey;
+    if (typeof apiKey !== "string" || !apiKey) {
+        throw new Error("Managed agent request has no agent run token");
+    }
+    const client = await createPromptAgentResponsesClient(
+        c,
+        communityEndpoint,
+        apiKey,
+    );
+    return {
+        ...context,
+        responsesFetcher: client.fetcher,
+        modelConfig: {
+            ...context.modelConfig,
+            responsesEndpoint: client.target.endpoint,
+        },
+    };
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {

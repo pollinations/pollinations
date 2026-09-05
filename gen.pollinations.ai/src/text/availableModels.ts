@@ -103,6 +103,11 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6-astra",
+        config: portkeyConfig["gpt-6-astra"],
+        useResponsesApi: true,
+    },
+    {
         name: "mercury",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,

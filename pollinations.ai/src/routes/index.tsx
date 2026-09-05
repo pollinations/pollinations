@@ -16,28 +16,22 @@ export const Route = createFileRoute("/")({
     component: HelloPage,
 });
 
-/**
- * Both measured, neither hardcoded. The old row claimed "1.5M daily requests"
- * and "10K weekly active devs" — the first is ~50% high (the real 24h figure
- * is under a million), and the second has no public source at all, so it is
- * gone rather than invented. App count lives on /apps, where the 577 KB
- * directory it needs is the page's actual content.
- */
 function useHeroStats() {
     const { data } = usePlatformStats();
     if (!data) return [];
     return [
         { value: compact(data.requestsWeek), label: "requests last week" },
+        { value: String(data.models - data.agents), label: "models" },
+        { value: String(data.agents), label: "agents" },
+        data.mcpServers === null
+            ? null
+            : { value: String(data.mcpServers), label: "MCP servers" },
         data.availability === null
             ? null
             : {
                   value: `${data.availability.toFixed(1)}%`,
                   label: "official model availability",
               },
-        {
-            value: String(data.models),
-            label: "models",
-        },
     ].filter((stat): stat is { value: string; label: string } => stat !== null);
 }
 
@@ -50,24 +44,27 @@ function HelloPage() {
             <HeroScene
                 scene="/heroes/home.webp"
                 nightScene="/heroes/home-top-night.webp"
+                contentClassName="px-6 pt-20 sm:max-w-[90%] lg:max-w-[72%]"
             >
                 <ContentHeader
                     eyebrow="Open infrastructure for AI apps"
                     title="Every model, one wallet."
                     subtitle="Complete small Quests to earn Pollen—the platform credit, where 1 Pollen = $1. Use it across text, image, audio and video through one API, then publish what you build and earn more when people use it."
                     variant="page"
+                    className="sm:[&_h1]:max-w-[9ch]"
                 />
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-wrap gap-2 sm:gap-3">
                     <ExternalLinkButton
                         href="https://enter.pollinations.ai/quests"
                         appearance="raised"
+                        className="max-sm:px-4! max-sm:py-2! max-sm:text-sm!"
                     >
                         Start for free
                     </ExternalLinkButton>
                     <ExternalLinkButton
                         href="https://gen.pollinations.ai/docs"
                         appearance="raised"
-                        className="bg-surface-opaque"
+                        className="bg-surface-opaque max-sm:px-4! max-sm:py-2! max-sm:text-sm!"
                     >
                         Read the docs
                     </ExternalLinkButton>

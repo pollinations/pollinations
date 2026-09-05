@@ -26,10 +26,6 @@ type Feature = {
     linkLabel?: string;
     href?: string;
     icon: ComponentType<IconProps>;
-    scene?: {
-        day: string;
-        night: string;
-    };
 };
 
 const BUILD_FOUNDATIONS: Feature[] = [
@@ -51,10 +47,6 @@ const BUILD_FOUNDATIONS: Feature[] = [
         linkLabel: "Explore the API",
         href: "https://gen.pollinations.ai/docs",
         icon: GenApiIcon,
-        scene: {
-            day: "/tool-scenes/api-models-day.webp",
-            night: "/tool-scenes/api-models-night.webp",
-        },
     },
     {
         title: "Ready-made agents",
@@ -62,10 +54,6 @@ const BUILD_FOUNDATIONS: Feature[] = [
         linkLabel: "Explore agents",
         href: "https://enter.pollinations.ai/models?scope=community&category=agent",
         icon: RobotIcon,
-        scene: {
-            day: "/tool-scenes/ready-agents-day.webp",
-            night: "/tool-scenes/ready-agents-night.webp",
-        },
     },
     {
         title: "Connect Pollinations accounts",
@@ -73,10 +61,6 @@ const BUILD_FOUNDATIONS: Feature[] = [
         linkLabel: "Connect an account",
         href: "https://gen.pollinations.ai/docs#tag/connect-user-wallets",
         icon: WalletIcon,
-        scene: {
-            day: "/tool-scenes/connected-accounts-day.webp",
-            night: "/tool-scenes/connected-accounts-night.webp",
-        },
     },
 ];
 
@@ -87,10 +71,6 @@ const BUILD_TOOLS: Feature[] = [
         linkLabel: "Store media",
         href: "https://gen.pollinations.ai/docs#tag/media-storage",
         icon: CloudUploadIcon,
-        scene: {
-            day: "/tool-scenes/media-hosting-day.webp",
-            night: "/tool-scenes/media-hosting-night.webp",
-        },
     },
     {
         title: "Pollinations CLI",
@@ -98,10 +78,6 @@ const BUILD_TOOLS: Feature[] = [
         linkLabel: "Use the CLI",
         href: "https://gen.pollinations.ai/docs#tag/cli",
         icon: TerminalIcon,
-        scene: {
-            day: "/tool-scenes/cli-day.webp",
-            night: "/tool-scenes/cli-night.webp",
-        },
     },
     {
         title: "MCP connectors",
@@ -109,10 +85,6 @@ const BUILD_TOOLS: Feature[] = [
         linkLabel: "Explore MCPs",
         href: "https://enter.pollinations.ai/models?category=mcp",
         icon: McpIcon,
-        scene: {
-            day: "/tool-scenes/mcp-connectors-day.webp",
-            night: "/tool-scenes/mcp-connectors-night.webp",
-        },
     },
 ];
 
@@ -143,7 +115,6 @@ function FeatureCard({
     feature: Feature;
     modelCount: number | null;
 }) {
-    const { isDark } = useColorMode();
     const Icon = feature.icon;
     const body =
         typeof feature.body === "function"
@@ -153,47 +124,29 @@ function FeatureCard({
     return (
         <Surface
             variant="card"
-            className={cn(
-                "relative flex h-full flex-col overflow-hidden p-0",
-                feature.scene && "min-h-96",
-            )}
+            className="flex h-full flex-col gap-5 p-5 sm:p-6"
         >
-            {feature.scene ? (
-                <img
-                    src={isDark ? feature.scene.night : feature.scene.day}
-                    alt=""
-                    width={928}
-                    height={1152}
-                    loading="lazy"
-                    decoding="async"
-                    aria-hidden="true"
-                    className="tool-card-scene pointer-events-none absolute inset-0 h-full w-full select-none object-cover object-center"
-                />
-            ) : null}
-
-            <div className="relative z-10 flex flex-1 flex-col gap-5 p-5 sm:p-6">
-                <div className="flex items-center gap-3">
-                    <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
-                        <Icon className="size-6" />
-                    </div>
-                    <Heading as="h3" size="card">
-                        {feature.title}
-                    </Heading>
+            <div className="flex items-center gap-3">
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-theme-bg-subtle text-theme-text-strong">
+                    <Icon className="size-6" />
                 </div>
-
-                <Text size="sm">{body}</Text>
-
-                {feature.href && feature.linkLabel ? (
-                    <ExternalLinkButton
-                        href={feature.href}
-                        size="sm"
-                        appearance="raised"
-                        className="self-start whitespace-nowrap"
-                    >
-                        {feature.linkLabel}
-                    </ExternalLinkButton>
-                ) : null}
+                <Heading as="h3" size="card">
+                    {feature.title}
+                </Heading>
             </div>
+
+            <Text size="sm">{body}</Text>
+
+            {feature.href && feature.linkLabel ? (
+                <ExternalLinkButton
+                    href={feature.href}
+                    size="sm"
+                    appearance="raised"
+                    className="self-start whitespace-nowrap"
+                >
+                    {feature.linkLabel}
+                </ExternalLinkButton>
+            ) : null}
         </Surface>
     );
 }
@@ -223,12 +176,17 @@ function FeatureGroup({
 }
 
 export function DevKit({ className }: { className?: string }) {
+    const { isDark } = useColorMode();
+    const scene = `/tool-scenes/earn-pollen-magic-${isDark ? "night" : "day"}`;
     const { data } = usePlatformStats();
     const modelCount = data?.models ?? null;
 
     return (
         <section className={cn("flex flex-col gap-10", className)}>
-            <Surface variant="card" className="flex flex-col gap-6 p-5 sm:p-6">
+            <Surface
+                variant="card"
+                className="flex flex-col gap-6 overflow-hidden p-5 sm:p-6"
+            >
                 <ContentHeader
                     eyebrow="Start free"
                     title="Make your first API call"
@@ -268,6 +226,18 @@ export function DevKit({ className }: { className?: string }) {
                         </ExternalLinkButton>
                     </div>
                 </div>
+                <img
+                    src={`${scene}.webp`}
+                    srcSet={`${scene}-1024.webp 1024w, ${scene}.webp 2048w`}
+                    sizes="(max-width: 1240px) 100vw, 1100px"
+                    alt=""
+                    aria-hidden="true"
+                    width={2048}
+                    height={1024}
+                    loading="lazy"
+                    decoding="async"
+                    className="first-call-scene pointer-events-none -mx-5 -mb-5 h-auto w-[calc(100%+2.5rem)] max-w-none select-none sm:-mx-6 sm:-mb-6 sm:w-[calc(100%+3rem)]"
+                />
             </Surface>
 
             <FeatureGroup

@@ -126,13 +126,17 @@ type PlatformStats = {
     availability: number | null;
     /** Models callable right now, community models included. */
     models: number;
+    /** Agent entries included in the model catalog. */
+    agents: number;
+    /** Public MCP servers, not the individual tools they expose. */
+    mcpServers: number | null;
     /** Count per category, e.g. { text: 141, image: 51 }. */
     byCategory: Record<string, number>;
     /** Community models, which carry an owner/model name. */
     community: number;
 };
 
-type CatalogModel = { name?: string; category?: string };
+type CatalogModel = { name?: string; category?: string; agent?: boolean };
 
 function summariseCatalog(models: CatalogModel[]) {
     const byCategory: Record<string, number> = {};
@@ -202,13 +206,20 @@ export function usePlatformStats() {
 
 function loadPlatformStats(): Promise<PlatformStats | null> {
     return (async () => {
-        const [weeks, models] = await Promise.all([
+        const [weeks, models, mcpServers] = await Promise.all([
             // 3, not 2: the window is relative to `now`, so the oldest bucket
             // is left-truncated. Three guarantees a whole one in the middle.
             tinybird<WeeklyHealthRow>("weekly_health_stats", "&weeks_back=3"),
             fetch("https://gen.pollinations.ai/models").then((r) =>
                 r.ok ? r.json() : [],
             ),
+            fetch("https://gen.pollinations.ai/mcp")
+                .then(async (response) => {
+                    if (!response.ok) return null;
+                    const body = await response.json();
+                    return Array.isArray(body.data) ? body.data.length : null;
+                })
+                .catch(() => null),
         ]);
 
         // Rows come back oldest-first; drop the week still in progress.
@@ -221,6 +232,8 @@ function loadPlatformStats(): Promise<PlatformStats | null> {
             requestsWeek: latest?.total_requests ?? 0,
             availability: latest?.official_availability ?? null,
             models: catalog.length,
+            agents: catalog.filter((model) => model.agent === true).length,
+            mcpServers,
             ...summariseCatalog(catalog),
         };
     })();

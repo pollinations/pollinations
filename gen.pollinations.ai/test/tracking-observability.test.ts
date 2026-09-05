@@ -856,6 +856,72 @@ describe("tracking observability", () => {
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
+    it.each([
+        false,
+        true,
+    ])("tracks a streamed policy rejection as unbilled 4xx (choice error %s)", async (nested) => {
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn(async (_amount: number) => {});
+        const error = {
+            code: 400,
+            message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            metadata: { error_type: "invalid_request" },
+        };
+        const event = nested
+            ? { choices: [{ finish_reason: "error", error }] }
+            : { choices: [], error };
+        const upstreamBody = `data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`;
+        const ctx = createExecutionContext();
+        const response = await createTrackedResponseApp(
+            consumePollen,
+            "generate.text",
+            new Response(upstreamBody, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/upstream", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: "openai",
+                    stream: true,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        // Already-started streams keep their status and complete provider error.
+        expect(response.status).toBe(200);
+        await expect(response.text()).resolves.toBe(upstreamBody);
+        await waitOnExecutionContext(ctx);
+        expect(tinybirdRequests).toHaveLength(1);
+        expect(new URL(tinybirdRequests[0].url).searchParams.get("name")).toBe(
+            "generation_event_v2",
+        );
+        await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
+            responseStatus: 422,
+            isBilledUsage: false,
+            errorResponseCode: "content_policy_violation",
+        });
+        expect(consumePollen).toHaveBeenCalledWith(0);
+    });
+
     it("tracks infrastructure exceptions through the shared error handler", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

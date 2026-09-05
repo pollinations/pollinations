@@ -446,6 +446,16 @@ describe("isRetryableFallbackError", () => {
     it("does not shop a content-policy refusal to a laxer endpoint", () => {
         expect(
             isRetryableFallbackError(
+                textFailure(403, {
+                    error: {
+                        message:
+                            "Gemini blocked the request: PROHIBITED_CONTENT",
+                    },
+                }),
+            ),
+        ).toBe(false);
+        expect(
+            isRetryableFallbackError(
                 textFailure(500, {
                     error: { message: "content policy violation" },
                 }),

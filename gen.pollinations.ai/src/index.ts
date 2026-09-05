@@ -147,6 +147,7 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         }
     })
     .route("/docs", createDocsRoutes(app))
+    .route("/", x402Routes)
     .route("/v1/audio", audioRoutes)
     .route("/", mcpRoutes)
     // Conventional, discoverable alias for the merged OpenAPI spec. JSON-only;
@@ -157,7 +158,6 @@ app.use("*", cors(PERMISSIVE_CORS_OPTIONS))
         return c.json(merged);
     })
     .route("/", modelStatusRoutes)
-    .route("/", x402Routes)
     .route("/", proxyRoutes);
 
 app.notFound(async (c: Context<Env>) => {

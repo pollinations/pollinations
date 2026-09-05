@@ -11,7 +11,9 @@ export async function enforceModelRateLimit(
     const limit = candidate.definition?.perUserRpm;
     if (limit == null) return;
 
-    const userId = c.var.auth.requireUser().id;
+    const userId = c.var.auth.paymentPayer
+        ? `x402:${c.var.auth.paymentPayer}`
+        : c.var.auth.requireUser().id;
     const namespace = c.env.COMMUNITY_MODEL_RATE_LIMITER;
     const stub = namespace.get(
         namespace.idFromName(`${candidate.id}:${userId}`),

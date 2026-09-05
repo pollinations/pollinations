@@ -15,15 +15,39 @@ import {
     createAnonymousX402Routes,
     createX402Fallback,
     finalX402Operation,
-    priceActualUsage,
+    quoteX402Request,
     requireX402Idempotency,
-    resumeX402Operation,
+    resumeX402Operation as resumeOperation,
     runX402Operation,
+    priceActualUsage as settleActualUsage,
 } from "../src/routes/x402.ts";
 
 const ROUTE = "/v1/chat/completions";
 const PAY_TO = "0x000000000000000000000000000000000000dEaD";
 const x402Env = { ...env, WEFT_PAY_TO: PAY_TO, WEFT_NETWORK: "eip155:84532" };
+
+const chatRequest = (body: unknown) => ({
+    method: "POST",
+    path: ROUTE,
+    headers: {},
+    body: CreateChatCompletionRequestSchema.parse(body),
+});
+const priceActualUsage = async (
+    bindings: CloudflareBindings,
+    body: CreateChatCompletionRequest,
+    headers: Headers,
+) =>
+    await settleActualUsage(
+        bindings,
+        await quoteX402Request(bindings, chatRequest(body)),
+        headers,
+    );
+const resumeX402Operation = (
+    bindings: CloudflareBindings,
+    key: string,
+    body: unknown,
+    candidate: PaymentResumeCandidate,
+) => resumeOperation(bindings, key, chatRequest(body), candidate);
 
 async function challenge(body: unknown) {
     const app = createAnonymousX402Routes(x402Env as CloudflareBindings);
@@ -46,6 +70,147 @@ async function challenge(body: unknown) {
 }
 
 const usd = (accepts: { amount: string }) => Number(accepts.amount) / 1e6;
+
+test.each([
+    ["GET", "/image/a%20blue%20flower?model=flux", undefined],
+    [
+        "POST",
+        "/v1/images/generations",
+        { model: "flux", prompt: "a blue flower", response_format: "b64_json" },
+    ],
+    ["POST", "/v1/audio/speech", { model: "elevenflash", input: "Hello" }],
+    [
+        "POST",
+        "/text",
+        {
+            model: "openai",
+            messages: [{ role: "user", content: "Hello" }],
+            max_tokens: 20,
+        },
+    ],
+] as const)("offers a bounded payment on %s %s", async (method, path, body) => {
+    const app = createAnonymousX402Routes(x402Env as CloudflareBindings);
+    const response = await app.request(
+        path,
+        {
+            method,
+            headers: {
+                "content-type": "application/json",
+                "idempotency-key": crypto.randomUUID(),
+            },
+            ...(body && { body: JSON.stringify(body) }),
+        },
+        x402Env,
+    );
+    expect(response.status).toBe(402);
+    const offer = JSON.parse(
+        atob(response.headers.get("payment-required") as string),
+    );
+    expect(offer.accepts[0].scheme).toBe("upto");
+    expect(usd(offer.accepts[0])).toBeGreaterThanOrEqual(0.001);
+});
+
+test.each([
+    ["GET", "/image/flower?model=veo", undefined],
+    ["GET", "/image/flower?model=gptimage", undefined],
+    [
+        "POST",
+        "/v1/images/generations",
+        { model: "flux", prompt: "flower", n: 2 },
+    ],
+    [
+        "POST",
+        "/v1/images/generations",
+        { model: "flux", prompt: "flower", response_format: "url" },
+    ],
+    [
+        "POST",
+        "/v1/audio/speech",
+        { model: "elevenmusic", input: "piano", duration: 30 },
+    ],
+    ["POST", "/v1/audio/speech", { model: "lyria", input: "piano" }],
+] as const)("does not advertise an unsupported media ceiling on %s %s", async (method, path, body) => {
+    const response = await createAnonymousX402Routes(
+        x402Env as CloudflareBindings,
+    ).request(
+        path,
+        {
+            method,
+            headers: {
+                "content-type": "application/json",
+                "idempotency-key": crypto.randomUUID(),
+            },
+            ...(body && { body: JSON.stringify(body) }),
+        },
+        x402Env,
+    );
+    expect(response.status).toBe(400);
+    expect(response.headers.has("payment-required")).toBe(false);
+});
+
+test("prices image and speech usage with the requested model's Pollen rates", async () => {
+    const quote = await quoteX402Request(x402Env as CloudflareBindings, {
+        method: "GET",
+        path: "/image/flower?model=flux",
+        headers: {},
+        body: { model: "flux" },
+    });
+    expect(quote.usage).toEqual({ completionImageTokens: 1 });
+    expect(
+        await settleActualUsage(
+            x402Env as CloudflareBindings,
+            quote,
+            new Headers({
+                "x-model-used": "flux",
+                "x-usage-completion-image-tokens": "1",
+            }),
+        ),
+    ).toBe(quote.maximum);
+    await expect(
+        settleActualUsage(
+            x402Env as CloudflareBindings,
+            quote,
+            new Headers({
+                "x-model-used": "flux",
+                "x-usage-completion-image-tokens": "10000",
+            }),
+        ),
+    ).rejects.toThrow(/authorized maximum/);
+
+    const speech = await quoteX402Request(x402Env as CloudflareBindings, {
+        method: "POST",
+        path: "/v1/audio/speech",
+        headers: {},
+        body: { model: "elevenflash", input: "🧶".repeat(100) },
+    });
+    expect(speech.usage).toEqual({ completionAudioTokens: 400 });
+    const actual = await settleActualUsage(
+        x402Env as CloudflareBindings,
+        speech,
+        new Headers({
+            "x-model-used": "elevenflash",
+            "x-usage-completion-audio-tokens": "200",
+        }),
+    );
+    expect(actual).toBeLessThan(speech.maximum);
+});
+
+test.each([
+    "/models",
+    "/image/models",
+    "/v1/models",
+    "/v1/audio/transcriptions",
+    "/v1/responses",
+    "/account/balance",
+])("leaves %s outside the payment fallback", async (path) => {
+    const app = new Hono<{ Bindings: CloudflareBindings }>()
+        .use("*", createX402Fallback())
+        .all("*", (c) => c.text("normal route"));
+    for (const method of ["GET", "POST", "OPTIONS"]) {
+        const response = await app.request(path, { method }, x402Env);
+        expect(await response.text()).toBe("normal route");
+    }
+});
 const request = (
     overrides: Record<string, unknown> = {},
 ): CreateChatCompletionRequest =>
@@ -201,7 +366,7 @@ test("anonymous callers get an upto challenge on the existing route", async () =
         "upto",
     ]);
     expect(accepts[0].payTo).toBe(PAY_TO);
-    expect(accepts[0].maxTimeoutSeconds).toBe(360);
+    expect(accepts[0].maxTimeoutSeconds).toBe(960);
     expect(accepts[0].extra.assetTransferMethod).toBe("permit2");
     expect(extensions["weft.request"].info).toEqual({
         model: "gpt-oss",
@@ -403,7 +568,7 @@ test("actual settlement fails closed without valid model and usage headers", asy
                 "x-usage-prompt-text-tokens": "1",
             }),
         ),
-    ).rejects.toThrow(/invalid text model/i);
+    ).rejects.toThrow(/invalid model/i);
     await expect(
         priceActualUsage(
             x402Env as CloudflareBindings,

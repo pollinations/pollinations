@@ -10,6 +10,7 @@ import {
     EditableCombobox,
     EditableComboboxToken,
     ExternalLinkButton,
+    PlusIcon,
     SearchIcon,
     Surface,
     TabButton,
@@ -459,6 +460,7 @@ function AppsPage() {
                     <ExternalLinkButton
                         href="https://github.com/pollinations/pollinations/issues/new?template=APP-SUBMISSION.yml"
                         appearance="raised"
+                        icon={<PlusIcon className="size-4 shrink-0" />}
                         className="self-start"
                     >
                         List your app

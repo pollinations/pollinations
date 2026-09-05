@@ -1,4 +1,9 @@
-import { ContentHeader, ExternalLinkButton } from "@pollinations/ui";
+import {
+    BookIcon,
+    ContentHeader,
+    ExternalLinkButton,
+    RocketIcon,
+} from "@pollinations/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { compact, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
@@ -57,6 +62,7 @@ function HelloPage() {
                     <ExternalLinkButton
                         href="https://enter.pollinations.ai/quests"
                         appearance="raised"
+                        icon={<RocketIcon className="size-4 shrink-0" />}
                         className="max-sm:px-4! max-sm:py-2! max-sm:text-sm!"
                     >
                         Start for free
@@ -64,6 +70,7 @@ function HelloPage() {
                     <ExternalLinkButton
                         href="https://gen.pollinations.ai/docs"
                         appearance="raised"
+                        icon={<BookIcon className="size-4 shrink-0" />}
                         className="bg-surface-opaque max-sm:px-4! max-sm:py-2! max-sm:text-sm!"
                     >
                         Read the docs

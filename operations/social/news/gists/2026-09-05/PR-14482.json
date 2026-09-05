@@ -1,0 +1,35 @@
+{
+  "pr_number": 14482,
+  "title": "fix: classify text content-policy rejections as 4xx",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14482",
+  "merged_at": "2026-09-05T12:37:50Z",
+  "labels": [],
+  "pr_body_excerpt": "- Classifies Gemini/OpenRouter PROHIBITED_CONTENT rejections as unbilled 422 errors using the existing content-policy detector; no fallback on policy refusals.\n- Reads numeric error.code from successful HTTP error envelopes and preserves provider details. Provider credentials/capacity failures remain retryable.\n- Records streamed policy failures as 422 in generation health, not server-error events. Already-started streams retain HTTP 200 and the original error body.\n- Tests: 128 targeted tests pass across client, tracking, fallback, and error-observability suites; TypeScript and Biome pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Policy refusals find their lane",
+    "blurb": "The text gateway now recognizes a content-policy “no” for what it is, rather than sending it wandering through fallback machinery. Policy rejections stay unbilled, clearly labeled, and pleasantly unsurprising.",
+    "summary": "Gemini and OpenRouter PROHIBITED_CONTENT responses are now detected as unbilled 422 content-policy errors with provider details preserved, while credential and capacity failures remain retryable and streamed policy failures are tracked separately from server errors.",
+    "impact": "Text API users now receive clear 422 policy responses without fallback attempts or billing, and generation health records distinguish policy refusals from actual server failures.",
+    "keywords": [
+      "text-api",
+      "content-policy",
+      "gemini",
+      "openrouter",
+      "error-handling",
+      "streaming",
+      "observability"
+    ],
+    "visual_concept": "A cozy API garden has a clearly marked “422” garden gate that gently redirects prohibited-content notes into a compost bin rather than the emergency fallback tunnel. Polli, wearing tiny librarian glasses, reads the provider error label while a helpful CRT monitor robot updates a healthy garden ledger; code-plants and flowers show that the system remains calm and correctly sorted.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she gently files a paper marked “422 POLICY” at a lime green (#ecf874) garden gate; beside her, a cute CRT-monitor robot records it in a glowing health ledger while code-plants and pastel flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, dark purple (#110518) pixel text reading “422”, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14482.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light blue translucent wings, wearing tiny librarian glasses as she gently files a paper marked “422 POLICY” at a lime green (#ecf874) garden gate; beside her, a cute CRT-monitor robot records it in a glowing health ledger while code-plants and pastel flowers grow nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, subtle CRT glow, dark purple (#110518) pixel text reading “422”, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-05T12:38:48.246731+00:00"
+}

@@ -375,6 +375,9 @@ function createUpstreamErrorResponse(
  * validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
+    // A timeout waiting on our provider is a gateway failure, not a caller's
+    // incomplete request. Keep upstreamStatus separately for retry decisions.
+    if (status === 408) return 504;
     const remapTo502 = new Set([401, 402, 403, 404, 409, 429, 524]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
@@ -388,19 +391,25 @@ export function getErrorCode(status: number): string {
         403: "FORBIDDEN",
         404: "NOT_FOUND",
         405: "METHOD_NOT_ALLOWED",
+        408: "REQUEST_TIMEOUT",
         409: "CONFLICT",
+        410: "GONE",
+        413: "PAYLOAD_TOO_LARGE",
         415: "UNSUPPORTED_MEDIA_TYPE",
         422: "UNPROCESSABLE_ENTITY",
+        426: "UPGRADE_REQUIRED",
         429: "RATE_LIMITED",
         500: "INTERNAL_ERROR",
         502: "BAD_GATEWAY",
         503: "SERVICE_UNAVAILABLE",
+        504: "GATEWAY_TIMEOUT",
     };
     return codes[status] || "UNKNOWN_ERROR";
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 402, 403, 404, 405, 409, 415, 422, 426, 429, 500, 502, 503,
+    400, 401, 402, 403, 404, 405, 408, 409, 410, 413, 415, 422, 426, 429, 500,
+    502, 503, 504,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -413,7 +422,10 @@ export function getDefaultErrorMessage(status: number): string {
         403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",
+        408: "The request was not received in time.",
         409: "Something with these details already exists. Maybe update it instead?",
+        410: "This resource is no longer available.",
+        413: "The request payload is too large. Reduce its size and try again.",
         415: "The request media type isn't supported.",
         422: "Your request looks good, but some required fields are missing or invalid.",
         426: "This endpoint requires a WebSocket upgrade request.",
@@ -421,6 +433,7 @@ export function getDefaultErrorMessage(status: number): string {
         500: "Oh snap, something went wrong on our end. We're on it!",
         502: "We couldn't reach our backend services. Please try again shortly.",
         503: "We're temporarily down for maintenance. Sorry about that!",
+        504: "The upstream service did not respond in time.",
     };
     return messages[status] || "UNKNOWN_ERROR";
 }

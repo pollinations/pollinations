@@ -6,6 +6,7 @@ import {
     opCloudPaidBurnUsd,
 } from "./computeLedger";
 import { toUsd } from "./fx";
+import { canonicalPollenModel, resolveLedgerLabel } from "./modelIdentity";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -18,10 +19,15 @@ import { canonicalVendor } from "./tb";
 const ACTIVE_USD = 0.0001;
 const MONTH_KEY = /^\d{4}-\d{2}$/;
 
+// Residual statuses carry provider cost that no Pollen model row owns.
 export type ModelAllocationStatus =
     | "allocated"
     | "missing provider"
-    | "unallocated";
+    | "unallocated"
+    | "needs mapping"
+    | "shared upstream"
+    | "missing breakdown"
+    | "provider only";
 
 export type ModelAllocationRow = {
     model: string;
@@ -105,6 +111,8 @@ type PollenModel = {
     questMeterUsd: number;
 };
 
+type Funding = { cashUsd: number; creditUsd: number };
+
 type ProviderMonth = {
     month: string;
     vendor: string;
@@ -113,8 +121,27 @@ type ProviderMonth = {
     hasProvider: boolean;
     cashUsd: number;
     creditUsd: number;
-    providerModels: Map<string, { cashUsd: number; creditUsd: number }>;
+    providerModels: Map<string, Funding>;
+    // One provider label that serves several Pollen models, keyed by label.
+    sharedLabels: Map<string, Funding & { models: string[] }>;
+    // Reviewed labels with no Pollen model at all, keyed by label.
+    providerOnlyLabels: Map<string, Funding>;
+    unmapped: Funding;
+    blank: Funding;
 };
+
+function emptyFunding(): Funding {
+    return { cashUsd: 0, creditUsd: 0 };
+}
+
+function addFunding(target: Funding, cashUsd: number, creditUsd: number) {
+    target.cashUsd += cashUsd;
+    target.creditUsd += creditUsd;
+}
+
+function hasFunding(funding: Funding): boolean {
+    return Math.abs(funding.cashUsd) + Math.abs(funding.creditUsd) > ACTIVE_USD;
+}
 
 function getOrInit<K, V>(map: Map<K, V>, key: K, make: () => V): V {
     const current = map.get(key);
@@ -139,6 +166,10 @@ function providerMonth(
         cashUsd: 0,
         creditUsd: 0,
         providerModels: new Map(),
+        sharedLabels: new Map(),
+        providerOnlyLabels: new Map(),
+        unmapped: emptyFunding(),
+        blank: emptyFunding(),
     }));
 }
 
@@ -223,17 +254,32 @@ function modelFundingAllocation(
     };
 }
 
+// Provider cost that no Pollen model row owns. It stays visible under the
+// reason it could not be joined instead of being spread across models.
+function residualRow(
+    model: string,
+    status: ModelAllocationStatus,
+    funding: Funding,
+): ModelAllocationRow {
+    return {
+        model,
+        status,
+        paidPollenUsd: null,
+        questPollenUsd: null,
+        retainedPaidUsd: null,
+        pollenMeterUsd: null,
+        ...nullFundingFields(),
+        providerCashUsd: funding.cashUsd,
+        providerCreditUsd: funding.creditUsd,
+        providerUsageUsd: funding.cashUsd + funding.creditUsd,
+    };
+}
+
 function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
-    let matchedCash = 0;
-    let matchedCredit = 0;
     const models = [...entry.pollenModels.values()].map(
         (model): ModelAllocationRow => {
             const funding = entry.providerModels.get(model.model);
-            if (funding) {
-                matchedCash += funding.cashUsd;
-                matchedCredit += funding.creditUsd;
-                return modelFundingAllocation(model, funding);
-            }
+            if (funding) return modelFundingAllocation(model, funding);
             return {
                 model: model.model,
                 status: entry.hasProvider ? "unallocated" : "missing provider",
@@ -245,24 +291,39 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
             };
         },
     );
-    const cash = entry.cashUsd - matchedCash;
-    const credit = entry.creditUsd - matchedCredit;
-    if (
-        entry.hasProvider &&
-        (!entry.hasPollen || Math.abs(cash) + Math.abs(credit) > ACTIVE_USD)
-    ) {
-        models.push({
-            model: "Unallocated vendor usage",
-            status: "unallocated",
-            paidPollenUsd: null,
-            questPollenUsd: null,
-            retainedPaidUsd: null,
-            pollenMeterUsd: null,
-            ...nullFundingFields(),
-            providerCashUsd: cash,
-            providerCreditUsd: credit,
-            providerUsageUsd: cash + credit,
-        });
+    for (const [model, funding] of entry.providerModels) {
+        if (!entry.pollenModels.has(model)) {
+            models.push(residualRow(model, "provider only", funding));
+        }
+    }
+    for (const [label, funding] of entry.providerOnlyLabels) {
+        models.push(residualRow(label, "provider only", funding));
+    }
+    for (const [label, shared] of entry.sharedLabels) {
+        models.push(
+            residualRow(
+                `${label} = ${shared.models.join(" + ")}`,
+                "shared upstream",
+                shared,
+            ),
+        );
+    }
+    if (hasFunding(entry.unmapped)) {
+        models.push(
+            residualRow("Needs model mapping", "needs mapping", entry.unmapped),
+        );
+    }
+    if (hasFunding(entry.blank)) {
+        models.push(
+            residualRow(
+                "Missing cost breakdown",
+                "missing breakdown",
+                entry.blank,
+            ),
+        );
+    }
+    if (entry.hasProvider && models.length === 0) {
+        models.push(residualRow("No Pollen usage", "provider only", entry));
     }
     return models.sort(
         (a, b) =>
@@ -274,8 +335,9 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     );
 }
 
-// Join only canonical model IDs. Keep unmatched costs separate; a missing model
-// must never redistribute the exact costs of another model.
+// Join provider labels to Pollen models only through registry ids, aliases
+// within the same provider, and the reviewed label table. Keep unmatched costs
+// separate; a missing model must never redistribute another model's costs.
 export function modelReconcileRows(data: Data): ModelReconcileRow[] {
     const entries = new Map<string, ProviderMonth>();
 
@@ -283,7 +345,9 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         if (!MONTH_KEY.test(row.month) || row.month < WINDOW_START) continue;
         const entry = providerMonth(entries, row.month, row.vendor);
         entry.hasPollen = true;
-        const modelName = row.model.trim() || "Unassigned Pollen model";
+        const modelName =
+            canonicalPollenModel(entry.vendor, row.model) ||
+            "Unassigned Pollen model";
         const model = getOrInit(entry.pollenModels, modelName, () => ({
             model: modelName,
             paidPollenUsd: 0,
@@ -322,14 +386,66 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         const creditUsd = opCloudCreditBurnUsd(row);
         entry.cashUsd += cashUsd;
         entry.creditUsd += creditUsd;
-        const model = row.model.trim();
-        if (model) {
-            const funding = getOrInit(entry.providerModels, model, () => ({
-                cashUsd: 0,
-                creditUsd: 0,
-            }));
-            funding.cashUsd += cashUsd;
-            funding.creditUsd += creditUsd;
+        let resolution = resolveLedgerLabel(entry.vendor, row.model);
+        // A retired model id is gone from the registry, but Pollen still
+        // names it; the exact name is still an exact join.
+        if (
+            resolution.kind === "unmapped" &&
+            entry.pollenModels.has(resolution.label)
+        ) {
+            resolution = { kind: "model", model: resolution.label };
+        }
+        // A label listed for several models is shared only in a month where
+        // more than one of them was actually metered on this vendor.
+        if (resolution.kind === "shared") {
+            const metered = resolution.models.filter((model) =>
+                entry.pollenModels.has(model),
+            );
+            if (metered.length === 1) {
+                resolution = { kind: "model", model: metered[0] };
+            } else if (metered.length > 1) {
+                resolution = { kind: "shared", models: metered };
+            }
+        }
+        switch (resolution.kind) {
+            case "model":
+                addFunding(
+                    getOrInit(
+                        entry.providerModels,
+                        resolution.model,
+                        emptyFunding,
+                    ),
+                    cashUsd,
+                    creditUsd,
+                );
+                break;
+            case "shared":
+                addFunding(
+                    getOrInit(entry.sharedLabels, row.model.trim(), () => ({
+                        ...emptyFunding(),
+                        models: resolution.models,
+                    })),
+                    cashUsd,
+                    creditUsd,
+                );
+                break;
+            case "provider-only":
+                addFunding(
+                    getOrInit(
+                        entry.providerOnlyLabels,
+                        resolution.label,
+                        emptyFunding,
+                    ),
+                    cashUsd,
+                    creditUsd,
+                );
+                break;
+            case "unmapped":
+                addFunding(entry.unmapped, cashUsd, creditUsd);
+                break;
+            case "blank":
+                addFunding(entry.blank, cashUsd, creditUsd);
+                break;
         }
     }
 

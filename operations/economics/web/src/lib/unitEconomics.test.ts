@@ -120,7 +120,7 @@ describe("unitEconomicsRows", () => {
         expect(modelRows.map((row) => row.model)).toEqual([
             "claude",
             "llama",
-            "Unallocated vendor usage",
+            "Needs model mapping",
         ]);
 
         for (const provider of providerRows) {

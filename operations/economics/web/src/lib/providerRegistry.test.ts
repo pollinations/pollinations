@@ -1,4 +1,8 @@
 import { describe, expect, it } from "vitest";
+import {
+    getModels,
+    getRegistryModelDefinition,
+} from "../../../../../shared/registry/registry";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
@@ -111,6 +115,43 @@ describe("provider registry", () => {
         expect(providerMeteringBasis("bedrock")).toBe("mixed");
         expect(providerMeteringBasis("inferenceport")).toBe("direct");
         expect(providerMeteringBasis("new-provider")).toBe("unmapped");
+    });
+
+    it("maps every reviewed provider label to registry model ids", () => {
+        const known = new Set<string>(
+            getModels().flatMap((id) => [
+                id,
+                ...getRegistryModelDefinition(id).aliases,
+            ]),
+        );
+        let entries = 0;
+        for (const provider of PROVIDER_REGISTRY) {
+            for (const [label, target] of Object.entries(
+                provider.modelLabels ?? {},
+            )) {
+                entries += 1;
+                expect(label.trim()).toBe(label);
+                expect(label).not.toBe("");
+                if (target === null) continue;
+                const targets = Array.isArray(target) ? target : [target];
+                expect(targets.length).toBeGreaterThanOrEqual(
+                    Array.isArray(target) ? 2 : 1,
+                );
+                for (const model of targets) {
+                    expect(known.has(model), `${provider.id}: ${label}`).toBe(
+                        true,
+                    );
+                }
+            }
+        }
+
+        expect(entries).toBeGreaterThan(0);
+        expect(resolveProvider("azure")?.modelLabels).toMatchObject({
+            "Kontext Pro glbl Images": "kontext",
+        });
+        expect(resolveProvider("elevenlabs")?.modelLabels).toMatchObject({
+            eleven_v3: ["elevenlabs", "eleven-dialogue"],
+        });
     });
 
     it("resolves manually approved aliases and leaves unknown names visible", () => {

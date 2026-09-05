@@ -162,6 +162,19 @@ export function providerCostCheck(
     };
 }
 
+// Rows that carry provider cost no Pollen model owns.
+const RESIDUAL_STATUSES = new Set<ModelAllocationStatus>([
+    "unallocated",
+    "needs mapping",
+    "shared upstream",
+    "missing breakdown",
+    "provider only",
+]);
+
+function isResidual(model: ModelAllocationRow): boolean {
+    return RESIDUAL_STATUSES.has(model.status);
+}
+
 function modelNetCash(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
@@ -169,7 +182,7 @@ function modelNetCash(
     if (model.netCashContributionUsd != null) {
         return model.netCashContributionUsd;
     }
-    if (parent.status !== "both sources" || model.status !== "unallocated") {
+    if (parent.status !== "both sources" || !isResidual(model)) {
         return null;
     }
 
@@ -187,7 +200,7 @@ function modelEconomicContribution(
     if (model.retainedPaidUsd != null && model.providerUsageUsd != null) {
         return model.retainedPaidUsd - model.providerUsageUsd;
     }
-    if (parent.status !== "both sources" || model.status !== "unallocated") {
+    if (parent.status !== "both sources" || !isResidual(model)) {
         return null;
     }
 
@@ -205,7 +218,7 @@ function modelMeterGap(
     if (model.meterGapUsd != null) return model.meterGapUsd;
     if (
         parent.status === "both sources" &&
-        model.status === "unallocated" &&
+        isResidual(model) &&
         model.providerUsageUsd != null &&
         model.paidPollenUsd == null &&
         model.questPollenUsd == null

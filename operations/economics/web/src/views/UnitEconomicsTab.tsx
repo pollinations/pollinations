@@ -125,7 +125,7 @@ function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
               : "text-theme-text-strong";
     const explanation =
         check.kind === "provider-level"
-            ? "Model costs require an exact model match in the vendor ledger. Unmatched costs stay unallocated; check totals on the vendor row."
+            ? "Model costs join through registry ids, same-provider aliases, and reviewed provider labels. Unjoined cost stays visible as needs mapping, shared upstream, or missing breakdown; check totals on the vendor row."
             : check.kind === "missing-mapping"
               ? "Add this vendor to the canonical registry before interpreting its economics."
               : check.kind === "missing-source"
@@ -613,7 +613,7 @@ function UnitEconomicsTable({
                                 className={GROUP_BORDER}
                                 {...headerProps("providerCashUsd")}
                             >
-                                <HeaderHint hint="Vendor usage paid with real cash. Model costs require an exact ledger model match; unmatched costs remain unallocated.">
+                                <HeaderHint hint="Vendor usage paid with real cash. Model costs join through registry ids, same-provider aliases, and reviewed provider labels; unjoined cost stays in named residual rows.">
                                     Cash
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -629,7 +629,7 @@ function UnitEconomicsTable({
                                 align="right"
                                 {...headerProps("providerCreditUsd")}
                             >
-                                <HeaderHint hint="Vendor usage funded with consumed credits. Model costs require an exact ledger model match; unmatched costs remain unallocated.">
+                                <HeaderHint hint="Vendor usage funded with consumed credits. Model costs join through registry ids, same-provider aliases, and reviewed provider labels; unjoined cost stays in named residual rows.">
                                     Credit
                                 </HeaderHint>
                             </TableHeaderCell>

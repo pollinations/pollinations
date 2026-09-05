@@ -1,0 +1,35 @@
+{
+  "pr_number": 14360,
+  "title": "feat: add structured managed-agent Responses output",
+  "author": "karanray06",
+  "url": "https://github.com/pollinations/pollinations/pull/14360",
+  "merged_at": "2026-09-05T20:36:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Builds on merged prerequisites #14479 (single-API registration) and #14491 (Workers runtime tests); no registration or migration changes in this PR.\n- Adds ordered assistant/MCP output, lifecycle SSE events, and stateless history replay; preserves Chat tool results and media links through the shared adapter.\n- Keeps reasoning effort; rejects unsupported managed-agent reasoning summaries with HTTP 400.\n- Preserves strict usage validation and per-child billing. Staging verified Responses/Chat JSON+SSE, MCP/replay, implicit/explicit/system-prompt caching, OpenRouter, and 18 usage fault/control probes. Wallet debit exactly matched 25 charges (0.02658924 Pollen); all 14 failed calls were unbilled and managed wrappers cost zero.\n- Latest main integrated; CI green. Staging migration/rollback rehearsed and all temporary resources removed. Two Mistral probes hit upstream rate limits; Gemini/OpenRouter passed. A pre-existing staging agent with obsolete connected-apps configuration remains unrelated. Production deployment is separate.\n\nFixes #14243",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Agents, neatly arranged",
+    "blurb": "Managed agents now leave a properly ordered trail: assistant output, MCP calls, lifecycle events, and history all land where they should. Even the receipts survived the trip, which is unusually civilized for a distributed system.",
+    "summary": "Added structured managed-agent output to the Responses API, including ordered assistant and MCP results, lifecycle SSE events, stateless history replay, preserved Chat tool/media results, and HTTP 400 validation for unsupported reasoning summaries.",
+    "impact": "Developers can now run managed agents through Responses or Chat and reliably consume replayable JSON/SSE output, MCP activity, media links, strict usage data, and per-child billing without wrapper charges.",
+    "keywords": [
+      "managed-agents",
+      "responses-api",
+      "mcp",
+      "sse",
+      "chat",
+      "billing",
+      "streaming"
+    ],
+    "visual_concept": "A cozy agent-runtime garden where outputs travel in a clearly ordered path: assistant messages as glowing letter tiles, MCP tool results as small labeled parcels, and SSE lifecycle sparks flowing through a retro terminal. Polli acts as the calm coordinator with a tiny clipboard, while the eager monitor robot watches the ordered event stream and code-plants grow from the validated usage receipts.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian visor and arranging glowing assistant-message tiles and MCP tool-result parcels into an orderly stream beside a lime green (#ecf874) CRT terminal; a chunky monitor robot happily watches lifecycle sparkles flow past code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"ORDERED OUTPUT\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14360.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny librarian visor and arranging glowing assistant-message tiles and MCP tool-result parcels into an orderly stream beside a lime green (#ecf874) CRT terminal; a chunky monitor robot happily watches lifecycle sparkles flow past code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"ORDERED OUTPUT\"."
+  },
+  "generated_at": "2026-09-05T20:37:35.429089+00:00"
+}

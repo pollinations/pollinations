@@ -429,8 +429,20 @@ async function fakePortkeyResponse(request: Request) {
         )
             ? `data: ${JSON.stringify({ ...usageEvent, usage: { prompt_tokens: 7 } })}\n\n`
             : "";
+        const earlyUsageChunk = prompt.includes("vcr early usage")
+            ? `data: ${JSON.stringify({
+                  ...streamEvent,
+                  usage: prompt.includes("partial")
+                      ? { prompt_tokens: 7 }
+                      : {
+                            prompt_tokens: 7,
+                            completion_tokens: 0,
+                            total_tokens: 7,
+                        },
+              })}\n\n`
+            : "";
         return new Response(
-            `data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}${invalidUsageChunk}data: [DONE]\n\n`,
+            `${earlyUsageChunk}data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}${invalidUsageChunk}data: [DONE]\n\n`,
             {
                 headers: {
                     "content-type": "text/event-stream; charset=utf-8",
@@ -843,6 +855,49 @@ test.for([
         error_code: "usage_missing",
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test.for([
+    "partial",
+    "valid",
+])("chat bills final usage after %s early usage", async (kind, { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            stream: true,
+            messages: [{ role: "user", content: `vcr early usage ${kind}` }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("[DONE]");
+    expect(stream).not.toContain("usage_missing");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: true,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+    expect(event.totalPrice).toBeGreaterThan(0);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(0);
+    const balanceAfter = await getUserBalance(db, caller.userId);
+    expect(balanceBefore.packBalance - balanceAfter.packBalance).toBeCloseTo(
+        event.totalPrice,
+        12,
+    );
 });
 
 test("Chat uses a native Responses target and preserves billing usage", async ({

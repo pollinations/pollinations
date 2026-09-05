@@ -869,6 +869,26 @@ describe("Chat Completions stream usage", () => {
         ).toThrow(/omitted terminal usage/);
     });
 
+    it("keeps early valid usage when later chunks omit it or use null", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\ndata: {"choices":[]}\n\ndata: {"usage":null}\n\ndata: [DONE]\n\n',
+            ),
+        );
+        expect(() => validator.finish()).not.toThrow();
+    });
+
+    it("passes through explicit errors even alongside partial usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"usage":{"prompt_tokens":2},"error":{"message":"provider failed"}}\n\ndata: [DONE]\n\n',
+            ),
+        );
+        expect(() => validator.finish()).not.toThrow();
+    });
+
     it("rejects a stream that ends before terminal usage", () => {
         const validator = createChatStreamUsageValidator();
         validator.feed(

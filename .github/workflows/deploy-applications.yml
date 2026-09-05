@@ -68,6 +68,8 @@ jobs:
             APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ name }) => !name.endsWith("-mcp"))))' "$APPS")
           fi
 
+          APPS=$(node -e 'const apps = JSON.parse(process.argv[1]); process.stdout.write(JSON.stringify(apps.filter(({ path }) => path !== "apps/polli")))' "$APPS")
+
           if [ "$APPS" = "[]" ]; then
             echo "No deployable application changes detected"
             echo "skip=true" >> "$GITHUB_OUTPUT"

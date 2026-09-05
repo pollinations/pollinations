@@ -340,23 +340,20 @@ export async function testCommunityTranscriptionEndpoint({
     };
 }
 
-// Speech (TTS) endpoints return binary audio rather than JSON, so the probe
-// reads the raw response body and validates the audio content type. The short
-// sample text is the only thing billed — characters against the completion
-// audio column, mirroring the first-party TTS models.
-const SAMPLE_SPEECH_INPUT = "Hello.";
-
+// Speech (TTS) endpoints bill the caller's input by character against the
+// same completion-audio fields the first-party TTS models use, so the probe
+// meters the request text it sent rather than anything in the response. What
+// the probe must prove is only that the endpoint answers a standard
+// OpenAI-shaped TTS request with real binary audio.
 export async function testCommunitySpeechEndpoint({
     baseUrl,
     bearerToken,
     model,
 }: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
-    let response: Response;
-    try {
-        // Same redirect and timeout policy as fetchJson: the base URL is
-        // validated before we fetch and following redirects would let the
-        // endpoint bounce the probe to an unvalidated destination.
-        response = await fetch(communityAudioSpeechUrl(baseUrl), {
+    const input = "Pollinations speech endpoint test.";
+    const response = await fetchCommunityAudio(
+        communityAudioSpeechUrl(baseUrl),
+        {
             method: "POST",
             headers: {
                 ...authorizationHeaders(bearerToken),
@@ -364,34 +361,24 @@ export async function testCommunitySpeechEndpoint({
             },
             body: JSON.stringify({
                 model,
-                input: SAMPLE_SPEECH_INPUT,
+                input,
                 voice: "alloy",
                 response_format: "mp3",
             }),
-            redirect: "manual",
-            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
-        });
-    } catch {
-        throw new Error("Endpoint request timed out or could not connect");
-    }
+        },
+    );
 
     if (!response.ok) {
-        const body = parseJson(
-            await readResponseText(
-                response,
+        // Error bodies are JSON on OpenAI-compatible endpoints; surface the
+        // upstream message so a wrong voice or format is diagnosable.
+        const text = new TextDecoder().decode(
+            await readResponseBytes(
+                response.clone(),
                 MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
                 () => new Error("Endpoint response is too large"),
             ),
         );
-        throw new Error(endpointErrorMessage(response.status, body));
-    }
-
-    const contentType = (response.headers.get("content-type") ?? "")
-        .split(";")[0]
-        .trim()
-        .toLowerCase();
-    if (!contentType.startsWith("audio/")) {
-        throw new Error("Endpoint did not respond with audio content");
+        throw new Error(endpointErrorMessage(response.status, parseJson(text)));
     }
 
     const bytes = await readResponseBytes(
@@ -399,14 +386,37 @@ export async function testCommunitySpeechEndpoint({
         MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
         () => new Error("Endpoint response is too large"),
     );
-    if (bytes.byteLength === 0) {
-        throw new Error("Endpoint responded with empty audio");
+    const contentType =
+        response.headers.get("content-type")?.split(";")[0]?.trim() ?? "";
+    if (!contentType.startsWith("audio/") || bytes.byteLength === 0) {
+        throw new Error(
+            "Endpoint did not return binary audio (expected an audio/* response body)",
+        );
     }
-
+    // No upstream usage object to relay: the gateway meters the request text,
+    // so the probe reports the same shape the request path will store.
     return {
-        usage: { characters: SAMPLE_SPEECH_INPUT.length },
-        billableUsage: { completionAudioTokens: SAMPLE_SPEECH_INPUT.length },
+        usage: { completionAudioTokens: input.length },
+        billableUsage: { completionAudioTokens: input.length },
     };
+}
+
+async function fetchCommunityAudio(
+    url: string,
+    init: RequestInit,
+): Promise<Response> {
+    try {
+        // Same redirect posture as fetchJson: the base URL is validated
+        // before we fetch, so following redirects would let the probe bounce
+        // to an unvalidated destination.
+        return await fetch(url, {
+            ...init,
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
 }
 
 export async function testCommunityEmbeddingEndpoint({

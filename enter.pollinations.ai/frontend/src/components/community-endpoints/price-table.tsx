@@ -343,11 +343,11 @@ export const BASE_TRANSCRIPTION_PRICE_KEYS: PriceFieldKey[] = [
     "promptAudioPrice",
 ];
 
-// Speech (TTS) models bill generated audio per 1M input characters against
-// the completion-audio price, like the first-party TTS models.
-export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
-
 export const BASE_VIDEO_PRICE_KEYS: PriceFieldKey[] = ["completionVideoPrice"];
+
+// Speech (TTS) models bill the input text per character against the
+// completion-audio price.
+export const BASE_SPEECH_PRICE_KEYS: PriceFieldKey[] = ["completionAudioPrice"];
 
 export function basePriceKeysForModality(
     modality: CommunityEndpointModality,

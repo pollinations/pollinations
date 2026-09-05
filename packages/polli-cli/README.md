@@ -95,7 +95,7 @@ polli usage --daily          # daily spend
 polli earnings               # developer earnings (default 30 days, --days up to 90)
 polli quests --claimable     # only rewards ready to claim
 polli agents list            # managed prompt agents
-polli my-models list         # invite-only community text, image, transcription, and speech models
+polli my-models list         # invite-only community text, image, and transcription models
 ```
 
 Manage agents with API-shaped JSON config files plus their callable model name

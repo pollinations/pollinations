@@ -47,7 +47,7 @@ Return one completed MP4 within 300 seconds as `b64_json` or a public `url`:
 
 Pollinations sends no upstream model id and bills the accepted request duration. Inline and downloaded responses are limited to 20 MB. Do not return an async job id; polling must finish inside the publisher endpoint before it responds.
 
-Text-to-speech providers must implement `POST /v1/audio/speech`. Pollinations forwards `model`, `input`, `voice`, and `response_format` (when supplied by the caller) and streams the upstream binary audio response back unchanged, preserving its `Content-Type`. The registration test sends a short `input` with `voice: "alloy"` and `response_format: "mp3"` and expects a non-empty `audio/*` response. Speech models are billed per input character.
+Text-to-speech is synchronous and OpenAI-shaped. Pollinations calls your `/v1/audio/speech` with `{ model, input, voice, response_format }` and streams the returned binary audio back to the caller with its content type preserved. Registration sends a short sample and accepts any non-empty `audio/*` response. Billing charges the input text by character against your per-1M completion-audio price. Voice cloning, speech-to-speech, and timestamps are out of scope.
 
 Realtime and 3D endpoints cannot currently be registered through this workflow.
 
@@ -63,7 +63,6 @@ Public models appear in the model catalog and can be called by other Pollination
 - Image models use per-token pricing when the registration test finds valid OpenAI image usage; otherwise they use a fixed price per generated image.
 - Video models are priced from the requested duration in seconds.
 - Transcription models are priced from reported audio duration.
-- Speech models are priced per input character through the generated-audio column.
 - Embedding models use the prompt-token count reported by the upstream endpoint.
 - A zero price makes the public model free.
 
@@ -73,7 +72,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, transcription, speech, or embedding and enter the upstream base URL, model id, and bearer token. For a text model with native Responses support, also enter its exact Responses URL. For video, enter the exact generation URL and bearer token.
+3. Select text, image, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For a text model with native Responses support, also enter its exact Responses URL. For video, enter the exact generation URL and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
@@ -86,7 +85,7 @@ The upstream credential is used by Pollinations to proxy requests to your endpoi
 
 ## Register with the CLI
 
-The CLI manages text, image, video, transcription, speech, and embedding model registrations. Sign in, test the endpoint, then create the model:
+The CLI manages text, image, video, transcription, and embedding model registrations. Sign in, test the endpoint, then create the model:
 
 ```bash
 npx @pollinations/cli auth login
@@ -114,8 +113,6 @@ Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle
 For a text provider with native Responses support, add the exact URL with `--responses-url https://api.example.com/v1/responses`. Use `polli my-models update <id> --no-responses` to clear it. Pollinations does not derive or probe this URL: its presence declares the capability, and query parameters are preserved exactly.
 
 Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
-
-Speech models use `--modality speech` and are priced per input character. For example, `--completion-audio-price 0.00003` charges 30 Pollen per 1M input characters.
 
 ## Publishing Controls
 

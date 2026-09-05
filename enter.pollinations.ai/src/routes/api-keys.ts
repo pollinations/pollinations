@@ -19,6 +19,8 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -244,6 +246,16 @@ export const apiKeysRoutes = new Hono<Env>()
                 allowAccountKeysPermission: true,
                 defaultCreatedVia: createdVia,
             });
+
+            c.executionCtx.waitUntil(
+                checkQuestsForUser(c.env, user.id, [
+                    ACCOUNT_SETUP_QUEST_GROUP,
+                ]).catch((error) =>
+                    c.get("log").warn("API key quest check failed: {error}", {
+                        error,
+                    }),
+                ),
+            );
 
             return c.json(created);
         },

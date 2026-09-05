@@ -24,26 +24,17 @@ import {
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "../routes/transcription-response.ts";
 
-export type CommunityTranscriptionOptions = {
-    file: File;
-    language?: string;
-    prompt?: string;
-    responseFormat?: string;
-    temperature?: number;
-};
-
 export type CommunitySpeechOptions = {
     input: string;
     voice: string;
-    responseFormat?: string;
+    responseFormat: string;
 };
 
-// Community speech (TTS) endpoints speak the OpenAI `/v1/audio/speech`
-// contract: POST model/input/voice/response_format, get binary audio back.
-// The response body and its content type are passed straight through so the
-// audio format the endpoint produced (mp3, opus, wav, ...) reaches the caller
-// unchanged, and usage is billed by input characters the way the first-party
-// TTS models are.
+// Speech (TTS) forwards the standard OpenAI fields — model, input, voice,
+// response_format — and streams the upstream's binary audio back untouched,
+// preserving its content type. Billing meters the input text we sent (the
+// same character count first-party TTS stores in completionAudioTokens)
+// because a binary audio response carries no usage object to read.
 export async function callCommunitySpeechEndpoint(
     endpoint: CommunityEndpointRuntime,
     options: CommunitySpeechOptions,
@@ -51,15 +42,16 @@ export async function callCommunitySpeechEndpoint(
 ): Promise<Response> {
     // Managed agents are text-only, so a speech endpoint is always external.
     if (endpoint.type !== "proxy") {
-        throw new Error(
-            `Community speech endpoint '${endpoint.modelId}' is a managed agent`,
-        );
+        throw new UpstreamError(500 as ContentfulStatusCode, {
+            message: `Community speech endpoint '${endpoint.modelId}' is a managed agent`,
+        });
     }
     const bearerToken = await decryptSecret(
         endpoint.bearerTokenCiphertext,
         secret,
     );
     const upstreamUrl = communityAudioSpeechUrl(endpoint.baseUrl);
+    const inputCharacters = options.input.length;
 
     let response: Response;
     try {
@@ -75,9 +67,7 @@ export async function callCommunitySpeechEndpoint(
                 model: endpoint.upstreamModel,
                 input: options.input,
                 voice: options.voice,
-                ...(options.responseFormat
-                    ? { response_format: options.responseFormat }
-                    : {}),
+                response_format: options.responseFormat,
             }),
             redirect: "manual",
             signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
@@ -91,15 +81,11 @@ export async function callCommunitySpeechEndpoint(
     }
     response = await ensureUpstreamOk(response, upstreamUrl);
 
-    const contentType = (response.headers.get("content-type") ?? "")
-        .split(";")[0]
-        .trim()
-        .toLowerCase();
-    // The registration probe proved this endpoint returns audio; anything
-    // else here is a provider regression, not a free request.
+    const contentType =
+        response.headers.get("content-type")?.split(";")[0]?.trim() ?? "";
     if (!contentType.startsWith("audio/")) {
         throw new UpstreamError(502 as ContentfulStatusCode, {
-            message: `Community speech endpoint '${endpoint.modelId}' did not return audio content`,
+            message: `Community speech endpoint '${endpoint.modelId}' did not return binary audio (expected audio/*, got ${contentType || "no content type"})`,
             requestUrl: new URL(upstreamUrl),
         });
     }
@@ -110,11 +96,19 @@ export async function callCommunitySpeechEndpoint(
             "Content-Type": contentType,
             ...buildUsageHeaders(
                 endpoint.modelId,
-                createAudioTokenUsage(options.input.length),
+                createAudioTokenUsage(inputCharacters),
             ),
         },
     });
 }
+
+export type CommunityTranscriptionOptions = {
+    file: File;
+    language?: string;
+    prompt?: string;
+    responseFormat?: string;
+    temperature?: number;
+};
 
 export async function callCommunityTranscriptionEndpoint(
     endpoint: CommunityEndpointRuntime,

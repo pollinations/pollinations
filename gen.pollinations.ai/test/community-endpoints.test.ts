@@ -294,10 +294,15 @@ async function createEnterFrontendApi(): Promise<Hono<Env>> {
     );
 }
 
+const enterTestEnv = {
+    ...env,
+    GEN_BASE_URL: "https://gen.pollinations.ai",
+};
+
 async function fetchEnterApi(
     app: Hono<Env>,
     request: Request,
-    envOverride: typeof env = env,
+    envOverride: typeof env = enterTestEnv,
 ): Promise<Response> {
     const ctx = createExecutionContext();
     return app.fetch(request, envOverride, ctx);
@@ -770,15 +775,6 @@ describe("community endpoint helpers", () => {
         ).toBe("https://api.example.com/v1/audio/transcriptions");
     });
 
-    it("derives the OpenAI-compatible audio speech URL", () => {
-        expect(communityAudioSpeechUrl("https://api.example.com/v1")).toBe(
-            "https://api.example.com/v1/audio/speech",
-        );
-        expect(
-            communityAudioSpeechUrl("https://api.example.com/v1/audio/speech"),
-        ).toBe("https://api.example.com/v1/audio/speech");
-    });
-
     it("restricts community transcription models to the transcription endpoint", () => {
         const definition = communityModelDefinition({
             modelId: "voodoohop/transcription",
@@ -792,15 +788,30 @@ describe("community endpoint helpers", () => {
         ]);
     });
 
+    it("derives the OpenAI-compatible audio speech URL", () => {
+        expect(communityAudioSpeechUrl("https://api.example.com/v1")).toBe(
+            "https://api.example.com/v1/audio/speech",
+        );
+        expect(
+            communityAudioSpeechUrl("https://api.example.com/v1/audio/speech"),
+        ).toBe("https://api.example.com/v1/audio/speech");
+    });
+
     it("restricts community speech models to the speech endpoint", () => {
         const definition = communityModelDefinition({
-            modelId: "voodoohop/tts",
+            modelId: "voodoohop/speech",
             title: "Speech",
             description: null,
             modality: "speech",
             ...communityEndpointPrices({}),
         });
         expect(definition.supportedEndpoints).toEqual(["/v1/audio/speech"]);
+    });
+
+    it("advertises community speech on the existing public audio routes", () => {
+        expect(communityEndpointSupportedEndpoints("speech", ["text"])).toEqual(
+            ["/v1/audio/speech"],
+        );
     });
 
     it("advertises community videos on the existing public media routes", () => {
@@ -1183,13 +1194,13 @@ describe("community endpoint helpers", () => {
     });
 
     it("builds community speech models billed per input character", () => {
-        const modelId = "voodoohop/tts";
+        const modelId = "voodoohop/kokoro";
         const definition = communityModelDefinition({
             modelId,
             title: "Community Speech",
-            description: "Community text-to-speech model",
+            description: "Community speech model",
             modality: "speech",
-            ...communityEndpointPrices({ completionAudioPrice: 0.00003 }),
+            ...communityEndpointPrices({ completionAudioPrice: 0.00002 }),
         });
 
         expect(definition).toMatchObject({
@@ -1197,34 +1208,36 @@ describe("community endpoint helpers", () => {
             inputModalities: ["text"],
             outputModalities: ["audio"],
             supportedEndpoints: ["/v1/audio/speech"],
-            cost: { completionAudioTokens: 0.00003 },
+            cost: { completionAudioTokens: 0.00002 },
         });
         expect(definition).not.toHaveProperty("flatRate");
         expect(definition.cost).not.toHaveProperty("promptTextTokens");
+        // Prices are stored per token internally (the dashboard displays per
+        // 1M), matching the first-party TTS completion-audio fields.
         expect(
             calculateUsageBilling({
                 model: modelId,
-                usage: { completionAudioTokens: 60 },
+                usage: { completionAudioTokens: 1_000_000 },
                 servedBy: definition,
             }).price.totalPrice,
-        ).toBeCloseTo(0.00003 * 60, 10);
+        ).toBeCloseTo(20, 10);
     });
 
     it("keeps the speech price as the only billed bucket for its modality", () => {
         const definition = communityPriceDefinition(
-            communityEndpointPrices({ completionAudioPrice: 0.00003 }),
+            communityEndpointPrices({ completionAudioPrice: 0.00002 }),
             "speech",
         );
-        expect(definition).toEqual({ completionAudioTokens: 0.00003 });
+        expect(definition).toEqual({ completionAudioTokens: 0.00002 });
     });
 
-    it("bills speech characters against the per-1M completion audio column", () => {
+    it("prices speech audio per token against the shared completion-audio field", () => {
         const [field] = communityEndpointPriceFieldsForModality("speech");
         expect(field).toMatchObject({
             key: "completionAudioPrice",
             usageType: "completionAudioTokens",
             priceUnit: "million",
-            rawUsagePaths: ["characters"],
+            rawUsagePaths: ["completionAudioTokens"],
         });
     });
 
@@ -1268,152 +1281,6 @@ describe("community endpoint helpers", () => {
                     }),
                 ).toBe(false);
             }
-        });
-    });
-
-    describe("community speech endpoint forwarding", () => {
-        afterEach(() => {
-            vi.unstubAllGlobals();
-        });
-
-        const secret = "test-secret";
-
-        async function speechEndpoint(): Promise<CommunityEndpointRuntime> {
-            return {
-                type: "proxy",
-                id: "community-endpoint-id",
-                ownerUserId: "owner-id",
-                modelId: "voodoohop/tts",
-                name: "tts",
-                title: "TTS",
-                description: null,
-                modality: "speech",
-                imagePricing: "request",
-                inputModalities: null,
-                baseUrl: "https://api.example.com/v1",
-                upstreamModel: "tts-1",
-                visibility: "public",
-                paidOnly: false,
-                perUserRpm: null,
-                fallbacks: [],
-                hiddenAt: null,
-                hiddenReason: null,
-                bearerTokenCiphertext: await encryptSecret(
-                    "sk_saved_token",
-                    secret,
-                ),
-                ...communityEndpointPrices({ completionAudioPrice: 0.00003 }),
-            };
-        }
-
-        it("forwards the OpenAI speech contract and bills input characters", async () => {
-            const audioBytes = new Uint8Array([0xff, 0xf3, 0x40, 0xc0]);
-            const fetchMock = vi.fn(async (input, init) => {
-                const request = new Request(input, init);
-                expect(request.url).toBe(
-                    "https://api.example.com/v1/audio/speech",
-                );
-                expect(request.headers.get("authorization")).toBe(
-                    "Bearer sk_saved_token",
-                );
-                await expect(request.json()).resolves.toEqual({
-                    model: "tts-1",
-                    input: "Hello there.",
-                    voice: "alloy",
-                    response_format: "mp3",
-                });
-                return new Response(audioBytes, {
-                    status: 200,
-                    headers: { "content-type": "audio/mpeg" },
-                });
-            });
-            vi.stubGlobal("fetch", fetchMock);
-
-            const response = await callCommunitySpeechEndpoint(
-                await speechEndpoint(),
-                {
-                    input: "Hello there.",
-                    voice: "alloy",
-                    responseFormat: "mp3",
-                },
-                secret,
-            );
-            expect(response.status).toBe(200);
-            // The upstream audio format must survive to the caller.
-            expect(response.headers.get("content-type")).toBe("audio/mpeg");
-            expect(response.headers.get("x-model-used")).toBe("voodoohop/tts");
-            expect(
-                response.headers.get("x-usage-completion-audio-tokens"),
-            ).toBe("12");
-            expect(new Uint8Array(await response.arrayBuffer())).toEqual(
-                audioBytes,
-            );
-        });
-
-        it("omits response_format when the caller did not send one", async () => {
-            const fetchMock = vi.fn(async (input, init) => {
-                const request = new Request(input, init);
-                await expect(request.json()).resolves.toEqual({
-                    model: "tts-1",
-                    input: "Hi.",
-                    voice: "alloy",
-                });
-                return new Response(new Uint8Array([0x00, 0x01]), {
-                    status: 200,
-                    headers: { "content-type": "audio/ogg" },
-                });
-            });
-            vi.stubGlobal("fetch", fetchMock);
-
-            const response = await callCommunitySpeechEndpoint(
-                await speechEndpoint(),
-                { input: "Hi.", voice: "alloy" },
-                secret,
-            );
-            expect(response.status).toBe(200);
-            expect(response.headers.get("content-type")).toBe("audio/ogg");
-        });
-
-        it("rejects upstream responses that are not audio", async () => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () => Response.json({ text: "not audio" })),
-            );
-
-            await expect(
-                callCommunitySpeechEndpoint(
-                    await speechEndpoint(),
-                    { input: "Hi.", voice: "alloy" },
-                    secret,
-                ),
-            ).rejects.toMatchObject({
-                status: 502,
-                message: expect.stringContaining(
-                    "did not return audio content",
-                ),
-            });
-        });
-
-        it("surfaces upstream failures", async () => {
-            vi.stubGlobal(
-                "fetch",
-                vi.fn(async () =>
-                    Response.json(
-                        { error: { message: "no such voice" } },
-                        { status: 404 },
-                    ),
-                ),
-            );
-
-            await expect(
-                callCommunitySpeechEndpoint(
-                    await speechEndpoint(),
-                    { input: "Hi.", voice: "alloy" },
-                    secret,
-                ),
-            ).rejects.toMatchObject({
-                message: expect.stringContaining("no such voice"),
-            });
         });
     });
 
@@ -2220,6 +2087,200 @@ describe("community endpoint helpers", () => {
         });
     });
 
+    describe("community speech endpoint billing", () => {
+        afterEach(() => {
+            vi.unstubAllGlobals();
+        });
+
+        const secret = "test-secret";
+        const TEST_MP3_BYTES = [73, 68, 51, 3, 4, 16, 0, 0, 0, 0];
+
+        async function speechEndpoint(): Promise<CommunityEndpointRuntime> {
+            return {
+                type: "proxy",
+                id: "community-speech-endpoint-id",
+                ownerUserId: "owner-id",
+                modelId: "voodoohop/kokoro",
+                name: "kokoro",
+                title: "Kokoro",
+                description: null,
+                modality: "speech",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                baseUrl: "https://api.example.com/v1",
+                upstreamModel: "kokoro-1",
+                visibility: "public",
+                paidOnly: false,
+                perUserRpm: null,
+                fallbacks: [],
+                hiddenAt: null,
+                hiddenReason: null,
+                bearerTokenCiphertext: await encryptSecret(
+                    "sk_saved_token",
+                    secret,
+                ),
+                ...communityEndpointPrices({ completionAudioPrice: 0.00002 }),
+            };
+        }
+
+        it("forwards the OpenAI speech fields and bills the input characters", async () => {
+            const fetchMock = vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                expect(request.url).toBe(
+                    "https://api.example.com/v1/audio/speech",
+                );
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                await expect(request.json()).resolves.toEqual({
+                    model: "kokoro-1",
+                    input: "Hello world",
+                    voice: "alloy",
+                    response_format: "mp3",
+                });
+                return new Response(new Uint8Array(TEST_MP3_BYTES), {
+                    headers: { "Content-Type": "audio/mpeg" },
+                });
+            });
+            vi.stubGlobal("fetch", fetchMock);
+
+            const response = await callCommunitySpeechEndpoint(
+                await speechEndpoint(),
+                {
+                    input: "Hello world",
+                    voice: "alloy",
+                    responseFormat: "mp3",
+                },
+                secret,
+            );
+
+            expect(response.status).toBe(200);
+            expect(response.headers.get("content-type")).toBe("audio/mpeg");
+            expect(response.headers.get(MODEL_USED_HEADER)).toBe(
+                "voodoohop/kokoro",
+            );
+            // 11 code points in "Hello world" — the same character count
+            // first-party TTS stores in completionAudioTokens.
+            expect(
+                Number(
+                    response.headers.get(
+                        USAGE_TYPE_HEADERS.completionAudioTokens,
+                    ),
+                ),
+            ).toBe(11);
+            expect(
+                Array.from(new Uint8Array(await response.arrayBuffer())),
+            ).toEqual(TEST_MP3_BYTES);
+        });
+
+        it("uses the existing UTF-16 character count for billing", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(
+                    async () =>
+                        new Response(new Uint8Array(TEST_MP3_BYTES), {
+                            headers: { "Content-Type": "audio/mpeg" },
+                        }),
+                ),
+            );
+
+            const response = await callCommunitySpeechEndpoint(
+                await speechEndpoint(),
+                {
+                    // First-party TTS uses JavaScript string length.
+                    input: `hi${String.fromCodePoint(0x1f30d)}`,
+                    voice: "alloy",
+                    responseFormat: "mp3",
+                },
+                secret,
+            );
+            expect(
+                Number(
+                    response.headers.get(
+                        USAGE_TYPE_HEADERS.completionAudioTokens,
+                    ),
+                ),
+            ).toBe(4);
+        });
+
+        it("propagates upstream speech failures", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json(
+                        { error: { message: "GPU unavailable" } },
+                        { status: 503 },
+                    ),
+                ),
+            );
+
+            await expect(
+                callCommunitySpeechEndpoint(
+                    await speechEndpoint(),
+                    {
+                        input: "Hello world",
+                        voice: "alloy",
+                        responseFormat: "mp3",
+                    },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 503,
+                message: expect.stringContaining("GPU unavailable"),
+            });
+        });
+
+        it("rejects a non-audio payload", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () =>
+                    Response.json({ data: [{ b64_json: "aGVsbG8=" }] }),
+                ),
+            );
+
+            await expect(
+                callCommunitySpeechEndpoint(
+                    await speechEndpoint(),
+                    {
+                        input: "Hello world",
+                        voice: "alloy",
+                        responseFormat: "mp3",
+                    },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: expect.stringContaining("did not return binary audio"),
+            });
+        });
+
+        it("maps connection failures to a provider error", async () => {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async () => {
+                    throw new Error("connection refused");
+                }),
+            );
+
+            await expect(
+                callCommunitySpeechEndpoint(
+                    await speechEndpoint(),
+                    {
+                        input: "Hello world",
+                        voice: "alloy",
+                        responseFormat: "mp3",
+                    },
+                    secret,
+                ),
+            ).rejects.toMatchObject({
+                status: 502,
+                message: expect.stringContaining(
+                    "timed out or could not connect",
+                ),
+            });
+        });
+    });
+
     it("builds Portkey gateway context with the saved token", async () => {
         const secret = "test-secret";
         const endpoint: CommunityEndpointRuntime = {
@@ -2874,7 +2935,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "runs managed Responses through a scoped token and bills the inner model once",
+    "runs managed Responses and Chat through Gen and bills each inner model call once",
     async () => {
         const ownerGithubUsername = `agent-owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `managed-${crypto.randomUUID().slice(0, 8)}`;
@@ -2907,14 +2968,15 @@ fixtureTest(
             user: { packBalance: 100 },
         });
         const balanceBefore = await getUserBalance(db, caller.userId);
+        const expectedInnerPrice = calculateUsageBilling({
+            model: "openai-fast",
+            usage: { promptTextTokens: 10, completionTextTokens: 5 },
+            servedBy: getRegistryModelDefinition("openai-fast"),
+        }).price.totalPrice;
         const tinybirdEvents: Record<string, unknown>[] = [];
+        const testClientIp = "203.0.113.42";
+        const runtimeClientIps: string[] = [];
         let runtimeToken = "";
-        const agentRuntimePath =
-            "../../enter.pollinations.ai/src/routes/agent-runtime.ts";
-        const { agentRuntimeRoutes } = (await import(agentRuntimePath)) as {
-            agentRuntimeRoutes: Hono<Env>;
-        };
-
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
@@ -2927,39 +2989,16 @@ fixtureTest(
                 }
                 if (
                     request.url ===
-                    communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL)
+                    "https://gen.pollinations.ai/v1/chat/completions"
                 ) {
+                    runtimeClientIps.push(
+                        request.headers.get("x-real-ip") ?? "",
+                    );
                     runtimeToken =
                         request.headers
                             .get("authorization")
                             ?.replace(/^Bearer\s+/i, "") ?? "";
-                    const context = createExecutionContext();
-                    const response = await agentRuntimeRoutes.fetch(
-                        new Request("https://enter.test/v1/responses", {
-                            method: request.method,
-                            headers: request.headers,
-                            body: await request.text(),
-                        }),
-                        { ...env, GEN_BASE_URL: "https://gen.internal" },
-                        context,
-                    );
-                    const body = await response.arrayBuffer();
-                    await waitOnExecutionContext(context);
-                    return new Response(body, response);
-                }
-                if (
-                    request.url === "https://gen.internal/v1/chat/completions"
-                ) {
-                    return fetchGen(
-                        new Request(
-                            "https://gen.pollinations.ai/v1/chat/completions",
-                            {
-                                method: request.method,
-                                headers: request.headers,
-                                body: await request.text(),
-                            },
-                        ),
-                    );
+                    return fetchGen(request);
                 }
                 if (isPortkeyChatCompletionsRequest(request)) {
                     return Response.json({
@@ -2994,6 +3033,7 @@ fixtureTest(
                 headers: {
                     Authorization: `Bearer ${caller.key}`,
                     "Content-Type": "application/json",
+                    "cf-connecting-ip": testClientIp,
                 },
                 body: JSON.stringify({ model: modelId, input: "hello" }),
             }),
@@ -3018,20 +3058,86 @@ fixtureTest(
             parentApiKeyId: caller.id,
             managedAgentId: agentId,
         });
+        expect(runtimeClientIps).toEqual([testClientIp]);
         const balanceAfter = await getUserBalance(db, caller.userId);
-        expect(balanceAfter.packBalance).toBeLessThan(
-            balanceBefore.packBalance,
+        expect(balanceAfter.packBalance).toBeCloseTo(
+            balanceBefore.packBalance - expectedInnerPrice,
+            8,
+        );
+        expect(
+            tinybirdEvents.filter(
+                (event) =>
+                    event.modelRequested === "openai-fast" &&
+                    event.isBilledUsage === true,
+            ),
+        ).toHaveLength(1);
+
+        const chatResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                    "cf-connecting-ip": testClientIp,
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    messages: [{ role: "user", content: "different prompt" }],
+                }),
+            }),
+        );
+        expect(chatResponse.status).toBe(200);
+        await expect(chatResponse.json()).resolves.toMatchObject({
+            object: "chat.completion",
+            choices: [
+                {
+                    message: {
+                        role: "assistant",
+                        content: "managed answer",
+                    },
+                },
+            ],
+            usage: {
+                prompt_tokens: 10,
+                completion_tokens: 5,
+                total_tokens: 15,
+            },
+        });
+        expect(runtimeClientIps).toEqual([testClientIp, testClientIp]);
+        const balanceAfterChat = await getUserBalance(db, caller.userId);
+        expect(balanceAfterChat.packBalance).toBeCloseTo(
+            balanceBefore.packBalance - 2 * expectedInnerPrice,
+            8,
         );
         const billedInnerEvents = tinybirdEvents.filter(
             (event) =>
                 event.modelRequested === "openai-fast" &&
                 event.isBilledUsage === true,
         );
-        expect(billedInnerEvents).toHaveLength(1);
-        expect(billedInnerEvents[0]).toMatchObject({
-            tokenCountPromptText: 10,
-            tokenCountCompletionText: 5,
-        });
+        expect(billedInnerEvents).toHaveLength(2);
+        for (const event of billedInnerEvents) {
+            expect(event).toMatchObject({
+                tokenCountPromptText: 10,
+                tokenCountCompletionText: 5,
+                totalPrice: expectedInnerPrice,
+            });
+        }
+        const outerEvents = tinybirdEvents.filter(
+            (event) => event.modelRequested === modelId,
+        );
+        expect(outerEvents).toHaveLength(2);
+        for (const event of outerEvents) {
+            expect(event).toMatchObject({
+                totalCost: 0,
+                totalPrice: 0,
+                devPrice: 0,
+            });
+        }
+        const outerRequestIds = outerEvents.map((event) => event.requestId);
+        expect(new Set(outerRequestIds).size).toBe(2);
+        expect(
+            billedInnerEvents.map((event) => event.parentRequestId).sort(),
+        ).toEqual([...outerRequestIds].sort());
     },
 );
 
@@ -5453,210 +5559,6 @@ fixtureTest(
 );
 
 fixtureTest(
-    "registers an OpenAI-compatible speech endpoint and bills it through the speech API",
-    async () => {
-        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
-        const modelName = `tts-${crypto.randomUUID().slice(0, 8)}`;
-        const ownerUserId = await createTestUser({
-            githubId: nextAllowedGithubId(),
-            githubUsername: ownerGithubUsername,
-        });
-        const sessionToken = `session-${crypto.randomUUID()}`;
-        await db.insert(sessionTable).values({
-            id: `session-${crypto.randomUUID()}`,
-            token: sessionToken,
-            userId: ownerUserId,
-            expiresAt: new Date(Date.now() + 60 * 60 * 1000),
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
-
-        const enterApi = await createEnterCommunityApi();
-        const speechUrl = "https://api.example.com/v1/audio/speech";
-        const audioBytes = new Uint8Array([0xff, 0xf3, 0x40, 0xc0, 0x00, 0x1f]);
-        const fetchMock = vi.fn(async (input, init) => {
-            const request = new Request(input, init);
-            if (request.url === speechUrl) {
-                expect(request.headers.get("authorization")).toBe(
-                    "Bearer sk_speech_upstream",
-                );
-                await expect(request.json()).resolves.toMatchObject({
-                    model: "tts-1",
-                    voice: "alloy",
-                });
-                return new Response(audioBytes, {
-                    status: 200,
-                    headers: { "content-type": "audio/mpeg" },
-                });
-            }
-            if (isBillingFetch(request)) {
-                return Response.json({ data: [] });
-            }
-            throw new Error(`Unexpected fetch: ${request.url}`);
-        });
-        vi.stubGlobal("fetch", fetchMock);
-
-        const registrationPayload = {
-            name: modelName,
-            title: "Community Speech Endpoint",
-            description: "OpenAI-compatible text-to-speech endpoint",
-            modality: "speech",
-            visibility: "public",
-            baseUrl: "https://api.example.com/v1",
-            upstreamModel: "tts-1",
-            bearerToken: "Bearer sk_speech_upstream",
-            completionAudioPrice: 0.00003,
-        };
-        const registerResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/community-endpoints", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
-                },
-                body: JSON.stringify(registrationPayload),
-            }),
-        );
-        expect(registerResponse.status).toBe(200);
-        const registered = (await registerResponse.json()) as {
-            id: string;
-            modelId: string;
-            modality: string;
-            inputModalities: string[];
-            baseUrl: string;
-            upstreamModel: string;
-            completionAudioPrice: number;
-        };
-        expect(registered).toMatchObject({
-            modelId: communityModelId(ownerGithubUsername, modelName),
-            modality: "speech",
-            inputModalities: ["text"],
-            baseUrl: "https://api.example.com/v1",
-            upstreamModel: "tts-1",
-            completionAudioPrice: 0,
-            pending: {
-                visibility: "public",
-                completionAudioPrice: 0.00003,
-            },
-        });
-        await maturePendingCommunityEndpoint(registered.id);
-
-        const testResponse = await fetchEnterApi(
-            enterApi,
-            new Request("http://localhost:3000/api/community-endpoints/test", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Cookie: await signedSessionCookie(sessionToken),
-                },
-                body: JSON.stringify({
-                    baseUrl: registered.baseUrl,
-                    bearerToken: "Bearer sk_speech_upstream",
-                    model: registered.upstreamModel,
-                    modality: "speech",
-                }),
-            }),
-        );
-        expect(testResponse.status).toBe(200);
-        await expect(testResponse.json()).resolves.toMatchObject({
-            message: "Endpoint responded with audio",
-            usage: { characters: 6 },
-            billableUsage: { completionAudioTokens: 6 },
-        });
-
-        const caller = await createTestApiKey({
-            user: { tierBalance: 100, packBalance: 0 },
-        });
-        const balanceBefore = await getUserBalance(db, caller.userId);
-        const speechResponse = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/audio/speech", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${caller.key}`,
-                },
-                body: JSON.stringify({
-                    model: registered.modelId,
-                    input: "Hello there.",
-                    voice: "alloy",
-                    response_format: "mp3",
-                }),
-            }),
-        );
-        expect(speechResponse.status).toBe(200);
-        // The upstream audio format must survive to the caller.
-        expect(speechResponse.headers.get("content-type")).toBe("audio/mpeg");
-        expect(speechResponse.headers.get("x-model-used")).toBe(
-            registered.modelId,
-        );
-        expect(
-            speechResponse.headers.get("x-usage-completion-audio-tokens"),
-        ).toBe("12");
-        expect(new Uint8Array(await speechResponse.arrayBuffer())).toEqual(
-            audioBytes,
-        );
-
-        const balanceAfter = await getUserBalance(db, caller.userId);
-        expect(balanceAfter.tierBalance).toBeLessThan(
-            balanceBefore.tierBalance,
-        );
-
-        const openaiModelsResponse = await fetchGen(
-            "https://gen.pollinations.ai/v1/models",
-        );
-        expect(openaiModelsResponse.status).toBe(200);
-        const openaiModels = (await openaiModelsResponse.json()) as {
-            data: {
-                id: string;
-                input_modalities?: string[];
-                output_modalities?: string[];
-                supported_endpoints?: string[];
-            }[];
-        };
-        const listedModel = openaiModels.data.find(
-            (model) => model.id === registered.modelId,
-        );
-        expect(listedModel?.input_modalities).toEqual(["text"]);
-        expect(listedModel?.output_modalities).toEqual(["audio"]);
-        expect(listedModel?.supported_endpoints).toEqual(
-            expect.arrayContaining(["/v1/audio/speech"]),
-        );
-
-        const audioModelsResponse = await fetchGen(
-            "https://gen.pollinations.ai/audio/models",
-        );
-        expect(audioModelsResponse.status).toBe(200);
-        const audioModels = (await audioModelsResponse.json()) as {
-            name: string;
-            category?: string;
-            community?: boolean;
-            input_modalities?: string[];
-            supported_endpoints?: string[];
-            pricing?: Record<string, string>;
-        }[];
-        const listedAudioModel = audioModels.find(
-            (model) => model.name === registered.modelId,
-        );
-        expect(listedAudioModel).toMatchObject({
-            name: registered.modelId,
-            category: "audio",
-            community: true,
-            input_modalities: ["text"],
-            pricing: { completionAudioTokens: "0.00003" },
-        });
-        expect(listedAudioModel?.supported_endpoints).toEqual(
-            expect.arrayContaining(["/v1/audio/speech"]),
-        );
-        expect(
-            fetchMock.mock.calls.filter(
-                ([input]) => new Request(input).url === speechUrl,
-            ),
-        ).toHaveLength(2);
-    },
-);
-
-fixtureTest(
     "registers an OpenAI-compatible embedding endpoint and bills it through embeddings APIs",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
@@ -6580,7 +6482,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     const enterEnv = {
         ...env,
         BETTER_AUTH_URL: "https://enter.test",
-        AGENT_RUNTIME_BASE_URL: env.AGENT_RUNTIME_BASE_URL,
+        GEN_BASE_URL: "https://gen.pollinations.ai",
     };
     const enterApi = await createEnterFrontendApi();
     const cookie = (await signedSessionCookie(sessionToken)).replace(
@@ -6628,7 +6530,7 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         name: modelName,
         description: null,
         visibility: "private",
-        baseUrl: env.AGENT_RUNTIME_BASE_URL,
+        baseUrl: "https://gen.pollinations.ai/v1",
         upstreamModel: agent.id,
     });
     const [storedAgent] = await db
@@ -6718,9 +6620,9 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     if (!registration) throw new Error("Agent listing was not created");
     expect(registration.id).toBe(agent.id);
     expect(registration.type).toBe("prompt_agent");
-    expect(registration.baseUrl).toBe(env.AGENT_RUNTIME_BASE_URL);
+    expect(registration.baseUrl).toBe("https://gen.pollinations.ai/v1");
     expect(registration.responsesUrl).toBe(
-        communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL),
+        "https://gen.pollinations.ai/v1/responses",
     );
     expect(registration.upstreamModel).toBe(agent.id);
     expect(registration).not.toHaveProperty("modality");
@@ -6780,8 +6682,8 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
     );
     expect(registryEntry?.communityEndpoint).toMatchObject({
         type: "prompt_agent",
-        baseUrl: env.AGENT_RUNTIME_BASE_URL,
-        responsesUrl: communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL),
+        baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+        responsesUrl: communityResponsesUrl(PROMPT_AGENT_BASE_URL_PLACEHOLDER),
         upstreamModel: agent.id,
     });
     // An agent listing carries no upstream credential of its own.
@@ -6818,9 +6720,11 @@ fixtureTest("creates, edits, routes, and deletes managed agents", async () => {
         managedAgentId: agent.id,
     });
     expect(gatewayContext.modelConfig).toMatchObject({
-        "custom-host": env.AGENT_RUNTIME_BASE_URL,
+        "custom-host": PROMPT_AGENT_BASE_URL_PLACEHOLDER,
         model: agent.id,
-        responsesEndpoint: communityResponsesUrl(env.AGENT_RUNTIME_BASE_URL),
+        responsesEndpoint: communityResponsesUrl(
+            PROMPT_AGENT_BASE_URL_PLACEHOLDER,
+        ),
     });
 
     const endpointAgentId = `endpoint-${crypto.randomUUID()}`;

@@ -32,18 +32,6 @@ describe("community endpoint price input", () => {
         ).toBe(true);
     });
 
-    it("allows publishing speech endpoints with only a generated-audio price", () => {
-        const visiblePriceKeys = new Set(basePriceKeysForModality("speech"));
-
-        expect([...visiblePriceKeys]).toEqual(["completionAudioPrice"]);
-        expect(
-            hasValidVisibleFormPrices(
-                { ...emptyForm, modality: "speech" },
-                visiblePriceKeys,
-            ),
-        ).toBe(true);
-    });
-
     it("accepts free and minimum prices", () => {
         expect(isValidPriceInput("")).toBe(true);
         expect(isValidPriceInput("0")).toBe(true);

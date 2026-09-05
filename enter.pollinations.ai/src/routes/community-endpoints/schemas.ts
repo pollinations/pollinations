@@ -113,7 +113,7 @@ const EndpointFieldsSchema = {
         .string()
         .url()
         .describe(
-            "OpenAI-compatible `/v1` base URL or full chat, image, audio, or transcription URL. For video, the exact generation URL.",
+            "OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL.",
         ),
     responsesUrl: z
         .string()

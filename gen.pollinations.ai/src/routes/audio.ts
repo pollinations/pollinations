@@ -2543,6 +2543,10 @@ async function dispatchAudioGeneration(
         text: string;
         voice: string;
         responseFormat: string;
+        // Present when this candidate is a community endpoint; speech models
+        // are dispatched through their upstream instead of a first-party
+        // provider below.
+        communityEndpoint?: FallbackCandidate["communityEndpoint"];
         seed?: number;
         duration?: number;
         seconds?: number;
@@ -2591,7 +2595,19 @@ async function dispatchAudioGeneration(
         falKey,
         stabilityApiKey,
         log,
+        communityEndpoint,
     } = opts;
+
+    if (communityEndpoint?.modality === "speech") {
+        return withSafetyHeaders(
+            c,
+            await callCommunitySpeechEndpoint(
+                communityEndpoint,
+                { input: text, voice, responseFormat },
+                c.env.BETTER_AUTH_SECRET,
+            ),
+        );
+    }
 
     if (model === "elevenmusic") {
         return withSafetyHeaders(
@@ -2812,27 +2828,12 @@ async function generateAudioFromSpeechRequest(
         ? await fetchReferenceAudio(reference_audio)
         : undefined;
 
-    return withAudioFallback(c, async (candidate) => {
-        // Community speech endpoints speak the OpenAI /v1/audio/speech
-        // contract directly and return the upstream audio format unchanged.
-        if (candidate.communityEndpoint) {
-            return withSafetyHeaders(
-                c,
-                await callCommunitySpeechEndpoint(
-                    candidate.communityEndpoint,
-                    {
-                        input: safeInput,
-                        voice,
-                        responseFormat: response_format,
-                    },
-                    c.env.BETTER_AUTH_SECRET,
-                ),
-            );
-        }
-        return dispatchAudioGeneration(c, candidate.id, {
+    return withAudioFallback(c, (candidate) =>
+        dispatchAudioGeneration(c, candidate.id, {
             text: safeInput,
             voice,
             responseFormat: response_format,
+            communityEndpoint: candidate.communityEndpoint,
             seed,
             duration,
             seconds,
@@ -2854,8 +2855,8 @@ async function generateAudioFromSpeechRequest(
             falKey: c.env.FAL_KEY,
             stabilityApiKey: c.env.STABILITY_API_KEY,
             log,
-        });
-    });
+        }),
+    );
 }
 
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {

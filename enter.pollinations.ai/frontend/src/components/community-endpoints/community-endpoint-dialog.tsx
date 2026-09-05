@@ -220,7 +220,7 @@ export function CommunityEndpointDialog({
                           : form.modality === "transcription"
                             ? "Endpoint responded, but did not return transcription text or usage"
                             : form.modality === "speech"
-                              ? "Endpoint responded, but did not return audio"
+                              ? "Endpoint responded, but did not return binary audio"
                               : "Endpoint responded, but did not return billable usage",
                 );
             }
@@ -509,7 +509,7 @@ export function CommunityEndpointDialog({
                             helper={
                                 form.modality === "video"
                                     ? "The exact URL Pollinations calls to generate a video."
-                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/audio URL."
+                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription/speech URL."
                             }
                             alignLabelRow
                         >
@@ -591,7 +591,7 @@ export function CommunityEndpointDialog({
                                             : form.modality === "transcription"
                                               ? "whisper-1"
                                               : form.modality === "speech"
-                                                ? "tts-1"
+                                                ? "kokoro"
                                                 : form.modality === "embedding"
                                                   ? "text-embedding-3-small"
                                                   : "gpt-4o-mini"

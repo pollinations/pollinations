@@ -39,6 +39,8 @@ export interface TransformOptions {
     additionalHeaders?: Record<string, string>;
     userApiKey?: string;
     portkeyGatewayUrl?: string;
+    /** Internal transport for managed prompt-agent Responses execution. */
+    responsesFetcher?: typeof fetch;
     jsonMode?: boolean;
     voice?: string;
     reasoning_effort?: string;

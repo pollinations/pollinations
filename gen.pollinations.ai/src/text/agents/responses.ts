@@ -14,7 +14,7 @@ import {
     type PromptAgentRuntime,
     runPromptAgent,
     streamPromptAgent,
-} from "./prompt-agent-runtime.ts";
+} from "./runtime.ts";
 
 export const PromptAgentResponsesRequestSchema =
     CreateResponseRequestSchema.extend({ model: z.string().uuid() });
@@ -243,12 +243,9 @@ function requestSettings(
     ) {
         invalidRequest("Invalid reasoning effort", "reasoning.effort");
     }
-    if (request.tools?.length) {
-        invalidRequest(
-            "Caller-provided tools are not supported by managed agents",
-            "tools",
-        );
-    }
+    // Caller tools are ignored, not rejected: an agent runs its own tools, and
+    // clients attach theirs unprompted. Open WebUI injects builtin tool specs
+    // into every chat sent from its UI, so rejecting made agents unusable there.
     if (request.tool_choice !== undefined) {
         invalidRequest(
             "Caller-provided tool choice is not supported by managed agents",

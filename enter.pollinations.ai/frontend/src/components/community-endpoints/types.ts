@@ -133,10 +133,6 @@ export type FallbackModelOption = {
  * Public community models from the model catalog, in dialog option form. The
  * catalog already excludes private and hidden models, and the server
  * re-validates modality and pricing on write.
- *
- * Speech and transcription models share the catalog's "audio" category, so the
- * modality is disambiguated by output: audio output means speech (TTS), text
- * output means transcription.
  */
 export function publicCommunityFallbackOptions(
     models: {
@@ -166,7 +162,9 @@ export function publicCommunityFallbackOptions(
                     : model.type === "video"
                       ? "video"
                       : model.type === "audio"
-                        ? model.outputModalities?.includes("audio")
+                        ? // Catalog type collapses both audio modalities: TTS
+                          // models output audio, speech-to-text outputs text.
+                          model.outputModalities?.includes("audio")
                             ? "speech"
                             : "transcription"
                         : model.type === "embedding"

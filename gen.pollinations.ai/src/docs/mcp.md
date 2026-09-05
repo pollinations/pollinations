@@ -15,6 +15,8 @@ then choose a server:
 | FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
 | Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
 | Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
+| Time | `https://gen.pollinations.ai/mcp/time` | Get the current time in any IANA timezone | [Source](https://github.com/pollinations/pollinations/tree/main/apps/robotic-robot-mcp) |
+| Run JS | `https://gen.pollinations.ai/mcp/run-js` | Run JavaScript in an isolated V8 sandbox | [Source](https://github.com/pollinations/pollinations/tree/main/apps/robotic-robot-mcp) |
 
 Send the key with every request:
 
@@ -71,7 +73,7 @@ claude mcp add --transport http pollinations \
 ```
 
 Run `/mcp` in Claude Code to verify the connection. Replace the name and URL
-with another endpoint from the table to use FFmpeg or Exa Search.
+with another endpoint from the table to use a different MCP server.
 
 ### Pollinations MCP
 
@@ -120,11 +122,20 @@ The Composio server discovers tools for the apps you ask to use. When an app is
 not connected, the agent can return a sign-in link. You can also manage
 connections from [MCP Connectors](https://enter.pollinations.ai/account#connectors).
 
+### Time MCP
+
+`time` returns the current date and time in UTC or a requested IANA timezone.
+
+### Run JS MCP
+
+`run-js` runs JavaScript in a network-disabled V8 isolate with selectable RAM and vCPU limits. Runtime is billed per MB-second at the rate shown for the selected vCPU tier.
+
 ### Billing and permissions
 
 Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
-selected model's listed rate.
+selected model's listed rate. The Time and Run JS owner receives 75% of each
+charge in the same Quest or Paid Pollen bucket used by the caller.
 
 An MCP server can only use models and account features allowed by the caller's
 key and cannot spend beyond that key's budget. Configure both in

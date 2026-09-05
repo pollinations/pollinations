@@ -1,5 +1,6 @@
 import { payerBucketToMeter } from "@shared/billing/balance.ts";
 import { handleBalanceDeduction } from "@shared/billing/track-helpers.ts";
+import { user as userTable } from "@shared/db/better-auth.ts";
 import { sendToTinybird } from "@shared/events.ts";
 import {
     type McpUsageReceipt,
@@ -19,7 +20,8 @@ import {
     type TinybirdEvent,
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
-import { drizzle } from "drizzle-orm/d1";
+import { eq } from "drizzle-orm";
+import { type DrizzleD1Database, drizzle } from "drizzle-orm/d1";
 import { type Context, Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
 import type { Env } from "@/env.ts";
@@ -46,7 +48,7 @@ function requestForMcp(
     const url = new URL(request.url);
     url.protocol = "https:";
     url.host = "mcp.internal";
-    url.pathname = "/";
+    url.pathname = server.proxyPath ?? "/";
     return new Request(url, {
         method: request.method,
         headers,
@@ -66,6 +68,29 @@ function responseForCaller(response: Response): Response {
     return result;
 }
 
+async function resolveOwnerReward(
+    db: DrizzleD1Database,
+    server: McpServerDefinition,
+) {
+    if (!server.ownerReward) return null;
+
+    const [owner] = await db
+        .select({ userId: userTable.id })
+        .from(userTable)
+        .where(eq(userTable.githubId, server.ownerReward.githubId))
+        .limit(1);
+    if (!owner) {
+        throw new Error(
+            `MCP owner GitHub ID ${server.ownerReward.githubId} is not linked to a Pollinations account`,
+        );
+    }
+
+    return {
+        userId: owner.userId,
+        rewardRate: server.ownerReward.rate,
+    };
+}
+
 async function settleUsage(
     c: Context<Env>,
     server: Extract<McpServerDefinition, { billing: "usage_receipt" }>,
@@ -77,6 +102,7 @@ async function settleUsage(
     let deduction: Awaited<ReturnType<typeof handleBalanceDeduction>> | null =
         null;
     try {
+        const ownerReward = await resolveOwnerReward(db, server);
         deduction = await handleBalanceDeduction({
             db: db as unknown as Parameters<
                 typeof handleBalanceDeduction
@@ -91,6 +117,7 @@ async function settleUsage(
             apiKeyReservedAmount: 0,
             byopClientKeyId: c.var.auth.apiKey?.byopClientKeyId,
             modelPaidOnly: false,
+            communityModelReward: ownerReward,
         });
     } catch (error) {
         c.var.log.error(
@@ -130,6 +157,11 @@ async function settleUsage(
         totalPrice: deduction?.billedPrice ?? 0,
         devPrice: usage.cost,
         markupRate: deduction?.markup?.markupRate ?? 0,
+        communityModelRewardUserId: deduction?.communityModelReward?.userId,
+        communityModelRewardRate:
+            deduction?.communityModelReward?.rewardRate ?? 0,
+        communityModelRewardAmount:
+            deduction?.communityModelReward?.credit ?? 0,
         errorResponseCode:
             usage.status >= 400 ? String(usage.status) : undefined,
         errorSource:

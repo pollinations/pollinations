@@ -3173,7 +3173,7 @@ fixtureTest.each(
 fixtureTest.each(
     ["responses", "chat/completions"].flatMap((route) =>
         [false, true].flatMap((stream) =>
-            (stream ? ["valid", "missing"] : ["valid"]).map((usageKind) => ({
+            ["valid", "missing", "malformed"].map((usageKind) => ({
                 route,
                 stream,
                 usageKind,
@@ -3354,6 +3354,14 @@ fixtureTest.each(
                                   prompt_tokens: 10,
                                   completion_tokens: 5,
                                   total_tokens: 15,
+                                  ...(modelCalls === 2 &&
+                                  usageKind === "malformed"
+                                      ? {
+                                            prompt_tokens_details: {
+                                                cache_write_tokens: -1,
+                                            },
+                                        }
+                                      : {}),
                               };
                     if (!stream)
                         return Response.json({

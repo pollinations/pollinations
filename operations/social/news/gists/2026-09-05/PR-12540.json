@@ -1,0 +1,36 @@
+{
+  "pr_number": 12540,
+  "title": "refactor(model3d): inline fal queue lifecycle",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/12540",
+  "merged_at": "2026-09-05T14:50:19Z",
+  "labels": [
+    "DEV-CHORE"
+  ],
+  "pr_body_excerpt": "- Removes the unused exported fal.ai job handle/state API and inlines its sole runFalJob lifecycle.\n- Refreshes against current main while retaining the API-key override, configurable poll limit, five-second waits, last-poll completion, and existing error handling.\n- Adds regression coverage for zero/exhausted poll limits, request ordering, delayed polling, and explicit credential forwarding; removes 51 net implementation lines.\n- Validated: all 45 model3d tests, Gen typecheck, repository-pinned Biome, and diff whitespace checks against main.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One queue, fewer crumbs",
+    "blurb": "The fal.ai 3D job queue tidied itself into one smaller lifecycle. Same patient five-second polling, fewer loose handles buzzing around.",
+    "summary": "Refactored the model3d fal.ai client by removing its unused exported job-handle API and inlining the sole runFalJob lifecycle, while preserving API-key overrides, configurable poll limits, five-second waits, final-poll completion, and error handling.",
+    "impact": "3D generation keeps the same fal.ai request and polling behavior, now backed by regression coverage for exhausted poll limits, request ordering, delayed polling, and explicit credential forwarding.",
+    "keywords": [
+      "model3d",
+      "fal.ai",
+      "queue",
+      "polling",
+      "refactor",
+      "tests"
+    ],
+    "visual_concept": "Depict a cozy garden-shed queue station where Polli organizes a single neat trail of fal.ai job tickets into a retro terminal, replacing several unused loose ticket holders. A small code-plant and five-second hourglass represent orderly delayed polling; Polli should look quietly pleased at the simpler setup.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, light blue translucent wings, and a tiny mechanic tool belt, neatly feeding one orderly line of job tickets into a lime green (#ecf874) glowing retro terminal while a small five-second hourglass and code-plants bloom beside it. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradient background, dark purple (#110518) outlines, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-12540.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blushes, a small smile, light blue translucent wings, and a tiny mechanic tool belt, neatly feeding one orderly line of job tickets into a lime green (#ecf874) glowing retro terminal while a small five-second hourglass and code-plants bloom beside it. Cozy 8-bit pixel art aesthetic, soft pastel mint-lavender-peach gradient background, dark purple (#110518) outlines, warm lighting, chunky retro sprites, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, emotionally warm."
+  },
+  "generated_at": "2026-09-05T14:51:37.033072+00:00"
+}

@@ -2854,6 +2854,29 @@ describe("trackResponse modelUsed", () => {
 });
 
 describe("trackResponse missing usage", () => {
+    it.each([
+        { choices: null },
+        { choices: [{ content_filter_results: "unrecognized metadata" }] },
+        { prompt_filter_results: [{}] },
+    ])("does not mistake valid usage for a failure because of unrelated metadata: %j", async (metadata) => {
+        const event = {
+            model: "openai",
+            ...metadata,
+            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
+        };
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(`data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(200);
+        expect(tracking.isBilledUsage).toBe(true);
+        expect(tracking.errorTracking).toBeUndefined();
+    });
+
     const emptyStream = () =>
         new Response("data: [DONE]\n\n", {
             headers: { "content-type": "text/event-stream" },

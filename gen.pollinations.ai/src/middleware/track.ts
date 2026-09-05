@@ -1313,6 +1313,10 @@ async function extractUsageAndContentFilterResultsStream(
 
     for await (const event of events) {
         const parseResult = EventSchema.safeParse(event);
+        // Optional choice/filter metadata must not invalidate genuine usage.
+        const usageResult = EventSchema.shape.usage.safeParse(
+            (event as { usage?: unknown } | null)?.usage,
+        );
         streamEvents.push(event);
 
         const incomingPromptFilterResults =
@@ -1333,15 +1337,14 @@ async function extractUsageAndContentFilterResultsStream(
             completionFilterResults,
         ]);
 
-        if (parseResult.data?.usage) {
+        if (usageResult.data) {
             if (usage) {
                 log.warn("Multiple usage objects found in event stream");
             }
-            usage = openaiUsageToUsage(parseResult.data.usage);
-            hasExplicitCacheHit = hasExplicitPromptCacheHit(
-                parseResult.data.usage,
-            );
-            model = parseResult.data?.model;
+            usage = openaiUsageToUsage(usageResult.data);
+            hasExplicitCacheHit = hasExplicitPromptCacheHit(usageResult.data);
+            const eventModel = (event as { model?: unknown } | null)?.model;
+            if (typeof eventModel === "string") model = eventModel;
         }
 
         const responsesUsage = getResponsesEventUsage(event);

@@ -356,7 +356,10 @@ function AppsPage() {
     const search = Route.useSearch();
     const { q } = search;
     const category = search.category;
-    const platform = listOf(APP_PLATFORMS, search.platform);
+    const platform = useMemo(
+        () => listOf(APP_PLATFORMS, search.platform),
+        [search.platform],
+    );
     const pollenPay = search.pollen;
     const sort = search.sort ?? "fresh";
     const navigate = useNavigate({ from: Route.fullPath });

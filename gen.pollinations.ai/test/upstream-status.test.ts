@@ -16,14 +16,11 @@ test.each([
     [413, "PAYLOAD_TOO_LARGE"],
     [426, "UPGRADE_REQUIRED"],
     [504, "GATEWAY_TIMEOUT"],
-] as const)(
-    "publishes a usable error code and message for %s",
-    (status, code) => {
-        expect(getErrorCode(status)).toBe(code);
-        expect(getDefaultErrorMessage(status)).not.toBe("UNKNOWN_ERROR");
-        expect(KNOWN_ERROR_STATUS_CODES).toContain(status);
-    },
-);
+] as const)("publishes a usable error code and message for %s", (status, code) => {
+    expect(getErrorCode(status)).toBe(code);
+    expect(getDefaultErrorMessage(status)).not.toBe("UNKNOWN_ERROR");
+    expect(KNOWN_ERROR_STATUS_CODES).toContain(status);
+});
 
 test("maps upstream payment failures to bad gateway", () => {
     expect(remapUpstreamStatus(402)).toBe(502);

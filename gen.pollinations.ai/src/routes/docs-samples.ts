@@ -80,6 +80,52 @@ const response = await client.chat.completions.create({
 console.log(response.choices[0].message.content);`,
         },
     ],
+    "post /v1/responses": [
+        {
+            label: "cURL",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/v1/responses \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"openai","input":"Hello!","store":false}'`,
+        },
+        {
+            label: "Streaming",
+            lang: "Shell",
+            source: `curl -N https://gen.pollinations.ai/v1/responses \\
+  -H "Authorization: Bearer YOUR_API_KEY" \\
+  -H "Content-Type: application/json" \\
+  -d '{"model":"openai","input":"Hello!","store":false,"stream":true}'`,
+        },
+        {
+            label: "Python",
+            lang: "Python",
+            source: `from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://gen.pollinations.ai/v1",
+    api_key="YOUR_API_KEY",
+)
+response = client.responses.create(
+    model="openai", input="Hello!", store=False,
+)
+print(response.output_text)`,
+        },
+        {
+            label: "JavaScript",
+            lang: "JavaScript",
+            source: `import OpenAI from "openai";
+
+const client = new OpenAI({
+  baseURL: "https://gen.pollinations.ai/v1",
+  apiKey: "YOUR_API_KEY",
+});
+const response = await client.responses.create({
+  model: "openai", input: "Hello!", store: false,
+});
+console.log(response.output_text);`,
+        },
+    ],
     "get /text/{prompt}": [
         {
             label: "cURL",

@@ -586,6 +586,71 @@ describe("Chat Completions over Responses", () => {
         expect(events.at(-1)).toBe("[DONE]");
     });
 
+    it("recovers each terminal item without duplicating streamed text", async () => {
+        mockStream([
+            'data: {"type":"response.output_text.delta","item_id":"msg_1","content_index":0,"delta":"First"}\n\n',
+            `data: ${JSON.stringify({
+                type: "response.completed",
+                response: {
+                    status: "completed",
+                    output: [
+                        {
+                            type: "message",
+                            id: "msg_1",
+                            content: [
+                                { type: "output_text", text: "First answer. " },
+                            ],
+                        },
+                        {
+                            type: "message",
+                            id: "msg_2",
+                            content: [
+                                { type: "output_text", text: "Second answer." },
+                            ],
+                        },
+                    ],
+                    usage: usage(),
+                },
+            })}\n\n`,
+        ]);
+        const events = await streamEvents(
+            await callChatViaResponses([{ role: "user", content: "Hi" }], {
+                model: "provider-model",
+                modelConfig,
+                stream: true,
+            }),
+        );
+        expect(
+            events
+                .flatMap((event) => event.choices ?? [])
+                .map((choice) => choice.delta?.content ?? "")
+                .join(""),
+        ).toBe("First answer. Second answer.");
+        expect(events.at(-1)).toBe("[DONE]");
+    });
+
+    it("preserves a provider's top-level stream error and omits success markers", async () => {
+        mockStream([
+            'event: error\ndata: {"type":"error","message":"Provider capacity exhausted","code":"rate_limit_exceeded","param":null,"sequence_number":3}\n\n',
+        ]);
+        const events = await streamEvents(
+            await callChatViaResponses([{ role: "user", content: "Hi" }], {
+                model: "provider-model",
+                modelConfig,
+                stream: true,
+            }),
+        );
+        expect(events).toEqual([
+            {
+                error: {
+                    message: "Provider capacity exhausted",
+                    code: "rate_limit_exceeded",
+                    type: "upstream_error",
+                },
+            },
+        ]);
+    });
+
     it("fails closed when non-streaming usage is absent", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({

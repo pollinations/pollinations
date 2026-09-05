@@ -41,8 +41,17 @@ export default defineConfig({
             output: {
                 // Markdown needs no manual chunk: it is reachable only from
                 // the legal routes, which autoCodeSplitting already splits.
-                manualChunks: {
-                    vendor: ["react", "react-dom", "@tanstack/react-router"],
+                // A function keeps the worker build from emitting an empty
+                // vendor chunk and catches react-dom/client, which the
+                // package-name form missed.
+                manualChunks(id) {
+                    if (
+                        /node_modules\/(react|react-dom|scheduler|@tanstack\/(react-router|router-core|history|store|react-store))\//.test(
+                            id,
+                        )
+                    ) {
+                        return "vendor";
+                    }
                 },
             },
         },

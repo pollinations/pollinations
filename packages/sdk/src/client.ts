@@ -1,3 +1,4 @@
+import { createParser } from "eventsource-parser";
 import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
     AccountBalance,
@@ -133,96 +134,6 @@ function stripKeyFromUrl(url: string): string {
     const urlObj = new URL(url);
     urlObj.searchParams.delete("key");
     return urlObj.toString();
-}
-
-interface SSEMessage {
-    data: string;
-}
-
-/** Incremental SSE decoder following event boundaries rather than network lines. */
-class SSEDecoder {
-    private buffer = "";
-    private data: string[] = [];
-
-    push(chunk: string, flush = false): SSEMessage[] {
-        this.buffer += chunk;
-        const messages: SSEMessage[] = [];
-
-        while (this.buffer.length > 0) {
-            const ending = this.nextLineEnding(flush);
-            if (!ending) break;
-            const line = this.buffer.slice(0, ending.index);
-            this.buffer = this.buffer.slice(ending.index + ending.length);
-            const message = this.processLine(line);
-            if (message) messages.push(message);
-        }
-
-        if (flush) {
-            if (this.buffer.length > 0) {
-                const message = this.processLine(this.buffer);
-                this.buffer = "";
-                if (message) messages.push(message);
-            }
-            const pending = this.dispatch();
-            if (pending) messages.push(pending);
-        }
-
-        return messages;
-    }
-
-    private nextLineEnding(
-        flush: boolean,
-    ): { index: number; length: number } | null {
-        for (let index = 0; index < this.buffer.length; index += 1) {
-            const character = this.buffer[index];
-            if (character === "\n") return { index, length: 1 };
-            if (character !== "\r") continue;
-            if (index + 1 === this.buffer.length && !flush) return null;
-            return {
-                index,
-                length: this.buffer[index + 1] === "\n" ? 2 : 1,
-            };
-        }
-        return null;
-    }
-
-    private processLine(line: string): SSEMessage | null {
-        if (line === "") return this.dispatch();
-        if (line.startsWith(":")) return null;
-
-        const separator = line.indexOf(":");
-        const field = separator < 0 ? line : line.slice(0, separator);
-        const rawValue = separator < 0 ? "" : line.slice(separator + 1);
-        const value = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
-        if (field === "data") {
-            // OpenAI-compatible streams commonly emit one JSON payload per
-            // data line without the blank SSE separator. Preserve legitimate
-            // multiline data until the accumulated JSON is complete.
-            const pending = this.hasCompleteData() ? this.dispatch() : null;
-            this.data.push(value);
-            return pending;
-        }
-        return null;
-    }
-
-    private hasCompleteData(): boolean {
-        if (this.data.length === 0) return false;
-        const data = this.data.join("\n").trim();
-        if (data === "[DONE]") return true;
-        try {
-            JSON.parse(data);
-            return true;
-        } catch {
-            return false;
-        }
-    }
-
-    private dispatch(): SSEMessage | null {
-        if (this.data.length === 0) return null;
-        const message = { data: this.data.join("\n") };
-        this.data = [];
-        return message;
-    }
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
@@ -1015,7 +926,10 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
-        const sseDecoder = new SSEDecoder();
+        let events: string[] = [];
+        const parser = createParser({
+            onEvent: ({ data }) => events.push(data),
+        });
         let finished = false;
         let completed = false;
         const cancelReader = () => {
@@ -1024,9 +938,9 @@ export class Pollinations {
         options.signal?.addEventListener("abort", cancelReader, { once: true });
 
         const chunksFrom = function* (
-            messages: SSEMessage[],
+            messages: string[],
         ): Generator<ChatStreamChunk> {
-            for (const message of messages) {
+            for (const data of messages) {
                 if (options.signal?.aborted) {
                     throw new PollinationsError(
                         "Request was cancelled",
@@ -1034,8 +948,8 @@ export class Pollinations {
                         499,
                     );
                 }
-                if (!message.data) continue;
-                if (message.data.trim() === "[DONE]") {
+                if (!data) continue;
+                if (data.trim() === "[DONE]") {
                     // Proxies may repeat [DONE]; the response is complete.
                     finished = true;
                     continue;
@@ -1047,7 +961,7 @@ export class Pollinations {
                         502,
                     );
                 }
-                yield parseChatStreamData(message.data);
+                yield parseChatStreamData(data);
             }
         };
 
@@ -1056,8 +970,9 @@ export class Pollinations {
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-                const text = decoder.decode(value, { stream: true });
-                yield* chunksFrom(sseDecoder.push(text));
+                parser.feed(decoder.decode(value, { stream: true }));
+                yield* chunksFrom(events);
+                events = [];
             }
             if (options.signal?.aborted) {
                 throw new PollinationsError(
@@ -1066,7 +981,8 @@ export class Pollinations {
                     499,
                 );
             }
-            yield* chunksFrom(sseDecoder.push(decoder.decode(), true));
+            parser.feed(decoder.decode());
+            yield* chunksFrom(events);
             completed = true;
         } catch (error) {
             if (options.signal?.aborted) {

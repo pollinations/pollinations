@@ -295,7 +295,7 @@ describe("Pollinations server-owned defaults", () => {
                 },
             ],
         };
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ data: [{ b64_json: "AAAA" }] }),
@@ -387,7 +387,7 @@ describe("Pollinations seed handling", () => {
 
     it("passes seed through text and chat requests consistently", async () => {
         const client = newClient();
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ choices: [{ message: { content: "ok" } }] }),
@@ -480,7 +480,7 @@ describe("Pollinations chat routing", () => {
         const client = newClient();
         fetchMock.mockResolvedValue(
             makeResponse(
-                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n',
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\n',
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -591,7 +591,7 @@ describe("Pollinations chat streaming", () => {
         expect(body.locked).toBe(false);
     });
 
-    it("reads a final event without a trailing newline", async () => {
+    it("discards an incomplete SSE event at EOF", async () => {
         const event = { choices: [{ delta: { content: "last" } }] };
         fetchMock.mockResolvedValue(
             new Response(`data: ${JSON.stringify(event)}`),
@@ -604,7 +604,19 @@ describe("Pollinations chat streaming", () => {
             chunks.push(chunk);
         }
 
-        expect(chunks).toEqual([event]);
+        expect(chunks).toEqual([]);
+    });
+
+    it("does not guess event boundaries between complete JSON data lines", async () => {
+        fetchMock.mockResolvedValue(
+            new Response('data: {"choices":[]}\ndata: {"choices":[]}\n\n'),
+        );
+
+        await expect(
+            newClient()
+                .chatStream([{ role: "user", content: "hello" }])
+                .next(),
+        ).rejects.toMatchObject({ code: "MALFORMED_STREAM" });
     });
 
     it("cancels and releases the body when decoding fails", async () => {
@@ -829,7 +841,7 @@ describe("Pollinations simple text facade", () => {
             'data: {"choices":[{"delta":{"content":""}}]}',
             "data: [DONE]",
             "",
-        ].join("\n");
+        ].join("\n\n");
         fetchMock.mockResolvedValue(
             makeResponse(stream, {
                 kind: "stream",
@@ -862,7 +874,7 @@ describe("Pollinations simple text facade", () => {
                     'data: {"error":{"message":"Upstream model unavailable"}}',
                     "data: [DONE]",
                     "",
-                ].join("\n"),
+                ].join("\n\n"),
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -959,7 +971,7 @@ describe("Pollinations simple text facade", () => {
                     'data: {"provider_metadata":{"status":"ok"}}',
                     "data: [DONE]",
                     "",
-                ].join("\n"),
+                ].join("\n\n"),
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -1013,7 +1025,7 @@ describe("Pollinations simple text facade", () => {
                     "data: [DONE]",
                     'data: {"provider_metadata":{"private":true}}',
                     "",
-                ].join("\n"),
+                ].join("\n\n"),
                 {
                     kind: "stream",
                     contentType: "text/event-stream",

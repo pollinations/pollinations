@@ -20,6 +20,26 @@
     "requests24h": 0
   },
   {
+    "emoji": "🌻",
+    "name": "Pollen Craft",
+    "url": "https://tomdacat.itch.io/pollen-craft",
+    "description": "Infinite crafting game where Pollinations names and illustrates every discovery.",
+    "language": "en",
+    "category": "games",
+    "platform": "web",
+    "githubUsername": "tomdacatto",
+    "githubUserId": "204561696",
+    "repositoryUrl": "https://github.com/tomdacatto/pollen-craft",
+    "repositoryStars": 0,
+    "discordUsername": "tomdacato",
+    "other": null,
+    "submittedDate": "2026-05-15",
+    "issueUrl": "https://github.com/pollinations/pollinations/issues/10973",
+    "approvedDate": null,
+    "byop": true,
+    "requests24h": 0
+  },
+  {
     "emoji": "🛠️",
     "name": "Pollin Uptime (HA Gateway)",
     "url": "https://brhost.eu.org",

@@ -1,10 +1,10 @@
 import { useChat } from "@ai-sdk/react";
 import {
     type AudioFormat,
+    CHAT_ROUTING_CAPABILITIES,
     type ChatRoutingCapability,
     type MessageContentPart,
     Pollinations,
-    PollinationsError,
 } from "@pollinations/sdk";
 import {
     useAuthActions,
@@ -65,13 +65,16 @@ import {
 } from "react";
 import {
     type AgentChoice,
+    API_BASE_URL,
     AUTO_ROUTING,
     agentChoices,
     arrayBufferToBase64,
     audioFormat,
     type ChatAttachmentKind,
     compactRouting,
+    errorMessage,
     fileKind,
+    isCancellation,
     type RenderedMedia,
     type RoutingChoice,
     type RoutingSelection,
@@ -82,16 +85,6 @@ import {
     type PollinationsUIMessage,
     type PreparedAttachment,
 } from "./pollinations-chat-transport";
-
-// @pollinations/ui does not export this website-local ordering.
-const CHAT_ROUTING_FIELDS = [
-    "text",
-    "web_search",
-    "image_generation",
-    "image_editing",
-    "video",
-    "audio",
-] as const satisfies readonly ChatRoutingCapability[];
 
 const ROUTING_LABELS: Record<ChatRoutingCapability, string> = {
     text: "Text",
@@ -117,15 +110,6 @@ const ATTACHMENT_ACCEPT: Record<ChatAttachmentKind, string> = {
     audio: "audio/*",
     file: ".pdf,.txt,.md,.csv,.json,.doc,.docx",
 };
-
-type ViteImportMeta = ImportMeta & {
-    env?: { VITE_POLLINATIONS_API_BASE_URL?: string };
-};
-
-const API_BASE_URL = (
-    (import.meta as ViteImportMeta).env?.VITE_POLLINATIONS_API_BASE_URL ||
-    "https://gen.pollinations.ai"
-).replace(/\/$/, "");
 
 function welcomeMessage(agent: AgentChoice): PollinationsUIMessage {
     return {
@@ -156,19 +140,6 @@ function attachmentKinds(agent: AgentChoice | undefined) {
                 modality === "audio" ||
                 modality === "file",
         ),
-    );
-}
-
-function errorMessage(error: unknown): string {
-    if (error instanceof PollinationsError) return error.message;
-    if (error instanceof Error) return error.message;
-    return "Something went wrong. Please try again.";
-}
-
-function isCancellation(error: unknown): boolean {
-    return (
-        (error instanceof PollinationsError && error.code === "CANCELLED") ||
-        (error instanceof DOMException && error.name === "AbortError")
     );
 }
 
@@ -946,7 +917,7 @@ function RoutingPanel({
             id="play-chat-routing"
             className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3"
         >
-            {CHAT_ROUTING_FIELDS.map((field) => (
+            {CHAT_ROUTING_CAPABILITIES.map((field) => (
                 <RoutingSelector
                     key={field}
                     field={field}
@@ -1029,7 +1000,7 @@ export function Chat() {
     const modelChoices = useMemo(
         () =>
             Object.fromEntries(
-                CHAT_ROUTING_FIELDS.map((field) => [
+                CHAT_ROUTING_CAPABILITIES.map((field) => [
                     field,
                     routingChoices(
                         catalog.models,
@@ -1057,7 +1028,7 @@ export function Chat() {
     useEffect(() => {
         setRouting((current) => {
             const next = { ...current };
-            for (const field of CHAT_ROUTING_FIELDS) {
+            for (const field of CHAT_ROUTING_CAPABILITIES) {
                 if (
                     next[field] &&
                     !modelChoices[field].some(
@@ -1206,7 +1177,7 @@ export function Chat() {
 
     const canRetryLast = (id: string) =>
         messages[messages.length - 1]?.id === id && !sending;
-    const routingOverrideCount = CHAT_ROUTING_FIELDS.filter(
+    const routingOverrideCount = CHAT_ROUTING_CAPABILITIES.filter(
         (field) => routing[field] !== null,
     ).length;
 

@@ -1,20 +1,30 @@
-import type {
-    AudioFormat,
-    ChatRouting,
-    ChatRoutingCapability,
-    MessageContent,
-    MessageContentPart,
-    ModelInfo,
+import {
+    type AudioFormat,
+    CHAT_ROUTING_CAPABILITIES,
+    type ChatRouting,
+    type ChatRoutingCapability,
+    type MessageContent,
+    type MessageContentPart,
+    type ModelInfo,
+    PollinationsError,
 } from "@pollinations/sdk";
 
-export const ROUTING_FIELDS = [
-    "text",
-    "web_search",
-    "image_generation",
-    "image_editing",
-    "video",
-    "audio",
-] as const satisfies readonly ChatRoutingCapability[];
+export const API_BASE_URL = (
+    import.meta.env.VITE_POLLINATIONS_API_BASE_URL ||
+    "https://gen.pollinations.ai"
+).replace(/\/$/, "");
+
+export function errorMessage(error: unknown): string {
+    if (error instanceof Error) return error.message;
+    return "Something went wrong. Please try again.";
+}
+
+export function isCancellation(error: unknown): boolean {
+    return (
+        (error instanceof PollinationsError && error.code === "CANCELLED") ||
+        (error instanceof DOMException && error.name === "AbortError")
+    );
+}
 
 export type RoutingSelection = Record<ChatRoutingCapability, string | null>;
 
@@ -271,7 +281,7 @@ export function compactRouting(
     selection: RoutingSelection,
 ): ChatRouting | undefined {
     const routing: ChatRouting = {};
-    for (const field of ROUTING_FIELDS) {
+    for (const field of CHAT_ROUTING_CAPABILITIES) {
         const model = selection[field]?.trim();
         if (model) routing[field] = model;
     }

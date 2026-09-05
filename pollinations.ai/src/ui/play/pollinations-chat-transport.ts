@@ -14,7 +14,9 @@ import type {
 } from "ai";
 import {
     buildUserContent,
+    errorMessage,
     extractStreamedMedia,
+    isCancellation,
     parseAgentMessage,
     type RenderedMedia,
 } from "./chat-models";
@@ -156,20 +158,6 @@ function finishReason(chunk: ChatStreamChunk): FinishReason | undefined {
         default:
             return undefined;
     }
-}
-
-function errorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : "The response failed.";
-}
-
-function isCancellation(error: unknown): boolean {
-    return (
-        (error instanceof DOMException && error.name === "AbortError") ||
-        (typeof error === "object" &&
-            error !== null &&
-            "code" in error &&
-            error.code === "CANCELLED")
-    );
 }
 
 /**

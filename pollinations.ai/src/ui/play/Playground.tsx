@@ -33,17 +33,7 @@ import { categoryLabel, ModelAccessIcon } from "@pollinations/ui/gen";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Chat } from "./Chat";
-
-type ViteImportMeta = ImportMeta & {
-    env?: {
-        VITE_POLLINATIONS_API_BASE_URL?: string;
-    };
-};
-
-const API_BASE_URL = (
-    (import.meta as ViteImportMeta).env?.VITE_POLLINATIONS_API_BASE_URL ||
-    "https://gen.pollinations.ai"
-).replace(/\/$/, "");
+import { API_BASE_URL, errorMessage } from "./chat-models";
 
 const EMPTY_CATALOG: ModelCatalog = {
     models: [],
@@ -237,11 +227,6 @@ function randomGenerationSeed(): number {
     const value = new Uint32Array(1);
     crypto.getRandomValues(value);
     return value[0] & 0x7fffffff;
-}
-
-function errorMessage(error: unknown): string {
-    if (error instanceof Error) return error.message;
-    return String(error || "Something went wrong");
 }
 
 function isAudioTranscriptionModel(

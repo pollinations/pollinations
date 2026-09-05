@@ -1,0 +1,34 @@
+{
+  "pr_number": 14494,
+  "title": "fix: record missing text usage as an unbilled failure",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14494",
+  "merged_at": "2026-09-05T16:34:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records missing text usage as a final, unbilled 502 and sends the captured response to the existing error log.\n- Preserves known provider costs without debiting the wallet or frontend-key allowance; earlier usage never makes a subsequently failed stream billable.\n- Reads valid usage independently of optional choice/filter metadata, avoiding false missing-usage failures.\n- Tests: tracking and full-route billing regressions, including a provider disconnect after usage but before the terminal event.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Failed streams stay unbilled",
+    "blurb": "A stream that loses its final usage report now leaves the wallet alone. Polli keeps the provider-cost breadcrumb, files a useful error log, and refuses to charge for a trip that did not reach the hive.",
+    "summary": "Text streams with missing terminal usage are now recorded as unbilled 502 failures with their captured provider response logged, while valid usage is read independently of optional choice and filter metadata.",
+    "impact": "Users keep their wallet and frontend-key allowance intact when a provider disconnects after reporting usage but before a stream's terminal event, while maintainers get clearer diagnostics for the failure.",
+    "keywords": [
+      "text-generation",
+      "streaming",
+      "billing",
+      "usage-tracking",
+      "error-logging",
+      "502"
+    ],
+    "visual_concept": "Depict a cozy text-streaming terminal whose last data packet has gently fallen off a vine before reaching a completion stamp. Polli, wearing a tiny accountant visor, catches the packet and marks it \"UNBILLED\" in a ledger while a nearby CRT Monitor Robot saves the response in an error-log flowerpot; the visual metaphor is that incomplete streams are carefully observed but never charged.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny accountant visor and gently stamps a fallen stream packet \"UNBILLED\" beside a glowing lime green (#ecf874) retro terminal, while a cute CRT monitor robot files a response into a blooming error-log plant. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"UNBILLED\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14494.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny accountant visor and gently stamps a fallen stream packet \"UNBILLED\" beside a glowing lime green (#ecf874) retro terminal, while a cute CRT monitor robot files a response into a blooming error-log plant. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle scanlines, retro gaming vibes like Stardew Valley or A Short Hike, pixel-font text: \"UNBILLED\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-05T16:35:29.639922+00:00"
+}

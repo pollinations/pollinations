@@ -159,7 +159,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
 - Run `npx biome check --write <file>` after edits and before commits.
-- Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers), confirm branch via `git branch --show-current`.
+- Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, and check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers).
 - When continuing prior work: read relevant code first; identify clear next steps.
 - Don't reimplement existing logic — search first.
 - When adding a React browser/IIFE bundle, grep bundled dependencies'
@@ -213,7 +213,6 @@ npx vitest run test/file.test.ts
 - API changes: maintain backward compatibility; document; handle errors.
 - Never edit or regenerate `APIDOCS.md` in a feature PR. It is generated from the live OpenAPI schema after a successful production deploy by `.github/workflows/docs-regenerate-api-reference.yml`, which opens a separate docs PR. Make documentation changes in the source schemas, routes, introductions, or recipes instead.
 - API docs source text: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
-- Security: never expose keys/secrets; use env vars; validate input.
 - Temp scratch files go in `temp/` clearly labeled.
 - Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
@@ -239,7 +238,6 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
-- Run biome check before committing.
 - If the active PR is already merged, open a follow-up branch only when the user
   requests another PR.
 

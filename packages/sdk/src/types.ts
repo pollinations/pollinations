@@ -514,6 +514,80 @@ export interface TranscriptionVerboseResponse extends TranscriptionResponse {
     duration: number;
     words?: Array<{ word: string; start: number; end: number }>;
     segments?: Array<{ id: number; start: number; end: number; text: string }>;
+// ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Embedding model (use the /embeddings/models endpoint to fetch available models) */
+export type EmbeddingModel = string;
+
+/** A multimodal content part for embedding input */
+export type EmbeddingContentPart =
+    | { type: "text"; text: string }
+    | { type: "image_url"; image_url: { url: string } }
+    | { type: "input_audio"; input_audio: { data: string; format: string } }
+    | {
+        type: "video_url";
+        video_url: { url: string; mime_type?: string };
+    };
+
+/** Input for embedding generation */
+export type EmbeddingInput =
+    | string
+    | string[]
+    | EmbeddingContentPart
+    | EmbeddingContentPart[];
+
+/** Task hint for text embeddings (converted to the model's recommended prompt instruction) */
+export type EmbeddingTaskType =
+    | "SEMANTIC_SIMILARITY"
+    | "CLASSIFICATION"
+    | "CLUSTERING"
+    | "RETRIEVAL_DOCUMENT"
+    | "RETRIEVAL_QUERY"
+    | "CODE_RETRIEVAL_QUERY"
+    | "QUESTION_ANSWERING"
+    | "FACT_VERIFICATION";
+
+/** Output encoding for the embedding vector */
+export type EmbeddingEncodingFormat = "float" | "base64";
+
+/** Options for embedding generation */
+export interface EmbeddingOptions extends RequestOptions {
+    /** Embedding model to use (server default applies when omitted) */
+    model?: EmbeddingModel;
+    /** Output embedding dimensions (model-specific limits apply) */
+    dimensions?: number;
+    /** Task hint for text embeddings */
+    taskType?: EmbeddingTaskType;
+    /** Input role for retrieval ('query' when searching, 'document' when indexing) */
+    inputType?: "query" | "document";
+    /** Output encoding for the embedding vector (default: 'float') */
+    encodingFormat?: EmbeddingEncodingFormat;
+}
+
+/** A single embedding object */
+export interface EmbeddingObject {
+    object: "embedding";
+    /** Embedding vector — array of floats, or base64 string when encodingFormat is 'base64' */
+    embedding: number[] | string;
+    /** Index of the embedding in the list */
+    index: number;
+}
+
+/** Token usage for an embedding response */
+export interface EmbeddingUsage {
+    prompt_tokens: number;
+    total_tokens: number;
+}
+
+/** Embedding response (OpenAI-compatible) */
+export interface EmbeddingResponse {
+    object: "list";
+    data: EmbeddingObject[];
+    model: string;
+    usage: EmbeddingUsage;
+}
 }
 
 // ============================================================================

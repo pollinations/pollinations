@@ -470,6 +470,32 @@ const response = await chat([
   }
 ]);
 ```
+## Embeddings
+
+```javascript
+import { embeddings } from '@pollinations/sdk';
+
+const result = await embeddings('The quick brown fox jumps over the lazy dog');
+
+console.log(result.data[0].embedding); // [0.023, -0.011, ...]
+console.log(result.usage); // { prompt_tokens: 9, total_tokens: 9 }
+
+// Batch input with options
+const batch = await embeddings(['hello', 'world'], {
+  model: 'gemini-2',
+  taskType: 'RETRIEVAL_QUERY',
+});
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | string | server default | Embedding model to use |
+| `dimensions` | number | - | Output embedding dimensions (model-specific limits apply) |
+| `taskType` | string | - | Task hint for text embeddings (e.g. `'RETRIEVAL_QUERY'`) |
+| `inputType` | string | - | `'query'` when searching, `'document'` when indexing |
+| `encodingFormat` | string | `'float'` | `'float'` or `'base64'` |
 
 ## List Available Models
 
@@ -561,6 +587,7 @@ import type {
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
+| `embeddings(input, options?)` | Generate vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |

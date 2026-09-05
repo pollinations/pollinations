@@ -40,6 +40,9 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EmbeddingInput,
+    EmbeddingOptions,
+    EmbeddingResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -401,6 +404,25 @@ export async function transcribe(
     options?: TranscribeOptions,
 ): Promise<TranscriptionResponse | TranscriptionVerboseResponse> {
     return getClient().transcribe(audio, options as TranscribeOptions);
+}
+// ============================================================================
+// Embeddings Functions
+// ============================================================================
+
+/**
+ * Generate vector embeddings (OpenAI-compatible)
+ *
+ * @example
+ * ```ts
+ * const result = await embeddings('The quick brown fox');
+ * console.log(result.data[0]?.embedding);
+ * ```
+ */
+export async function embeddings(
+    input: EmbeddingInput,
+    options?: EmbeddingOptions,
+): Promise<EmbeddingResponse> {
+    return getClient().embeddings(input, options);
 }
 
 // ============================================================================

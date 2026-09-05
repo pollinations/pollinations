@@ -1,4 +1,5 @@
 import { createParser } from "eventsource-parser";
+import { validatedSSEStream } from "../validatedSSEStream.js";
 import {
     getResponsesEventUsage,
     normalizeResponsesTerminalEvent,
@@ -115,36 +116,8 @@ export function requireResponsesStreamUsage(
 ): ReadableStream<Uint8Array<ArrayBuffer>> {
     const validator = createResponsesStreamUsageValidator();
 
-    return body.pipeThrough(
-        new TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>({
-            transform(chunk, controller) {
-                try {
-                    validator.feed(chunk);
-                    controller.enqueue(chunk);
-                } catch (error) {
-                    if (!(error instanceof ResponsesUsageError)) throw error;
-                    controller.enqueue(
-                        responsesUsageErrorEvent(
-                            error,
-                            validator.nextSequenceNumber,
-                        ),
-                    );
-                    controller.terminate();
-                }
-            },
-            flush(controller) {
-                try {
-                    validator.finish();
-                } catch (error) {
-                    if (!(error instanceof ResponsesUsageError)) throw error;
-                    controller.enqueue(
-                        responsesUsageErrorEvent(
-                            error,
-                            validator.nextSequenceNumber,
-                        ),
-                    );
-                }
-            },
-        }),
-    );
+    return validatedSSEStream(body, validator, (error) => {
+        if (!(error instanceof ResponsesUsageError)) throw error;
+        return responsesUsageErrorEvent(error, validator.nextSequenceNumber);
+    });
 }

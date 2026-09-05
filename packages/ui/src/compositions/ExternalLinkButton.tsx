@@ -9,6 +9,8 @@ type ExternalLinkButtonBaseProps = {
     /** Set false for another Pollinations property that should behave as product navigation. */
     external?: boolean;
     showIcon?: boolean;
+    /** Leading icon, rendered before the label. */
+    icon?: ReactNode;
     className?: string;
     children: ReactNode;
 };
@@ -30,11 +32,13 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
         appearance,
         external = true,
         showIcon = true,
+        icon,
         className,
         children,
     } = props;
     const content = (
         <>
+            {icon}
             <span>{children}</span>
             {external && showIcon ? (
                 <ExternalLinkIcon
@@ -54,6 +58,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
             appearance: _appearance,
             external: _external,
             showIcon: _showIcon,
+            icon: _icon,
             className: _className,
             children: _children,
             ...anchorProps
@@ -81,6 +86,7 @@ export function ExternalLinkButton(props: ExternalLinkButtonProps) {
         appearance: _appearance,
         external: _external,
         showIcon: _showIcon,
+        icon: _icon,
         className: _className,
         children: _children,
         ...buttonProps

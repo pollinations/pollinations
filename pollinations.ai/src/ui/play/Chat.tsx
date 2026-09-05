@@ -7,9 +7,9 @@ import {
     Pollinations,
 } from "@pollinations/sdk";
 import {
+    type UseModelCatalogValue,
     useAuthActions,
     useAuthState,
-    useModelCatalog,
 } from "@pollinations/sdk/react";
 import {
     Alert,
@@ -931,13 +931,9 @@ function RoutingPanel({
     );
 }
 
-export function Chat() {
+export function Chat({ catalog }: { catalog: UseModelCatalogValue }) {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
-    const catalog = useModelCatalog({
-        baseUrl: API_BASE_URL,
-        enabled: isHydrated,
-    });
     const agents = useMemo(
         () => agentChoices(catalog.models),
         [catalog.models],

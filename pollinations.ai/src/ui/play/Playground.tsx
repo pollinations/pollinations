@@ -1,11 +1,13 @@
 import {
-    fetchModelCatalog,
-    type ModelCatalog,
     type ModelCategory,
     type ModelInfo,
     Pollinations,
 } from "@pollinations/sdk";
-import { useAuthActions, useAuthState } from "@pollinations/sdk/react";
+import {
+    useAuthActions,
+    useAuthState,
+    useModelCatalog,
+} from "@pollinations/sdk/react";
 import {
     Alert,
     AudioIcon,
@@ -34,11 +36,6 @@ import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Chat } from "./Chat";
 import { API_BASE_URL, errorMessage } from "./chat-models";
-
-const EMPTY_CATALOG: ModelCatalog = {
-    models: [],
-    allowedModelIds: new Set(),
-};
 
 type PlaygroundModel = {
     id: string;
@@ -155,40 +152,6 @@ type PlaygroundResult =
           type: "text";
           text: string;
       };
-
-function usePlaygroundCatalog(apiKey: string | null) {
-    const [catalog, setCatalog] = useState<ModelCatalog>(EMPTY_CATALOG);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<Error | null>(null);
-
-    useEffect(() => {
-        const controller = new AbortController();
-        setIsLoading(true);
-        setError(null);
-
-        fetchModelCatalog({
-            apiKey,
-            baseUrl: API_BASE_URL,
-            signal: controller.signal,
-        })
-            .then((nextCatalog) => {
-                setCatalog(nextCatalog);
-                setIsLoading(false);
-            })
-            .catch((err) => {
-                if (err instanceof DOMException && err.name === "AbortError") {
-                    return;
-                }
-                setError(err instanceof Error ? err : new Error(String(err)));
-                setCatalog(EMPTY_CATALOG);
-                setIsLoading(false);
-            });
-
-        return () => controller.abort();
-    }, [apiKey]);
-
-    return { catalog, isLoading, error };
-}
 
 function promptPlaceholder(
     category: PlaygroundCategory,
@@ -662,11 +625,13 @@ async function uploadReferenceImages(
 export function Playground() {
     const { apiKey, isLoggedIn, isHydrated } = useAuthState();
     const { login } = useAuthActions();
-    const {
-        catalog,
-        isLoading,
-        error: catalogError,
-    } = usePlaygroundCatalog(apiKey);
+    // One catalog for the whole page; Chat receives it instead of fetching
+    // its own copy.
+    const catalog = useModelCatalog({
+        baseUrl: API_BASE_URL,
+        enabled: isHydrated,
+    });
+    const { isLoading, error: catalogError } = catalog;
     const [activeCategory, setActiveCategory] =
         useState<PlaygroundCategory>("text");
     const [audioTask, setAudioTask] = useState<AudioTask>("speech-generation");
@@ -1104,7 +1069,7 @@ export function Playground() {
                 onSelectCategory={selectCategory}
             />
 
-            {activeCategory === "text" && <Chat />}
+            {activeCategory === "text" && <Chat catalog={catalog} />}
 
             {activeCategory !== "text" && (
                 <div className="grid overflow-clip">

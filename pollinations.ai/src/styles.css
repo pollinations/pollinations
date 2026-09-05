@@ -50,6 +50,12 @@
     mask-image: linear-gradient(to bottom, black 0%, black 38%, transparent 100%);
 }
 
+/* Mouse focus can remain on a navigation link after changing routes. Only
+   keyboard-visible focus should temporarily reveal a scroll-hidden header. */
+.site-header:has(:focus-visible) {
+    transform: translateY(0);
+}
+
 @media (max-width: 48.749rem) {
     html {
         scrollbar-gutter: stable both-edges;

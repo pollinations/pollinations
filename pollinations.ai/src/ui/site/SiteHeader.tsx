@@ -231,7 +231,7 @@ export function SiteHeader() {
 
     return (
         <header
-            className={`pointer-events-none fixed inset-x-0 top-0 z-30 bg-transparent py-4 transition-transform duration-300 focus-within:translate-y-0 min-[780px]:pointer-events-auto min-[780px]:sticky sm:py-5 motion-reduce:transition-none ${
+            className={`site-header pointer-events-none fixed inset-x-0 top-0 z-30 bg-transparent py-4 transition-transform duration-300 min-[780px]:pointer-events-auto min-[780px]:sticky sm:py-5 motion-reduce:transition-none ${
                 hidden ? "-translate-y-full" : "translate-y-0"
             }`}
         >
@@ -369,7 +369,7 @@ export function SiteHeader() {
                                     className="flex min-h-0 flex-1 flex-col gap-3 overflow-x-hidden overflow-y-auto"
                                 >
                                     <div
-                                        className={`site-drawer-card rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
+                                        className={`site-drawer-card flex flex-col gap-1.5 rounded-[18px] bg-surface-opaque p-2.5 shadow-well ${
                                             mobileMenuOpen
                                                 ? "site-drawer-card-enter"
                                                 : ""

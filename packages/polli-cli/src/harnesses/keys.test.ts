@@ -103,12 +103,13 @@ describe("harness models", () => {
         ]);
     });
 
-    it.each(["missing", "realtime", "owner/community-chat"])(
-        "rejects an unavailable harness model: %s",
-        async (model) => {
-            await expect(fetchHarnessModels(model)).rejects.toThrow(
-                `Model "${model}" is not a tool-calling text model. Run: polli models`,
-            );
-        },
-    );
+    it.each([
+        "missing",
+        "realtime",
+        "owner/community-chat",
+    ])("rejects an unavailable harness model: %s", async (model) => {
+        await expect(fetchHarnessModels(model)).rejects.toThrow(
+            `Model "${model}" is not a tool-calling text model. Run: polli models`,
+        );
+    });
 });

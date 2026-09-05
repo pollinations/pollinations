@@ -14,10 +14,7 @@ describe("harness home paths", () => {
         [home, home],
         ["~other/agent", resolve("~other/agent")],
         [" ~/agent ", resolve(" ~/agent ")],
-    ])(
-        "resolves %s without changing caller whitespace rules",
-        (path, expected) => {
-            expect(resolveHomePath(home, path)).toBe(expected);
-        },
-    );
+    ])("resolves %s without changing caller whitespace rules", (path, expected) => {
+        expect(resolveHomePath(home, path)).toBe(expected);
+    });
 });

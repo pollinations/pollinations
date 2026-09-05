@@ -580,7 +580,7 @@ function BuildDiary() {
                                 {zoom === "month" && !zoomLoading && (
                                     <Dropdown
                                         align="end"
-                                        className="polli:max-h-80 polli:w-60 polli:overflow-y-auto polli:p-2"
+                                        className="max-h-80 w-60 overflow-y-auto p-2"
                                         trigger={(open) => (
                                             <Button
                                                 type="button"
@@ -598,11 +598,11 @@ function BuildDiary() {
                                         )}
                                     >
                                         {(close) => (
-                                            <div className="polli:flex polli:flex-col polli:gap-3">
+                                            <div className="flex flex-col gap-3">
                                                 {diaryYears.map((year) => (
                                                     <div
                                                         key={year}
-                                                        className="polli:flex polli:flex-col polli:gap-1"
+                                                        className="flex flex-col gap-1"
                                                     >
                                                         <Eyebrow
                                                             size="chrome"

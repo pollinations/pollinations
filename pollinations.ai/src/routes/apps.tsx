@@ -580,7 +580,7 @@ function AppsPage() {
                             )}
                             <Dropdown
                                 align="end"
-                                className="polli:min-w-40 polli:p-1"
+                                className="min-w-40 p-1"
                                 trigger={(open) => {
                                     const SortIcon = SORT_ICONS[sort];
                                     return (
@@ -601,7 +601,7 @@ function AppsPage() {
                                 }}
                             >
                                 {(close) => (
-                                    <div className="polli:flex polli:flex-col polli:gap-1">
+                                    <div className="flex flex-col gap-1">
                                         {(
                                             Object.keys(
                                                 SORT_LABELS,

@@ -74,6 +74,12 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
 
+export const CommunityEndpointApiSchema = z.enum([
+    "chat_completions",
+    "responses",
+]);
+export type CommunityEndpointApi = z.infer<typeof CommunityEndpointApiSchema>;
+
 export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
 
 export const COMMUNITY_ENDPOINT_CAPABILITIES = [
@@ -563,7 +569,8 @@ const StoredCommunityEndpointPricesSchema = z.object(
 export const ProxyListingPayloadSchema = z
     .object({
         bearerTokenCiphertext: z.string().min(1),
-        responsesUrl: z.string().url().nullable().default(null),
+        // Media listings have no text API and do not need a data migration.
+        api: CommunityEndpointApiSchema.nullable().default(null),
         // Owner-set: callers may only spend Paid Pollen on this model. Rows
         // from before paid-only support are public-spend by default.
         paidOnly: z.boolean().default(false),
@@ -577,6 +584,14 @@ export const ProxyListingPayloadSchema = z
         advertised: CommunityEndpointAdvertisedSchema.optional(),
         prices: StoredCommunityEndpointPricesSchema,
     })
+    .refine(
+        (payload) => (payload.modality === "text") === (payload.api !== null),
+        {
+            path: ["api"],
+            message:
+                "Text models require an API; other modalities do not accept one",
+        },
+    )
     .transform(({ advertised: storedAdvertised, ...payload }) => {
         const advertised = normalizeCommunityEndpointAdvertised(
             storedAdvertised,
@@ -622,7 +637,7 @@ export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
-        responsesUrl: z.string().url().nullable().default(null),
+        api: CommunityEndpointApiSchema,
     })
     .strict();
 
@@ -755,7 +770,7 @@ type CommunityEndpointRuntimeBase = {
     // All variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
     baseUrl: string;
-    responsesUrl?: string | null;
+    api: CommunityEndpointApi | null;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     requiredSafetyFeatures?: SafetyFeature[];

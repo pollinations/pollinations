@@ -5,6 +5,7 @@ import {
 } from "cloudflare:test";
 import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import type { AuthUser } from "@shared/auth/api-key.ts";
+import { getUserBalance } from "@shared/billing/balance.ts";
 import { selectCommunityModelReward } from "@shared/billing/track-helpers.ts";
 import {
     COMMUNITY_MODEL_REWARD_RATE,
@@ -13,16 +14,25 @@ import {
     communityModelDefinition,
     type ProxyCommunityEndpointRuntime,
 } from "@shared/community-endpoints.ts";
-import { user as userTable } from "@shared/db/better-auth.ts";
+import {
+    communityEndpoint as communityEndpointTable,
+    user as userTable,
+} from "@shared/db/better-auth.ts";
 import { handleError } from "@shared/error.ts";
 import { modelInfoFromDefinition } from "@shared/registry/model-info.ts";
 import {
     type BillingAdjustment,
+    calculateUsageBilling,
     getPriceDefinitionForModel,
     getRegistryModelDefinition,
     type ModelName,
 } from "@shared/registry/registry.ts";
 import type { TinybirdEvent } from "@shared/schemas/generation-event.ts";
+import { encryptSecret } from "@shared/secret-encryption.ts";
+import {
+    createTestApiKey,
+    createTestUser,
+} from "@shared/test/fixtures/index.ts";
 import { removeUnset } from "@shared/util.ts";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -43,9 +53,15 @@ import {
     track,
     trackResponse,
 } from "@/middleware/track.ts";
-import type { GenerationModelEntry } from "@/model-registry.ts";
+import worker from "../src/index.ts";
+import {
+    type GenerationModelEntry,
+    resetGenerationModelRegistryCache,
+} from "../src/model-registry.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
+    resetGenerationModelRegistryCache();
     vi.restoreAllMocks();
 });
 
@@ -126,6 +142,7 @@ function createCommunityEndpoint(
         id: "community-endpoint-test",
         ownerUserId,
         modelId: "test-owner/test-model",
+        api: "chat_completions",
         name: "test-model",
         title: "Test Model",
         description: null,
@@ -134,7 +151,7 @@ function createCommunityEndpoint(
         modality: "text",
         imagePricing: "request",
         inputModalities: null,
-        baseUrl: "https://community.example.test/openai",
+        baseUrl: "https://community.example.test/openai/chat/completions",
         upstreamModel: "upstream-test-model",
         bearerTokenCiphertext: "encrypted",
         visibility: "public",
@@ -2171,6 +2188,142 @@ describe("tracking observability", () => {
         expect(event.tokenCountCompletionText).toBe(500);
         expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
         expect(event.isBilledUsage).toBe(true);
+    });
+
+    it.each([
+        "valid",
+        "missing",
+        "malformed",
+    ])("settles native community Chat streaming with %s usage and no model metadata", async (usageKind) => {
+        const caller = await createTestApiKey({
+            user: { tierBalance: 0, packBalance: 10 },
+        });
+        const db = drizzle(env.DB);
+        const before = await getUserBalance(db, caller.userId);
+        const publisher = `usage-${crypto.randomUUID().slice(0, 8)}`;
+        const endpoint = createCommunityEndpoint(
+            await createTestUser({ githubUsername: publisher }),
+            {
+                id: crypto.randomUUID(),
+                modelId: `${publisher}/test-model`,
+                bearerTokenCiphertext: await encryptSecret(
+                    "test-upstream-key",
+                    env.BETTER_AUTH_SECRET,
+                ),
+            },
+        );
+        await db.insert(communityEndpointTable).values({
+            id: endpoint.id,
+            ownerUserId: endpoint.ownerUserId,
+            name: endpoint.name,
+            title: endpoint.title,
+            type: "proxy",
+            baseUrl: endpoint.baseUrl,
+            upstreamModel: endpoint.upstreamModel,
+            visibility: "public",
+            payload: JSON.stringify({
+                api: "chat_completions",
+                modality: "text",
+                imagePricing: "request",
+                inputModalities: ["text"],
+                perUserRpm: null,
+                fallbacks: [],
+                bearerTokenCiphertext: endpoint.bearerTokenCiphertext,
+                prices: communityEndpointPrices(endpoint),
+            }),
+        });
+        const model = endpoint.modelId;
+        const events: Record<string, unknown>[] = [];
+        let upstreamCalls = 0;
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const request = new Request(input, init);
+                const url = new URL(request.url);
+                if (request.url === endpoint.baseUrl) {
+                    upstreamCalls++;
+                    expect(init?.redirect).toBe("manual");
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer test-upstream-key",
+                    );
+                    const terminal =
+                        usageKind === "missing"
+                            ? {}
+                            : {
+                                  usage: {
+                                      prompt_tokens:
+                                          usageKind === "malformed" ? -1 : 10,
+                                      completion_tokens: 5,
+                                      total_tokens: 15,
+                                  },
+                              };
+                    return new Response(
+                        'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
+                            `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
+                        { headers: { "Content-Type": "text/event-stream" } },
+                    );
+                }
+                if (url.pathname === "/v0/events") {
+                    events.push(
+                        ...(await request.text())
+                            .split("\n")
+                            .filter(Boolean)
+                            .map((line) => JSON.parse(line)),
+                    );
+                }
+                return Response.json({ data: [] });
+            },
+        );
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${caller.key}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model,
+                    stream: true,
+                    messages: [{ role: "user", content: "stream usage check" }],
+                }),
+            }),
+            withInlineGenerationCoordinator(env),
+            ctx,
+        );
+        const body = await response.text();
+        await waitOnExecutionContext(ctx);
+        expect(response.status, body).toBe(200);
+        expect(upstreamCalls).toBe(1);
+        const after = await getUserBalance(db, caller.userId);
+        const rows = events.filter((event) => event.modelRequested === model);
+        expect(rows).toHaveLength(1);
+        if (usageKind === "valid") {
+            const expectedPrice = calculateUsageBilling({
+                model,
+                usage: { promptTextTokens: 10, completionTextTokens: 5 },
+                servedBy: communityModelDefinition(endpoint),
+            }).price.totalPrice;
+            expect(expectedPrice).toBeGreaterThan(0);
+            expect(body).not.toContain('"error"');
+            expect(rows[0]).toMatchObject({
+                isBilledUsage: true,
+                modelUsed: model,
+                tokenCountPromptText: 10,
+                tokenCountCompletionText: 5,
+                totalPrice: expectedPrice,
+            });
+            expect(before.packBalance - after.packBalance).toBeCloseTo(
+                expectedPrice,
+                9,
+            );
+        } else {
+            expect(body).toContain('"error"');
+            expect(rows[0]).toMatchObject({
+                isBilledUsage: false,
+                totalPrice: 0,
+            });
+            expect(after.packBalance).toBe(before.packBalance);
+        }
     });
 
     it("bills cache-write tokens reported by a Chat stream", async () => {

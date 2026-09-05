@@ -45,15 +45,40 @@ describe("modelBody", () => {
         });
     });
 
-    it("sets and clears the exact Responses endpoint", () => {
+    it.each([
+        "responses",
+        "chat_completions",
+    ])("registers one exact %s text endpoint without a base URL", (api) => {
+        const url = "https://example.com/custom-endpoint?version=1";
         expect(
             modelBody(
-                { responsesUrl: "https://example.com/v1/responses" },
+                {
+                    name: "text-provider",
+                    title: "Text Provider",
+                    api,
+                    url,
+                    bearerToken: "upstream-token",
+                },
+                true,
+            ),
+        ).toEqual({
+            name: "text-provider",
+            title: "Text Provider",
+            api,
+            url,
+            bearerToken: "upstream-token",
+        });
+    });
+
+    it("changes the selected API and URL together", () => {
+        expect(
+            modelBody(
+                { api: "responses", url: "https://example.com/v1/responses" },
                 false,
             ),
-        ).toEqual({ responsesUrl: "https://example.com/v1/responses" });
-        expect(modelBody({ responses: false }, false)).toEqual({
-            responsesUrl: null,
+        ).toEqual({
+            api: "responses",
+            url: "https://example.com/v1/responses",
         });
     });
 

@@ -1,12 +1,8 @@
 import {
-    AccountIcon,
     AppIcon,
-    ArrowRightIcon,
     AudioIcon,
     BeakerIcon,
     BookIcon,
-    BotIcon,
-    BugIcon,
     Button,
     ButtonGroup,
     CardIcon,
@@ -16,26 +12,20 @@ import {
     Chip,
     ClipboardIcon,
     ClockIcon,
-    CloudUploadIcon,
     CodeIcon,
     ColorModeToggle,
-    CubeIcon,
     DatabaseIcon,
     Dialog,
     DiscordIcon,
     DownloadIcon,
-    Drawer,
     Dropdown,
     DropdownItem,
-    EarningsIcon,
     ExternalLinkIcon,
     EyeIcon,
     Field,
     GenApiIcon,
-    GitBranchIcon,
     GitHubIcon,
     GlobeIcon,
-    GraduationCapIcon,
     Heading,
     IconButton,
     ImageIcon,
@@ -52,16 +42,11 @@ import {
     PencilIcon,
     PlusIcon,
     ReasoningIcon,
-    RocketIcon,
     ScrollArea,
     SearchIcon,
-    SignOutIcon,
     Slider,
-    SparkleIcon,
-    SparklesIcon,
     SpeakerIcon,
     SproutIcon,
-    StarIcon,
     SunIcon,
     Surface,
     Switch,
@@ -69,24 +54,18 @@ import {
     Table,
     TableBody,
     TableCell,
-    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
-    TargetIcon,
     TerminalIcon,
     Text,
     Textarea,
     TokensIcon,
-    ToolIcon,
     Tooltip,
-    TrashIcon,
     TrendUpIcon,
-    UsageIcon,
     useColorMode,
     VideoIcon,
     WalletIcon,
-    WarningIcon,
     XIcon,
 } from "@pollinations/ui";
 import { useState } from "react";
@@ -106,30 +85,6 @@ const SCROLL_AREA_ITEMS = [
     "Billing row",
 ] as const;
 const ICON_GROUPS = [
-    {
-        group: "Account, operations and tools",
-        icons: [
-            { Icon: AccountIcon, label: "Account" },
-            { Icon: ArrowRightIcon, label: "Arrow right" },
-            { Icon: BotIcon, label: "Bot" },
-            { Icon: BugIcon, label: "Bug" },
-            { Icon: CloudUploadIcon, label: "Upload" },
-            { Icon: CubeIcon, label: "Cube" },
-            { Icon: EarningsIcon, label: "Earnings" },
-            { Icon: GitBranchIcon, label: "Git branch" },
-            { Icon: GraduationCapIcon, label: "Learn" },
-            { Icon: RocketIcon, label: "Rocket" },
-            { Icon: SignOutIcon, label: "Sign out" },
-            { Icon: SparkleIcon, label: "Sparkle" },
-            { Icon: SparklesIcon, label: "Sparkles" },
-            { Icon: StarIcon, label: "Star" },
-            { Icon: TargetIcon, label: "Target" },
-            { Icon: ToolIcon, label: "Tool" },
-            { Icon: TrashIcon, label: "Trash" },
-            { Icon: UsageIcon, label: "Usage" },
-            { Icon: WarningIcon, label: "Warning" },
-        ],
-    },
     {
         group: "Brand",
         icons: [
@@ -211,8 +166,6 @@ const ICON_GROUPS = [
 export function PrimitivesPage() {
     const [activePrimitiveTab, setActivePrimitiveTab] = useState("md-image");
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [drawerOpen, setDrawerOpen] = useState(false);
-    const [tableExpanded, setTableExpanded] = useState(false);
     const [dialogSize, setDialogSize] =
         useState<(typeof CONTROL_SIZES)[number]>("md");
     const [switchOn, setSwitchOn] = useState(true);
@@ -359,9 +312,7 @@ export function PrimitivesPage() {
                                     *
                                 </Field.RequiredIndicator>
                             </Field.Label>
-                            <Field.Input asChild>
-                                <Input placeholder="/v1/chat/completions" />
-                            </Field.Input>
+                            <Input placeholder="/v1/chat/completions" />
                             <Field.HelperText className="text-xs text-theme-text-soft">
                                 Used for API calls.
                             </Field.HelperText>
@@ -549,47 +500,6 @@ export function PrimitivesPage() {
                                 </TableRow>
                             </TableBody>
                         </Table>
-                    </PrimitiveExample>
-
-                    <PrimitiveExample
-                        name="Drawer"
-                        description="Accessible compact navigation with a backdrop, focus management and Escape dismissal."
-                    >
-                        <Button onClick={() => setDrawerOpen(true)}>
-                            Open drawer
-                        </Button>
-                        <Drawer
-                            open={drawerOpen}
-                            onOpenChange={setDrawerOpen}
-                            ariaLabel="Example navigation drawer"
-                        >
-                            <div className="space-y-4 p-6">
-                                <Heading as="h2" size="section">
-                                    Example navigation
-                                </Heading>
-                                <p>Use Escape or the close button to return.</p>
-                                <Button onClick={() => setDrawerOpen(false)}>
-                                    Close drawer
-                                </Button>
-                            </div>
-                        </Drawer>
-                    </PrimitiveExample>
-
-                    <PrimitiveExample
-                        name="TableDisclosureButton"
-                        description="A compact expandable-row trigger. The parent owns the row’s expanded state."
-                    >
-                        <TableDisclosureButton
-                            expanded={tableExpanded}
-                            onClick={() => setTableExpanded((value) => !value)}
-                        >
-                            Example usage details
-                        </TableDisclosureButton>
-                        {tableExpanded && (
-                            <p className="mt-3 text-sm text-theme-text-soft">
-                                Expanded example row. No live account data.
-                            </p>
-                        )}
                     </PrimitiveExample>
 
                     <PrimitiveExample

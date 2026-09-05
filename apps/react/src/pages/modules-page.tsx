@@ -11,7 +11,6 @@ import {
     ButtonGroup,
     Chip,
     ExternalLinkButton,
-    ScrollArea,
     Surface,
     Table,
     TableBody,
@@ -20,13 +19,7 @@ import {
     Text,
 } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
-import {
-    LoginButton,
-    UserAvatar,
-    UserName,
-    WhenLoggedIn,
-    WhenLoggedOut,
-} from "@pollinations/ui/auth/sdk";
+import { UserAvatar } from "@pollinations/ui/auth/sdk";
 import {
     categoryLabel,
     ModalityChip,
@@ -37,11 +30,6 @@ import {
 } from "@pollinations/ui/gen";
 import { type ReactNode, useState } from "react";
 import { GEN_BASE_URL } from "../config";
-import {
-    AccountContexts,
-    AuthPresentationExamples,
-    WalletExamples,
-} from "./account-examples";
 import { PageIntro, SectionHeader } from "./reference-layout";
 
 const CATEGORY_ORDER: ModelSelectorCategory[] = [
@@ -123,15 +111,9 @@ function CatalogTable({
     children: ReactNode;
 }) {
     return (
-        <ScrollArea
-            axis="x"
-            className="max-w-full"
-            aria-label={`${ariaLabel} scrollable table`}
-        >
-            <Table aria-label={ariaLabel}>
-                <TableBody>{children}</TableBody>
-            </Table>
-        </ScrollArea>
+        <Table aria-label={ariaLabel}>
+            <TableBody>{children}</TableBody>
+        </Table>
     );
 }
 
@@ -198,9 +180,7 @@ function formatPollenAmount(value: number | null | undefined): string {
 
 function formatUsageCount(count: number | null | undefined): string {
     if (count == null) return "No usage";
-    return count
-        ? "Recent request found (30-day sample)"
-        : "No recent request in sample";
+    return `${count.toLocaleString()} request${count === 1 ? "" : "s"} / 30d`;
 }
 
 function formatExpiry(value: string | null | undefined): string {
@@ -298,22 +278,13 @@ export function ModulesPage() {
     return (
         <>
             <PageIntro>
-                Modules group domain features — auth, model selection and
-                wallet. Their display components can be SDK-free; explicit /sdk
-                entry points connect them to live data.
+                Modules are domain features wired to the SDK and live data —
+                authentication, model selection, wallet — assembled from
+                primitives and compositions.
             </PageIntro>
 
-            <AccountContexts />
-            <WalletExamples />
-            <AuthPresentationExamples />
-
             <section>
-                <SectionHeader title="Live app connection — AppUserMenu">
-                    This connects react.pollinations.ai to your delegated API
-                    access, not to an operations session. No secret key is
-                    displayed here. Profile name and email require the optional
-                    profile permission.
-                </SectionHeader>
+                <SectionHeader title="Auth" />
                 <Surface
                     variant="panel"
                     className="flex flex-col items-start gap-5"
@@ -327,35 +298,6 @@ export function ModulesPage() {
                             </span>
                         ) : null}
                     </div>
-                    <div className="space-y-2 text-sm">
-                        <p className="font-semibold">
-                            SDK building blocks: LoginButton · UserAvatar ·
-                            UserName · WhenLoggedIn · WhenLoggedOut
-                        </p>
-                        <WhenLoggedIn>
-                            <div className="flex items-center gap-2">
-                                <UserAvatar />
-                                <UserName />
-                                <span>App connection is active.</span>
-                            </div>
-                        </WhenLoggedIn>
-                        <WhenLoggedOut>
-                            <LoginButton>Connect this showcase</LoginButton>
-                        </WhenLoggedOut>
-                        <p className="text-theme-text-soft">
-                            These controls all use the same PolliProvider.
-                            Conditional rendering is a UI convenience, not a
-                            server authorization check.
-                        </p>
-                    </div>
-                    {isLoggedIn &&
-                    (profile.error || accountKey.error || keyUsage.error) ? (
-                        <Alert title="Some connection details are unavailable">
-                            Check the granted permissions or reconnect if the
-                            key has expired. Missing data is not a zero balance
-                            or unlimited access.
-                        </Alert>
-                    ) : null}
                     <div className="flex w-full flex-col gap-5">
                         <div className="w-full">
                             <Text as="h3" size="sm" weight="bold">
@@ -417,12 +359,10 @@ export function ModulesPage() {
                                         <AccountSummaryText
                                             value={
                                                 isLoggedIn
-                                                    ? accountKey.data
-                                                        ? formatPollenAmount(
-                                                              accountKey.data
-                                                                  ?.pollenBudget,
-                                                          )
-                                                        : "Unavailable"
+                                                    ? formatPollenAmount(
+                                                          accountKey.data
+                                                              ?.pollenBudget,
+                                                      )
                                                     : "—"
                                             }
                                             isLoading={accountKey.isLoading}
@@ -433,12 +373,10 @@ export function ModulesPage() {
                                         <AccountSummaryText
                                             value={
                                                 isLoggedIn
-                                                    ? accountKey.data
-                                                        ? formatExpiry(
-                                                              accountKey.data
-                                                                  ?.expiresAt,
-                                                          )
-                                                        : "Unavailable"
+                                                    ? formatExpiry(
+                                                          accountKey.data
+                                                              ?.expiresAt,
+                                                      )
                                                     : "—"
                                             }
                                             isLoading={accountKey.isLoading}
@@ -449,12 +387,9 @@ export function ModulesPage() {
                                         <AccountSummaryText
                                             value={
                                                 isLoggedIn
-                                                    ? keyUsage.data
-                                                        ? formatUsageCount(
-                                                              keyUsage.data
-                                                                  ?.count,
-                                                          )
-                                                        : "Unavailable"
+                                                    ? formatUsageCount(
+                                                          keyUsage.data?.count,
+                                                      )
                                                     : "—"
                                             }
                                             isLoading={keyUsage.isLoading}
@@ -466,6 +401,15 @@ export function ModulesPage() {
                                                 categories={categories}
                                                 isLoading={isLoading}
                                             />
+                                        ) : (
+                                            <AccountSummaryText value="—" />
+                                        )}
+                                    </CatalogTableRow>
+                                    <CatalogTableRow label="App Earnings">
+                                        {isLoggedIn ? (
+                                            <Chip intent="news" size="sm">
+                                                20% of pollen spent in-app
+                                            </Chip>
                                         ) : (
                                             <AccountSummaryText value="—" />
                                         )}

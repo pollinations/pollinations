@@ -7,6 +7,39 @@ import {
 } from "./documents";
 
 describe("driveDocumentLink", () => {
+    it("distinguishes supplier evidence from payment-only statements", () => {
+        const statement =
+            "evidence_type=payment_statement https://drive.google.com/file/d/statement/view";
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence: statement,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Wise cashback",
+                evidence: `${statement} evidence_requirement=payment`,
+            }),
+        ).toBe(true);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence:
+                    "evidence_type=supplier_document https://drive.google.com/file/d/invoice/view",
+            }),
+        ).toBe(true);
+        expect(
+            hasArchivedEvidence(
+                "https://drive.google.com/drive/folders/folder",
+            ),
+        ).toBe(false);
+        expect(
+            hasArchivedEvidence(
+                "https://docs.google.com/forms/d/form/viewform",
+            ),
+        ).toBe(false);
+    });
     it("recognizes Drive folders", () => {
         expect(
             driveDocumentLink(

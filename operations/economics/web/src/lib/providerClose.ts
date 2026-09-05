@@ -1,5 +1,6 @@
 import type { Data, OpCloudRow } from "../types";
 import { cloudCategory } from "./categories";
+import { opCloudCreditBurnUsd, opCloudPaidBurnUsd } from "./computeLedger";
 import {
     driveDocumentLink,
     hasArchivedEvidence,
@@ -14,9 +15,11 @@ import {
     WINDOW_START,
 } from "./months";
 import {
+    canonicalProviderAccountId,
     providerCheckExplanation,
     providerMeteringBasis,
     providerReviewRows,
+    resolveProvider,
 } from "./providerRegistry";
 import { type VendorPlanes, vendorPlanes } from "./vendorReconciliation";
 
@@ -45,6 +48,12 @@ export type ProviderCloseEvidence = {
 };
 
 export type ProviderCloseRow = {
+    coverageStatus:
+        | "complete"
+        | "partial"
+        | "missing"
+        | "exception"
+        | "not required";
     month: string;
     vendor: string;
     partial: boolean;
@@ -119,7 +128,11 @@ function closeStatus({
     transactionDocumentMissing: boolean;
 }): ProviderCloseStatus {
     if (transactionDocumentMissing) return "missing document";
-    if (accountStatus === "partial" || accountStatus === "unassigned") {
+    if (
+        accountStatus === "partial" ||
+        accountStatus === "unassigned" ||
+        (statementRequired && accountStatus === "no activity")
+    ) {
         return "needs account check";
     }
     if (!hasProviderEvidence && statementRequired && !providerCheckResolved) {
@@ -135,11 +148,40 @@ function providerEvidenceFor(
 ): OpCloudRow[] {
     return rows.filter(
         (row) =>
-            cloudCategory(row) === "compute" &&
+            ["compute", "infrastructure"].includes(cloudCategory(row)) &&
             !(row.credit > 0 && row.paid === 0) &&
             row.start.slice(0, 7) === month &&
             row.vendor === vendor,
     );
+}
+
+function coversCalendarMonth(rows: OpCloudRow[], month: string): boolean {
+    const start = Date.parse(`${month}-01T00:00:00Z`);
+    const date = new Date(start);
+    date.setUTCMonth(date.getUTCMonth() + 1);
+    const end = date.getTime();
+    let covered = start;
+    const intervals = rows
+        .filter((row) => hasArchivedEvidence(row.evidence))
+        .map((row) => [
+            Date.parse(
+                row.start.replace(" ", "T") +
+                    (row.start.endsWith("Z") ? "" : "Z"),
+            ),
+            Date.parse(
+                row.end.replace(" ", "T") + (row.end.endsWith("Z") ? "" : "Z"),
+            ),
+        ])
+        .filter(
+            ([from, to]) =>
+                Number.isFinite(from) && Number.isFinite(to) && to > from,
+        )
+        .sort((a, b) => a[0] - b[0]);
+    for (const [from, to] of intervals) {
+        if (from > covered) break;
+        covered = Math.max(covered, to);
+    }
+    return covered >= end;
 }
 
 function dedupeEvidence(providerRows: OpCloudRow[]): ProviderCloseEvidence[] {
@@ -187,6 +229,12 @@ export function providerCloseRows(
         string,
         Exclude<TransactionDocumentStatus, null>
     >();
+    for (const [key, review] of reviewByKey) {
+        if (review.monthlyReview) {
+            productKeys.add(key);
+            productActivityKeys.add(key);
+        }
+    }
     for (const row of data.opTransactions ?? []) {
         const month = row.date.slice(0, 7);
         if (
@@ -218,7 +266,7 @@ export function providerCloseRows(
         const month = row.start.slice(0, 7);
         if (
             month >= WINDOW_START &&
-            cloudCategory(row) === "compute" &&
+            ["compute", "infrastructure"].includes(cloudCategory(row)) &&
             !(row.credit > 0 && row.paid === 0)
         ) {
             const key = `${month}|${row.vendor}`;
@@ -226,29 +274,41 @@ export function providerCloseRows(
             productActivityKeys.add(key);
         }
     }
-    const planes = [...productKeys].sort().map((key): VendorPlanes => {
-        const existing = planeByKey.get(key);
-        if (existing) return existing;
-        const [month, vendor] = key.split("|");
-        return {
-            month,
-            vendor,
-            meteringBasis: providerMeteringBasis(vendor),
-            cashUsd: null,
-            cloudPaidUsd: null,
-            cloudCreditUsd: null,
-            cloudUsd: null,
-            meterCloudUsd: null,
-            pollenPaidCostUsd: null,
-            pollenQuestCostUsd: null,
-            pollenCostUsd: null,
-            calibX: null,
-            cashCoverage: null,
-            meterCoverage: null,
-            reconciliationExplanation: null,
-            status: "ok",
-        };
-    });
+    const planes = [...productKeys]
+        .sort(
+            (a, b) =>
+                Number(
+                    transactionDocumentStatusByKey.has(b) ||
+                        (reviewByKey.get(b)?.sources.length ?? 0) > 0,
+                ) -
+                    Number(
+                        transactionDocumentStatusByKey.has(a) ||
+                            (reviewByKey.get(a)?.sources.length ?? 0) > 0,
+                    ) || a.localeCompare(b),
+        )
+        .map((key): VendorPlanes => {
+            const existing = planeByKey.get(key);
+            if (existing) return existing;
+            const [month, vendor] = key.split("|");
+            return {
+                month,
+                vendor,
+                meteringBasis: providerMeteringBasis(vendor),
+                cashUsd: null,
+                cloudPaidUsd: null,
+                cloudCreditUsd: null,
+                cloudUsd: null,
+                meterCloudUsd: null,
+                pollenPaidCostUsd: null,
+                pollenQuestCostUsd: null,
+                pollenCostUsd: null,
+                calibX: null,
+                cashCoverage: null,
+                meterCoverage: null,
+                reconciliationExplanation: null,
+                status: "ok",
+            };
+        });
     return planes.map((plane) => {
         const planeKey = `${plane.month}|${plane.vendor}`;
         const providerRows = providerEvidenceFor(
@@ -256,14 +316,17 @@ export function providerCloseRows(
             plane.month,
             plane.vendor,
         );
-        const hasProviderEvidence = providerRows.some((row) =>
-            hasArchivedEvidence(row.evidence),
-        );
+        const hasProviderEvidence =
+            providerRows.length > 0 &&
+            providerRows.every((row) => hasArchivedEvidence(row.evidence));
         const meteringBasis = providerMeteringBasis(plane.vendor);
         const statementRequired =
             productActivityKeys.has(planeKey) &&
             meteringBasis !== "internal" &&
-            meteringBasis !== "not_applicable";
+            (meteringBasis !== "not_applicable" ||
+                providerRows.some(
+                    (row) => cloudCategory(row) === "infrastructure",
+                ));
         const providerCheckResolved =
             providerCheckExplanation(
                 plane.month,
@@ -271,10 +334,16 @@ export function providerCloseRows(
                 data.privateConfig,
             ) != null;
         const billedUsd = hasProviderEvidence
-            ? (plane.cloudPaidUsd ?? 0)
+            ? providerRows.reduce(
+                  (sum, row) => sum + opCloudPaidBurnUsd(row),
+                  0,
+              )
             : null;
         const creditFreeUsd = hasProviderEvidence
-            ? (plane.cloudCreditUsd ?? 0)
+            ? providerRows.reduce(
+                  (sum, row) => sum + opCloudCreditBurnUsd(row),
+                  0,
+              )
             : null;
         const funding = fundingStatus({
             billedUsd,
@@ -284,16 +353,43 @@ export function providerCloseRows(
             statementRequired,
         });
         const review = reviewByKey.get(planeKey);
+        const provider = resolveProvider(plane.vendor);
+        const accounts = review?.expectedAccounts ?? [];
+        const completeCoverage =
+            accounts.length > 0
+                ? accounts.every((account) =>
+                      coversCalendarMonth(
+                          providerRows.filter(
+                              (row) =>
+                                  canonicalProviderAccountId(
+                                      provider,
+                                      row.account_id,
+                                  ) === account.id,
+                          ),
+                          plane.month,
+                      ),
+                  )
+                : coversCalendarMonth(providerRows, plane.month);
+        const coverageStatus = !statementRequired
+            ? ("not required" as const)
+            : providerCheckResolved
+              ? ("exception" as const)
+              : providerRows.length === 0
+                ? ("missing" as const)
+                : completeCoverage
+                  ? ("complete" as const)
+                  : ("partial" as const);
         const transactionDocumentStatus =
             transactionDocumentStatusByKey.get(planeKey) ?? null;
         const status = closeStatus({
             accountStatus: review?.accountStatus ?? "not tracked",
-            hasProviderEvidence,
+            hasProviderEvidence: hasProviderEvidence && completeCoverage,
             providerCheckResolved,
             statementRequired,
             transactionDocumentMissing: transactionDocumentStatus === "missing",
         });
         return {
+            coverageStatus,
             month: plane.month,
             vendor: plane.vendor,
             partial: plane.month >= currentMonth,
@@ -351,7 +447,8 @@ export function providerCloseSummary(
         blockers: closedRows.filter(
             (row) =>
                 row.closeStatus === "needs provider check" ||
-                row.closeStatus === "needs account check",
+                row.closeStatus === "needs account check" ||
+                row.closeStatus === "missing document",
         ).length,
         billedUsd: rows.reduce((sum, row) => sum + (row.billedUsd ?? 0), 0),
         creditFreeUsd: rows.reduce(

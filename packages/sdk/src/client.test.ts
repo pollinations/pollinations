@@ -564,49 +564,46 @@ describe("Pollinations simple text facade", () => {
         [{ code: 200 }, 502, "STREAM_ERROR"],
         [{ code: 600 }, 502, "STREAM_ERROR"],
         [{ code: 400.5 }, 502, "STREAM_ERROR"],
-    ])(
-        "preserves streamed error status and code: %j",
-        async (error, status, code) => {
-            fetchMock.mockResolvedValue(
-                makeResponse(
-                    `data: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`,
-                    { kind: "stream", contentType: "text/event-stream" },
-                ),
-            );
-            const consume = async () => {
-                for await (const _chunk of newClient().textStream("hello")) {
-                    /* consume */
-                }
-            };
-            await expect(consume()).rejects.toMatchObject({
-                name: "PollinationsError",
-                status,
-                code,
-            });
-        },
-    );
+    ])("preserves streamed error status and code: %j", async (error, status, code) => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                `data: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`,
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const consume = async () => {
+            for await (const _chunk of newClient().textStream("hello")) {
+                /* consume */
+            }
+        };
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            status,
+            code,
+        });
+    });
 
-    it.each([undefined, null])(
-        "rejects an error finish reason even with error=%s",
-        async (error) => {
-            fetchMock.mockResolvedValue(
-                makeResponse(
-                    `data: ${JSON.stringify({ error, choices: [{ delta: {}, finish_reason: "error" }] })}\n\ndata: [DONE]\n\n`,
-                    { kind: "stream", contentType: "text/event-stream" },
-                ),
-            );
-            const consume = async () => {
-                for await (const _chunk of newClient().textStream("hello")) {
-                    /* consume */
-                }
-            };
-            await expect(consume()).rejects.toMatchObject({
-                name: "PollinationsError",
-                status: 502,
-                code: "STREAM_ERROR",
-            });
-        },
-    );
+    it.each([
+        undefined,
+        null,
+    ])("rejects an error finish reason even with error=%s", async (error) => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                `data: ${JSON.stringify({ error, choices: [{ delta: {}, finish_reason: "error" }] })}\n\ndata: [DONE]\n\n`,
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const consume = async () => {
+            for await (const _chunk of newClient().textStream("hello")) {
+                /* consume */
+            }
+        };
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            status: 502,
+            code: "STREAM_ERROR",
+        });
+    });
 
     it("rejects malformed stream events without choices", async () => {
         fetchMock.mockResolvedValue(

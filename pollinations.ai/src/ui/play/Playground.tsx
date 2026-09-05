@@ -215,11 +215,18 @@ function promptPlaceholder(
     return "Describe what you want…";
 }
 
+const EXTENSIONS: Record<string, string> = {
+    "image/jpeg": "jpg",
+    "image/svg+xml": "svg",
+    "audio/mpeg": "mp3",
+    "audio/x-wav": "wav",
+    "video/quicktime": "mov",
+};
+
 function getResultExtension(result: PlaygroundResult): string {
-    if (result.type === "image") return "png";
-    if (result.type === "video") return "mp4";
-    if (result.type === "audio") return "mp3";
-    return "txt";
+    if (result.type === "text") return "txt";
+    const type = result.contentType.split(";")[0].trim().toLowerCase();
+    return EXTENSIONS[type] ?? type.split("/")[1] ?? result.type;
 }
 
 function bytesToObjectUrl(buffer: ArrayBuffer, contentType: string): string {

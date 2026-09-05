@@ -27,6 +27,7 @@ export function collectOutput(
     send?: (type: string, payload: Record<string, unknown>) => void,
 ) {
     const items: AgentOutputItem[] = [];
+    const skippedToolCalls = new Set<string>();
     let message: z.infer<typeof MessageSchema> | undefined;
     const closeMessage = (status: "completed" | "incomplete" = "completed") => {
         if (!message) return;
@@ -93,6 +94,12 @@ export function collectOutput(
                 return;
             }
             if (part.type === "tool-call") {
+                // The SDK feeds invalid attempts back to the model for recovery;
+                // they never executed an MCP tool and are not public call history.
+                if (part.invalid) {
+                    skippedToolCalls.add(part.toolCallId);
+                    return;
+                }
                 closeMessage();
                 const [, serverLabel, name] =
                     /^mcp__(.*?)__(.*)$/.exec(part.toolName) ?? [];
@@ -122,6 +129,7 @@ export function collectOutput(
                 });
                 return;
             }
+            if (skippedToolCalls.delete(part.toolCallId)) return;
             const index = items.findIndex(
                 (item) => item.id === part.toolCallId,
             );

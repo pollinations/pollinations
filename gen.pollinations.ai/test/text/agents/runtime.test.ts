@@ -1018,6 +1018,196 @@ describe("prompt-agent runtime", () => {
         });
     });
 
+    it.each(
+        [false, true].flatMap((stream) =>
+            [
+                { kind: "unknown tool", name: "search", arguments: "{}" },
+                {
+                    kind: "malformed arguments",
+                    name: "mcp__pollinations__listModels",
+                    arguments: "{",
+                },
+            ].map((attempt) => ({ stream, ...attempt })),
+        ),
+    )("recovers from $kind with stream=$stream and returns replayable history", async ({
+        stream,
+        name,
+        arguments: toolArguments,
+    }) => {
+        let modelCalls = 0;
+        let toolCalls = 0;
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url === POLLINATIONS_MCP_PROXY_URL) {
+                    if (request.method === "GET")
+                        return new Response(null, { status: 405 });
+                    if (request.method === "DELETE")
+                        return new Response(null, { status: 200 });
+                    const body = (await request.json()) as {
+                        id?: string;
+                        method: string;
+                    };
+                    if (body.method === "notifications/initialized")
+                        return new Response(null, { status: 202 });
+                    if (body.method === "tools/call") {
+                        toolCalls++;
+                        throw new Error("Invalid tool must not execute");
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result:
+                            body.method === "initialize"
+                                ? {
+                                      protocolVersion: "2025-06-18",
+                                      capabilities: { tools: {} },
+                                      serverInfo: {
+                                          name: "test-mcp",
+                                          version: "1.0.0",
+                                      },
+                                  }
+                                : {
+                                      tools: [
+                                          {
+                                              name: "listModels",
+                                              inputSchema: {
+                                                  type: "object",
+                                              },
+                                          },
+                                      ],
+                                  },
+                    });
+                }
+                modelCalls++;
+                const body = (await request.json()) as {
+                    stream?: boolean;
+                    messages: { role: string; content?: unknown }[];
+                };
+                if (modelCalls === 2) {
+                    expect(body.messages).toEqual(
+                        expect.arrayContaining([
+                            expect.objectContaining({
+                                role: "tool",
+                                content: expect.any(String),
+                            }),
+                        ]),
+                    );
+                }
+                if (modelCalls === 3) {
+                    expect(
+                        body.messages.some((item) => item.role === "tool"),
+                    ).toBe(false);
+                }
+                const message = {
+                    role: "assistant",
+                    content:
+                        modelCalls === 1 ? "checking " : "Recovered answer",
+                    ...(modelCalls === 1
+                        ? {
+                              tool_calls: [
+                                  {
+                                      index: 0,
+                                      id: "invalid-call",
+                                      type: "function",
+                                      function: {
+                                          name,
+                                          arguments: toolArguments,
+                                      },
+                                  },
+                              ],
+                          }
+                        : {}),
+                };
+                const finishReason = modelCalls === 1 ? "tool_calls" : "stop";
+                const usage = {
+                    prompt_tokens: 3,
+                    completion_tokens: 2,
+                    total_tokens: 5,
+                };
+                if (!body.stream) {
+                    return Response.json({
+                        choices: [{ message, finish_reason: finishReason }],
+                        usage,
+                    });
+                }
+                return new Response(
+                    `${[
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: message,
+                                    finish_reason: null,
+                                },
+                            ],
+                        },
+                        {
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: {},
+                                    finish_reason: finishReason,
+                                },
+                            ],
+                            usage,
+                        },
+                    ]
+                        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                        .join("")}data: [DONE]\n\n`,
+                    { headers: { "content-type": "text/event-stream" } },
+                );
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const runtime: PromptAgentRuntime = {
+            ...BASE_RUNTIME,
+            config: { ...BASE_RUNTIME.config, mcpServers: ["pollinations"] },
+        };
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "look up cats" }], stream },
+            runtime,
+        );
+        expect(response.status).toBe(200);
+        let result: {
+            output: unknown[];
+            usage: { tool_call_counts: Record<string, number> };
+        };
+        if (stream) {
+            const events = responseStreamEvents(await response.text());
+            expect(events.some((event) => event.type === "error")).toBe(false);
+            expect(
+                events.some((event) => event.type === "response.failed"),
+            ).toBe(false);
+            result = events.find((event) => event.type === "response.completed")
+                ?.response as typeof result;
+        } else {
+            result = await response.json();
+        }
+        expect(modelCalls).toBe(2);
+        expect(toolCalls).toBe(0);
+        expect(responseOutputText(result)).toBe("checking Recovered answer");
+        expect(result.output).toEqual([
+            expect.objectContaining({ type: "message", status: "completed" }),
+        ]);
+        expect(result.usage.tool_call_counts).toEqual({});
+        const replay = await runAgent(
+            {
+                messages: [
+                    ...result.output,
+                    { role: "user", content: "Continue" },
+                ],
+            },
+            runtime,
+        );
+        expect(replay.status).toBe(200);
+        expect(responseOutputText(await replay.json())).toBe(
+            "Recovered answer",
+        );
+        expect(modelCalls).toBe(3);
+        expect(toolCalls).toBe(0);
+    });
+
     it("feeds a failing tool's error back to the model instead of 502", async () => {
         let modelCalls = 0;
         const fetchMock = vi.fn(

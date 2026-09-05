@@ -1,5 +1,5 @@
 /**
- * Content-policy detection for upstream image/video providers.
+ * Content-policy detection for upstream generation providers.
  *
  * Providers (Alibaba DashScope, Replicate, Vertex AI Gemini, Azure Content
  * Safety) reject disallowed prompts, input images, or generated outputs with
@@ -32,6 +32,7 @@ const MODERATION_PATTERNS = [
     "unsafe content", // Azure Content Safety "contains unsafe content"
     "nsfw", // Replicate Qwen Image Edit "... contained NSFW content ..."
     "content_safety_violation", // Azure MAI image 400 body "code":"content_safety_violation"
+    "prohibited_content", // Gemini/OpenRouter text rejection
 ];
 
 // Provider-side blocks that quote content-policy wording but are NOT about this

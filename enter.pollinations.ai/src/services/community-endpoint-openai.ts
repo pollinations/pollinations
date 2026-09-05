@@ -1,7 +1,6 @@
 import {
     communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
-    communityChatCompletionsUrl,
     communityEmbeddingsUrl,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
@@ -9,6 +8,7 @@ import {
 } from "@shared/community-endpoint-urls.ts";
 import {
     COMMUNITY_ENDPOINT_TIMEOUT_MS,
+    type CommunityEndpointApi,
     type CommunityEndpointImagePricing,
     communityEndpointErrorDetail,
     communityTranscriptionSeconds,
@@ -27,9 +27,17 @@ import {
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
     openaiUsageToUsage,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes, readResponseText } from "@shared/response-bytes.ts";
+import {
+    CompletionUsageSchema,
+    CreateResponseResponseSchema,
+    ResponseTerminalEventSchema,
+} from "@shared/schemas/openai.ts";
 import { detectVideoMimeType } from "@shared/video-mime.ts";
+import { createParser } from "eventsource-parser";
+import { z } from "zod";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
 type EndpointAuth = {
@@ -62,7 +70,11 @@ function communityModelsUrl(baseUrl: string): string {
     return url.toString();
 }
 
-async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
+async function fetchText(
+    url: string,
+    init: RequestInit,
+    streaming = false,
+): Promise<string> {
     let response: Response;
     try {
         // The base URL is validated against https + the private-host blocklist
@@ -77,17 +89,25 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         throw new Error("Endpoint request timed out or could not connect");
     }
 
-    const body = parseJson(
-        await readResponseText(
-            response,
-            MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
-            () => new Error("Endpoint response is too large"),
-        ),
+    const text = await readResponseText(
+        response,
+        MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+        () => new Error("Endpoint response is too large"),
     );
     if (!response.ok) {
-        throw new Error(endpointErrorMessage(response.status, body));
+        throw new Error(endpointErrorMessage(response.status, parseJson(text)));
     }
-    return body;
+    if (
+        streaming &&
+        !response.headers.get("content-type")?.includes("text/event-stream")
+    ) {
+        throw new Error("Endpoint did not return a text/event-stream response");
+    }
+    return text;
+}
+
+async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
+    return parseJson(await fetchText(url, init));
 }
 
 function parseJson(text: string): unknown {
@@ -139,51 +159,125 @@ export async function listCommunityEndpointModels({
 }
 
 export async function testCommunityEndpoint({
-    baseUrl,
+    url,
+    api,
     bearerToken,
     model,
-}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
-    const body = await fetchJson(communityChatCompletionsUrl(baseUrl), {
+}: {
+    url: string;
+    api: CommunityEndpointApi;
+    bearerToken: string;
+    model: string;
+}): Promise<CommunityEndpointTestResult> {
+    const request = {
+        model,
+        ...(api === "responses"
+            ? { input: "Reply with OK.", store: false }
+            : { messages: [{ role: "user", content: "Reply with OK." }] }),
+    };
+    const init = {
         method: "POST",
         headers: {
             ...authorizationHeaders(bearerToken),
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: "user", content: "Reply with OK." }],
-            stream: false,
-        }),
-    });
-
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("choices" in body) ||
-        !Array.isArray(body.choices)
-    ) {
-        throw new Error("Endpoint did not return OpenAI chat choices");
-    }
-    if (
-        !("usage" in body) ||
-        !body.usage ||
-        typeof body.usage !== "object" ||
-        !("prompt_tokens" in body.usage) ||
-        !("completion_tokens" in body.usage) ||
-        !("total_tokens" in body.usage) ||
-        typeof body.usage.prompt_tokens !== "number" ||
-        typeof body.usage.completion_tokens !== "number" ||
-        typeof body.usage.total_tokens !== "number"
-    ) {
-        throw new Error("Endpoint did not return OpenAI token usage");
-    }
-    const usage = body.usage as CommunityEndpointUsage;
-    return {
-        usage,
-        billableUsage: openaiUsageToUsage(
-            usage as Parameters<typeof openaiUsageToUsage>[0],
-        ),
     };
+    const body = await fetchJson(url, {
+        ...init,
+        body: JSON.stringify({ ...request, stream: false }),
+    });
+    let result: CommunityEndpointTestResult;
+    if (api === "responses") {
+        const parsed = CreateResponseResponseSchema.safeParse(body);
+        if (
+            !parsed.success ||
+            !["completed", "incomplete"].includes(parsed.data.status) ||
+            !parsed.data.usage
+        ) {
+            throw new Error(
+                "Endpoint did not return a successful Response with valid token usage",
+            );
+        }
+        result = {
+            usage: parsed.data.usage,
+            billableUsage: responsesUsageToUsage(parsed.data.usage),
+        };
+    } else {
+        const parsed = z
+            .object({
+                choices: z.array(z.unknown()).min(1),
+                usage: CompletionUsageSchema,
+            })
+            .safeParse(body);
+        if (!parsed.success) {
+            throw new Error(
+                "Endpoint did not return OpenAI chat choices with valid token usage",
+            );
+        }
+        result = {
+            usage: parsed.data.usage,
+            billableUsage: openaiUsageToUsage(parsed.data.usage),
+        };
+    }
+
+    const stream = await fetchText(
+        url,
+        {
+            ...init,
+            body: JSON.stringify({
+                ...request,
+                stream: true,
+                ...(api === "chat_completions"
+                    ? { stream_options: { include_usage: true } }
+                    : {}),
+            }),
+        },
+        true,
+    );
+    let hasUsage = false;
+    const parser = createParser({
+        onEvent(event) {
+            if (event.data === "[DONE]") return;
+            const data = parseJson(event.data);
+            if (!data || typeof data !== "object")
+                throw new Error("Endpoint returned malformed streaming data");
+            const type = ("type" in data ? data.type : null) ?? event.event;
+            if (
+                ("error" in data && data.error != null) ||
+                type === "error" ||
+                type === "response.failed"
+            ) {
+                throw new Error("Endpoint returned a streaming error");
+            }
+            if (api === "responses") {
+                if (
+                    !["response.completed", "response.incomplete"].includes(
+                        String(type),
+                    )
+                )
+                    return;
+                const terminal = ResponseTerminalEventSchema.safeParse({
+                    ...data,
+                    type,
+                });
+                if (!terminal.success || !terminal.data.response.usage)
+                    throw new Error(
+                        "Endpoint omitted valid terminal streaming usage",
+                    );
+                hasUsage = true;
+            } else if ("usage" in data && data.usage != null) {
+                if (!CompletionUsageSchema.safeParse(data.usage).success)
+                    throw new Error(
+                        "Endpoint omitted valid terminal streaming usage",
+                    );
+                hasUsage = true;
+            }
+        },
+    });
+    parser.feed(`${stream}\n\n`);
+    if (!hasUsage)
+        throw new Error("Endpoint omitted valid terminal streaming usage");
+    return result;
 }
 
 export async function testCommunityImageEndpoint({

@@ -295,7 +295,7 @@ describe("Pollinations server-owned defaults", () => {
                 },
             ],
         };
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ data: [{ b64_json: "AAAA" }] }),
@@ -387,7 +387,7 @@ describe("Pollinations seed handling", () => {
 
     it("passes seed through text and chat requests consistently", async () => {
         const client = newClient();
-        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n\n';
         fetchMock
             .mockResolvedValueOnce(
                 makeResponse({ choices: [{ message: { content: "ok" } }] }),
@@ -480,7 +480,7 @@ describe("Pollinations chat routing", () => {
         const client = newClient();
         fetchMock.mockResolvedValue(
             makeResponse(
-                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n',
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n\n',
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -520,6 +520,176 @@ describe("Pollinations chat routing", () => {
 });
 
 describe("Pollinations chat streaming", () => {
+    it("passes request values and provider payloads through unchanged", async () => {
+        const messages = [
+            { role: "user" as const, content: "  keep this text  " },
+        ];
+        const routing = { text: "publisher/custom-model" };
+        const payload = {
+            model: "provider-reported-id",
+            choices: [
+                {
+                    index: 0,
+                    delta: {
+                        content: "  answer  ",
+                        reasoning: "provider detail",
+                    },
+                    finish_reason: "provider_finish",
+                },
+            ],
+            usage: {
+                prompt_tokens: 1,
+                completion_tokens: 2,
+                total_tokens: 3,
+                provider_cost: 0.123,
+            },
+            provider_metadata: { region: "example", nested: [0, false, null] },
+        };
+        fetchMock.mockResolvedValue(
+            new Response(
+                `data: ${JSON.stringify(payload)}\n\ndata: [DONE]\n\n`,
+            ),
+        );
+        const chunks = [];
+        for await (const chunk of newClient().chatStream(messages, {
+            model: "requested-alias",
+            routing,
+            seed: 0,
+            temperature: 0,
+        })) {
+            chunks.push(chunk);
+        }
+        expect(chunks).toEqual([payload]);
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            messages,
+            model: "requested-alias",
+            routing,
+            seed: 0,
+            temperature: 0,
+            stream: true,
+        });
+    });
+
+    it.each([
+        "\n",
+        "\r",
+        "\r\n",
+    ])("preserves UTF-8 and tool/usage events split at every byte (%j)", async (newline) => {
+        const events = [
+            {
+                choices: [
+                    {
+                        index: 0,
+                        delta: { content: "🌸 café" },
+                        finish_reason: null,
+                    },
+                ],
+            },
+            {
+                choices: [
+                    {
+                        index: 0,
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "call_1",
+                                    type: "function",
+                                    function: {
+                                        name: "search",
+                                        arguments: "{}",
+                                    },
+                                },
+                            ],
+                        },
+                        finish_reason: "tool_calls",
+                    },
+                ],
+            },
+            {
+                choices: [],
+                usage: {
+                    prompt_tokens: 2,
+                    completion_tokens: 3,
+                    total_tokens: 5,
+                },
+            },
+        ];
+        const sse = events
+            .map((event) => `data:${JSON.stringify(event)}${newline}${newline}`)
+            .join("");
+        const bytes = new TextEncoder().encode(
+            `${sse}data: [DONE]${newline}${newline}`,
+        );
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                for (const byte of bytes)
+                    controller.enqueue(Uint8Array.of(byte));
+                controller.close();
+            },
+        });
+        fetchMock.mockResolvedValue(new Response(body));
+
+        const chunks = [];
+        for await (const chunk of newClient().chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual(events);
+        expect(body.locked).toBe(false);
+    });
+
+    it("discards an incomplete SSE event at EOF", async () => {
+        const event = { choices: [{ delta: { content: "last" } }] };
+        fetchMock.mockResolvedValue(
+            new Response(`data: ${JSON.stringify(event)}`),
+        );
+
+        const chunks = [];
+        for await (const chunk of newClient().chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual([]);
+    });
+
+    it("does not guess event boundaries between complete JSON data lines", async () => {
+        fetchMock.mockResolvedValue(
+            new Response('data: {"choices":[]}\ndata: {"choices":[]}\n\n'),
+        );
+
+        await expect(
+            newClient()
+                .chatStream([{ role: "user", content: "hello" }])
+                .next(),
+        ).rejects.toMatchObject({ code: "MALFORMED_STREAM" });
+    });
+
+    it("cancels and releases the body when decoding fails", async () => {
+        const cancel = vi.fn();
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode("data: [invalid-json]\n\n"),
+                );
+            },
+            cancel,
+        });
+        fetchMock.mockResolvedValue(new Response(body));
+
+        await expect(
+            newClient()
+                .chatStream([{ role: "user", content: "hello" }])
+                .next(),
+        ).rejects.toMatchObject({ code: "MALFORMED_STREAM" });
+        expect(cancel).toHaveBeenCalledOnce();
+        expect(body.locked).toBe(false);
+    });
+
     it("decodes SSE across chunk boundaries and ignores comment lines", async () => {
         const client = newClient();
         const chunk = {
@@ -754,7 +924,7 @@ describe("Pollinations simple text facade", () => {
                     'data: {"error":{"message":"Upstream model unavailable"}}',
                     "data: [DONE]",
                     "",
-                ].join("\n"),
+                ].join("\n\n"),
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -778,6 +948,72 @@ describe("Pollinations simple text facade", () => {
         });
     });
 
+    it("accepts successful stream events with a null error", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"error":null,"choices":[{"delta":{"content":"hello"}}]}\n\ndata: [DONE]\n\n',
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const chunks: string[] = [];
+        for await (const chunk of newClient().textStream("hello"))
+            chunks.push(chunk);
+        expect(chunks).toEqual(["hello"]);
+    });
+
+    it.each([
+        [{ code: 400, message: "PROHIBITED_CONTENT" }, 400, "STREAM_ERROR"],
+        [{ code: "429", message: "Rate limited" }, 429, "STREAM_ERROR"],
+        [
+            { code: "content_policy_violation", status: 422 },
+            422,
+            "content_policy_violation",
+        ],
+        [{ code: "usage_missing" }, 502, "usage_missing"],
+        [{ code: 200 }, 502, "STREAM_ERROR"],
+        [{ code: 600 }, 502, "STREAM_ERROR"],
+        [{ code: 400.5 }, 502, "STREAM_ERROR"],
+    ])("preserves streamed error status and code: %j", async (error, status, code) => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                `data: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`,
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const consume = async () => {
+            for await (const _chunk of newClient().textStream("hello")) {
+                /* consume */
+            }
+        };
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            status,
+            code,
+        });
+    });
+
+    it.each([
+        undefined,
+        null,
+    ])("rejects an error finish reason even with error=%s", async (error) => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                `data: ${JSON.stringify({ error, choices: [{ delta: {}, finish_reason: "error" }] })}\n\ndata: [DONE]\n\n`,
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const consume = async () => {
+            for await (const _chunk of newClient().textStream("hello")) {
+                /* consume */
+            }
+        };
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            status: 502,
+            code: "STREAM_ERROR",
+        });
+    });
+
     it("rejects malformed stream events without choices", async () => {
         fetchMock.mockResolvedValue(
             makeResponse(
@@ -785,7 +1021,7 @@ describe("Pollinations simple text facade", () => {
                     'data: {"provider_metadata":{"status":"ok"}}',
                     "data: [DONE]",
                     "",
-                ].join("\n"),
+                ].join("\n\n"),
                 {
                     kind: "stream",
                     contentType: "text/event-stream",
@@ -830,36 +1066,29 @@ describe("Pollinations simple text facade", () => {
             status: 502,
         });
     });
-
-    it("reports malformed provider data appended after DONE", async () => {
-        fetchMock.mockResolvedValue(
-            makeResponse(
-                [
-                    'data: {"choices":[]}',
-                    "data: [DONE]",
-                    'data: {"provider_metadata":{"private":true}}',
-                    "",
-                ].join("\n"),
-                {
-                    kind: "stream",
-                    contentType: "text/event-stream",
-                },
-            ),
-        );
-
-        const consume = async () => {
-            for await (const _chunk of newClient().chatStream([
-                { role: "user", content: "hello" },
-            ])) {
-                // Consume the stream.
-            }
-        };
-
-        await expect(consume()).rejects.toMatchObject({
-            name: "PollinationsError",
-            code: "MALFORMED_STREAM",
-            status: 502,
+    it("stops at DONE without waiting for EOF or inspecting trailing data", async () => {
+        const cancel = vi.fn();
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode(
+                        'data: {"choices":[]}\n\ndata: [DONE]\n\ndata: [not-json]\n\n',
+                    ),
+                );
+                // Deliberately leave the connection open.
+            },
+            cancel,
         });
+        fetchMock.mockResolvedValue(new Response(body));
+        const chunks = [];
+        for await (const chunk of newClient().chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+        expect(chunks).toEqual([{ choices: [] }]);
+        expect(cancel).toHaveBeenCalledOnce();
+        expect(body.locked).toBe(false);
     });
 });
 

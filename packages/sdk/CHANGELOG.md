@@ -14,9 +14,10 @@ All notable changes to `@pollinations/sdk` will be documented in this file.
 ### Changed
 - `PolliProvider` now uses OAuth authorization-code + PKCE, keeping delegated
   API tokens out of callback URLs without changing its public API.
-- Chat streaming decodes SSE by event boundary (CRLF, multi-line data,
-  comments), rejects data after `[DONE]` as malformed, tolerates a repeated
-  `[DONE]`, and cancels the response body when iteration stops early.
+- Chat streaming uses `eventsource-parser` for standard SSE event boundaries,
+  multiline data, and comments. Events need a terminating blank line; incomplete
+  events at EOF are discarded. Stops at `[DONE]` and releases the connection;
+  cancellation and streamed error handling are preserved.
 
 ## [5.1.0-alpha.6] - 2026-08-23
 

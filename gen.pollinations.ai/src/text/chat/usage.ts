@@ -2,6 +2,7 @@ import { UpstreamError } from "@shared/error.ts";
 import { CompletionUsageSchema } from "@shared/schemas/openai.ts";
 import { createParser } from "eventsource-parser";
 import type { ChatCompletion } from "../types.js";
+import { validatedSSEStream } from "../validatedSSEStream.js";
 
 export function requireChatCompletionUsage(completion: ChatCompletion): void {
     if (CompletionUsageSchema.safeParse(completion.usage).success) return;
@@ -101,28 +102,12 @@ function chatUsageErrorEvent(error: ChatUsageError): Uint8Array<ArrayBuffer> {
 export function requireChatStreamUsage(
     body: ReadableStream<Uint8Array<ArrayBuffer>>,
 ): ReadableStream<Uint8Array<ArrayBuffer>> {
-    const validator = createChatStreamUsageValidator();
-
-    return body.pipeThrough(
-        new TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>({
-            transform(chunk, controller) {
-                try {
-                    validator.feed(chunk);
-                    controller.enqueue(chunk);
-                } catch (error) {
-                    if (!(error instanceof ChatUsageError)) throw error;
-                    controller.enqueue(chatUsageErrorEvent(error));
-                    controller.terminate();
-                }
-            },
-            flush(controller) {
-                try {
-                    validator.finish();
-                } catch (error) {
-                    if (!(error instanceof ChatUsageError)) throw error;
-                    controller.enqueue(chatUsageErrorEvent(error));
-                }
-            },
-        }),
+    return validatedSSEStream(
+        body,
+        createChatStreamUsageValidator(),
+        (error) => {
+            if (!(error instanceof ChatUsageError)) throw error;
+            return chatUsageErrorEvent(error);
+        },
     );
 }

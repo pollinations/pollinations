@@ -30,7 +30,8 @@ export const CODE_SAMPLES: Record<
   -d '{
     "name": "my-agent",
     "title": "My Agent",
-    "baseUrl": "https://agent.example.com/v1"
+    "api": "responses",
+    "url": "https://agent.example.com/v1/responses"
   }'`,
         },
     ],

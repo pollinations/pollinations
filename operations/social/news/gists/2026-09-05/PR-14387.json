@@ -1,0 +1,35 @@
+{
+  "pr_number": 14387,
+  "title": "feat: add speech (TTS) as a community-model modality",
+  "author": "xiaotian1171",
+  "url": "https://github.com/pollinations/pollinations/pull/14387",
+  "merged_at": "2026-09-05T02:43:54Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14347\n\n- Adds `speech` as a first-class community-model modality across My Models, the Account API, catalog, dashboard, and CLI.\n- Probes OpenAI-compatible `/v1/audio/speech` endpoints and requires a non-empty `audio/*` response.\n- Forwards `model`, `input`, `voice`, and `response_format`, streams the upstream audio unchanged, and preserves its content type.\n- Reuses existing character billing, auth, cache, publisher rewards, timeout, fallback, and per-user rate limiting.\n- Documents the narrow publisher contract and adds focused registration and generation coverage.\n\nMaintainer follow-up aligns character counting exactly with existing first-party TTS. All required CI and CodeQL checks pass.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden learned to talk",
+    "blurb": "Community models can now speak. Bring an OpenAI-compatible TTS endpoint, and the hive will carry its audio back unchanged—voice, format, and all.",
+    "summary": "Added speech as a first-class community-model modality, allowing publishers to register OpenAI-compatible /v1/audio/speech endpoints that receive model, input, voice, and response_format and stream audio/* responses through the existing platform billing, auth, cache, rewards, fallback, timeout, and rate-limit systems.",
+    "impact": "Publishers can offer their own TTS models through My Models, the Account API, catalog, dashboard, and CLI, while users receive upstream audio in its original format and content type with the same character counting as first-party TTS.",
+    "keywords": [
+      "speech",
+      "tts",
+      "community-models",
+      "audio",
+      "openai-compatible",
+      "my-models",
+      "api"
+    ],
+    "visual_concept": "A cozy community TTS workshop: Polli helps a retro CRT monitor turn a typed prompt into visible warm audio waveforms flowing toward a tiny speaker-flower. The monitor represents an OpenAI-compatible community endpoint, while labeled audio bubbles show that voices and formats travel through intact; code-plants and a small model catalog card connect the scene to registration and discovery.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones while she guides a glowing audio waveform from a retro CRT monitor into a blooming speaker-flower; a friendly monitor robot holds a small card reading \"TTS\" as code-plants grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"COMMUNITY VOICES\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14387.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny studio headphones while she guides a glowing audio waveform from a retro CRT monitor into a blooming speaker-flower; a friendly monitor robot holds a small card reading \"TTS\" as code-plants grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"COMMUNITY VOICES\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-05T02:44:55.334348+00:00"
+}

@@ -42,10 +42,11 @@ activity: separate Pollen/Ko-fi gross sales, refunds, and reversals. Processing
 fees are an Operations expense; Wise payouts remain cash movements only.
 Production reads live
 materializations; local development reads their verified staging copies.
-Inference model costs join provider ledger labels to Pollen models through
-registry ids, same-provider aliases, and the reviewed `modelLabels` table in
-`../provider-registry.json`; unjoined cost stays visible as needs mapping,
-shared upstream, or missing breakdown rows and is never spread across models.
+Inference model costs join provider ledger labels to Pollen models only by
+exact Pollen id or through the reviewed `modelLabels` table in
+`../provider-registry.json`; Pollen ids stay split as metered, today's registry
+aliases never merge them, and unjoined cost stays visible as needs mapping,
+shared upstream, or missing breakdown rows rather than spread across models.
 Collection and correction conventions live in
 `.claude/skills/economics-provider-collection/SKILL.md` at the repository root.
 Each view loads only its required endpoints. An unrelated endpoint failure does

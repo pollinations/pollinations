@@ -63,6 +63,10 @@ export type ProviderAccountDefinition = {
 
 type ProviderRegistryFile = {
     version: number;
+    // Pollen model ids that no longer exist in the shared registry but still
+    // identify historical costs. Removing a model from the product does not
+    // invalidate what it cost.
+    retiredModels: string[];
     providers: ProviderDefinition[];
 };
 
@@ -72,6 +76,9 @@ export type ProviderReconciliationExplanation =
 
 export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
     .providers;
+export const RETIRED_MODELS: readonly string[] = (
+    registryJson as ProviderRegistryFile
+).retiredModels;
 const providerByAlias = new Map<string, ProviderDefinition>();
 for (const provider of PROVIDER_REGISTRY) {
     providerByAlias.set(provider.id, provider);

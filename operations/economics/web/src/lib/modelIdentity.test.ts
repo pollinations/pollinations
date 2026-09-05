@@ -1,30 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { canonicalPollenModel, resolveLedgerLabel } from "./modelIdentity";
-
-describe("canonicalPollenModel", () => {
-    it("keeps a registry model id unchanged", () => {
-        expect(canonicalPollenModel("google", "veo")).toBe("veo");
-    });
-
-    it("collapses a registry alias into its model within the same provider", () => {
-        expect(canonicalPollenModel("google", "veo-1080p")).toBe("veo");
-        expect(canonicalPollenModel("aws", "claude-opus-5")).toBe(
-            "claude-large",
-        );
-    });
-
-    it("does not adopt an alias that belongs to another provider's model", () => {
-        // grok-4.5 is an alias of the Azure model grok-4.6; August OpenRouter
-        // usage was metered under its own name and must stay separate.
-        expect(canonicalPollenModel("openrouter", "grok-4.5")).toBe("grok-4.5");
-    });
-
-    it("leaves community and unknown ids visible", () => {
-        expect(canonicalPollenModel("community", "Alice/private-model")).toBe(
-            "Alice/private-model",
-        );
-    });
-});
+import { resolveLedgerLabel } from "./modelIdentity";
 
 describe("resolveLedgerLabel", () => {
     it("treats an empty label as a missing cost breakdown", () => {
@@ -33,26 +8,7 @@ describe("resolveLedgerLabel", () => {
         });
     });
 
-    it("joins a registry model id directly", () => {
-        expect(resolveLedgerLabel("aws", "claude-sonnet-5")).toEqual({
-            kind: "model",
-            model: "claude-sonnet-5",
-        });
-    });
-
-    it("joins a registry alias only within the model's provider", () => {
-        expect(
-            resolveLedgerLabel("openrouter", "google/gemini-2.5-flash-lite"),
-        ).toEqual({ kind: "model", model: "gemini-fast" });
-        expect(
-            resolveLedgerLabel("replicate", "google/gemini-2.5-flash-image"),
-        ).toEqual({
-            kind: "unmapped",
-            label: "google/gemini-2.5-flash-image",
-        });
-    });
-
-    it("joins a provider label from the registry's label table", () => {
+    it("joins a reviewed provider label from the registry label table", () => {
         expect(resolveLedgerLabel("azure", "Kontext Pro glbl Images")).toEqual({
             kind: "model",
             model: "kontext",
@@ -61,6 +17,54 @@ describe("resolveLedgerLabel", () => {
             kind: "model",
             model: "nanobanana-pro",
         });
+    });
+
+    it("keeps a historical model id verbatim even when today's registry aliases it", () => {
+        // gpt-realtime-2 is an alias of gpt-realtime-2.1 today, but it was a
+        // separately metered Pollen model with its own Azure meters.
+        expect(
+            resolveLedgerLabel(
+                "azure",
+                "gpt-realtime-2 Audio opt Gl 1M Tokens",
+            ),
+        ).toEqual({ kind: "model", model: "gpt-realtime-2" });
+    });
+
+    it("joins a label that is a current registry model id without a table entry", () => {
+        // Identity is not an alias: the id names the same accounting identity
+        // on every vendor, whether or not Pollen metered it that month.
+        expect(resolveLedgerLabel("ovhcloud", "mistral")).toEqual({
+            kind: "model",
+            model: "mistral",
+        });
+    });
+
+    it("does not join a registry alias that is not a reviewed label", () => {
+        expect(resolveLedgerLabel("azure", "gpt-5-mini")).toEqual({
+            kind: "unmapped",
+            label: "gpt-5-mini",
+        });
+    });
+
+    it("prefers a label qualified by the ledger SKU or line item", () => {
+        expect(
+            resolveLedgerLabel("google", "veo-3-fast", {
+                sku: "Veo 3 Fast 1080p Audio Video Generation",
+                name: "Vertex AI — Veo 3 Fast 1080p Audio Video Generation",
+            }),
+        ).toEqual({ kind: "model", model: "veo-1080p" });
+        expect(
+            resolveLedgerLabel("replicate", "wan-video/wan-2.7-i2v", {
+                sku: "video_output_duration_seconds",
+                name: "wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-720p",
+            }),
+        ).toEqual({ kind: "model", model: "wan-pro" });
+        expect(
+            resolveLedgerLabel("google", "veo-3-fast", {
+                sku: "3 provider SKUs",
+                name: "veo-3-fast",
+            }),
+        ).toEqual({ kind: "shared", models: ["veo", "veo-1080p"] });
     });
 
     it("reports a label that serves several Pollen models as shared", () => {

@@ -18,6 +18,7 @@ import {
     providerCheckExplanation,
     providerMeteringBasis,
     providerReviewRows,
+    RETIRED_MODELS,
     resolveProvider,
 } from "./providerRegistry";
 
@@ -117,13 +118,18 @@ describe("provider registry", () => {
         expect(providerMeteringBasis("new-provider")).toBe("unmapped");
     });
 
-    it("maps every reviewed provider label to registry model ids", () => {
-        const known = new Set<string>(
-            getModels().flatMap((id) => [
+    it("maps every reviewed provider label to a registry or retired model id", () => {
+        const current = new Set<string>(getModels());
+        const known = new Set<string>([
+            ...getModels().flatMap((id) => [
                 id,
                 ...getRegistryModelDefinition(id).aliases,
             ]),
-        );
+            ...RETIRED_MODELS,
+        ]);
+        for (const retired of RETIRED_MODELS) {
+            expect(current.has(retired), retired).toBe(false);
+        }
         let entries = 0;
         for (const provider of PROVIDER_REGISTRY) {
             for (const [label, target] of Object.entries(
@@ -134,6 +140,7 @@ describe("provider registry", () => {
                 expect(label).not.toBe("");
                 if (target === null) continue;
                 const targets = Array.isArray(target) ? target : [target];
+                expect(new Set(targets).size).toBe(targets.length);
                 expect(targets.length).toBeGreaterThanOrEqual(
                     Array.isArray(target) ? 2 : 1,
                 );
@@ -148,6 +155,7 @@ describe("provider registry", () => {
         expect(entries).toBeGreaterThan(0);
         expect(resolveProvider("azure")?.modelLabels).toMatchObject({
             "Kontext Pro glbl Images": "kontext",
+            "gpt-realtime-2 Audio opt Gl 1M Tokens": "gpt-realtime-2",
         });
         expect(resolveProvider("elevenlabs")?.modelLabels).toMatchObject({
             eleven_v3: ["elevenlabs", "eleven-dialogue"],

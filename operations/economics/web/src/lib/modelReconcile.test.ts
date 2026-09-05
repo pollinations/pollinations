@@ -303,21 +303,55 @@ describe("modelReconcileRows", () => {
         expect(row.models).toHaveLength(2);
     });
 
-    it("joins a registry alias within the vendor's own provider", () => {
+    it("does not join a registry alias that is not a reviewed label", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [cloud({ model: "claude-opus-5", paid: -50 })],
+                opCloud: [
+                    cloud({ model: "anthropic/claude-opus-5", paid: -50 }),
+                ],
                 opPollen: [pollen({ model: "claude-large", cost_paid: 45 })],
             }),
         );
 
-        expect(row.models).toEqual([
-            expect.objectContaining({
-                model: "claude-large",
-                status: "allocated",
-                providerCashUsd: 50,
+        expect(
+            row.models.find((m) => m.model === "claude-large"),
+        ).toMatchObject({ status: "unallocated", providerCashUsd: null });
+        expect(
+            row.models.find((m) => m.model === "Needs model mapping"),
+        ).toMatchObject({ status: "needs mapping", providerCashUsd: 50 });
+    });
+
+    it("keeps a historical Pollen id apart from the model today's registry aliases it to", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "azure",
+                        model: "gpt-realtime-2 Audio opt Gl 1M Tokens",
+                        paid: -9,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "azure",
+                        model: "gpt-realtime-2",
+                        cost_paid: 8,
+                    }),
+                    pollen({
+                        vendor: "azure",
+                        model: "gpt-realtime-2.1",
+                        cost_paid: 5,
+                    }),
+                ],
             }),
-        ]);
+        );
+
+        expect(
+            row.models.find((m) => m.model === "gpt-realtime-2"),
+        ).toMatchObject({ status: "allocated", providerCashUsd: 9 });
+        expect(
+            row.models.find((m) => m.model === "gpt-realtime-2.1"),
+        ).toMatchObject({ status: "unallocated", providerCashUsd: null });
     });
 
     it("joins a retired model id that the registry no longer lists but Pollen still names", () => {
@@ -349,14 +383,21 @@ describe("modelReconcileRows", () => {
         ]);
     });
 
-    it("collapses Pollen alias ids into their model before joining", () => {
+    it("keeps separately metered Pollen ids apart and splits them by ledger SKU", () => {
         const [row] = modelReconcileRows(
             data({
                 opCloud: [
                     cloud({
                         vendor: "google",
                         model: "veo-3-fast",
+                        resource_sku: "Veo 3 Fast 720p Audio Video Generation ",
                         paid: -100,
+                    }),
+                    cloud({
+                        vendor: "google",
+                        model: "veo-3-fast",
+                        resource_sku: "Veo 3 Fast 1080p Audio Video Generation",
+                        paid: -6,
                     }),
                 ],
                 opPollen: [
@@ -364,20 +405,23 @@ describe("modelReconcileRows", () => {
                     pollen({
                         vendor: "google",
                         model: "veo-1080p",
-                        cost_paid: 10,
+                        cost_paid: 5,
                     }),
                 ],
             }),
         );
 
-        expect(row.models).toEqual([
-            expect.objectContaining({
-                model: "veo",
-                status: "allocated",
-                pollenMeterUsd: 90,
-                providerCashUsd: 100,
-            }),
-        ]);
+        expect(row.models.find((m) => m.model === "veo")).toMatchObject({
+            status: "allocated",
+            pollenMeterUsd: 80,
+            providerCashUsd: 100,
+        });
+        expect(row.models.find((m) => m.model === "veo-1080p")).toMatchObject({
+            status: "allocated",
+            pollenMeterUsd: 5,
+            providerCashUsd: 6,
+        });
+        expect(row.models).toHaveLength(2);
     });
 
     it("keeps a label that serves several Pollen models unallocated as a shared upstream", () => {

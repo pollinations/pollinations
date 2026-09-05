@@ -101,11 +101,15 @@ name or an undocumented ratio.
   refunds, reversals, fees, stream, and coverage. It never stores customer or
   payment payloads.
 - `economics_pollen_usage` stores internal Paid and Quest consumption. Reconcile
-  it at provider-month grain. Provider labels join Pollen models only through
-  registry ids, same-provider aliases, and the reviewed `modelLabels` table in
-  `operations/economics/provider-registry.json`; add a label there with its
-  registry model id (an array when one upstream serves several models, `null`
-  when it has no Pollen model). Unjoined cost stays visible as needs mapping,
+  it at provider-month grain. Pollen model ids are accounting identities as
+  recorded: today's registry aliases never merge them. A provider label joins
+  a Pollen model only when it equals that month's Pollen id or through the
+  reviewed `modelLabels` table in `operations/economics/provider-registry.json`.
+  Add a label with the Pollen id it billed at the time (an array when one
+  upstream served several ids, `null` when it has no Pollen model); qualify the
+  key as `label | sku` or `label | line item` when one label bills several
+  ids on separate lines. Ids no longer in the shared registry stay valid
+  through `retiredModels`. Unjoined cost stays visible as needs mapping,
   shared upstream, or missing breakdown. Never spread it across models.
 - D1 `user` is authoritative for creator GitHub usernames and current balances.
   Paid and Quest Pollen are non-cashable usage exposure; Paid serves the full

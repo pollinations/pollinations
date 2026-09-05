@@ -1,5 +1,13 @@
 {
   "version": 16,
+  "retiredModels": [
+    "chickytutor",
+    "claude-legacy",
+    "gemini-legacy",
+    "klein-large",
+    "ltx-2",
+    "mistral-ocr"
+  ],
   "providers": [
     {
       "id": "airforce",
@@ -77,6 +85,7 @@
           "claude-fast",
           "midijourney"
         ],
+        "claude-opus-4-5-20251101": "claude-legacy",
         "claude-opus-4-6": [
           "claude-large",
           "midijourney-large"
@@ -164,13 +173,23 @@
         }
       ],
       "modelLabels": {
+        "claude-3.5-haiku": "chickytutor",
         "claude-haiku-4-5": "claude-fast",
+        "claude-haiku-4.5": "claude-fast",
+        "claude-opus-4-5": [
+          "claude-legacy",
+          "claude-opus-4.6"
+        ],
         "claude-opus-4-6": "claude-opus-4.6",
         "claude-opus-4-7": "claude-opus-4.7",
+        "claude-opus-4-8": "claude-large",
         "claude-opus-4.1": null,
+        "claude-opus-4.5": "claude-large",
+        "claude-opus-4.6": "claude-large",
         "claude-opus-5": "claude-large",
         "claude-sonnet-4-6": "claude",
-        "claude-sonnet-4.5": "claude"
+        "claude-sonnet-4.5": "claude",
+        "claude-sonnet-4.6": "claude"
       }
     },
     {
@@ -301,8 +320,14 @@
         ],
         "Grok 4.1 Inp Glbl Tokens": "grok",
         "Grok 4.1 Outp Glbl Tokens": "grok",
-        "Grok 4.2 Inp glbl Tokens": "grok",
-        "Grok 4.2 Outp glbl Tokens": "grok",
+        "Grok 4.2 Inp glbl Tokens": [
+          "grok",
+          "grok-4-20-reasoning"
+        ],
+        "Grok 4.2 Outp glbl Tokens": [
+          "grok",
+          "grok-4-20-reasoning"
+        ],
         "Grok4 Fast Inp glbl Tokens": "grok",
         "Grok4 Fast Outp glbl Tokens": "grok",
         "Image 2 img inp Gl 1M Tokens": "gpt-image-2",
@@ -343,12 +368,14 @@
         "gpt img 1.5 out img gl 1M Tokens": "gptimage-large",
         "gpt img 1.5 out txt gl 1M Tokens": "gptimage-large",
         "gpt-live-transcribe Gl Unit": "gpt-live-transcribe",
-        "gpt-realtime-2 Audio cd inp Gl 1M Tokens": "gpt-realtime-2.1",
-        "gpt-realtime-2 Audio inp Gl 1M Tokens": "gpt-realtime-2.1",
-        "gpt-realtime-2 Audio opt Gl 1M Tokens": "gpt-realtime-2.1",
-        "gpt-realtime-2 Text cd inp Gl 1M Tokens": "gpt-realtime-2.1",
-        "gpt-realtime-2 Text inp Gl 1M Tokens": "gpt-realtime-2.1",
-        "gpt-realtime-2 Text opt Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2 Audio cd inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Audio inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Audio opt Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Image cd inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Image inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Text cd inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Text inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Text opt Gl 1M Tokens": "gpt-realtime-2",
         "gpt-realtime-2.1 Audio cd inp Gl 1M Tokens": [
           "gpt-realtime-2.1",
           "gpt-realtime-2.1-mini"
@@ -837,6 +864,11 @@
           "gemini-search",
           "gemini-fast"
         ],
+        "gemini-2.5-pro": "gemini-legacy",
+        "gemini-3-flash": [
+          "gemini",
+          "gemini-3-flash"
+        ],
         "gemini-3-pro": "gemini-large",
         "gemini-3-pro-image": "nanobanana-pro",
         "gemini-3.1-flash-image": "nanobanana-2",
@@ -850,11 +882,18 @@
           "gemini-search",
           "gemini-3.5-flash"
         ],
-        "gemini-3.5-flash-lite": "gemini-search",
-        "gemini-3.6-flash": "gemini-search",
+        "gemini-3.5-flash-lite": "gemini-search-fast",
+        "gemini-3.6-flash": "gemini-search-large",
         "gemini-mm-embedding": "gemini-2",
         "gemini-omni-flash": "google/gemini-omni-1.1-flash",
-        "veo-3-fast": "veo"
+        "veo-3-fast": [
+          "veo",
+          "veo-1080p"
+        ],
+        "veo-3-fast | Veo 3 Fast 1080p Audio Video Generation": "veo-1080p",
+        "veo-3-fast | Veo 3 Fast 1080p Video Generation": "veo-1080p",
+        "veo-3-fast | Veo 3 Fast 720p Audio Video Generation": "veo",
+        "veo-3-fast | Veo 3 Fast Video 720p Generation": "veo"
       }
     },
     {
@@ -922,7 +961,11 @@
         "asset-harvester": null,
         "lightning-image-turbo": null,
         "minimax-h3-512p-lora-finetune": null,
-        "trellis2": "trellis-2"
+        "trellis2": [
+          "trellis-2",
+          "trellis-2-medium",
+          "trellis-2-low"
+        ]
       }
     },
     {
@@ -1038,7 +1081,10 @@
         }
       ],
       "modelLabels": {
-        "flux-klein": "klein"
+        "flux-klein": "klein",
+        "flux-klein-9b": "klein-large",
+        "ltx2-comfyui-api-distilled": "ltx-2",
+        "ltx2-video": "ltx-2"
       }
     },
     {
@@ -1070,7 +1116,10 @@
           "accountId": "myceli",
           "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "mistral-ocr": "mistral-ocr"
+      }
     },
     {
       "id": "nebius",
@@ -1114,6 +1163,7 @@
       "modelLabels": {
         "gpt-image-2-2026-04-21": "gpt-image-2",
         "gpt-realtime-2": "gpt-realtime-2",
+        "gpt-realtime-2.1": "gpt-realtime-2.1",
         "text-embedding-3-large": "openai-3-large",
         "text-embedding-3-small": "openai-3-small"
       }
@@ -1204,13 +1254,26 @@
         "Seedream 4.5": "seedream-pro",
         "Step 3.5 Flash": "step-3.5-flash",
         "Wan 3.0": "wan-3.0",
+        "alibaba/happyhorse-1.1": "happyhorse-1.1",
         "bytedance-seed/seedream-4.5": "seedream-pro",
         "bytedance/seedance-2.0-fast": "seedance-2.0-fast",
         "bytedance/seedance-2.0-mini": "seedance-2.0-mini",
         "bytedance/seedance-2.5": "seedance-2.5",
+        "google/gemini-2.5-flash-image": "nanobanana",
+        "google/gemini-2.5-flash-lite": "gemini-fast",
+        "google/gemini-3-flash-preview": "gemini-3-flash",
+        "google/gemini-3-pro-image": "nanobanana-pro",
+        "google/gemini-3.1-flash-image": "nanobanana-2",
+        "google/gemini-3.1-flash-lite-image": "nanobanana-2-lite",
+        "google/gemini-3.1-pro-preview": "gemini-large",
+        "google/gemini-3.5-flash-lite": "gemini-flash-lite-3.5",
         "google/gemini-3.6-flash": "gemini",
+        "google/gemma-4-26b-a4b-it": "gemma",
         "google/gemma-4-26b-a4b-it-20260403": "gemma",
+        "google/gemma-4-31b-it": "gemma-4-31b",
         "google/veo-3.1-fast": "veo",
+        "inception/mercury-2": "mercury",
+        "meituan/longcat-2.0": "longcat",
         "meta-llama/llama-4-scout": "llama-scout",
         "meta-llama/llama-4-scout-17b-16e-instruct": "llama-scout",
         "minimax/minimax-m3-20260531": "minimax-m3",
@@ -1221,11 +1284,28 @@
           "mistral-small-3.2"
         ],
         "moonshotai/kimi-k2.7-code-20260612": "kimi-k2.7-code",
+        "poolside/laguna-s-2.1": "laguna",
+        "qwen/qwen3-coder-next": "qwen-coder-large",
         "qwen/qwen3-coder-next-2025-02-03": "qwen-coder-large",
         "qwen/qwen3-vl-235b-a22b-thinking": "qwen-vision-pro",
+        "qwen/qwen3-vl-30b-a3b-instruct": "qwen-vision",
+        "qwen/qwen3.7-flash": "qwen3.7-flash",
+        "qwen/qwen3.7-max": "qwen3.7-max",
+        "qwen/qwen3.7-plus": "qwen-large",
+        "qwen/qwen3.8-27b": "qwen3.8-27b",
+        "qwen/qwen3.8-max": "qwen3.8-max",
+        "recraft/recraft-v4.1-vector": "recraft-v4.1-vector",
+        "stepfun/step-3.5-flash": "step-3.5-flash",
         "stepfun/step-3.7-flash-20260528": "step-flash",
+        "thinkingmachines/inkling-small": "inkling",
         "x-ai/grok-4.5": "grok-4.5",
         "x-ai/grok-4.6": "grok-4.6",
+        "x-ai/grok-imagine-image-2.0": "grok-imagine-image-2.0",
+        "x-ai/grok-imagine-image-quality": "grok-imagine-pro",
+        "x-ai/grok-imagine-video": "grok-video-pro",
+        "x-ai/grok-imagine-video-1.5": "grok-imagine-video-1.5",
+        "xiaomi/mimo-v2.5": "mimo-v2.5",
+        "xiaomi/mimo-v2.5-pro": "mimo-v2.5-pro",
         "z-ai/glm-5.2": "glm"
       }
     },
@@ -1287,7 +1367,15 @@
           "accountId": "81749045",
           "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "sonar": [
+          "perplexity-fast",
+          "perplexity-high"
+        ],
+        "sonar-pro": "perplexity",
+        "sonar-reasoning-pro": "perplexity-reasoning"
+      }
     },
     {
       "id": "pointsflyer",
@@ -1383,7 +1471,27 @@
         "prunaai/p-image": "p-image",
         "prunaai/p-image-edit": "p-image-edit",
         "prunaai/p-image-upscale": null,
-        "prunaai/p-video": "p-video",
+        "prunaai/p-video": [
+          "p-video",
+          "p-video-720p",
+          "p-video-1080p"
+        ],
+        "prunaai/p-video | Output video duration (seconds): p-video-1080p-base @ 0.04/second": [
+          "p-video-1080p",
+          "p-video"
+        ],
+        "prunaai/p-video | Output video duration (seconds): p-video-720p-base @ 0.02/second": [
+          "p-video",
+          "p-video-720p"
+        ],
+        "prunaai/p-video | prunaai/p-video — Output video duration (seconds): p-video-1080p-base": [
+          "p-video-1080p",
+          "p-video"
+        ],
+        "prunaai/p-video | prunaai/p-video — Output video duration (seconds): p-video-720p-base": [
+          "p-video",
+          "p-video-720p"
+        ],
         "qwen/qwen-image": "qwen-image",
         "qwen/qwen-image-edit-plus": "qwen-image",
         "topazlabs/image-upscale": null,
@@ -1391,7 +1499,17 @@
         "wan-video/wan-2.2-t2v-fast": "wan-fast",
         "wan-video/wan-2.6-i2v": "wan",
         "wan-video/wan-2.6-t2v": "wan",
-        "wan-video/wan-2.7-i2v": "wan-pro",
+        "wan-video/wan-2.7-i2v": [
+          "wan-pro",
+          "wan-pro-1080p"
+        ],
+        "wan-video/wan-2.7-i2v | Output video duration (seconds): wan-27-i2v-1080p @ 0.15/second": [
+          "wan-pro-1080p",
+          "wan-pro"
+        ],
+        "wan-video/wan-2.7-i2v | Output video duration (seconds): wan-27-i2v-720p @ 0.1/second": "wan-pro",
+        "wan-video/wan-2.7-i2v | wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-1080p": "wan-pro-1080p",
+        "wan-video/wan-2.7-i2v | wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-720p": "wan-pro",
         "wan-video/wan-2.7-image": "wan-image",
         "wan-video/wan-2.7-image-pro": "wan-image-pro",
         "wan-video/wan-2.7-t2v": "wan-pro"
@@ -1645,7 +1763,7 @@
         }
       ],
       "modelLabels": {
-        "meta/muse-spark-1.1": "muse-spark-1.2",
+        "meta/muse-spark-1.1": "muse-spark-1.1",
         "meta/muse-spark-1.2": "muse-spark-1.2",
         "meta/muse-spark-1.2-contributor": "muse-spark-1.2"
       }

@@ -6,7 +6,7 @@ import {
     opCloudPaidBurnUsd,
 } from "./computeLedger";
 import { toUsd } from "./fx";
-import { canonicalPollenModel, resolveLedgerLabel } from "./modelIdentity";
+import { resolveLedgerLabel } from "./modelIdentity";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -335,9 +335,9 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     );
 }
 
-// Join provider labels to Pollen models only through registry ids, aliases
-// within the same provider, and the reviewed label table. Keep unmatched costs
-// separate; a missing model must never redistribute another model's costs.
+// Join provider labels to Pollen models only by exact Pollen id or through the
+// reviewed label table. Keep unmatched costs separate; a missing model must
+// never redistribute another model's costs.
 export function modelReconcileRows(data: Data): ModelReconcileRow[] {
     const entries = new Map<string, ProviderMonth>();
 
@@ -345,9 +345,7 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         if (!MONTH_KEY.test(row.month) || row.month < WINDOW_START) continue;
         const entry = providerMonth(entries, row.month, row.vendor);
         entry.hasPollen = true;
-        const modelName =
-            canonicalPollenModel(entry.vendor, row.model) ||
-            "Unassigned Pollen model";
+        const modelName = row.model.trim() || "Unassigned Pollen model";
         const model = getOrInit(entry.pollenModels, modelName, () => ({
             model: modelName,
             paidPollenUsd: 0,
@@ -386,15 +384,15 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         const creditUsd = opCloudCreditBurnUsd(row);
         entry.cashUsd += cashUsd;
         entry.creditUsd += creditUsd;
-        let resolution = resolveLedgerLabel(entry.vendor, row.model);
-        // A retired model id is gone from the registry, but Pollen still
-        // names it; the exact name is still an exact join.
-        if (
-            resolution.kind === "unmapped" &&
-            entry.pollenModels.has(resolution.label)
-        ) {
-            resolution = { kind: "model", model: resolution.label };
-        }
+        // A label that is exactly a Pollen model id metered this month is an
+        // exact join, whether or not today's registry still lists it.
+        const label = row.model.trim();
+        let resolution = entry.pollenModels.has(label)
+            ? ({ kind: "model", model: label } as const)
+            : resolveLedgerLabel(entry.vendor, label, {
+                  sku: row.resource_sku,
+                  name: row.resource_name,
+              });
         // A label listed for several models is shared only in a month where
         // more than one of them was actually metered on this vendor.
         if (resolution.kind === "shared") {

@@ -520,6 +520,56 @@ describe("Pollinations chat routing", () => {
 });
 
 describe("Pollinations chat streaming", () => {
+    it("passes request values and provider payloads through unchanged", async () => {
+        const messages = [
+            { role: "user" as const, content: "  keep this text  " },
+        ];
+        const routing = { text: "publisher/custom-model" };
+        const payload = {
+            model: "provider-reported-id",
+            choices: [
+                {
+                    index: 0,
+                    delta: {
+                        content: "  answer  ",
+                        reasoning: "provider detail",
+                    },
+                    finish_reason: "provider_finish",
+                },
+            ],
+            usage: {
+                prompt_tokens: 1,
+                completion_tokens: 2,
+                total_tokens: 3,
+                provider_cost: 0.123,
+            },
+            provider_metadata: { region: "example", nested: [0, false, null] },
+        };
+        fetchMock.mockResolvedValue(
+            new Response(
+                `data: ${JSON.stringify(payload)}\n\ndata: [DONE]\n\n`,
+            ),
+        );
+        const chunks = [];
+        for await (const chunk of newClient().chatStream(messages, {
+            model: "requested-alias",
+            routing,
+            seed: 0,
+            temperature: 0,
+        })) {
+            chunks.push(chunk);
+        }
+        expect(chunks).toEqual([payload]);
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            messages,
+            model: "requested-alias",
+            routing,
+            seed: 0,
+            temperature: 0,
+            stream: true,
+        });
+    });
+
     it.each([
         "\n",
         "\r",
@@ -1016,36 +1066,29 @@ describe("Pollinations simple text facade", () => {
             status: 502,
         });
     });
-
-    it("reports malformed provider data appended after DONE", async () => {
-        fetchMock.mockResolvedValue(
-            makeResponse(
-                [
-                    'data: {"choices":[]}',
-                    "data: [DONE]",
-                    'data: {"provider_metadata":{"private":true}}',
-                    "",
-                ].join("\n\n"),
-                {
-                    kind: "stream",
-                    contentType: "text/event-stream",
-                },
-            ),
-        );
-
-        const consume = async () => {
-            for await (const _chunk of newClient().chatStream([
-                { role: "user", content: "hello" },
-            ])) {
-                // Consume the stream.
-            }
-        };
-
-        await expect(consume()).rejects.toMatchObject({
-            name: "PollinationsError",
-            code: "MALFORMED_STREAM",
-            status: 502,
+    it("stops at DONE without waiting for EOF or inspecting trailing data", async () => {
+        const cancel = vi.fn();
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode(
+                        'data: {"choices":[]}\n\ndata: [DONE]\n\ndata: [not-json]\n\n',
+                    ),
+                );
+                // Deliberately leave the connection open.
+            },
+            cancel,
         });
+        fetchMock.mockResolvedValue(new Response(body));
+        const chunks = [];
+        for await (const chunk of newClient().chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+        expect(chunks).toEqual([{ choices: [] }]);
+        expect(cancel).toHaveBeenCalledOnce();
+        expect(body.locked).toBe(false);
     });
 });
 

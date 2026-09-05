@@ -930,60 +930,25 @@ export class Pollinations {
         const parser = createParser({
             onEvent: ({ data }) => events.push(data),
         });
-        let finished = false;
-        let completed = false;
         const cancelReader = () => {
             void reader.cancel().catch(() => undefined);
         };
         options.signal?.addEventListener("abort", cancelReader, { once: true });
 
-        const chunksFrom = function* (
-            messages: string[],
-        ): Generator<ChatStreamChunk> {
-            for (const data of messages) {
-                if (options.signal?.aborted) {
-                    throw new PollinationsError(
-                        "Request was cancelled",
-                        "CANCELLED",
-                        499,
-                    );
-                }
-                if (!data) continue;
-                if (data.trim() === "[DONE]") {
-                    // Proxies may repeat [DONE]; the response is complete.
-                    finished = true;
-                    continue;
-                }
-                if (finished) {
-                    throw new PollinationsError(
-                        "Chat stream contained data after completion",
-                        "MALFORMED_STREAM",
-                        502,
-                    );
-                }
-                yield parseChatStreamData(data);
-            }
-        };
-
         try {
-            if (options.signal?.aborted) await reader.cancel();
+            options.signal?.throwIfAborted();
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
-                parser.feed(decoder.decode(value, { stream: true }));
-                yield* chunksFrom(events);
+                options.signal?.throwIfAborted();
+                parser.feed(decoder.decode(value, { stream: !done }));
+                for (const data of events) {
+                    options.signal?.throwIfAborted();
+                    if (data.trim() === "[DONE]") return;
+                    if (data) yield parseChatStreamData(data);
+                }
                 events = [];
+                if (done) return;
             }
-            if (options.signal?.aborted) {
-                throw new PollinationsError(
-                    "Request was cancelled",
-                    "CANCELLED",
-                    499,
-                );
-            }
-            parser.feed(decoder.decode());
-            yield* chunksFrom(events);
-            completed = true;
         } catch (error) {
             if (options.signal?.aborted) {
                 throw new PollinationsError(
@@ -995,9 +960,8 @@ export class Pollinations {
             throw error;
         } finally {
             options.signal?.removeEventListener("abort", cancelReader);
-            // An early break or a decoder error leaves the body open; cancel
-            // it so the connection is released.
-            if (!completed) await reader.cancel().catch(() => undefined);
+            // Release the connection on [DONE], early exit, or error.
+            await reader.cancel().catch(() => undefined);
             reader.releaseLock();
         }
     }

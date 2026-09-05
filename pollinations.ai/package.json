@@ -11,7 +11,7 @@
         "build": "tsc && vite build",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
         "build:website-v2": "CLOUDFLARE_ENV=website-v2 vite build --mode=staging",
-        "build:production": "CLOUDFLARE_ENV=production vite build --mode=production",
+        "build:production": "tsc && CLOUDFLARE_ENV=production vite build --mode=production",
         "data:pr-history": "node scripts/update-community-pr-history.mjs",
         "preview": "vite preview",
         "deploy:staging": "npm run build:staging && wrangler deploy --config dist/pollinations_ai/wrangler.json",

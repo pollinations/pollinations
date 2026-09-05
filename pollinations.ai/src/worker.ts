@@ -193,9 +193,11 @@ export default {
         }
 
         const path = url.pathname === "" ? "/" : url.pathname;
-        // Normalize: strip trailing slash (except root)
-        const normalizedPath =
-            path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path;
+        // Normalize: strip trailing slash (except root). The router matches
+        // paths case-insensitively, so the meta lookup must too.
+        const normalizedPath = (
+            path !== "/" && path.endsWith("/") ? path.slice(0, -1) : path
+        ).toLowerCase();
         const knownRoute = normalizedPath in ROUTE_META;
         const meta = knownRoute ? ROUTE_META[normalizedPath] : NOT_FOUND_META;
         const canonical = `https://pollinations.ai${normalizedPath === "/" ? "" : normalizedPath}`;

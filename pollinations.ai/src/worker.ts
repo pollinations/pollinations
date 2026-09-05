@@ -166,6 +166,12 @@ export default {
     ): Promise<Response> {
         const url = new URL(request.url);
 
+        // www is routed only so it can redirect to the canonical apex host.
+        if (url.hostname.startsWith("www.")) {
+            url.hostname = url.hostname.slice(4);
+            return Response.redirect(url.toString(), 301);
+        }
+
         if (
             request.method === "GET" &&
             url.pathname === DISCORD_PRESENCE_PATH

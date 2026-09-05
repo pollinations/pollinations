@@ -1,0 +1,99 @@
+{
+  "date": "2026-09-04",
+  "period_start": "2026-09-04",
+  "period_end": "2026-09-04",
+  "title": "More ways to talk to models, agents, and MCP tools",
+  "summary": "A crowded day of better OpenAI-compatible agent plumbing, new creative models and MCP tools, smoother onboarding, and APIs that fail with considerably less interpretive dance.\n\nThe OpenAI-compatible Responses API now works statelessly across built-in, community, and agent-backed text models, including streaming, tools, structured output, reasoning, usage, and prompt caching. Managed agents now run through Gen with scoped run tokens, preserving their billing, caching, and tracing across child-model and MCP calls. Open WebUI also gained per-user Pollinations MCP access and stopped attaching unwanted builtin tools to every chat, so managed agents and tool-sensitive community models can simply get on with it.\n\nGPT-6 Astra is now available through a single canonical model ID with support for vision, streaming, tools, structured output, and prompt caching. MiniMax H3 Max Turbo joins the video lineup with synchronized audio, first- and last-frame guidance, and multiple clip lengths. MCP clients can now use Nectar for image creation and editing, video, and speech, while the newly listed Pollin Uptime gateway offers multimodal routing with a four-layer fallback cascade.\n\nPolli now exposes OpenAI-compatible Chat Completions, Responses, and Models endpoints with SSE streaming and function-call events. Its broader upgrade adds scoped Discord search, fresher code intelligence with revision provenance, hardened 4K Mermaid and PNG visuals, stronger model fallback, and independent deployment. It also has published privacy and service terms, because even a helpful robot needs paperwork.",
+  "pr_count": 22,
+  "prs": [
+    {
+      "number": 14309,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14376,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14405,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14420,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14424,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14428,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14430,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14433,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14434,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14438,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14440,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14441,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14447,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14449,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14451,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14452,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14454,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14457,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14459,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14461,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14464,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14466,
+      "date": "2026-09-04"
+    }
+  ],
+  "generated_at": "2026-09-05T06:28:12.926631+00:00"
+}

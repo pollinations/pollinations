@@ -1,0 +1,33 @@
+{
+  "pr_number": 14488,
+  "title": "fix: omit the implicit simple-text seed",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14488",
+  "merged_at": "2026-09-05T14:42:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Remove the default seed from simple-text requests so Responses-backed models no longer reject an otherwise ordinary request.\n- Preserve explicit seeds, including zero and the -1 compatibility mapping. Explicit unsupported seeds still return 400.\n- Leave image seeds and request-based cache keys unchanged; document the optional text seed in the source schema.\n- Tests: 49 request, Responses-adapter, and text-cache tests; gen typecheck passes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The seed knows when to sit out",
+    "blurb": "Simple text requests now arrive without an uninvited default seed tucked into their pollen basket. Responses-backed models can get on with the ordinary request they were asked for.",
+    "summary": "Simple-text requests now omit the implicit default seed for Responses-backed models, while preserving explicit seeds including 0 and the -1 compatibility mapping.",
+    "impact": "Ordinary text requests work with Responses-backed models again, and developers retain explicit seed control with unsupported explicit seeds still returning a clear 400 response.",
+    "keywords": [
+      "text-api",
+      "seed",
+      "responses-api",
+      "request-validation",
+      "cache"
+    ],
+    "visual_concept": "Polli tends a cozy text-message garden beside a retro terminal, gently removing an unwanted seed from a plain chat request while clearly labeled explicit seeds, including 0 and -1, remain safely planted. Small code-plants and a calm CRT monitor represent compatible Responses-backed text generation.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny gardener gloves, carefully removing one stray seed from a simple text letter while a retro CRT terminal glows lime green (#ecf874) beside neatly labeled seed packets \"0\" and \"-1\" growing into code-flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with a warm cream garden shed backdrop and dark purple (#110518) pixel-font text: \"OPTIONAL SEED\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14488.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny gardener gloves, carefully removing one stray seed from a simple text letter while a retro CRT terminal glows lime green (#ecf874) beside neatly labeled seed packets \"0\" and \"-1\" growing into code-flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with a warm cream garden shed backdrop and dark purple (#110518) pixel-font text: \"OPTIONAL SEED\"."
+  },
+  "generated_at": "2026-09-05T14:43:33.482404+00:00"
+}

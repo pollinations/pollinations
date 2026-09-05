@@ -27,7 +27,17 @@ export type ModelAllocationStatus =
     | "needs mapping"
     | "shared upstream"
     | "missing breakdown"
-    | "provider only";
+    | "provider only"
+    | "shared member";
+
+// Residual cost by reason, per vendor month.
+export type ResidualBuckets = {
+    allocatedUsd: number;
+    billedTogetherUsd: number;
+    missingBreakdownUsd: number;
+    needsMappingUsd: number;
+    providerOnlyUsd: number;
+};
 
 export type ModelAllocationRow = {
     model: string;
@@ -49,6 +59,10 @@ export type ModelAllocationRow = {
     paidContributionUsd: number | null;
     questCashSubsidyUsd: number | null;
     netCashContributionUsd: number | null;
+    // For a member of a billed-together group: the group row's name.
+    group?: string;
+    // For a billed-together row: the provider billing lines it sums.
+    lines?: { label: string; usd: number }[];
 };
 
 export type ModelReconcileStatus =
@@ -78,6 +92,7 @@ export type ModelReconcileRow = {
     questCashSubsidyUsd: number | null;
     netCashContributionUsd: number | null;
     models: ModelAllocationRow[];
+    buckets: ResidualBuckets;
 };
 
 export type ModelReconcileSummary = {
@@ -100,6 +115,7 @@ export type ModelReconcileSummary = {
     netCashContributionUsd: number | null;
     pollenOnlyMeterUsd: number;
     providerOnlyUsageUsd: number;
+    buckets: ResidualBuckets;
 };
 
 type PollenModel = {
@@ -122,8 +138,12 @@ type ProviderMonth = {
     cashUsd: number;
     creditUsd: number;
     providerModels: Map<string, Funding>;
-    // One provider label that serves several Pollen models, keyed by label.
-    sharedLabels: Map<string, Funding & { models: string[] }>;
+    // Provider lines billed for several Pollen models of one upstream, keyed
+    // by the model set, with the billing lines they sum.
+    sharedGroups: Map<
+        string,
+        Funding & { models: string[]; lines: Map<string, number> }
+    >;
     // Reviewed labels with no Pollen model at all, keyed by label.
     providerOnlyLabels: Map<string, Funding>;
     unmapped: Funding;
@@ -166,7 +186,7 @@ function providerMonth(
         cashUsd: 0,
         creditUsd: 0,
         providerModels: new Map(),
-        sharedLabels: new Map(),
+        sharedGroups: new Map(),
         providerOnlyLabels: new Map(),
         unmapped: emptyFunding(),
         blank: emptyFunding(),
@@ -275,19 +295,68 @@ function residualRow(
     };
 }
 
+function emptyBuckets(): ResidualBuckets {
+    return {
+        allocatedUsd: 0,
+        billedTogetherUsd: 0,
+        missingBreakdownUsd: 0,
+        needsMappingUsd: 0,
+        providerOnlyUsd: 0,
+    };
+}
+
+export function residualBuckets(
+    models: readonly ModelAllocationRow[],
+): ResidualBuckets {
+    const buckets = emptyBuckets();
+    for (const model of models) {
+        const usd = model.providerUsageUsd ?? 0;
+        switch (model.status) {
+            case "allocated":
+                buckets.allocatedUsd += usd;
+                break;
+            case "shared upstream":
+                buckets.billedTogetherUsd += usd;
+                break;
+            case "missing breakdown":
+                buckets.missingBreakdownUsd += usd;
+                break;
+            case "needs mapping":
+                buckets.needsMappingUsd += usd;
+                break;
+            case "provider only":
+                buckets.providerOnlyUsd += usd;
+                break;
+            default:
+                break;
+        }
+    }
+    return buckets;
+}
+
 function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
+    const memberGroup = new Map<string, string>();
+    for (const [key, group] of entry.sharedGroups) {
+        for (const model of group.models) memberGroup.set(model, key);
+    }
     const models = [...entry.pollenModels.values()].map(
         (model): ModelAllocationRow => {
             const funding = entry.providerModels.get(model.model);
             if (funding) return modelFundingAllocation(model, funding);
+            const group = memberGroup.get(model.model);
             return {
                 model: model.model,
-                status: entry.hasProvider ? "unallocated" : "missing provider",
+                status: group
+                    ? "shared member"
+                    : entry.hasProvider
+                      ? "unallocated"
+                      : "missing provider",
                 paidPollenUsd: model.paidPollenUsd,
                 questPollenUsd: model.questPollenUsd,
                 retainedPaidUsd: model.retainedPaidUsd,
                 pollenMeterUsd: pollenMeterUsd(model),
                 ...nullFundingFields(),
+                ...(group ? { group } : {}),
             };
         },
     );
@@ -299,14 +368,11 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     for (const [label, funding] of entry.providerOnlyLabels) {
         models.push(residualRow(label, "provider only", funding));
     }
-    for (const [label, shared] of entry.sharedLabels) {
-        models.push(
-            residualRow(
-                `${label} = ${shared.models.join(" + ")}`,
-                "shared upstream",
-                shared,
-            ),
-        );
+    for (const [key, group] of entry.sharedGroups) {
+        models.push({
+            ...residualRow(key, "shared upstream", group),
+            lines: [...group.lines].map(([label, usd]) => ({ label, usd })),
+        });
     }
     if (hasFunding(entry.unmapped)) {
         models.push(
@@ -418,16 +484,23 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
                     creditUsd,
                 );
                 break;
-            case "shared":
-                addFunding(
-                    getOrInit(entry.sharedLabels, row.model.trim(), () => ({
+            case "shared": {
+                const group = getOrInit(
+                    entry.sharedGroups,
+                    resolution.models.join(" + "),
+                    () => ({
                         ...emptyFunding(),
                         models: resolution.models,
-                    })),
-                    cashUsd,
-                    creditUsd,
+                        lines: new Map<string, number>(),
+                    }),
+                );
+                addFunding(group, cashUsd, creditUsd);
+                group.lines.set(
+                    label,
+                    (group.lines.get(label) ?? 0) + cashUsd + creditUsd,
                 );
                 break;
+            }
             case "provider-only":
                 addFunding(
                     getOrInit(
@@ -561,6 +634,7 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
                         ? retainedPaidUsd - providerCashUsd
                         : null,
                 models,
+                buckets: residualBuckets(models),
             };
         })
         .sort(
@@ -611,9 +685,15 @@ export function modelReconcileSummary(
         netCashContributionUsd: null,
         pollenOnlyMeterUsd: 0,
         providerOnlyUsageUsd: 0,
+        buckets: emptyBuckets(),
     };
 
     for (const row of rows) {
+        for (const key of Object.keys(
+            summary.buckets,
+        ) as (keyof ResidualBuckets)[]) {
+            summary.buckets[key] += row.buckets[key];
+        }
         summary.paidPollenUsd += row.paidPollenUsd ?? 0;
         summary.questPollenUsd += row.questPollenUsd ?? 0;
         summary.retainedPaidUsd += row.retainedPaidUsd ?? 0;

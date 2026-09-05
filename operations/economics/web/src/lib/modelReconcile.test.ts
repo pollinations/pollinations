@@ -424,7 +424,7 @@ describe("modelReconcileRows", () => {
         expect(row.models).toHaveLength(2);
     });
 
-    it("keeps a label that serves several Pollen models unallocated as a shared upstream", () => {
+    it("keeps a label that serves several Pollen models billed together, never split", () => {
         const [row] = modelReconcileRows(
             data({
                 opCloud: [
@@ -463,20 +463,112 @@ describe("modelReconcileRows", () => {
             { status: "allocated", providerCashUsd: 50 },
         );
         expect(row.models.find((m) => m.model === "elevenlabs")).toMatchObject({
-            status: "unallocated",
+            status: "shared member",
+            group: "elevenlabs + eleven-dialogue",
             providerCashUsd: null,
         });
         expect(
-            row.models.find((m) => m.model === "eleven-dialogue"),
-        ).toMatchObject({ status: "unallocated", providerCashUsd: null });
-        expect(
-            row.models.find(
-                (m) => m.model === "eleven_v3 = elevenlabs + eleven-dialogue",
-            ),
-        ).toMatchObject({ status: "shared upstream", providerCashUsd: 100 });
+            row.models.find((m) => m.model === "elevenlabs + eleven-dialogue"),
+        ).toMatchObject({
+            status: "shared upstream",
+            providerCashUsd: 100,
+            lines: [{ label: "eleven_v3", usd: 100 }],
+        });
         expect(
             row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
         ).toBe(150);
+    });
+
+    it("shows one billed-together row per upstream group and marks its members", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "azure",
+                        model: "5.5 ShortCo opt Gl 1M Tokens",
+                        paid: -100,
+                    }),
+                    cloud({
+                        vendor: "azure",
+                        model: "5.5 ShortCo inp Gl 1M Tokens",
+                        paid: -50,
+                    }),
+                    cloud({
+                        vendor: "azure",
+                        model: "Kontext Pro glbl Images",
+                        paid: -20,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "azure",
+                        model: "openai-large",
+                        cost_paid: 120,
+                    }),
+                    pollen({
+                        vendor: "azure",
+                        model: "midijourney-large",
+                        cost_paid: 5,
+                    }),
+                    pollen({
+                        vendor: "azure",
+                        model: "kontext",
+                        cost_paid: 20,
+                    }),
+                ],
+            }),
+        );
+
+        const group = row.models.filter((m) => m.status === "shared upstream");
+        expect(group).toEqual([
+            expect.objectContaining({
+                model: "openai-large + midijourney-large",
+                providerCashUsd: 150,
+                lines: [
+                    { label: "5.5 ShortCo opt Gl 1M Tokens", usd: 100 },
+                    { label: "5.5 ShortCo inp Gl 1M Tokens", usd: 50 },
+                ],
+            }),
+        ]);
+        expect(
+            row.models.find((m) => m.model === "openai-large"),
+        ).toMatchObject({
+            status: "shared member",
+            group: "openai-large + midijourney-large",
+            providerCashUsd: null,
+            pollenMeterUsd: 120,
+        });
+        expect(
+            row.models.find((m) => m.model === "midijourney-large"),
+        ).toMatchObject({ status: "shared member" });
+        expect(row.buckets).toEqual({
+            allocatedUsd: 20,
+            billedTogetherUsd: 150,
+            missingBreakdownUsd: 0,
+            needsMappingUsd: 0,
+            providerOnlyUsd: 0,
+        });
+    });
+
+    it("sums the residual buckets across vendor months", () => {
+        const rows = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({ model: "claude", paid: -40 }),
+                    cloud({ model: "", paid: -30 }),
+                    cloud({ vendor: "modal", model: "mystery", paid: -5 }),
+                ],
+                opPollen: [pollen({ model: "claude", cost_paid: 35 })],
+            }),
+        );
+
+        expect(modelReconcileSummary(rows).buckets).toEqual({
+            allocatedUsd: 40,
+            billedTogetherUsd: 0,
+            missingBreakdownUsd: 30,
+            needsMappingUsd: 5,
+            providerOnlyUsd: 0,
+        });
     });
 
     it("joins a shared label directly when only one of its models was metered that month", () => {

@@ -34,6 +34,7 @@ import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
     type ModelAllocationStatus,
     type ModelReconcileRow,
+    type ModelReconcileSummary,
     modelReconcileRows,
     modelReconcileSummary,
     visibleModelReconcileRows,
@@ -88,12 +89,98 @@ function MixGauge({
     );
 }
 
-function allocationWarning(status: ModelAllocationStatus | null) {
+// One chip per situation. A billed-together row carries its billing lines in
+// the hint; a member points at its group instead of reading as a gap.
+function allocationChip(row: UnitEconomicsRow) {
+    const status = row.allocationStatus;
     if (status == null || status === "allocated") return null;
+    if (status === "shared upstream") {
+        const lines = (row.lines ?? [])
+            .map((line) => `${line.label}: ${fmtUsd(line.usd)}`)
+            .join("\n");
+        return (
+            <span title={lines || undefined}>
+                <Chip intent="neutral" size="sm">
+                    billed together · {row.lines?.length ?? 0} line
+                    {(row.lines?.length ?? 0) === 1 ? "" : "s"}
+                </Chip>
+            </span>
+        );
+    }
+    if (status === "shared member") {
+        const others = (row.group ?? "")
+            .split(" + ")
+            .filter((model) => model !== row.model)
+            .join(", ");
+        return (
+            <span
+                title={`Cost is on the billed-together row ${row.group ?? ""}`}
+            >
+                <Chip intent="neutral" size="sm">
+                    billed with {others}
+                </Chip>
+            </span>
+        );
+    }
+    const intent =
+        status === "missing breakdown"
+            ? "danger"
+            : status === "provider only"
+              ? "neutral"
+              : "warning";
     return (
-        <Chip intent="warning" size="sm">
+        <Chip intent={intent} size="sm">
             {status === "missing provider" ? "missing vendor" : status}
         </Chip>
+    );
+}
+
+function ResidualBucketChips({
+    buckets,
+}: {
+    buckets: ModelReconcileSummary["buckets"];
+}) {
+    const items: {
+        label: string;
+        usd: number;
+        intent: "success" | "neutral" | "danger" | "warning";
+    }[] = [
+        {
+            label: "assigned to models",
+            usd: buckets.allocatedUsd,
+            intent: "success",
+        },
+        {
+            label: "billed together",
+            usd: buckets.billedTogetherUsd,
+            intent: "neutral",
+        },
+        {
+            label: "missing breakdown",
+            usd: buckets.missingBreakdownUsd,
+            intent: "danger",
+        },
+        {
+            label: "needs mapping",
+            usd: buckets.needsMappingUsd,
+            intent: "warning",
+        },
+        {
+            label: "provider only",
+            usd: buckets.providerOnlyUsd,
+            intent: "neutral",
+        },
+    ];
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            {items
+                .filter((item) => item.usd > 0.005)
+                .map((item) => (
+                    <Chip intent={item.intent} size="sm" key={item.label}>
+                        {fmtUsd(item.usd)} {item.label}
+                    </Chip>
+                ))}
+        </div>
     );
 }
 
@@ -477,6 +564,10 @@ function UnitEconomicsTable({
         <div className="flex flex-col gap-4">
             <StatCards items={stats} />
 
+            {view === "inference" && (
+                <ResidualBucketChips buckets={summary.buckets} />
+            )}
+
             {(includesPartialMonth ||
                 summary.missingSideProviderMonths > 0 ||
                 mixedVendorMonths > 0) && (
@@ -697,9 +788,7 @@ function UnitEconomicsTable({
                                                 : row.model}
                                         </span>
                                         {view === "inference" &&
-                                            allocationWarning(
-                                                row.allocationStatus,
-                                            )}
+                                            allocationChip(row)}
                                     </TableCell>
                                     <TableCell
                                         align="right"

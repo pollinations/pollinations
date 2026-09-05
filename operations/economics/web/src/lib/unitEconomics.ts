@@ -37,6 +37,9 @@ export type UnitEconomicsRow = EconomicsValues & {
     economicContributionUsd: number | null;
     sourceStatus: ModelReconcileStatus;
     allocationStatus: ModelAllocationStatus | null;
+    // Billed-together detail, present on model-grain rows only.
+    group?: string | null;
+    lines?: { label: string; usd: number }[] | null;
 };
 
 export type ProviderCostCheckKind =
@@ -240,6 +243,8 @@ export function unitEconomicsRows(
             model: "All models",
             sourceStatus: provider.status,
             allocationStatus: null,
+            group: null,
+            lines: null,
             economicContributionUsd:
                 provider.status === "both sources" &&
                 provider.retainedPaidUsd != null &&
@@ -259,6 +264,8 @@ export function unitEconomicsRows(
                 model: model.model,
                 sourceStatus: provider.status,
                 allocationStatus: model.status,
+                group: model.group ?? null,
+                lines: model.lines ?? null,
                 ...economicsValues(model),
                 economicContributionUsd: modelEconomicContribution(
                     provider,

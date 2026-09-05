@@ -488,27 +488,27 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 400, upstreamStatus: 500 });
     });
 
-    it.each(["status", "code"])(
-        "maps 429 from an upstream error envelope's %s to 502",
-        async (field) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-                Response.json({
-                    error: {
-                        message: "rate limited",
-                        [field]: 429,
-                    },
-                }),
-            );
+    it.each([
+        "status",
+        "code",
+    ])("maps 429 from an upstream error envelope's %s to 502", async (field) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                error: {
+                    message: "rate limited",
+                    [field]: 429,
+                },
+            }),
+        );
 
-            await expect(
-                genericOpenAIClient(
-                    [{ role: "user", content: "hello" }],
-                    { model: "provider-model" },
-                    { endpoint: "https://portkey.test/chat" },
-                ),
-            ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
-        },
-    );
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
+    });
 
     it.each([
         [200, false],
@@ -516,67 +516,60 @@ describe("genericOpenAIClient", () => {
         [400, false],
         [403, false],
         [500, false],
-    ])(
-        "returns a non-retryable 4xx for policy rejection (HTTP %s, choice error %s)",
-        async (status, nested) => {
-            const details = {
-                code: 400,
-                message: "Gemini blocked the request: PROHIBITED_CONTENT",
-                metadata: { error_type: "invalid_request" },
-            };
-            const body = nested
-                ? { choices: [{ finish_reason: "error", error: details }] }
-                : { error: details };
-            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-                Response.json(body, { status }),
-            );
-            const error = await genericOpenAIClient(
+    ])("returns a non-retryable 4xx for policy rejection (HTTP %s, choice error %s)", async (status, nested) => {
+        const details = {
+            code: 400,
+            message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            metadata: { error_type: "invalid_request" },
+        };
+        const body = nested
+            ? { choices: [{ finish_reason: "error", error: details }] }
+            : { error: details };
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(body, { status }),
+        );
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        ).catch((error) => error);
+        expect(error).toMatchObject({
+            status: 422,
+            upstreamStatus: status === 200 ? 400 : status,
+            details: status === 200 ? details : body,
+        });
+        expect(isRetryableFallbackError(error)).toBe(false);
+    });
+
+    it.each([
+        401, 402, 403, 429, 503,
+    ])("keeps provider error.code=%s eligible for fallback", async (code) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { code, message: "Provider unavailable" } }),
+        );
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        ).catch((error) => error);
+        expect(error).toMatchObject({ upstreamStatus: code });
+        expect(isRetryableFallbackError(error)).toBe(true);
+    });
+
+    it.each([
+        200, 1001,
+    ])("does not use non-error HTTP code %s as the response status", async (code) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { code, message: "Provider failed" } }),
+        );
+        await expect(
+            genericOpenAIClient(
                 [{ role: "user", content: "hello" }],
                 { model: "provider-model" },
                 { endpoint: "https://portkey.test/chat" },
-            ).catch((error) => error);
-            expect(error).toMatchObject({
-                status: 422,
-                upstreamStatus: status === 200 ? 400 : status,
-                details: status === 200 ? details : body,
-            });
-            expect(isRetryableFallbackError(error)).toBe(false);
-        },
-    );
-
-    it.each([401, 402, 403, 429, 503])(
-        "keeps provider error.code=%s eligible for fallback",
-        async (code) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-                Response.json({
-                    error: { code, message: "Provider unavailable" },
-                }),
-            );
-            const error = await genericOpenAIClient(
-                [{ role: "user", content: "hello" }],
-                { model: "provider-model" },
-                { endpoint: "https://portkey.test/chat" },
-            ).catch((error) => error);
-            expect(error).toMatchObject({ upstreamStatus: code });
-            expect(isRetryableFallbackError(error)).toBe(true);
-        },
-    );
-
-    it.each([200, 1001])(
-        "does not use non-error HTTP code %s as the response status",
-        async (code) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-                Response.json({ error: { code, message: "Provider failed" } }),
-            );
-            await expect(
-                genericOpenAIClient(
-                    [{ role: "user", content: "hello" }],
-                    { model: "provider-model" },
-                    { endpoint: "https://portkey.test/chat" },
-                ),
-            ).rejects.toMatchObject({ status: 502 });
-        },
-    );
+            ),
+        ).rejects.toMatchObject({ status: 502 });
+    });
 
     it("maps an embedded completion 429 to a retryable upstream error", async () => {
         const details = {
@@ -638,22 +631,19 @@ describe("genericOpenAIClient", () => {
     it.each([
         '{"error":{"message":"Failed to load image: cannot identify image file","code":400}}',
         '{"error":{"message":"Invalid or unsupported audio file.","code":400}}',
-    ])(
-        "maps malformed media in a successful error envelope to 400: %s",
-        async (message) => {
-            vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-                Response.json({ error: { message } }),
-            );
+    ])("maps malformed media in a successful error envelope to 400: %s", async (message) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { message } }),
+        );
 
-            await expect(
-                genericOpenAIClient(
-                    [{ role: "user", content: "hello" }],
-                    { model: "provider-model" },
-                    { endpoint: "https://portkey.test/chat" },
-                ),
-            ).rejects.toMatchObject({ status: 400 });
-        },
-    );
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
 
     it("maps invalid upstream JSON to 502 with gateway context", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(

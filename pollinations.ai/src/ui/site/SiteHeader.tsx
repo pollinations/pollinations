@@ -218,7 +218,7 @@ export function SiteHeader() {
     const { data: repoStars } = useRepoStars();
     const displayedRepoStars = repoStars === null ? null : compact(repoStars);
     const { data: discordOnline } = useDiscordPresence({
-        refreshMs: 30_000,
+        refreshMs: 300_000,
     });
     const scrolled = useScrolled();
     const scrolledAway = useHideOnScroll();

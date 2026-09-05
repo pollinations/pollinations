@@ -35,7 +35,7 @@ interface ExecutionContext {
 
 const DISCORD_GUILD_ID = "885844321461485618";
 const DISCORD_PRESENCE_PATH = "/api/discord-presence";
-const DISCORD_PRESENCE_TTL_SECONDS = 30;
+const DISCORD_PRESENCE_TTL_SECONDS = 300;
 const GITHUB_STARS_PATH = "/api/github-stars";
 const GITHUB_STARS_TTL_SECONDS = 15 * 60;
 

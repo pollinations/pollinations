@@ -18,7 +18,8 @@ convention.
   The desktop's `secret-tool` command (normally provided by libsecret) stores
   the authorization in the login keyring.
 - macOS: use the Plug-ins folder shown in **Preferences → Folders → Plug-ins**,
-  then restart GIMP. The authorization is stored in Keychain.
+  then restart GIMP. The authorization is stored through Keychain Services and
+  is never passed to a command-line process.
 - Windows: use the Plug-ins folder shown in **Preferences → Folders → Plug-ins**,
   then restart GIMP. The authorization is encrypted with Windows DPAPI for the
   signed-in user.
@@ -39,15 +40,21 @@ publishers create their own App Key at <https://enter.pollinations.ai/keys>.
 After connecting, the model picker calls authenticated
 `https://gen.pollinations.ai/image/models`. This returns every image-output
 model visible to the connected account, including that account's community
-models. The picker hides video-only records. Image editing is enabled only when
-the selected model advertises `image` in `input_modalities`; resolution choices
-are shown only when the selected model advertises `resolutions`.
+models. The picker hides video-only records. Image editing is enabled when the
+model advertises image input or `/v1/images/edits` in `supported_endpoints`, so
+models such as `zimage` are not incorrectly excluded. Resolution choices are
+shown only when the selected model advertises `resolutions`.
 
 Enter a prompt and choose **Generate** to add a new result layer. To edit,
 select a paintable layer and tick **Edit the active layer**. Optionally tick
 **Use the current selection** to send its bounds. The source is exported from a
-new temporary image and the returned image is inserted as a new layer. The
-source layer is not modified.
+new temporary image. The returned layer is scaled to those selection bounds and
+placed at the selection's canvas offset. The source layer is not modified. A
+seed control makes text-to-image prompts reproducible.
+
+Model loading, device polling, generation, and editing run on background
+threads. GIMP's GTK event loop remains responsive while network requests are in
+flight, and closing the dialog safely discards late callbacks.
 
 The plug-in gives actionable messages for expired/revoked authorization
 (connect again), HTTP 402 (add Pollen), connection failures, malformed API

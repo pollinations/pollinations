@@ -227,7 +227,16 @@
         "claude-opus-5": "claude-large",
         "claude-sonnet-4-6": "claude",
         "claude-sonnet-4.5": "claude",
-        "claude-sonnet-4.6": "claude"
+        "claude-sonnet-4.6": "claude",
+        "USE1-Guardrail-ContentPolicyUnitsConsumed": null,
+        "USE1-Guardrail-SensitiveInformationPolicyPaidUnitsConsumed": null,
+        "USE1-Nova2.0Lite-input-tokens": "nova",
+        "USE1-Nova2.0Lite-output-tokens": "nova",
+        "USE1-NovaCanvas-T2I-1024-Standard": "nova-canvas",
+        "USE1-NovaCanvas-T2I-2048-Standard": "nova-canvas",
+        "USE1-NovaMicro-input-tokens": "nova-fast",
+        "USE1-NovaMicro-output-tokens": "nova-fast",
+        "USE1-NovaReel-T2V-Medfps-HDRes": "nova-reel"
       }
     },
     {
@@ -1528,6 +1537,8 @@
           "perplexity-fast",
           "perplexity-high"
         ],
+        "sonar | api_requests high": "perplexity-high",
+        "sonar | api_requests low": "perplexity-fast",
         "sonar-pro": "perplexity",
         "sonar-reasoning-pro": "perplexity-reasoning"
       }

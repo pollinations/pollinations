@@ -1,0 +1,35 @@
+{
+  "pr_number": 14489,
+  "title": "refactor: share request logging and embedding response shaping",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14489",
+  "merged_at": "2026-09-05T14:46:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Rebuilds only the remaining request-logger and embedding-response deduplication from #12042 on current main.\n- Shares Gen/Enter request context, timing, and environment-based logging while preserving Gen URL redaction and Enter's existing URL formatting; existing middleware imports and LoggerVariables exports remain compatible.\n- Shares sorting and float/base64 shaping for Azure OpenAI, Cohere, and Fireworks; keeps provider calls, validation, usage headers, and billing unchanged.\n- Adds eight logger cases and three batched base64/billing cases; existing provider fixtures now return reversed entries to exercise sorting. Validated 84 Gen tests, 16 Enter tests, both service typechecks, Biome, and whitespace checks.\n- Leaves unrelated constants/header micro-extractions and behavior changes from #12042 out of scope; auth metadata consolidation already landed in #12924.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One logger, two hives",
+    "blurb": "Gen and Enter now share the same request-logging roots, while embeddings get one careful response-shaping path. The plumbing is less duplicated; the API keeps behaving exactly as it did.",
+    "summary": "Shared Gen/Enter request context, timing, and environment-based logging in a common middleware module, and centralized embedding sorting plus float/base64 response shaping for Azure OpenAI, Cohere, and Fireworks without changing provider calls, validation, usage headers, or billing.",
+    "impact": "Developers get consistent internal logging and embedding-response ordering across providers while Gen URL redaction, Enter URL formatting, billing, and existing middleware imports remain intact.",
+    "keywords": [
+      "logging",
+      "embeddings",
+      "middleware",
+      "response-shaping",
+      "azure-openai",
+      "cohere",
+      "fireworks"
+    ],
+    "visual_concept": "A cozy shared garden-shed logging station represents one middleware root feeding both Gen and Enter paths: Polli tidies two labeled watering hoses into a single glowing logbook, while sorted embedding crystals move neatly into matching jars. A retro terminal, code-plants, and small provider-colored-but-pastel jars convey response shaping and preserved order without implying a user-visible API change.",
+    "image_prompt": "Cozy pixel art scene inside a warm garden-shed hackerspace: Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny librarian scarf, carefully connects two vine-like request paths labeled “GEN” and “ENTER” to one glowing lime green (#ecf874) logbook, while neatly sorted pastel embedding crystals fill small jars beside a retro terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14489.jpg",
+    "prompt": "Cozy pixel art scene inside a warm garden-shed hackerspace: Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light-blue wings, and a tiny librarian scarf, carefully connects two vine-like request paths labeled “GEN” and “ENTER” to one glowing lime green (#ecf874) logbook, while neatly sorted pastel embedding crystals fill small jars beside a retro terminal and code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, subtle CRT glow, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-05T14:47:58.643998+00:00"
+}

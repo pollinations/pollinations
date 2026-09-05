@@ -37,6 +37,36 @@ For all Pollinations-hosted MCP servers, see the
 | `listModels` | List live models, capabilities, voices, and pricing | Model registry routes |
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
+| `startDeviceLogin` | Start a browser device-flow login; returns a user code + URL | `POST /api/device/code` |
+| `pollDeviceLogin` | Poll once for approval; activates the session key on success | `POST /api/device/token` |
+| `whoAmI` | Confirm which user the current key belongs to | `GET /api/device/userinfo` |
+
+## Authenticate via device flow
+
+Instead of pasting an API key, an MCP host (Claude Desktop, Cursor, …) can walk
+the user through login inside the conversation:
+
+1. **`startDeviceLogin`** — returns a short user code and a verification URL.
+   The user opens the URL in their browser and approves.
+2. **`pollDeviceLogin`** — poll once; returns `pending` until the user approves,
+   then `approved` (the session API key is set automatically). The LLM repeats
+   this after the user confirms.
+3. **`whoAmI`** — confirms which account the key belongs to.
+
+```
+User:    log me into pollinations
+LLM:     [calls startDeviceLogin]
+         → Visit https://enter.pollinations.ai/device?user_code=ABCD-1234
+           and approve. Tell me when you've approved.
+User:    done
+LLM:     [calls pollDeviceLogin]
+         → Logged in. [calls whoAmI] → Welcome Thomas.
+```
+
+The flow reuses the SDK's OAuth device authorization (RFC 8628). Only the short
+user code is ever shown to the LLM; the device code stays server-side. The key
+is session-local and cleared by `clearApiKey`. For a real end-to-end run
+(requires a human to approve in a browser): `node test-mcp-client.js --device-flow`.
 
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone

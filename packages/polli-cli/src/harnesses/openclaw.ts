@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import JSON5 from "json5";
 import polliSkill from "../../SKILL.md?raw";
 import { BASE_URL } from "../lib/config.js";
@@ -7,15 +7,12 @@ import {
     commandExists,
     readTextIfExists,
     removeIfExists,
+    resolveHomePath,
     writeTextAtomic,
 } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
-import {
-    applyWithSnapshot,
-    clearSnapshot,
-    restoreSnapshot,
-} from "./snapshot.js";
+import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
 import type {
     HarnessAdapter,
     HarnessContext,
@@ -31,26 +28,19 @@ const DEFAULT_MODEL = "kimi";
 // matching OpenClaw's own config-level variable substitution.
 const KEY_ENV = "POLLI_OPENCLAW_API_KEY";
 
-const expandTilde = (ctx: HarnessContext, value: string) =>
-    value === "~"
-        ? ctx.home
-        : value.startsWith("~/") || value.startsWith("~\\")
-          ? join(ctx.home, value.slice(2))
-          : value;
-
 /** OPENCLAW_STATE_DIR wins; otherwise OPENCLAW_HOME relocates the home. */
 export const openclawStateDir = (ctx: HarnessContext) => {
     const stateDir = ctx.env.OPENCLAW_STATE_DIR?.trim();
-    if (stateDir) return resolve(expandTilde(ctx, stateDir));
+    if (stateDir) return resolveHomePath(ctx.home, stateDir);
     const home = ctx.env.OPENCLAW_HOME?.trim();
-    return join(home ? resolve(expandTilde(ctx, home)) : ctx.home, ".openclaw");
+    return join(home ? resolveHomePath(ctx.home, home) : ctx.home, ".openclaw");
 };
 
 // The active config path: OPENCLAW_CONFIG_PATH wins, else $STATE_DIR/openclaw.json.
 const configPath = (ctx: HarnessContext) => {
     const override = ctx.env.OPENCLAW_CONFIG_PATH?.trim();
     return override
-        ? resolve(expandTilde(ctx, override))
+        ? resolveHomePath(ctx.home, override)
         : join(openclawStateDir(ctx), "openclaw.json");
 };
 
@@ -214,12 +204,7 @@ export const configureOpenClaw = (
 };
 
 export const disableOpenClaw = (ctx: HarnessContext): HarnessResult => {
-    const managedFiles = files(ctx);
-    let outcome: HarnessResult["outcome"] = "restored";
-    if (restoreSnapshot(ctx, ID, managedFiles) !== "restored") {
-        outcome = stripConfig(ctx) ? "stripped" : "unchanged";
-        clearSnapshot(ctx, ID, managedFiles);
-    }
+    const outcome = restoreOrStrip(ctx, ID, files(ctx), () => stripConfig(ctx));
     return { ...result(ctx), configured: false, outcome };
 };
 
@@ -252,12 +237,7 @@ export const openclaw: HarnessAdapter = {
             );
         }
         const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels();
-        if (!models.some((candidate) => candidate.id === model)) {
-            throw new Error(
-                `Model "${model}" is not a tool-calling text model. Run: polli models`,
-            );
-        }
+        const models = await fetchHarnessModels(model);
         initializeOpenClaw(ctx);
 
         const apiKey = await resolveHarnessKey(

@@ -53,7 +53,7 @@ const genAliases = [
     "utils/text-cache.ts",
 ];
 
-const baseConfig = defineConfig({
+const baseConfig = defineWorkersConfig({
     resolve: {
         dedupe: ["hono", "hono-openapi"],
         alias: [
@@ -88,7 +88,7 @@ const baseConfig = defineConfig({
     },
 });
 
-export default defineWorkersConfig(async ({ mode }) => {
+export default defineConfig(async ({ mode }) => {
     const migrationsPath = path.join(
         __dirname,
         "../enter.pollinations.ai/drizzle",
@@ -99,6 +99,10 @@ export default defineWorkersConfig(async ({ mode }) => {
     return {
         ...baseConfig,
         test: {
+            // Use Gen's pool, not the older version hoisted for Enter.
+            pool: fileURLToPath(
+                import.meta.resolve("@cloudflare/vitest-pool-workers"),
+            ),
             globalSetup: ["./test/setup/snapshot-server.ts"],
             setupFiles: ["./test/setup/apply-migrations.ts"],
             exclude: [...configDefaults.exclude],

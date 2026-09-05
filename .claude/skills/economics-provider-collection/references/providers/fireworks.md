@@ -90,6 +90,23 @@ Collection steps:
 6. Keep prepaid credit top-ups separate from usage cost.
 7. Use this skill for saved raw evidence.
 
+## Verified — 2026-09-05
+
+- Model detail when `firectl` grouped usage returns an empty `account_usage`:
+  the Analytics page's JSON route accepts any ISO range in the authenticated
+  browser session (`elliot@neoglyph.ai`):
+
+  ```
+  POST https://app.fireworks.ai/api/analytic/usage-costs
+  {"start":"<YYYY-MM-01>T00:00:00.000Z","end":"<next-YYYY-MM-01>T00:00:00.000Z","granularity":"total","groupBy":"modelTier","pageSize":500,"pageToken":""}
+  ```
+
+  `groupBy` accepts `modelTier` (invoice display names), `model`, `user`,
+  `apiKeyId`; `/api/analytic/usage-costs/export` returns a daily CSV. This
+  view excludes embedding lines; the postpaid Orb invoice
+  (`firectl billing list-invoices`, Invoice URL) is the complete source and
+  is the ledger row source, as in July.
+
 Known traps:
 
 - Never save API keys in command logs or evidence files.

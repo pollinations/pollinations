@@ -39,6 +39,28 @@ Collection steps:
    counts and provider-cost estimates by month/model. For closed months, use
    those rows as proportions only when the provider invoice total is stronger.
 
+## Verified — 2026-09-05
+
+- The console's own JSON route gives model and SKU detail with daily buckets,
+  but only for the trailing month; export it in the first days of each month.
+  Authenticated browser session (elliot@myceli.ai), read-only:
+
+  ```
+  GET https://console.perplexity.ai/rest/pplx-api/v2/groups/81749045/usage-analytics?time_bucket=day&time_range=past_month&version=2.18&source=default
+  ```
+
+  `time_range` accepts only `past_day`, `past_week`, `past_month`,
+  `year_to_date`; `year_to_date` requires `time_bucket=week` (Thursday-start
+  buckets); `start`/`end` parameters are ignored. Meters: `api_requests`
+  (per model and `search_context_size`), `input_tokens`, `output_tokens`.
+  Sum the daily `meter_event_summaries` for the UTC calendar month and save
+  the raw JSON to `data/inbox/perplexity/` and Drive.
+- Days that have already left the trailing-month window cannot be recovered
+  at daily grain; a weekly bucket that straddles a month boundary cannot be
+  split. Record what is exact and flag the rest; do not fill it from Pollen.
+- No public usage or billing API exists; the console routes are limited to
+  `usage-analytics`, `invoices` (credit purchases) and a Stripe portal session.
+
 Known traps:
 
 - The Sonar key does not provide a supported account billing, balance, or

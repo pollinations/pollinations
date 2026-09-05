@@ -1,31 +1,30 @@
 import { Pollinations } from "@pollinations/sdk";
 
-export const AGENT_MODEL = "morriszdweck/osaii-swarm";
-export const AGENT_BASE_MODEL = "morriszdweck/osaii-api-smart";
-export const CONSENT_BUDGET = 5;
-export const CONSENT_EXPIRY_DAYS = 7;
+const CONSENT_BUDGET = 5;
+const CONSENT_EXPIRY_DAYS = 7;
 
-export function buildConsentUrl(verificationUri, appKey, userCode) {
+export function buildConsentUrl(verificationUri, appKey, userCode, agentId) {
     const url = new URL("/authorize", verificationUri);
     url.searchParams.set("user_code", userCode);
     url.searchParams.set("client_id", appKey);
-    url.searchParams.set("models", `${AGENT_MODEL},${AGENT_BASE_MODEL}`);
+    url.searchParams.set("models", agentId);
     url.searchParams.set("budget", String(CONSENT_BUDGET));
     url.searchParams.set("expiry", String(CONSENT_EXPIRY_DAYS));
     return url.toString();
 }
 
-export async function startDeviceAuthorization(appKey, signal) {
+export async function startDeviceAuthorization(config, signal) {
     const auth = await Pollinations.authorizeDevice({
-        clientId: appKey,
+        clientId: config.appKey,
         signal,
     });
     return {
         ...auth,
         verificationUri: buildConsentUrl(
             auth.verificationUri,
-            appKey,
+            config.appKey,
             auth.userCode,
+            config.agentId,
         ),
     };
 }
@@ -34,12 +33,12 @@ export async function getUserInfo(token) {
     return new Pollinations({ apiKey: token, textTimeout: 20_000 }).userInfo();
 }
 
-export async function askAgent(token, messages) {
+export async function askAgent(token, messages, agentId) {
     const response = await new Pollinations({
         apiKey: token,
         textTimeout: 90_000,
     }).chat(messages, {
-        model: AGENT_MODEL,
+        model: agentId,
         maxTokens: 900,
         private: true,
     });

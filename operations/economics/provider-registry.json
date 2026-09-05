@@ -1,5 +1,5 @@
 {
-  "version": 16,
+  "version": 17,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -65,6 +65,7 @@
         "qwen3-coder-next": "qwen-coder-large",
         "qwen3-tts-flash": "qwen-tts",
         "qwen3-tts-instruct-flash": "qwen-tts-instruct",
+        "qwen3-vl-235b-a22b-thinking": "qwen-vision-pro",
         "qwen3-vl-plus": "qwen-vision",
         "wan2.2-i2v-flash": "wan-fast",
         "wan2.2-kf2v-flash": "wan-fast",
@@ -123,6 +124,14 @@
         }
       ],
       "balanceTracking": true,
+      "modelLabels": {
+        "Prompting Universal-3.5 Pro": "universal-3.5-pro",
+        "Realtime Universal-3.5 Pro | EU": null,
+        "Universal-2": "universal-2",
+        "Universal-3.5 Pro": "universal-3.5-pro",
+        "qwen3.5-4b-32k-fast (Input)": null,
+        "qwen3.5-4b-32k-fast (Output)": null
+      },
       "collectionMethod": "dashboard",
       "access": [
         {
@@ -830,6 +839,22 @@
         }
       ],
       "balanceTracking": true,
+      "modelLabels": {
+        "alibaba/qwen-image-3/edit": "qwen-image-3",
+        "alibaba/qwen-image-3/text-to-image": "qwen-image-3",
+        "alibaba/wan-3.0-prime/image-to-video": "wan-3.0",
+        "alibaba/wan-3.0-prime/reference-to-video": "wan-3.0",
+        "alibaba/wan-3.0-prime/text-to-video": "wan-3.0",
+        "alibaba/wan-3.0/text-to-video": null,
+        "fal-ai/hyper3d/rodin/v2.5/fast": "hyper3d-rodin",
+        "fal-ai/hyper3d/rodin/v2.5/text-to-3d/fast": "hyper3d-rodin",
+        "fal-ai/stable-audio-3/medium/audio-to-audio": "stable-audio-3-medium",
+        "fal-ai/stable-audio-3/medium/text-to-audio": "stable-audio-3-medium",
+        "fal-ai/z-image/turbo": "zimage",
+        "krea/v2/large/text-to-image": null,
+        "krea/v2/medium/text-to-image": "krea",
+        "minimax/h3/text-to-video": "minimax-h3"
+      },
       "collectionMethod": "api",
       "access": [
         {

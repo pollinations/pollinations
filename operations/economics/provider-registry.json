@@ -177,8 +177,10 @@
         "claude-haiku-4-5": "claude-fast",
         "claude-haiku-4.5": "claude-fast",
         "claude-opus-4-5": [
-          "claude-legacy",
-          "claude-opus-4.6"
+          {
+            "until": "2026-05",
+            "model": "claude-legacy"
+          }
         ],
         "claude-opus-4-6": "claude-opus-4.6",
         "claude-opus-4-7": "claude-opus-4.7",
@@ -376,30 +378,12 @@
         "gpt-realtime-2 Text cd inp Gl 1M Tokens": "gpt-realtime-2",
         "gpt-realtime-2 Text inp Gl 1M Tokens": "gpt-realtime-2",
         "gpt-realtime-2 Text opt Gl 1M Tokens": "gpt-realtime-2",
-        "gpt-realtime-2.1 Audio cd inp Gl 1M Tokens": [
-          "gpt-realtime-2.1",
-          "gpt-realtime-2.1-mini"
-        ],
-        "gpt-realtime-2.1 Audio inp Gl 1M Tokens": [
-          "gpt-realtime-2.1",
-          "gpt-realtime-2.1-mini"
-        ],
-        "gpt-realtime-2.1 Audio opt Gl 1M Tokens": [
-          "gpt-realtime-2.1",
-          "gpt-realtime-2.1-mini"
-        ],
-        "gpt-realtime-2.1 Text cd inp Gl 1M Tokens": [
-          "gpt-realtime-2.1",
-          "gpt-realtime-2.1-mini"
-        ],
-        "gpt-realtime-2.1 Text inp Gl 1M Tokens": [
-          "gpt-realtime-2.1",
-          "gpt-realtime-2.1-mini"
-        ],
-        "gpt-realtime-2.1 Text opt Gl 1M Tokens": [
-          "gpt-realtime-2.1",
-          "gpt-realtime-2.1-mini"
-        ],
+        "gpt-realtime-2.1 Audio cd inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Audio inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Audio opt Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Text cd inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Text inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Text opt Gl 1M Tokens": "gpt-realtime-2.1",
         "gpt4omini-aud1217 Inp glbl Tokens": "openai-audio",
         "gpt4omini-aud1217 Outp glbl Tokens": "openai-audio",
         "gpt4omini-aud1217-txt Inp glbl Tokens": "openai-audio",
@@ -817,8 +801,14 @@
         "Kimi K3": "kimi-k3",
         "MiniMax M2.5": "minimax",
         "MiniMax M2.7": [
-          "minimax-m2.7",
-          "minimax"
+          {
+            "until": "2026-05",
+            "model": "minimax"
+          },
+          {
+            "from": "2026-06",
+            "model": "minimax-m2.7"
+          }
         ],
         "MiniMax M3": "minimax",
         "Qwen 3.6 Plus": "qwen-large",

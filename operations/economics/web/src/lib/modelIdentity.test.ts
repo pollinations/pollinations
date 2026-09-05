@@ -67,6 +67,30 @@ describe("resolveLedgerLabel", () => {
         ).toEqual({ kind: "shared", models: ["veo", "veo-1080p"] });
     });
 
+    it("applies the dated rule for the row's month when a label changed meaning", () => {
+        // Fireworks billed MiniMax M2.7 to the Pollen id `minimax` until May
+        // 2026; from June `minimax` ran on M3 and `minimax-m2.7` took over.
+        expect(
+            resolveLedgerLabel("fireworks", "MiniMax M2.7", {
+                month: "2026-05",
+            }),
+        ).toEqual({ kind: "model", model: "minimax" });
+        expect(
+            resolveLedgerLabel("fireworks", "MiniMax M2.7", {
+                month: "2026-07",
+            }),
+        ).toEqual({ kind: "model", model: "minimax-m2.7" });
+    });
+
+    it("leaves a dated label unmapped in months no rule covers", () => {
+        expect(
+            resolveLedgerLabel("aws", "claude-opus-4-5", { month: "2026-06" }),
+        ).toEqual({ kind: "unmapped", label: "claude-opus-4-5" });
+        expect(
+            resolveLedgerLabel("aws", "claude-opus-4-5", { month: "2026-04" }),
+        ).toEqual({ kind: "model", model: "claude-legacy" });
+    });
+
     it("reports a label that serves several Pollen models as shared", () => {
         expect(resolveLedgerLabel("elevenlabs", "eleven_v3")).toEqual({
             kind: "shared",

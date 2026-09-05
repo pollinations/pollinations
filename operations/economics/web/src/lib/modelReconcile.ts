@@ -392,6 +392,7 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
             : resolveLedgerLabel(entry.vendor, label, {
                   sku: row.resource_sku,
                   name: row.resource_name,
+                  month,
               });
         // A label listed for several models is shared only in a month where
         // more than one of them was actually metered on this vendor.

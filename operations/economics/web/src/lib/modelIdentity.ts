@@ -13,7 +13,30 @@ export type LabelQualifiers = {
     // under several line items that map to different Pollen models.
     sku?: string;
     name?: string;
+    // Ledger month (YYYY-MM), for labels whose meaning changed over time.
+    month?: string;
 };
+
+// A dated rule pins a label to the Pollen id it billed during a period. Both
+// bounds are inclusive months; a missing bound is open. Months no rule covers
+// stay unmapped rather than guessed.
+export type DatedLabelRule = {
+    from?: string;
+    until?: string;
+    model: string | string[] | null;
+};
+
+export type ModelLabelTarget = string | string[] | null | DatedLabelRule[];
+
+export function isDatedRules(
+    target: ModelLabelTarget,
+): target is DatedLabelRule[] {
+    return (
+        Array.isArray(target) &&
+        target.length > 0 &&
+        typeof target[0] === "object"
+    );
+}
 
 // Current registry ids only. Aliases are deliberately excluded: today's alias
 // of a model must not rewrite which model a historical cost belonged to.
@@ -44,8 +67,22 @@ export function resolveLedgerLabel(
             ? { kind: "model", model: name }
             : { kind: "unmapped", label: name };
     }
-    const target = table[key];
+    let target: ModelLabelTarget = table[key];
+    if (isDatedRules(target)) {
+        const month = qualifiers.month;
+        const rule = month
+            ? target.find(
+                  (candidate) =>
+                      (candidate.from ?? "") <= month &&
+                      month <= (candidate.until ?? "9999-12"),
+              )
+            : undefined;
+        if (!rule) return { kind: "unmapped", label: name };
+        target = rule.model;
+    }
     if (target === null) return { kind: "provider-only", label: name };
-    if (Array.isArray(target)) return { kind: "shared", models: target };
+    if (Array.isArray(target)) {
+        return { kind: "shared", models: target as string[] };
+    }
     return { kind: "model", model: target };
 }

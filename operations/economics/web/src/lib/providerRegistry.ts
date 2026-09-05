@@ -29,9 +29,17 @@ export type ProviderDefinition = {
     access?: ProviderAccessTarget[];
     accounts?: ProviderAccountDefinition[];
     // Reviewed provider labels (meter names, invoice slugs, dashboard display
-    // names) keyed to registry model ids. An array means one upstream serves
-    // several Pollen models; null means the label has no Pollen model at all.
-    modelLabels?: Record<string, string | string[] | null>;
+    // names) keyed to Pollen model ids. A string array means one billed line
+    // served several ids of the same model at the same provider; null means
+    // the label has no Pollen model; an array of dated rules pins the label to
+    // the id it meant in each period.
+    modelLabels?: Record<
+        string,
+        | string
+        | string[]
+        | null
+        | { from?: string; until?: string; model: string | string[] | null }[]
+    >;
 };
 
 export type ProviderCollectionMethod = "api" | "cli" | "dashboard" | "internal";

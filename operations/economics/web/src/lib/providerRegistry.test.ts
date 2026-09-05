@@ -5,6 +5,7 @@ import {
 } from "../../../../../shared/registry/registry";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import { isDatedRules } from "./modelIdentity";
 import {
     activeProviderAccounts,
     canonicalProvider,
@@ -138,16 +139,28 @@ describe("provider registry", () => {
                 entries += 1;
                 expect(label.trim()).toBe(label);
                 expect(label).not.toBe("");
-                if (target === null) continue;
-                const targets = Array.isArray(target) ? target : [target];
-                expect(new Set(targets).size).toBe(targets.length);
-                expect(targets.length).toBeGreaterThanOrEqual(
-                    Array.isArray(target) ? 2 : 1,
-                );
-                for (const model of targets) {
-                    expect(known.has(model), `${provider.id}: ${label}`).toBe(
-                        true,
+                const rules = isDatedRules(target)
+                    ? target
+                    : [{ model: target }];
+                for (const rule of rules) {
+                    for (const bound of [rule.from, rule.until]) {
+                        if (bound != null)
+                            expect(bound).toMatch(/^\d{4}-\d{2}$/);
+                    }
+                    if (rule.model === null) continue;
+                    const targets = Array.isArray(rule.model)
+                        ? rule.model
+                        : [rule.model];
+                    expect(new Set(targets).size).toBe(targets.length);
+                    expect(targets.length).toBeGreaterThanOrEqual(
+                        Array.isArray(rule.model) ? 2 : 1,
                     );
+                    for (const model of targets) {
+                        expect(
+                            known.has(model),
+                            `${provider.id}: ${label}`,
+                        ).toBe(true);
+                    }
                 }
             }
         }

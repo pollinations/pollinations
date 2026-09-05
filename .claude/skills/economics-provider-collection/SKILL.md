@@ -105,12 +105,16 @@ name or an undocumented ratio.
   recorded: today's registry aliases never merge them. A provider label joins
   a Pollen model only when it equals that month's Pollen id or through the
   reviewed `modelLabels` table in `operations/economics/provider-registry.json`.
-  Add a label with the Pollen id it billed at the time (an array when one
-  upstream served several ids, `null` when it has no Pollen model); qualify the
+  Add a label with the Pollen id it billed at the time, or `null` when it has
+  no Pollen model. Group several ids in one entry only when they are the same
+  model at the same provider billed on one line (a persona, resolution, or
+  quality tier of one upstream); never group different models. Qualify the
   key as `label | sku` or `label | line item` when one label bills several
-  ids on separate lines. Ids no longer in the shared registry stay valid
-  through `retiredModels`. Unjoined cost stays visible as needs mapping,
-  shared upstream, or missing breakdown. Never spread it across models.
+  ids on separate lines, and use dated rules (`{ "until": "2026-05", "model":
+  ... }`) when a label meant a different id in a different period. Ids no
+  longer in the shared registry stay valid through `retiredModels`. Unjoined
+  cost stays visible as needs mapping, shared upstream, or missing breakdown.
+  Never spread it across models.
 - D1 `user` is authoritative for creator GitHub usernames and current balances.
   Paid and Quest Pollen are non-cashable usage exposure; Paid serves the full
   catalog, Quest only the eligible catalog. Never classify either as Revenue

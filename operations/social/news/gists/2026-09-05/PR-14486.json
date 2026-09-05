@@ -1,0 +1,34 @@
+{
+  "pr_number": 14486,
+  "title": "refactor: share CLI harness lifecycle helpers",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14486",
+  "merged_at": "2026-09-05T14:38:28Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shares model validation, home-path resolution, and restore-or-strip behavior across all five CLI harnesses.\n- Preserves adapter-specific configuration, credentials, setup order, and protection for user-edited files; removes an unused OpenCode writer parameter.\n- Adds 13 regression cases; all 98 CLI tests, package build, CLI help smoke test, Biome, and diff checks pass.\n- Standalone TypeScript checking has the same 27 existing diagnostics as untouched main; no new diagnostics.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Five hives, one toolkit",
+    "blurb": "The CLI harnesses now share their careful housekeeping routines. Same adapter personalities, fewer copies of the broom.",
+    "summary": "Refactored all five Polli CLI harnesses to share model validation, home-path resolution, and restore-or-strip lifecycle helpers while preserving adapter-specific setup, credentials, and user-edited-file protection.",
+    "impact": "CLI users get the same harness behavior with 13 added regression cases guarding configuration restoration and cleanup across DSH, OpenClaw, OpenCode, Pi, and Prime.",
+    "keywords": [
+      "polli-cli",
+      "cli",
+      "harnesses",
+      "refactor",
+      "regression-tests",
+      "configuration"
+    ],
+    "visual_concept": "Polli acts as a cozy workshop caretaker, using a small tool belt to connect five differently decorated CLI harness stations to one shared set of neatly labeled maintenance tools. Tiny code-plants and protected flower pots represent preserved user configuration, while a CRT robot happily verifies each station.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, organizing five small retro CLI terminal stations around one shared lime green (#ecf874) toolbox; each station has its own gentle adapter decorations while protected code-plants grow in labeled pots. A chunky CRT monitor robot checks the tidy connections beside warm cream, mint, lavender, and peach gradients, with subtle pixel text reading \"SHARED HELPERS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14486.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny tool belt, organizing five small retro CLI terminal stations around one shared lime green (#ecf874) toolbox; each station has its own gentle adapter decorations while protected code-plants grow in labeled pots. A chunky CRT monitor robot checks the tidy connections beside warm cream, mint, lavender, and peach gradients, with subtle pixel text reading \"SHARED HELPERS\"; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-05T14:39:33.059738+00:00"
+}

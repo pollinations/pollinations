@@ -3,7 +3,10 @@ import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
     allocateGrants,
+    balanceCreditTerms,
+    consumeBalanceLots,
     creditRunway,
+    providerAccountBalanceRows,
     providerBalanceRows,
 } from "./providerBalances";
 import { vendorPlanes } from "./vendorReconciliation";
@@ -71,6 +74,111 @@ const emptyData = (over: Partial<Data>): Data => ({
 });
 
 describe("vendorPlanes", () => {
+    it("keeps user-approved expiry assumptions distinct from verified terms", () => {
+        const snapshot = opCloud({
+            type: "balance",
+            credit: 100,
+            end: "",
+            resource_sku: "current-balance-expiry-assumed",
+        });
+        expect(balanceCreditTerms(snapshot)).toEqual({
+            known: false,
+            assumed: true,
+            expiry: null,
+        });
+        const account = providerAccountBalanceRows(
+            emptyData({ opCloud: [snapshot] }),
+            new Date("2026-05-15T00:00:00Z"),
+        ).find((row) => row.vendor === "aws");
+        expect(account?.creditTermsKnown).toBe(false);
+        expect(account?.expiryAssumed).toBe(true);
+    });
+
+    it("sums only the latest complete lot snapshot without combining prior totals", () => {
+        const common = {
+            type: "balance",
+            account_id: "301235909293",
+            start: "2026-09-05 00:00:00",
+            resource_sku: "current-balance-lot",
+        };
+        const rows = [
+            opCloud({
+                type: "balance",
+                credit: 9999,
+                start: "2026-09-01 00:00:00",
+                end: "",
+            }),
+            opCloud({
+                ...common,
+                entry_id: "lot-a",
+                resource_id: "a",
+                credit: 20,
+                end: "2026-09-10",
+            }),
+            opCloud({
+                ...common,
+                entry_id: "lot-b",
+                resource_id: "b",
+                credit: 100,
+                end: "2026-09-20",
+            }),
+            opCloud({
+                ...common,
+                entry_id: "lot-b",
+                resource_id: "b",
+                credit: 110,
+                end: "2026-09-20",
+                recorded_at: "2026-09-06 00:00:00",
+            }),
+        ];
+        const account = providerAccountBalanceRows(
+            emptyData({ opCloud: rows }),
+            new Date("2026-09-06T00:00:00Z"),
+        ).find((row) => row.vendor === "aws");
+        expect(account?.creditBalanceUsd).toBe(130);
+        expect(account?.fundingLots).toHaveLength(2);
+        expect(account?.creditTermsKnown).toBe(true);
+        expect(account?.creditExpiry).toBe("2026-09-10");
+        expect(
+            providerBalanceRows(
+                emptyData({ opCloud: rows }),
+                new Date("2026-09-06T00:00:00Z"),
+            ).find((row) => row.vendor === "aws")?.creditBalanceUsd,
+        ).toBe(130);
+    });
+
+    it("expires each grant and purchased-credit lot independently", () => {
+        const lots = [
+            { creditUsd: 100, cashUsd: 0, expiry: "2026-09-20" },
+            { creditUsd: 20, cashUsd: 0, expiry: "2026-09-10" },
+            { creditUsd: 0, cashUsd: 50, expiry: "2026-09-30" },
+        ];
+        expect(consumeBalanceLots(lots, 10, "2026-09-10")).toBe(0);
+        expect(lots[1].creditUsd).toBe(10);
+        expect(consumeBalanceLots(lots, 110, "2026-09-11")).toBe(0);
+        expect(lots[1].creditUsd).toBe(10); // expired, never used
+        expect(lots[2].cashUsd).toBe(40);
+        expect(consumeBalanceLots(lots, 60, "2026-09-30")).toBe(20);
+        expect(consumeBalanceLots(lots, 10, "2026-10-01")).toBe(10);
+    });
+    it("does not normalize an invalid expiry or interpret blank as unlimited", () => {
+        expect(
+            balanceCreditTerms(opCloud({ credit: 100, end: "2026-02-30" }))
+                .known,
+        ).toBe(false);
+        expect(
+            balanceCreditTerms(opCloud({ credit: 100, end: "" })).known,
+        ).toBe(false);
+        expect(
+            balanceCreditTerms(
+                opCloud({
+                    credit: 100,
+                    end: "",
+                    resource_sku: "current-balance-no-expiry",
+                }),
+            ).known,
+        ).toBe(true);
+    });
     it("aligns the OP planes on (month, vendor) and converts currencies", () => {
         const data = emptyData({
             opTransactions: [
@@ -1586,7 +1694,7 @@ describe("providerBalanceRows", () => {
         });
     });
 
-    it("does not call stale balance snapshots checked", () => {
+    it("keeps a balance check valid for its monthly close cycle", () => {
         const data = emptyData({
             opCloud: [
                 opCloud({
@@ -1601,12 +1709,84 @@ describe("providerBalanceRows", () => {
 
         expect(row).toMatchObject({
             balanceAsOf: "2026-08-01",
-            balanceStatus: "stale",
+            balanceStatus: "checked",
             cashBalanceUsd: 500,
         });
     });
 
-    it("lists a provider even when it has no wallet balance to refresh", () => {
+    it("shows one balance row per canonical account and collapses aliases", () => {
+        const now = new Date("2026-09-04T12:00:00Z");
+        const rows = providerAccountBalanceRows(
+            emptyData({
+                opCloud: [
+                    opCloud({
+                        entry_id: "e2b-uuid",
+                        vendor: "e2b",
+                        account_id: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+                        account_name: "Pollinations",
+                        type: "balance",
+                        start: "2026-08-27 00:00:00",
+                        credit: 25_100,
+                    }),
+                    opCloud({
+                        entry_id: "e2b-slug",
+                        vendor: "e2b",
+                        account_id: "elliots-project",
+                        account_name: "Pollinations",
+                        type: "balance",
+                        start: "2026-09-01 00:00:00",
+                        credit: 25_000,
+                    }),
+                ],
+            }),
+            now,
+        ).filter((row) => row.vendor === "e2b");
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            accountId: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+            accountLabel: "Pollinations",
+            loginEmail: "elliot@myceli.ai",
+            creditBalanceUsd: 25_000,
+            balanceAsOf: "2026-09-01",
+            balanceStatus: "checked",
+        });
+    });
+
+    it("archives closed Fireworks accounts without hiding their balances", () => {
+        const rows = providerAccountBalanceRows(
+            emptyData({
+                opCloud: [
+                    opCloud({
+                        vendor: "fireworks",
+                        account_id: "et-fy",
+                        account_name: "Pollinations",
+                        type: "balance",
+                        start: "2026-09-04 00:00:00",
+                        credit: 506,
+                    }),
+                ],
+            }),
+            new Date("2026-09-04T12:00:00Z"),
+        ).filter((row) => row.vendor === "fireworks");
+
+        expect(rows).toHaveLength(5);
+        expect(rows.find((row) => row.accountId === "et-fy")).toMatchObject({
+            active: false,
+            balanceStatus: "archived",
+            creditBalanceUsd: 506,
+        });
+        expect(rows.find((row) => row.accountId === "myceli")).toMatchObject({
+            active: false,
+            balanceStatus: "archived",
+        });
+        expect(rows.find((row) => row.accountId === "neoglyph")).toMatchObject({
+            active: true,
+            balanceStatus: "not_checked",
+        });
+    });
+
+    it("lists an inactive provider even when it has no wallet balance to refresh", () => {
         const data = emptyData({
             opCloud: [
                 opCloud({
@@ -1620,7 +1800,7 @@ describe("providerBalanceRows", () => {
         expect(
             rowFor(data, new Date("2026-08-22T12:00:00Z"), "inception"),
         ).toMatchObject({
-            active: true,
+            active: false,
             balanceTracking: false,
             balanceStatus: "not_applicable",
             cashBalanceUsd: null,

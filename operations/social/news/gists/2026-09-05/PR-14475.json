@@ -1,0 +1,33 @@
+{
+  "pr_number": 14475,
+  "title": "fix: deduplicate and organize agent guidelines",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14475",
+  "merged_at": "2026-09-05T03:15:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Deduplicates directory mappings and workflow reminders, reducing `AGENTS.md` from 276 to 259 lines.\n- Groups command/file, testing, and model guidance without moving content into other files.\n- Preserves operational details and approval requirements; secret, Cloudflare, and Economics safety sections are unchanged.\n- Validation: `git diff --check` passed; reviewed moved and condensed instructions against `main`.\n- Docs-only: Biome skips Markdown, and the Git hook reported missing `lefthook`; no application tests run.\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive notes got tidier",
+    "blurb": "The agent handbook lost a few duplicate petals and found clearer shelves. Same operational rules, less scavenger hunting.",
+    "summary": "Consolidated duplicate directory mappings and workflow reminders in AGENTS.md, reducing it from 276 to 259 lines while retaining command, testing, model, safety, and approval guidance.",
+    "impact": "Contributors and coding agents can find the repository's operational instructions more quickly, with Cloudflare, secret-handling, and Economics safeguards unchanged.",
+    "keywords": [
+      "agents",
+      "guidelines",
+      "documentation",
+      "contributor-experience",
+      "repository"
+    ],
+    "visual_concept": "Polli wears tiny librarian glasses and sorts duplicate instruction scrolls onto labeled shelves in a cozy garden-shed workspace. A retro terminal and neatly organized code-plants represent clearer agent guidance, while a small locked cabinet symbolizes preserved safety rules.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, and tiny librarian glasses, neatly filing duplicate code scrolls in a warm garden-shed library beside organized code-plants and a retro terminal glowing lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “AGENTS.md”."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14475.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink cheek blush, and tiny librarian glasses, neatly filing duplicate code scrolls in a warm garden-shed library beside organized code-plants and a retro terminal glowing lime green (#ecf874). Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with subtle pixel-font text reading “AGENTS.md”."
+  },
+  "generated_at": "2026-09-05T03:16:36.223114+00:00"
+}

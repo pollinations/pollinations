@@ -351,6 +351,10 @@ function loadPullRequestHistory() {
             allTimeCount: payload.allTimeCount + liveAdditions,
         };
     })();
+    // A failed load must not be cached, or the diary stays broken until reload.
+    historyCache.catch(() => {
+        historyCache = null;
+    });
     return historyCache;
 }
 
@@ -371,14 +375,14 @@ function loadDailySummary(date: string) {
     if (date < NEWS_START_DAY) return Promise.resolve(null);
     const existing = summaryCache.get(date);
     if (existing) return existing;
-    const request = fetch(`${NEWS_RAW}/${date}/summary.json`).then(
-        async (response) => {
+    const request = fetch(`${NEWS_RAW}/${date}/summary.json`)
+        .then(async (response) => {
             // Not every calendar day has an entry. Raw GitHub content is
             // CDN-backed and does not consume the API quota.
             if (!response.ok) return null;
             return (await response.json()) as DailySummary;
-        },
-    );
+        })
+        .catch(() => null);
     summaryCache.set(date, request);
     return request;
 }

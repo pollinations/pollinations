@@ -9,7 +9,17 @@ import {
     unlinkSync,
     writeFileSync,
 } from "node:fs";
-import { basename, delimiter, dirname, join } from "node:path";
+import { basename, delimiter, dirname, join, resolve } from "node:path";
+
+/** Resolve a configured path, expanding only the current user's tilde. */
+export const resolveHomePath = (home: string, path: string) =>
+    resolve(
+        path === "~"
+            ? home
+            : path.startsWith("~/") || path.startsWith("~\\")
+              ? join(home, path.slice(2))
+              : path,
+    );
 
 const isExecutable = (path: string) => {
     try {

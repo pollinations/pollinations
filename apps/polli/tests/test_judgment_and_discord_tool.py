@@ -2,7 +2,7 @@ import inspect
 import unittest
 
 from src.ai.prompts import BASE_SYSTEM_PROMPT, DISCORD_PROMPT_ADDON
-from src.ai.tools import DISCORD_SEARCH_TOOL
+from src.ai.tools import DISCORD_SEARCH_TOOL, RENDER_VISUAL_TOOL
 from src.bot import format_discord_identity
 from src.discord.search import tool_discord_search
 
@@ -37,9 +37,16 @@ class DiscordToolContractTests(unittest.TestCase):
         top_n = parameters["properties"]["top_n"]
 
         self.assertIn("top_n", parameters["required"])
-        self.assertEqual(top_n["enum"], list(range(1, 101)))
+        self.assertEqual(top_n["minimum"], 1)
+        self.assertEqual(top_n["maximum"], 25)
         self.assertNotIn("limit", parameters["properties"])
         self.assertIs(inspect.signature(tool_discord_search).parameters["top_n"].default, inspect.Parameter.empty)
+
+    def test_diagram_tool_does_not_claim_discord_renders_mermaid(self):
+        description = RENDER_VISUAL_TOOL["function"]["description"]
+
+        self.assertIn("Discord does not render Mermaid fences", description)
+        self.assertNotIn("rendered inline automatically", description)
 
 
 if __name__ == "__main__":

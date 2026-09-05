@@ -46,6 +46,27 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
+    it("routes openai/gpt-6-astra to the direct Azure Responses deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-6-astra",
+        });
+
+        expect(result.options.model).toBe("gpt-6-astra");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-deployment-id": "gpt-6-astra",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("does not expose gpt-6-astra as an alias", () => {
+        expect(() =>
+            resolveModelConfig(messages, { model: "gpt-6-astra" }),
+        ).toThrow("Model configuration not found for: gpt-6-astra");
+    });
+
     it("routes Claude Fable 5.1 to its global profile", () => {
         expect(
             resolveModelConfig(messages, {
@@ -176,6 +197,54 @@ describe("resolveModelConfig", () => {
             only: ["Alibaba"],
             allow_fallbacks: false,
         });
+    });
+
+    it("routes Qwen3.8 Max 0902 directly to Alibaba", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-max-0902",
+        });
+
+        expect(result.options.model).toBe("qwen3.8-max-0902");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it.each([
+        ["required", "required"],
+        [
+            "function object",
+            {
+                type: "function",
+                function: { name: "get_weather" },
+            },
+        ],
+    ])("disables Qwen3.8 Max 0902 thinking for %s tool choice", async (_label, toolChoice) => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-max-0902",
+            reasoning_effort: "high",
+            tool_choice: toolChoice,
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("none");
+    });
+
+    it("keeps Qwen3.8 Max 0902 reasoning for automatic tool choice", async () => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-max-0902",
+            reasoning_effort: "high",
+            tool_choice: "auto",
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
     it("routes Qwen3.8 2.4T A95B directly to Fireworks", () => {

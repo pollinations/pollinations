@@ -2,7 +2,9 @@ import { UpstreamError } from "@shared/error.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
+    PROMPT_CACHE_TYPE_HEADER,
     responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
 import {
@@ -21,13 +23,17 @@ import {
 } from "../../fallback.ts";
 import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
 import { assertStreamContentType } from "../../utils/upstream-response.ts";
+import { createPromptAgentResponsesClient } from "../agents/client.ts";
+import { communityEndpointModelConfig } from "../communityEndpoint.js";
 import { syncTextEnvironment } from "../environment.js";
 import { throwTextError } from "../errors.js";
+import { supportsTextFallbackRequest } from "../fallbackCompatibility.js";
 import type { ServiceError } from "../types.js";
 import {
     callDirectResponses,
     type DirectResponsesTarget,
     resolveDirectResponsesTarget,
+    responsesTargetFromConfig,
 } from "./client.js";
 import {
     ResponsesInvalidRequestError,
@@ -39,7 +45,7 @@ import { requireResponsesStreamUsage } from "./stream.js";
 type ResponsesContext = Context<Env>;
 
 type DirectResponsesCandidate = FallbackCandidate & {
-    responsesTarget: DirectResponsesTarget;
+    responsesTarget?: DirectResponsesTarget;
     originalIndex: number;
 };
 
@@ -53,43 +59,80 @@ function directResponsesCandidates(
 ): DirectResponsesCandidate[] {
     const candidates = fallbackCandidates(c.var.model);
     const primary = candidates[0];
-    if (!primary || primary.communityEndpoint || primary.entry?.agentConfig) {
+    if (!primary) {
         throw new ResponsesInvalidRequestError(
-            `Model ${request.model} does not support the direct Responses API`,
+            `Model ${request.model} does not support the stateless Responses API`,
         );
     }
-    const primaryTarget = resolveDirectResponsesTarget(
-        primary.id,
-        request,
-        c.env,
-    );
-    if (!primaryTarget) {
+    const targetFor = (
+        candidate: FallbackCandidate,
+    ): DirectResponsesTarget | null | undefined => {
+        if (!candidate.communityEndpoint) {
+            return resolveDirectResponsesTarget(candidate.id, request);
+        }
+        return candidate.communityEndpoint.responsesUrl ? undefined : null;
+    };
+    const primaryTarget = targetFor(primary);
+    if (primaryTarget === null) {
         throw new ResponsesInvalidRequestError(
-            `Model ${request.model} does not support the direct Responses API`,
+            `Model ${request.model} does not support the stateless Responses API`,
         );
     }
 
     const supported: DirectResponsesCandidate[] = [
-        { ...primary, responsesTarget: primaryTarget, originalIndex: 0 },
+        {
+            ...primary,
+            ...(primaryTarget ? { responsesTarget: primaryTarget } : {}),
+            originalIndex: 0,
+        },
     ];
     for (let index = 1; index < candidates.length; index += 1) {
         const candidate = candidates[index];
-        if (candidate.communityEndpoint || candidate.entry?.agentConfig) {
+        if (!supportsTextFallbackRequest(candidate.definition, request)) {
             continue;
         }
-        const target = resolveDirectResponsesTarget(
-            candidate.id,
-            request,
-            c.env,
-        );
-        if (!target) continue;
+        const target = targetFor(candidate);
+        if (target === null) continue;
         supported.push({
             ...candidate,
-            responsesTarget: target,
+            ...(target ? { responsesTarget: target } : {}),
             originalIndex: index,
         });
     }
     return supported;
+}
+
+async function responsesClientForAttempt(
+    c: ResponsesContext,
+    attempt: DirectResponsesCandidate,
+): Promise<{ target: DirectResponsesTarget; fetcher?: typeof fetch }> {
+    if (attempt.responsesTarget) return { target: attempt.responsesTarget };
+    const endpoint = attempt.communityEndpoint;
+    if (!endpoint?.responsesUrl) {
+        throw new ResponsesInvalidRequestError(
+            `Model ${attempt.id} does not support the stateless Responses API`,
+        );
+    }
+    const config = await communityEndpointModelConfig({
+        endpoint,
+        secret: c.env.BETTER_AUTH_SECRET,
+        parentRequestId: c.get("requestId"),
+        parentApiKeyId: c.var.auth?.apiKey?.id,
+    });
+    if (endpoint.type === "prompt_agent") {
+        const apiKey = config.authKey;
+        if (typeof apiKey !== "string" || !apiKey) {
+            throw new Error("Managed agent request has no agent run token");
+        }
+        return createPromptAgentResponsesClient(c, endpoint, apiKey);
+    }
+    const target = responsesTargetFromConfig(endpoint.upstreamModel, config);
+    if (!target) {
+        throw new ResponsesInvalidRequestError(
+            `Model ${attempt.id} does not support the stateless Responses API`,
+        );
+    }
+    return { target };
 }
 
 async function handleDirectResponse(
@@ -103,9 +146,14 @@ async function handleDirectResponse(
         const { result, candidate } = await withModelFallback(
             directResponsesCandidates(c, request),
             async (attempt): Promise<DirectResponsesResult> => {
+                const responsesClient = await responsesClientForAttempt(
+                    c,
+                    attempt,
+                );
                 const result = await callDirectResponses(
                     request,
-                    attempt.responsesTarget,
+                    responsesClient.target,
+                    responsesClient.fetcher,
                 );
                 if (request.stream) {
                     assertStreamContentType(
@@ -134,6 +182,17 @@ async function handleDirectResponse(
                         requestUrl: result.requestUrl,
                     });
                 }
+                if (
+                    parsed.data.status !== "completed" &&
+                    parsed.data.status !== "incomplete" &&
+                    parsed.data.status !== "failed"
+                ) {
+                    throw new UpstreamError(502, {
+                        message:
+                            "Responses provider returned a non-terminal response",
+                        requestUrl: result.requestUrl,
+                    });
+                }
                 return { ...result, usage: parsed.data.usage };
             },
             c.var.track?.attempts,
@@ -155,14 +214,17 @@ async function handleDirectResponse(
             );
         }
 
-        if (!request.stream) {
+        if (!request.stream && result.usage) {
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
                     candidate.id,
-                    responsesUsageToUsage(result.usage as ResponseUsage),
+                    responsesUsageToUsage(result.usage),
                 ),
             )) {
                 headers.set(name, value);
+            }
+            if (hasExplicitPromptCacheHit(result.usage)) {
+                headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
             }
         }
 

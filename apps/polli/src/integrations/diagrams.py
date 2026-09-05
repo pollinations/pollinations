@@ -16,7 +16,6 @@ import io
 import logging
 from pathlib import Path
 
-
 logger = logging.getLogger(__name__)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -87,6 +86,14 @@ def _escape(source: str) -> str:
     return source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def diagram_viewport(source: str) -> tuple[int, int]:
+    lines = source.count("\n") + 1
+    nodes = max(source.count("-->"), source.count("---"), source.count("participant")) + 1
+    width = min(1920, max(1100, 900 + nodes * 35))
+    height = min(1080, max(800, 650 + lines * 12))
+    return width, height
+
+
 def detect_diagram_type(source: str) -> str | None:
     """The Mermaid diagram keyword this source starts with, if any."""
     for line in source.strip().split("\n"):
@@ -101,9 +108,12 @@ def detect_diagram_type(source: str) -> str | None:
     return None
 
 
-async def render_mermaid(source: str, *, width: int = 1100, height: int = 800) -> io.BytesIO:
+async def render_mermaid(source: str, *, width: int | None = None, height: int | None = None) -> io.BytesIO:
     """Render Mermaid source to a PNG."""
     source = source.strip()
+    adaptive_width, adaptive_height = diagram_viewport(source)
+    width = width or adaptive_width
+    height = height or adaptive_height
     if not source:
         raise DiagramError("Diagram source is empty")
     if len(source) > MAX_SOURCE_CHARS:
@@ -138,23 +148,20 @@ async def render_mermaid(source: str, *, width: int = 1100, height: int = 800) -
                     # Mermaid replaces the block with an error graphic on bad syntax, so a
                     # missing <svg> almost always means the source itself is invalid.
                     raise DiagramError(
-                        "Mermaid could not render this diagram — check the syntax for the "
-                        "declared diagram type."
+                        "Mermaid could not render this diagram — check the syntax for the " "declared diagram type."
                     ) from e
 
                 # Invalid syntax doesn't throw — Mermaid swaps in an error graphic that is
                 # still a valid <svg>. Posting that would show users a picture of an error
                 # message, so detect it and report the failure as text instead.
-                error_text = await page.evaluate(
-                    """() => {
+                error_text = await page.evaluate("""() => {
                         const el = document.querySelector('.mermaid');
                         if (!el) return null;
                         const svg = el.querySelector('svg');
                         const isError = (svg && svg.getAttribute('aria-roledescription') === 'error')
                             || !!el.querySelector('.error-icon, .error-text');
                         return isError ? (el.innerText || 'Syntax error').trim() : null;
-                    }"""
-                )
+                    }""")
                 if error_text:
                     first_line = error_text.split("\n")[0]
                     raise DiagramError(f"Invalid Mermaid syntax: {first_line}")

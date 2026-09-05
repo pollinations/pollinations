@@ -47,7 +47,38 @@ Actions:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "enum": ["get", "search", "search_user", "find_similar", "create", "comment", "edit", "edit_comment", "delete_comment", "close", "reopen", "label", "unlabel", "assign", "unassign", "milestone", "lock", "link", "get_history", "get_parent", "get_sub_issues", "create_sub_issue", "add_sub_issue", "remove_sub_issue", "list_labels", "list_milestones", "subscribe", "unsubscribe", "unsubscribe_all", "list_subscriptions"],
+                        "enum": [
+                            "get",
+                            "search",
+                            "search_user",
+                            "find_similar",
+                            "create",
+                            "comment",
+                            "edit",
+                            "edit_comment",
+                            "delete_comment",
+                            "close",
+                            "reopen",
+                            "label",
+                            "unlabel",
+                            "assign",
+                            "unassign",
+                            "milestone",
+                            "lock",
+                            "link",
+                            "get_history",
+                            "get_parent",
+                            "get_sub_issues",
+                            "create_sub_issue",
+                            "add_sub_issue",
+                            "remove_sub_issue",
+                            "list_labels",
+                            "list_milestones",
+                            "subscribe",
+                            "unsubscribe",
+                            "unsubscribe_all",
+                            "list_subscriptions",
+                        ],
                         "description": "Issue operation to perform.",
                     },
                     "issue_number": {
@@ -292,7 +323,38 @@ Actions:
                 "properties": {
                     "action": {
                         "type": "string",
-                        "enum": ["get", "list", "get_files", "get_diff", "get_checks", "get_commits", "get_threads", "get_review_comments", "get_file_at_ref", "get_history", "review", "request_review", "remove_reviewer", "approve", "request_changes", "merge", "update", "close", "reopen", "create", "convert_to_draft", "ready_for_review", "update_branch", "comment", "inline_comment", "suggest", "resolve_thread", "unresolve_thread", "enable_auto_merge", "disable_auto_merge"],
+                        "enum": [
+                            "get",
+                            "list",
+                            "get_files",
+                            "get_diff",
+                            "get_checks",
+                            "get_commits",
+                            "get_threads",
+                            "get_review_comments",
+                            "get_file_at_ref",
+                            "get_history",
+                            "review",
+                            "request_review",
+                            "remove_reviewer",
+                            "approve",
+                            "request_changes",
+                            "merge",
+                            "update",
+                            "close",
+                            "reopen",
+                            "create",
+                            "convert_to_draft",
+                            "ready_for_review",
+                            "update_branch",
+                            "comment",
+                            "inline_comment",
+                            "suggest",
+                            "resolve_thread",
+                            "unresolve_thread",
+                            "enable_auto_merge",
+                            "disable_auto_merge",
+                        ],
                         "description": "PR operation to perform.",
                     },
                     "pr_number": {
@@ -417,6 +479,8 @@ Finding things:
 - tree   — directory layout, to explore an unfamiliar area before drilling in.
 
 Following relationships (symbol graph — pass the symbol name as `query`):
+- symbols — resolve matching symbols with stable IDs, qualified names, signatures, ranges,
+            repository revision, and freshness before traversing ambiguous names.
 - callers — functions that call this symbol. More precise than grep: it distinguishes a
             real call from an import or a comment mentioning the name.
 - callees — functions this symbol calls. Use to understand what something depends on.
@@ -443,6 +507,7 @@ impact("atomicDeductUserBalance") to see the blast radius.""",
                         "read",
                         "list",
                         "tree",
+                        "symbols",
                         "callers",
                         "callees",
                         "impact",
@@ -768,33 +833,33 @@ Security: Results filtered to channels the user can access.""",
                     "description": "Search text (required for messages). Mentions auto-parsed.",
                 },
                 "channel_id": {
-                    "type": "integer",
-                    "description": "Filter to specific channel",
+                    "type": "string",
+                    "description": "Discord channel snowflake or <#mention>",
                 },
                 "channel_name": {
                     "type": "string",
                     "description": "Find channel by name (alternative to channel_id)",
                 },
                 "user_id": {
-                    "type": "integer",
-                    "description": "Filter by author or look up member",
+                    "type": "string",
+                    "description": "Discord user snowflake or @mention; filters message author or member lookup",
                 },
-                "role_id": {"type": "integer", "description": "Filter members by role"},
+                "role_id": {"type": "string", "description": "Discord role snowflake or @role mention"},
                 "role_name": {
                     "type": "string",
                     "description": "Find role by name",
                 },
                 "message_id": {
-                    "type": "integer",
-                    "description": "Target message for context action",
+                    "type": "string",
+                    "description": "Target message snowflake for context action",
                 },
                 "thread_id": {
-                    "type": "integer",
-                    "description": "Target thread for thread_history",
+                    "type": "string",
+                    "description": "Target thread snowflake for thread_history",
                 },
                 "channel_type": {
                     "type": "string",
-                    "enum": ["text", "voice", "forum", "category", "news", "stage"],
+                    "enum": ["text", "voice", "forum", "media", "category", "news", "stage"],
                     "description": "Filter channels by type",
                 },
                 "has": {
@@ -804,16 +869,19 @@ Security: Results filtered to channels the user can access.""",
                 },
                 "before": {
                     "type": "string",
-                    "description": "Messages before this date/snowflake ID",
+                    "pattern": "^[0-9]+$",
+                    "description": "Messages before this message snowflake",
                 },
                 "after": {
                     "type": "string",
-                    "description": "Messages after this date/snowflake ID",
+                    "pattern": "^[0-9]+$",
+                    "description": "Messages after this message snowflake",
                 },
                 "top_n": {
                     "type": "integer",
-                    "enum": list(range(1, 101)),
-                    "description": "Required result count. Choose the smallest sufficient value; normally 3-10, up to 100 when independently justified.",
+                    "minimum": 1,
+                    "maximum": 25,
+                    "description": "Required result count. Choose the smallest sufficient value; normally 3-10, maximum 25.",
                 },
                 "sort_by": {
                     "type": "string",
@@ -853,7 +921,9 @@ Security: Results filtered to channels the user can access.""",
                 },
                 "offset": {
                     "type": "integer",
-                    "description": "Pagination offset for targeted follow-up retrieval",
+                    "minimum": 0,
+                    "maximum": 9975,
+                    "description": "Discord search offset for targeted follow-up retrieval",
                 },
                 "include_archived": {
                     "type": "boolean",
@@ -883,7 +953,7 @@ RENDER_VISUAL_TOOL = {
 Types: table, bar, horizontal_bar (long category names), line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
 `diagram` is Mermaid — flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, journey, gantt, pie, quadrantChart, requirementDiagram, gitGraph, mindmap, timeline, sankey, xychart, block, packet, kanban, architecture, radar, treemap, C4Context.
 
-For a diagram you usually do not need this tool: a ```mermaid fence in your reply is rendered inline automatically. Use `type: "diagram"` only for a standalone attachment.
+Discord does not render Mermaid fences. Always use `type: "diagram"` when the user asks for a diagram or flowchart; the tool returns an attached image.
 
 Data shape:
 - table:   {"headers": ["A","B"], "rows": [["1","2"], ...]}
@@ -919,9 +989,7 @@ Callable multiple times per turn; each call attaches one image (Discord caps at 
                     "description": "Title shown above the visual. Keep under 60 chars.",
                 },
                 "data": {
-                    "description": (
-                        "Structured data for tables/charts; Mermaid source (a string) for diagram."
-                    ),
+                    "description": ("Structured data for tables/charts; Mermaid source (a string) for diagram."),
                 },
                 "options": {
                     "type": "object",

@@ -4,8 +4,10 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
 } from "@shared/registry/usage-headers.ts";
 import type { CreateChatCompletionRequest } from "@shared/schemas/openai.ts";
 import type { Context } from "hono";
@@ -19,6 +21,7 @@ import {
 import { fixWavHeader } from "../routes/audio.js";
 import type { GenerateTextRequestQueryParams } from "../schemas/text.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { createPromptAgentResponsesClient } from "./agents/client.ts";
 import {
     requireChatCompletionUsage,
     requireChatStreamUsage,
@@ -26,6 +29,7 @@ import {
 import { communityEndpointGatewayContext } from "./communityEndpoint.ts";
 import { syncTextEnvironment } from "./environment.js";
 import { throwTextError } from "./errors.js";
+import { supportsTextFallbackRequest } from "./fallbackCompatibility.js";
 import { generateTextPortkey } from "./generateTextPortkey.js";
 import {
     getChatRequestData,
@@ -73,11 +77,11 @@ function prepareRequestParameters(
  * Built per attempt rather than once up front, so a delegating fallback mints
  * its own run token and no attempt ever carries another endpoint's credential.
  */
-function gatewayContext(
+async function gatewayContext(
     c: TextContext,
     requestData: RequestData,
     candidate: FallbackCandidate,
-): Promise<TransformOptions> | TransformOptions {
+): Promise<TransformOptions> {
     const { communityEndpoint, definition } = candidate;
     // A fallback must resolve transforms from the model that will actually run.
     const candidateRequest = candidate.entry
@@ -89,7 +93,7 @@ function gatewayContext(
     if (!communityEndpoint || !definition) {
         return withGatewayContext(c, candidateRequest);
     }
-    return communityEndpointGatewayContext({
+    const context = await communityEndpointGatewayContext({
         endpoint: communityEndpoint,
         modelDefinition: definition,
         requestData: candidateRequest,
@@ -99,6 +103,25 @@ function gatewayContext(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
     });
+    if (communityEndpoint.type !== "prompt_agent") return context;
+
+    const apiKey = context.modelConfig?.authKey;
+    if (typeof apiKey !== "string" || !apiKey) {
+        throw new Error("Managed agent request has no agent run token");
+    }
+    const client = await createPromptAgentResponsesClient(
+        c,
+        communityEndpoint,
+        apiKey,
+    );
+    return {
+        ...context,
+        responsesFetcher: client.fetcher,
+        modelConfig: {
+            ...context.modelConfig,
+            responsesEndpoint: client.target.endpoint,
+        },
+    };
 }
 
 function withGatewayContext(c: TextContext, requestData: RequestData) {
@@ -135,6 +158,9 @@ function usageHeaders(
             buildUsageHeaders(modelUsed, normalizedUsage),
         )) {
             headers.set(key, String(value));
+        }
+        if (hasExplicitPromptCacheHit(usage)) {
+            headers.set(PROMPT_CACHE_TYPE_HEADER, "ephemeral");
         }
     }
     if (completion?.fallbackTarget) {
@@ -310,12 +336,21 @@ async function generateTextResponse(
         }
         const normalizedRequestData = normalization.requestData;
         const portkey = c.env.PORTKEY;
-        const {
-            result: completion,
-            candidate,
-            index,
-        } = await withModelFallback(
-            fallbackCandidates(c.var.model),
+        const candidates = fallbackCandidates(c.var.model)
+            .map((candidate, originalIndex) => ({
+                ...candidate,
+                originalIndex,
+            }))
+            .filter(
+                (candidate) =>
+                    candidate.originalIndex === 0 ||
+                    supportsTextFallbackRequest(
+                        candidate.definition,
+                        normalizedRequestData,
+                    ),
+            );
+        const { result: completion, candidate } = await withModelFallback(
+            candidates,
             async (attempt) => {
                 const result = await generateTextPortkey(
                     normalizedRequestData.messages,
@@ -337,7 +372,7 @@ async function generateTextResponse(
         // Keep the internal "config.targets[N]" marker stable for response
         // headers and cached tracking data. Non-enumerable so JSON.stringify /
         // R2 cache snapshots never leak the field.
-        attachFallbackTarget(completion, index);
+        attachFallbackTarget(completion, candidate.originalIndex);
 
         // The successful candidate always carries the canonical registry id,
         // including aliases, community models, and fallback targets.

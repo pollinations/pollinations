@@ -21,13 +21,14 @@ export function createChatStreamUsageValidator() {
     const decoder = new TextDecoder();
     let usageSeen = false;
     let doneSeen = false;
+    let errorSeen = false;
     let validationError: ChatUsageError | undefined;
 
     const parser = createParser({
         onEvent(message) {
             if (message.data.trim() === "[DONE]") {
                 doneSeen = true;
-                if (!usageSeen) {
+                if (!usageSeen && !errorSeen) {
                     validationError = new ChatUsageError(
                         "Chat Completions provider omitted terminal usage",
                     );
@@ -42,6 +43,13 @@ export function createChatStreamUsageValidator() {
                 return;
             }
             if (!event || typeof event !== "object" || !("usage" in event)) {
+                const error =
+                    event && typeof event === "object"
+                        ? (event as { error?: unknown }).error
+                        : undefined;
+                if (error && typeof error === "object") {
+                    errorSeen = true;
+                }
                 return;
             }
 
@@ -69,7 +77,7 @@ export function createChatStreamUsageValidator() {
             parser.feed(`${decoder.decode()}\n\n`);
             parser.reset({ consume: true });
             if (validationError) throw validationError;
-            if (!doneSeen || !usageSeen) {
+            if (!errorSeen && (!doneSeen || !usageSeen)) {
                 throw new ChatUsageError(
                     "Chat Completions provider ended without terminal usage",
                 );

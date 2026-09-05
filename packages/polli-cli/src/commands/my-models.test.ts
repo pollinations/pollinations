@@ -45,6 +45,18 @@ describe("modelBody", () => {
         });
     });
 
+    it("sets and clears the exact Responses endpoint", () => {
+        expect(
+            modelBody(
+                { responsesUrl: "https://example.com/v1/responses" },
+                false,
+            ),
+        ).toEqual({ responsesUrl: "https://example.com/v1/responses" });
+        expect(modelBody({ responses: false }, false)).toEqual({
+            responsesUrl: null,
+        });
+    });
+
     it("maps required safety features and clears them with none", () => {
         expect(
             modelBody(
@@ -90,6 +102,22 @@ describe("modelBody", () => {
                 true,
             ),
         ).toMatchObject({ modality: "transcription" });
+    });
+
+    it("supports speech model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "tts-provider",
+                    title: "TTS Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "speech",
+                    completionAudioPrice: "0.00003",
+                },
+                true,
+            ),
+        ).toMatchObject({ modality: "speech", completionAudioPrice: 0.00003 });
     });
 
     it("supports per-second video model registration", () => {

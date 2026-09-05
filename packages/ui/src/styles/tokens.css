@@ -50,7 +50,6 @@
     --polli-color-text-strong:         oklch(0.25 0.02 80);
     --polli-color-text-base:           oklch(0.40 0.017 80);
     --polli-color-text-muted:          oklch(0.49 0.013 80);
-    --polli-color-text-on-accent:      oklch(0.98 0.005 80);
     --polli-color-text-hover:          var(--polli-color-text-strong);
 
     /* Neutral separator line — subtle hairline for dividers/hr/table rows.

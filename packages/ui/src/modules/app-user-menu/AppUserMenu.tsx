@@ -27,8 +27,6 @@ export type AppUserMenuLabels = {
 export type AppUserMenuProps = {
     dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
-    /** Keep the account menu focused when the host already links to Dashboard. */
-    showDashboard?: boolean;
     /** Match a large rectangular site action instead of the default pill. */
     triggerVariant?: "pill" | "action";
 };
@@ -46,14 +44,12 @@ const actionTriggerClass =
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
-    showDashboard = true,
     triggerVariant = "pill",
 }: AppUserMenuProps) {
     return (
         <AppUserMenuContent
             dashboardHref={dashboardHref}
             labels={labelOverrides}
-            showDashboard={showDashboard}
             triggerVariant={triggerVariant}
         />
     );
@@ -62,11 +58,8 @@ export function AppUserMenu({
 function AppUserMenuContent({
     dashboardHref,
     labels: labelOverrides,
-    showDashboard,
     triggerVariant,
-}: Required<
-    Pick<AppUserMenuProps, "dashboardHref" | "showDashboard" | "triggerVariant">
-> &
+}: Required<Pick<AppUserMenuProps, "dashboardHref" | "triggerVariant">> &
     Pick<AppUserMenuProps, "labels">) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const { logout } = useAuthActions();
@@ -128,18 +121,16 @@ function AppUserMenuContent({
                             data-theme="accent"
                             className="polli:flex polli:flex-col"
                         >
-                            {showDashboard && (
-                                <DropdownItem
-                                    as="a"
-                                    href={dashboardHref}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    onClick={close}
-                                >
-                                    <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
-                                    {labels.topUpAccount}
-                                </DropdownItem>
-                            )}
+                            <DropdownItem
+                                as="a"
+                                href={dashboardHref}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
+                            >
+                                <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                                {labels.topUpAccount}
+                            </DropdownItem>
                             <DropdownItem
                                 type="button"
                                 className="polli:justify-start polli:text-left"

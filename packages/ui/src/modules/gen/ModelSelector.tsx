@@ -1,5 +1,4 @@
 import type { ModelCategory, ModelInfo } from "@pollinations/sdk";
-import { cn } from "../../lib/cn.ts";
 import { Button } from "../../primitives/Button.tsx";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
@@ -14,8 +13,6 @@ type ModelSelectorProps = {
     category: ModelSelectorCategory;
     value: string;
     isLoading?: boolean;
-    /** Extra classes for the trigger button, e.g. to match sibling controls. */
-    className?: string;
     onChange: (modelId: string) => void;
 };
 
@@ -43,7 +40,6 @@ export function ModelSelector({
     category,
     value,
     isLoading = false,
-    className,
     onChange,
 }: ModelSelectorProps) {
     const filteredModels = models
@@ -65,10 +61,7 @@ export function ModelSelector({
                 <Button
                     type="button"
                     aria-label={accessibleLabel}
-                    className={cn(
-                        "polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2",
-                        className,
-                    )}
+                    className="polli:min-w-64 polli:max-w-full polli:self-start polli:justify-between polli:gap-2"
                 >
                     <span className="polli:flex polli:min-w-0 polli:items-center polli:gap-2">
                         <span className="polli:truncate">{modelLabel}</span>

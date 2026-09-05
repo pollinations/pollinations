@@ -760,10 +760,17 @@ test("chat streaming without usage fails closed and remains unbilled", async ({
     expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 200,
+        responseStatus: 502,
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "usage_missing",
+    });
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
+        status: 502,
+        upstream_status: 200,
+        error_code: "usage_missing",
+        upstream_body: expect.any(String),
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
 });
@@ -924,7 +931,7 @@ test("Chat-over-Responses stream without usage fails closed and remains unbilled
     expect(mocks.responsesDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 200,
+        responseStatus: 502,
         modelRequested: "gpt-5.6-luna",
         modelUsed: "gpt-5.6-luna",
         isBilledUsage: false,
@@ -1202,7 +1209,7 @@ test("Responses streaming without usage fails closed and remains unbilled", asyn
     expect(mocks.responsesDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 200,
+        responseStatus: 502,
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "usage_missing",

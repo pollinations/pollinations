@@ -9,7 +9,7 @@ binding = "ASSETS"
 not_found_handling = "single-page-application"
 # Run HTML routes through the SEO worker while serving asset directories
 # directly from Cloudflare's static asset layer.
-run_worker_first = ["/*", "!/assets/*", "!/characters/*", "!/heroes/*", "!/app-art/*", "!/legal/*"]
+run_worker_first = ["/*", "!/assets/*", "!/heroes/*", "!/tool-scenes/*", "!/app-art/*", "!/supporters/*", "!/data/*", "!/legal/*"]
 
 # Public hostnames are attached directly in the Myceli account.
 [env.production]

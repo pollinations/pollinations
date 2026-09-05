@@ -1,12 +1,4 @@
-import {
-    afterAll,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -23,15 +15,6 @@ const RUNTIME = {
     fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
         globalThis.fetch(input, init),
 };
-
-function rethrowUnhandledRejection(reason: unknown): void {
-    throw reason;
-}
-
-// Keep the migrated AI SDK failure-path tests under Enter's existing
-// workerd rejection behavior without weakening Gen's test suite globally.
-beforeAll(() => process.on("unhandledRejection", rethrowUnhandledRejection));
-afterAll(() => process.off("unhandledRejection", rethrowUnhandledRejection));
 
 function request(input: Record<string, unknown>) {
     return PromptAgentResponsesRequestSchema.parse({
@@ -503,6 +486,13 @@ describe("managed agent Responses runtime", () => {
     });
 
     it("rejects state and unsupported parameters", async () => {
+        const fetchMock = vi.fn(async () =>
+            Response.json(
+                { error: { message: "Test upstream unavailable" } },
+                { status: 502 },
+            ),
+        );
+        vi.stubGlobal("fetch", fetchMock);
         expect(
             PromptAgentResponsesRequestSchema.safeParse({
                 model: crypto.randomUUID(),
@@ -521,7 +511,8 @@ describe("managed agent Responses runtime", () => {
             new AbortController().signal,
             RUNTIME,
         );
-        expect(withTools.status).not.toBe(400);
+        expect(withTools.status).toBe(502);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
 
         for (const [field, value] of [
             ["max_tool_calls", { max_tool_calls: 2 }],
@@ -537,5 +528,6 @@ describe("managed agent Responses runtime", () => {
                 error: { code: "unsupported_parameter", param: field },
             });
         }
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

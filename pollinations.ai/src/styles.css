@@ -53,7 +53,7 @@
 /* Mouse focus can remain on a navigation link after changing routes. Only
    keyboard-visible focus should temporarily reveal a scroll-hidden header. */
 .site-header:has(:focus-visible) {
-    transform: translateY(0);
+    translate: 0;
 }
 
 @media (max-width: 48.749rem) {

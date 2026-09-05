@@ -1,0 +1,35 @@
+{
+  "pr_number": 14479,
+  "title": "feat: use one upstream API per community text registration",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14479",
+  "merged_at": "2026-09-05T09:58:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Requires one API and exact URL for community text models and endpoint agents; updates Zod schemas, dashboard, CLI, probes, and source docs. Responses registrations serve both public APIs; Chat registrations serve Chat only.\n- Backfills existing Chat registrations only, preserving pending prices and normalizing their URLs as the previous route did. Read-only production/staging checks found no external Responses registrations. Media and managed prompt rows are unchanged.\n- Fixes adversarial-review findings: trailing-slash migration routing, skipped usage-only native Chat stream billing, and the packaged CLI example. Valid streams debit once; missing/malformed usage errors without billing.\n- Verified 305 targeted tests, both worker typechecks, and formatting after integrating main. Registration is separated from managed-agent PR #14360; contributor history is preserved. Addresses #14243.\n- Production deployment remains separate: coordinate Enter/Gen, migration/rollback rehearsal, fresh zero-Responses preflight, and a matching CLI release. No deployment or remote database changes are included.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "One model, one address",
+    "blurb": "Community text models now register with one exact upstream URL instead of a small constellation of nearly-the-same ones. The hive has put labels on the pipes, which is usually how software becomes less haunted.",
+    "summary": "Community text-model and endpoint-agent registrations now require one exact upstream API URL: Responses registrations can serve both public API styles, while Chat registrations serve Chat only, with existing Chat URLs backfilled and normalized.",
+    "impact": "Contributors get a clearer dashboard and CLI registration flow, while valid native Chat streams are billed exactly once and malformed or usage-less streams return an error without a debit.",
+    "keywords": [
+      "community-models",
+      "text-api",
+      "endpoint-registration",
+      "chat-completions",
+      "responses-api",
+      "cli",
+      "billing"
+    ],
+    "visual_concept": "Depict the community model registration system as a cozy garden of labeled API pipes: one sturdy upstream pipe feeds a Chat flower, while a Responses flower branches neatly to both Chat and Responses watering cans. Polli, wearing a tiny plumber tool belt, checks that every pipe has one precise address; a friendly CRT Monitor Robot holds an exact-URL label beside a retro terminal. Small code-plants and flowers make the routing cleanup feel organized and welcoming rather than bureaucratic.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny plumber tool belt, carefully attaching one exact URL label to a lime green (#ecf874) upstream API pipe in a warm code garden; the pipe feeds a pixel Chat flower and a Responses flower, while a cute CRT-monitor robot holds a terminal printout reading \"ONE URL\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, vines, subtle CRT glow, and dark purple (#110518) outlines; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14479.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and a tiny plumber tool belt, carefully attaching one exact URL label to a lime green (#ecf874) upstream API pipe in a warm code garden; the pipe feeds a pixel Chat flower and a Responses flower, while a cute CRT-monitor robot holds a terminal printout reading \"ONE URL\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with code-plants, vines, subtle CRT glow, and dark purple (#110518) outlines; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-05T09:59:20.552513+00:00"
+}

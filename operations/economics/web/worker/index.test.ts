@@ -11,10 +11,9 @@ const env = {
             ),
         ),
     },
-    ECONOMICS_PASSWORD: "correct horse battery staple",
-    LOGIN_RATE_LIMITER: {
-        limit: vi.fn().mockResolvedValue({ success: true }),
-    },
+    POLLINATIONS_AUTH_SESSION_SECRET:
+        "test-session-secret-at-least-32-characters",
+    POLLINATIONS_OAUTH_CLIENT_ID: "pk_internal_tools",
     TINYBIRD_API: "https://api.europe-west2.gcp.tinybird.co",
     TINYBIRD_ECONOMICS_READ_TOKEN: "test-token",
     TINYBIRD_POLLEN_PIPE: "economics_pollen_usage_snapshot_api",
@@ -29,132 +28,137 @@ function request(path: string, init?: RequestInit) {
     );
 }
 
-async function authenticatedCookie() {
-    const response = await request("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ password: env.ECONOMICS_PASSWORD }),
+function upstream(options?: { role?: string; tinybird?: { data: unknown[] } }) {
+    const mock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = String(input);
+        if (url.endsWith("/api/auth/oauth2/token")) {
+            return Response.json({ access_token: "sk_login" });
+        }
+        if (url.endsWith("/api/auth/oauth2/userinfo")) {
+            return Response.json({
+                sub: "user-1",
+                email: "alice@example.com",
+                role: options?.role || "admin",
+            });
+        }
+        return Response.json(options?.tinybird || { data: [] });
     });
-    return response.headers.get("Set-Cookie") || "";
+    vi.stubGlobal("fetch", mock);
+    return mock;
+}
+
+function cookieFrom(response: Response, name: string) {
+    return response.headers
+        .get("Set-Cookie")
+        ?.match(new RegExp(`${name}=([^;]+)`))?.[1];
+}
+
+async function authenticatedCookie(mock = upstream()) {
+    const login = await request("/auth/login?return_to=%2F");
+    const location = new URL(login.headers.get("Location") || "");
+    const flow = cookieFrom(login, "pollinations_oauth_flow");
+    const callback = await request(
+        `/auth/callback?code=code-1&state=${location.searchParams.get("state")}`,
+        { headers: { Cookie: `pollinations_oauth_flow=${flow}` } },
+    );
+    const session = cookieFrom(callback, "pollinations_session");
+    if (!session) throw new Error("Expected OAuth session cookie");
+    expect(mock).toHaveBeenCalledTimes(2);
+    return `pollinations_session=${session}`;
 }
 
 afterEach(() => {
-    vi.useRealTimers();
     vi.unstubAllGlobals();
-    env.LOGIN_RATE_LIMITER.limit.mockResolvedValue({ success: true });
     env.ASSETS.fetch.mockClear();
 });
 
 describe("economics Worker auth", () => {
-    it("reports an unauthenticated session", async () => {
-        const response = await request("/api/auth/session");
+    it("keeps health public", async () => {
+        const response = await request("/api/health");
 
         expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toEqual({
-            authenticated: false,
-        });
+        await expect(response.json()).resolves.toEqual({ ok: true });
     });
 
-    it("rejects the wrong password", async () => {
-        const response = await request("/api/auth/login", {
-            method: "POST",
-            body: JSON.stringify({ password: "wrong" }),
-        });
+    it("redirects unauthenticated browsers to Pollinations login", async () => {
+        const response = await request("/monthly?month=2026-08");
 
-        expect(response.status).toBe(401);
+        expect(response.status).toBe(302);
+        expect(response.headers.get("Location")).toBe(
+            "https://economics.myceli.ai/auth/login?return_to=%2Fmonthly%3Fmonth%3D2026-08",
+        );
+        expect(env.ASSETS.fetch).not.toHaveBeenCalled();
     });
 
-    it("rate limits repeated login attempts", async () => {
-        env.LOGIN_RATE_LIMITER.limit.mockResolvedValueOnce({
-            success: false,
-        });
-
-        const response = await request("/api/auth/login", {
-            method: "POST",
-            headers: { "CF-Connecting-IP": "192.0.2.1" },
-            body: JSON.stringify({ password: env.ECONOMICS_PASSWORD }),
-        });
-
-        expect(response.status).toBe(429);
-        expect(env.LOGIN_RATE_LIMITER.limit).toHaveBeenCalledWith({
-            key: "192.0.2.1",
-        });
-    });
-
-    it("creates a secure session cookie", async () => {
-        const login = await request("/api/auth/login", {
-            method: "POST",
-            body: JSON.stringify({ password: env.ECONOMICS_PASSWORD }),
-        });
-        const cookie = login.headers.get("Set-Cookie");
-
-        expect(login.status).toBe(204);
-        expect(cookie).toContain("HttpOnly; Secure; SameSite=Lax");
-
-        const session = await request("/api/auth/session", {
-            headers: { Cookie: cookie || "" },
-        });
-        await expect(session.json()).resolves.toEqual({ authenticated: true });
-    });
-
-    it("rejects an expired signed session", async () => {
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date("2026-08-24T10:00:00.000Z"));
-        const cookie = await authenticatedCookie();
-        vi.setSystemTime(new Date("2026-08-24T22:00:01.000Z"));
-
-        const session = await request("/api/auth/session", {
-            headers: { Cookie: cookie },
-        });
-
-        await expect(session.json()).resolves.toEqual({
-            authenticated: false,
-        });
-    });
-
-    it("rejects pipe reads without a session", async () => {
-        const upstream = vi.fn();
-        vi.stubGlobal("fetch", upstream);
+    it("rejects API reads without a session", async () => {
+        const mock = upstream();
 
         const response = await request(
             "/api/pipes/economics_compute_ledger_api",
         );
 
         expect(response.status).toBe(401);
-        expect(upstream).not.toHaveBeenCalled();
+        await expect(response.json()).resolves.toEqual({
+            error: "Unauthorized",
+        });
+        expect(mock).not.toHaveBeenCalled();
+    });
+
+    it("creates a session for a Pollinations database admin", async () => {
+        const cookie = await authenticatedCookie();
+        const response = await request("/assets/index.js", {
+            headers: { Cookie: cookie },
+        });
+
+        expect(response.status).toBe(200);
+        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
+        await expect(response.text()).resolves.toBe("private asset");
+    });
+
+    it("rejects a Pollinations account without the admin role", async () => {
+        upstream({ role: "user" });
+        const login = await request("/auth/login");
+        const location = new URL(login.headers.get("Location") || "");
+        const flow = cookieFrom(login, "pollinations_oauth_flow");
+
+        const response = await request(
+            `/auth/callback?code=code-2&state=${location.searchParams.get("state")}`,
+            { headers: { Cookie: `pollinations_oauth_flow=${flow}` } },
+        );
+
+        expect(response.status).toBe(403);
     });
 
     it("rejects pipes outside the read allowlist", async () => {
-        const upstream = vi.fn();
-        vi.stubGlobal("fetch", upstream);
+        const mock = upstream();
+        const cookie = await authenticatedCookie(mock);
+        mock.mockClear();
 
         const response = await request("/api/pipes/secret_pipe", {
-            headers: { Cookie: await authenticatedCookie() },
+            headers: { Cookie: cookie },
         });
 
         expect(response.status).toBe(404);
-        expect(upstream).not.toHaveBeenCalled();
+        expect(mock).not.toHaveBeenCalled();
     });
 
-    it("forwards an authenticated allowlisted pipe with the read token", async () => {
-        const upstream = vi
-            .fn()
-            .mockResolvedValue(
-                Response.json({ data: [{ entry_id: "cloud-1" }] }),
-            );
-        vi.stubGlobal("fetch", upstream);
+    it("forwards an authenticated pipe with the read token", async () => {
+        const mock = upstream({
+            tinybird: { data: [{ entry_id: "cloud-1" }] },
+        });
+        const cookie = await authenticatedCookie(mock);
+        mock.mockClear();
 
         const response = await request(
             "/api/pipes/economics_compute_ledger_api",
-            {
-                headers: { Cookie: await authenticatedCookie() },
-            },
+            { headers: { Cookie: cookie } },
         );
 
         expect(response.status).toBe(200);
         await expect(response.json()).resolves.toEqual({
             data: [{ entry_id: "cloud-1" }],
         });
-        expect(upstream).toHaveBeenCalledWith(
+        expect(mock).toHaveBeenCalledWith(
             `${env.TINYBIRD_API}/v0/pipes/economics_compute_ledger_api.json`,
             {
                 headers: {
@@ -164,45 +168,33 @@ describe("economics Worker auth", () => {
         );
     });
 
-    it("keeps private configuration behind the authenticated pipe proxy", async () => {
-        const upstream = vi
-            .fn()
-            .mockResolvedValue(Response.json({ data: [{ config: "{}" }] }));
-        vi.stubGlobal("fetch", upstream);
-
-        const unauthorized = await request(
-            "/api/pipes/economics_private_config_api",
+    it("reports Tinybird failures as upstream errors", async () => {
+        const mock = upstream();
+        const cookie = await authenticatedCookie(mock);
+        mock.mockResolvedValueOnce(
+            Response.json({ error: "Forbidden" }, { status: 403 }),
         );
-        expect(unauthorized.status).toBe(401);
-        expect(upstream).not.toHaveBeenCalled();
 
         const response = await request(
-            "/api/pipes/economics_private_config_api",
-            { headers: { Cookie: await authenticatedCookie() } },
+            "/api/pipes/economics_compute_ledger_api",
+            { headers: { Cookie: cookie } },
         );
 
-        expect(response.status).toBe(200);
-        expect(upstream).toHaveBeenCalledWith(
-            `${env.TINYBIRD_API}/v0/pipes/economics_private_config_api.json`,
-            {
-                headers: {
-                    Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,
-                },
-            },
-        );
+        expect(response.status).toBe(502);
     });
 
     it("routes Pollen reads to the environment-specific upstream", async () => {
-        const upstream = vi.fn().mockResolvedValue(Response.json({ data: [] }));
-        vi.stubGlobal("fetch", upstream);
+        const mock = upstream();
+        const cookie = await authenticatedCookie(mock);
+        mock.mockClear();
 
         const response = await request(
             "/api/pipes/economics_pollen_usage_api",
-            { headers: { Cookie: await authenticatedCookie() } },
+            { headers: { Cookie: cookie } },
         );
 
         expect(response.status).toBe(200);
-        expect(upstream).toHaveBeenCalledWith(
+        expect(mock).toHaveBeenCalledWith(
             `${env.TINYBIRD_API}/v0/pipes/economics_pollen_usage_snapshot_api.json`,
             {
                 headers: {
@@ -210,32 +202,6 @@ describe("economics Worker auth", () => {
                 },
             },
         );
-    });
-
-    it("does not serve application assets before authentication", async () => {
-        const response = await request("/");
-
-        expect(response.status).toBe(401);
-        expect(response.headers.get("Cache-Control")).toBe("no-store");
-        expect(response.headers.get("Content-Security-Policy")).toContain(
-            "frame-ancestors 'none'",
-        );
-        await expect(response.text()).resolves.toContain(
-            "Enter the economics password",
-        );
-        expect(env.ASSETS.fetch).not.toHaveBeenCalled();
-    });
-
-    it("serves application assets only after authentication", async () => {
-        const cookie = await authenticatedCookie();
-        const response = await request("/assets/index.js", {
-            headers: { Cookie: cookie },
-        });
-
-        expect(response.status).toBe(200);
-        expect(response.headers.get("Cache-Control")).toBe("private, no-store");
-        await expect(response.text()).resolves.toBe("private asset");
-        expect(env.ASSETS.fetch).toHaveBeenCalledOnce();
     });
 
     it("keeps local development assets available without a session", async () => {

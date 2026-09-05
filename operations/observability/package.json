@@ -14,7 +14,8 @@
         "containers:images": "wrangler containers images list"
     },
     "dependencies": {
-        "@cloudflare/containers": "^0.3.7"
+        "@cloudflare/containers": "^0.3.7",
+        "@pollinations/auth": "file:../../packages/auth"
     },
     "devDependencies": {
         "wrangler": "^4.110.0"

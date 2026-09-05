@@ -8,6 +8,7 @@ const REQUIRED_SECRET_NAMES = [
     "TINYBIRD_READ_TOKEN",
     "TINYBIRD_LEGACY_READ_TOKEN",
     "DISCORD_WEBHOOK_URL",
+    "POLLINATIONS_AUTH_SESSION_SECRET",
 ];
 
 const secretPath = process.argv[2];

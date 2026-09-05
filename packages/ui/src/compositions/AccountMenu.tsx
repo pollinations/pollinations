@@ -1,17 +1,19 @@
-import { cn } from "../../lib/cn.ts";
-import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
-import { Dropdown } from "../../primitives/Dropdown.tsx";
-import { DropdownItem } from "../../primitives/DropdownItem.tsx";
-import { SignOutIcon } from "../../primitives/icons/index.tsx";
+import type { ReactNode } from "react";
+import { cn } from "../lib/cn.ts";
+import { ChevronIcon } from "../primitives/ChevronIcon.tsx";
+import { Dropdown, type DropdownProps } from "../primitives/Dropdown.tsx";
 
 export type AccountMenuProps = {
     name: string;
     avatarUrl?: string | null;
-    onSignOut: () => void;
+    /** Optional display content, such as the app allowance or session context. */
+    secondaryContent?: ReactNode;
+    /** The caller owns navigation, permissions and sign-out behavior. */
+    children: DropdownProps["children"];
     className?: string;
+    menuClassName?: string;
     side?: "top" | "bottom";
     menuLabel?: string;
-    signOutLabel?: string;
 };
 
 function initials(name: string) {
@@ -24,17 +26,21 @@ function initials(name: string) {
 export function AccountMenu({
     name,
     avatarUrl,
-    onSignOut,
+    secondaryContent,
+    children,
     className,
+    menuClassName,
     side = "bottom",
-    menuLabel = "Account menu",
-    signOutLabel = "Sign Out",
+    menuLabel = `Account menu for ${name}`,
 }: AccountMenuProps) {
     return (
         <Dropdown
             align="end"
             side={side}
-            className="polli:w-[var(--reference-width)] polli:min-w-48 polli:p-1"
+            className={cn(
+                "polli:w-[var(--reference-width)] polli:min-w-48 polli:p-1",
+                menuClassName,
+            )}
             trigger={(open) => (
                 <button
                     type="button"
@@ -60,8 +66,15 @@ export function AccountMenu({
                             {initials(name)}
                         </span>
                     )}
-                    <span className="polli:min-w-0 polli:flex-1 polli:truncate polli:text-left polli:text-sm polli:font-medium">
-                        {name}
+                    <span className="polli:flex polli:min-w-0 polli:flex-1 polli:flex-col polli:items-start polli:text-left">
+                        <span className="polli:max-w-full polli:truncate polli:text-sm polli:font-medium">
+                            {name}
+                        </span>
+                        {secondaryContent != null && (
+                            <span className="polli:max-w-full polli:truncate polli:text-xs polli:text-theme-text-base">
+                                {secondaryContent}
+                            </span>
+                        )}
                     </span>
                     <ChevronIcon
                         expanded={open}
@@ -70,20 +83,7 @@ export function AccountMenu({
                 </button>
             )}
         >
-            {(close) => (
-                <DropdownItem
-                    onClick={() => {
-                        close();
-                        onSignOut();
-                    }}
-                >
-                    <SignOutIcon
-                        className="polli:h-4 polli:w-4 polli:shrink-0"
-                        aria-hidden="true"
-                    />
-                    {signOutLabel}
-                </DropdownItem>
-            )}
+            {children}
         </Dropdown>
     );
 }

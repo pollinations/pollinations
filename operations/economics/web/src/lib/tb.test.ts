@@ -5,6 +5,7 @@ import {
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
+    TbError,
     validatePipeRows,
 } from "./tb";
 
@@ -72,6 +73,22 @@ describe("loadAll", () => {
         await expect(loadAll()).rejects.toThrow(
             "economics_private_config_api: expected one row, received 0",
         );
+    });
+
+    it("preserves dashboard authentication status", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() =>
+                Promise.resolve(
+                    Response.json({ error: "Unauthorized" }, { status: 401 }),
+                ),
+            ),
+        );
+
+        const error = await loadAll().catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(TbError);
+        expect((error as TbError).status).toBe(401);
     });
 });
 

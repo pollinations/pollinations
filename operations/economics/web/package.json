@@ -17,6 +17,7 @@
     "pretypecheck": "npm run build --prefix ../../../packages/ui"
   },
   "dependencies": {
+    "@pollinations/auth": "*",
     "@pollinations/ui": "*",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"

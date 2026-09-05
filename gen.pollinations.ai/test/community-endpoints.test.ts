@@ -3318,7 +3318,9 @@ fixtureTest.each(
                     modelCalls++;
                     const upstream = (await request.json()) as {
                         messages: { role: string; content: string }[];
+                        reasoning_effort?: string;
                     };
+                    expect(upstream.reasoning_effort).toBe("low");
                     if (modelCalls === 2) {
                         expect(
                             upstream.messages.some(
@@ -3446,8 +3448,11 @@ fixtureTest.each(
                     model: modelId,
                     stream,
                     ...(route === "responses"
-                        ? { input: "hello" }
-                        : { messages: [{ role: "user", content: "hello" }] }),
+                        ? { input: "hello", reasoning: { effort: "low" } }
+                        : {
+                              messages: [{ role: "user", content: "hello" }],
+                              reasoning_effort: "low",
+                          }),
                 }),
             }),
         );

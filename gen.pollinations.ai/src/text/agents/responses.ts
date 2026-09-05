@@ -300,16 +300,13 @@ function requestSettings(
         )
     ) {
         invalidRequest(
-            "Only reasoning effort and automatic summaries are supported by managed agents",
+            "Only reasoning effort is supported by managed agents",
             "reasoning",
         );
     }
-    if (
-        request.reasoning?.summary != null &&
-        request.reasoning.summary !== "auto"
-    ) {
+    if (request.reasoning?.summary != null) {
         invalidRequest(
-            "Only automatic reasoning summaries are supported by managed agents",
+            "Reasoning summaries are not supported by managed agents",
             "reasoning.summary",
         );
     }
@@ -435,10 +432,7 @@ function responseConfiguration(request: CreateResponseRequest) {
                   typeof request.reasoning.effort === "string"
                       ? request.reasoning.effort
                       : null,
-              summary:
-                  typeof request.reasoning.summary === "string"
-                      ? request.reasoning.summary
-                      : null,
+              summary: null,
           }
         : null;
     return {

@@ -4,7 +4,6 @@ import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
 } from "../../../src/text/agents/responses.ts";
-import { chatToResponsesRequest } from "../../../src/text/responses/chatRequest.ts";
 
 const RUNTIME = {
     config: {
@@ -105,13 +104,7 @@ describe("managed agent Responses runtime", () => {
 
         const response = await handlePromptAgentResponsesRequest(
             request({
-                ...chatToResponsesRequest(
-                    [{ role: "user", content: "hello" }],
-                    {
-                        model: crypto.randomUUID(),
-                        reasoning_effort: "low",
-                    },
-                ),
+                reasoning: { effort: "low", summary: null },
                 instructions: "Answer in one sentence.",
                 max_output_tokens: 123,
                 temperature: 0.4,
@@ -141,7 +134,7 @@ describe("managed agent Responses runtime", () => {
             frequency_penalty: 0,
             top_logprobs: 0,
             temperature: 0.4,
-            reasoning: { effort: "low", summary: "auto" },
+            reasoning: { effort: "low", summary: null },
             max_output_tokens: 123,
             max_tool_calls: null,
             background: false,
@@ -649,18 +642,28 @@ describe("managed agent Responses runtime", () => {
             ["max_tool_calls", { max_tool_calls: 2 }],
             [
                 "reasoning.summary",
+                { reasoning: { effort: "low", summary: "auto" } },
+            ],
+            [
+                "reasoning.summary",
+                { reasoning: { effort: "low", summary: "concise" } },
+            ],
+            [
+                "reasoning.summary",
                 { reasoning: { effort: "low", summary: "detailed" } },
             ],
         ] as const) {
-            const unsupported = await handlePromptAgentResponsesRequest(
-                request(value),
-                new AbortController().signal,
-                RUNTIME,
-            );
-            expect(unsupported.status).toBe(400);
-            await expect(unsupported.json()).resolves.toMatchObject({
-                error: { code: "unsupported_parameter", param: field },
-            });
+            for (const stream of [false, true]) {
+                const unsupported = await handlePromptAgentResponsesRequest(
+                    request({ ...value, stream }),
+                    new AbortController().signal,
+                    RUNTIME,
+                );
+                expect(unsupported.status).toBe(400);
+                await expect(unsupported.json()).resolves.toMatchObject({
+                    error: { code: "unsupported_parameter", param: field },
+                });
+            }
         }
     });
 });

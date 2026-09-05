@@ -273,45 +273,41 @@ test.each([
         },
     ],
     ["search", { web_search_options: { search_context_size: "low" } }],
-])(
-    "rejects unsupported %s before advertising payment",
-    async (_name, change) => {
-        const app = createAnonymousX402Routes(x402Env as CloudflareBindings);
-        const response = await app.request(
-            ROUTE,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(request(change)),
-            },
-            x402Env,
-        );
-        expect(response.status).toBe(400);
-        expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
-    },
-);
+])("rejects unsupported %s before advertising payment", async (_name, change) => {
+    const app = createAnonymousX402Routes(x402Env as CloudflareBindings);
+    const response = await app.request(
+        ROUTE,
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(request(change)),
+        },
+        x402Env,
+    );
+    expect(response.status).toBe(400);
+    expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
+});
 
-test.each(["gpt-5.6-sol"])(
-    "rejects model %s with unsupported billing",
-    async (model) => {
-        const app = createAnonymousX402Routes(x402Env as CloudflareBindings);
-        const response = await app.request(
-            ROUTE,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Idempotency-Key": crypto.randomUUID(),
-                },
-                body: JSON.stringify(request({ model })),
+test.each([
+    "gpt-5.6-sol",
+])("rejects model %s with unsupported billing", async (model) => {
+    const app = createAnonymousX402Routes(x402Env as CloudflareBindings);
+    const response = await app.request(
+        ROUTE,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Idempotency-Key": crypto.randomUUID(),
             },
-            x402Env,
-        );
+            body: JSON.stringify(request({ model })),
+        },
+        x402Env,
+    );
 
-        expect(response.status).toBe(400);
-        expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
-    },
-);
+    expect(response.status).toBe(400);
+    expect(response.headers.get("PAYMENT-REQUIRED")).toBeNull();
+});
 
 test("rejects unknown anonymous request fields before pricing or generation", async () => {
     const app = createAnonymousX402Routes(x402Env as CloudflareBindings);

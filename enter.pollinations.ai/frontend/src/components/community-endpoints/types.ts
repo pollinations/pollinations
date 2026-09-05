@@ -140,6 +140,7 @@ export function publicCommunityFallbackOptions(
         type: string;
         community?: boolean;
         agent?: boolean;
+        outputModalities?: string[];
     }[],
 ): FallbackModelOption[] {
     return models
@@ -161,7 +162,11 @@ export function publicCommunityFallbackOptions(
                     : model.type === "video"
                       ? "video"
                       : model.type === "audio"
-                        ? "transcription"
+                        ? // Catalog type collapses both audio modalities: TTS
+                          // models output audio, speech-to-text outputs text.
+                          model.outputModalities?.includes("audio")
+                            ? "speech"
+                            : "transcription"
                         : model.type === "embedding"
                           ? "embedding"
                           : "text",

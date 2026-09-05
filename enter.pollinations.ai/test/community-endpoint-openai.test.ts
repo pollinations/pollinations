@@ -5,6 +5,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
@@ -540,6 +541,80 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes speech endpoints with a standard OpenAI TTS request", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe("https://api.example.com/v1/audio/speech");
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                model: "kokoro-1",
+                input: "Pollinations speech endpoint test.",
+                voice: "alloy",
+                response_format: "mp3",
+            });
+            return new Response(new Uint8Array([73, 68, 51, 3, 4, 0, 0, 0]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "kokoro-1",
+            }),
+        ).resolves.toEqual({
+            // The probe meters the request text it sent: 34 code points.
+            usage: { completionAudioTokens: 34 },
+            billableUsage: { completionAudioTokens: 34 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects speech upstreams that answer without binary audio", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({ data: [{ b64_json: "aGVsbG8=" }] }),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "kokoro-1",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return binary audio (expected an audio/* response body)",
+        );
+    });
+
+    it("rejects empty speech audio, since the sample is real text", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response(new Uint8Array(0), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    }),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "kokoro-1",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return binary audio (expected an audio/* response body)",
+        );
     });
 
     it("probes embedding endpoints and returns billable prompt tokens", async () => {

@@ -1,3 +1,4 @@
+import type { AgentRunClaims } from "@shared/auth/agent-run-token.ts";
 import {
     type AuthenticatedApiKey,
     assertNotBanned,
@@ -18,6 +19,8 @@ export type AuthVariables = {
         user?: User;
         session?: Session;
         apiKey?: AuthenticatedApiKey;
+        rawApiKey?: string;
+        agentRun?: AgentRunClaims;
         requireAuthorization: (options?: { message?: string }) => Promise<void>;
         requireUser: () => User;
     };
@@ -38,11 +41,11 @@ interface AuthResult {
     session?: Session;
     apiKey?: AuthenticatedApiKey;
     rawApiKey?: string;
+    agentRun?: AgentRunClaims;
 }
 
 export const auth = (options: AuthOptions) =>
     createMiddleware<AuthEnv>(async (c, next) => {
-        const _log = c.get("log").getChild("auth");
         const client = createAuth(c.env);
 
         const authenticateSession = async (): Promise<AuthResult | null> => {
@@ -85,6 +88,7 @@ export const auth = (options: AuthOptions) =>
                     user: result.user as User,
                     apiKey: result.apiKey,
                     rawApiKey: result.rawApiKey,
+                    agentRun: result.agentRun,
                 };
             } catch (error) {
                 if (
@@ -102,7 +106,7 @@ export const auth = (options: AuthOptions) =>
         if (!authResult) {
             authResult = await authenticateApiKey();
         }
-        const { user, session, apiKey } = authResult || {};
+        const { user, session, apiKey, rawApiKey, agentRun } = authResult || {};
 
         const requireAuthorization = async (options?: {
             message?: string;
@@ -124,6 +128,8 @@ export const auth = (options: AuthOptions) =>
             user,
             session,
             apiKey,
+            rawApiKey,
+            agentRun,
             requireAuthorization,
             requireUser,
         });

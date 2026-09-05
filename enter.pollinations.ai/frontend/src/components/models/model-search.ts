@@ -6,28 +6,31 @@ export const MODEL_CATEGORIES = [
     "audio",
     "realtime",
     "text",
-    "community",
     "embedding",
+    "agent",
+    "mcp",
 ] as const;
 
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
-export const MODEL_SORT_KEYS = [
-    "name",
-    "perPollen",
-    "input",
-    "output",
+export const MODEL_SORTS = [
+    "popular",
+    "newest",
+    "price-low",
+    "price-high",
+    "title",
+    "title-desc",
+    "brand",
+    "brand-desc",
 ] as const;
-export type ModelSortKey = (typeof MODEL_SORT_KEYS)[number];
-
-export const MODEL_SORT_DIRECTIONS = ["asc", "desc"] as const;
-export type ModelSortDirection = (typeof MODEL_SORT_DIRECTIONS)[number];
+export type ModelSort = (typeof MODEL_SORTS)[number];
 
 export type ModelSearch = {
     category?: ModelCategory;
     q?: string;
-    sort?: ModelSortKey;
-    dir?: ModelSortDirection;
+    agentQ?: string;
+    mcpQ?: string;
+    sort?: ModelSort;
 };
 
 function includes<T extends string>(
@@ -40,23 +43,20 @@ function includes<T extends string>(
 export function validateModelSearch(
     search: Record<string, unknown>,
 ): ModelSearch {
+    const category = includes(MODEL_CATEGORIES, search.category)
+        ? search.category
+        : "all";
+    const sort = includes(MODEL_SORTS, search.sort) ? search.sort : "popular";
+    const query = typeof search.q === "string" ? search.q.trim() : "";
+    const agentQuery =
+        typeof search.agentQ === "string" ? search.agentQ.trim() : "";
+    const mcpQuery = typeof search.mcpQ === "string" ? search.mcpQ.trim() : "";
+
     return {
-        category:
-            includes(MODEL_CATEGORIES, search.category) &&
-            search.category !== "all"
-                ? search.category
-                : undefined,
-        q:
-            typeof search.q === "string" && search.q.length > 0
-                ? search.q
-                : undefined,
-        sort:
-            includes(MODEL_SORT_KEYS, search.sort) &&
-            search.sort !== "perPollen"
-                ? search.sort
-                : undefined,
-        dir: includes(MODEL_SORT_DIRECTIONS, search.dir)
-            ? search.dir
-            : undefined,
+        category: category === "all" ? undefined : category,
+        q: query || undefined,
+        agentQ: agentQuery || undefined,
+        mcpQ: mcpQuery || undefined,
+        sort: sort === "popular" ? undefined : sort,
     };
 }

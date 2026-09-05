@@ -3,6 +3,11 @@ import {
     type ApiKeyType,
     createApiKeyForUser,
 } from "@shared/auth/api-key-creation.ts";
+import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
+import {
+    getAvailableBalance,
+    getUserBalance,
+} from "@shared/billing/balance.ts";
 import { isCommunityEndpointOwnerAllowed } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import {
@@ -11,6 +16,10 @@ import {
     user as userTable,
 } from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import {
+    filterPermissionsToVisibleModels,
+    getVisibleModelIdsForUser,
+} from "@shared/registry/visible-model-ids.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import type { Context } from "hono";
@@ -20,6 +29,7 @@ import { describeRoute, resolver } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
+import { discordConfigFromEnv } from "../services/discord.ts";
 import { QUEST_CATEGORIES } from "../services/quests/definitions.ts";
 import { listQuestCards } from "../services/quests/index.ts";
 import {
@@ -27,11 +37,11 @@ import {
     requireTinybirdReadToken,
 } from "../services/tinybird.ts";
 import {
-    hasAccountReadPermission,
-    hasDirectAccountPermission,
+    hasAccountPermission,
+    requireAccountPermission,
 } from "./account-permissions.ts";
+import { agentsRoutes } from "./agents.ts";
 import { communityEndpointsRoutes } from "./community-endpoints.ts";
-import { parseMetadata } from "./metadata-utils.ts";
 
 const DEFAULT_USAGE_DAYS = 30;
 const DEFAULT_DAILY_USAGE_DAYS = 90;
@@ -80,33 +90,6 @@ export function resolveUsageTargetUserId(
     };
 }
 
-/**
- * Require that the caller has `account:keys` permission.
- * Session-authenticated users (no apiKey) are always allowed.
- */
-function requireKeysPermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (!apiKey) return; // session auth — always allowed
-    if (!hasDirectAccountPermission(apiKey, "keys")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:keys' permission",
-        });
-    }
-}
-
-function requireUsagePermission(apiKey?: {
-    permissions?: Record<string, string[]>;
-    metadata?: Record<string, unknown>;
-}): void {
-    if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
-        throw new HTTPException(403, {
-            message: "API key does not have 'account:usage' permission",
-        });
-    }
-}
-
 // Schema for creating an API key via the API
 const CreateKeySchema = z.object({
     name: z.string().min(1).max(253).describe("Name for the API key"),
@@ -133,7 +116,9 @@ const CreateKeySchema = z.object({
         .number()
         .nullable()
         .optional()
-        .describe("Pollen budget cap. null = unlimited"),
+        .describe(
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -664,6 +649,9 @@ const profileResponseSchema = z.object({
         .describe(
             "Whether the account is allowed to manage community endpoints.",
         ),
+    discordAvailable: z
+        .boolean()
+        .describe("Whether Discord account connections are available."),
     name: z
         .string()
         .nullable()
@@ -680,11 +668,26 @@ const profileResponseSchema = z.object({
         ),
 });
 
+const accountBalanceSchema = z.object({
+    total: z
+        .number()
+        .describe(
+            "Quest Pollen + paid Pollen the account can spend on a regular model. Paid-only models spend `paid` alone, so use that field for them rather than this total.",
+        ),
+    tier: z.number().describe("Quest Pollen remaining, never below 0"),
+    paid: z.number().describe("Paid Pollen remaining, never below 0"),
+});
+
 const balanceResponseSchema = z.object({
     balance: z
         .number()
         .describe(
-            "Remaining pollen balance (sum of Quest Pollen + paid balance)",
+            "Pollen remaining for this caller. Budgeted API keys see the key's remaining budget here, not the account total. Sessions and unbudgeted keys see the account total (Quest Pollen + paid).",
+        ),
+    accountBalance: accountBalanceSchema
+        .optional()
+        .describe(
+            "Full account balances. Included only when the caller can view account usage (dashboard session or `account:usage`). Omitted for budgeted keys that lack that permission so the account wallet is not leaked.",
         ),
 });
 
@@ -792,6 +795,15 @@ const usageResponseSchema = z.object({
  */
 export const accountRoutes = new Hono<Env>()
     .use(auth({ allowApiKey: true, allowSessionCookie: true }))
+    // Account responses are per-user and must never be cached by browsers or
+    // intermediary proxies. Applied once here so nested routes (agents,
+    // my-models, keys, ...) inherit it without repeating it per handler.
+    .use("*", async (c, next) => {
+        await next();
+        c.header("Cache-Control", "private, no-store, max-age=0");
+        c.header("Pragma", "no-cache");
+    })
+    .route("/agents", agentsRoutes)
     .route("/my-models", communityEndpointsRoutes)
     .get(
         "/profile",
@@ -816,8 +828,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
-            const includeProfilePII =
-                !apiKey || hasAccountReadPermission(apiKey, "profile");
+            const includeProfilePII = hasAccountPermission(apiKey, "profile");
 
             const db = drizzle(c.env.DB);
             const users = await db
@@ -842,6 +853,7 @@ export const accountRoutes = new Hono<Env>()
                 image: profile.image ?? null,
                 communityEndpointsAllowed:
                     isCommunityEndpointOwnerAllowed(profile),
+                discordAvailable: Boolean(discordConfigFromEnv(c.env)),
                 ...(includeProfilePII && {
                     name: profile.name ?? null,
                     email: profile.email ?? null,
@@ -875,7 +887,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireUsagePermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "usage");
 
             const db = drizzle(c.env.DB, { schema });
             const [cards, rewardRows] = await Promise.all([
@@ -942,7 +954,7 @@ export const accountRoutes = new Hono<Env>()
             tags: ["👤 Account"],
             summary: "Get Balance",
             description:
-                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget (no scope needed). Full account balance requires the read-only `account:usage` permission.",
+                "Returns the pollen balance visible to the caller. API keys with a budget always see their remaining budget in `balance` (no scope needed). When the caller can view account usage (`account:usage` or a dashboard session), the response also includes `accountBalance: { total, tier, paid }`. Unbudgeted keys without `account:usage` get 403. Key-scoped usage is `GET /account/key/usage`; account-wide usage is `GET /account/usage`.",
             responses: {
                 200: {
                     description: "Pollen balance",
@@ -963,34 +975,43 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
+            const keyBudget = apiKey?.pollenBalance ?? null;
+            const canViewAccount = hasAccountPermission(apiKey, "usage");
 
-            // Keys with a budget always see their own budget — no scope needed.
-            if (apiKey?.pollenBalance != null) {
-                return c.json({ balance: apiKey.pollenBalance });
-            }
-
-            // Beyond that, reading account balance requires usage or admin.
-            if (apiKey && !hasAccountReadPermission(apiKey, "usage")) {
+            // Unbudgeted keys cannot see any balance without account:usage.
+            if (keyBudget == null && !canViewAccount) {
                 throw new HTTPException(403, {
                     message:
                         "API key does not have 'account:usage' permission and no budget of its own. Add `account:usage` or set a budget on the key.",
                 });
             }
 
-            const db = drizzle(c.env.DB);
-            const users = await db
-                .select({
-                    tierBalance: userTable.tierBalance,
-                    packBalance: userTable.packBalance,
-                })
-                .from(userTable)
-                .where(eq(userTable.id, user.id))
-                .limit(1);
+            let accountBalance:
+                | { total: number; tier: number; paid: number }
+                | undefined;
+            if (canViewAccount) {
+                // Same helper the billing path uses, so a bucket that has gone
+                // negative is clamped here exactly as it is when spending is
+                // authorized — a raw tier + pack sum would under-report the
+                // Pollen the account can actually spend.
+                const balances = await getUserBalance(
+                    drizzle(c.env.DB),
+                    user.id,
+                );
+                accountBalance = {
+                    total: getAvailableBalance(balances),
+                    tier: Math.max(0, balances.tierBalance),
+                    paid: Math.max(0, balances.packBalance),
+                };
+            }
 
-            const tierBalance = users[0]?.tierBalance ?? 0;
-            const packBalance = users[0]?.packBalance ?? 0;
+            // Budgeted keys keep seeing their remaining budget in `balance`.
+            const balance =
+                keyBudget != null ? keyBudget : (accountBalance?.total ?? 0);
 
-            return c.json({ balance: tierBalance + packBalance });
+            return c.json(
+                accountBalance ? { balance, accountBalance } : { balance },
+            );
         },
     )
     .get(
@@ -1027,7 +1048,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const {
                 format,
@@ -1111,7 +1132,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const {
                 format,
@@ -1213,7 +1234,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const { limit, days, granularity, period } = c.req.valid("query");
             const { userId: devUserId } = resolveUsageTargetUserId(
@@ -1285,7 +1306,7 @@ export const accountRoutes = new Hono<Env>()
             const user = c.var.auth.requireUser();
             const apiKey = c.var.auth.apiKey;
 
-            requireUsagePermission(apiKey);
+            requireAccountPermission(apiKey, "usage");
 
             const { format, days, granularity, period } = c.req.valid("query");
             const grain = granularity === "day" ? "hour" : "day";
@@ -1355,7 +1376,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
 
             const db = drizzle(c.env.DB);
             const keys = await db
@@ -1373,12 +1394,25 @@ export const accountRoutes = new Hono<Env>()
                     enabled: apikeyTable.enabled,
                 })
                 .from(apikeyTable)
-                .where(eq(apikeyTable.userId, user.id))
+                .where(eq(apikeyTable.referenceId, user.id))
                 .all();
+            const parsedPermissions = keys.map((key) => {
+                if (!key.permissions) return null;
+                try {
+                    return JSON.parse(key.permissions);
+                } catch {
+                    return null;
+                }
+            });
+            const hasModelRestrictions = parsedPermissions.some((permissions) =>
+                Array.isArray(permissions?.models),
+            );
+            const visibleModelIds = hasModelRestrictions
+                ? await getVisibleModelIdsForUser(c.env.DB, user.id)
+                : null;
 
-            c.header("Cache-Control", "private, no-store, max-age=0");
             return c.json({
-                data: keys.map((key) => ({
+                data: keys.map((key, index) => ({
                     id: key.id,
                     name: key.name,
                     start: key.start,
@@ -1386,15 +1420,12 @@ export const accountRoutes = new Hono<Env>()
                     createdAt: key.createdAt,
                     expiresAt: key.expiresAt,
                     lastRequest: key.lastRequest,
-                    permissions: key.permissions
-                        ? (() => {
-                              try {
-                                  return JSON.parse(key.permissions);
-                              } catch {
-                                  return null;
-                              }
-                          })()
-                        : null,
+                    permissions: visibleModelIds
+                        ? filterPermissionsToVisibleModels(
+                              parsedPermissions[index],
+                              visibleModelIds,
+                          )
+                        : parsedPermissions[index],
                     metadata: parseMetadata(key.metadata),
                     pollenBalance: key.pollenBalance,
                     enabled: key.enabled,
@@ -1419,7 +1450,7 @@ export const accountRoutes = new Hono<Env>()
         async (c) => {
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
-            requireKeysPermission(c.var.auth.apiKey);
+            requireAccountPermission(c.var.auth.apiKey, "keys");
 
             const {
                 name,
@@ -1478,7 +1509,7 @@ export const accountRoutes = new Hono<Env>()
             await c.var.auth.requireAuthorization();
             const user = c.var.auth.requireUser();
             const callerKey = c.var.auth.apiKey;
-            requireKeysPermission(callerKey);
+            requireAccountPermission(callerKey, "keys");
 
             const { id } = c.req.param();
 
@@ -1497,7 +1528,7 @@ export const accountRoutes = new Hono<Env>()
                 .where(
                     and(
                         eq(apikeyTable.id, id),
-                        eq(apikeyTable.userId, user.id),
+                        eq(apikeyTable.referenceId, user.id),
                     ),
                 )
                 .get();
@@ -1584,11 +1615,29 @@ export const accountRoutes = new Hono<Env>()
                                         .describe(
                                             "Stable id of the user that owns this key — server-attested.",
                                         ),
-                                    byopClientKeyId: z
-                                        .string()
+                                    byopApp: z
+                                        .object({
+                                            clientKeyId: z
+                                                .string()
+                                                .describe(
+                                                    "Publishable app key (client id) that minted this key via the BYOP authorize flow.",
+                                                ),
+                                            name: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "Display name of the BYOP app.",
+                                                ),
+                                            appUser: z
+                                                .string()
+                                                .nullable()
+                                                .describe(
+                                                    "User id of the app account that owns the BYOP app key.",
+                                                ),
+                                        })
                                         .nullable()
                                         .describe(
-                                            "Publishable app key that minted this key via the BYOP authorize flow. Server-attested; clients cannot forge.",
+                                            "BYOP app attribution for keys minted through the BYOP authorize flow. Server-attested; null for non-BYOP keys.",
                                         ),
                                 }),
                             ),
@@ -1652,10 +1701,29 @@ export const accountRoutes = new Hono<Env>()
             }
 
             // Format permissions for response
+            const userId = c.var.auth.user?.id;
+            const visibleModelIds =
+                userId && Array.isArray(apiKey.permissions?.models)
+                    ? await getVisibleModelIdsForUser(c.env.DB, userId)
+                    : null;
+            const effectivePermissions = visibleModelIds
+                ? filterPermissionsToVisibleModels(
+                      apiKey.permissions ?? null,
+                      visibleModelIds,
+                  )
+                : (apiKey.permissions ?? null);
             const permissions = {
-                models: apiKey.permissions?.models || null,
-                account: apiKey.permissions?.account || null,
+                models: effectivePermissions?.models ?? null,
+                account: effectivePermissions?.account ?? null,
             };
+
+            const byopApp = apiKey.byopClientKeyId
+                ? {
+                      clientKeyId: apiKey.byopClientKeyId,
+                      name: apiKey.byopClientName ?? null,
+                      appUser: apiKey.byopClientUserId ?? null,
+                  }
+                : null;
 
             return c.json({
                 valid: true, // If we got here, the key is valid
@@ -1671,7 +1739,7 @@ export const accountRoutes = new Hono<Env>()
                 // stamp ownership from these values — never from request
                 // params — so user and BYOP app ids cannot be spoofed.
                 userId: c.var.auth.user?.id ?? null,
-                byopClientKeyId: apiKey.byopClientKeyId ?? null,
+                byopApp,
             });
         },
     )

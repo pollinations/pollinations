@@ -51,6 +51,9 @@ describe("ElevenLabs music_v2", () => {
                 if (request.url.endsWith("/v1/music/upload")) {
                     return Response.json({
                         song_id: "reference-song",
+                        composition_plan: {
+                            chunks: [{ duration_ms: 10_000 }],
+                        },
                     });
                 }
                 return new Response(new Uint8Array([1, 2, 3, 4]), {
@@ -58,7 +61,7 @@ describe("ElevenLabs music_v2", () => {
                 });
             });
 
-        await generateMusic({
+        const response = await generateMusic({
             prompt: "[Verse]\nPlay this as warm indie disco",
             durationSeconds: 45,
             referenceAudio: new File(["reference"], "reference.mp3", {
@@ -76,9 +79,10 @@ describe("ElevenLabs music_v2", () => {
         expect(uploadRequest.url).toBe(
             "https://api.elevenlabs.io/v1/music/upload",
         );
-        expect((await uploadRequest.formData()).get("file")).toBeInstanceOf(
-            File,
-        );
+        const uploadForm = await uploadRequest.formData();
+        expect(uploadForm.get("file")).toBeInstanceOf(File);
+        expect(uploadForm.get("extract_composition_plan")).toBe("music_v2");
+        expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("10");
 
         const composeRequest = new Request(
             fetchMock.mock.calls[1][0],

@@ -1,10 +1,10 @@
 /**
- * Generic fal.ai queue API client for 3D generation models.
+ * Generic fal.ai queue API client for generation models.
  *
  * Contract confirmed against fal.ai docs (no precedent client existed in this
  * repo before this file): submit to POST https://queue.fal.run/{endpoint},
  * auth via "Authorization: Key $FAL_KEY", poll the returned status_url until
- * COMPLETED/FAILED, then fetch the returned response_url for the result.
+ * COMPLETED, then fetch the returned response_url for the result.
  * fal.ai's 3D-generation models consistently return the mesh under a
  * `model_mesh: { url, content_type, file_name, file_size }` field (confirmed
  * for fal-ai/triposr and fal-ai/trellis/multi; assumed for the others —
@@ -48,6 +48,7 @@ export interface FalModelMesh {
 export interface RunFalJobOptions {
     endpoint: string;
     input: Record<string, unknown>;
+    pollMaxAttempts?: number;
 }
 
 function requireFalApiKey(): string {
@@ -60,8 +61,8 @@ function requireFalApiKey(): string {
 
 export async function runFalJob(
     opts: RunFalJobOptions,
+    apiKey = requireFalApiKey(),
 ): Promise<Record<string, unknown>> {
-    const apiKey = requireFalApiKey();
     const submission = await falFetch<FalQueueSubmitResponse>(apiKey, {
         method: "POST",
         url: `${QUEUE_BASE}/${opts.endpoint}`,
@@ -69,13 +70,20 @@ export async function runFalJob(
     });
 
     let pollAttempts = 0;
-    while (pollAttempts < POLL_MAX_ATTEMPTS) {
+    const pollMaxAttempts = opts.pollMaxAttempts ?? POLL_MAX_ATTEMPTS;
+    while (true) {
+        if (pollAttempts >= pollMaxAttempts) {
+            throw new FalError(
+                `fal.ai request ${submission.request_id} timed out after ${(pollMaxAttempts * POLL_INTERVAL_MS) / 1000}s`,
+                504,
+            );
+        }
         await sleep(POLL_INTERVAL_MS);
-        const statusResponse = await falFetch<FalQueueStatusResponse>(apiKey, {
+        const status = await falFetch<FalQueueStatusResponse>(apiKey, {
             method: "GET",
             url: submission.status_url,
         });
-        if (statusResponse.status === "COMPLETED") {
+        if (status.status === "COMPLETED") {
             return falFetch<Record<string, unknown>>(apiKey, {
                 method: "GET",
                 url: submission.response_url,
@@ -83,11 +91,6 @@ export async function runFalJob(
         }
         pollAttempts++;
     }
-
-    throw new FalError(
-        `fal.ai request ${submission.request_id} timed out after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s`,
-        504,
-    );
 }
 
 // fal.ai's 3D models use either `model_mesh` (triposr, trellis/multi, rodin,

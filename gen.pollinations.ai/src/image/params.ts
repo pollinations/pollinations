@@ -1,5 +1,8 @@
 import { IMAGE_SERVICES, type ImageModelName } from "@shared/registry/image.ts";
+import type { ModelDefinition } from "@shared/registry/registry.ts";
+import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { z } from "zod";
+import { normalizeSeed, SENTINEL_SEED } from "@/util.ts";
 import { getDefaultSideLength } from "./models.js";
 
 const allowedModels = Object.keys(IMAGE_SERVICES) as [
@@ -8,7 +11,7 @@ const allowedModels = Object.keys(IMAGE_SERVICES) as [
 ];
 const validQualities = ["low", "medium", "high", "hd"] as const;
 // Maximum seed value - use INT32_MAX for compatibility with strict providers like Vertex AI
-const MAX_RANDOM_SEED = 2147483647; // INT32_MAX (2^31 - 1)
+const MAX_SEED = 2147483647; // INT32_MAX (2^31 - 1)
 
 const sanitizedBoolean = z
     .union([z.string(), z.boolean()])
@@ -20,15 +23,44 @@ const sanitizedBoolean = z
 const sanitizedSeed = z.preprocess((v) => {
     const seed = String(v);
     const parsedSeed = Number.parseInt(seed, 10);
-    const parsed = Number.isInteger(parsedSeed) ? parsedSeed : 42;
-    // seed=-1 means "random" - generate a random seed
-    return parsed === -1 ? Math.floor(Math.random() * MAX_RANDOM_SEED) : parsed;
-}, z.int().min(0).max(MAX_RANDOM_SEED).catch(42));
+    const parsed = Number.isInteger(parsedSeed) ? parsedSeed : SENTINEL_SEED;
+    return normalizeSeed(parsed);
+}, z.int().min(0).max(MAX_SEED).catch(SENTINEL_SEED));
 
 const sanitizedSideLength = z.preprocess((v) => {
     const parsed = Number.parseInt(v as string, 10);
     return Number.isInteger(parsed) ? parsed : undefined;
 }, z.int().optional());
+
+const parseReferenceUrls = (value: unknown): string[] => {
+    const values = Array.isArray(value)
+        ? value
+        : typeof value === "string"
+          ? value.split("|")
+          : [];
+    return values
+        .filter((entry): entry is string => typeof entry === "string")
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+};
+
+const referenceUrl = z.string().superRefine((value, ctx) => {
+    if (!validateUserMediaUrl(value).ok) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+                "Reference media must use public HTTP(S) URLs without credentials or literal IP hosts.",
+        });
+    }
+});
+
+const referenceUrls = z.preprocess(parseReferenceUrls, z.array(referenceUrl));
+
+export const CommunityReferenceParamsSchema = z.object({
+    reference_images: referenceUrls.optional(),
+    reference_videos: referenceUrls.optional(),
+    reference_audios: referenceUrls.optional(),
+});
 
 function adjustImageSizeForModel(
     model: ImageModelName,
@@ -57,7 +89,7 @@ export const ImageParamsSchema = z
         seed: sanitizedSeed,
         model: z.enum(allowedModels),
         safe: sanitizedBoolean.catch(false),
-        quality: z.literal(validQualities).catch("medium"),
+        quality: z.string().catch("medium"),
         image: z
             .union([z.array(z.string()), z.string(), z.null(), z.undefined()])
             .transform((value?: string[] | string | null) => {
@@ -70,6 +102,9 @@ export const ImageParamsSchema = z
                     : value.split(",");
             })
             .catch([]),
+        reference_images: referenceUrls.optional(),
+        reference_videos: referenceUrls.optional(),
+        reference_audios: referenceUrls.optional(),
         transparent: sanitizedBoolean.catch(false),
         reasoning: z
             .union([z.string(), z.boolean()])
@@ -82,9 +117,12 @@ export const ImageParamsSchema = z
             })
             .catch("balanced"),
         guidance_scale: z.coerce.number().optional().catch(undefined),
-        // Video-specific parameters - pass through to backend, let provider validate
-        duration: z.coerce.number().optional(),
+        // Shared public bound; individual providers can narrow it further below.
+        duration: z.coerce.number().int().min(1).max(120).optional(),
         fps: z.coerce.number().optional(),
+        resolution: z
+            .enum(["1k", "2k", "360p", "480p", "720p", "768p", "1080p", "4k"])
+            .optional(),
         aspectRatio: z
             .enum([
                 "16:9",
@@ -100,12 +138,142 @@ export const ImageParamsSchema = z
         audio: sanitizedBoolean.catch(true), // generateAudio defaults to true
     })
     .superRefine((data, ctx) => {
+        if (data.resolution) {
+            const supported = (IMAGE_SERVICES[data.model] as ModelDefinition)
+                .resolutions;
+            if (!supported?.includes(data.resolution)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["resolution"],
+                    message: supported
+                        ? `Resolution "${data.resolution}" is not supported by ${data.model}. Supported: ${supported.join(", ")}.`
+                        : `${data.model} does not accept a resolution parameter.`,
+                });
+            }
+        }
         if (data.model === "gpt-image-2" && data.transparent) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ["transparent"],
                 message:
                     "Transparent backgrounds are not supported by gpt-image-2.",
+            });
+        }
+        const definition = IMAGE_SERVICES[data.model] as ModelDefinition;
+        const references = [
+            {
+                field: "reference_images" as const,
+                values: data.reference_images ?? [],
+                capability: "reference_images" as const,
+            },
+            {
+                field: "reference_videos" as const,
+                values: data.reference_videos ?? [],
+                capability: "reference_videos" as const,
+            },
+            {
+                field: "reference_audios" as const,
+                values: data.reference_audios ?? [],
+                capability: "reference_audios" as const,
+            },
+        ];
+        for (const { field, values, capability } of references) {
+            if (values.length === 0) continue;
+            if (!definition.videoCapabilities?.includes(capability)) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [field],
+                    message: `${data.model} does not support ${field}.`,
+                });
+            }
+        }
+        if (data.model === "minimax-h3") {
+            if (data.duration !== undefined && data.duration !== 5) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message: "minimax-h3 supports exactly 5 seconds.",
+                });
+            }
+            if (data.aspectRatio !== undefined && data.aspectRatio !== "16:9") {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message: "minimax-h3 currently supports 16:9 only.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message: "minimax-h3 outputs 24 FPS.",
+                });
+            }
+        }
+        if (data.model === "minimax/minimax-h3-max-turbo") {
+            if (
+                data.duration !== undefined &&
+                ![5, 10, 15].includes(data.duration)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message:
+                        "minimax/minimax-h3-max-turbo supports 5, 10, or 15 seconds.",
+                });
+            }
+            if (
+                data.aspectRatio !== undefined &&
+                !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
+                    data.aspectRatio,
+                )
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message:
+                        "minimax/minimax-h3-max-turbo supports 21:9, 16:9, 4:3, 1:1, 3:4, or 9:16.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message:
+                        "minimax/minimax-h3-max-turbo outputs video at 24 FPS.",
+                });
+            }
+        }
+        if (data.model === "google/gemini-omni-1.1-flash") {
+            if (
+                data.aspectRatio !== undefined &&
+                !["16:9", "9:16"].includes(data.aspectRatio)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message:
+                        "google/gemini-omni-1.1-flash supports 16:9 or 9:16.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message:
+                        "google/gemini-omni-1.1-flash outputs video at 24 FPS.",
+                });
+            }
+        }
+        if (
+            data.model === "grok-imagine-image-2.0" &&
+            !["low", "medium"].includes(data.quality)
+        ) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["quality"],
+                message:
+                    "grok-imagine-image-2.0 supports low or medium quality.",
             });
         }
     })
@@ -121,8 +289,13 @@ export const ImageParamsSchema = z
             data.width,
             data.height,
         );
+        const quality = validQualities.includes(
+            data.quality as (typeof validQualities)[number],
+        )
+            ? (data.quality as (typeof validQualities)[number])
+            : "medium";
 
-        return { ...data, width, height, dimensionsExplicit };
+        return { ...data, quality, width, height, dimensionsExplicit };
     });
 
 export type ImageParams = z.infer<typeof ImageParamsSchema>;

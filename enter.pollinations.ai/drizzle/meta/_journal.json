@@ -260,6 +260,181 @@
       "when": 1784063115626,
       "tag": "0036_community_endpoint_visibility",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "6",
+      "when": 1784745559578,
+      "tag": "0037_salty_khan",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "6",
+      "when": 1784972286318,
+      "tag": "0038_slimy_ultimo",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "6",
+      "when": 1785145497278,
+      "tag": "0039_blushing_ultimatum",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "6",
+      "when": 1785331128707,
+      "tag": "0040_fearless_carnage",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "6",
+      "when": 1785349614100,
+      "tag": "0041_material_centennial",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "6",
+      "when": 1785526197552,
+      "tag": "0042_lethal_marvel_apes",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "6",
+      "when": 1785590121639,
+      "tag": "0043_canonicalize-model-permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1785758400000,
+      "tag": "0044_consolidate-model-permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "6",
+      "when": 1785885364700,
+      "tag": "0045_community_provider_profile",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "6",
+      "when": 1786708800000,
+      "tag": "0046_canonicalize-model-permission-aliases",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "6",
+      "when": 1786712400000,
+      "tag": "0047_blushing_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "6",
+      "when": 1786716000000,
+      "tag": "0048_heavy_jimmy_woo",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "6",
+      "when": 1786889023916,
+      "tag": "0049_stormy_franklin_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1787093800020,
+      "tag": "0050_rekey_rewards_to_github_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "6",
+      "when": 1787093808467,
+      "tag": "0051_drop_rewards_github_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 52,
+      "version": "6",
+      "when": 1787225959768,
+      "tag": "0052_redundant_silver_sable",
+      "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "6",
+      "when": 1787239130592,
+      "tag": "0053_listing_envelope",
+      "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "6",
+      "when": 1787318370605,
+      "tag": "0054_canonicalize_midijourney_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "6",
+      "when": 1787648526176,
+      "tag": "0055_rare_doctor_spectrum",
+      "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1788172800000,
+      "tag": "0056_canonicalize_gpt_realtime_2_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1788182587055,
+      "tag": "0057_require-community-titles",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1788203007557,
+      "tag": "0058_rekey_issue_rewards",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1788290821008,
+      "tag": "0059_shared-community-safety",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1788523521324,
+      "tag": "0060_better_auth_1_6",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1788566400000,
+      "tag": "0061_single_text_endpoint",
+      "breakpoints": true
     }
   ]
 }

@@ -22,6 +22,23 @@ type AuthorizeDefaultsInput = {
 export const DEFAULT_CONSENT_BUDGET = 5;
 export const DEFAULT_CONSENT_EXPIRY_DAYS = 7;
 
+const SECONDS_PER_DAY = 24 * 60 * 60;
+
+/**
+ * The expiry field is in days and accepts fractions, but key creation takes
+ * whole seconds (`z.number().int().positive()`), so a fraction landing
+ * mid-second failed validation. Rounding is the whole fix.
+ *
+ * An empty field is the only thing that means "no expiry". Anything invalid
+ * stays invalid and the server rejects it, which the dialogs surface.
+ */
+export function expiryDaysToExpiresIn(
+    expiryDays: number | null | undefined,
+): number | undefined {
+    if (expiryDays == null) return undefined;
+    return Math.round(expiryDays * SECONDS_PER_DAY);
+}
+
 /**
  * An S256 PKCE code_challenge is exactly 43 base64url chars (unpadded
  * SHA-256, RFC 7636 §4.2). Single source of truth for the consent page's

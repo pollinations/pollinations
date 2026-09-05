@@ -219,7 +219,7 @@ npm run dev
 
 ### **🚀 Live Demo**
 
-🎮 **Play Now:** [AI Dungeon Master Live Demo](https://codevector-2003.github.io/pollinations/)
+🎮 **Play Now:** [AI Dungeon Master](https://github.com/pollinations/pollinations/tree/main/apps/ai-dungeon-master)
 
 ### **Production Build**
 

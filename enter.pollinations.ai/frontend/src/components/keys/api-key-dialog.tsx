@@ -215,7 +215,7 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
                                 user&apos;s Pollen.{" "}
                                 <InlineLink
                                     href={genDocsUrl(
-                                        "#tag/bring-your-own-pollen",
+                                        "#tag/connect-user-wallets",
                                     )}
                                 >
                                     Read the guide
@@ -270,20 +270,15 @@ export const ApiKeyDialog: FC<ApiKeyDialogProps> = ({
 
                     {!simplified && !createdKey && (
                         <p className="text-xs text-theme-text-muted">
-                            Publishable keys (<code>pk_</code>) deprecated –
-                            create via{" "}
+                            Raw publishable keys (<code>pk_</code>) are legacy.
+                            For browsers, create an App Key on this dashboard
+                            and use{" "}
                             <InlineLink
-                                href={genDocsUrl(
-                                    "#tag/-account/POST/account/keys",
-                                )}
+                                href={genDocsUrl("#tag/connect-user-wallets")}
                             >
-                                API
-                            </InlineLink>{" "}
-                            or{" "}
-                            <InlineLink href="https://github.com/pollinations/pollinations/tree/main/packages/polli-cli">
-                                polli CLI
+                                Connect User Wallets
                             </InlineLink>
-                            .
+                            — do not mint a raw <code>pk_</code> via the CLI.
                         </p>
                     )}
 

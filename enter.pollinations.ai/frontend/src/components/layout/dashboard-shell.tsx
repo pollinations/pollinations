@@ -1,5 +1,7 @@
 import {
+    AccountIcon,
     BookIcon,
+    BugIcon,
     CheckIcon,
     ChevronIcon,
     Chip,
@@ -16,6 +18,7 @@ import {
     MenuIcon,
     NavItem,
     ScrollArea,
+    SignOutIcon,
     TerminalIcon,
     useScrollLock,
     WalletIcon,
@@ -60,6 +63,7 @@ type DashboardShellProps = PropsWithChildren<{
     onSignOut?: () => void;
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    showFooterLinks?: boolean;
 }>;
 
 type BrandLink = {
@@ -103,14 +107,14 @@ const brandLinks: readonly BrandLink[] = [
         label: "Pollinations on GitHub",
         icon: <GitHubIcon className="h-full w-full" />,
         text: "github",
-        count: "4.4k",
+        count: "5k",
     },
     {
         href: "https://discord.gg/pollinations-ai-885844321461485618",
         label: "Discord community",
         icon: <DiscordIcon className="h-full w-full" />,
         text: "discord",
-        count: "18k",
+        count: "19k",
     },
 ];
 
@@ -122,16 +126,16 @@ const footerLinks: readonly FooterLink[] = [
 
 const accountMenuLinks: readonly AccountMenuLink[] = [
     {
-        href: "https://discord.com/channels/885844321461485618/1432378056126894343",
-        label: "#pollen-beta",
+        href: "https://discord.com/channels/885844321461485618/889573359111774329",
+        label: "Get Help",
         icon: <DiscordIcon className="h-full w-full" />,
-        ariaLabel: "#pollen-beta Discord channel",
+        ariaLabel: "Get help in the Discord community chat",
     },
     {
         href: "https://github.com/pollinations/pollinations/issues",
-        label: "Report an issue",
-        icon: <GitHubIcon className="h-full w-full" />,
-        ariaLabel: "Report an issue on GitHub",
+        label: "Report a Bug",
+        icon: <BugIcon className="h-full w-full" />,
+        ariaLabel: "Report a bug on GitHub",
     },
 ];
 
@@ -142,6 +146,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     onSignOut,
     accountArea,
     walletArea,
+    showFooterLinks = true,
     children,
 }) => {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -149,10 +154,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
     const menuButtonRef = useRef<HTMLButtonElement>(null);
     const mainScrollRef = useRef<HTMLDivElement>(null);
     const location = useRouterState({ select: (state) => state.location });
-    const activeNavItem =
-        DASHBOARD_NAV_ITEMS.find((item) => item.to === location.pathname) ??
-        DASHBOARD_NAV_ITEMS[0];
-    const activePage = activeNavItem.id;
+    const activeNavItem = DASHBOARD_NAV_ITEMS.find(
+        (item) => item.to === location.pathname,
+    );
+    const activePage = activeNavItem?.id;
+    const activePageLabel =
+        location.pathname === "/account"
+            ? "Account"
+            : (activeNavItem?.label ?? "Dashboard");
 
     useDashboardShellBodyClass();
     useScrollLock(isDrawerOpen);
@@ -162,7 +171,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             location.pathname,
             window.location.origin,
         ).toString();
-        const title = `${activeNavItem.label} | pollinations.ai`;
+        const title = `${activePageLabel} | pollinations.ai`;
         document.title = title;
         document
             .querySelector('link[rel="canonical"]')
@@ -176,7 +185,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
         document
             .querySelector('meta[name="twitter:title"]')
             ?.setAttribute("content", title);
-    }, [activeNavItem.label, location.pathname]);
+    }, [activePageLabel, location.pathname]);
 
     const closeDrawer = useCallback(() => {
         const activeElement = document.activeElement;
@@ -233,8 +242,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "BYOP",
-            href: `${genDocsUrl()}#tag/byop`,
+            label: "Connect User Wallets",
+            href: `${genDocsUrl()}#tag/connect-user-wallets`,
             icon: (
                 <WalletIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -247,8 +256,8 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             ),
         },
         {
-            label: "MCP Server",
-            href: `${genDocsUrl()}#tag/mcp-server`,
+            label: "MCP Servers",
+            href: `${genDocsUrl()}#tag/mcp-servers`,
             icon: (
                 <McpIcon className="h-3.5 w-3.5 shrink-0 text-theme-text-muted" />
             ),
@@ -262,6 +271,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 username={githubUsername}
                 avatarUrl={githubAvatarUrl ?? ""}
                 onSignOut={onSignOut}
+                onNavigate={closeDrawer}
                 links={accountMenuLinks}
                 className="w-full justify-start"
             />
@@ -289,17 +299,18 @@ export const DashboardShell: FC<DashboardShellProps> = ({
             supportLinks={supportLinks}
             accountArea={effectiveAccountArea}
             walletArea={walletArea}
+            showFooterLinks={showFooterLinks}
             onNavigate={closeDrawer}
         />
     );
 
     return (
         <div className="flex h-dvh overflow-hidden bg-app-bg text-theme-text-strong">
-            <div className="hidden md:block">{rail}</div>
+            <div className="hidden lg:block">{rail}</div>
             <div
                 ref={drawerRef}
                 className={cn(
-                    "fixed inset-0 z-40 transition-[visibility] md:hidden",
+                    "fixed inset-0 z-40 transition-[visibility] lg:hidden",
                     isDrawerOpen
                         ? "pointer-events-auto visible delay-0"
                         : "pointer-events-none invisible delay-[420ms]",
@@ -319,7 +330,7 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                 />
                 <div
                     className={cn(
-                        "absolute inset-y-0 left-0 flex w-[min(20rem,86vw)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
+                        "absolute inset-y-0 left-0 flex w-[clamp(14.5rem,76vw,17rem)] transform-gpu flex-col overflow-hidden border-r border-theme-text-strong/10 bg-app-bg shadow-xl transition-transform ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform",
                         "duration-[420ms]",
                         isDrawerOpen ? "translate-x-0" : "-translate-x-full",
                     )}
@@ -343,14 +354,14 @@ export const DashboardShell: FC<DashboardShellProps> = ({
                     </div>
                 </div>
             </div>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
+            <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
                 <MobileMenuButton
                     buttonRef={menuButtonRef}
                     onOpen={() => setIsDrawerOpen(true)}
                 />
                 <ScrollArea
                     ref={mainScrollRef}
-                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 md:px-6 md:pt-10"
+                    className="min-h-0 min-w-0 flex-1 overscroll-contain px-4 pt-14 pb-8 lg:px-6 lg:pt-10"
                 >
                     <main className="mx-auto flex max-w-[800px] flex-col gap-6">
                         {children}
@@ -373,12 +384,13 @@ function useDashboardShellBodyClass(): void {
 }
 
 type DashboardRailProps = {
-    activePage: DashboardPage;
+    activePage?: DashboardPage;
     navItems: readonly DashboardNavItem[];
     supportAction: SupportAction;
     supportLinks: readonly SupportLink[];
     accountArea?: ReactNode;
     walletArea?: ReactNode;
+    showFooterLinks: boolean;
     onNavigate: () => void;
 };
 
@@ -389,14 +401,15 @@ const DashboardRail: FC<DashboardRailProps> = ({
     supportLinks,
     accountArea,
     walletArea,
+    showFooterLinks,
     onNavigate,
 }) => (
     <aside
         data-theme="neutral"
-        className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
+        className="flex min-h-0 flex-1 flex-col px-2 py-4 lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-60 lg:border-r lg:border-theme-text-strong/10"
         aria-label="Dashboard navigation"
     >
-        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 md:flex">
+        <div className="hidden shrink-0 flex-col gap-2 border-b border-theme-text-strong/10 pb-4 pl-1 lg:flex">
             <BrandMark size="desktop" />
             <BrandLinks links={brandLinks} />
         </div>
@@ -409,7 +422,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
                 } as CSSProperties
             }
         >
-            <nav className="flex flex-col gap-1 pr-2">
+            <nav className="flex flex-col gap-1">
                 {navItems.map((item) => (
                     <NavItem
                         as={Link}
@@ -421,13 +434,13 @@ const DashboardRail: FC<DashboardRailProps> = ({
                         onClick={onNavigate}
                     >
                         {item.label}
-                        {item.id === "quests" && (
+                        {(item.id === "my-models" || item.id === "quests") && (
                             <Chip
                                 intent="neutral"
                                 size="sm"
                                 className="ml-auto bg-transparent text-theme-text-soft"
                             >
-                                New!
+                                {item.id === "quests" ? "3 new!" : "New!"}
                             </Chip>
                         )}
                     </NavItem>
@@ -438,7 +451,7 @@ const DashboardRail: FC<DashboardRailProps> = ({
         <div className="flex shrink-0 flex-col gap-2 border-t border-theme-text-strong/10 pt-4">
             {walletArea && <div className="px-1">{walletArea}</div>}
             {accountArea}
-            <DashboardFooter links={footerLinks} note="© 2026 Myceli.AI" />
+            <DashboardFooter links={showFooterLinks ? footerLinks : []} />
         </div>
     </aside>
 );
@@ -450,7 +463,7 @@ const MobileMenuButton: FC<{
     <button
         ref={buttonRef}
         type="button"
-        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+        className="fixed left-3 top-3 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque lg:hidden"
         onClick={onOpen}
         aria-label="Open navigation"
     >
@@ -558,36 +571,35 @@ const SupportLinkRow: FC<SupportLink> = ({ label, href, icon }) => (
 
 const DashboardFooter: FC<{
     links: readonly FooterLink[];
-    note?: ReactNode;
-}> = ({ links, note }) => (
-    <>
-        <div className="flex flex-wrap gap-x-2 gap-y-1 px-3 text-xs leading-snug text-theme-text-muted">
-            {links.map((link) => (
-                <a
-                    key={link.href}
-                    href={link.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="transition-colors hover:text-theme-text-strong"
-                >
-                    {link.label}
-                </a>
-            ))}
-        </div>
-        <div className="flex items-center justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
-            <span>{note}</span>
-            {/* accent on the toggle's active icon, over the neutral rail */}
-            <span data-theme="accent">
-                <ColorModeToggle />
-            </span>
-        </div>
-    </>
+}> = ({ links }) => (
+    <div className="flex items-end justify-between gap-2 pl-3 text-xs leading-none text-theme-text-muted">
+        {links.length > 0 && (
+            <div className="flex flex-wrap gap-x-2 gap-y-1 leading-snug">
+                {links.map((link) => (
+                    <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="transition-colors hover:text-theme-text-strong"
+                    >
+                        {link.label}
+                    </a>
+                ))}
+            </div>
+        )}
+        {/* accent on the toggle's active icon, over the neutral rail */}
+        <span data-theme="accent" className="ml-auto shrink-0">
+            <ColorModeToggle />
+        </span>
+    </div>
 );
 
 type AccountMenuButtonProps = {
     username: string;
     avatarUrl: string;
     onSignOut?: () => void;
+    onNavigate?: () => void;
     links?: readonly AccountMenuLink[];
     className?: string;
 };
@@ -596,6 +608,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     username,
     avatarUrl,
     onSignOut,
+    onNavigate,
     links = [],
     className,
 }) => (
@@ -634,15 +647,33 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 {links.length > 0 && (
                     <div className="my-1 border-t border-divider" />
                 )}
+                <Link
+                    to="/account"
+                    onClick={() => {
+                        close();
+                        onNavigate?.();
+                    }}
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-theme-text-strong transition-colors hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                >
+                    <AccountIcon
+                        className="h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>Account</span>
+                </Link>
                 <button
                     type="button"
                     onClick={() => {
                         close();
                         onSignOut?.();
                     }}
-                    className="flex w-full cursor-pointer items-center rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-left text-sm text-theme-text-strong hover:bg-theme-bg-hover focus:outline-none focus-visible:bg-theme-bg-hover"
                 >
-                    Sign Out
+                    <SignOutIcon
+                        className="h-4 w-4 shrink-0"
+                        aria-hidden="true"
+                    />
+                    <span>Sign Out</span>
                 </button>
             </>
         )}

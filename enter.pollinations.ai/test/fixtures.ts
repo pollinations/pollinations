@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { apiKeyClient } from "@better-auth/api-key/client";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
@@ -9,9 +10,10 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createAuthClient } from "better-auth/client";
-import { adminClient, apiKeyClient } from "better-auth/client/plugins";
+import { adminClient } from "better-auth/client/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
+import { createMockDiscord } from "./mocks/discord.ts";
 import { createMockGithub } from "./mocks/github.ts";
 import { createMockStripe } from "./mocks/stripe.ts";
 
@@ -27,6 +29,7 @@ const createAuthClientInstance = () =>
 
 const createMocks = () => ({
     tinybird: createMockTinybird(),
+    discord: createMockDiscord(),
     github: createMockGithub(),
     stripe: createMockStripe(),
 });
@@ -60,7 +63,11 @@ type SignupData = {
  */
 export const createApiKeyViaApi = async (
     sessionToken: string,
-    options: { name: string; type?: "secret" | "publishable" },
+    options: {
+        name: string;
+        type?: "secret" | "publishable";
+        allowedModels?: string[];
+    },
 ) => {
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/keys",
@@ -219,21 +226,14 @@ export const test = base.extend<Fixtures>({
      * Creates an API key with zero pollen budget (exhausted).
      * Uses the /api/api-keys/:id/update endpoint to set pollenBudget to 0.
      */
-    exhaustedBudgetApiKey: async ({ auth, sessionToken }, use) => {
-        const createApiKeyResponse = await auth.apiKey.create({
+    exhaustedBudgetApiKey: async ({ sessionToken }, use) => {
+        const created = await createApiKeyViaApi(sessionToken, {
             name: "exhausted-budget-key",
-            fetchOptions: {
-                headers: {
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
-                },
-            },
         });
-        if (!createApiKeyResponse.data)
-            throw new Error("Failed to create exhausted budget API key");
 
         // Set pollenBudget to 0 via the API endpoint
         const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${createApiKeyResponse.data.id}/update`,
+            `http://localhost:3000/api/api-keys/${created.id}/update`,
             {
                 method: "POST",
                 headers: {
@@ -251,27 +251,20 @@ export const test = base.extend<Fixtures>({
             );
         }
 
-        await use(createApiKeyResponse.data.key);
+        await use(created.key);
     },
     /**
      * Creates an API key with 100 pollen budget for testing decrement.
      * Returns both key and id so tests can verify balance changes.
      */
-    budgetedApiKey: async ({ auth, sessionToken }, use) => {
-        const createApiKeyResponse = await auth.apiKey.create({
+    budgetedApiKey: async ({ sessionToken }, use) => {
+        const created = await createApiKeyViaApi(sessionToken, {
             name: "budgeted-test-key",
-            fetchOptions: {
-                headers: {
-                    "Cookie": `better-auth.session_token=${sessionToken}`,
-                },
-            },
         });
-        if (!createApiKeyResponse.data)
-            throw new Error("Failed to create budgeted API key");
 
         // Set pollenBudget to 100 via the API endpoint
         const updateResponse = await SELF.fetch(
-            `http://localhost:3000/api/api-keys/${createApiKeyResponse.data.id}/update`,
+            `http://localhost:3000/api/api-keys/${created.id}/update`,
             {
                 method: "POST",
                 headers: {
@@ -290,8 +283,8 @@ export const test = base.extend<Fixtures>({
         }
 
         await use({
-            key: createApiKeyResponse.data.key,
-            id: createApiKeyResponse.data.id,
+            key: created.key,
+            id: created.id,
         });
     },
 });

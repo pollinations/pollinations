@@ -1,14 +1,22 @@
-import type { CommunityEndpointRuntime } from "@shared/community-endpoints.ts";
+import {
+    type CommunityEndpointRuntime,
+    usesAgentRunToken,
+} from "@shared/community-endpoints.ts";
 import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
+import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
-import { getGenerationModelRegistry } from "../model-registry.ts";
+import {
+    type GenerationModelEntry,
+    getGenerationModelRegistry,
+} from "../model-registry.ts";
 import type { AuthVariables } from "./auth.ts";
 
 const ENDPOINT_LABEL: Record<EventType, string> = {
@@ -26,14 +34,37 @@ export type ModelVariables = {
         /** The resolved canonical model name */
         resolved: string;
         /** Static registry definition, or a dynamic definition resolved from D1. */
-        definition: ModelDefinition<string>;
+        definition: ModelDefinition;
         communityEndpoint?: CommunityEndpointRuntime;
+        /**
+         * Extra cache-key scope for models whose output is not shareable
+         * between callers. Unset means the response is cacheable platform-wide,
+         * which is the default for every static and external community model.
+         */
+        cacheScope?: string;
+        /** Entry that serves the request when this model's upstream fails. */
+        fallbackEntries?: GenerationModelEntry[];
     };
     formData?: FormData;
 };
 
+/** Required checks for every provider this request may reach. */
+export function getRequiredSafetyFeatures(
+    model: ModelVariables["model"] | undefined,
+): SafetyFeature[] {
+    const features = new Set(model?.definition.requiredSafetyFeatures ?? []);
+    for (const fallback of model?.fallbackEntries ?? []) {
+        for (const feature of fallback.definition.requiredSafetyFeatures ??
+            []) {
+            features.add(feature);
+        }
+    }
+    return [...features].sort();
+}
+
 type ResolveModelOptions = {
     defaultModel?: string;
+    supportedEndpoint?: string;
 };
 
 function hasJsonContentType(contentType: string): boolean {
@@ -55,10 +86,19 @@ export async function resolveModelDefinition(
     eventType: EventType,
     env: CloudflareBindings,
     callerUserId?: string,
+    supportedEndpoint?: string,
 ): Promise<ModelVariables["model"]> {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
     if (!entry) {
+        throw new HTTPException(400, {
+            message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
+        });
+    }
+
+    // Provider routes are registry entries so fallback linking and billing can
+    // use them, but callers must select the public model they belong to.
+    if (entry.definition.fallbackOnly === true) {
         throw new HTTPException(400, {
             message: `Invalid model or alias: "${model}". Must be a valid model name or alias.`,
         });
@@ -84,6 +124,19 @@ export async function resolveModelDefinition(
             message: `Model "${model}" is a ${actualLabel} model and cannot be used on the ${ENDPOINT_LABEL[eventType]} endpoint. Use the ${actualLabel} endpoint instead.`,
         });
     }
+    if (entry.definition.supportedEndpoints && !supportedEndpoint) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" is available only on: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
+    if (
+        supportedEndpoint &&
+        !entry.supportedEndpoints.includes(supportedEndpoint)
+    ) {
+        throw new HTTPException(400, {
+            message: `Model "${model}" cannot be used on ${supportedEndpoint}. Supported endpoints: ${entry.supportedEndpoints.join(", ")}.`,
+        });
+    }
 
     return {
         requested: model,
@@ -91,6 +144,15 @@ export async function resolveModelDefinition(
         definition: entry.definition,
         ...(entry.communityEndpoint && {
             communityEndpoint: entry.communityEndpoint,
+        }),
+        // An agent run executes tools and spends the caller's balance, so its
+        // answer belongs to that caller and must never be replayed to another.
+        ...(entry.communityEndpoint &&
+            usesAgentRunToken(entry.communityEndpoint) && {
+                cacheScope: `agent:${entry.id}`,
+            }),
+        ...(entry.fallbackEntries && {
+            fallbackEntries: entry.fallbackEntries,
         }),
     };
 }
@@ -156,15 +218,28 @@ export function resolveModel(
         // routes, so the caller identity is available to gate private
         // endpoints. If it isn't (unauthenticated path), callerUserId is
         // undefined and a private endpoint fails closed — never exposed.
-        c.set(
-            "model",
-            await resolveModelDefinition(
-                model,
-                eventType,
-                c.env,
-                c.var.auth?.user?.id,
-            ),
+        const resolved = await resolveModelDefinition(
+            model,
+            eventType,
+            c.env,
+            c.var.auth?.user?.id,
+            options?.supportedEndpoint,
         );
+        // Fallback-only entries are provider implementations of the public
+        // model the caller selected, so they inherit that model's permission.
+        // Visible and community targets remain independently scoped: a key can
+        // never be served — or billed for — a model it could not call directly.
+        const allowedModels = c.var.auth?.apiKey?.permissions?.models;
+        if (allowedModels && resolved.fallbackEntries) {
+            resolved.fallbackEntries = resolved.fallbackEntries.filter(
+                (entry) =>
+                    (entry.definition.fallbackOnly === true &&
+                        !entry.communityEndpoint) ||
+                    allowedModels.includes(entry.id),
+            );
+        }
+        c.set("model", resolved);
+        c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();
     });
 }

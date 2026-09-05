@@ -7,25 +7,24 @@
  * supplied:
  *   - wan-fast → wan-2.2-t2v-fast / wan-2.2-i2v-fast  (480p, ~5s, silent)
  *   - wan      → wan-2.6-t2v      / wan-2.6-i2v       (720p, native audio)
- *   - wan-pro  → wan-2.7-t2v      / wan-2.7-i2v       (720p, native audio)
+ *   - wan-pro  → wan-2.7-t2v / wan-2.7-i2v / wan-2.7-r2v (720p or 1080p)
  *
- * ONE PRICE PER MODEL: Replicate prices Wan video per-second by resolution
- * (720p vs 1080p) — so each model is LOCKED to a single resolution to keep a
- * single rate. wan/wan-pro lock to 720p ($0.10/s, audio bundled); wan-fast
- * locks to 480p (flat $0.05 per fixed-length clip). 1080p, if ever wanted,
- * would be a separate model. This mirrors the Seedance 720p-locked convention.
+ * Replicate prices Wan video per-second by mode and resolution. wan-pro exposes
+ * T2V, I2V, and R2V through one public model ID. Billing selects the matching
+ * rate from the request resolution and whether an input frame routed to I2V.
+ * R2V (reference_images / reference_videos) is $0.10/s, same as T2V.
  */
 
+import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
-    ReplicateError,
     runReplicatePrediction,
+    toReplicateHttpError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -34,8 +33,10 @@ const logError = debug("pollinations:wan:error");
 interface WanVariantConfig {
     t2vModel: string;
     i2vModel: string;
+    r2vModel?: string;
     trackingName: string;
     displayName: string;
+    predictionDeadlineMinutes?: number;
     /**
      * Build the Replicate input for the chosen mode. `frames` holds the
      * already-downloaded data URIs: frames[0] = first frame, frames[1] = last.
@@ -60,6 +61,8 @@ const WAN_FAST_FIXED_SECONDS = 5;
 const WAN_26_DURATIONS = [5, 10, 15] as const;
 const WAN_PRO_MIN_DURATION = 2;
 const WAN_PRO_MAX_DURATION = 15;
+const WAN_PRO_R2V_MAX_DURATION = 10;
+const WAN_PRO_PREDICTION_DEADLINE_MINUTES = 15;
 
 /** Pick the supported aspect ratio closest to the request. */
 function pickAspect<T extends string>(
@@ -95,7 +98,7 @@ function withSeed(
     input: Record<string, unknown>,
     safeParams: ImageParams,
 ): Record<string, unknown> {
-    if (safeParams.seed !== undefined && safeParams.seed !== -1) {
+    if (safeParams.seed !== undefined) {
         input.seed = safeParams.seed;
     }
     return input;
@@ -153,9 +156,8 @@ const WAN_26_CONFIG: WanVariantConfig = {
     },
 };
 
-// Wan 2.7 is offered at two locked resolutions as separate models (one price
-// each): wan-pro @720p ($0.10/s) and wan-pro-1080p @1080p ($0.15/s). The t2v/i2v
-// schemas are identical apart from the resolution value, so share a factory.
+// Wan 2.7 uses one public model for both supported resolutions. The upstream
+// still has separate T2V and I2V routes, selected from the input frames.
 function makeWan27Config(
     resolution: "720p" | "1080p",
     trackingName: string,
@@ -163,8 +165,10 @@ function makeWan27Config(
     return {
         t2vModel: "wan-video/wan-2.7-t2v",
         i2vModel: "wan-video/wan-2.7-i2v",
+        r2vModel: "wan-video/wan-2.7-r2v",
         trackingName,
         displayName: `Wan 2.7${resolution === "1080p" ? " 1080p" : ""}`,
+        predictionDeadlineMinutes: WAN_PRO_PREDICTION_DEADLINE_MINUTES,
         resolveDuration: (p) =>
             Math.max(
                 WAN_PRO_MIN_DURATION,
@@ -198,7 +202,7 @@ function makeWan27Config(
 }
 
 const WAN_27_CONFIG = makeWan27Config("720p", "wan-pro");
-const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro-1080p");
+const WAN_27_1080P_CONFIG = makeWan27Config("1080p", "wan-pro");
 
 async function generateWanVideo(
     config: WanVariantConfig,
@@ -206,19 +210,64 @@ async function generateWanVideo(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const images = safeParams.image ?? [];
-    if (images.length > 2) {
+    const hasFrames = images.length > 0;
+    const hasReference =
+        (safeParams.reference_images?.length ?? 0) > 0 ||
+        (safeParams.reference_videos?.length ?? 0) > 0;
+
+    if (hasFrames && hasReference) {
         throw new HttpError(
-            `${config.displayName} supports at most two frames: image[0] as first frame and image[1] as last frame.`,
+            "Frame inputs (image[]) and reference media (reference_images, reference_videos) cannot be combined.",
             400,
         );
     }
-    const mode: "t2v" | "i2v" = images.length > 0 ? "i2v" : "t2v";
-    const model = mode === "i2v" ? config.i2vModel : config.t2vModel;
 
-    const frames =
-        images.length > 0 ? await Promise.all(images.map(toDataUri)) : [];
-    const input = config.buildInput(mode, prompt, safeParams, frames);
-    const requestedDuration = config.resolveDuration(safeParams);
+    let model: string;
+    let input: Record<string, unknown>;
+    let requestedDuration: number;
+    let mode: string;
+
+    if (hasReference) {
+        if (!config.r2vModel) {
+            throw new HttpError(
+                `${config.displayName} does not support reference-to-video.`,
+                400,
+            );
+        }
+        model = config.r2vModel;
+        mode = "r2v";
+        requestedDuration = Math.max(
+            WAN_PRO_MIN_DURATION,
+            Math.min(
+                WAN_PRO_R2V_MAX_DURATION,
+                Math.floor(safeParams.duration ?? 5),
+            ),
+        );
+        input = withSeed(
+            {
+                prompt,
+                resolution: safeParams.resolution ?? "720p",
+                aspect_ratio: pickAspect(safeParams, WAN_PRO_RATIOS),
+                duration: requestedDuration,
+                ...(safeParams.reference_images?.length
+                    ? { reference_images: safeParams.reference_images }
+                    : {}),
+                ...(safeParams.reference_videos?.length
+                    ? { reference_videos: safeParams.reference_videos }
+                    : {}),
+            },
+            safeParams,
+        );
+    } else {
+        const frameMode: "t2v" | "i2v" = hasFrames ? "i2v" : "t2v";
+        model = frameMode === "i2v" ? config.i2vModel : config.t2vModel;
+        mode = frameMode;
+        const frames = hasFrames
+            ? await Promise.all(images.map(toDataUri))
+            : [];
+        input = config.buildInput(frameMode, prompt, safeParams, frames);
+        requestedDuration = config.resolveDuration(safeParams);
+    }
 
     logOps(`${config.displayName} (${mode}) input:`, {
         ...input,
@@ -227,6 +276,12 @@ async function generateWanVideo(
         first_frame: input.first_frame ? "[data uri]" : undefined,
         last_image: input.last_image ? "[data uri]" : undefined,
         last_frame: input.last_frame ? "[data uri]" : undefined,
+        reference_images: input.reference_images
+            ? `[${(input.reference_images as string[]).length} urls]`
+            : undefined,
+        reference_videos: input.reference_videos
+            ? `[${(input.reference_videos as string[]).length} urls]`
+            : undefined,
     });
 
     let videoUrl: string;
@@ -235,6 +290,7 @@ async function generateWanVideo(
         const result = await runReplicatePrediction<typeof input, string>({
             model,
             input,
+            predictionDeadlineMinutes: config.predictionDeadlineMinutes,
         });
         videoUrl = result.output;
         actualDurationSeconds = result.videoOutputDurationSeconds;
@@ -245,13 +301,10 @@ async function generateWanVideo(
         });
     } catch (err) {
         logError(`${config.displayName} prediction call failed:`, err);
-        if (err instanceof ReplicateError) {
-            throw new HttpError(
-                `${config.displayName} generation failed: ${err.message}`,
-                err.status ?? 500,
-            );
-        }
-        throw err;
+        throw toReplicateHttpError(
+            err,
+            `${config.displayName} generation failed`,
+        );
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {
@@ -298,18 +351,12 @@ export function callWanFastAPI(
     return generateWanVideo(WAN_FAST_CONFIG, prompt, safeParams);
 }
 
-/** Wan 2.7 via Replicate — T2V / I2V at 720p with native audio + keyframes. */
+/** Wan 2.7 via Replicate — T2V / I2V with native audio + keyframes. */
 export function callWanProAPI(
     prompt: string,
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
-    return generateWanVideo(WAN_27_CONFIG, prompt, safeParams);
-}
-
-/** Wan 2.7 via Replicate at locked 1080p (billed at the higher i2v rate). */
-export function callWanPro1080pAPI(
-    prompt: string,
-    safeParams: ImageParams,
-): Promise<VideoGenerationResult> {
-    return generateWanVideo(WAN_27_1080P_CONFIG, prompt, safeParams);
+    const config =
+        safeParams.resolution === "1080p" ? WAN_27_1080P_CONFIG : WAN_27_CONFIG;
+    return generateWanVideo(config, prompt, safeParams);
 }

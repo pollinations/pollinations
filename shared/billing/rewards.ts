@@ -3,14 +3,27 @@ import type { DrizzleD1Database } from "drizzle-orm/d1";
 import type * as schema from "../db/better-auth.ts";
 import { rewards, user as userTable } from "../db/better-auth.ts";
 import type { Bucket } from "./deduction.ts";
+import { POLLEN_BILLING_PRECISION } from "./precision.ts";
 
 export const MAX_REWARD_AMOUNT = 10_000;
+
+/**
+ * Idempotency key for a reward one person can earn once. Keyed on the GitHub
+ * id, which outlives the account row, so a deleted-and-recreated account
+ * cannot earn it again.
+ */
+export function rewardKey(questId: string, githubId: number | null): string {
+    if (githubId === null) {
+        throw new Error(`Reward ${questId} requires a GitHub identity`);
+    }
+    return `quest:${questId}:github:${githubId}`;
+}
 
 export interface RecordRewardInput {
     /**
      * Idempotency guard. Must be deterministic for the logical reward so retries
      * never create duplicates; encodes the quest's completion scope, e.g.
-     * "quest:{issue}" or "quest:{questId}:user:{userId}".
+     * "quest:{issue}" or rewardKey().
      */
     idempotencyKey: string;
     userId: string;
@@ -56,11 +69,6 @@ function assertRewardAmount(amount: number): void {
     }
 }
 
-// D1 binds every value as a parameter and caps a statement at 100 bound
-// variables. Each reward row binds 8 columns, so 12 rows (96 params) is the
-// largest safe chunk.
-const REWARD_INSERT_CHUNK = 12;
-
 /**
  * Records earned rewards without moving pollen. The unique idempotency key
  * makes scanner retries safe; only claimReward() credits the user's balance.
@@ -89,16 +97,23 @@ export async function recordRewards(
         };
     });
 
-    const rewardIds: string[] = [];
-    for (let i = 0; i < rows.length; i += REWARD_INSERT_CHUNK) {
-        const chunk = rows.slice(i, i + REWARD_INSERT_CHUNK);
-        const inserted = await db
+    // Keep each insert as a separate statement so its bound parameter count is
+    // independent of the number of rewards. D1 executes the statements in one
+    // transactional batch, avoiding extra database round trips.
+    const statements = rows.map((row) =>
+        db
             .insert(rewards)
-            .values(chunk)
-            .onConflictDoNothing({ target: rewards.idempotencyKey })
-            .returning({ id: rewards.id });
-        rewardIds.push(...inserted.map((row) => row.id));
-    }
+            .values(row)
+            .onConflictDoNothing({ target: rewards.idempotencyKey }),
+    );
+    const [firstStatement, ...remainingStatements] = statements;
+    if (!firstStatement) return { recorded: 0, rewardIds: [] };
+
+    const results = await db.batch([firstStatement, ...remainingStatements]);
+    const rewardIds = rows.flatMap((row, index) => {
+        const result = results[index] as D1Result | undefined;
+        return result?.meta.changes ? [row.id] : [];
+    });
 
     return {
         recorded: rewardIds.length,
@@ -147,7 +162,7 @@ export async function claimReward(
         db
             .update(userTable)
             .set({
-                [`${row.balanceBucket}Balance`]: sql`COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}`,
+                [`${row.balanceBucket}Balance`]: sql`ROUND(COALESCE(${bucketColumn}, 0) + ${row.pollenAmount}, ${POLLEN_BILLING_PRECISION})`,
             })
             .where(sql`${userTable.id} = ${userId} AND changes() = 1`)
             .returning({ newBalance: bucketColumn }),

@@ -20,6 +20,21 @@ export const CODE_SAMPLES: Record<
   }'`,
         },
     ],
+    "post /account/my-models/endpoint-agents": [
+        {
+            label: "Create endpoint agent",
+            lang: "Shell",
+            source: `curl https://gen.pollinations.ai/account/my-models/endpoint-agents \
+  -H "Authorization: Bearer YOUR_SECRET_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "my-agent",
+    "title": "My Agent",
+    "api": "responses",
+    "url": "https://agent.example.com/v1/responses"
+  }'`,
+        },
+    ],
     "post /v1/chat/completions": [
         {
             label: "cURL",
@@ -175,10 +190,6 @@ curl "https://gen.pollinations.ai/audio/Hello%20world?voice=nova" \\
 
 # Generate music (ElevenLabs)
 curl "https://gen.pollinations.ai/audio/upbeat%20jazz?model=elevenmusic&duration=30" \\
-  -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3
-
-# Generate music (ACE-Step, open-source)
-curl "https://gen.pollinations.ai/audio/brazilian%20berimbau%20instrumental?model=acestep&duration=15" \\
   -H "Authorization: Bearer YOUR_API_KEY" -o music.mp3`,
         },
         {
@@ -526,18 +537,30 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
+                aliases: [],
+                category: "text",
+                community: false,
+                title: "OpenAI",
             },
             {
                 id: "claude",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
+                aliases: [],
+                category: "text",
+                community: false,
+                title: "Claude",
             },
             {
                 id: "gemini",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",
+                aliases: [],
+                category: "text",
+                community: false,
+                title: "Gemini",
             },
         ],
     },

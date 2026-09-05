@@ -32,7 +32,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                 "./test/setup/apply-migrations.ts",
                 "./test/setup/rejection-handler.ts",
             ],
-            exclude: [...configDefaults.exclude, "test/e2e/**"],
+            exclude: [...configDefaults.exclude, "test/e2e/**", "scripts/**"],
             reporters: ["default"],
             teardownTimeout: 5000,
             poolOptions: {
@@ -45,6 +45,62 @@ export default defineWorkersConfig(async ({ mode }) => {
                     miniflare: {
                         bindings: {
                             TEST_MIGRATIONS: migrations,
+                        },
+                        serviceBindings: {
+                            COMPOSIO_MCP: async (request: Request) => {
+                                const userId = request.headers.get(
+                                    "x-pollinations-user-id",
+                                );
+                                if (!userId) {
+                                    return Response.json(
+                                        { message: "Missing user" },
+                                        { status: 401 },
+                                    );
+                                }
+                                const url = new URL(request.url);
+                                if (url.pathname === "/connections") {
+                                    if (request.method === "POST") {
+                                        return Response.json({
+                                            redirectUrl:
+                                                "https://connect.composio.test/link",
+                                        });
+                                    }
+                                    return Response.json({
+                                        data: [
+                                            {
+                                                id: "ca_test",
+                                                toolkit: "github",
+                                                name: "GitHub",
+                                                logo: "https://logos.composio.test/github",
+                                                alias: null,
+                                                status: "ACTIVE",
+                                                userId,
+                                            },
+                                        ],
+                                    });
+                                }
+                                if (url.pathname === "/toolkits") {
+                                    return Response.json({
+                                        data: [
+                                            {
+                                                slug: "github",
+                                                name: "GitHub",
+                                                description: "Code hosting",
+                                                logo: null,
+                                            },
+                                        ],
+                                    });
+                                }
+                                if (
+                                    request.method === "DELETE" &&
+                                    url.pathname === "/connections/ca_test"
+                                ) {
+                                    return new Response(null, { status: 204 });
+                                }
+                                return new Response("Not found", {
+                                    status: 404,
+                                });
+                            },
                         },
                     },
                 },

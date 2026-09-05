@@ -8,39 +8,39 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /v1/models` | All models in OpenAI-compatible format (`{object: "list", data: [...]}`) |
 | `GET /text/models` | Text models with pricing, context window, tool support |
 | `GET /image/models` | Image & video models with capabilities and pricing |
+| `GET /video/models` | Video models with capabilities and pricing |
 | `GET /audio/models` | Audio models with supported voices |
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
+
+### Query Parameters
+
+All model discovery endpoints accept an optional `community` query parameter:
+
+| Parameter | Values | Behaviour |
+|-----------|--------|-----------|
+| *(omitted)* | | Returns all models (default, backward-compatible) |
+| `community=false` | `false`, `0` | Excludes community models — returns official models only |
+| `community=true` | `true`, `1` | Returns community models only |
+
+Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+
+Example: `GET /models?community=false`
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
 Modalities, video frame controls, voices, and context length remain separate
 structured fields.
 
-## Community Models (Alpha)
+Use `supported_endpoints` to discover which public API routes accept each
+model. `/v1/responses` identifies built-in models with a configured native
+Responses route, community text models and endpoint agents whose owner supplied
+the Responses API and one exact URL, and managed prompt agents. These community
+models and agents also accept `/v1/chat/completions` through the shared adapter.
+Built-in models may use separate upstream routes for Chat and Responses.
 
-Community models are user-owned, OpenAI-compatible text endpoints proxied through `gen.pollinations.ai` under an `owner/model` id (e.g. `Spit-fires/LFM2.5-230M`). Registration is currently invite-only while the program is in alpha — rules below will likely get stricter before general availability.
+## Community Models
 
-**Alpha stage**
-- Inclusion is fairly permissive for now; expect that to tighten before official launch.
-- Text models only for now — image, audio, and other modalities are planned next.
+Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
 
-**Payouts**
-- Owners currently earn 75% of the pollen spent on their model.
-- Payouts are like-for-like: a request paid with paid pollen pays the owner in paid pollen; a request paid with quest pollen pays the owner in quest pollen. Quest pollen can't be cashed out — it can only be spent on non-paid models.
-- Owners will be able to switch their model to paid-only.
-- Dollar payouts are planned but not available yet (legal/compliance work in progress).
-- Expect a trial period where pollen accumulates but can't be cashed out yet — this will likely start manually, inviting owners once they cross a pollen threshold.
-
-**Policing & safety**
-- Community models do **not** run on Pollinations infrastructure — they run on the owner's own backend. Don't send API keys or other sensitive data through them.
-- A safety feature that auto-redacts private info before it's sent to community models is planned, likely on by default with an opt-out.
-- Owners and users are encouraged to test each other's models — self-policing keeps the ecosystem honest.
-- Models can be pulled (and repeat offenders potentially blocked) for instability or suspected abuse — e.g. silently changing prices or serving a different model than advertised.
-
-**Automated health monitoring**
-- An automated monitor checks each community model's error rate and latency. Models with sustained failures get deactivated automatically — no human involvement needed for that direction.
-- Reactivating a deactivated model is manual and owner-only, from the dashboard. There's no auto-reactivation, so if your model was turned off, fix the underlying issue before reactivating it, or it may just fail again.
-- Check your model's live health — request counts, success rate, errors, and latency — at [model-monitor.pollinations.ai/debug](https://model-monitor.pollinations.ai/debug).
-
-Registration and management ("My Models") are documented under the Account section of this reference, or via the [CLI](/docs/guides/cli) (`polli my-models`).
+For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.

@@ -28,7 +28,7 @@ export type MockTinybirdState = {
     earningsResponse: UsageRow[];
     earningsTransactionsResponse: UsageRow[];
     appDirectoryResponse: UsageRow[];
-    paidAppSpendResponse: UsageRow[];
+    appUsageResponse: UsageRow[];
     modelModalitiesResponse: UsageRow[];
     pipeCalls: PipeCall[];
 };
@@ -44,7 +44,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         earningsResponse: [],
         earningsTransactionsResponse: [],
         appDirectoryResponse: [],
-        paidAppSpendResponse: [],
+        appUsageResponse: [],
         modelModalitiesResponse: [],
         pipeCalls: [],
     };
@@ -54,7 +54,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             const eventName = c.req.query("name");
             const body = await c.req.text();
 
-            if (eventName === "generation_event") {
+            if (eventName === "generation_event_v2") {
                 const events = parseNdjson<TinybirdGenerationEvent>(body);
                 if (
                     events.find((event) =>
@@ -107,9 +107,9 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
             return c.json({ data: state.appDirectoryResponse }, 200);
         })
-        .get("/v0/pipes/quest_paid_app_spend.json", (c) => {
+        .get("/v0/pipes/quest_app_usage.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
-            return c.json({ data: state.paidAppSpendResponse }, 200);
+            return c.json({ data: state.appUsageResponse }, 200);
         })
         .get("/v0/pipes/quest_model_modalities.json", (c) => {
             state.pipeCalls.push({ url: c.req.url, query: c.req.query() });
@@ -136,7 +136,7 @@ export function createMockTinybird(): MockAPI<MockTinybirdState> {
         state.earningsResponse = [];
         state.earningsTransactionsResponse = [];
         state.appDirectoryResponse = [];
-        state.paidAppSpendResponse = [];
+        state.appUsageResponse = [];
         state.modelModalitiesResponse = [];
         state.pipeCalls = [];
     };

@@ -1,3 +1,5 @@
+import type { PublicPriceInfo } from "@shared/registry/public-pricing.ts";
+
 export type ModelCategory =
     | "text"
     | "image"
@@ -7,13 +9,18 @@ export type ModelCategory =
     | "embedding"
     | "realtime";
 
-export type ModelDisplayCategory = ModelCategory | "community";
+export type ModelDisplayCategory =
+    | ModelCategory
+    | "community-text"
+    | "community-image"
+    | "community-agent";
 
 export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 export type PriceKind =
     | "text"
@@ -37,27 +44,45 @@ export type ModelPriceLine = {
     unit: PriceUnit;
 };
 
+export type ModelPriceVariant = {
+    name: string;
+    label: string;
+    description: string;
+    prices: ModelPriceLine[];
+};
+
+export type ModelPriceAdjustment = PublicPriceInfo;
+
 export type ModelPrice = {
     name: string;
     type: ModelCategory;
     community?: boolean;
+    agent?: boolean;
+    baseModel?: string;
+    perUserRpm?: number | null;
     displayName?: string;
     description?: string;
     brand?: string;
+    brandUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
+    supportedEndpoints?: string[];
     capabilities: ModelCapability[];
     paidOnly?: boolean;
+    free?: boolean;
     alpha?: boolean;
     addedDate?: number;
     inputSortPrice?: number;
     outputSortPrice?: number;
     prices: ModelPriceLine[];
+    priceVariants?: ModelPriceVariant[];
+    priceDefaultLabel?: string;
+    priceAdjustments?: ModelPriceAdjustment[];
     // Real usage data from Tinybird (rolling 7-day average)
     realAvgCost?: number;
-};
-
-export type Modalities = {
-    input: string[];
-    output: string[];
+    users7d?: number;
+    contextLength?: number;
+    minDuration?: number;
+    maxDuration?: number;
+    allowedDurations?: number[];
 };

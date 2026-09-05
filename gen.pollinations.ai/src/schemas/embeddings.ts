@@ -69,12 +69,12 @@ export const CreateEmbeddingRequestSchema = z
                 z.array(ContentPartSchema),
             ])
             .meta({
-                description: `Input text or content parts to embed. Supports strings, arrays of strings (max ${MAX_EMBEDDING_BATCH_SIZE} inputs), or multimodal content parts (text, image_url, input_audio, video_url). Multimodal content parts are supported by Gemini embedding models only.`,
+                description: `Input text or content parts to embed. Supports strings, arrays of strings (max ${MAX_EMBEDDING_BATCH_SIZE} inputs), or multimodal content parts (text, image_url, input_audio, video_url). Gemini supports every listed modality; Cohere Embed v4 supports text and one image per input.`,
                 example: "Hello world",
             }),
         dimensions: z.number().int().min(128).max(4096).optional().meta({
             description:
-                "Output embedding dimensions (128-4096). Model-specific limits apply; openai-3-small supports up to 1536.",
+                "Output embedding dimensions (128-4096). Model-specific limits apply; Cohere supports 256, 512, 1024, or 1536.",
             example: 768,
         }),
         task_type: z
@@ -91,9 +91,14 @@ export const CreateEmbeddingRequestSchema = z
             .optional()
             .meta({
                 description:
-                    "Gemini-specific task type hint for optimized embeddings",
+                    "Gemini text-specific task hint, converted to the model's recommended prompt instruction",
                 example: "RETRIEVAL_QUERY",
             }),
+        input_type: z.enum(["query", "document"]).optional().meta({
+            description:
+                "Cohere-specific input role for retrieval. Use document when indexing and query when searching.",
+            example: "query",
+        }),
         encoding_format: z.enum(["float", "base64"]).default("float").meta({
             description:
                 "Output encoding for the embedding vector. `base64` packs Float32 little-endian like OpenAI.",

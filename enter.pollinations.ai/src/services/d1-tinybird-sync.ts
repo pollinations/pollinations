@@ -39,11 +39,29 @@ const TABLES = [
     },
     {
         datasource: "d1_community_model",
-        query: `SELECT id, owner_user_id, name, description, upstream_model,
-                       prompt_text_price, prompt_cached_price, prompt_cache_write_price,
-                       prompt_audio_price, prompt_image_price, completion_text_price,
-                       completion_reasoning_price, completion_audio_price,
-                       disabled_at, disabled_reason, disabled_by,
+        // Preserve the existing Tinybird wire schema without exporting the
+        // payload itself: proxy payloads contain encrypted credentials and
+        // prompt-agent payloads contain their system prompts.
+        query: `SELECT id, owner_user_id, name, description,
+                       CASE WHEN type = 'proxy'
+                           THEN coalesce(json_extract(payload, '$.modality'), 'text')
+                           ELSE 'text'
+                       END AS modality,
+                       CASE WHEN type = 'proxy'
+                           THEN coalesce(json_extract(payload, '$.imagePricing'), 'request')
+                           ELSE 'request'
+                       END AS image_pricing,
+                       upstream_model,
+                       coalesce(json_extract(payload, '$.prices.promptTextPrice'), 0) AS prompt_text_price,
+                       coalesce(json_extract(payload, '$.prices.promptCachedPrice'), 0) AS prompt_cached_price,
+                       coalesce(json_extract(payload, '$.prices.promptCacheWritePrice'), 0) AS prompt_cache_write_price,
+                       coalesce(json_extract(payload, '$.prices.promptAudioPrice'), 0) AS prompt_audio_price,
+                       coalesce(json_extract(payload, '$.prices.promptImagePrice'), 0) AS prompt_image_price,
+                       coalesce(json_extract(payload, '$.prices.completionTextPrice'), 0) AS completion_text_price,
+                       coalesce(json_extract(payload, '$.prices.completionReasoningPrice'), 0) AS completion_reasoning_price,
+                       coalesce(json_extract(payload, '$.prices.completionAudioPrice'), 0) AS completion_audio_price,
+                       coalesce(json_extract(payload, '$.prices.completionImagePrice'), 0) AS completion_image_price,
+                       hidden_at, hidden_reason, hidden_by,
                        created_at, updated_at
                 FROM community_endpoint
                 WHERE id > ?

@@ -81,8 +81,82 @@ describe("/openapi.json", () => {
         expect(Object.keys(schema.paths).length).toBeGreaterThan(0);
         // Gen-owned merged paths prove the real merge ran (not a stub/404).
         expect(schema.paths["/v1/chat/completions"]).toBeDefined();
+        expect(schema.paths["/v1/responses"]).toBeDefined();
         expect(schema.paths["/image/{prompt}"]).toBeDefined();
         expect(schema.paths["/account/key"]).toBeDefined();
+        expect(schema.paths["/v1/audio/music/upload"]).toBeUndefined();
+
+        const modelProperties = collectPropertySets(
+            schema.paths["/models"],
+        ).find(
+            (properties) =>
+                "name" in properties &&
+                "category" in properties &&
+                "community" in properties,
+        );
+        if (!modelProperties) throw new Error("Model schema not found");
+        expect((modelProperties.category as { enum?: string[] }).enum).toEqual([
+            "text",
+            "image",
+            "audio",
+            "video",
+            "3d",
+            "embedding",
+            "realtime",
+        ]);
+        expect(
+            (
+                modelProperties.input_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video"]);
+        expect(
+            (
+                modelProperties.output_modalities as {
+                    items?: { enum?: string[] };
+                }
+            ).items?.enum,
+        ).toEqual(["text", "image", "audio", "video", "embedding", "3d"]);
+
+        const openAIModelProperties = collectPropertySets(
+            schema.paths["/v1/models"],
+        ).find(
+            (properties) =>
+                "id" in properties &&
+                "owned_by" in properties &&
+                "community" in properties,
+        );
+        expect(openAIModelProperties).toEqual(
+            expect.objectContaining({
+                aliases: expect.any(Object),
+                category: expect.any(Object),
+                community: expect.any(Object),
+                title: expect.any(Object),
+            }),
+        );
+
+        const statusOperation = schema.paths["/v1/models/status"] as {
+            get: {
+                parameters: { name: string }[];
+            };
+        };
+        expect(statusOperation.get.parameters.map(({ name }) => name)).toEqual([
+            "minutes",
+            "format",
+        ]);
+        expect(
+            collectPropertySets(schema.paths["/v1/models/status"]).some(
+                (properties) => "data" in properties,
+            ),
+        ).toBe(true);
+
+        const speechRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "reference_audio" in properties &&
+                "composition_plan" in properties,
+        );
+        expect(speechRequestPropertySets.length).toBeGreaterThan(0);
 
         const chatRequestPropertySets = collectPropertySets(schema).filter(
             (properties) => "reasoning_effort" in properties,
@@ -91,6 +165,36 @@ describe("/openapi.json", () => {
         for (const properties of chatRequestPropertySets) {
             expect(properties.thinking).toBeUndefined();
             expect(properties.thinking_budget).toBeUndefined();
+        }
+
+        for (const path of ["/v1/chat/completions", "/v1/responses"]) {
+            const operation = schema.paths[path] as {
+                post?: {
+                    responses?: Record<
+                        string,
+                        { content?: Record<string, unknown> }
+                    >;
+                };
+            };
+            expect(operation.post?.responses?.["200"]?.content).toHaveProperty(
+                "application/json",
+            );
+            expect(operation.post?.responses?.["200"]?.content).toHaveProperty(
+                "text/event-stream",
+            );
+            expect(operation.post?.responses?.["502"]).toBeDefined();
+        }
+
+        const embeddingRequestPropertySets = collectPropertySets(schema).filter(
+            (properties) =>
+                "input_type" in properties && "task_type" in properties,
+        );
+        expect(embeddingRequestPropertySets.length).toBeGreaterThan(0);
+        for (const properties of embeddingRequestPropertySets) {
+            const inputType = properties.input_type as {
+                enum?: string[];
+            };
+            expect(inputType.enum).toEqual(["query", "document"]);
         }
     });
 

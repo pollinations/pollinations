@@ -1,4 +1,7 @@
-import { usageToOpenAIImageUsage } from "@shared/registry/usage-headers.ts";
+import {
+    getOpenAIImageUsage,
+    usageToOpenAIImageUsage,
+} from "@shared/registry/usage-headers.ts";
 import { describe, expect, it } from "vitest";
 import { buildTrackingHeaders } from "../../src/image/utils/trackingHeaders.ts";
 
@@ -45,5 +48,31 @@ describe("usageToOpenAIImageUsage", () => {
                 image_tokens: 40,
             },
         });
+    });
+
+    it("rejects internally inconsistent upstream usage", () => {
+        const response = {
+            usage: {
+                input_tokens: 50,
+                output_tokens: 50,
+                total_tokens: 100,
+                input_tokens_details: {
+                    text_tokens: 10,
+                    image_tokens: 40,
+                },
+            },
+        };
+
+        expect(getOpenAIImageUsage(response)).toEqual(response.usage);
+        expect(
+            getOpenAIImageUsage({
+                usage: { ...response.usage, input_tokens: 49 },
+            }),
+        ).toBeNull();
+        expect(
+            getOpenAIImageUsage({
+                usage: { ...response.usage, total_tokens: 99 },
+            }),
+        ).toBeNull();
     });
 });

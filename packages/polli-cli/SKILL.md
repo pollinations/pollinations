@@ -1,14 +1,14 @@
 ---
 name: polli
-description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage my-models, or run polli commands.
+description: Generate images, text, audio, video, and transcribe speech via the Pollinations API using the polli CLI. Use when asked to generate media, call pollinations.ai, check pollen balance, list models, manage API keys, inspect quests, manage agents or my-models, or run polli commands.
 allowed-tools: Bash(polli *)
 ---
 
 # polli — Pollinations CLI
 
-Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, and invite-only my-models.
+Thin wrapper around `gen.pollinations.ai`. Generates images, text, audio, video; transcribes speech; manages API keys, usage, quests, agents, and invite-only my-models.
 
-Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
+If `polli` is not installed, run `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 
 ## When to use this skill
 
@@ -18,6 +18,7 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 - User asks about their **pollen balance, usage, or API keys**
 - User wants to **browse or filter available models**
 - User wants to inspect **quests** or manage invite-only **my-models**
+- User wants to create or update a hosted prompt **agent**
 
 ## Quick reference
 
@@ -38,8 +39,11 @@ Install: `npm i -g @pollinations/cli@latest` (provides the `polli` binary).
 | Filter models by type | `polli models --type image` |
 | Model health + latency | `polli models --stats` (default 60m, `--window <min>`) |
 | Check balance | `polli usage` |
+| Developer earnings | `polli earnings` (`--days <n>`, max 90) |
 | List your quests + claim state | `polli quests` (filters: `--open --claimable --claimed --coming-soon`) |
+| Manage prompt agents | `polli agents list` |
 | Manage invite-only community models | `polli my-models list` |
+| Connect a coding harness to Pollinations | `polli harness <dsh\|opencode\|openclaw\|pi\|prime> on` (available adapters: `polli harness --help`) |
 | Machine-readable output | append `--json` to any command |
 
 ## Setup
@@ -127,7 +131,7 @@ Cheapest path: `--model wan-fast` at ~$0.01/sec, **fixed 5-second output** (any 
 ```bash
 polli gen transcribe recording.mp3 --language en
 ```
-Models: `whisper` (default), `scribe`, `universal-2`, `universal-3-pro`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** and **AssemblyAI** return timing data when requested through the API; **scribe** returns only `{text: "..."}` — use whisper or AssemblyAI if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
+Models: `whisper` (default), `scribe`, `universal-2`, `universal-3.5-pro`. Accepts common audio formats (mp3, wav, m4a, flac, ogg); non-audio input (e.g. a `.txt` file) returns a clear `400 invalid_request_error: extension "txt" not supported` — no need to pre-validate with `file`. Default output is the plain transcript on stdout as a single line (pipe-friendly). Use `--json` for structured output: **whisper** and **AssemblyAI** return timing data when requested through the API; **scribe** returns only `{text: "..."}` — use whisper or AssemblyAI if you need timing data. `--language <ISO-639-1>` (e.g. `en`, `fr`) is an optional hint that can improve accuracy for non-English or accented speech.
 
 ### Discover models
 ```bash
@@ -145,6 +149,8 @@ Use `--stats` before choosing a model. **Caveat**: the `err%` column counts **5x
 polli usage              # current pollen balance
 polli usage --history    # recent individual requests
 polli usage --daily      # daily cost summary
+polli earnings           # developer earnings total + per-entity breakdown (default 30d)
+polli earnings --days 7  # rolling window, max 90
 polli quests             # your quests + claim state (open/claimable/claimed/coming)
 polli quests --claimable # only rewards ready to claim
 ```
@@ -154,11 +160,40 @@ polli quests --claimable # only rewards ready to claim
 ```bash
 polli my-models list
 polli my-models models --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY"
-polli my-models create --name my-model --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini
+polli my-models create --name my-model --title "My Model" --api chat_completions --url https://api.example.com/v1/chat/completions --bearer-token "$UPSTREAM_KEY" --upstream-model gpt-4.1-mini --required-safety privacy,secrets,sexual,violence,shield
+polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model flux
 polli my-models update <id> --description "Updated description"
+polli my-models update <id> --paid-only            # only accept Paid Pollen; --no-paid-only reverts
+polli my-models update <id> --required-safety privacy,secrets,sexual,violence,shield
 polli my-models delete <id>
 ```
-`my-models` manages owned community text models for invite-only accounts. It requires `communityEndpointsAllowed: true` plus a key with `account:keys`, or an authenticated dashboard session through the API. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+`my-models` manages owned community text, image, and transcription models. Any account can create private models; `communityEndpointsAllowed: true` is required only to publish them. API keys require `account:keys`. Use `account:usage` for narrow read-only usage and `polli quests`; use both permissions when a client needs both read-only account state and admin operations. Quest claiming is dashboard-only; `polli quests` is read-only and account-aware.
+
+### Register an image my-model
+```bash
+polli my-models test --modality image --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --model image-v1
+polli my-models create --name my-image --title "My Image" --modality image --image-pricing request --completion-image-price 0.01 --input-modalities text,image --base-url https://api.example.com/v1 --bearer-token "$UPSTREAM_KEY" --upstream-model image-v1
+```
+Test before creating. The probe reports the pricing mode it detected and the input modalities it found, including whether the endpoint accepts image edits; pass those back as `--input-modalities text,image` to advertise edit support. `polli my-models list` shows them in the `inputs` column.
+
+Two billing modes: `--image-pricing request` charges `--completion-image-price` per generated image, while `--image-pricing tokens` bills returned token usage per 1M through `--prompt-text-price`, `--prompt-image-price`, and `--completion-image-price`.
+
+Prices only apply to `--visibility public` models. A private model is owner-only and always free, so every price flag above is stored as `0` until you publish — and making a published model private clears its prices again.
+
+`--modality` is fixed at creation — `update` cannot change it.
+
+### Manage agents
+
+```bash
+polli agents list
+polli agents get <id>
+polli agents create --config agent.json --name my-agent --title "My Agent"
+polli agents update <id> --config agent.json
+polli agents delete <id>
+```
+The config file contains `systemPrompt`, `baseModel`, and optional `mcpServers`; create also requires `--name` and `--title` for the callable model listing. Use server IDs from the MCP catalog. Updates replace the complete agent configuration.
+
+Creating an agent also creates its callable model listing. Managed agents are text-only and free, with no fallbacks or per-user RPM. Deleting the agent also deletes its model listing. See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md).
 
 ### Manage API keys
 ```bash
@@ -169,6 +204,25 @@ polli keys create --name "my-app" --type publishable --redirect-uri https://app.
 polli keys revoke <id>                                             # id comes from `keys list --json`
 ```
 `--permissions <perms...>` scopes what the new key can do on the account (e.g. `profile usage` lets it call `polli --key <new> usage`). **Without `--permissions`, new scoped keys can generate media but cannot read account state** — `polli --key <new> usage` will 403. `"keys"` is auto-stripped from the list so a scoped key can never mint further keys. Existing keys with `account:keys` can manage my-models where that invite-only feature is enabled, but still need `account:usage` for read-only account state. Publishable app keys default developer earnings off; pass `--earnings` to enable them. To inspect a specific key other than the current one, use `polli keys list --json | jq '.[] | select(.id == "<id>")'`. `keys info` is intentionally scoped to the caller's own key.
+
+### Connect a coding harness
+```bash
+polli harness --help                # supported harnesses
+polli harness dsh on                # login if needed, mint key "polli-harness-dsh", write provider + default model
+polli harness dsh on --model kimi   # any tool-calling text model from `polli models`
+polli harness dsh on --no-mcp       # configure the provider and skill without MCP tools
+polli harness dsh off               # restore the config backed up before "on"
+polli harness opencode on           # enable the Pollinations OpenCode plugin
+polli harness opencode off          # remove the plugin setup and stored key
+polli harness pi on                 # login if needed, mint key "polli-harness-pi", configure Pi with Pollinations
+polli harness pi on --model kimi    # any tool-calling text model from `polli models`
+polli harness pi off                # restore the Pi config backed up before "on"
+polli harness openclaw on           # login if needed, mint key "polli-harness-openclaw", add provider + Polli skill
+polli harness openclaw off          # remove the Pollinations provider, key, and skill
+```
+Each adapter checks that its harness can be launched before login, key creation, or configuration. DSH's official launch uses `npx`, so its adapter checks for `npx`; OpenCode, OpenClaw, and Pi require their installed commands.
+
+The DSH adapter globally configures the Pollinations provider, hosted Pollinations MCP, and this skill under `$DSH_HOME` (default `~/.dsh`). OpenCode enables the existing Pollinations plugin and stores its dedicated key in the plugin config. OpenClaw adds a `pollinations` provider to `~/.openclaw/openclaw.json`, stores a dedicated key in `env.vars`, and installs this skill under `~/.openclaw/skills/polli/`. Pi writes `~/.pi/agent/models.json`, `auth.json`, and `settings.json`, and installs this skill under `~/.pi/agent/skills/polli/`. Guide: `polli docs` section "Coding Harnesses".
 
 ### Read API docs
 ```bash

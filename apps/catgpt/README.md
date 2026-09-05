@@ -50,6 +50,7 @@ Here are some AI-generated CatGPT memes created with our generator:
 - **AI-Powered Generation**: Uses Gemini 2.5 Flash Image (nanobanana) via [gen.pollinations.ai](https://gen.pollinations.ai) API
 - **Instant Memes**: Generate custom cat wisdom in seconds
 - **Share & Download**: Save your favorite memes or share them with friends
+- **Community Gallery**: Generated memes are automatically shared so everyone can browse the community's creations
 - **No Sign-up Required**: Completely free and open to use
 - **Gen-Z Friendly Design**: Modern, vibrant, and fun UI with animated elements
 - **Easter Eggs**: Hidden surprises for the curious (try the Konami code! 🎮)
@@ -58,7 +59,7 @@ Here are some AI-generated CatGPT memes created with our generator:
 
 - **Frontend**: Pure HTML, CSS, and JavaScript (no frameworks needed!)
 - **AI Service**: [gen.pollinations.ai](https://gen.pollinations.ai) - Gemini 2.5 Flash Image (nanobanana) model
-- **Image Upload**: Cloudinary for reference image hosting
+- **Image Upload**: Pollinations media storage for private references and public generated memes
 - **Design**: Psychedelic Gen-Z aesthetic with animated elements
 
 ## 🔧 API Migration (Jan 2026)
@@ -89,7 +90,7 @@ Keep your cats happy with premium pet food from our sponsor [PuraPep](https://ww
 2. Type your question in the text box
 3. Click "Generate Meme"
 4. Watch as CatGPT responds with feline wisdom!
-5. Download or share your creation
+5. Download or share your creation; generated memes also appear in the public community gallery
 
 ## 🤝 Credits & Collaboration
 

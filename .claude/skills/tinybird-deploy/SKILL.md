@@ -44,7 +44,7 @@ Always sanity-check which workspace a token targets before deploying: `tb --clou
 ```
 enter.pollinations.ai/observability/
 ├── datasources/       # Data source definitions (.datasource)
-│   ├── generation_event.datasource
+│   ├── generation_event_v2.datasource
 │   ├── polar_event.datasource
 │   ├── stripe_event.datasource
 │   └── ...

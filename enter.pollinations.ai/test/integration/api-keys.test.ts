@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { describe, expect } from "vitest";
 import { createApiKeyViaApi, test } from "../fixtures.ts";
@@ -21,6 +22,70 @@ type ApiKeyListResponse = {
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
+        test("forces publishable keys to zero direct-spend budget", async ({
+            sessionToken,
+        }) => {
+            for (const pollenBudget of [undefined, null, 0]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/api-keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: `forced-zero-publishable-${String(pollenBudget)}`,
+                            type: "publishable",
+                            pollenBudget,
+                            metadata: {
+                                redirectUris: [
+                                    "https://zero-budget.example/callback",
+                                ],
+                            },
+                        }),
+                    },
+                );
+
+                expect(response.status).toBe(200);
+                const created = await response.json();
+                expect(created.pollenBudget).toBe(0);
+
+                const db = drizzle(env.DB, { schema });
+                const stored = await db.query.apikey.findFirst({
+                    where: (apikey, { eq }) => eq(apikey.id, created.id),
+                });
+                expect(stored?.pollenBalance).toBe(0);
+            }
+        });
+
+        test("rejects non-zero publishable-key budgets", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "invalid-budget-publishable",
+                        type: "publishable",
+                        pollenBudget: 5,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: "Publishable keys must have a pollen budget of 0",
+                },
+            });
+        });
+
         test("should create publishable key metadata in one step", async ({
             sessionToken,
         }) => {
@@ -281,6 +346,17 @@ describe("API Key Management", () => {
             expect(created.metadata.clientId).toBeUndefined();
             expect(created.metadata.createdForUserId).toBeUndefined();
             expect(created.metadata.createdForApp).toBeUndefined();
+
+            const db = drizzle(env.DB, { schema });
+            await expect
+                .poll(async () => {
+                    const reward = await db.query.rewards.findFirst({
+                        where: (rewards, { eq }) =>
+                            eq(rewards.questId, "first_api_key"),
+                    });
+                    return Boolean(reward?.claimedAt);
+                })
+                .toBe(true);
         });
 
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
@@ -836,6 +912,139 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
+        test("should canonicalize model aliases while preserving unknown permissions", async ({
+            sessionToken,
+        }) => {
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "key-with-alias-and-unknown-model",
+                allowedModels: [
+                    "flux",
+                    "nanobanana2",
+                    "gpt-realtime-2",
+                    "retired-model",
+                ],
+            });
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as ApiKeyListResponse;
+            const listed = body.data.find((key) => key.id === created.id);
+            expect(listed?.permissions?.models).toEqual([
+                "flux",
+                "nanobanana-2",
+                "gpt-realtime-2.1",
+            ]);
+
+            const db = drizzle(env.DB, { schema });
+            const stored = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
+                "flux",
+                "nanobanana-2",
+                "gpt-realtime-2.1",
+                "retired-model",
+            ]);
+        });
+
+        test("should include only private community models owned by the user", async ({
+            sessionToken,
+        }) => {
+            const created = await createApiKeyViaApi(sessionToken, {
+                name: "key-with-private-community-models",
+                allowedModels: [
+                    "model-owner/private-model",
+                    "other-owner/private-model",
+                ],
+            });
+            const db = drizzle(env.DB, { schema });
+            const key = await db.query.apikey.findFirst({
+                where: (apikey, { eq }) => eq(apikey.id, created.id),
+            });
+            expect(key?.configId).toBe("default");
+            expect(key?.referenceId).toBeTruthy();
+            const ownerUserId = key?.referenceId as string;
+
+            await db
+                .update(schema.user)
+                .set({ githubUsername: "model-owner" })
+                .where(eq(schema.user.id, ownerUserId));
+            await db.insert(schema.user).values({
+                id: "other-model-owner-id",
+                name: "Other Model Owner",
+                email: "other-model-owner@example.com",
+                githubUsername: "other-owner",
+                createdAt: new Date(),
+                updatedAt: new Date(),
+            });
+            await db.insert(schema.communityEndpoint).values([
+                {
+                    id: "owner-private-model",
+                    ownerUserId,
+                    name: "private-model",
+                    title: "Owner private model",
+                    baseUrl: "https://owner.example.com/v1",
+                    upstreamModel: "private-model",
+                    payload: JSON.stringify({
+                        bearerTokenCiphertext: "encrypted-token",
+                        modality: "text",
+                        imagePricing: "request",
+                        inputModalities: ["text"],
+                        perUserRpm: null,
+                        fallbacks: [],
+                        prices: {},
+                    }),
+                    visibility: "private",
+                    promptTextPrice: 0,
+                    completionTextPrice: 0,
+                },
+                {
+                    id: "other-private-model",
+                    ownerUserId: "other-model-owner-id",
+                    name: "private-model",
+                    title: "Other private model",
+                    baseUrl: "https://other.example.com/v1",
+                    upstreamModel: "private-model",
+                    payload: JSON.stringify({
+                        bearerTokenCiphertext: "encrypted-token",
+                        modality: "text",
+                        imagePricing: "request",
+                        inputModalities: ["text"],
+                        perUserRpm: null,
+                        fallbacks: [],
+                        prices: {},
+                    }),
+                    visibility: "private",
+                    promptTextPrice: 0,
+                    completionTextPrice: 0,
+                },
+            ]);
+
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    headers: {
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                },
+            );
+
+            expect(response.status).toBe(200);
+            const body = (await response.json()) as ApiKeyListResponse;
+            const listed = body.data.find((item) => item.id === created.id);
+            expect(listed?.permissions?.models).toEqual([
+                "model-owner/private-model",
+            ]);
+        });
+
         test("should require authentication", async () => {
             const response = await SELF.fetch(
                 "http://localhost:3000/api/api-keys",
@@ -914,7 +1123,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: ["flux", "nanobanana2", "nanobanana-2"],
                         accountPermissions: ["profile", "usage"],
                     }),
                 },
@@ -936,7 +1145,7 @@ describe("API Key Management", () => {
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: ["flux", "openai"],
+                models: ["flux", "nanobanana-2"],
                 account: ["profile", "usage"],
             });
         });
@@ -1094,6 +1303,7 @@ describe("API Key Management", () => {
             // Create a new key
             const createdKey = await createApiKeyViaApi(sessionToken, {
                 name: "budget-test",
+                allowedModels: ["flux", "retired-model"],
             });
             const keyId = createdKey.id;
 
@@ -1115,6 +1325,7 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
+            expect(JSON.parse(result.permissions).models).toEqual(["flux"]);
 
             // Verify in list
             const listResponse = await SELF.fetch(

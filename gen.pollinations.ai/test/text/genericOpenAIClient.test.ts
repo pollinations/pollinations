@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { isRetryableFallbackError } from "../../src/fallback.ts";
+import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 
 afterEach(() => {
@@ -6,12 +8,90 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("uses a configured service-binding fetcher", async () => {
+        const fetcher = vi.fn(async () =>
+            Response.json({
+                model: "provider-model",
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "ok" },
+                        finish_reason: "stop",
+                    },
+                ],
+            }),
+        );
+        const globalFetch = vi
+            .spyOn(globalThis, "fetch")
+            .mockRejectedValue(new Error("unexpected public fetch"));
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            {
+                endpoint: "https://portkey.myceli.ai/v1/chat/completions",
+                fetcher,
+            },
+        );
+
+        expect(fetcher).toHaveBeenCalledOnce();
+        expect(fetcher).toHaveBeenCalledWith(
+            "https://portkey.myceli.ai/v1/chat/completions",
+            expect.objectContaining({ method: "POST" }),
+        );
+        expect(globalFetch).not.toHaveBeenCalled();
+        expect(completion.choices?.[0]?.message?.content).toBe("ok");
+    });
+
+    it("normalizes provider stop to length at the configured token limit", async () => {
+        let upstreamBody: Record<string, unknown> | undefined;
+
+        vi.spyOn(globalThis, "fetch").mockImplementationOnce(
+            async (_input, init) => {
+                upstreamBody = JSON.parse(String(init?.body));
+                return Response.json({
+                    model: "provider-model",
+                    choices: [
+                        {
+                            index: 0,
+                            message: {
+                                role: "assistant",
+                                content: "truncated",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 3,
+                        completion_tokens: 1,
+                        total_tokens: 4,
+                    },
+                });
+            },
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "write several words" }],
+            {
+                model: "provider-model",
+                max_tokens: 1,
+                normalizeFinishReasonAtTokenLimit: true,
+            },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]?.finish_reason).toBe("length");
+        expect(upstreamBody).not.toHaveProperty(
+            "normalizeFinishReasonAtTokenLimit",
+        );
+    });
+
     it("does not send internal gateway options in the upstream JSON body", async () => {
         let upstreamBody: Record<string, unknown> | undefined;
 
         vi.spyOn(globalThis, "fetch").mockImplementationOnce(
             async (input, init) => {
-                expect(String(input)).toBe("https://portkey.test/chat");
+                expect(input).toBe("https://portkey.test/chat");
                 expect(init?.signal).toBeUndefined();
                 expect(new Headers(init?.headers).get("authorization")).toBe(
                     "Bearer secret",
@@ -40,7 +120,7 @@ describe("genericOpenAIClient", () => {
             },
         );
 
-        await genericOpenAIClient(
+        const completion = await genericOpenAIClient(
             [{ role: "user", content: "hello" }],
             {
                 model: "provider-model",
@@ -69,6 +149,18 @@ describe("genericOpenAIClient", () => {
         expect(upstreamBody).not.toHaveProperty("portkeyGatewayUrl");
         expect(upstreamBody).not.toHaveProperty("requestedModel");
         expect(upstreamBody).not.toHaveProperty("userApiKey");
+        expect(completion.upstreamRequestUrl?.href).toBe(
+            "https://portkey.test/chat",
+        );
+        expect(
+            Object.prototype.propertyIsEnumerable.call(
+                completion,
+                "upstreamRequestUrl",
+            ),
+        ).toBe(false);
+        expect(JSON.stringify({ ...completion })).not.toContain(
+            "upstreamRequestUrl",
+        );
     });
 
     it("strips top-level null options while preserving nested provider payloads", async () => {
@@ -98,6 +190,7 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     tool_calls: [{ id: "call_1", type: "function" }],
                     content: null,
+                    provider_message_option: "kept",
                 },
             ],
             {
@@ -132,9 +225,9 @@ describe("genericOpenAIClient", () => {
                     role: "assistant",
                     content: null,
                     tool_calls: [{ id: "call_1", type: "function" }],
+                    provider_message_option: "kept",
                 },
             ],
-            stream: false,
             tools: [
                 {
                     type: "function",
@@ -299,6 +392,340 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
     });
 
+    it("maps an unsupported image URL format to a client error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    error: {
+                        message:
+                            "Unsupported image format for URL: https://example.com/video.mp4",
+                    },
+                },
+                { status: 415, statusText: "Unsupported Media Type" },
+            ),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 415, upstreamStatus: 415 });
+    });
+
+    it("maps unsupported multimodal input errors to a client error", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    error: {
+                        message: "Provider returned error",
+                        metadata: {
+                            raw: "No endpoints found that support image input",
+                        },
+                    },
+                },
+                { status: 404, statusText: "Not Found" },
+            ),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 400, upstreamStatus: 404 });
+    });
+
+    it.each([
+        "Multimodal processing failed: image decode error",
+        '{"error":{"message":"Invalid or unsupported audio file."}}',
+    ])("maps malformed media errors to a client error: %s", async (message) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(
+                {
+                    error: {
+                        message: "Provider returned error",
+                        metadata: { raw: message },
+                    },
+                },
+                { status: 500, statusText: "Internal Server Error" },
+            ),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 400, upstreamStatus: 500 });
+    });
+
+    it.each([
+        "status",
+        "code",
+    ])("maps 429 from an upstream error envelope's %s to 502", async (field) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                error: {
+                    message: "rate limited",
+                    [field]: 429,
+                },
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
+    });
+
+    it.each([
+        [200, false],
+        [200, true],
+        [400, false],
+        [403, false],
+        [500, false],
+    ])("returns a non-retryable 4xx for policy rejection (HTTP %s, choice error %s)", async (status, nested) => {
+        const details = {
+            code: 400,
+            message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            metadata: { error_type: "invalid_request" },
+        };
+        const body = nested
+            ? { choices: [{ finish_reason: "error", error: details }] }
+            : { error: details };
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(body, { status }),
+        );
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        ).catch((error) => error);
+        expect(error).toMatchObject({
+            status: 422,
+            upstreamStatus: status === 200 ? 400 : status,
+            details: status === 200 ? details : body,
+        });
+        expect(isRetryableFallbackError(error)).toBe(false);
+    });
+
+    it.each([
+        401, 402, 403, 429, 503,
+    ])("keeps provider error.code=%s eligible for fallback", async (code) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { code, message: "Provider unavailable" } }),
+        );
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        ).catch((error) => error);
+        expect(error).toMatchObject({ upstreamStatus: code });
+        expect(isRetryableFallbackError(error)).toBe(true);
+    });
+
+    it.each([
+        200, 1001,
+    ])("does not use non-error HTTP code %s as the response status", async (code) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { code, message: "Provider failed" } }),
+        );
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 502 });
+    });
+
+    it("maps an embedded completion 429 to a retryable upstream error", async () => {
+        const details = {
+            code: 429,
+            message: "Provider rate limited",
+            metadata: { error_type: "rate_limit_exceeded" },
+        };
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                choices: [
+                    {
+                        finish_reason: "error",
+                        error: details,
+                    },
+                ],
+            }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            details,
+        });
+    });
+
+    it("leaves non-rate-limit completion errors unchanged", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                choices: [
+                    {
+                        finish_reason: "error",
+                        error: {
+                            code: 400,
+                            message: "Malformed function call",
+                        },
+                    },
+                ],
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]).toMatchObject({
+            finish_reason: "error",
+            error: { code: 400 },
+        });
+    });
+
+    it.each([
+        '{"error":{"message":"Failed to load image: cannot identify image file","code":400}}',
+        '{"error":{"message":"Invalid or unsupported audio file.","code":400}}',
+    ])("maps malformed media in a successful error envelope to 400: %s", async (message) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { message } }),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+    });
+
+    it("maps invalid upstream JSON to 502 with gateway context", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            new Response("not json"),
+        );
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            requestUrl: new URL("https://portkey.test/chat"),
+        });
+    });
+
+    it("normalizes choices without mutating frozen upstream objects", async () => {
+        const response = new Response();
+        Object.defineProperty(response, "json", {
+            value: async () => ({
+                choices: [
+                    Object.freeze({
+                        message: { tool_calls: [{}] },
+                        finish_reason: "stop",
+                    }),
+                ],
+            }),
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(response);
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.choices?.[0]?.finish_reason).toBe("tool_calls");
+    });
+
+    it("preserves and normalizes every upstream choice and extension", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                id: "chatcmpl_multi",
+                object: "chat.completion",
+                provider_response_option: { trace: "kept" },
+                choices: [
+                    {
+                        index: 0,
+                        message: { role: "assistant", content: "first" },
+                        finish_reason: "stop",
+                        provider_choice_option: "first-kept",
+                    },
+                    {
+                        index: 1,
+                        message: {
+                            role: "assistant",
+                            content: null,
+                            tool_calls: [{ id: "call_1" }],
+                        },
+                        finish_reason: "stop",
+                        provider_choice_option: "second-kept",
+                    },
+                ],
+                usage: { completion_tokens: 5 },
+            }),
+        );
+
+        const completion = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "provider-model",
+                max_tokens: 5,
+                normalizeFinishReasonAtTokenLimit: true,
+            },
+            { endpoint: "https://portkey.test/chat" },
+        );
+
+        expect(completion.provider_response_option).toEqual({ trace: "kept" });
+        expect(completion.choices).toHaveLength(2);
+        expect(completion.choices?.[0]).toMatchObject({
+            finish_reason: "length",
+            provider_choice_option: "first-kept",
+        });
+        expect(completion.choices?.[1]).toMatchObject({
+            finish_reason: "tool_calls",
+            provider_choice_option: "second-kept",
+        });
+    });
+
+    it("preserves non-Error transport failures as the cause", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValueOnce("socket closed");
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            cause: "socket closed",
+            requestUrl: new URL("https://portkey.test/chat"),
+        });
+    });
+
     it("passes through successful empty completions", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({
@@ -378,101 +805,76 @@ describe("genericOpenAIClient", () => {
         expect(text).toContain("data: [DONE]\n\n");
     });
 
-    it("captures the Portkey fallback target header on non-streaming responses", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json(
-                {
-                    id: "chatcmpl_test",
-                    object: "chat.completion",
-                    model: "provider-model",
-                    choices: [
-                        {
-                            index: 0,
-                            message: { role: "assistant", content: "ok" },
-                            finish_reason: "stop",
-                        },
-                    ],
-                    usage: { prompt_tokens: 1, completion_tokens: 1 },
-                },
-                {
-                    headers: {
-                        "x-portkey-last-used-option-index": "config.targets[1]",
-                    },
-                },
+    it("rejects an empty upstream stream as a retryable failure", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(new Response(null));
+
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model", stream: true },
+                { endpoint: "https://portkey.test/chat" },
             ),
-        );
-
-        const completion = await genericOpenAIClient(
-            [{ role: "user", content: "hello" }],
-            { model: "provider-model" },
-            { endpoint: "https://portkey.test/chat" },
-        );
-
-        expect(completion.fallbackTarget).toBe("config.targets[1]");
-        // Internal metadata must stay out of the OpenAI-compatible body: it is
-        // non-enumerable, so JSON.stringify({ ...completion }) never includes it.
-        expect(
-            Object.prototype.propertyIsEnumerable.call(
-                completion,
-                "fallbackTarget",
-            ),
-        ).toBe(false);
-        expect(JSON.stringify({ ...completion })).not.toContain(
-            "fallbackTarget",
-        );
-    });
-
-    it("captures the Portkey fallback target header on streaming responses", async () => {
-        vi.spyOn(globalThis, "fetch").mockImplementationOnce(async () => {
-            const encoder = new TextEncoder();
-            return new Response(
-                new ReadableStream({
-                    start(controller) {
-                        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                        controller.close();
-                    },
-                }),
-                {
-                    headers: {
-                        "content-type": "text/event-stream; charset=utf-8",
-                        "x-portkey-last-used-option-index": "config.targets[1]",
-                    },
-                },
-            );
+        ).rejects.toMatchObject({
+            status: 502,
+            requestUrl: new URL("https://portkey.test/chat"),
         });
+    });
+});
 
-        const completion = await genericOpenAIClient(
-            [{ role: "user", content: "hello" }],
-            { model: "provider-model", stream: true },
-            { endpoint: "https://portkey.test/chat" },
+describe("Chat Completions stream usage", () => {
+    const encoder = new TextEncoder();
+
+    it("accepts valid usage followed by the terminal DONE event", () => {
+        const validator = createChatStreamUsageValidator();
+
+        validator.feed(
+            encoder.encode(
+                'data: {"model":"provider-model","choices":[],"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\ndata: [DONE]\n',
+            ),
         );
 
-        expect(completion.fallbackTarget).toBe("config.targets[1]");
+        expect(() => validator.finish()).not.toThrow();
     });
 
-    it("leaves fallbackTarget undefined when the header is absent", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({
-                id: "chatcmpl_test",
-                object: "chat.completion",
-                model: "provider-model",
-                choices: [
-                    {
-                        index: 0,
-                        message: { role: "assistant", content: "ok" },
-                        finish_reason: "stop",
-                    },
-                ],
-                usage: { prompt_tokens: 1, completion_tokens: 1 },
-            }),
+    it("rejects DONE without valid usage", () => {
+        const validator = createChatStreamUsageValidator();
+
+        expect(() =>
+            validator.feed(encoder.encode("data: [DONE]\n\n")),
+        ).toThrow(/omitted terminal usage/);
+    });
+
+    it("rejects a stream that ends before terminal usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"model":"provider-model","choices":[{"delta":{"content":"ok"}}]}\n\n',
+            ),
         );
 
-        const completion = await genericOpenAIClient(
-            [{ role: "user", content: "hello" }],
-            { model: "provider-model" },
-            { endpoint: "https://portkey.test/chat" },
+        expect(() => validator.finish()).toThrow(/without terminal usage/);
+    });
+
+    it("accepts an explicit terminal error without usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"error":{"message":"upstream failed","code":"upstream_error"}}\n\ndata: [DONE]\n\n',
+            ),
         );
 
-        expect(completion.fallbackTarget).toBeUndefined();
+        expect(() => validator.finish()).not.toThrow();
+    });
+
+    it("does not treat an error:null field as a terminal failure", () => {
+        const validator = createChatStreamUsageValidator();
+
+        expect(() =>
+            validator.feed(
+                encoder.encode(
+                    'data: {"error":null,"choices":[{"delta":{"content":"partial"}}]}\n\ndata: [DONE]\n\n',
+                ),
+            ),
+        ).toThrow(/omitted terminal usage/);
     });
 });

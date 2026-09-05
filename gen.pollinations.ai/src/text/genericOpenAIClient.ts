@@ -1,9 +1,10 @@
-import { remapUpstreamStatus } from "@shared/error.ts";
+import { collectUpstreamHeaders, remapUpstreamStatus } from "@shared/error.ts";
 import debug from "debug";
 import {
-    normalizeOptions,
-    validateAndNormalizeMessages,
-} from "./textGenerationUtils.js";
+    CONTENT_POLICY_STATUS,
+    isContentPolicyViolation,
+} from "../image/utils/contentModeration.ts";
+import { prepareMessages } from "./textGenerationUtils.js";
 import type {
     ChatCompletion,
     ChatMessage,
@@ -18,17 +19,29 @@ const log = debug("pollinations:genericopenai");
 const errorLog = debug("pollinations:error");
 const DONE_EVENT_PATTERN = /data:\s*\[DONE\]/;
 
-// Attach Portkey's served fallback target as internal, non-enumerable metadata
-// so tracking can read completion.fallbackTarget while it stays out of every
-// JSON.stringify({ ...completion }) response body (the OpenAI-compatible body
-// has no such field).
-function withFallbackTarget(
+function isClientInputError(details: unknown): boolean {
+    const serialized =
+        typeof details === "string" ? details : JSON.stringify(details);
+    return /no endpoints found that support (?:image|audio|video) input|multimodal processing failed|(?:image|audio) decode error|invalid or unsupported audio file|failed to load image|cannot identify image file|image URL must be a valid and downloadable URL or look like data:/i.test(
+        serialized,
+    );
+}
+
+function apiErrorStatus(details: unknown, status: number): number {
+    if (isContentPolicyViolation(JSON.stringify(details))) {
+        return CONTENT_POLICY_STATUS;
+    }
+    return isClientInputError(details) ? 400 : remapUpstreamStatus(status);
+}
+
+// Attach internal response metadata as non-enumerable properties so downstream
+// handling can use it without adding fields to OpenAI-compatible response bodies.
+function withUpstreamRequestUrl(
     completion: ChatCompletion,
-    fallbackTarget: string | undefined,
+    requestUrl: URL,
 ): ChatCompletion {
-    if (fallbackTarget === undefined) return completion;
-    Object.defineProperty(completion, "fallbackTarget", {
-        value: fallbackTarget,
+    Object.defineProperty(completion, "upstreamRequestUrl", {
+        value: requestUrl,
         enumerable: false,
         configurable: true,
         writable: true,
@@ -37,10 +50,8 @@ function withFallbackTarget(
 }
 
 function ensureOpenAISseDone(
-    source: ReadableStream<Uint8Array> | null,
-): ReadableStream<Uint8Array> | null {
-    if (!source) return source;
-
+    source: ReadableStream<Uint8Array>,
+): ReadableStream<Uint8Array> {
     const decoder = new TextDecoder();
     const encoder = new TextEncoder();
     let seenDone = false;
@@ -86,20 +97,58 @@ function extractErrorMessage(details: unknown): string | null {
     return typeof message === "string" && message.trim() ? message : null;
 }
 
+/**
+ * Some OpenAI-compatible gateways return an upstream rate limit inside an
+ * otherwise successful completion. Normalize explicit rate limits and policy
+ * rejections; other finish errors (e.g. malformed tool output) stay unchanged.
+ */
+function responseBodyError(
+    completion: ChatCompletion,
+): ChatCompletion["error"] {
+    if (completion.error) return completion.error;
+
+    for (const choice of completion.choices ?? []) {
+        if (choice.finish_reason !== "error") continue;
+        const details = choice.error;
+        if (!details || typeof details !== "object") continue;
+        const embedded = details as { code?: unknown; status?: unknown };
+        if (
+            embedded.code !== 429 &&
+            embedded.status !== 429 &&
+            !isContentPolicyViolation(JSON.stringify(details))
+        )
+            continue;
+
+        return {
+            message: extractErrorMessage(details) ?? undefined,
+            status:
+                typeof embedded.status === "number"
+                    ? embedded.status
+                    : typeof embedded.code === "number"
+                      ? embedded.code
+                      : undefined,
+            details,
+        };
+    }
+}
+
 function createApiError(
-    response: { status: number; statusText: string },
+    response: Response,
     details: unknown,
     modelName: string,
+    requestUrl: URL,
 ): ServiceError {
     const statusMessage = `${response.status} ${response.statusText}`;
     const detailMessage = extractErrorMessage(details);
     const error = new Error(
         detailMessage ? `${statusMessage}: ${detailMessage}` : statusMessage,
     ) as ServiceError;
-    error.status = remapUpstreamStatus(response.status);
+    error.status = apiErrorStatus(details, response.status);
     error.upstreamStatus = response.status;
     error.details = details;
     error.model = modelName;
+    error.requestUrl = requestUrl;
+    error.upstreamHeaders = collectUpstreamHeaders(response.headers);
     return error;
 }
 
@@ -111,14 +160,28 @@ function parseJsonSafe(text: string): unknown {
     }
 }
 
+function toServiceError(thrown: unknown): ServiceError {
+    return thrown instanceof Error
+        ? (thrown as ServiceError)
+        : (new Error(String(thrown), { cause: thrown }) as ServiceError);
+}
+
+function withUpstreamContext(thrown: unknown, requestUrl: URL): ServiceError {
+    const error = toServiceError(thrown);
+    error.requestUrl ??= requestUrl;
+    error.status ??= 502;
+    return error;
+}
+
 export async function genericOpenAIClient(
     messages: ChatMessage[],
     options: TransformOptions = {},
     config: OpenAIClientConfig,
 ): Promise<ChatCompletion> {
-    const { endpoint, defaultOptions = {}, additionalHeaders = {} } = config;
+    const { endpoint, additionalHeaders = {}, fetcher = fetch } = config;
     const startTime = Date.now();
     const requestId = crypto.randomUUID();
+    let requestUrl: URL | undefined;
 
     log(`[${requestId}] Starting request`, {
         messageCount: messages?.length || 0,
@@ -128,44 +191,45 @@ export async function genericOpenAIClient(
         optionKeys: Object.keys(options),
     });
 
-    let normalizedOptions: TransformOptions;
     let modelName = "unknown";
 
     try {
-        normalizedOptions = normalizeOptions(options, defaultOptions);
-        if (!normalizedOptions.model) {
+        if (!options.model) {
             throw new Error("Model is required");
         }
-        modelName = normalizedOptions.model;
+        modelName = options.model;
 
-        const validatedMessages = validateAndNormalizeMessages(messages);
+        const preparedMessages = prepareMessages(messages);
         const {
             additionalHeaders: _additionalHeaders,
             jsonMode: _jsonMode,
             modelConfig: _modelConfig,
             modelDef: _modelDef,
+            normalizeFinishReasonAtTokenLimit:
+                _normalizeFinishReasonAtTokenLimit,
             portkeyGatewayUrl: _portkeyGatewayUrl,
             requestedModel: _requestedModel,
             userApiKey: _userApiKey,
             ...cleanedOptions
-        } = normalizedOptions;
+        } = options;
         const requestBody = cleanNullAndUndefined({
             model: modelName,
-            messages: validatedMessages,
+            messages: preparedMessages,
             ...cleanedOptions,
         });
 
         log(`[${requestId}] Request body prepared`, {
             model: modelName,
-            messageCount: validatedMessages.length,
+            messageCount: preparedMessages.length,
             optionKeys: Object.keys(cleanedOptions),
-            stream: normalizedOptions.stream === true,
+            stream: options.stream === true,
         });
 
         const endpointUrl =
             typeof endpoint === "function"
-                ? endpoint(modelName, normalizedOptions)
+                ? endpoint(modelName, options)
                 : endpoint;
+        requestUrl = new URL(endpointUrl);
 
         const headers = {
             "Content-Type": "application/json",
@@ -174,36 +238,46 @@ export async function genericOpenAIClient(
 
         log(`[${requestId}] Header keys:`, Object.keys(headers));
 
-        const response = await fetch(endpointUrl, {
-            method: "POST",
-            headers,
-            body: JSON.stringify(requestBody),
-        });
+        let response: Response;
+        try {
+            response = await fetcher(endpointUrl, {
+                method: "POST",
+                redirect: "manual",
+                headers,
+                body: JSON.stringify(requestBody),
+            });
+        } catch (thrown: unknown) {
+            throw withUpstreamContext(thrown, requestUrl);
+        }
 
         if (!response.ok) {
-            const errorText = await response.text();
+            let errorText: string;
+            try {
+                errorText = await response.text();
+            } catch (thrown: unknown) {
+                throw withUpstreamContext(thrown, requestUrl);
+            }
             const errorDetails = parseJsonSafe(errorText) || errorText;
             errorLog(
                 `[${requestId}] API error (${response.status}):`,
                 errorDetails,
             );
-            throw createApiError(response, errorDetails, modelName);
+            throw createApiError(response, errorDetails, modelName, requestUrl);
         }
 
-        // Portkey reports which fallback target served the call via this header
-        // (e.g. "config.targets[0]" = primary, "config.targets[1]" = first
-        // fallback). Surface it so tracking can record whether a fallback fired.
-        const fallbackTarget =
-            response.headers.get("x-portkey-last-used-option-index") ??
-            undefined;
-
-        if (normalizedOptions.stream) {
+        if (options.stream) {
             log(
                 `[${requestId}] Streaming response, status: ${response.status}`,
             );
 
+            if (!response.body) {
+                throw withUpstreamContext(
+                    new Error("Text model returned an empty stream"),
+                    requestUrl,
+                );
+            }
             const streamToReturn = ensureOpenAISseDone(response.body);
-            return withFallbackTarget(
+            return withUpstreamRequestUrl(
                 {
                     id: `genericopenai-${requestId}`,
                     object: "chat.completion.chunk",
@@ -219,34 +293,77 @@ export async function genericOpenAIClient(
                         },
                     ],
                 },
-                fallbackTarget,
+                requestUrl,
             );
         }
 
-        const data = (await response.json()) as ChatCompletion;
+        let data: ChatCompletion;
+        try {
+            data = (await response.json()) as ChatCompletion;
+        } catch (thrown: unknown) {
+            throw withUpstreamContext(thrown, requestUrl);
+        }
+        const responseError = responseBodyError(data);
+        if (responseError) {
+            const errorDetails =
+                typeof responseError === "string"
+                    ? { message: responseError }
+                    : responseError;
+            const error = new Error(
+                errorDetails.message || "Text generation failed",
+            ) as ServiceError;
+            const upstreamStatus =
+                typeof errorDetails.status === "number"
+                    ? errorDetails.status
+                    : typeof errorDetails.code === "number" &&
+                        errorDetails.code >= 400 &&
+                        errorDetails.code <= 599
+                      ? errorDetails.code
+                      : undefined;
+            error.status = apiErrorStatus(errorDetails, upstreamStatus ?? 502);
+            error.upstreamStatus = upstreamStatus;
+            error.details = errorDetails.details ?? errorDetails;
+            error.model = modelName;
+            error.requestUrl = requestUrl;
+            error.upstreamHeaders = collectUpstreamHeaders(response.headers);
+            throw error;
+        }
         log(
             `[${requestId}] Completed in ${Date.now() - startTime}ms, model: ${data.model || modelName}`,
         );
 
-        const formattedChoice = (data.choices?.[0] ?? {}) as CompletionChoice;
+        const choices = (data.choices?.length ? data.choices : [{}]).map(
+            (choice): CompletionChoice => {
+                const formattedChoice = { ...choice };
+                // Some providers report "stop" even when they returned a tool
+                // call. Keep the compatibility fix without dropping choices.
+                if (formattedChoice.message?.tool_calls?.length) {
+                    formattedChoice.finish_reason = "tool_calls";
+                }
+                if (
+                    _normalizeFinishReasonAtTokenLimit &&
+                    formattedChoice.finish_reason === "stop" &&
+                    typeof options.max_tokens === "number" &&
+                    typeof data.usage?.completion_tokens === "number" &&
+                    data.usage.completion_tokens >= options.max_tokens
+                ) {
+                    formattedChoice.finish_reason = "length";
+                }
+                return formattedChoice;
+            },
+        );
 
-        // Force finish_reason to "tool_calls" when tool_calls are present.
-        // Some providers (e.g. Vertex AI) return "stop" for tool call responses.
-        if (formattedChoice.message?.tool_calls?.length) {
-            formattedChoice.finish_reason = "tool_calls";
-        }
-
-        return withFallbackTarget(
+        return withUpstreamRequestUrl(
             {
                 ...data,
                 id: data.id || `genericopenai-${requestId}`,
                 object: data.object || "chat.completion",
-                choices: [formattedChoice],
+                choices,
             },
-            fallbackTarget,
+            requestUrl,
         );
     } catch (thrown: unknown) {
-        const error = thrown as ServiceError;
+        const error = toServiceError(thrown);
         errorLog(`[${requestId}] Error:`, {
             error: error.message,
             status: error.status,

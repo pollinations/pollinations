@@ -4,6 +4,10 @@ compatibility_date = "2025-11-01"
 compatibility_flags = [ "nodejs_compat", "nodejs_als" ]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
+[[services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
+
 [dev]
 port = 3000
 
@@ -29,18 +33,23 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for dev)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
+GEN_BASE_URL = "http://localhost:8788"
 # Stripe Payment Method Configurations (sandbox)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.local]
+
+[[env.local.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
 
 [env.local.triggers]
 crons = []
@@ -62,17 +71,22 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "trace"
 LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (sandbox for local development)
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 BETTER_AUTH_URL = "http://localhost:3000"
+GEN_BASE_URL = "http://localhost:8788"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 
 [env.production]
+
+[[env.production.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
 
 # Explicitly detach cron schedules. Deleting the [triggers] block leaves
 # previously-deployed crons attached (crons undefined = unchanged); only
@@ -111,17 +125,22 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 D1_EXPORT_TOKEN_SHA256 = "16787796e725ff98fa6d4c820922cc12fcf85a21bd1221abd984ef6cd1902a8d"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments (live for production)
 STRIPE_MODE = "live"
 STRIPE_SUCCESS_URL = "https://enter.pollinations.ai"
 BETTER_AUTH_URL = "https://enter.pollinations.ai"
+GEN_BASE_URL = "https://gen.pollinations.ai"
 # Stripe Payment Method Configurations (live)
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TVU4T7rcjS3l7trqtBuve71"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrY4O7rcjS3l7trnGXDTuat"
 [env.staging]
+
+[[env.staging.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp-staging"
 
 # See production note above: explicit empty crons detaches the schedule.
 [env.staging.triggers]
@@ -140,7 +159,7 @@ custom_domain = true
 [[env.staging.d1_databases]]
 binding = "DB"
 database_name = "staging-pollinations-enter-db"
-database_id = "63da5347-3fa8-4410-a68f-c9e83956f76a"
+database_id = "2cb1cf1a-a18a-4cad-a4bb-be64e3c0e39f"
 migrations_dir = "drizzle"
 
 [[env.staging.kv_namespaces]]
@@ -154,20 +173,25 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # Stripe payments: sandbox mode for staging
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://staging.enter.pollinations.ai"
 BETTER_AUTH_URL = "https://staging.enter.pollinations.ai"
+GEN_BASE_URL = "https://staging.gen.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 # Staging OAuth lockdown — GitHub IDs are immutable; emails allow one-off
 # team access when the exact GitHub account is unknown. Issue #11137.
-STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458"
+STAGING_ALLOWED_GITHUB_IDS = "36901823,5099901,235942848,248917639,241978997,118118458,189873015"
 STAGING_ALLOWED_EMAILS = "elliot@pollinations.ai"
 [env.dev]
+
+[[env.dev.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
 
 [[env.dev.routes]]
 pattern = "dev.enter.myceli.ai"
@@ -192,7 +216,7 @@ CLOUDFLARE_ACCOUNT_ID = "b6ec751c0862027ba269faf7029b2501"
 LOG_LEVEL = "debug"
 LOG_FORMAT = "json"
 D1_EXPORT_TOKEN_SHA256 = "9eb69171319388c1231cd7452b717f4bda9c52a8a836cf7456326b4e3b7c79fb"
-TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event"
+TINYBIRD_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events?name=stripe_event"
 # TODO: Change back to staging image endpoint once staging services are available
 # Currently using prod services for simplicity
@@ -200,10 +224,15 @@ TINYBIRD_STRIPE_INGEST_URL = "https://api.europe-west2.gcp.tinybird.co/v0/events
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "https://dev.enter.pollinations.ai"
 BETTER_AUTH_URL = "https://dev.enter.pollinations.ai"
+GEN_BASE_URL = "https://dev.gen.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"
 [env.test]
+
+[[env.test.services]]
+binding = "COMPOSIO_MCP"
+service = "pollinations-composio-mcp"
 
 [[env.test.d1_databases]]
 binding = "DB"
@@ -224,13 +253,27 @@ LOG_FORMAT = "text"
 D1_EXPORT_TOKEN_SHA256 = "93b05a64761af544d325ac158513bef41959e8777a7375981ec7ae41f84cb05d"
 GITHUB_CLIENT_ID = "test_github_client_id"
 GITHUB_CLIENT_SECRET = "test_github_client_secret"
-TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event"
+DISCORD_CLIENT_ID = "test_discord_client_id"
+DISCORD_CLIENT_SECRET = "test_discord_client_secret"
+DISCORD_BOT_TOKEN = "test_discord_bot_token"
+BETTER_AUTH_SECRET = "not-a-secret-workers-test-only"
+# isInternalRequest() rejects tokens shorter than 32 characters, so a shorter
+# placeholder 401s every internal route instead of exercising it.
+PLN_ENTER_TOKEN = "test-admin-token-at-least-32-characters"
+TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
+# Placeholders, not credentials. The Stripe tests run against the mock in
+# test/mocks/stripe.ts and never reach Stripe; the SDK only refuses to
+# construct without a key, and the webhook tests sign with the same value the
+# route verifies.
+STRIPE_SECRET_KEY = "sk_test_not_a_real_key_workers_test_only"
+STRIPE_WEBHOOK_SECRET = "whsec_not_a_real_secret_workers_test_only"
 BETTER_AUTH_URL = "http://localhost:3000"
+GEN_BASE_URL = "https://gen.pollinations.ai"
 STRIPE_AUTO_TOP_UP_PMC_ID = "pmc_1TUpob6O03AauPe8EgmA4mvg"
 # Single broad checkout PMC; Stripe filters methods by buyer currency/country.
 STRIPE_PMC = "pmc_1SrYT96O03AauPe8ijLy6sZU"

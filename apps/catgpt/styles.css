@@ -561,6 +561,19 @@ header {
     box-shadow: none;
 }
 
+.publish-note,
+.gallery-intro {
+    margin-top: 0.75rem;
+    color: var(--color-muted);
+    font-size: 0.8rem;
+    line-height: 1.5;
+}
+
+.gallery-intro {
+    margin-top: -0.75rem;
+    margin-bottom: 1.5rem;
+}
+
 .hidden {
     display: none;
 }
@@ -581,10 +594,24 @@ header {
 /* === Cards === */
 
 .examples-grid,
-.your-memes-grid {
+.your-memes-grid,
+.community-memes-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 1.5rem;
+}
+
+.community-card {
+    color: inherit;
+    text-decoration: none;
+}
+
+.gallery-message {
+    grid-column: 1 / -1;
+    padding: 2rem;
+    color: var(--color-muted);
+    text-align: center;
+    font-style: italic;
 }
 
 .example-card {
@@ -740,7 +767,8 @@ footer a {
     }
 
     .examples-grid,
-    .your-memes-grid {
+    .your-memes-grid,
+    .community-memes-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 1rem;
     }
@@ -801,7 +829,8 @@ footer a {
     }
 
     .examples-grid,
-    .your-memes-grid {
+    .your-memes-grid,
+    .community-memes-grid {
         grid-template-columns: 1fr;
     }
 

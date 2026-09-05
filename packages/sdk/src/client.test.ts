@@ -1,5 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Pollinations } from "./client.js";
+import {
+    chat,
+    configure,
+    generateAudio,
+    generateImage,
+    generateText,
+    generateVideo,
+    resetClient,
+} from "./helpers.js";
 import { PollinationsError } from "./types.js";
 
 // Build a minimal Response-like object good enough for the client paths.
@@ -72,8 +81,62 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+    resetClient();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    vi.useRealTimers();
+});
+
+describe("Convenience helpers", () => {
+    beforeEach(() => {
+        configure({ apiKey: "sk_test", baseUrl: "https://example.test" });
+    });
+
+    it("makes one request per media helper without inventing a seed", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        await generateImage("a cat");
+        await generateVideo("a cat running");
+        await generateAudio("hello");
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        for (const [url] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("seed")).toBe(false);
+        }
+    });
+
+    it("makes one request per text helper without inventing a seed", async () => {
+        const response = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "test",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "ok" },
+                    finish_reason: "stop",
+                },
+            ],
+        };
+        fetchMock.mockResolvedValue(makeResponse(response));
+
+        await generateText("hello");
+        await generateText("hello", { raw: true });
+        await chat([{ role: "user", content: "hello" }]);
+
+        expect(fetchMock).toHaveBeenCalledTimes(3);
+        expect(fetchMock.mock.calls.map((call) => bodyOf(call).seed)).toEqual([
+            undefined,
+            undefined,
+            undefined,
+        ]);
+    });
 });
 
 // Helper: pull the seed query param from an image/video GET URL.
@@ -88,6 +151,33 @@ function bodyOf(call: unknown[]): Record<string, unknown> {
 }
 
 describe("Pollinations request attempts", () => {
+    it("keeps video requests alive until the 20-minute default timeout", async () => {
+        vi.useFakeTimers();
+        let aborted = false;
+        fetchMock.mockImplementation(
+            (_url: string, init: RequestInit) =>
+                new Promise<Response>((_, reject) => {
+                    init.signal?.addEventListener("abort", () => {
+                        aborted = true;
+                        reject(new DOMException("Aborted", "AbortError"));
+                    });
+                }),
+        );
+
+        const request = newClient().video("a long-running scene");
+        const assertion = expect(request).rejects.toMatchObject({
+            code: "TIMEOUT",
+            status: 408,
+            message: "Request timed out after 1200000ms",
+        });
+
+        await vi.advanceTimersByTimeAsync(1_200_000 - 1);
+        expect(aborted).toBe(false);
+        await vi.advanceTimersByTimeAsync(1);
+        await assertion;
+        expect(aborted).toBe(true);
+    });
+
     it("does not retry uploads after a network failure", async () => {
         const client = newClient();
         fetchMock.mockRejectedValue(new Error("boom"));
@@ -161,6 +251,105 @@ describe("Pollinations media upload", () => {
         const formData = request.body as FormData;
         expect(formData.get("tags")).toBe("cats,gallery");
         expect(result.tags).toEqual(["cats", "gallery"]);
+    });
+});
+
+describe("Pollinations server-owned defaults", () => {
+    it("omits unset models from URL requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(null, {
+                kind: "binary",
+                contentType: "application/octet-stream",
+            }),
+        );
+
+        await client.image("a cat");
+        await client.video("a cat running");
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        for (const [url] of fetchMock.mock.calls) {
+            expect(new URL(url as string).searchParams.has("model")).toBe(
+                false,
+            );
+        }
+    });
+
+    it("omits unset models from JSON requests", async () => {
+        const client = newClient();
+        const completion = {
+            id: "chatcmpl-test",
+            object: "chat.completion",
+            created: 1,
+            model: "server-default",
+            choices: [
+                {
+                    index: 0,
+                    message: { role: "assistant", content: "ok" },
+                    finish_reason: "stop",
+                },
+            ],
+        };
+        const stream = 'data: {"choices":[{"delta":{"content":"x"}}]}\n';
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ b64_json: "AAAA" }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ b64_json: "AAAA" }] }),
+            )
+            .mockResolvedValueOnce(makeResponse(completion))
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            )
+            .mockResolvedValueOnce(makeResponse(completion))
+            .mockResolvedValueOnce(
+                makeResponse(stream, {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(null, {
+                    kind: "binary",
+                    contentType: "audio/mpeg",
+                }),
+            );
+
+        await client.imageGenerate("a cat");
+        await client.imageEdit("make it blue", {
+            image: "https://example.test/cat.png",
+        });
+        await client.text("hello");
+        for await (const _ of client.textStream("hello")) {
+            // consume stream
+        }
+        await client.chat([{ role: "user", content: "hello" }]);
+        for await (const _ of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            // consume stream
+        }
+        await client.audioSpeech("hello");
+
+        expect(fetchMock).toHaveBeenCalledTimes(7);
+        expect(fetchMock.mock.calls.map((call) => bodyOf(call).model)).toEqual(
+            Array(7).fill(undefined),
+        );
+        expect(bodyOf(fetchMock.mock.calls[6]).voice).toBeUndefined();
+    });
+
+    it("omits an unset transcription model", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(makeResponse({ text: "hello" }));
+
+        await client.transcribe(new ArrayBuffer(8));
+
+        const request = fetchMock.mock.calls[0][1] as RequestInit;
+        expect((request.body as FormData).has("model")).toBe(false);
     });
 });
 
@@ -246,6 +435,195 @@ describe("Pollinations seed handling", () => {
     });
 });
 
+describe("Pollinations simple text facade", () => {
+    it("maps every simple text option to one canonical chat request", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await expect(
+            client.text("hello", {
+                systemPrompt: "be concise",
+                model: "openai",
+                temperature: 0.5,
+                maxTokens: 42,
+                frequencyPenalty: 0.25,
+                presencePenalty: -0.25,
+                seed: -1,
+                json: true,
+                private: true,
+            }),
+        ).resolves.toBe("ok");
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(bodyOf(fetchMock.mock.calls[0])).toEqual({
+            messages: [
+                { role: "system", content: "be concise" },
+                { role: "user", content: "hello" },
+            ],
+            model: "openai",
+            temperature: 0.5,
+            max_tokens: 42,
+            frequency_penalty: 0.25,
+            presence_penalty: -0.25,
+            seed: -1,
+            private: true,
+            stream: false,
+            response_format: { type: "json_object" },
+        });
+    });
+
+    it("streams only text deltas through the canonical chat parser", async () => {
+        const client = newClient();
+        const stream = [
+            'data: {"choices":[{"delta":{"role":"assistant"}}]}',
+            'data: {"choices":[{"delta":{"content":"hello"}}]}',
+            'data: {"choices":[{"delta":{"content":""}}]}',
+            "data: [DONE]",
+            "",
+        ].join("\n");
+        fetchMock.mockResolvedValue(
+            makeResponse(stream, {
+                kind: "stream",
+                contentType: "text/event-stream",
+            }),
+        );
+
+        const chunks: string[] = [];
+        for await (const chunk of client.textStream("hello", {
+            json: true,
+            private: true,
+        })) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual(["hello"]);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            messages: [{ role: "user", content: "hello" }],
+            stream: true,
+            private: true,
+            response_format: { type: "json_object" },
+        });
+    });
+
+    it("surfaces streamed API errors instead of yielding invalid chunks", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"error":{"message":"Upstream model unavailable"}}',
+                    "data: [DONE]",
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "STREAM_ERROR",
+            status: 502,
+            message: "Upstream model unavailable",
+        });
+    });
+
+    it("rejects malformed stream events without choices", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"provider_metadata":{"status":"ok"}}',
+                    "data: [DONE]",
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+
+    it("rejects invalid JSON in a stream", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse("data: [invalid-json]\n\n", {
+                kind: "stream",
+                contentType: "text/event-stream",
+            }),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+
+    it("reports malformed provider data appended after DONE", async () => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    'data: {"choices":[]}',
+                    "data: [DONE]",
+                    'data: {"provider_metadata":{"private":true}}',
+                    "",
+                ].join("\n"),
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of newClient().chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            code: "MALFORMED_STREAM",
+            status: 502,
+        });
+    });
+});
+
 describe("Pollinations.imageEdit — response resolution (characterization)", () => {
     it("returns the resolved image item for a normal url response", async () => {
         const client = newClient();
@@ -267,6 +645,32 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
 
         expect(result.url).toBe("https://img.test/x.png");
         expect(result.contentType).toBe("image/png");
+    });
+
+    it("throws the API error when an image URL cannot be downloaded", async () => {
+        const client = newClient();
+
+        fetchMock
+            .mockResolvedValueOnce(
+                makeResponse({ data: [{ url: "https://img.test/x.png" }] }),
+            )
+            .mockResolvedValueOnce(
+                makeResponse(
+                    {
+                        error: {
+                            message: "Image not found",
+                            code: "NOT_FOUND",
+                        },
+                    },
+                    { ok: false, status: 404 },
+                ),
+            );
+
+        await expect(client.imageEdit("make it blue")).rejects.toMatchObject({
+            message: "Image not found",
+            code: "NOT_FOUND",
+            status: 404,
+        });
     });
 
     it("returns the resolved image item for a b64_json response", async () => {
@@ -304,5 +708,46 @@ describe("Pollinations.imageEdit — response resolution (characterization)", ()
             code: "NO_IMAGE",
             status: 500,
         });
+    });
+});
+
+describe("Pollinations model discovery", () => {
+    it("returns the model array from the registry endpoint", async () => {
+        const client = newClient();
+        const models = [{ name: "openai", title: "OpenAI" }];
+        fetchMock.mockResolvedValueOnce(makeResponse(models));
+
+        await expect(client.models()).resolves.toEqual(models);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/models",
+        );
+    });
+});
+
+describe("Pollinations.accountQuests", () => {
+    it("fetches the quest catalog and returns it typed", async () => {
+        const client = newClient();
+        const questsResponse = {
+            quests: [
+                {
+                    id: "quest-sdk-methods",
+                    title: "Ship an SDK method",
+                    description: "Add a new account method to the SDK",
+                    category: "sdk",
+                    state: "available",
+                    status: "open",
+                    rewardAmount: 5,
+                    balanceBucket: "tier",
+                    url: null,
+                    reward: null,
+                },
+            ],
+        };
+        fetchMock.mockResolvedValueOnce(makeResponse(questsResponse));
+
+        await expect(client.accountQuests()).resolves.toEqual(questsResponse);
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            "https://example.test/account/quests",
+        );
     });
 });

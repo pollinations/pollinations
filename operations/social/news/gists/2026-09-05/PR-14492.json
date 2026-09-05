@@ -1,0 +1,34 @@
+{
+  "pr_number": 14492,
+  "title": "fix: distinguish key budgets from wallet payment failures",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14492",
+  "merged_at": "2026-09-05T16:24:57Z",
+  "labels": [],
+  "pr_body_excerpt": "- Return distinct KEY_BUDGET_EXHAUSTED and INSUFFICIENT_BALANCE codes with the existing 402 status.\n- Link key-budget failures to key settings and wallet failures to top-up, including paid-only balance guidance.\n- Stop the CLI telling users to top up for exhausted key budgets. No changes to prices, reservations, or deductions.\n- Tests: 42 gateway/billing tests and 4 CLI guidance tests; gen typecheck passes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "402s learn the difference",
+    "blurb": "A depleted API key budget and an empty wallet now get their own little signposts. Polli has stopped sending everyone to the same jar of honey.",
+    "summary": "Payment-required responses now distinguish exhausted API key budgets (KEY_BUDGET_EXHAUSTED) from insufficient wallet balances (INSUFFICIENT_BALANCE), while keeping HTTP 402 and directing each case to the relevant settings or top-up flow.",
+    "impact": "CLI and API users with a spent key budget are guided to key settings, while wallet-balance failures point to top-up guidance, including paid-only balance details.",
+    "keywords": [
+      "billing",
+      "api-keys",
+      "wallet",
+      "errors",
+      "cli",
+      "payment-required"
+    ],
+    "visual_concept": "Depict two friendly, clearly labeled garden paths branching from a retro 402 terminal: one path leads to a tiny key-settings toolbox with an empty key-budget meter, and the other to a warm wallet top-up watering can. Polli, wearing a tiny guide hat and holding a signpost, calmly directs the monitor robot down the correct path; code-plants and flowers make the error-routing metaphor feel helpful rather than alarming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny guide hat and holding a signpost beside a retro terminal showing pixel text “402.” Two warm garden paths split toward a key-settings toolbox labeled “KEY BUDGET” and a wallet watering can labeled “TOP UP,” while a cheerful CRT monitor robot follows the right sign; lime green (#ecf874) code-plants, flowers, soft pastel gradients, cozy pixel art, 8-bit aesthetic, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14492.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny guide hat and holding a signpost beside a retro terminal showing pixel text “402.” Two warm garden paths split toward a key-settings toolbox labeled “KEY BUDGET” and a wallet watering can labeled “TOP UP,” while a cheerful CRT monitor robot follows the right sign; lime green (#ecf874) code-plants, flowers, soft pastel gradients, cozy pixel art, 8-bit aesthetic, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-05T16:25:57.395908+00:00"
+}

@@ -1,12 +1,4 @@
-import {
-    afterAll,
-    beforeAll,
-    beforeEach,
-    describe,
-    expect,
-    it,
-    vi,
-} from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -17,15 +9,6 @@ type PromptAgentRequest = {
     messages?: unknown[];
     stream?: boolean;
 };
-
-function rethrowUnhandledRejection(reason: unknown): void {
-    throw reason;
-}
-
-// Keep the migrated AI SDK failure-path tests under Enter's existing
-// workerd rejection behavior without weakening Gen's test suite globally.
-beforeAll(() => process.on("unhandledRejection", rethrowUnhandledRejection));
-afterAll(() => process.off("unhandledRejection", rethrowUnhandledRejection));
 
 const BASE_RUNTIME: PromptAgentRuntime = {
     config: {

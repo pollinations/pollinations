@@ -8,6 +8,31 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("reports Portkey's exhausted deadline as 504 without starting a fallback", async () => {
+        const details = {
+            error: {
+                type: "timeout_error",
+                message:
+                    "Request exceeded the timeout sent in the request: 290000ms",
+            },
+        };
+        const fetcher = vi.fn(async () =>
+            Response.json(details, { status: 408 }),
+        );
+        const failure = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat", fetcher },
+        ).catch((error) => error);
+        expect(failure).toMatchObject({
+            status: 504,
+            upstreamStatus: 408,
+            details,
+        });
+        expect(isRetryableFallbackError(failure)).toBe(false);
+        expect(fetcher).toHaveBeenCalledOnce();
+    });
+
     it("uses a configured service-binding fetcher", async () => {
         const fetcher = vi.fn(async () =>
             Response.json({

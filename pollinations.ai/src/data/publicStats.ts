@@ -84,7 +84,7 @@ function cached<T>(load: () => Promise<T>) {
     };
 }
 
-/** The community app directory, deduplicated by name (newest first wins). */
+/** The community app directory; exact duplicates collapse, same-named apps stay. */
 const loadDirectory = cached(async () => {
     const rows = await tinybird<DirectoryApp>(
         "app_directory_public",
@@ -92,8 +92,9 @@ const loadDirectory = cached(async () => {
     );
     const seen = new Set<string>();
     return rows.filter((app) => {
-        const key = app.name?.toLowerCase();
-        if (!key || seen.has(key)) return false;
+        if (!app.name) return false;
+        const key = `${app.name.toLowerCase()}|${app.web_url || app.github_repository_url}`;
+        if (seen.has(key)) return false;
         seen.add(key);
         return true;
     });

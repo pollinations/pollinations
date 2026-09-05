@@ -1,9 +1,9 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Video generation handler for Pollinations
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
@@ -53,10 +53,9 @@ export function validateVideoFrameCount(safeParams: ImageParams): void {
               ? "one start-frame image (image[0])"
               : `${maxFrames} frame images (image[0] as the start frame and image[1] as the end frame)`;
 
-    throw new HttpError(
-        `${definition.title} supports ${supportedFrames}; received ${frameCount}.`,
-        400,
-    );
+    throw UpstreamError.fromProvider(400, {
+        message: `${definition.title} supports ${supportedFrames}; received ${frameCount}.`,
+    });
 }
 
 export async function createAndReturnVideo(

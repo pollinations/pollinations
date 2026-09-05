@@ -1,5 +1,5 @@
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
-import { downloadMesh, requireImages, toHttpError } from "../modelUtils.ts";
+import { downloadMesh, requireImages, toUpstreamError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
 import { extractFalModelMesh, runFalJob } from "./falClient.ts";
 
@@ -32,6 +32,6 @@ export async function callTrellis2Fal(
             },
         };
     } catch (error) {
-        throw toHttpError(error);
+        throw toUpstreamError(error);
     }
 }

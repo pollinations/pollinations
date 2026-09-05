@@ -52,13 +52,10 @@ describe("callNovaCanvasAPI", () => {
                 seed: 42,
             } as ImageParams),
         ).rejects.toMatchObject({
-            name: "HttpError",
+            name: "UpstreamError",
             status: 400,
             message: expect.stringContaining("expected maxLength: 1024"),
-            details: {
-                validation: true,
-                body: expect.stringContaining("expected maxLength: 1024"),
-            },
+            responseBody: expect.stringContaining("expected maxLength: 1024"),
         });
     });
 });

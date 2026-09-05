@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { AuthResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -135,7 +135,7 @@ export async function analyzeImageSafety(
 
 /**
  * Checks prompt safety with Azure Content Safety, logs the result, and throws
- * an HttpError(400) if the prompt is unsafe.
+ * an UpstreamError(400) if the prompt is unsafe.
  */
 export async function requireSafePrompt(
     prompt: string,
@@ -150,7 +150,9 @@ export async function requireSafePrompt(
         const errorMessage = `Prompt contains unsafe content: ${promptSafetyResult.formattedViolations}`;
         logError("Azure Content Safety rejected prompt:", errorMessage);
 
-        const error = new HttpError(errorMessage, 400);
+        const error = UpstreamError.fromProvider(400, {
+            message: errorMessage,
+        });
         await logGptImageError(
             prompt,
             safeParams,

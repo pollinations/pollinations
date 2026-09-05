@@ -1,5 +1,5 @@
 import { Buffer } from "node:buffer";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import { fetchUserImage } from "@/userImage.ts";
 
@@ -13,7 +13,9 @@ export function base64ToBuffer(base64: string): Buffer {
         .replace(/\s/g, "")
         .replace(/=+$/, "");
     if (!/^[A-Za-z0-9+/_-]*$/.test(input)) {
-        throw new HttpError("Invalid base64 image response", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Invalid base64 image response",
+        });
     }
     return Buffer.from(input, "base64");
 }

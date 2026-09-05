@@ -8,6 +8,7 @@ function serializeDetails(details: unknown): string | undefined {
 }
 
 export function throwTextError(error: ServiceError): never {
+    if (error instanceof UpstreamError) throw error;
     const status =
         typeof error.status === "number"
             ? error.status
@@ -21,7 +22,9 @@ export function throwTextError(error: ServiceError): never {
         errorCode: error.errorCode,
         requestUrl: error.requestUrl,
         upstreamStatus: error.upstreamStatus,
-        responseBody: serializeDetails(error.details || error.response?.data),
+        responseBody:
+            error.responseBody ??
+            serializeDetails(error.details || error.response?.data),
         upstreamHeaders: error.upstreamHeaders,
         cause: error,
     });

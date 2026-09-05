@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
@@ -7,7 +7,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance-2.5:ops");
@@ -40,10 +40,9 @@ function resolveAspectRatio(safeParams: ImageParams): Seedance25AspectRatio {
         ) {
             return safeParams.aspectRatio as Seedance25AspectRatio;
         }
-        throw new HttpError(
-            `aspectRatio "${safeParams.aspectRatio}" is not supported by Seedance 2.5. Supported: ${ASPECT_RATIOS.join(", ")}.`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `aspectRatio "${safeParams.aspectRatio}" is not supported by Seedance 2.5. Supported: ${ASPECT_RATIOS.join(", ")}.`,
+        });
     }
     if (!safeParams.dimensionsExplicit) return "16:9";
     return closestRatioLogSpace(
@@ -58,18 +57,16 @@ export async function callSeedance25API(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     if ((safeParams.duration ?? DURATION) !== DURATION) {
-        throw new HttpError(
-            "Seedance 2.5 currently supports 4-second videos",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: "Seedance 2.5 currently supports 4-second videos",
+        });
     }
 
     const resolution = safeParams.resolution ?? "480p";
     if (resolution !== "480p" && resolution !== "720p") {
-        throw new HttpError(
-            "Seedance 2.5 supports 480p or 720p resolution",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: "Seedance 2.5 supports 480p or 720p resolution",
+        });
     }
 
     const images = safeParams.image ?? [];
@@ -112,7 +109,7 @@ export async function callSeedance25API(
         });
     } catch (error) {
         logError("prediction failed", error);
-        throw toReplicateHttpError(error, "Seedance 2.5 generation failed");
+        throw toReplicateUpstreamError(error, "Seedance 2.5 generation failed");
     }
 
     const videoResponse = await fetchUpstream(videoUrl, {

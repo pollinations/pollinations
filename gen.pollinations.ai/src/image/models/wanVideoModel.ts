@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Alibaba Wan video generation via Replicate.
  *
@@ -15,7 +16,6 @@
  * R2V (reference_images / reference_videos) is $0.10/s, same as T2V.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
@@ -24,7 +24,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan:ops");
@@ -216,10 +216,10 @@ async function generateWanVideo(
         (safeParams.reference_videos?.length ?? 0) > 0;
 
     if (hasFrames && hasReference) {
-        throw new HttpError(
-            "Frame inputs (image[]) and reference media (reference_images, reference_videos) cannot be combined.",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "Frame inputs (image[]) and reference media (reference_images, reference_videos) cannot be combined.",
+        });
     }
 
     let model: string;
@@ -229,10 +229,9 @@ async function generateWanVideo(
 
     if (hasReference) {
         if (!config.r2vModel) {
-            throw new HttpError(
-                `${config.displayName} does not support reference-to-video.`,
-                400,
-            );
+            throw UpstreamError.fromProvider(400, {
+                message: `${config.displayName} does not support reference-to-video.`,
+            });
         }
         model = config.r2vModel;
         mode = "r2v";
@@ -301,7 +300,7 @@ async function generateWanVideo(
         });
     } catch (err) {
         logError(`${config.displayName} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${config.displayName} generation failed`,
         );

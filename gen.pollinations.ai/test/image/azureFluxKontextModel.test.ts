@@ -155,7 +155,7 @@ describe("callAzureFluxKontext", () => {
         });
     });
 
-    it("maps a filtered successful response to a safe client error", async () => {
+    it("maps a filtered successful response without removing provider diagnostics", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {
@@ -190,14 +190,20 @@ describe("callAzureFluxKontext", () => {
             },
         });
         expect(JSON.parse(error.responseBody)).toMatchObject({
-            dataCount: 1,
-            finishReason: "content_filter",
-            filteredCategories: ["sexual"],
+            data: [
+                {
+                    finish_reason: "content_filter",
+                    content_filter_results: {
+                        sexual: { filtered: true, severity: "high" },
+                    },
+                    revised_prompt: "private rewritten prompt",
+                },
+            ],
+            prompt: "private prompt must not be logged",
         });
-        expect(error.responseBody).not.toContain("private");
     });
 
-    it("records a safe response summary when Azure returns no image", async () => {
+    it("preserves the complete response when Azure returns no image", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {
@@ -227,11 +233,14 @@ describe("callAzureFluxKontext", () => {
             upstreamHeaders: { "x-ms-request-id": "azure-request-empty" },
         });
         expect(JSON.parse(error.responseBody)).toMatchObject({
-            dataCount: 1,
+            data: [
+                {
+                    source_url: "https://private.example/source.png",
+                    unexpected: "metadata only",
+                },
+            ],
             message: "generation completed without an image",
         });
-        expect(error.responseBody).not.toContain("private.example");
-        expect(error.responseBody).not.toContain("metadata only");
     });
 });
 

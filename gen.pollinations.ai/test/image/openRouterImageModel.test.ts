@@ -150,7 +150,7 @@ describe("OpenRouter Grok Imagine Pro", () => {
             callOpenRouterGrokImagineProAPI("test prompt", baseParams),
         ).rejects.toMatchObject({
             status: 502,
-            upstreamUrl: OPENROUTER_IMAGE_URL,
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
         });
     });
 });
@@ -937,7 +937,7 @@ describe("OpenRouter Recraft vector", () => {
             }),
         ).rejects.toMatchObject({
             status: 502,
-            upstreamUrl: OPENROUTER_IMAGE_URL,
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
         });
     });
 
@@ -966,6 +966,9 @@ describe("OpenRouter Recraft vector", () => {
         ).rejects.toMatchObject({
             status: 429,
             upstreamStatus: 429,
+            responseBody: JSON.stringify({
+                error: { message: "Recraft upstream returned 429", code: 429 },
+            }),
             requestUrl: new URL(OPENROUTER_IMAGE_URL),
         });
     });

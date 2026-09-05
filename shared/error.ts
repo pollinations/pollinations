@@ -51,8 +51,9 @@ type UpstreamErrorOptions = {
     errorCode?: string;
 };
 
+/** Public HTTP failure plus original provider diagnostics. Bodies are not redacted or truncated. */
 export class UpstreamError extends HTTPException {
-    public readonly name = "UpstreamError" as const;
+    public override readonly name: string = "UpstreamError";
     public readonly requestUrl?: URL;
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;
@@ -68,6 +69,14 @@ export class UpstreamError extends HTTPException {
         this.responseBody = options?.responseBody;
         this.upstreamHeaders = options?.upstreamHeaders;
         this.errorCode = options?.errorCode;
+    }
+
+    /** Keep the provider status for diagnostics and retries; expose gateway failures as 5xx. */
+    static fromProvider(status: number, options: UpstreamErrorOptions) {
+        return new UpstreamError(remapUpstreamStatus(status), {
+            ...options,
+            upstreamStatus: status,
+        });
     }
 }
 
@@ -92,16 +101,24 @@ export async function ensureUpstreamOk(
     requestUrl: string | URL,
 ): Promise<Response> {
     if (response.ok) return response;
-    const responseBody = await response.text();
+    let responseBody: string | undefined;
+    let cause: unknown;
+    try {
+        responseBody = await response.text();
+    } catch (error) {
+        cause = error;
+    }
     const rawMessage =
-        extractUpstreamMessage(responseBody) ||
-        getDefaultErrorMessage(response.status);
-    throw new UpstreamError(remapUpstreamStatus(response.status), {
-        message: truncateString(rawMessage, MAX_ERROR_MESSAGE_LENGTH) ?? "",
+        (responseBody && extractUpstreamMessage(responseBody)) ||
+        (cause instanceof Error
+            ? cause.message
+            : getDefaultErrorMessage(response.status));
+    throw UpstreamError.fromProvider(response.status, {
+        message: rawMessage,
         requestUrl:
             typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
-        upstreamStatus: response.status,
         responseBody,
+        cause,
         upstreamHeaders: collectUpstreamHeaders(response.headers),
     });
 }
@@ -158,7 +175,12 @@ const GenericErrorDetailsSchema = z
         name: z.string(),
         upstreamStatus: z.number().int().optional(),
         upstreamHost: z.string().optional(),
-        upstreamBody: z.string().optional(),
+        upstreamBody: z
+            .string()
+            .describe(
+                "Original provider response body, without redaction or truncation.",
+            )
+            .optional(),
     })
     .meta({ $id: "ErrorDetails" });
 
@@ -370,10 +392,7 @@ function createUpstreamErrorResponse(
             name: error.name,
             upstreamStatus: error.upstreamStatus,
             upstreamHost: error.requestUrl?.hostname,
-            upstreamBody: truncateString(
-                error.responseBody,
-                MAX_UPSTREAM_BODY_LENGTH,
-            ),
+            upstreamBody: error.responseBody,
         },
         error.errorCode,
     );

@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -43,10 +43,9 @@ function resolveImageSize(safeParams: ImageParams): FalImageSize {
     const preset =
         FAL_IMAGE_SIZES[safeParams.aspectRatio as keyof typeof FAL_IMAGE_SIZES];
     if (preset) return preset;
-    throw new HttpError(
-        `Aspect ratio ${safeParams.aspectRatio} is not supported by qwen-image-3`,
-        400,
-    );
+    throw UpstreamError.fromProvider(400, {
+        message: `Aspect ratio ${safeParams.aspectRatio} is not supported by qwen-image-3`,
+    });
 }
 
 export async function callQwenImage3API(
@@ -55,7 +54,9 @@ export async function callQwenImage3API(
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
     if (!apiKey) {
-        throw new HttpError("FAL_KEY environment variable is required", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "FAL_KEY environment variable is required",
+        });
     }
 
     const outputPixels = safeParams.width * safeParams.height;
@@ -65,18 +66,17 @@ export async function callQwenImage3API(
         outputPixels < QWEN_IMAGE_3_MIN_PIXELS ||
         outputPixels > QWEN_IMAGE_3_MAX_PIXELS
     ) {
-        throw new HttpError(
-            "qwen-image-3 output must contain between 512×512 and 2048×2048 total pixels",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "qwen-image-3 output must contain between 512×512 and 2048×2048 total pixels",
+        });
     }
 
     const images = safeParams.image ?? [];
     if (images.length > QWEN_IMAGE_3_MAX_IMAGES) {
-        throw new HttpError(
-            `qwen-image-3 supports at most ${QWEN_IMAGE_3_MAX_IMAGES} reference images`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `qwen-image-3 supports at most ${QWEN_IMAGE_3_MAX_IMAGES} reference images`,
+        });
     }
     const imageUrls = await Promise.all(images.map(toDataUri));
     const isEdit = imageUrls.length > 0;
@@ -112,12 +112,10 @@ export async function callQwenImage3API(
     const data = (await response.json()) as FalQwenImage3Response;
     const imageUrl = data.images?.[0]?.url;
     if (!imageUrl) {
-        throw new HttpError(
-            "Qwen Image 3 returned no image URL",
-            502,
-            undefined,
-            upstreamUrl,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "Qwen Image 3 returned no image URL",
+            requestUrl: new URL(upstreamUrl),
+        });
     }
 
     const imageResponse = await fetchUpstream(imageUrl, {

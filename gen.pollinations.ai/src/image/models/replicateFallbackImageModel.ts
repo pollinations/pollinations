@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
@@ -10,7 +10,7 @@ import {
 } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 type ReplicateFallbackModel =
@@ -66,13 +66,16 @@ async function runReplicateImage(
             string | string[]
         >({ model, input });
         const url = Array.isArray(output) ? output[0] : output;
-        if (!url) throw new HttpError(`${label} returned no image`, 502);
+        if (!url)
+            throw UpstreamError.fromProvider(502, {
+                message: `${label} returned no image`,
+            });
         const response = await fetchUpstream(url, {
             errorLabel: `Failed to download ${label} output`,
         });
         return Buffer.from(await response.arrayBuffer());
     } catch (error) {
-        throw toReplicateHttpError(error, `${label} generation failed`);
+        throw toReplicateUpstreamError(error, `${label} generation failed`);
     }
 }
 
@@ -110,10 +113,9 @@ export async function callReplicateFallbackImage(
     switch (model) {
         case "flux-2-pro-replicate": {
             if (params.image.length > 8) {
-                throw new HttpError(
-                    "FLUX.2 Pro supports at most 8 reference images",
-                    400,
-                );
+                throw UpstreamError.fromProvider(400, {
+                    message: "FLUX.2 Pro supports at most 8 reference images",
+                });
             }
             const images = await prepareFluxImages(params.image);
             promptImageTokens = images.megapixels;
@@ -174,16 +176,14 @@ export async function callReplicateFallbackImage(
         }
         case "p-image-edit-replicate": {
             if (params.image.length === 0) {
-                throw new HttpError(
-                    "p-image-edit requires at least one input image",
-                    400,
-                );
+                throw UpstreamError.fromProvider(400, {
+                    message: "p-image-edit requires at least one input image",
+                });
             }
             if (params.image.length > 5) {
-                throw new HttpError(
-                    "p-image-edit supports at most 5 input images",
-                    400,
-                );
+                throw UpstreamError.fromProvider(400, {
+                    message: "p-image-edit supports at most 5 input images",
+                });
             }
             buffer = await runReplicateImage(
                 "prunaai/p-image-edit",
@@ -199,7 +199,9 @@ export async function callReplicateFallbackImage(
         }
         case "krea-replicate": {
             if (params.image.length > 0) {
-                throw new HttpError("Krea does not accept image input", 400);
+                throw UpstreamError.fromProvider(400, {
+                    message: "Krea does not accept image input",
+                });
             }
             buffer = await runReplicateImage(
                 "krea/krea-2-medium",
@@ -213,10 +215,9 @@ export async function callReplicateFallbackImage(
             break;
         }
         default:
-            throw new HttpError(
-                `Unsupported Replicate fallback model: ${model}`,
-                400,
-            );
+            throw UpstreamError.fromProvider(400, {
+                message: `Unsupported Replicate fallback model: ${model}`,
+            });
     }
 
     return {

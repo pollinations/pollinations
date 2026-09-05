@@ -2297,7 +2297,21 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Invalid image request: height must be at least 256",
+            message: "Image backend rejected request with status 422",
+            details: {
+                upstreamStatus: 422,
+                upstreamBody: JSON.stringify({
+                    detail: [
+                        {
+                            type: "greater_than_equal",
+                            loc: ["body", "height"],
+                            msg: "Input should be greater than or equal to 256",
+                            input: 220,
+                            ctx: { ge: 256 },
+                        },
+                    ],
+                }),
+            },
         },
     });
     await wait();
@@ -2321,7 +2335,11 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Invalid image request: prompt is too long",
+            message: "Image backend rejected request with status 422",
+            details: {
+                upstreamStatus: 422,
+                upstreamBody: JSON.stringify({ detail: "prompt is too long" }),
+            },
         },
     });
     await waitDetail();
@@ -2346,7 +2364,13 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Image provider error: missing provider key",
+            message: "Image backend rejected request with status 400",
+            details: {
+                upstreamStatus: 400,
+                upstreamBody: JSON.stringify({
+                    message: "missing provider key",
+                }),
+            },
         },
     });
     await waitProvider400();
@@ -2358,8 +2382,7 @@ test("image backend validation errors return client-facing 400", async ({
         responseStatus: 400,
     });
 
-    // Upstream 400 with empty body must still surface a useful message via
-    // HttpError.message, not collapse to a generic "Image provider error".
+    // An empty upstream body still carries the backend status in the message.
     const { response: emptyBody400Response, wait: waitEmptyBody400 } =
         await fetchWorker(
             "/image/empty%20body%20400?model=zimage&width=280&height=280&seed=42",
@@ -2373,8 +2396,7 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message:
-                "Image provider error: Image backend rejected request with status 400",
+            message: "Image backend rejected request with status 400",
         },
     });
     await waitEmptyBody400();

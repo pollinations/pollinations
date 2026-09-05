@@ -72,51 +72,46 @@ export const isFresh = (app: DirectoryApp, now = Date.now()) => {
     return Number.isFinite(approved) && approved >= now - THIRTY_DAYS_MS;
 };
 
-/** The community app directory, deduplicated by name (newest first wins). */
-export function useAppDirectory() {
-    return useAsync<DirectoryApp[]>(async () => {
-        const rows = await tinybird<DirectoryApp>(
-            "app_directory_public",
-            "&limit=1000",
-        );
-        const seen = new Set<string>();
-        return rows.filter((app) => {
-            const key = app.name?.toLowerCase();
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
+/** Shared across routes; a failed load is dropped so the next mount retries. */
+function cached<T>(load: () => Promise<T>) {
+    let promise: Promise<T> | null = null;
+    return () => {
+        promise ??= load().catch((error) => {
+            promise = null;
+            throw error;
         });
-    }, []);
+        return promise;
+    };
+}
+
+/** The community app directory, deduplicated by name (newest first wins). */
+const loadDirectory = cached(async () => {
+    const rows = await tinybird<DirectoryApp>(
+        "app_directory_public",
+        "&limit=1000",
+    );
+    const seen = new Set<string>();
+    return rows.filter((app) => {
+        const key = app.name?.toLowerCase();
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+    });
+});
+
+export function useAppDirectory() {
+    return useAsync<DirectoryApp[]>(loadDirectory, []);
 }
 
 export type ShowcaseApp = DirectoryApp & { total_apps: number };
 
-/** Eight active apps plus the complete directory count for the home page. */
-export function useAppShowcase() {
-    return useAsync<ShowcaseApp[]>(async () => {
-        const rows = await tinybird<DirectoryApp>(
-            "app_directory_public",
-            "&limit=1000",
-        );
-        const seen = new Set<string>();
-        const apps = rows.filter((app) => {
-            const key = app.name?.toLowerCase();
-            if (!key || seen.has(key)) return false;
-            seen.add(key);
-            return true;
-        });
-        const totalApps = apps.length;
+/** The most active apps plus the complete directory count, from one small pipe. */
+const loadShowcase = cached(() =>
+    tinybird<ShowcaseApp>("app_showcase_public", "&limit=8"),
+);
 
-        return apps
-            .filter((app) => app.description && Number(app.requests_24h) >= 100)
-            .sort(
-                (a, b) =>
-                    Number(b.requests_24h) - Number(a.requests_24h) ||
-                    b.approved_date.localeCompare(a.approved_date),
-            )
-            .slice(0, 8)
-            .map((app) => ({ ...app, total_apps: totalApps }));
-    }, []);
+export function useAppShowcase() {
+    return useAsync<ShowcaseApp[]>(loadShowcase, []);
 }
 
 type PlatformStats = {

@@ -7,6 +7,9 @@ export const REQUIRED_PIPES = [
     "economics_compute_ledger_api",
     "economics_pollen_usage_api",
     "economics_private_config_api",
+    "economics_revenue_share_api",
+    "economics_stripe_sales_api",
+    "economics_user_balances_api",
 ];
 
 export async function checkTinybirdContract({ api, token, fetchImpl = fetch }) {

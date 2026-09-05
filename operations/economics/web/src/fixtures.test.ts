@@ -6,6 +6,9 @@ const EXPECTED_PIPES = [
     "economics_compute_ledger_api",
     "economics_pollen_usage_api",
     "economics_private_config_api",
+    "economics_revenue_share_api",
+    "economics_stripe_sales_api",
+    "economics_user_balances_api",
 ];
 
 describe("fixtures", () => {
@@ -79,6 +82,11 @@ describe("fixtures", () => {
         expect(
             pollen.some(
                 (row) => row.month === "2026-07" && row.vendor === "community",
+            ),
+        ).toBe(true);
+        expect(
+            FIXTURES.economics_revenue_share_api.some(
+                (row) => (row as { month: string }).month === "2026-07",
             ),
         ).toBe(true);
     });

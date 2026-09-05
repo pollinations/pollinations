@@ -164,6 +164,58 @@ describe("economics Worker auth", () => {
         );
     });
 
+    it("keeps revenue-share identity data behind authentication", async () => {
+        const upstream = vi.fn().mockResolvedValue(Response.json({ data: [] }));
+        vi.stubGlobal("fetch", upstream);
+
+        const unauthorized = await request(
+            "/api/pipes/economics_revenue_share_api",
+        );
+        expect(unauthorized.status).toBe(401);
+        expect(upstream).not.toHaveBeenCalled();
+
+        const response = await request(
+            "/api/pipes/economics_revenue_share_api",
+            { headers: { Cookie: await authenticatedCookie() } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(upstream).toHaveBeenCalledWith(
+            `${env.TINYBIRD_API}/v0/pipes/economics_revenue_share_api.json`,
+            {
+                headers: {
+                    Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,
+                },
+            },
+        );
+    });
+
+    it("keeps aggregate D1 balances behind authentication", async () => {
+        const upstream = vi.fn().mockResolvedValue(Response.json({ data: [] }));
+        vi.stubGlobal("fetch", upstream);
+
+        const unauthorized = await request(
+            "/api/pipes/economics_user_balances_api",
+        );
+        expect(unauthorized.status).toBe(401);
+        expect(upstream).not.toHaveBeenCalled();
+
+        const response = await request(
+            "/api/pipes/economics_user_balances_api",
+            { headers: { Cookie: await authenticatedCookie() } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(upstream).toHaveBeenCalledWith(
+            `${env.TINYBIRD_API}/v0/pipes/economics_user_balances_api.json`,
+            {
+                headers: {
+                    Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,
+                },
+            },
+        );
+    });
+
     it("keeps private configuration behind the authenticated pipe proxy", async () => {
         const upstream = vi
             .fn()

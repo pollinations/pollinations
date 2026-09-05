@@ -1,0 +1,20 @@
+DESCRIPTION >
+    Current non-cashable Paid and Quest Pollen exposure from the daily D1 user
+    snapshot. Returns one aggregate row and no user identity fields.
+
+TOKEN "operations_read" READ
+
+NODE economics_user_balances_api_node
+SQL >
+    SELECT
+        count() AS users,
+        countIf(ifNull(pack_balance, 0) > 0) AS paid_users,
+        countIf(ifNull(tier_balance, 0) > 0) AS quest_users,
+        sumIf(ifNull(pack_balance, 0), ifNull(pack_balance, 0) > 0)
+            AS paid_balance,
+        sumIf(ifNull(tier_balance, 0), ifNull(tier_balance, 0) > 0)
+            AS quest_balance,
+        toString(max(synced_at)) AS synced_at
+    FROM d1_user
+
+TYPE ENDPOINT

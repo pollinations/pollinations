@@ -45,8 +45,3 @@ custom_domain = true
 pattern = "staging.pollinations.ai"
 zone_name = "pollinations.ai"
 custom_domain = true
-
-# Persistent website V2 preview. It has its own Worker and workers.dev URL,
-# with no staging or production custom-domain routes.
-[env.website-v2]
-workers_dev = true

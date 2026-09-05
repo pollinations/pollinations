@@ -10,13 +10,11 @@
         "prebuild": "npm run build:ui",
         "build": "tsc && vite build",
         "build:staging": "CLOUDFLARE_ENV=staging vite build --mode=staging",
-        "build:website-v2": "CLOUDFLARE_ENV=website-v2 vite build --mode=staging",
         "build:production": "tsc && CLOUDFLARE_ENV=production vite build --mode=production",
         "data:pr-history": "node scripts/update-community-pr-history.mjs",
         "preview": "vite preview",
         "test": "vitest run",
         "deploy:staging": "npm run build:staging && wrangler deploy --config dist/pollinations_ai/wrangler.json",
-        "deploy:website-v2": "npm run build:website-v2 && wrangler deploy --config dist/pollinations_ai/wrangler.json",
         "deploy:production": "npm run build:production && wrangler deploy --config dist/pollinations_ai/wrangler.json"
     },
     "dependencies": {
@@ -36,11 +34,9 @@
         "@types/react": "^19.2.7",
         "@types/react-dom": "^19.2.3",
         "@vitejs/plugin-react": "^5.1.1",
-        "eslint-plugin-jsx-a11y": "^6.10.2",
         "tailwindcss": "^4.1.12",
         "typescript": "^5.9.3",
         "vite": "^7.2.4",
-        "vite-tsconfig-paths": "^5.1.4",
         "vitest": "^3.2.4",
         "wrangler": "^4.49.0"
     }

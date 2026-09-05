@@ -313,7 +313,6 @@ cursor-party/
 data/
 !pollinations.ai/src/data/
 !pollinations.ai/public/data/
-!pollinations.ai/public/data/community-pr-history.json
 text.pollinations.ai/v2/
 
 # Local Netlify folder

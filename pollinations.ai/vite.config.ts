@@ -1,11 +1,9 @@
-import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { cloudflare } from "@cloudflare/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
-import tsconfigPaths from "vite-tsconfig-paths";
 
 // Brand SVGs resolve from source rather than dist, matching enter's frontend
 // so the two sites can't drift on the wordmark.
@@ -24,12 +22,10 @@ export default defineConfig({
         }),
         react(),
         tailwindcss(),
-        tsconfigPaths(),
         cloudflare(),
     ],
     resolve: {
         alias: {
-            "@shared": path.resolve(__dirname, "../shared"),
             "@pollinations/ui/brand": uiBrand,
         },
         // Linked UI packages must share the app's SDK auth context.
@@ -53,13 +49,6 @@ export default defineConfig({
                         return "vendor";
                     }
                 },
-            },
-        },
-    },
-    optimizeDeps: {
-        esbuildOptions: {
-            loader: {
-                ".js": "jsx",
             },
         },
     },

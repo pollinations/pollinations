@@ -1,15 +1,21 @@
 import {
     Alert,
+    AppHeader,
     BeakerIcon,
     Button,
     CodeBlock,
     Collapsible,
     CopyButton,
     currentPeriod,
+    EditableCombobox,
+    EditableComboboxToken,
     ExternalLinkButton,
+    Field,
+    FieldStack,
     FileUpload,
     ImageIcon,
     InfoTip,
+    Input,
     LinkCard,
     LockIcon,
     Markdown,
@@ -26,6 +32,7 @@ import {
     WalletIcon,
 } from "@pollinations/ui";
 import { useState } from "react";
+import { AccountMenuExample } from "./account-examples";
 import { CONTROL_SIZES, PageIntro, PrimitiveExample } from "./reference-layout";
 
 const NAV_ITEM_OPTIONS = ["Models", "Usage", "Keys", "Billing"] as const;
@@ -48,6 +55,8 @@ export function CompositionsPage() {
         currentPeriod(),
     );
     const [files, setFiles] = useState<File[]>([]);
+    const [comboboxValue, setComboboxValue] = useState("");
+    const [comboboxOpen, setComboboxOpen] = useState(false);
 
     return (
         <>
@@ -59,6 +68,60 @@ export function CompositionsPage() {
 
             <section>
                 <div className="grid gap-3">
+                    <PrimitiveExample
+                        name="AccountMenu"
+                        description="Shared avatar/name menu shell. Caller-owned actions; no SDK, API key, sign-in or sign-out assumptions."
+                    >
+                        <AccountMenuExample />
+                    </PrimitiveExample>
+                    <PrimitiveExample
+                        name="AppHeader"
+                        description="Brand, navigation slots and optional scroll-aware hiding. This showcase uses the same header above."
+                    >
+                        <AppHeader
+                            navLabel="Example navigation"
+                            className="polli:static"
+                            innerClassName="polli:px-0 polli:flex-col polli:sm:flex-col"
+                        >
+                            <Button size="sm">Example action</Button>
+                        </AppHeader>
+                    </PrimitiveExample>
+                    <PrimitiveExample
+                        name="FieldStack"
+                        description="Accessible field composition with a label, help text, error and optional action."
+                    >
+                        <FieldStack
+                            label="App name"
+                            helper="Choose a name users will recognize."
+                        >
+                            <Field.Input asChild>
+                                <Input placeholder="My creative app" />
+                            </Field.Input>
+                        </FieldStack>
+                    </PrimitiveExample>
+                    <PrimitiveExample
+                        name="EditableCombobox · EditableComboboxToken"
+                        description="Choose a suggestion or type freely. A token can open the list from inside the input shell."
+                    >
+                        <EditableCombobox
+                            aria-label="Example category"
+                            value={comboboxValue}
+                            onChange={setComboboxValue}
+                            options={["Image", "Text", "Video", "Audio"]}
+                            open={comboboxOpen}
+                            onOpenChange={setComboboxOpen}
+                            placeholder="Choose or type"
+                            startContent={
+                                <EditableComboboxToken
+                                    label="Category"
+                                    value="Any"
+                                    onClick={() =>
+                                        setComboboxOpen((open) => !open)
+                                    }
+                                />
+                            }
+                        />
+                    </PrimitiveExample>
                     <PrimitiveExample
                         name="ExternalLinkButton"
                         description="Button-styled link for leaving the current app surface."

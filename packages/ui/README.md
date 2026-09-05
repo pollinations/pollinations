@@ -204,6 +204,9 @@ import { AccountMenu, DropdownItem } from "@pollinations/ui";
   Better Auth; UI components never make that authorization decision.
 - Open WebUI keeps its upstream native UI and its delegated API connection.
 
+Interactive examples and the permission boundaries are shown in
+`react.pollinations.ai/?view=modules`; the bare composition is under Compositions.
+
 ## Source Layout
 
 - `src/primitives/*` contains generic, SDK-free building blocks.

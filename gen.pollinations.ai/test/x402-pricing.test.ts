@@ -21,6 +21,7 @@ import {
     runX402Operation,
     priceActualUsage as settleActualUsage,
 } from "../src/routes/x402.ts";
+import { X402_STREAM_DONE } from "../src/utils/x402-stream.ts";
 
 const ROUTE = "/v1/chat/completions";
 const PAY_TO = "0x000000000000000000000000000000000000dEaD";
@@ -64,6 +65,7 @@ async function challenge(body: unknown) {
         x402Env,
     );
     expect(response.status).toBe(402);
+    expect(response.headers.get("content-type")).toContain("application/json");
     const header = response.headers.get("PAYMENT-REQUIRED");
     expect(header).toBeTruthy();
     return JSON.parse(atob(header as string));
@@ -333,6 +335,14 @@ function operationApp(
     app.use(ROUTE, runX402Operation);
     app.post(ROUTE, (c) => {
         counts.work += 1;
+        if (
+            (c.req.valid("json" as never) as CreateChatCompletionRequest).stream
+        ) {
+            return c.body(`data: {"choices":[]}\n\n${X402_STREAM_DONE}`, 200, {
+                "Content-Type": "text/event-stream",
+                "Settlement-Overrides": JSON.stringify({ amount: "$0.001" }),
+            });
+        }
         return c.json({ ok: true }, 200, {
             "Settlement-Overrides": JSON.stringify({ amount: "$0.001" }),
         });
@@ -418,8 +428,14 @@ test("the obsolete x402-prefixed route is absent", async () => {
     expect(response.status).toBe(404);
 });
 
+test("offers an ordinary JSON 402 for streaming chat at the same spending ceiling", async () => {
+    const normal = await challenge(request());
+    const streaming = await challenge(request({ stream: true }));
+    expect(usd(streaming.accepts[0])).toBe(usd(normal.accepts[0]));
+    expect(streaming.accepts[0].scheme).toBe("upto");
+});
+
 test.each([
-    ["streaming", { stream: true }],
     ["missing output cap", { max_tokens: undefined }],
     [
         "multimodal input",
@@ -928,6 +944,26 @@ test("final replay requires the exact proof and skips verify and settle", async 
     };
     const rejected = await app.request(key, request(), paymentHeader(forged));
     expect(rejected.status).toBe(409);
+    expect(counts).toEqual({ work: 1, payment: 1, settlement: 1 });
+});
+
+test("persists a streaming receipt before DONE and replays it without another generation or settlement", async () => {
+    const counts = { work: 0, payment: 0, settlement: 0 };
+    const app = operationApp(x402Env as CloudflareBindings, counts);
+    const key = crypto.randomUUID();
+    const payment = paymentHeader(paymentPayload(uniqueNonce()));
+    const body = request({ stream: true });
+    const first = await app.request(key, body, payment);
+    expect(first.status).toBe(200);
+    const text = await first.text();
+    const receipt = first.headers.get("payment-response");
+    expect(text).toContain(
+        `event: x402.payment\ndata: ${JSON.stringify({ paymentResponse: receipt })}\n\n${X402_STREAM_DONE}`,
+    );
+    expect(text.match(/\[DONE\]/g)).toHaveLength(1);
+    const replay = await app.request(key, body, payment);
+    expect(await replay.text()).toBe(text);
+    expect(replay.headers.get("payment-response")).toBe(receipt);
     expect(counts).toEqual({ work: 1, payment: 1, settlement: 1 });
 });
 

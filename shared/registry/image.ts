@@ -393,6 +393,7 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
+        perUserRpm: 6,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -709,6 +710,7 @@ const IMAGE_BASE_SERVICES = {
         // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
         // flat ($0.01/s x 5s = $0.05).
         cost: {
+            promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         title: "Wan 2.2",
@@ -1293,6 +1295,45 @@ const IMAGE_BASE_SERVICES = {
         minDuration: 5,
         maxDuration: 5,
         defaultDuration: 5,
+    },
+    "minimax/minimax-h3-max-turbo": {
+        aliases: [],
+        provider: "fal",
+        brand: "MiniMax",
+        category: "video",
+        addedDate: new Date("2026-09-04").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal launch pricing through 2026-09-07; restore list rates on 2026-09-08.
+        cost: {
+            completionVideoSeconds: 0.00625, // 480p per output second.
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.01 },
+            },
+            matchResolution("768p"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "768p"],
+        title: "MiniMax H3 Max Turbo",
+        description:
+            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p or 768p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 5,
+        maxDuration: 15,
+        defaultDuration: 5,
+        allowedDurations: [5, 10, 15],
     },
     "klein": {
         aliases: ["flux-klein", "black-forest-labs/flux.2-klein-4b"],

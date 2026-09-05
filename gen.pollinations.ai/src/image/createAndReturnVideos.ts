@@ -9,7 +9,10 @@ import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
-import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
+import {
+    callMinimaxH3API,
+    callMinimaxH3MaxTurboAPI,
+} from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
@@ -77,6 +80,7 @@ export async function createAndReturnVideo(
             break;
         case "seedance-pro-fal":
         case "wan-fal":
+        case "wan-fast-fal":
         case "grok-video-pro-fal":
         case "grok-imagine-video-1.5-fal":
             result = await callFalFallbackVideo(prompt, safeParams);
@@ -116,6 +120,9 @@ export async function createAndReturnVideo(
             break;
         case "minimax-h3":
             result = await callMinimaxH3API(prompt, safeParams);
+            break;
+        case "minimax/minimax-h3-max-turbo":
+            result = await callMinimaxH3MaxTurboAPI(prompt, safeParams);
             break;
         default:
             throw new Error(

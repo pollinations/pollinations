@@ -13,6 +13,8 @@ import { requireAccountPermission } from "./account-permissions.ts";
 const ConnectionSchema = z.object({
     id: z.string(),
     toolkit: z.string(),
+    name: z.string().nullable(),
+    logo: z.string().nullable(),
     alias: z.string().nullable(),
     status: z.string(),
 });

@@ -19,6 +19,7 @@ import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
     basePriceKeysForModality,
@@ -42,6 +43,7 @@ import {
     idleAction,
     isValidPerUserRpm,
     nextFormState,
+    openWebUiTestableModelId,
     providerModelHelper,
     readError,
     toEndpointPayload,
@@ -73,6 +75,10 @@ export function CommunityEndpointDialog({
 }: CommunityEndpointDialogProps) {
     const isEdit = !!endpoint;
     const isEndpointAgent = endpoint?.type === "endpoint_agent";
+    // Only in edit mode: a model being created has no id to open yet.
+    const testableModelId = endpoint
+        ? openWebUiTestableModelId(endpoint)
+        : null;
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
@@ -213,7 +219,9 @@ export function CommunityEndpointDialog({
                           ? "Endpoint responded, but did not return playable video"
                           : form.modality === "transcription"
                             ? "Endpoint responded, but did not return transcription text or usage"
-                            : "Endpoint responded, but did not return billable usage",
+                            : form.modality === "speech"
+                              ? "Endpoint responded, but did not return binary audio"
+                              : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -415,7 +423,7 @@ export function CommunityEndpointDialog({
                             title="Queued changes will be cancelled"
                         >
                             Saving this model as Private removes its queued
-                            changes. Publishing it again starts a new 12-hour
+                            changes. Publishing it again starts a new 3-hour
                             wait.
                         </Alert>
                     )}
@@ -437,6 +445,7 @@ export function CommunityEndpointDialog({
                                         "image",
                                         "video",
                                         "transcription",
+                                        "speech",
                                         "embedding",
                                     ] as const
                                 ).map((modality) => (
@@ -500,7 +509,7 @@ export function CommunityEndpointDialog({
                             helper={
                                 form.modality === "video"
                                     ? "The exact URL Pollinations calls to generate a video."
-                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                                    : "OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription/speech URL."
                             }
                             alignLabelRow
                         >
@@ -581,9 +590,11 @@ export function CommunityEndpointDialog({
                                             ? "gpt-image-2"
                                             : form.modality === "transcription"
                                               ? "whisper-1"
-                                              : form.modality === "embedding"
-                                                ? "text-embedding-3-small"
-                                                : "gpt-4o-mini"
+                                              : form.modality === "speech"
+                                                ? "kokoro"
+                                                : form.modality === "embedding"
+                                                  ? "text-embedding-3-small"
+                                                  : "gpt-4o-mini"
                                     }
                                     align="end"
                                     open={providerModelMenuOpen}
@@ -602,6 +613,31 @@ export function CommunityEndpointDialog({
                             </FieldStack>
                         )}
                     </div>
+
+                    {(isEndpointAgent || form.modality === "text") && (
+                        <FieldStack
+                            label="Responses API URL"
+                            helper="Optional exact /v1/responses URL. When set, Responses requests go directly to this endpoint with the same authentication and billing as Chat Completions."
+                            alignLabelRow
+                        >
+                            <Input
+                                name="community-responses-url"
+                                type="url"
+                                inputMode="url"
+                                value={form.responsesUrl}
+                                placeholder="https://api.example.com/v1/responses"
+                                autoComplete="off"
+                                autoCapitalize="none"
+                                spellCheck={false}
+                                onChange={(event) =>
+                                    updateForm(
+                                        "responsesUrl",
+                                        event.target.value,
+                                    )
+                                }
+                            />
+                        </FieldStack>
+                    )}
 
                     {!isEndpointAgent && (
                         <FieldStack
@@ -817,7 +853,15 @@ export function CommunityEndpointDialog({
                     )}
                 </ScrollArea>
 
-                <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
+                <div className="flex shrink-0 items-center justify-end gap-2 p-6 pt-4">
+                    {testableModelId && (
+                        <div className="mr-auto">
+                            <OpenWebUiLink
+                                modelId={testableModelId}
+                                variant="text"
+                            />
+                        </div>
+                    )}
                     <Button
                         type="button"
                         intent="danger"

@@ -392,6 +392,17 @@ export function XIcon(props: IconProps) {
     );
 }
 
+export function TrashIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M4 7h16" />
+            <path d="M9 7V4h6v3" />
+            <path d="m6 7 1 14h10l1-14" />
+            <path d="M10 11v6M14 11v6" />
+        </svg>
+    );
+}
+
 // --- Model modality / capability / price glyphs (single-ink, replace emoji) ---
 
 export function ChatIcon(props: IconProps) {
@@ -486,6 +497,23 @@ export function SparkleIcon(props: IconProps) {
             <path d="M22 5h-4" />
             <path d="M4 17v2" />
             <path d="M5 18H3" />
+        </svg>
+    );
+}
+
+export function StarIcon({
+    filled = false,
+    ...props
+}: IconProps & { filled?: boolean }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            {...strokeProps}
+            fill={filled ? "currentColor" : "none"}
+            {...props}
+        >
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
         </svg>
     );
 }

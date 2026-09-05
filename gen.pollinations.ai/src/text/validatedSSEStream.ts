@@ -21,15 +21,21 @@ export function validatedSSEStream(
                     // CRLF is one newline, not an empty line. Accept all SSE line
                     // endings, including separators split between network chunks.
                     while (true) {
-                        const boundary = /(?:\r\n|\n|\r(?!\n)){2}/.exec(
+                        const boundary = /(?:\r\n|\n|\r(?!\n|$)){2}/.exec(
                             pending,
                         );
                         if (!boundary) break;
                         const end = boundary.index + boundary[0].length;
-                        const event = encoder.encode(pending.slice(0, end));
+                        const event = pending.slice(0, end);
                         pending = pending.slice(end);
-                        validator.feed(event);
-                        controller.enqueue(event);
+                        // The parser holds a trailing CR until the next byte.
+                        // Complete it for validation only; preserve wire bytes.
+                        validator.feed(
+                            encoder.encode(
+                                event.endsWith("\r") ? `${event}\n` : event,
+                            ),
+                        );
+                        controller.enqueue(encoder.encode(event));
                     }
                 } catch (error) {
                     controller.enqueue(errorEvent(error));

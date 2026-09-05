@@ -39,19 +39,26 @@ describe.each([
         }
     });
 
-    it("returns a complete error event when usage is absent, regardless of chunk split", async () => {
+    it.each([
+        "\n",
+        "\r\n",
+        "\r",
+    ])("returns a complete error event with %j line endings at every chunk split", async (newline) => {
         const invalidTerminal =
             _name === "Chat"
                 ? 'data: {"usage":{"prompt_tokens":1}}\n\ndata: [DONE]\n\n'
                 : 'event: response.completed\ndata: {"type":"response.completed","response":{"status":"completed"}}\n\n';
-        const bytes = encoder.encode(content + invalidTerminal);
+        const prefix = content.replaceAll("\n", newline);
+        const bytes = encoder.encode(
+            prefix + invalidTerminal.replaceAll("\n", newline),
+        );
         for (let split = 1; split < bytes.length; split++) {
             const output = await new Response(
                 validate(splitStream(bytes, split)),
             ).text();
-            expect(output.startsWith(content)).toBe(true);
+            expect(output.startsWith(prefix)).toBe(true);
             const events = output
-                .split("\n")
+                .split(/\r\n|\r|\n/)
                 .filter((line) => line.startsWith("data:"))
                 .map((line) => JSON.parse(line.slice(5)));
             expect(events).toHaveLength(2);

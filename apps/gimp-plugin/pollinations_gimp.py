@@ -6,18 +6,43 @@ import binascii
 import json
 import os
 from pathlib import Path
-import tempfile
 import sys
+import tempfile
+import threading
 import time
 from typing import Any, Callable
 from urllib.error import HTTPError, URLError
 import urllib.request
+from urllib.parse import urlparse
+import webbrowser
+
 GEN_BASE = "https://gen.pollinations.ai"
 AUTH_BASE = "https://enter.pollinations.ai"
 CLIENT_ID = "pk_VZF38YW4tQX36SEn"
-SCOPE = "generate profile usage keys"
+SCOPE = "generate"
 DEFAULT_TIMEOUT = 90
-TOKEN_FILE = Path.home() / ".config" / "pollinations-gimp" / "token.json"
+MAX_IMAGE_BYTES = 32 * 1024 * 1024
+
+
+def platform_config_dir(
+    *,
+    environ: dict[str, str] | None = None,
+    home: Path | None = None,
+    platform_name: str | None = None,
+) -> Path:
+    values = os.environ if environ is None else environ
+    user_home = Path.home() if home is None else Path(home)
+    platform = sys.platform if platform_name is None else platform_name
+    if platform == "win32":
+        root = Path(values.get("APPDATA", user_home / "AppData" / "Roaming"))
+    elif platform == "darwin":
+        root = user_home / "Library" / "Application Support"
+    else:
+        root = Path(values.get("XDG_CONFIG_HOME", user_home / ".config"))
+    return root / "pollinations-gimp"
+
+
+TOKEN_FILE = platform_config_dir() / "token.json"
 
 class APIError(RuntimeError):
     def __init__(self, message: str, *, status: int | None = None,
@@ -115,11 +140,16 @@ def start_device_flow(client_id: str = CLIENT_ID, scope: str = SCOPE,
 def poll_device_token(device: dict[str, Any], client_id: str = CLIENT_ID,
                       request: Callable[..., Any] = request_json,
                       sleep: Callable[[float], None] = time.sleep,
-                      clock: Callable[[], float] = time.monotonic) -> str:
-    interval = max(0.0, float(device["interval"]))
+                      clock: Callable[[], float] = time.monotonic,
+                      cancelled: Callable[[], bool] = lambda: False) -> str:
+    interval = max(5.0, float(device["interval"]))
     deadline = clock() + float(device["expires_in"])
     while clock() < deadline:
+        if cancelled():
+            raise APIError("Authorization cancelled.", code="cancelled")
         sleep(interval)
+        if cancelled():
+            raise APIError("Authorization cancelled.", code="cancelled")
         if clock() >= deadline:
             break
         try:
@@ -199,12 +229,6 @@ def clear_token(path: Path = TOKEN_FILE) -> None:
         Path(path).unlink()
     except FileNotFoundError:
         pass
-
-def user_info(token: str, request: Callable[..., Any] = request_json) -> dict[str, Any]:
-    result = request(f"{AUTH_BASE}/api/device/userinfo", token=validate_token(token))
-    if not isinstance(result, dict):
-        raise APIError("Pollinations returned an invalid profile response.", code="invalid_response")
-    return result
 
 FIELD_ALIASES = {
     "id": "name", "inputModalities": "input_modalities",
@@ -286,12 +310,47 @@ def build_edit_request(prompt: str, model: dict[str, Any], image_data_uri: str,
     return body
 
 
-def decode_image_response(payload: Any) -> bytes:
+def request_image(url: str, timeout: float = DEFAULT_TIMEOUT,
+                  opener: Callable[..., Any] | None = None) -> bytes:
+    if urlparse(url).scheme != "https":
+        raise APIError("Pollinations returned an unsafe image URL.", code="invalid_response")
+    request = urllib.request.Request(url, headers={"Accept": "image/*"})
+    open_fn = opener or urllib.request.urlopen
     try:
-        encoded = payload["data"][0]["b64_json"]
-        if not isinstance(encoded, str):
-            raise KeyError
-        return base64.b64decode(encoded, validate=True)
+        with open_fn(request, timeout=timeout) as response:
+            status = getattr(response, "status", 200)
+            content_type = response.headers.get_content_type() if getattr(response, "headers", None) else ""
+            length = response.headers.get("Content-Length") if getattr(response, "headers", None) else None
+            if length and int(length) > MAX_IMAGE_BYTES:
+                raise APIError("The generated image is too large.", code="invalid_response")
+            data = response.read(MAX_IMAGE_BYTES + 1)
+    except HTTPError as error:
+        raise map_http_error(error.code, _decode_json(error.read())) from None
+    except (TimeoutError, URLError, OSError, ValueError):
+        raise APIError("Could not download the generated image.", code="network") from None
+    if status < 200 or status >= 300:
+        raise map_http_error(status)
+    if content_type and not content_type.startswith("image/"):
+        raise APIError("Pollinations returned a non-image response.", code="invalid_response")
+    if not data or len(data) > MAX_IMAGE_BYTES:
+        raise APIError("Pollinations returned no usable image.", code="invalid_response")
+    return data
+
+
+def decode_image_response(payload: Any,
+                          downloader: Callable[[str], bytes] = request_image) -> bytes:
+    try:
+        item = payload["data"][0]
+        encoded = item.get("b64_json")
+        if isinstance(encoded, str):
+            data = base64.b64decode(encoded, validate=True)
+            if not data or len(data) > MAX_IMAGE_BYTES:
+                raise ValueError
+            return data
+        url = item.get("url")
+        if isinstance(url, str) and url:
+            return downloader(url)
+        raise KeyError
     except (KeyError, IndexError, TypeError, ValueError, binascii.Error):
         raise APIError("Pollinations returned no usable image.", code="invalid_response") from None
 
@@ -360,14 +419,24 @@ def _gimp_export_drawable(image: Any, drawable: Any,
             pass
 
 
-def insert_png_layer(image: Any, data: bytes, name: str = "Pollinations") -> None:
+def _load_png(data: bytes) -> Any:
     if Gimp is None or Gio is None:
         raise APIError("GIMP bindings are unavailable.", code="gimp_unavailable")
     fd, filename = tempfile.mkstemp(suffix=".png")
     os.close(fd)
     try:
         Path(filename).write_bytes(data)
-        loaded = Gimp.file_load(Gimp.RunMode.NONINTERACTIVE, Gio.File.new_for_path(filename))
+        return Gimp.file_load(Gimp.RunMode.NONINTERACTIVE, Gio.File.new_for_path(filename))
+    finally:
+        try:
+            os.unlink(filename)
+        except OSError:
+            pass
+
+
+def insert_png_layer(image: Any, data: bytes, name: str = "Pollinations") -> None:
+    loaded = _load_png(data)
+    try:
         layers = loaded.get_layers()
         if not layers:
             raise APIError("GIMP could not load the generated image.", code="import_failed")
@@ -378,17 +447,30 @@ def insert_png_layer(image: Any, data: bytes, name: str = "Pollinations") -> Non
             image.insert_layer(layer, None, -1)
         finally:
             image.undo_group_end()
-        loaded.delete()
         Gimp.displays_flush()
     finally:
         try:
-            os.unlink(filename)
-        except OSError:
+            loaded.delete()
+        except Exception:
             pass
 
 
-def api_models(token: str) -> list[dict[str, Any]]:
-    return image_models(request_json(f"{GEN_BASE}/image/models", token=validate_token(token)))
+def open_png_image(data: bytes) -> Any:
+    loaded = _load_png(data)
+    if not loaded.get_layers():
+        loaded.delete()
+        raise APIError("GIMP could not load the generated image.", code="import_failed")
+    Gimp.Display.new(loaded)
+    Gimp.displays_flush()
+    return loaded
+
+
+def api_models(token: str, request: Callable[..., Any] = request_json) -> list[dict[str, Any]]:
+    payload = request(f"{GEN_BASE}/image/models", token=validate_token(token))
+    rows = payload.get("data") if isinstance(payload, dict) else payload
+    if not isinstance(rows, list):
+        raise APIError("Pollinations returned an invalid model list.", code="invalid_response")
+    return image_models(rows)
 
 
 def generate(token: str, prompt: str, model: dict[str, Any], resolution: str | None = None,
@@ -419,18 +501,41 @@ except (ImportError, ValueError):
 
 if Gimp is not None:
     class PollinationsPlugin(Gimp.PlugIn):
+        CONNECT = "python-fu-pollinations-connect"
+        DISCONNECT = "python-fu-pollinations-disconnect"
+        GENERATE = "python-fu-pollinations"
+
         def do_query_procedures(self):
-            return ["python-fu-pollinations"]
+            return [self.CONNECT, self.DISCONNECT, self.GENERATE]
 
         def do_create_procedure(self, name):
-            procedure = Gimp.ImageProcedure.new(self, name, Gimp.PDBProcType.PLUGIN,
-                                                 self.run, None)
+            handlers = {
+                self.CONNECT: self.run_connect,
+                self.DISCONNECT: self.run_disconnect,
+                self.GENERATE: self.run,
+            }
+            procedure = Gimp.ImageProcedure.new(
+                self, name, Gimp.PDBProcType.PLUGIN, handlers[name], None
+            )
             procedure.set_image_types("*")
-            procedure.set_menu_label("Pollinations AI")
-            procedure.add_menu_path("<Image>/Filters/AI")
-            procedure.set_documentation("Generate or edit an image with Pollinations AI.",
-                                        "Uses your Pollinations account and inserts the result as a new layer.",
-                                        name)
+            procedure.add_menu_path("<Image>/Filters/AI/Pollinations AI")
+            if name == self.CONNECT:
+                procedure.set_menu_label("Connect Account…")
+                procedure.set_sensitivity_mask(Gimp.ProcedureSensitivityMask.ALWAYS)
+                summary = "Connect a Pollinations account with device authorization."
+            elif name == self.DISCONNECT:
+                procedure.set_menu_label("Disconnect Account")
+                procedure.set_sensitivity_mask(Gimp.ProcedureSensitivityMask.ALWAYS)
+                summary = "Remove the Pollinations account token from this computer."
+            else:
+                procedure.set_menu_label("Generate or Edit…")
+                procedure.set_sensitivity_mask(
+                    Gimp.ProcedureSensitivityMask.NO_IMAGE
+                    | Gimp.ProcedureSensitivityMask.DRAWABLE
+                    | Gimp.ProcedureSensitivityMask.DRAWABLES
+                )
+                summary = "Generate or edit an image with Pollinations AI."
+            procedure.set_documentation(summary, summary, name)
             procedure.set_attribution("Pollinations", "Pollinations", "2026")
             return procedure
 
@@ -441,22 +546,105 @@ if Gimp is not None:
             dialog.run()
             dialog.destroy()
 
-        def _connect(self, parent):
-            device = start_device_flow()
-            dialog = Gtk.MessageDialog(transient_for=parent, modal=True,
-                                       message_type=Gtk.MessageType.INFO,
-                                       buttons=Gtk.ButtonsType.OK_CANCEL,
-                                       text="Open the Pollinations verification URL and approve access.")
-            dialog.format_secondary_text(f"Code: {device['user_code']}\n{device['verification_uri_complete']}")
-            approved = dialog.run() == Gtk.ResponseType.OK
+        def _background(self, parent, title, work):
+            dialog = Gtk.Dialog(title=title, transient_for=parent,
+                                flags=Gtk.DialogFlags.MODAL)
+            dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+            box = dialog.get_content_area()
+            box.set_spacing(10)
+            spinner = Gtk.Spinner()
+            spinner.start()
+            box.pack_start(spinner, False, False, 8)
+            box.pack_start(Gtk.Label(label=title), False, False, 8)
+            dialog.show_all()
+            cancel = threading.Event()
+            closed = threading.Event()
+            state: dict[str, Any] = {}
+
+            def finish():
+                if not closed.is_set():
+                    dialog.response(Gtk.ResponseType.OK)
+                return False
+
+            def worker():
+                try:
+                    state["value"] = work(cancel)
+                except Exception as error:
+                    state["error"] = error
+                GLib.idle_add(finish)
+
+            threading.Thread(target=worker, daemon=True).start()
+            response = dialog.run()
+            cancel.set()
+            closed.set()
             dialog.destroy()
-            if not approved:
+            if response != Gtk.ResponseType.OK:
+                raise APIError("Operation cancelled.", code="cancelled")
+            if "error" in state:
+                raise state["error"]
+            return state.get("value")
+
+        def _connect(self, parent):
+            device = self._background(
+                parent, "Requesting a wallet code…", lambda _: start_device_flow()
+            )
+            dialog = Gtk.Dialog(title="Connect Pollinations Account",
+                                transient_for=parent, flags=Gtk.DialogFlags.MODAL)
+            dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+            browser_button = Gtk.Button(label="Open Browser")
+            browser_button.connect(
+                "clicked",
+                lambda *_: webbrowser.open(device["verification_uri_complete"], new=2),
+            )
+            dialog.get_action_area().pack_end(browser_button, False, False, 0)
+            area = dialog.get_content_area()
+            area.set_spacing(10)
+            area.pack_start(Gtk.Label(
+                label="Approve this code in your browser. GIMP will keep waiting until you approve or cancel.",
+                wrap=True, xalign=0), False, False, 8)
+            code = Gtk.Label(label=device["user_code"])
+            code.set_selectable(True)
+            area.pack_start(code, False, False, 8)
+            address = Gtk.Label(label=device["verification_uri_complete"], xalign=0)
+            address.set_selectable(True)
+            area.pack_start(address, False, False, 8)
+            dialog.show_all()
+            cancel = threading.Event()
+            closed = threading.Event()
+            state: dict[str, Any] = {}
+
+            def finish():
+                if not closed.is_set():
+                    dialog.response(Gtk.ResponseType.OK)
+                return False
+
+            def worker():
+                try:
+                    state["token"] = poll_device_token(
+                        device,
+                        sleep=lambda seconds: cancel.wait(seconds),
+                        cancelled=cancel.is_set,
+                    )
+                except Exception as error:
+                    state["error"] = error
+                GLib.idle_add(finish)
+
+            threading.Thread(target=worker, daemon=True).start()
+            response = dialog.run()
+            cancel.set()
+            closed.set()
+            dialog.destroy()
+            if response != Gtk.ResponseType.OK:
                 raise APIError("Authorization cancelled.", code="cancelled")
-            token = poll_device_token(device)
+            if "error" in state:
+                raise state["error"]
+            token = state.get("token")
+            if not token:
+                raise APIError("Pollinations returned no account token.", code="invalid_response")
             save_token(token)
             return token
 
-        def _dialog(self, image, token, models):
+        def _dialog(self, image, models):
             dialog = Gtk.Dialog(title="Pollinations AI", flags=Gtk.DialogFlags.MODAL)
             dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
             dialog.add_button("Generate", Gtk.ResponseType.OK)
@@ -472,7 +660,12 @@ if Gimp is not None:
             area.pack_start(Gtk.Label(label="Resolution", xalign=0), False, False, 0); area.pack_start(resolution, False, False, 0)
             edit_check = Gtk.CheckButton(label="Edit active drawable / selection")
             area.pack_start(edit_check, False, False, 0)
-            status = Gtk.Label(xalign=0); area.pack_start(status, False, False, 0)
+            output = Gtk.ComboBoxText()
+            output.append("layer", "New layer in current image")
+            output.append("image", "New image")
+            output.set_active_id("layer" if image is not None else "image")
+            area.pack_start(Gtk.Label(label="Output", xalign=0), False, False, 0)
+            area.pack_start(output, False, False, 0)
 
             def selected():
                 return next((m for m in models if m["name"] == combo.get_active_id()), models[0])
@@ -483,10 +676,19 @@ if Gimp is not None:
                 for value in values: resolution.append(value, value)
                 resolution.set_active(0)
                 resolution.set_visible(bool(values))
-                edit_check.set_visible(model_can_edit(model))
+                edit_check.set_visible(image is not None and model_can_edit(model))
                 edit_check.set_active(False)
+                output.set_sensitive(image is not None)
 
-            combo.connect("changed", changed); changed()
+            def edit_changed(*_):
+                editing = edit_check.get_active()
+                if editing:
+                    output.set_active_id("layer")
+                output.set_sensitive(not editing)
+
+            combo.connect("changed", changed)
+            edit_check.connect("toggled", edit_changed)
+            changed()
             dialog.show_all(); changed()
             response = dialog.run()
             if response != Gtk.ResponseType.OK:
@@ -495,44 +697,102 @@ if Gimp is not None:
             text = text_buffer.get_text(start, end, False).strip()
             model = selected(); chosen_resolution = resolution.get_active_id() if resolution.get_visible() else None
             do_edit = edit_check.get_active() and model_can_edit(model)
+            target = output.get_active_id() or "layer"
             dialog.destroy()
             if not text: raise APIError("Enter a prompt.", code="invalid_input")
+            source_uri = None
             if do_edit:
                 drawables = image.get_selected_drawables()
                 if not drawables: raise APIError("Select a drawable to edit.", code="invalid_input")
-                source = active_drawable_png(image, drawables[0])
-                return edit(token, text, model, png_data_uri(source), chosen_resolution), model["name"], True
-            return generate(token, text, model, chosen_resolution), model["name"], False
+                source_uri = png_data_uri(active_drawable_png(image, drawables[0]))
+            return {
+                "prompt": text,
+                "model": model,
+                "resolution": chosen_resolution,
+                "edit": do_edit,
+                "source": source_uri,
+                "target": target,
+            }
+
+        def _return(self, procedure, status):
+            return procedure.new_return_values(status, GLib.Error())
+
+        def _run_account_action(self, procedure, action):
+            GimpUi.init("pollinations_gimp")
+            try:
+                action()
+                return self._return(procedure, Gimp.PDBStatusType.SUCCESS)
+            except APIError as error:
+                if error.code == "cancelled":
+                    return self._return(procedure, Gimp.PDBStatusType.CANCEL)
+                self._message(None, str(error), error=True)
+                return self._return(procedure, Gimp.PDBStatusType.EXECUTION_ERROR)
+            except Exception:
+                self._message(None, "The account action could not be completed.", error=True)
+                return self._return(procedure, Gimp.PDBStatusType.EXECUTION_ERROR)
+
+        def run_connect(self, procedure, run_mode, image, drawables, config, run_data):
+            def connect():
+                self._connect(None)
+                self._message(None, "Pollinations account connected.")
+            return self._run_account_action(procedure, connect)
+
+        def run_disconnect(self, procedure, run_mode, image, drawables, config, run_data):
+            def disconnect():
+                clear_token()
+                self._message(None, "Pollinations account disconnected.")
+            return self._run_account_action(procedure, disconnect)
 
         def run(self, procedure, run_mode, image, drawables, config, run_data):
             parent = None
+            GimpUi.init("pollinations_gimp")
             try:
                 token = load_token()
                 if not token: token = self._connect(parent)
                 try:
-                    models = api_models(token)
+                    models = self._background(
+                        parent, "Loading image models…",
+                        lambda _: api_models(token),
+                    )
                 except APIError as error:
                     if error.status != 401: raise
-                    token = self._connect(parent); models = api_models(token)
+                    clear_token()
+                    token = self._connect(parent)
+                    models = self._background(
+                        parent, "Loading image models…",
+                        lambda _: api_models(token),
+                    )
                 if not models: raise APIError("No image models are available.", code="no_models")
-                result = self._dialog(image, token, models)
-                if result is None:
-                    return procedure.new_return_values(Gimp.PDBStatusType.CANCEL, GLib.Error())
-                data, model_name, was_edit = result
-                insert_png_layer(image, data, f"Pollinations · {model_name}")
-                return procedure.new_return_values(Gimp.PDBStatusType.SUCCESS, GLib.Error())
+                options = self._dialog(image, models)
+                if options is None:
+                    return self._return(procedure, Gimp.PDBStatusType.CANCEL)
+
+                def create_result(_):
+                    if options["edit"]:
+                        return edit(token, options["prompt"], options["model"],
+                                    options["source"], options["resolution"])
+                    return generate(token, options["prompt"], options["model"],
+                                    options["resolution"])
+
+                data = self._background(parent, "Generating image…", create_result)
+                name = f"Pollinations · {options['model']['name']}"
+                if options["target"] == "image" and not options["edit"]:
+                    open_png_image(data)
+                else:
+                    insert_png_layer(image, data, name)
+                return self._return(procedure, Gimp.PDBStatusType.SUCCESS)
             except APIError as error:
                 if error.code == "cancelled":
-                    return procedure.new_return_values(Gimp.PDBStatusType.CANCEL, GLib.Error())
+                    return self._return(procedure, Gimp.PDBStatusType.CANCEL)
                 if error.status == 401:
                     clear_token()
                     self._message(parent, "Authentication expired. Run the plug-in again to reconnect.", error=True)
                 else:
                     self._message(parent, str(error), error=True)
-                return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR, GLib.Error())
+                return self._return(procedure, Gimp.PDBStatusType.EXECUTION_ERROR)
             except Exception:
                 self._message(parent, "The Pollinations plug-in could not complete the operation.", error=True)
-                return procedure.new_return_values(Gimp.PDBStatusType.EXECUTION_ERROR, GLib.Error())
+                return self._return(procedure, Gimp.PDBStatusType.EXECUTION_ERROR)
 
 
 if __name__ == "__main__" and Gimp is not None:

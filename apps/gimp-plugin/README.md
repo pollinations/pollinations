@@ -1,54 +1,83 @@
 # Pollinations AI for GIMP 3
 
-Standalone GIMP 3 Python plug-in for text-to-image generation and image
-editing through `gen.pollinations.ai`. Results are imported as a new layer;
-the source layer is never replaced.
+GIMP 3 Python plug-in for Pollinations image generation and selection-aware
+editing. A generated image can open as a new image or be added as a new layer;
+edits always preserve the source and return a new layer.
 
 ## Install
 
-1. Copy `pollinations_gimp.py` into a GIMP 3 plug-in directory, for example
-   `~/.config/GIMP/3.0/plug-ins/pollinations/` on Linux or
-   `%APPDATA%\\GIMP\\3.0\\plug-ins\\pollinations\\` on Windows.
-2. On Unix, make the file executable (`chmod 755 pollinations_gimp.py`).
-3. Restart GIMP and open `Filters > AI > Pollinations AI`.
+GIMP discovers a Python plug-in only when its directory and executable share
+the same base name. Copy the file to exactly this layout:
 
-The plug-in uses only Python's standard library. GIMP 3 supplies the `gi`
-bindings at runtime. It needs network access to `enter.pollinations.ai` for
-device login and `gen.pollinations.ai` for model discovery and generation.
+```text
+pollinations_gimp/
+└── pollinations_gimp.py
+```
 
-## Login and configuration
+Place that directory under the user plug-in directory:
 
-The first run displays a device URL and code. Open that URL in any browser,
-approve access, then return to GIMP and confirm. The plug-in polls
-`/api/oauth/token` until approval or expiry. It stores the resulting key at
-`~/.config/pollinations-gimp/token.json` (or the equivalent home directory on
-the platform). Delete that file to disconnect and connect again.
+- Linux: `${XDG_CONFIG_HOME:-~/.config}/GIMP/3.0/plug-ins/`
+- macOS: `~/Library/Application Support/GIMP/3.0/plug-ins/`
+- Windows: `%APPDATA%\GIMP\3.0\plug-ins\`
 
-Model choices come from the authenticated `/image/models` response. Editing
-is available only when the model advertises image input and
-`/v1/images/edits`; resolution choices appear only when `resolutions` is
-advertised. No unsupported fields are sent.
+On Linux and macOS, run `chmod 755 pollinations_gimp.py`. Restart GIMP 3 and
+confirm these entries appear under `Filters > AI > Pollinations AI`:
+
+- `Connect Account…`
+- `Disconnect Account`
+- `Generate or Edit…`
+
+The plug-in uses only Python's standard library and the `gi` bindings bundled
+with GIMP 3.
+
+## Use
+
+Choose `Connect Account…`, then select `Open Browser`. GIMP displays the code
+while polling in a worker thread; Cancel stops polling. Authorization requests
+only the `generate` scope. The delegated token persists across GIMP restarts.
+
+`Generate or Edit…` loads the live image-model catalog without blocking GTK.
+Choose `New image` or `New layer in current image`. Editing is offered only for
+models that advertise image input and the edits endpoint, and sends only the
+active drawable plus the active selection when present. Model loading and
+generation run outside the GTK thread, and their progress dialogs can be
+dismissed without freezing GIMP.
+
+`Disconnect Account` deletes the stored token immediately. Token locations are:
+
+- Linux: `${XDG_CONFIG_HOME:-~/.config}/pollinations-gimp/token.json`
+- macOS: `~/Library/Application Support/pollinations-gimp/token.json`
+- Windows: `%APPDATA%\pollinations-gimp\token.json`
 
 ## Privacy
 
-The token is written atomically with Unix mode `0600` when supported. Requests
-send the token only as an HTTPS bearer header. For edits, only the active
-drawable and active selection (when present) are exported as PNG data; the
-whole image is not flattened. The plug-in does not log tokens, prompts, image
-data, or responses, and does not send telemetry.
+The token is written atomically with Unix mode `0600` when supported. It is sent
+only as an HTTPS bearer header to Pollinations API requests. Signed image-result
+URLs are downloaded without the token. The plug-in does not log tokens, prompts,
+image data, responses, or telemetry.
 
-## Reproducible smoke checklist
+## Automated checks
 
-1. Run `python -m unittest discover -s apps/gimp-plugin/tests -v` from the
-   repository root (no GIMP installation is required).
-2. Run `python -m py_compile apps/gimp-plugin/pollinations_gimp.py`.
-3. In GIMP 3, create a two-layer RGB image, select the top layer, and invoke
-   the menu. Complete device login; verify image models populate.
-4. Generate a prompt and verify one new `Pollinations · <model>` layer appears
-   while both source layers remain unchanged.
-5. Select an edit-capable model, make a rectangular selection, enable edit,
-   and verify the generated result is inserted as another new layer.
-6. Switch to a text-only image model and verify edit is hidden; switch to a
-   model without `resolutions` and verify the resolution control is hidden.
-7. Temporarily remove network access and verify the dialog reports a concise
-   connection error without printing credentials.
+From the repository root:
+
+```bash
+python -m unittest discover -s apps/gimp-plugin/tests -v
+python -m py_compile apps/gimp-plugin/pollinations_gimp.py
+```
+
+The suite covers device approval, cancellation, expiry, token persistence,
+platform paths, local HTTP requests, network errors, model validation, base64
+and URL image responses, selection bounds, and generation/edit payloads.
+
+## Reproducible GIMP 3 smoke test
+
+1. Install using the exact directory layout above and restart GIMP 3. Confirm
+   all three menu entries are discovered.
+2. Connect, use `Open Browser`, approve the code, and generate once as a new
+   image and once as a new layer. Confirm the dialogs remain responsive.
+3. In a two-layer image, select the upper layer and a rectangle. Run an edit and
+   confirm a third layer appears while both source layers remain unchanged.
+4. Restart GIMP, generate without signing in again, then disconnect. Confirm the
+   next generation asks for authorization.
+5. Start login again and cancel before approval. Confirm polling stops without
+   an error dialog.

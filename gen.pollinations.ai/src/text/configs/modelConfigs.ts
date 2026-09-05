@@ -122,6 +122,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
         ),
+    "gpt-6-astra": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra/chat/completions?api-version=2025-04-01-preview",
+        ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
@@ -253,6 +258,22 @@ export const portkeyConfig: PortkeyConfigMap = {
     "qwen3.7-flash-alibaba": () =>
         createAlibabaModelConfig({
             model: "qwen3.7-flash",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "qwen/qwen3.8-flash": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "qwen3.8-flash-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-flash",
             defaultOptions: { max_tokens: 64000 },
         }),
     "poolside/laguna-s-2.1": () =>

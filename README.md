@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ Nectar MCP](https://github.com/pinkpixel-dev/nectar-mcp) | Nectar is a stdio MCP server for Pollinations image, video, and audio generation. It gives MCP clients a focused set of creative media tools. Generate and edit images, create videos, and generate spee | [@sizzlebop](https://github.com/sizzlebop) |
 | [🛠️ Pollin Uptime (HA Gateway)](https://brhost.eu.org) | Zero-downtime serverless AI gateway and multimodal playground with automatic 4-layer fallback cascade. Never hit 500 errors or rate limits again — seamlessly route Chat, Vision, Images, Video, and Voi | [@samucamg](https://github.com/samucamg) |
 | [💬 Open WebUI for Pollinations](https://openwebui.pollinations.ai) | Open WebUI chat frontend with Pollinations login. All Pollinations text models in the picker, plus the Pollinations MCP server as a tool server for image, video and audio. | [@voodoohop](https://github.com/voodoohop) |
 | [📚 AI Homework Solver](https://zizoisu.github.io/ai-homework-solver) | A web-based homework solver that integrates with Pollinations AI. Supports multiple question types including MCQ, short answer, true/false, and fill-in-the-blank questions. Features a hybrid model wit | [@zizoisu](https://github.com/zizoisu) |
@@ -37,7 +38,6 @@
 | [🎬 Automated Video App](https://automatedvideoapp.com) | Turn any topic or script into a narrated, captioned video, then edit it scene by scene or drive the whole thing from Claude. AI stills and AI video are generated through Pollinations on the user's own key. | [@ackhmez](https://github.com/ackhmez) |
 | [🖼️ Pixel Forge](https://b3b41020.github.io/pixel-forge) | AI image generation studio powered by Pollinations. Users enter a prompt, select a model (Flux, Dreamshaper, Klein, GPT Image 2, Zimage, Nanobanana) and image size, then generate. Built with the Polli | [@b3b41020](https://github.com/b3b41020) |
 | [🛠️ DemoWeaver](https://mebularts.github.io/DemoWeaver) | DemoWeaver is an open-source AI-powered product walkthrough generator that turns a running web application into a browser-verified, professionally narrated product video. Instead of manually recording | [@mebularts](https://github.com/mebularts) |
-| [🖼️ AI STUDIO — RealTime AUDIO & VIDEO CREATOR](https://noanswers.website/WebAnimation) | Creates collaborative images using the Pollinations image API integration. Thereby, allowing users to add generated content or uploaded from the local machines and create slide/videos adaptive to FPS | [@noanswers-website](https://github.com/noanswers-website) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-04** – **🚀 GPT-6 Astra** Call `openai/gpt-6-astra` for tool use, structured output, vision, streaming, and prompt caching through one predictable model ID. [API docs](https://gen.pollinations.ai/docs)
+- **2026-09-04** – **🎨 MiniMax H3 Max Turbo** Generate guided video with synchronized audio, first/last-frame inputs, 480p or 768p output, and clips up to 15 seconds. [Try the API](https://gen.pollinations.ai/docs)
+- **2026-09-04** – **✨ Responses API for more models** Use OpenAI-compatible `/v1/responses` across built-in, community, and agent-backed text models—with tools, structured output, streaming, and reasoning intact. [API docs](https://gen.pollinations.ai/docs)
+- **2026-09-04** – **🔗 Pollinations MCP in Open WebUI** Run Pollinations MCP tools from Open WebUI using your own consent key and Pollen balance. Your wallet, your tool calls. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
+- **2026-09-04** – **🎯 Pollin Uptime** A serverless multimodal playground routes chat, vision, images, video, and voice through a four-layer fallback cascade. [Try it](https://brhost.eu.org) <!-- app -->
+- **2026-09-04** – **🌟 Nectar MCP** Give MCP clients dedicated tools for Pollinations image generation and editing, video creation, and speech generation. [View repo](https://github.com/pinkpixel-dev/nectar-mcp) <!-- app -->
 - **2026-09-03** – **🚀 Qwen3.8 Max 0902** The exact Qwen checkpoint is now available for chat and Responses API calls, with streaming, tool use, image/video input, structured output, and prompt caching. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-03** – **✨ Open WebUI for Pollinations** A full chat workspace with every Pollinations text model and MCP-powered image, video, and audio tools—without leaving the conversation. [Try it](https://openwebui.pollinations.ai) <!-- app -->
 - **2026-09-03** – **🔗 Polli joins OpenClaw** Run `polli harness openclaw on` to wire Pollinations models and managed media-generation skills into OpenClaw. The claw has access to pixels now.
 - **2026-09-03** – **🎯 AI Homework Solver** A Pollinations-powered study helper for multiple-choice, short-answer, true/false, and fill-in-the-blank questions joined the learn collection. [Try it](https://zizoisu.github.io/ai-homework-solver) <!-- app -->
-- **2026-09-02** – **🚀 Responses API, direct from providers** Send stateless OpenAI-compatible requests to `/v1/responses` across 56 supported models, with native SSE streaming plus Pollinations safety, caching, and billing. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-02** – **🔗 Agents can connect to the outside world** The new Composio MCP connector lets agents use caller-owned Gmail, Slack, GitHub, Drive, and hundreds more services—without lending public agents anyone’s credentials. [MCP Docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
-- **2026-09-02** – **✨ Backup wings for official models** 42 text, image, video, audio, and 3D models can now continue through verified providers when an upstream has a bad day. Same requested model; fewer dead ends.
-- **2026-09-02** – **🤖 Gemini 3.8 Flash is live** Call `google/gemini-3.8-flash` for fast multimodal chat, streaming, structured output, tools, reasoning, search, and caching. [See available models](https://gen.pollinations.ai/v1/models)
-- **2026-09-01** – **🎨 Wan video gets more routes** `wan-pro` and `wan-3.0` now handle text, image, and reference-to-video workflows; Wan 3.0 can also use a second image as the end frame. [Try the API](https://gen.pollinations.ai/docs)
-- **2026-09-01** – **🚀 Mercury 2.5 Preview** A new model for reasoning, tool use, structured output, multi-turn chat, and streaming—available as `inception/mercury-2.5-preview`. [Browse models](https://gen.pollinations.ai/v1/models)
 ---
 
 ## 🌱 Introduction

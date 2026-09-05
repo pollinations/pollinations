@@ -98,7 +98,10 @@ function StatusBadge({ row }: { row: ProviderCloseRow }) {
         );
     }
     return (
-        <Tooltip triggerAs="span" content={CLOSE_HINT[row.closeStatus]}>
+        <Tooltip
+            triggerAs="span"
+            content={`${CLOSE_HINT[row.closeStatus]} Calendar usage coverage: ${row.coverageStatus}.`}
+        >
             <Chip intent={CLOSE_INTENT[row.closeStatus]} size="sm">
                 {CLOSE_LABEL[row.closeStatus]}
             </Chip>

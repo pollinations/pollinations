@@ -73,6 +73,58 @@ const data = (over: Partial<Data>): Data => ({
 });
 
 describe("providerCloseRows", () => {
+    it("includes expected active accounts even when no usage was imported", () => {
+        const rows = providerCloseRows(
+            data({ opCloud: [cloud({ vendor: "aws" })] }),
+            "2026-07",
+        );
+        const azure = rows.find((row) => row.vendor === "azure");
+        expect(azure).toMatchObject({
+            coverageStatus: "missing",
+            closeStatus: "needs account check",
+        });
+    });
+
+    it("requires calendar coverage for infrastructure and does not accept a mid-month billing cycle", () => {
+        const rows = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "cloudflare",
+                        account_id: "myceli",
+                        type: "infra",
+                        start: "2026-08-01 00:00:00",
+                        end: "2026-08-22 00:00:00",
+                        credit: -100,
+                    }),
+                ],
+            }),
+            "2026-09",
+        );
+        expect(rows.find((row) => row.vendor === "cloudflare")).toMatchObject({
+            closeStatus: "needs provider check",
+            coverageStatus: "partial",
+            creditFreeUsd: 100,
+            billedUsd: 0,
+        });
+    });
+
+    it("does not bridge missing days between two usage exports", () => {
+        const rows = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({ vendor: "aws", end: "2026-06-10 00:00:00" }),
+                    cloud({ vendor: "aws", start: "2026-06-20 00:00:00" }),
+                ],
+            }),
+            "2026-07",
+        );
+        expect(rows.find((row) => row.vendor === "aws")).toMatchObject({
+            coverageStatus: "partial",
+            closeStatus: "needs provider check",
+        });
+    });
+
     it("shows an actionable bank-document gap in the monthly detail", () => {
         const rows = providerCloseRows(
             data({ opTransactions: [transaction()] }),
@@ -87,7 +139,7 @@ describe("providerCloseRows", () => {
             fundingStatus: "not applicable",
             transactionDocumentStatus: "missing",
         });
-        expect(providerCloseSummary(rows).blockers).toBe(0);
+        expect(providerCloseSummary([row]).blockers).toBe(1);
     });
 
     it("does not turn an acknowledged lost document into a close blocker", () => {
@@ -100,12 +152,19 @@ describe("providerCloseRows", () => {
                             "OpenAI subscription · supplier invoice lost and unavailable",
                     }),
                 ],
+                opCloud: [
+                    cloud({
+                        vendor: "openai",
+                        account_id: "",
+                        start: "2026-07-01 00:00:00",
+                        end: "2026-08-01 00:00:00",
+                    }),
+                ],
             }),
             "2026-08",
         );
 
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({
+        expect(rows.find((row) => row.vendor === "openai")).toMatchObject({
             vendor: "openai",
             closeStatus: "ready",
             transactionDocumentStatus: "acknowledged",
@@ -201,7 +260,7 @@ describe("providerCloseRows", () => {
     it("does not infer a payable cost from usage without a statement", () => {
         const [row] = providerCloseRows(data({ opPollen: [pollen()] }));
 
-        expect(row.closeStatus).toBe("needs provider check");
+        expect(row.closeStatus).toBe("needs account check");
         expect(row.fundingStatus).toBe("needs check");
         expect(row.billedUsd).toBeNull();
     });
@@ -286,7 +345,9 @@ describe("providerCloseRows", () => {
                 opPollen: [pollen(), pollen({ vendor: "openai" })],
             }),
         );
-        const summary = providerCloseSummary(rows);
+        const summary = providerCloseSummary(
+            rows.filter((row) => ["azure", "openai"].includes(row.vendor)),
+        );
 
         expect(summary.closedRows).toBe(2);
         expect(summary.partialRows).toBe(0);
@@ -320,6 +381,31 @@ describe("providerCloseRows", () => {
                             credit: -0.38201479,
                         }),
                 ),
+            }),
+            "2026-08",
+        );
+
+        expect(row.closeStatus).toBe("ready");
+    });
+
+    it("resolves a known project alias to its active billing account", () => {
+        const [row] = providerCloseRows(
+            data({
+                opCloud: [
+                    cloud({
+                        account_id: "stellar-verve-465920-b7",
+                        vendor: "google",
+                        start: "2026-07-01 00:00:00",
+                        end: "2026-08-01 00:00:00",
+                        paid: -100,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        month: "2026-07",
+                        vendor: "google",
+                    }),
+                ],
             }),
             "2026-08",
         );
@@ -430,7 +516,7 @@ describe("providerCloseRows", () => {
 
         expect(rows[0].partial).toBe(true);
         expect(summary.closedRows).toBe(0);
-        expect(summary.partialRows).toBe(1);
+        expect(summary.partialRows).toBe(rows.length);
         expect(summary.closeReady).toBe(0);
         expect(summary.blockers).toBe(0);
     });

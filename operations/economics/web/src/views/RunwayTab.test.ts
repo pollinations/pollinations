@@ -1,8 +1,8 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import { automaticForecastRule } from "../lib/forecastTerms";
+import { automaticForecastRule, forecastLineRule } from "../lib/forecastTerms";
 import type { Data } from "../types";
 import {
     fmtRunwayTableValue,
@@ -16,6 +16,10 @@ import {
     runwayPeriodText,
     runwayValueClass,
 } from "./RunwayTab";
+
+afterEach(() => {
+    vi.useRealTimers();
+});
 
 describe("RunwayTab labels", () => {
     it("shows full rounded runway amounts without compact suffixes", () => {
@@ -55,6 +59,7 @@ describe("RunwayTab labels", () => {
         expect(forecastMethodLabel("funded")).toBe("FUNDED");
         expect(forecastMethodLabel("last")).toBe("RUN RATE");
         expect(forecastMethodLabel("one_off")).toBe("ONE-TIME");
+        expect(forecastMethodLabel("mixed")).toBe("MIXED");
         expect(forecastMethodLabel(null)).toBeNull();
     });
 
@@ -72,6 +77,7 @@ describe("RunwayTab labels", () => {
             "Included only in this month.",
         );
         expect(forecastMethodHint(null)).toBeNull();
+        expect(forecastMethodHint("mixed")).toContain("each component");
     });
 
     it("explains when forecast cash moves", () => {
@@ -97,6 +103,40 @@ describe("RunwayTab labels", () => {
                 paymentTiming: "prepaid",
             });
         }
+        expect(automaticForecastRule("llm7.io", "revenue_share")).toBeNull();
+        expect(forecastLineRule("llm7.io", "revenue_share")).toEqual({
+            method: "one_off",
+            paymentTiming: "direct",
+        });
+    });
+
+    it("shows D1 balances as non-cashable usage exposure", () => {
+        const html = renderToStaticMarkup(
+            createElement(RunwayTab, {
+                data: {
+                    privateConfig: PRIVATE_CONFIG_FIXTURE,
+                    userBalances: [
+                        {
+                            users: 100,
+                            paid_users: 10,
+                            quest_users: 80,
+                            paid_balance: 1_234,
+                            quest_balance: 5_678,
+                            synced_at: "2026-09-03 03:00:00",
+                        },
+                    ],
+                },
+                year: "2026",
+            }),
+        );
+
+        expect(html).toContain("Unspent Pollen");
+        expect(html).toContain("Paid Pollen");
+        expect(html).toContain("Quest Pollen");
+        expect(html).toContain("1,234");
+        expect(html).toContain("5,678");
+        expect(html).toContain("full catalog");
+        expect(html).toContain("restricted catalog");
     });
 
     it("colors cash values without overemphasizing zeroes", () => {
@@ -150,6 +190,21 @@ describe("RunwayTab labels", () => {
                     recorded_at: "2026-07-03 00:00:00",
                 },
             ],
+            stripeSales: [
+                {
+                    revenue_stream: "pollen",
+                    reversals: 0,
+                    month: "2026-08",
+                    currency: "USD",
+                    gross_sales: 120,
+                    refunds: 20,
+                    net_sales: 100,
+                    stripe_fees: 5,
+                    net_after_fees: 95,
+                    payments: 3,
+                    refund_count: 1,
+                },
+            ],
         };
 
         const html = renderToStaticMarkup(
@@ -161,7 +216,9 @@ describe("RunwayTab labels", () => {
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
         expect(html).not.toContain(">aws<");
-        expect(html).toContain("Cash change");
+        expect(html).toContain(">Expenses</td>");
+        expect(html.match(/>Cash change<\/td>/g)).toHaveLength(1);
+        expect(html).not.toContain("Revenue less expenses");
         expect(html).toContain("Cash balance");
         expect(html).toContain('class="sr-only">Line item</span>');
         expect(html).not.toContain(">Actual</span>");
@@ -169,6 +226,8 @@ describe("RunwayTab labels", () => {
     });
 
     it("derives the next-month plan without a forecast feed", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-25T12:00:00.000Z"));
         const html = renderToStaticMarkup(
             createElement(RunwayTab, {
                 year: "2026",

@@ -22,10 +22,24 @@ export type ProviderDefinition = {
     aliases: string[];
     connector: string | null;
     monthlyReview: boolean;
+    activeFrom?: string;
+    activeTo?: string | null;
     balanceTracking: boolean;
     collectionMethod: ProviderCollectionMethod | null;
     access?: ProviderAccessTarget[];
     accounts?: ProviderAccountDefinition[];
+    // Reviewed provider labels (meter names, invoice slugs, dashboard display
+    // names) keyed to Pollen model ids. A string array means one billed line
+    // served several ids of the same model at the same provider; null means
+    // the label has no Pollen model; an array of dated rules pins the label to
+    // the id it meant in each period.
+    modelLabels?: Record<
+        string,
+        | string
+        | string[]
+        | null
+        | { from?: string; until?: string; model: string | string[] | null }[]
+    >;
 };
 
 export type ProviderCollectionMethod = "api" | "cli" | "dashboard" | "internal";
@@ -34,6 +48,8 @@ export type ProviderAccessTarget = {
     workspace: string;
     url: string;
     accountId?: string;
+    loginEmail?: string;
+    label?: string;
 };
 
 export type MeteringBasis =
@@ -47,12 +63,30 @@ export type MeteringBasis =
 export type ProviderAccountDefinition = {
     id: string;
     label: string;
+    aliases?: string[];
+    loginEmail?: string;
     activeFrom: string;
     activeTo: string | null;
 };
 
+// A reviewed re-attribution of Pollen rows whose provider tag named a vendor
+// that never billed them. Bounded by month; evidence is mandatory.
+export type PollenVendorOverride = {
+    vendor: string;
+    model: string;
+    to: string;
+    from: string;
+    until: string;
+    evidence: string;
+};
+
 type ProviderRegistryFile = {
     version: number;
+    pollenVendorOverrides: PollenVendorOverride[];
+    // Pollen model ids that no longer exist in the shared registry but still
+    // identify historical costs. Removing a model from the product does not
+    // invalidate what it cost.
+    retiredModels: string[];
     providers: ProviderDefinition[];
 };
 
@@ -62,6 +96,26 @@ export type ProviderReconciliationExplanation =
 
 export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
     .providers;
+export const RETIRED_MODELS: readonly string[] = (
+    registryJson as ProviderRegistryFile
+).retiredModels;
+export const POLLEN_VENDOR_OVERRIDES: readonly PollenVendorOverride[] = (
+    registryJson as ProviderRegistryFile
+).pollenVendorOverrides;
+
+export function pollenVendorOverride(
+    month: string,
+    vendor: string,
+    model: string,
+): string | undefined {
+    return POLLEN_VENDOR_OVERRIDES.find(
+        (override) =>
+            override.vendor === vendor &&
+            override.model === model &&
+            override.from <= month &&
+            month <= override.until,
+    )?.to;
+}
 const providerByAlias = new Map<string, ProviderDefinition>();
 for (const provider of PROVIDER_REGISTRY) {
     providerByAlias.set(provider.id, provider);
@@ -89,6 +143,45 @@ export function activeProviderAccounts(
         (account) =>
             account.activeFrom <= month &&
             (account.activeTo == null || account.activeTo >= month),
+    );
+}
+
+export function normalizeProviderAccountId(value?: string): string {
+    return normalizeProviderName(value?.trim() || "default");
+}
+
+export function resolveProviderAccount(
+    provider: ProviderDefinition,
+    value?: string,
+): ProviderAccountDefinition | undefined {
+    const normalized = normalizeProviderAccountId(value);
+    return provider.accounts?.find(
+        (account) =>
+            normalizeProviderAccountId(account.id) === normalized ||
+            (account.aliases ?? []).some(
+                (alias) => normalizeProviderAccountId(alias) === normalized,
+            ),
+    );
+}
+
+export function canonicalProviderAccountId(
+    provider: ProviderDefinition | undefined,
+    value?: string,
+): string {
+    const normalized = normalizeProviderAccountId(value);
+    return provider == null
+        ? normalized
+        : (resolveProviderAccount(provider, normalized)?.id ?? normalized);
+}
+
+function providerRequiresReview(
+    provider: ProviderDefinition,
+    month: string,
+): boolean {
+    return (
+        provider.monthlyReview &&
+        (provider.activeFrom == null || provider.activeFrom <= month) &&
+        (provider.activeTo == null || provider.activeTo >= month)
     );
 }
 
@@ -186,9 +279,15 @@ export function collectProviderObservations(
         vendor,
     }: ProviderObservation) => {
         const normalized = normalizeProviderName(vendor);
-        const normalizedAccountId = accountId
-            ? normalizeProviderName(accountId)
+        const definition = resolveProvider(normalized);
+        const resolvedAccount = definition
+            ? resolveProviderAccount(definition, accountId)
             : undefined;
+        const normalizedAccountId =
+            resolvedAccount?.id ??
+            (accountId?.trim()
+                ? normalizeProviderAccountId(accountId)
+                : undefined);
         if (!normalized || !/^\d{4}-\d{2}$/.test(month)) return;
         const key = `${month}|${normalized}|${source}|${normalizedAccountId ?? ""}`;
         const existing = observations.get(key);
@@ -323,12 +422,15 @@ export function providerReviewRows(
             observedAliases: [],
             sources: [],
             mapped: definition != null,
-            monthlyReview: definition?.monthlyReview ?? false,
+            monthlyReview: definition
+                ? providerRequiresReview(definition, reviewMonth)
+                : false,
             dashboardChecked: false,
             checkExplanation: null,
-            dashboardStatus: definition?.monthlyReview
-                ? "no activity"
-                : "not required",
+            dashboardStatus:
+                definition && providerRequiresReview(definition, reviewMonth)
+                    ? "no activity"
+                    : "not required",
             expectedAccounts,
             observedAccountIds: [],
             accountStatus: expectedAccounts.length
@@ -344,7 +446,7 @@ export function providerReviewRows(
 
     for (const reviewMonth of months) {
         for (const provider of PROVIDER_REGISTRY) {
-            if (!provider.monthlyReview) continue;
+            if (!providerRequiresReview(provider, reviewMonth)) continue;
             const key = `${reviewMonth}|${provider.id}`;
             rows.set(key, makeRow(reviewMonth, provider.id, provider));
         }
@@ -359,6 +461,7 @@ export function providerReviewRows(
             rows.get(key) ?? makeRow(observation.month, provider, definition);
         row.aliasSet.add(observation.vendor);
         row.sourceSet.add(observation.source);
+        if (definition?.monthlyReview) row.monthlyReview = true;
         row.dashboardChecked ||= observation.dashboardChecked;
         if (observation.source === "cloud") {
             if (observation.accountId) {
@@ -423,8 +526,7 @@ export function providerReviewRows(
                         ? ("reviewed gap" as const)
                         : row.dashboardChecked
                           ? ("recorded" as const)
-                          : row.mapped &&
-                              resolveProvider(row.provider)?.monthlyReview
+                          : row.mapped && row.monthlyReview
                             ? sourceSet.size > 0
                                 ? ("due" as const)
                                 : ("no activity" as const)

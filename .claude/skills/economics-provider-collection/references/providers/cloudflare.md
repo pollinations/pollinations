@@ -34,6 +34,27 @@ Primary evidence sources:
   - Cloudflare currently documents `/user/billing/history` as deprecated. Use it only for billing-history evidence until a replacement source is chosen.
 - Transaction context: `economics_bank_ledger` vendor `cloudflare`.
 
+## Daily usage export — verified 2026-09-05
+
+- API: `GET https://api.cloudflare.com/client/v4/accounts/{account_id}/billable-usage?from=YYYY-MM-DD&to=YYYY-MM-DD`.
+- Myceli credential: existing `CLOUDFLARE_MYCELI_API_TOKEN`; account ID from registry.
+- Query each intersecting billing cycle, including its anchor day. A calendar
+  query can silently omit the preceding cycle's days. Myceli anchor: day 22.
+  For August, query `2026-07-22`–`2026-08-22` and `2026-08-22`–`2026-09-01`,
+  then retain charge periods within `[2026-08-01, 2026-09-01)`.
+- Grain: account + subscription + service + charge period (+ zone when present).
+  Check duplicates, currency and every calendar day. Sum `ContractedCost`, never
+  sum the cumulative columns or add multiple cost measures together.
+- Reconcile cycle service totals against the invoice before publishing costs.
+  The alpha API currently disagrees with invoiced Durable Objects, Logs and
+  Vectorize costs. Complete daily coverage alone does not certify cost accuracy.
+- Dashboard: Billable usage → Billing Period. No export control observed;
+  period labels are billing cycles. Fixed subscriptions are excluded.
+- Invoice PDF: Invoices and documents → exact invoice row → Row actions →
+  Download. Usage, credit drawdown, next-cycle subscriptions and subscription
+  discounts are separate lines; zero due is not zero usage.
+- API reference: https://developers.cloudflare.com/api/resources/billing/subresources/usage/methods/get_account_usage_v1/
+
 Collection steps:
 
 1. For invoices, place PDFs in `data/inbox/`.
@@ -60,9 +81,10 @@ Collection steps:
 5. For a completed billing period whose invoice is not yet available, archive
    the Billable usage view and record its exact total as dashboard evidence.
    Replace or confirm it with the consolidated invoice when issued.
-6. Treat the period label as a billing-cycle label, not a calendar month. Keep
-   the observed cycle dates in evidence and assign the ledger month consistently
-   with the invoice issue/end month.
+6. Preserve actual usage `start`/`end` (UTC, end-exclusive), not calendar-month
+   boundaries substituted from the invoice label. Keep invoice issue date and
+   cycle dates separate. Do not add a daily export alongside an existing cycle
+   total for the same usage; prepare a reviewed replacement only after reconciliation.
 7. Use this skill for saved raw evidence.
 
 Known traps:

@@ -2,10 +2,13 @@
 
 Canonical vendor: `alibaba`
 
-## Verified — 2026-08-21
+## Verified — 2026-09-04
 
 - Status: working provider billing API through the `aliyun` CLI.
-- Account: Myceli.AI OÜ (`5314153712077332`).
+- Login: `elliot@myceli.ai` in the Myceli browser workspace.
+- Managed account: Myceli.AI OÜ (`5314153712077332`).
+- Billing account: `10451809460254` (alias of the managed account).
+- Balance: `0.00 USD`.
 - The current month remains partial and must not be used as a closed-month
   forecast baseline.
 
@@ -16,7 +19,8 @@ Primary evidence sources:
 - Archived 2026 billing-item history: https://drive.google.com/file/d/1ImP3PS7o4eeq6BZapWElDJ3KUnsVY0PR/view?usp=drivesdk
 - 2026 provider/Pollen reconciliation: https://drive.google.com/file/d/1G8HF_KyAhBgwBUUnnCQ426eLiGwqKSJk/view?usp=drivesdk
 - Invoice/payment: Alibaba Cloud invoice, billing email, or Wise/card transaction.
-- Dashboard: Alibaba Cloud billing console for cross-checking bill overview rows.
+- Dashboard: <https://billing-cost.console.alibabacloud.com/fortune/billing-account>
+  for balance and bill cross-checks.
 
 Required local setup:
 

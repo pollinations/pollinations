@@ -32,7 +32,10 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     // Revenue
     "github|revenue": { method: "one_off", paymentTiming: "direct" },
     "polar|revenue": { method: "one_off", paymentTiming: "direct" },
-    "stripe|revenue": { method: "last", paymentTiming: "direct" },
+    "pollen sales|revenue": { method: "last", paymentTiming: "direct" },
+    "ko-fi|revenue": { method: "last", paymentTiming: "direct" },
+    "stripe refunds|revenue": { method: "last", paymentTiming: "direct" },
+    "stripe reversals|revenue": { method: "one_off", paymentTiming: "direct" },
     "wise|revenue": { method: "one_off", paymentTiming: "direct" },
 
     // Cash adjustments
@@ -213,10 +216,17 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "notion|operations": { method: "one_off", paymentTiming: "direct" },
     "protonvpn|operations": { method: "last", paymentTiming: "direct" },
     "slack|operations": { method: "last", paymentTiming: "direct" },
+    "stripe fees|operations": { method: "last", paymentTiming: "direct" },
     "tele2|operations": { method: "fixed", paymentTiming: "direct" },
     "telecom|operations": { method: "fixed", paymentTiming: "direct" },
 
     // Office
+    "gaswerksiedlung|office": {
+        method: "fixed",
+        paymentTiming: "direct",
+        // Rent resumes only with a reviewed private budget, never old payments.
+        fixedAmounts: [],
+    },
     "barbara-khamouguinoff|office": {
         method: "one_off",
         paymentTiming: "direct",
@@ -276,6 +286,9 @@ export function forecastLineRule(
     category: string,
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): ForecastLineRule | null {
+    if (category.trim().toLowerCase() === "revenue_share") {
+        return { method: "one_off", paymentTiming: "direct" };
+    }
     const rule = FORECAST_RULE_BY_LINE[key(vendor, category)];
     if (!rule) return null;
     return { ...rule, ...privateRule(vendor, category, privateRules) };

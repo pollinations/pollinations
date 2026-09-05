@@ -6,6 +6,7 @@ export const CATEGORY_IDS = [
     "infrastructure",
     "development",
     "operations",
+    "revenue_share",
     "office",
     "admin",
     "payroll",
@@ -20,6 +21,7 @@ export const EXPENSE_CATEGORY_ORDER = [
     "infrastructure",
     "development",
     "operations",
+    "revenue_share",
     "office",
     "admin",
     "payroll",
@@ -31,6 +33,7 @@ const CATEGORY_LABELS: Record<CategoryValue, string> = {
     infrastructure: "Infrastructure",
     development: "Development",
     operations: "Operations",
+    revenue_share: "Revenue Share",
     office: "Office",
     admin: "Admin",
     payroll: "Payroll",
@@ -137,6 +140,12 @@ export function transactionCategory(
 ): CategoryValue {
     if (row.kind === "opening_balance") return "balance_sheet";
 
+    const supplied = normalize(row.category);
+    if (supplied === "creator_payout") return "revenue_share";
+    // A reviewed deposit/refund or other balance-sheet movement is not a
+    // recurring vendor expense (for example a Deel deposit is not payroll).
+    if (supplied === "balance_sheet") return "balance_sheet";
+
     const vendor = normalize(row.vendor);
     const description = normalize(row.description);
 
@@ -172,7 +181,6 @@ export function transactionCategory(
     const mapped = TRANSACTION_VENDOR_CATEGORIES[vendor];
     if (mapped) return mapped;
 
-    const supplied = normalize(row.category);
     return isCategory(supplied) ? supplied : "uncategorized";
 }
 

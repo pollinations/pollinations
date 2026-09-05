@@ -82,7 +82,8 @@ export function driveDocumentLink(evidence: string): DriveDocumentLink | null {
 }
 
 export function hasArchivedEvidence(evidence: string): boolean {
-    return driveDocumentLink(evidence) != null;
+    // A folder or a form is a location, not a retained document proving a fact.
+    return driveDocumentLink(evidence)?.previewHref != null;
 }
 
 const OPEN_EVIDENCE_WORDING =
@@ -96,6 +97,14 @@ export function hasReconciledTransactionEvidence({
     evidence: string;
 }): boolean {
     if (!hasArchivedEvidence(evidence)) return false;
+    // A bank statement proves cash, not a supplier invoice. Statement-only
+    // exceptions must be reviewed per fact (e.g. a payout or bank cashback),
+    // not inferred globally from the vendor name.
+    if (
+        /\bevidence_type=payment_statement\b/u.test(evidence) &&
+        !/\bevidence_requirement=payment\b/u.test(evidence)
+    )
+        return false;
     return !OPEN_EVIDENCE_WORDING.test(`${description} ${evidence}`);
 }
 

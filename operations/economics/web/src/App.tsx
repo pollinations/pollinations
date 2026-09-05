@@ -47,21 +47,23 @@ import {
     ledgerFacets,
 } from "./lib/filterFacets";
 import {
-    collectMonths,
+    isMonthKey,
     latestClosedMonth,
+    reportingMonths,
     WINDOW_START,
     yearsOf,
 } from "./lib/months";
 import type { ProvenanceCode } from "./lib/provenance";
-import { fixturesMode, loadAll, TbError } from "./lib/tb";
+import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
-import { CommunityTab } from "./views/CommunityTab";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
 import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { ProviderCloseTab } from "./views/ProviderCloseTab";
+import { RevenueShareLedgerTab } from "./views/RevenueShareLedgerTab";
+import { RevenueShareTab } from "./views/RevenueShareTab";
 import { RunwayTab } from "./views/RunwayTab";
 import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
 
@@ -70,10 +72,37 @@ type InsightTab =
     | "runway"
     | "vendors"
     | "inference"
-    | "community"
+    | "revenue-share"
     | "balances"
     | "gpu";
 type ActiveView = InsightTab | LedgerTab;
+
+const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
+    "op-transactions": ["opTransactions"],
+    "op-cloud": ["opCloud"],
+    "op-pollen": ["opPollen"],
+    "revenue-share-ledger": ["revenueShare"],
+    "revenue-share": ["revenueShare", "opTransactions"],
+    balances: ["opCloud", "opTransactions"],
+    runway: [
+        "opTransactions",
+        "opCloud",
+        "stripeSales",
+        "userBalances",
+        "privateConfig",
+    ],
+    close: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
+    vendors: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
+    inference: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
+    gpu: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
+};
+
+function initialView(): ActiveView {
+    const requested = new URLSearchParams(window.location.search).get("view");
+    return requested && Object.hasOwn(VIEW_SOURCES, requested)
+        ? (requested as ActiveView)
+        : "runway";
+}
 
 const logoMask: CSSProperties = {
     WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
@@ -91,7 +120,7 @@ const INSIGHT_TABS = [
     {
         id: "runway",
         label: "Runway",
-        note: "Cash runway from the Wise-derived bank ledger plus explicit OP Forecast assumptions.",
+        note: "Stripe sales, Wise bank cash, and forecasts derived from reviewed rules, provider usage, and checked funding.",
         icon: WalletIcon,
     },
     {
@@ -113,9 +142,9 @@ const INSIGHT_TABS = [
         icon: RocketIcon,
     },
     {
-        id: "community",
-        label: "Community",
-        note: "Community-model economics: cash-backed Paid Pollen, owner and BYOP shares, retained value, Quest rewards, and activity without a Pollinations vendor cost.",
+        id: "revenue-share",
+        label: "Revenue Share",
+        note: "Community-model and BYOP economics by creator, with Paid and Quest rewards kept separate.",
         icon: SproutIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -130,7 +159,7 @@ const LEDGER_INSIGHT_TABS = [
     {
         id: "balances",
         label: "Balances",
-        note: "Current cash-prepaid and free-credit vendor balances, with an expandable monthly roll-forward.",
+        note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
         icon: ClockIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -143,6 +172,7 @@ const ALL_INSIGHT_TABS = [
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
 type LedgerDrawerItem = DrawerItem<LedgerTab> & {
+    source: DataSource;
     codes: ProvenanceCode[];
     pipe: string;
     rows: (data: Data) => number;
@@ -151,6 +181,7 @@ type LedgerDrawerItem = DrawerItem<LedgerTab> & {
 const TABS = [
     {
         id: "op-transactions",
+        source: "opTransactions",
         label: "Bank",
         codes: ["WISE"],
         pipe: "economics_bank_ledger_api",
@@ -163,6 +194,7 @@ const TABS = [
     },
     {
         id: "op-cloud",
+        source: "opCloud",
         label: "Compute & Infra",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
         pipe: "economics_compute_ledger_api",
@@ -175,6 +207,7 @@ const TABS = [
     },
     {
         id: "op-pollen",
+        source: "opPollen",
         label: "Pollen",
         codes: ["TB"],
         pipe: "economics_pollen_usage_api",
@@ -183,6 +216,19 @@ const TABS = [
         rows: (data) =>
             (data.opPollen ?? []).filter((row) => row.month >= WINDOW_START)
                 .length,
+    },
+    {
+        id: "revenue-share-ledger",
+        source: "revenueShare",
+        label: "Revenue Share",
+        codes: ["TB"],
+        pipe: "economics_revenue_share_api",
+        note: "Monthly creator-earning ledger by creator and App or Community Model. Paid and Quest earnings remain separate; associated usage can overlap when one request has both source types.",
+        icon: DatabaseIcon,
+        rows: (data) =>
+            (data.revenueShare ?? []).filter(
+                (row) => row.row_type === "source" && row.month >= WINDOW_START,
+            ).length,
     },
 ] satisfies readonly LedgerDrawerItem[];
 
@@ -259,8 +305,8 @@ function EconomicsNav({
         </NavItem>
     );
     const rawItem = (item: (typeof TABS)[number]) => {
-        const count = data ? item.rows(data) : null;
-        const title = `${codesLabel(item.codes)}${item.pipe}${data ? ` · ${count} rows` : ""}\n${item.note}`;
+        const count = data?.[item.source] != null ? item.rows(data) : null;
+        const title = `${codesLabel(item.codes)}${item.pipe}${count != null ? ` · ${count} rows` : ""}\n${item.note}`;
 
         return (
             <NavItem
@@ -506,9 +552,9 @@ function viewInfoContent(activeView: ActiveView) {
                     as free usage. Gross Paid remains in the usage-mix tooltip.
                 </InfoLine>
                 <InfoLine>
-                    Vendor-month totals are authoritative. Model values are
-                    allocations by monthly Pollen metered-cost share, not
-                    independent vendor evidence.
+                    Vendor-month totals are authoritative. Model costs use exact
+                    matched provider evidence; unmatched costs remain
+                    unallocated.
                 </InfoLine>
                 <InfoLine>
                     Result is retained Paid minus cash and consumed credits.
@@ -518,22 +564,24 @@ function viewInfoContent(activeView: ActiveView) {
             </span>
         );
     }
-    if (activeView === "community") {
+    if (activeView === "revenue-share") {
         return (
             <span className="block max-w-72">
-                <strong>Community Models</strong>
+                <strong>Revenue Share</strong>
                 <InfoLine>
-                    Paid Pollen is cash-backed value consumed, not Stripe or
-                    Wise cash collected in this month. Quest Pollen is free
-                    usage and never fiat revenue.
+                    One row per creator combines their BYOP apps and Community
+                    models. Each request is associated with every creator whose
+                    app or model participated.
                 </InfoLine>
                 <InfoLine>
-                    Paid shows only the value retained after owner and BYOP
-                    payouts. Hover it for the payout breakdown.
+                    Pollinations profit is Paid usage minus every creator
+                    earning and the external model cost. The summary cards count
+                    each request once even when two creators participated.
                 </InfoLine>
                 <InfoLine>
-                    Community authors supply the model and infrastructure, so no
-                    Pollinations vendor cost is reconciled here.
+                    Quest creator earnings remain non-cashable. Settlements are
+                    shown only after a completed Bank movement is explicitly
+                    classified as a creator payout.
                 </InfoLine>
             </span>
         );
@@ -584,16 +632,18 @@ function viewInfoContent(activeView: ActiveView) {
             <span className="block max-w-72">
                 <strong>Runway</strong>
                 <InfoLine>
-                    Actual cash comes from OP Transactions; future cash comes
-                    from explicit OP Forecast assumptions.
+                    Cash change and balance come from the Wise-backed Bank
+                    ledger. Stripe payouts affect cash, never P&amp;L revenue.
                 </InfoLine>
                 <InfoLine>
                     The current month keeps bank movements and the authored
                     full-month plan in separate columns.
                 </InfoLine>
                 <InfoLine>
-                    Revenue and expense-category rows are cash P&amp;L totals;
-                    expand a category to see its vendor detail.
+                    Revenue separates Pollen and Ko-fi sales, refunds, and
+                    reversals. Processing fees are an Operations expense; other
+                    expense categories remain cash-based. Expand a category to
+                    see its vendor detail.
                 </InfoLine>
                 <InfoLine>
                     Compute &amp; Infra usage can inform the forecast, but
@@ -696,8 +746,14 @@ export default function App() {
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
-    const [activeView, setActiveView] = useState<ActiveView>("runway");
-    const [selectedMonth, setSelectedMonth] = useState("");
+    const [activeView, setActiveView] = useState<ActiveView>(initialView);
+    const [loadedView, setLoadedView] = useState<ActiveView | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const month =
+            new URLSearchParams(window.location.search).get("month") ?? "";
+        return isMonthKey(month) ? month : "";
+    });
     const [runwayYear, setRunwayYear] = useState("2026");
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -732,23 +788,44 @@ export default function App() {
 
         const retryKey = attempt;
         let cancelled = false;
+        const controller = new AbortController();
         setError(null);
-        loadAll()
+        setLoading(true);
+        setLoadedView(null);
+        loadAll(VIEW_SOURCES[activeView], controller.signal)
             .then((loaded) => {
-                if (!cancelled && retryKey === attempt) setData(loaded);
+                if (!cancelled && retryKey === attempt) {
+                    setData(loaded);
+                    setLoadedView(activeView);
+                    setLoading(false);
+                }
             })
             .catch((caught: unknown) => {
                 if (cancelled || retryKey !== attempt) return;
+                setLoading(false);
 
-                if (
-                    caught instanceof TbError &&
-                    (caught.status === 401 || caught.status === 403)
-                ) {
-                    setAuthenticated(false);
-                    setSessionChecked(true);
-                    setAuthError(
-                        `Session rejected (${caught.message}) - enter the password again.`,
-                    );
+                if (caught instanceof TbError && caught.status === 401) {
+                    checkSession()
+                        .then((valid) => {
+                            if (cancelled) return;
+                            if (valid)
+                                setError(
+                                    `${caught.message}. Tinybird access failed; the Economics session is still valid.`,
+                                );
+                            else {
+                                setAuthenticated(false);
+                                setSessionChecked(true);
+                                setAuthError(
+                                    "Your Economics session expired. Sign in again.",
+                                );
+                            }
+                        })
+                        .catch(() => {
+                            if (!cancelled)
+                                setError(
+                                    "Unable to verify the Economics session. Retry when the connection is available.",
+                                );
+                        });
                 } else {
                     setError(
                         caught instanceof Error
@@ -760,10 +837,21 @@ export default function App() {
 
         return () => {
             cancelled = true;
+            controller.abort();
         };
-    }, [ready, attempt]);
+    }, [ready, attempt, activeView]);
 
-    const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", activeView);
+        if (selectedMonth) url.searchParams.set("month", selectedMonth);
+        window.history.replaceState(null, "", url);
+    }, [activeView, selectedMonth]);
+
+    const viewData =
+        !error && loadedView === activeView && !loading ? data : null;
+
+    const months = reportingMonths();
     const reportingYears = useMemo(() => yearsOf(months), [months]);
     const monthFilter = months.includes(selectedMonth)
         ? selectedMonth
@@ -851,7 +939,13 @@ export default function App() {
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
             </div>
             <div className="flex items-center justify-between gap-2">
-                <span />
+                <Button
+                    size="sm"
+                    disabled={loading}
+                    onClick={() => setAttempt((value) => value + 1)}
+                >
+                    {loading ? "Refreshing…" : "Refresh"}
+                </Button>
                 <ColorModeToggle />
             </div>
         </>
@@ -927,58 +1021,64 @@ export default function App() {
                     </div>
                 </Alert>
             )}
-            {!error && !data && <Text tone="soft">Loading pipes...</Text>}
+            {!error && !viewData && <Text tone="soft">Loading this view…</Text>}
             <ErrorBoundary
                 resetKey={`${activeView}:${selectedYear}:${monthFilter}:${runwayYear}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
             >
-                {data && activeView === "op-transactions" && (
+                {viewData && activeView === "op-transactions" && (
                     <OpTransactionsTab
                         category={selectedCategories}
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && activeView === "op-pollen" && (
+                {viewData && activeView === "op-pollen" && (
                     <OpPollenTab
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && activeView === "op-cloud" && (
+                {viewData && activeView === "op-cloud" && (
                     <OpCloudTab
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && activeView === "close" && (
+                {viewData && activeView === "revenue-share-ledger" && (
+                    <RevenueShareLedgerTab
+                        data={viewData}
+                        month={monthFilter}
+                    />
+                )}
+                {viewData && activeView === "close" && (
                     <ProviderCloseTab
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         months={months}
                         year={selectedYear}
                         onMonthChange={setSelectedMonth}
                     />
                 )}
-                {data && activeView === "runway" && (
-                    <RunwayTab data={data} year={runwayYear} />
+                {viewData && activeView === "runway" && (
+                    <RunwayTab data={viewData} year={runwayYear} />
                 )}
-                {data && activeView === "vendors" && (
-                    <VendorsTab data={data} month={monthFilter} />
+                {viewData && activeView === "vendors" && (
+                    <VendorsTab data={viewData} month={monthFilter} />
                 )}
-                {data && activeView === "inference" && (
-                    <ManagedInferenceTab data={data} month={monthFilter} />
+                {viewData && activeView === "inference" && (
+                    <ManagedInferenceTab data={viewData} month={monthFilter} />
                 )}
-                {data && activeView === "balances" && (
-                    <BalancesTab data={data} />
+                {viewData && activeView === "balances" && (
+                    <BalancesTab data={viewData} />
                 )}
-                {data && activeView === "community" && (
-                    <CommunityTab data={data} month={monthFilter} />
+                {viewData && activeView === "revenue-share" && (
+                    <RevenueShareTab data={viewData} month={monthFilter} />
                 )}
-                {data && activeView === "gpu" && (
-                    <GpuTab data={data} month={monthFilter} />
+                {viewData && activeView === "gpu" && (
+                    <GpuTab data={viewData} month={monthFilter} />
                 )}
             </ErrorBoundary>
         </>

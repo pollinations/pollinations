@@ -53,6 +53,47 @@ export type OpPollenRow = {
     requests_quests: number;
 };
 
+export type RevenueShareSourceRow = {
+    row_type: "summary" | "creator" | "source";
+    month: string;
+    recipient_id: string;
+    github_username: string;
+    recipient_name: string;
+    sources_json: string;
+    paid_usage: number;
+    paid_creator_earnings: number;
+    paid_pollinations_profit: number;
+    quest_usage: number;
+    quest_creator_earnings: number;
+    paid_requests: number;
+    quest_requests: number;
+};
+
+export type StripeSalesRow = {
+    revenue_stream: "pollen" | "kofi";
+    reversals: number;
+    // Absent coverage is unknown, never a completed month.
+    coverage_complete?: number;
+    month: string;
+    currency: string;
+    gross_sales: number;
+    refunds: number;
+    net_sales: number;
+    stripe_fees: number;
+    net_after_fees: number;
+    payments: number;
+    refund_count: number;
+};
+
+export type UserBalanceSummaryRow = {
+    users: number;
+    paid_users: number;
+    quest_users: number;
+    paid_balance: number;
+    quest_balance: number;
+    synced_at: string;
+};
+
 export type ProviderObservationSource = "transactions" | "cloud" | "pollen";
 
 // Captured before provider aliases are canonicalized so the registry can show
@@ -75,6 +116,7 @@ export type ForecastAmount = {
 export type ScheduledForecastAmount = ForecastAmount & {
     month: string;
     note: string;
+    settledByEntryIds?: string[];
 };
 
 export type PrivateForecastRule = {
@@ -130,6 +172,9 @@ export type Data = {
     opTransactions?: OpTransactionRow[];
     opCloud?: OpCloudRow[];
     opPollen?: OpPollenRow[];
+    revenueShare?: RevenueShareSourceRow[];
+    stripeSales?: StripeSalesRow[];
+    userBalances?: UserBalanceSummaryRow[];
     providerObservations?: ProviderObservation[];
     privateConfig?: EconomicsPrivateConfig;
 };

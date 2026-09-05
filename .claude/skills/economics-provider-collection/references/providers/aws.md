@@ -2,6 +2,10 @@
 
 Canonical vendor: `aws`
 
+Dashboard routing (verified 2026-09-05): `elliot@myceli.ai` Chrome window;
+Myceli AI payer `301235909293`. Use the registry's Credits link, or Billing and
+Cost Management home → Credits. Do not confuse the payer with linked accounts.
+
 ## Verified — 2026-08-22
 
 - Status: AWS Credits, Automat-it Glass, Umbrella UI, and the account-scoped
@@ -14,9 +18,11 @@ Canonical vendor: `aws`
 Collection steps:
 
 1. For invoices, place PDFs/receipts in `data/inbox/`.
-2. For the current balance, record one dated `type: balance` OP Cloud snapshot
-   from AWS Credits using `Total estimated amount remaining`. Preserve each
-   active grant's remaining amount and expiry in the evidence notes.
+2. Current balance: one `type: balance` row per nonzero grant, identical checked
+   `start`, payer `account_id`, grant ID as `resource_id`, and
+   `resource_sku: current-balance-lot`. Use estimated remaining amounts and each
+   grant's verified `end`. Sum must match Total estimated amount remaining.
+   Never append the summed account total alongside its lots.
 3. For a closed month, archive the Glass settlement/invoice and use `You Pay`
    as the cash obligation after credits and reseller discounts.
 4. For usage evidence, query Umbrella Cost for the requested period only.
@@ -77,6 +83,16 @@ account ID in `resource_id`, classify `Amazon Bedrock` and services ending in
 `[Amazon Bedrock Edition]` as inference, and normalize the named edition to the
 canonical model slug. Other services are infrastructure.
 
+## Verified — 2026-09-05
+
+- Umbrella `groupBy=usagetype` splits the `Amazon Bedrock` service line into
+  Nova usage types (`USE1-NovaReel-*`, `USE1-NovaMicro-*`, `USE1-Nova2.0Lite-*`,
+  `USE1-NovaCanvas-*`) and Bedrock Guardrails (`USE1-Guardrail-*`, no Pollen
+  model). Umbrella figures are identical under unblended, net unblended and
+  amortized cost. Console Cost Explorer captures taken before the month is
+  finalized differ from Umbrella; Umbrella is the ledger source for Bedrock
+  usage from August 2026.
+
 Known traps:
 
 - No single AWS surface is authoritative for everything: AWS owns live credit
@@ -85,6 +101,10 @@ Known traps:
 - Do not replace AWS's live estimated credit balance with Glass's remaining
   credit figure. Glass is tied to its latest finalized settlement and can lag
   current unbilled usage.
+- Active credits can have different expiry dates. Capture each credit ID,
+  estimated remaining amount, expiry, and applicable products; use See complete
+  list of services to verify eligibility. Never assign one expiry to the summed
+  payer balance or revive an estimated-zero grant from its finalized balance.
 - The authorization header from Umbrella is the raw token, with no `Bearer` prefix.
 - Auth response fields:
   - `.Authorization` is the raw authorization token.

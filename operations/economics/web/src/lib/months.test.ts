@@ -7,6 +7,7 @@ import {
     matchesMonth,
     monthLabel,
     monthName,
+    reportingMonths,
     yearsOf,
 } from "./months";
 
@@ -15,6 +16,14 @@ const data: Data = {
     opCloud: FIXTURES.economics_compute_ledger_api,
     opPollen: FIXTURES.economics_pollen_usage_api,
 } as Data;
+
+it("keeps every elapsed reporting month available independently of loaded data", () => {
+    expect(reportingMonths(new Date("2026-03-15T00:00:00Z"))).toEqual([
+        "2026-01",
+        "2026-02",
+        "2026-03",
+    ]);
+});
 
 describe("collectMonths", () => {
     it("unions months across OP month-grained tables, sorted", () => {

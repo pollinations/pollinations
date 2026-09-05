@@ -71,6 +71,17 @@ export function matchesValue(value: string, filter: ValueFilter): boolean {
 // Credits runway must clamp to the window.
 export const WINDOW_START = "2026-01";
 
+// Navigation must not lose a selected period when another view loads fewer sources.
+// Missing months remain selectable so their absence is visible, not silently skipped.
+export function reportingMonths(now = new Date()): string[] {
+    const end = now.toISOString().slice(0, 7);
+    const months: string[] = [];
+    for (let month = WINDOW_START; month <= end; month = monthShift(month, 1)) {
+        months.push(month);
+    }
+    return months;
+}
+
 // Every in-window month observed across the OP month-grained tables, ascending.
 export function collectMonths(data: Data): string[] {
     const months = new Set<string>();
@@ -79,6 +90,7 @@ export function collectMonths(data: Data): string[] {
     }
     for (const row of data.opCloud ?? []) months.add(row.start.slice(0, 7));
     for (const row of data.opPollen ?? []) months.add(row.month);
+    for (const row of data.revenueShare ?? []) months.add(row.month);
     return [...months]
         .filter((month) => isMonthKey(month) && month >= WINDOW_START)
         .sort((a, b) => a.localeCompare(b));

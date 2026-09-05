@@ -1,9 +1,8 @@
 import type { Data } from "../types";
 
-// Monthly average EUR→USD (ECB rates via frankfurter.dev, pulled 2026-07-06;
-// 2025 backfill pulled 2026-07-13). Append one line when a new month starts —
-// the only maintenance this needs. 2025 months are needed because the credit
-// and prepaid-coverage lenses read pre-window rows.
+// Monthly average EUR→USD (ECB reference rates). Append one line when a new
+// month starts. 2025 months are needed because the credit and prepaid-coverage
+// lenses read pre-window rows.
 const FX_EUR_USD: Record<string, number> = {
     "2025-01": 1.0354,
     "2025-02": 1.0413,
@@ -24,6 +23,7 @@ const FX_EUR_USD: Record<string, number> = {
     "2026-05": 1.1673,
     "2026-06": 1.1518,
     "2026-07": 1.1411,
+    "2026-08": 1.1593,
 };
 
 // Monthly average CAD→USD. Only two CAD facts exist (the 2025 VLAS MIKROPULO
@@ -71,6 +71,7 @@ export function fxEstimatedMonths(data: Data): string[] {
     for (const row of data.opTransactions ?? []) check(row.currency, row.date);
     for (const row of data.opCloud ?? []) check(row.currency, row.start);
     for (const row of data.opPollen ?? []) check(row.currency, row.month);
+    for (const row of data.stripeSales ?? []) check(row.currency, row.month);
     return [...months].sort();
 }
 

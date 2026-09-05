@@ -2,9 +2,13 @@
 
 Canonical vendor: `elevenlabs`
 
-## Verified — 2026-08-20
+## Verified — 2026-09-04
 
 - Status: workspace analytics API works with the stored key.
+- Login: `elliot@myceli.ai` in the Myceli browser workspace.
+- Workspace: `My Workspace` (`myceli`).
+- Plan: Scale, `$299/month`, renews September 13.
+- Remaining quota: `2,844,141` of `4,284,566` usage credits.
 - The response is column-oriented (`columns` plus array-valued `rows`); it
   does not return a `total_cost` property on each row object.
 
@@ -51,6 +55,8 @@ Collection steps:
 
 Known traps:
 
+- Usage credits are a non-USD quota; record them as `usage-quota`, never as a
+  monetary credit balance.
 - A plain runtime key can 401; the key needs workspace analytics/admin scope.
 - Analytics usage can differ from invoice cash because subscriptions, overage timing, and top-ups are separate evidence surfaces.
 - Grant waterfall assumptions need dashboard or transaction backing.

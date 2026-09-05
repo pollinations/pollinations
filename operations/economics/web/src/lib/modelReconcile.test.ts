@@ -56,7 +56,10 @@ describe("modelReconcileRows", () => {
     it("splits paid and Quest traffic through cash and credit funding", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [cloud({ paid: -80, credit: -20 })],
+                opCloud: [
+                    cloud({ model: "claude", paid: -60, credit: -15 }),
+                    cloud({ model: "nova", paid: -20, credit: -5 }),
+                ],
                 opPollen: [
                     pollen({
                         model: "claude",
@@ -178,7 +181,7 @@ describe("modelReconcileRows", () => {
         expect(row.paidProviderCashUsd).toBe(100);
     });
 
-    it("falls back to provider-month allocation when canonical model coverage is incomplete", () => {
+    it("preserves exact costs when canonical model coverage is incomplete", () => {
         const [row] = modelReconcileRows(
             data({
                 opCloud: [
@@ -202,15 +205,500 @@ describe("modelReconcileRows", () => {
 
         const claude = row.models.find((model) => model.model === "claude");
         const nova = row.models.find((model) => model.model === "nova");
-        if (!claude || !nova) throw new Error("fallback models missing");
-        expect(claude.providerCashUsd).toBe(50);
-        expect(nova.providerCashUsd).toBe(50);
+        if (!claude || !nova) throw new Error("models missing");
+        expect(claude.providerCashUsd).toBe(100);
+        expect(claude.status).toBe("allocated");
+        expect(nova.providerCashUsd).toBeNull();
+        expect(nova.status).toBe("unallocated");
+        expect(row.providerCashUsd).toBe(100);
+        expect(row.paidProviderCashUsd).toBeNull();
+    });
+
+    it("separates unmapped labels from model-less costs without changing exact matches", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({ model: "claude", paid: -40, credit: -10 }),
+                    cloud({ model: "Provider Claude Label", paid: -20 }),
+                    cloud({ model: "", credit: -30 }),
+                ],
+                opPollen: [
+                    pollen({ model: "claude", cost_paid: 30, price_paid: 60 }),
+                    pollen({ model: "nova", cost_paid: 70, price_paid: 80 }),
+                ],
+            }),
+        );
+        expect(row.models.find((m) => m.model === "claude")).toMatchObject({
+            status: "allocated",
+            providerCashUsd: 40,
+            providerCreditUsd: 10,
+        });
+        expect(row.models.find((m) => m.model === "nova")).toMatchObject({
+            status: "unallocated",
+            providerCashUsd: null,
+        });
+        expect(
+            row.models.find((m) => m.model === "Needs model mapping"),
+        ).toMatchObject({
+            status: "needs mapping",
+            providerCashUsd: 20,
+            providerCreditUsd: 0,
+        });
+        expect(
+            row.models.find((m) => m.model === "Missing cost breakdown"),
+        ).toMatchObject({
+            status: "missing breakdown",
+            providerCashUsd: 0,
+            providerCreditUsd: 30,
+        });
+        expect(
+            row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
+        ).toBe(100);
+        expect(row.providerUsageUsd).toBe(100);
+        expect(row.netCashContributionUsd).toBe(80);
+    });
+
+    it("joins provider labels through the registry label table", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "azure",
+                        model: "Kontext Pro glbl Images",
+                        paid: -40,
+                    }),
+                    cloud({
+                        vendor: "azure",
+                        model: "Image 2 img opt Gl 1M Tokens",
+                        paid: -60,
+                    }),
+                    cloud({
+                        vendor: "azure",
+                        model: "Image 2 txt inp Gl 1M Tokens",
+                        paid: -10,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "azure",
+                        model: "kontext",
+                        cost_paid: 30,
+                    }),
+                    pollen({
+                        vendor: "azure",
+                        model: "gpt-image-2",
+                        cost_paid: 60,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models.find((m) => m.model === "kontext")).toMatchObject({
+            status: "allocated",
+            providerCashUsd: 40,
+        });
+        expect(row.models.find((m) => m.model === "gpt-image-2")).toMatchObject(
+            { status: "allocated", providerCashUsd: 70 },
+        );
+        expect(row.models).toHaveLength(2);
+    });
+
+    it("does not join a registry alias that is not a reviewed label", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({ model: "anthropic/claude-opus-5", paid: -50 }),
+                ],
+                opPollen: [pollen({ model: "claude-large", cost_paid: 45 })],
+            }),
+        );
+
+        expect(
+            row.models.find((m) => m.model === "claude-large"),
+        ).toMatchObject({ status: "unallocated", providerCashUsd: null });
+        expect(
+            row.models.find((m) => m.model === "Needs model mapping"),
+        ).toMatchObject({ status: "needs mapping", providerCashUsd: 50 });
+    });
+
+    it("keeps a historical Pollen id apart from the model today's registry aliases it to", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "azure",
+                        model: "gpt-realtime-2 Audio opt Gl 1M Tokens",
+                        paid: -9,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "azure",
+                        model: "gpt-realtime-2",
+                        cost_paid: 8,
+                    }),
+                    pollen({
+                        vendor: "azure",
+                        model: "gpt-realtime-2.1",
+                        cost_paid: 5,
+                    }),
+                ],
+            }),
+        );
+
+        expect(
+            row.models.find((m) => m.model === "gpt-realtime-2"),
+        ).toMatchObject({ status: "allocated", providerCashUsd: 9 });
+        expect(
+            row.models.find((m) => m.model === "gpt-realtime-2.1"),
+        ).toMatchObject({ status: "unallocated", providerCashUsd: null });
+    });
+
+    it("joins a retired model id that the registry no longer lists but Pollen still names", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "mistral",
+                        model: "mistral-ocr",
+                        paid: -9,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "mistral",
+                        model: "mistral-ocr",
+                        cost_paid: 8,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models).toEqual([
+            expect.objectContaining({
+                model: "mistral-ocr",
+                status: "allocated",
+                providerCashUsd: 9,
+            }),
+        ]);
+    });
+
+    it("keeps separately metered Pollen ids apart and splits them by ledger SKU", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "google",
+                        model: "veo-3-fast",
+                        resource_sku: "Veo 3 Fast 720p Audio Video Generation ",
+                        paid: -100,
+                    }),
+                    cloud({
+                        vendor: "google",
+                        model: "veo-3-fast",
+                        resource_sku: "Veo 3 Fast 1080p Audio Video Generation",
+                        paid: -6,
+                    }),
+                ],
+                opPollen: [
+                    pollen({ vendor: "google", model: "veo", cost_paid: 80 }),
+                    pollen({
+                        vendor: "google",
+                        model: "veo-1080p",
+                        cost_paid: 5,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models.find((m) => m.model === "veo")).toMatchObject({
+            status: "allocated",
+            pollenMeterUsd: 80,
+            providerCashUsd: 100,
+        });
+        expect(row.models.find((m) => m.model === "veo-1080p")).toMatchObject({
+            status: "allocated",
+            pollenMeterUsd: 5,
+            providerCashUsd: 6,
+        });
+        expect(row.models).toHaveLength(2);
+    });
+
+    it("keeps a label that serves several Pollen models billed together, never split", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "elevenlabs",
+                        model: "eleven_v3",
+                        paid: -100,
+                    }),
+                    cloud({
+                        vendor: "elevenlabs",
+                        model: "music_v2",
+                        paid: -50,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "elevenlabs",
+                        model: "elevenlabs",
+                        cost_paid: 90,
+                    }),
+                    pollen({
+                        vendor: "elevenlabs",
+                        model: "eleven-dialogue",
+                        cost_paid: 5,
+                    }),
+                    pollen({
+                        vendor: "elevenlabs",
+                        model: "elevenmusic",
+                        cost_paid: 50,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models.find((m) => m.model === "elevenmusic")).toMatchObject(
+            { status: "allocated", providerCashUsd: 50 },
+        );
+        expect(row.models.find((m) => m.model === "elevenlabs")).toMatchObject({
+            status: "shared member",
+            group: "elevenlabs + eleven-dialogue",
+            providerCashUsd: null,
+        });
+        expect(
+            row.models.find((m) => m.model === "elevenlabs + eleven-dialogue"),
+        ).toMatchObject({
+            status: "shared upstream",
+            providerCashUsd: 100,
+            lines: [{ label: "eleven_v3", usd: 100 }],
+        });
+        expect(
+            row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
+        ).toBe(150);
+    });
+
+    it("shows one billed-together row per upstream group and marks its members", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "azure",
+                        model: "5.5 ShortCo opt Gl 1M Tokens",
+                        paid: -100,
+                    }),
+                    cloud({
+                        vendor: "azure",
+                        model: "5.5 ShortCo inp Gl 1M Tokens",
+                        paid: -50,
+                    }),
+                    cloud({
+                        vendor: "azure",
+                        model: "Kontext Pro glbl Images",
+                        paid: -20,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "azure",
+                        model: "openai-large",
+                        cost_paid: 120,
+                    }),
+                    pollen({
+                        vendor: "azure",
+                        model: "midijourney-large",
+                        cost_paid: 5,
+                    }),
+                    pollen({
+                        vendor: "azure",
+                        model: "kontext",
+                        cost_paid: 20,
+                    }),
+                ],
+            }),
+        );
+
+        const group = row.models.filter((m) => m.status === "shared upstream");
+        expect(group).toEqual([
+            expect.objectContaining({
+                model: "openai-large + midijourney-large",
+                providerCashUsd: 150,
+                lines: [
+                    { label: "5.5 ShortCo opt Gl 1M Tokens", usd: 100 },
+                    { label: "5.5 ShortCo inp Gl 1M Tokens", usd: 50 },
+                ],
+            }),
+        ]);
+        expect(
+            row.models.find((m) => m.model === "openai-large"),
+        ).toMatchObject({
+            status: "shared member",
+            group: "openai-large + midijourney-large",
+            providerCashUsd: null,
+            pollenMeterUsd: 120,
+        });
+        expect(
+            row.models.find((m) => m.model === "midijourney-large"),
+        ).toMatchObject({ status: "shared member" });
+        expect(row.buckets).toEqual({
+            allocatedUsd: 20,
+            billedTogetherUsd: 150,
+            missingBreakdownUsd: 0,
+            needsMappingUsd: 0,
+            providerOnlyUsd: 0,
+        });
+    });
+
+    it("sums the residual buckets across vendor months", () => {
+        const rows = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({ model: "claude", paid: -40 }),
+                    cloud({ model: "", paid: -30 }),
+                    cloud({ vendor: "modal", model: "mystery", paid: -5 }),
+                ],
+                opPollen: [pollen({ model: "claude", cost_paid: 35 })],
+            }),
+        );
+
+        expect(modelReconcileSummary(rows).buckets).toEqual({
+            allocatedUsd: 40,
+            billedTogetherUsd: 0,
+            missingBreakdownUsd: 30,
+            needsMappingUsd: 5,
+            providerOnlyUsd: 0,
+        });
+    });
+
+    it("joins a shared label directly when only one of its models was metered that month", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "elevenlabs",
+                        model: "eleven_v3",
+                        paid: -100,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "elevenlabs",
+                        model: "elevenlabs",
+                        cost_paid: 90,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models).toEqual([
+            expect.objectContaining({
+                model: "elevenlabs",
+                status: "allocated",
+                providerCashUsd: 100,
+            }),
+        ]);
+    });
+
+    it("shows a mapped model with no Pollen usage as provider only", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "azure",
+                        model: "Flex Megapixel",
+                        paid: -5,
+                    }),
+                    cloud({
+                        vendor: "azure",
+                        model: "Kontext Pro glbl Images",
+                        paid: -20,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "azure",
+                        model: "kontext",
+                        cost_paid: 20,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models.find((m) => m.model === "flux-2-flex")).toMatchObject(
+            {
+                status: "provider only",
+                providerCashUsd: 5,
+                pollenMeterUsd: null,
+            },
+        );
+        expect(
+            row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
+        ).toBe(25);
+    });
+
+    it("shows a reviewed label with no Pollen model as provider only", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "replicate",
+                        model: "topazlabs/image-upscale",
+                        paid: -5,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "replicate",
+                        model: "seedance-2.0",
+                        cost_paid: 20,
+                    }),
+                ],
+            }),
+        );
+
+        expect(
+            row.models.find((m) => m.model === "topazlabs/image-upscale"),
+        ).toMatchObject({ status: "provider only", providerCashUsd: 5 });
+    });
+
+    it("drops a zero-cost ledger line instead of showing it as provider only", () => {
+        // A corrected fact re-appended with credit 0 and paid 0 records no
+        // usage; it must not surface as a residual row.
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "pointsflyer",
+                        model: "gptimage",
+                        credit: 0,
+                        paid: 0,
+                    }),
+                    cloud({
+                        entry_id: "cloud-test-2",
+                        vendor: "pointsflyer",
+                        model: "gpt-5.4-nano",
+                        credit: -5,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "pointsflyer",
+                        model: "gpt-5.4-nano",
+                        cost_paid: 5,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models.map((m) => m.model)).toEqual(["gpt-5.4-nano"]);
+        expect(row.buckets.providerOnlyUsd).toBe(0);
     });
 
     it("identifies paid and Quest Pollen spent on credit-funded usage", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [cloud({ paid: -25, credit: -75 })],
+                opCloud: [cloud({ model: "claude", paid: -25, credit: -75 })],
                 opPollen: [
                     pollen({
                         cost_paid: 60,
@@ -282,7 +770,7 @@ describe("modelReconcileRows", () => {
         expect(row.models[0].status).toBe("missing provider");
     });
 
-    it("shows provider usage without Pollen as unallocated", () => {
+    it("shows provider usage without Pollen as needing a mapping", () => {
         const [row] = modelReconcileRows(
             data({ opCloud: [cloud({ vendor: "modal", paid: -42 })] }),
         );
@@ -292,8 +780,8 @@ describe("modelReconcileRows", () => {
         expect(row.providerUsageUsd).toBe(42);
         expect(row.models).toEqual([
             expect.objectContaining({
-                model: "Unallocated vendor usage",
-                status: "unallocated",
+                model: "Needs model mapping",
+                status: "needs mapping",
                 providerCashUsd: 42,
             }),
         ]);
@@ -329,7 +817,7 @@ describe("modelReconcileRows", () => {
                     status: "unallocated",
                 }),
                 expect.objectContaining({
-                    model: "Unallocated vendor usage",
+                    model: "Needs model mapping",
                     providerCashUsd: 20,
                     providerCreditUsd: 80,
                 }),
@@ -359,7 +847,7 @@ describe("modelReconcileRows", () => {
         const rows = modelReconcileRows(
             data({
                 opCloud: [
-                    cloud({ paid: -50 }),
+                    cloud({ model: "claude", paid: -50 }),
                     cloud({ vendor: "modal", paid: -20 }),
                 ],
                 opPollen: [

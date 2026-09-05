@@ -11,14 +11,18 @@ import {
     opCloudPaidBurnUsd,
 } from "./computeLedger";
 import { toUsd } from "./fx";
-import { monthLabel, monthShift, WINDOW_START } from "./months";
+import { isDateKey, monthLabel, monthShift, WINDOW_START } from "./months";
 import { isPrepaidVendor } from "./providerFunding";
 import {
     activeProviderAccounts,
+    canonicalProvider,
+    canonicalProviderAccountId,
     PROVIDER_REGISTRY,
     type ProviderAccessTarget,
     type ProviderCollectionMethod,
+    type ProviderDefinition,
     resolveProvider,
+    resolveProviderAccount,
 } from "./providerRegistry";
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
@@ -476,6 +480,7 @@ export type ProviderBalanceMonth = {
 };
 
 export type ProviderBalanceRow = {
+    creditTermsKnown: boolean;
     vendor: string;
     label: string;
     active: boolean;
@@ -499,6 +504,35 @@ export type ProviderBalanceRow = {
     creditDepletionReason: "burn" | "expiry" | null;
     finished: boolean;
     history: ProviderBalanceMonth[];
+};
+
+export type ProviderAccountBalanceRow = {
+    fundingLots: BalanceFundingLot[];
+    expiryAssumed: boolean;
+    creditTermsKnown: boolean;
+    creditExpiry: string | null;
+    vendor: string;
+    label: string;
+    accountId: string;
+    accountLabel: string;
+    loginEmail: string | null;
+    active: boolean;
+    balanceTracking: boolean;
+    collectionMethod: ProviderCollectionMethod | null;
+    access: ProviderAccessTarget[];
+    cashBalanceUsd: number | null;
+    creditBalanceUsd: number | null;
+    balanceAsOf: string | null;
+    balanceStatus:
+        | "checked"
+        | "stale"
+        | "not_checked"
+        | "not_applicable"
+        | "archived";
+    balanceNote: string | null;
+    creditDepletionDate: string | null;
+    creditDepletionReason: "burn" | "expiry" | null;
+    finished: boolean;
 };
 
 type BalanceFlow = {
@@ -534,6 +568,7 @@ function balanceFlow(
 }
 
 type ProviderBalanceAnchor = {
+    creditTermsKnown: boolean;
     cashUsd: number;
     creditUsd: number;
     observedOn: string;
@@ -541,17 +576,139 @@ type ProviderBalanceAnchor = {
     balanceNote: string | null;
 };
 
+export type BalanceFundingLot = {
+    creditUsd: number;
+    cashUsd: number;
+    expiry: string | null;
+};
+
+type AccountBalanceSnapshot = OpCloudRow & {
+    fundingLots: BalanceFundingLot[];
+    expiryAssumed: boolean;
+    termsKnown: boolean;
+};
+
+export function balanceCreditTerms(row: OpCloudRow): {
+    known: boolean;
+    expiry: string | null;
+    assumed: boolean;
+} {
+    const date = row.end.slice(0, 10);
+    const expiry = isDateKey(date) ? date : null;
+    return {
+        known:
+            row.credit <= 0 ||
+            expiry != null ||
+            row.resource_sku === "current-balance-no-expiry",
+        expiry,
+        assumed:
+            expiry == null &&
+            row.resource_sku === "current-balance-expiry-assumed",
+    };
+}
+
 type ProviderBalanceCoverage = Pick<
     ProviderBalanceRow,
     "balanceAsOf" | "balanceStatus" | "checkedAccounts" | "expectedAccounts"
 >;
 
-const MAX_BALANCE_SNAPSHOT_AGE_DAYS = 7;
+function latestProviderBalanceRows(
+    data: Data,
+    today: string,
+): Map<string, Map<string, AccountBalanceSnapshot>> {
+    const rowsByVendorAccount = new Map<string, Map<string, OpCloudRow[]>>();
+    for (const row of data.opCloud ?? []) {
+        if (!isOpCloudBalanceRow(row)) continue;
+        const observedOn = row.start.slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(observedOn) || observedOn > today) {
+            continue;
+        }
+        const vendor = canonicalProvider(row.vendor);
+        const definition = resolveProvider(vendor);
+        const accounts = getOrInit(
+            rowsByVendorAccount,
+            vendor,
+            () => new Map<string, OpCloudRow[]>(),
+        );
+        const accountId = canonicalProviderAccountId(
+            definition,
+            row.account_id,
+        );
+        const existing = accounts.get(accountId);
+        if (!existing || row.start > existing[0].start) {
+            accounts.set(accountId, [row]);
+        } else if (row.start === existing[0].start) {
+            const isLot = row.resource_sku === "current-balance-lot";
+            const existingIsLot =
+                existing[0].resource_sku === "current-balance-lot";
+            if (isLot !== existingIsLot) {
+                throw new Error(
+                    `Mixed total and lot balance snapshot for ${vendor} / ${accountId}`,
+                );
+            }
+            const index = isLot
+                ? existing.findIndex(
+                      (item) => item.resource_id === row.resource_id,
+                  )
+                : 0;
+            if (index < 0) existing.push(row);
+            else if (row.recorded_at > existing[index].recorded_at)
+                existing[index] = row;
+        }
+    }
+    const snapshots = new Map<string, Map<string, AccountBalanceSnapshot>>();
+    for (const [vendor, accounts] of rowsByVendorAccount) {
+        const combined = new Map<string, AccountBalanceSnapshot>();
+        for (const [account, rows] of accounts) {
+            const terms = rows.map(balanceCreditTerms);
+            const fundingLots = rows.map((row, index) => ({
+                creditUsd: toUsd(row.credit, row.currency, row.start),
+                cashUsd: toUsd(row.paid, row.currency, row.start),
+                expiry: terms[index].expiry,
+            }));
+            const expiry = terms
+                .map((term) => term.expiry)
+                .filter((date): date is string => date != null)
+                .sort()[0];
+            combined.set(account, {
+                ...rows[0],
+                currency: "USD",
+                credit: fundingLots.reduce(
+                    (sum, lot) => sum + lot.creditUsd,
+                    0,
+                ),
+                paid: fundingLots.reduce((sum, lot) => sum + lot.cashUsd, 0),
+                end: expiry ?? "",
+                fundingLots,
+                expiryAssumed: terms.some((term) => term.assumed),
+                termsKnown: terms.every((term) => term.known),
+            });
+        }
+        snapshots.set(vendor, combined);
+    }
+    return snapshots;
+}
 
-function dateShift(date: string, days: number): string {
-    const shifted = new Date(`${date}T00:00:00Z`);
-    shifted.setUTCDate(shifted.getUTCDate() + days);
-    return shifted.toISOString().slice(0, 10);
+// Consume only usable lots, earliest expiry first, then purchased credit.
+// Call once per service day so a mid-month expiry never funds later usage.
+export function consumeBalanceLots(
+    lots: BalanceFundingLot[],
+    amount: number,
+    date: string,
+): number {
+    let remaining = Math.max(0, amount);
+    const ordered = [...lots].sort((a, b) =>
+        (a.expiry ?? "9999").localeCompare(b.expiry ?? "9999"),
+    );
+    for (const field of ["creditUsd", "cashUsd"] as const) {
+        for (const lot of ordered) {
+            if (lot.expiry && lot.expiry < date) continue;
+            const used = Math.min(Math.max(0, lot[field]), remaining);
+            lot[field] -= used;
+            remaining -= used;
+        }
+    }
+    return remaining;
 }
 
 function providerBalanceAnchors(
@@ -562,32 +719,11 @@ function providerBalanceAnchors(
     anchors: Map<string, ProviderBalanceAnchor>;
     coverage: Map<string, ProviderBalanceCoverage>;
 } {
-    const rowsByVendorAccount = new Map<string, Map<string, OpCloudRow>>();
-    for (const row of data.opCloud ?? []) {
-        if (!isOpCloudBalanceRow(row)) continue;
-        const observedOn = row.start.slice(0, 10);
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(observedOn) || observedOn > today) {
-            continue;
-        }
-        const accounts = getOrInit(
-            rowsByVendorAccount,
-            row.vendor,
-            () => new Map(),
-        );
-        const accountId = row.account_id?.trim() || "default";
-        const existing = accounts.get(accountId);
-        if (
-            !existing ||
-            `${row.start}|${row.recorded_at}` >
-                `${existing.start}|${existing.recorded_at}`
-        ) {
-            accounts.set(accountId, row);
-        }
-    }
+    const rowsByVendorAccount = latestProviderBalanceRows(data, today);
 
     const anchors = new Map<string, ProviderBalanceAnchor>();
     const coverage = new Map<string, ProviderBalanceCoverage>();
-    const freshSince = dateShift(today, -MAX_BALANCE_SNAPSHOT_AGE_DAYS);
+    const freshSince = `${currentMonth}-01`;
     for (const [vendor, accounts] of rowsByVendorAccount) {
         const provider = resolveProvider(vendor);
         const expectedAccounts = provider
@@ -599,11 +735,11 @@ function providerBalanceAnchors(
             expectedAccounts.length > 0
                 ? expectedAccounts.map((accountId) => accounts.get(accountId))
                 : [...accounts.values()]
-        ).filter((row): row is OpCloudRow => row != null);
+        ).filter((row): row is AccountBalanceSnapshot => row != null);
         const freshRows = selected.filter(
             (row) => row.start.slice(0, 10) >= freshSince,
         );
-        const active = provider?.monthlyReview ?? true;
+        const active = providerActiveInMonth(provider, currentMonth);
         const balanceTracking = provider?.balanceTracking ?? true;
         const rows = !active || freshRows.length === 0 ? selected : freshRows;
         const expectedCount =
@@ -635,6 +771,7 @@ function providerBalanceAnchors(
             .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
             .sort();
         anchors.set(vendor, {
+            creditTermsKnown: rows.every((row) => row.termsKnown),
             cashUsd: rows.reduce(
                 (sum, row) => sum + toUsd(row.paid, row.currency, row.start),
                 0,
@@ -644,7 +781,7 @@ function providerBalanceAnchors(
                 0,
             ),
             observedOn: observedDates[0],
-            creditExpiry: expiries.at(-1) ?? null,
+            creditExpiry: expiries[0] ?? null,
             balanceNote:
                 rows.find((row) => row.resource_sku === "usage-quota")
                     ?.resource_name || null,
@@ -658,7 +795,7 @@ function anchoredCreditDepletion(
     credit: RunwayRow | null,
     now: Date,
 ): Pick<ProviderBalanceRow, "creditDepletionDate" | "creditDepletionReason"> {
-    if (anchor.creditUsd <= POOL_EPS_USD) {
+    if (anchor.creditUsd <= POOL_EPS_USD || !anchor.creditTermsKnown) {
         return { creditDepletionDate: null, creditDepletionReason: null };
     }
     const candidates: {
@@ -787,7 +924,7 @@ export function providerBalanceRows(
         if (definition?.meteringBasis === "internal") continue;
         const credit = creditByVendor.get(vendor) ?? null;
         const anchor = anchors.get(vendor) ?? null;
-        const active = definition?.monthlyReview ?? true;
+        const active = providerActiveInMonth(definition, currentMonth);
         const balanceTracking = definition?.balanceTracking ?? true;
         const balanceCoverage = coverage.get(vendor) ?? {
             balanceAsOf: null,
@@ -864,6 +1001,7 @@ export function providerBalanceRows(
                 : null;
         rows.push({
             vendor,
+            creditTermsKnown: anchor?.creditTermsKnown ?? false,
             label: definition?.label ?? vendor,
             active,
             balanceTracking,
@@ -900,5 +1038,177 @@ export function providerBalanceRows(
                 b.creditDepletionDate ?? "9999",
             ) ||
             a.vendor.localeCompare(b.vendor),
+    );
+}
+
+function providerActiveInMonth(
+    provider: ProviderDefinition | undefined,
+    month: string,
+): boolean {
+    return (
+        (provider?.monthlyReview ?? true) &&
+        (provider?.activeFrom == null || provider.activeFrom <= month) &&
+        (provider?.activeTo == null || provider.activeTo >= month)
+    );
+}
+
+function accountAccessTargets(
+    provider: ProviderDefinition | undefined,
+    accountId: string,
+): ProviderAccessTarget[] {
+    if (!provider?.access) return [];
+    const exact = provider.access.filter(
+        (target) =>
+            target.accountId != null &&
+            canonicalProviderAccountId(provider, target.accountId) ===
+                accountId,
+    );
+    if (exact.length > 0) return exact;
+    if ((provider.accounts?.length ?? 0) <= 1) {
+        return provider.access.filter((target) => target.accountId == null);
+    }
+    return [];
+}
+
+// Balances and Runway consume account-scoped snapshots. Credits belonging to
+// separate accounts must not silently fund each other's usage.
+export function providerAccountBalanceRows(
+    data: Data,
+    now: Date,
+): ProviderAccountBalanceRow[] {
+    const today = now.toISOString().slice(0, 10);
+    const currentMonth = today.slice(0, 7);
+    const checkedSince = `${currentMonth}-01`;
+    const latestByVendor = latestProviderBalanceRows(data, today);
+    const providerTotals = new Map(
+        providerBalanceRows(data, now).map((row) => [row.vendor, row] as const),
+    );
+    const vendorIds = new Set([
+        ...providerTotals.keys(),
+        ...latestByVendor.keys(),
+    ]);
+    const rows: ProviderAccountBalanceRow[] = [];
+
+    for (const vendor of vendorIds) {
+        const provider = resolveProvider(vendor);
+        const total = providerTotals.get(vendor);
+        const snapshots = latestByVendor.get(vendor) ?? new Map();
+        const accountIds: string[] = [];
+        for (const account of provider?.accounts ?? []) {
+            accountIds.push(account.id);
+        }
+        for (const accountId of snapshots.keys()) {
+            if (!accountIds.includes(accountId)) accountIds.push(accountId);
+        }
+        if (accountIds.length === 0) accountIds.push("default");
+
+        const activeAccountIds = new Set(
+            provider == null
+                ? accountIds
+                : activeProviderAccounts(provider, currentMonth).map(
+                      (account) => account.id,
+                  ),
+        );
+        const providerActive = providerActiveInMonth(provider, currentMonth);
+        const soleActiveAccount =
+            providerActive && activeAccountIds.size === 1
+                ? [...activeAccountIds][0]
+                : null;
+
+        for (const accountId of accountIds) {
+            const definition = provider
+                ? resolveProviderAccount(provider, accountId)
+                : undefined;
+            const snapshot = snapshots.get(accountId);
+            const access = accountAccessTargets(provider, accountId);
+            const active =
+                providerActive &&
+                (provider?.accounts == null ||
+                    provider.accounts.length === 0 ||
+                    definition == null ||
+                    activeAccountIds.has(accountId));
+            const balanceTracking = provider?.balanceTracking ?? true;
+            const balanceAsOf = snapshot?.start.slice(0, 10) ?? null;
+            const balanceStatus = !balanceTracking
+                ? ("not_applicable" as const)
+                : !active
+                  ? ("archived" as const)
+                  : balanceAsOf == null
+                    ? ("not_checked" as const)
+                    : balanceAsOf < checkedSince
+                      ? ("stale" as const)
+                      : ("checked" as const);
+            const cashBalanceUsd = snapshot
+                ? toUsd(snapshot.paid, snapshot.currency, snapshot.start)
+                : null;
+            const creditBalanceUsd = snapshot
+                ? toUsd(snapshot.credit, snapshot.currency, snapshot.start)
+                : null;
+            const accountDepletion =
+                accountId === soleActiveAccount &&
+                total?.balanceStatus === "checked"
+                    ? {
+                          date: total.creditDepletionDate,
+                          reason: total.creditDepletionReason,
+                      }
+                    : {
+                          date: snapshot
+                              ? balanceCreditTerms(snapshot).expiry
+                              : null,
+                          reason:
+                              snapshot && balanceCreditTerms(snapshot).expiry
+                                  ? ("expiry" as const)
+                                  : null,
+                      };
+
+            rows.push({
+                vendor,
+                fundingLots: snapshot?.fundingLots ?? [],
+                expiryAssumed: snapshot?.expiryAssumed ?? false,
+                creditTermsKnown: snapshot?.termsKnown ?? false,
+                creditExpiry: snapshot
+                    ? balanceCreditTerms(snapshot).expiry
+                    : null,
+                label: provider?.label ?? total?.label ?? vendor,
+                accountId,
+                accountLabel:
+                    definition?.label ||
+                    snapshot?.account_name?.trim() ||
+                    accountId,
+                loginEmail:
+                    definition?.loginEmail ??
+                    access.find((target) => target.loginEmail)?.loginEmail ??
+                    null,
+                active,
+                balanceTracking,
+                collectionMethod: provider?.collectionMethod ?? null,
+                access,
+                cashBalanceUsd,
+                creditBalanceUsd,
+                balanceAsOf,
+                balanceStatus,
+                balanceNote: snapshot?.expiryAssumed
+                    ? "Expiry ignored for this snapshot by user-approved planning assumption; provider non-expiry is not verified"
+                    : (snapshot?.fundingLots.length ?? 0) > 1
+                      ? "Separate credit lots retain their own expiry dates; the earliest expiry applies only to that lot"
+                      : snapshot?.resource_sku === "usage-quota"
+                        ? snapshot.resource_name || null
+                        : null,
+                creditDepletionDate: accountDepletion.date,
+                creditDepletionReason: accountDepletion.reason,
+                finished:
+                    snapshot != null &&
+                    Math.abs(cashBalanceUsd ?? 0) <= POOL_EPS_USD &&
+                    Math.abs(creditBalanceUsd ?? 0) <= POOL_EPS_USD,
+            });
+        }
+    }
+
+    return rows.sort(
+        (a, b) =>
+            Number(b.active) - Number(a.active) ||
+            Number(a.finished) - Number(b.finished) ||
+            a.label.localeCompare(b.label) ||
+            a.accountLabel.localeCompare(b.accountLabel),
     );
 }

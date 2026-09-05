@@ -4,6 +4,7 @@ import { fxEstimatedMonths, toUsd } from "./fx";
 describe("toUsd", () => {
     it("converts EUR at the month rate, accepting full dates", () => {
         expect(toUsd(100, "EUR", "2026-06-20")).toBeCloseTo(115.18, 2);
+        expect(toUsd(100, "EUR", "2026-08-31")).toBeCloseTo(115.93, 2);
     });
 
     it("passes USD and POLLEN through 1:1", () => {
@@ -46,7 +47,9 @@ describe("fxEstimatedMonths", () => {
 
     it("stays empty while every EUR month has a table rate", () => {
         expect(
-            fxEstimatedMonths({ opTransactions: [eurTxn("2026-06-20")] }),
+            fxEstimatedMonths({
+                opTransactions: [eurTxn("2026-06-20"), eurTxn("2026-08-31")],
+            }),
         ).toEqual([]);
     });
 

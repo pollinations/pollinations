@@ -37,6 +37,9 @@ export type UnitEconomicsRow = EconomicsValues & {
     economicContributionUsd: number | null;
     sourceStatus: ModelReconcileStatus;
     allocationStatus: ModelAllocationStatus | null;
+    // Billed-together detail, present on model-grain rows only.
+    group?: string | null;
+    lines?: { label: string; usd: number }[] | null;
 };
 
 export type ProviderCostCheckKind =
@@ -97,9 +100,8 @@ export function meterMatchPct(
     return (Math.min(pollen, provider) / total) * 100;
 }
 
-// Provider-month is the only authoritative cost-check grain. Model rows inherit
-// an allocation of the provider total, so repeating a pass/fail status on every
-// model would imply independent evidence that does not exist.
+// The reconciliation status compares the full provider month. Exact model costs
+// can be shown independently, but do not certify that the whole invoice matches.
 export function providerCostCheck(
     row: Pick<
         UnitEconomicsRow,
@@ -163,6 +165,19 @@ export function providerCostCheck(
     };
 }
 
+// Rows that carry provider cost no Pollen model owns.
+const RESIDUAL_STATUSES = new Set<ModelAllocationStatus>([
+    "unallocated",
+    "needs mapping",
+    "shared upstream",
+    "missing breakdown",
+    "provider only",
+]);
+
+function isResidual(model: ModelAllocationRow): boolean {
+    return RESIDUAL_STATUSES.has(model.status);
+}
+
 function modelNetCash(
     parent: ModelReconcileRow,
     model: ModelAllocationRow,
@@ -170,16 +185,11 @@ function modelNetCash(
     if (model.netCashContributionUsd != null) {
         return model.netCashContributionUsd;
     }
-    if (parent.status !== "both sources" || model.status !== "unallocated") {
+    if (parent.status !== "both sources" || !isResidual(model)) {
         return null;
     }
 
-    // When provider spend cannot be allocated by model, keep both known sides
-    // visible: retained Pollen stays with its model and cash stays on the
-    // explicit unallocated row. Their sum still reconciles to the provider.
-    if (model.retainedPaidUsd != null && model.providerCashUsd == null) {
-        return model.retainedPaidUsd;
-    }
+    // Unknown model cost is not zero cost or a 100% margin.
     if (model.retainedPaidUsd == null && model.providerCashUsd != null) {
         return -model.providerCashUsd;
     }
@@ -193,15 +203,11 @@ function modelEconomicContribution(
     if (model.retainedPaidUsd != null && model.providerUsageUsd != null) {
         return model.retainedPaidUsd - model.providerUsageUsd;
     }
-    if (parent.status !== "both sources" || model.status !== "unallocated") {
+    if (parent.status !== "both sources" || !isResidual(model)) {
         return null;
     }
 
-    // Preserve both known sides when a mixed provider-month cannot allocate
-    // cost by model. The model and explicit unallocated rows remain additive.
-    if (model.retainedPaidUsd != null && model.providerUsageUsd == null) {
-        return model.retainedPaidUsd;
-    }
+    // Only the residual cost itself is known; unmatched model profit is not.
     if (model.retainedPaidUsd == null && model.providerUsageUsd != null) {
         return -model.providerUsageUsd;
     }
@@ -215,7 +221,7 @@ function modelMeterGap(
     if (model.meterGapUsd != null) return model.meterGapUsd;
     if (
         parent.status === "both sources" &&
-        model.status === "unallocated" &&
+        isResidual(model) &&
         model.providerUsageUsd != null &&
         model.paidPollenUsd == null &&
         model.questPollenUsd == null
@@ -237,6 +243,8 @@ export function unitEconomicsRows(
             model: "All models",
             sourceStatus: provider.status,
             allocationStatus: null,
+            group: null,
+            lines: null,
             economicContributionUsd:
                 provider.status === "both sources" &&
                 provider.retainedPaidUsd != null &&
@@ -256,6 +264,8 @@ export function unitEconomicsRows(
                 model: model.model,
                 sourceStatus: provider.status,
                 allocationStatus: model.status,
+                group: model.group ?? null,
+                lines: model.lines ?? null,
                 ...economicsValues(model),
                 economicContributionUsd: modelEconomicContribution(
                     provider,

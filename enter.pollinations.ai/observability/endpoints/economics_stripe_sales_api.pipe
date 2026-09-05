@@ -1,0 +1,83 @@
+DESCRIPTION >
+    Monthly Stripe sales from reviewed account balance activity. The latest
+    version of each account-month-currency fact is used.
+
+TOKEN "operations_read" READ
+
+NODE latest_sales
+SQL >
+    %
+    SELECT
+        splitByChar(':', entry_id)[2] AS account_id,
+        tupleElement(latest, 1) AS month,
+        upper(tupleElement(latest, 2)) AS currency,
+        tupleElement(latest, 3) AS gross_amount,
+        tupleElement(latest, 4) AS refund_amount,
+        tupleElement(latest, 5) AS fee_amount,
+        tupleElement(latest, 6) AS payment_count,
+        tupleElement(latest, 7) AS refunds_count,
+        tupleElement(latest, 8) AS coverage_end,
+        tupleElement(latest, 9) AS expected_accounts,
+        tupleElement(latest, 10) AS revenue_stream,
+        tupleElement(latest, 11) AS reversal_amount
+    FROM
+    (
+        SELECT
+            entry_id,
+            argMax(
+                tuple(
+                    month,
+                    currency,
+                    gross_sales,
+                    refunds,
+                    stripe_fees,
+                    payments,
+                    refund_count,
+                    coverage_end,
+                    expected_accounts,
+                    revenue_stream,
+                    reversals
+                ),
+                recorded_at
+            ) AS latest
+        FROM economics_stripe_sales
+        GROUP BY entry_id
+    )
+
+NODE month_coverage
+SQL >
+    SELECT month,
+        toUInt8(
+            countIf(isNull(coverage_end)) = 0
+            AND min(coverage_end) >= addMonths(toDate(concat(month, '-01')), 1)
+            AND min(expected_accounts) = max(expected_accounts)
+            AND min(expected_accounts) > 0
+            AND uniq(account_id) = max(expected_accounts)
+            AND countIf(account_id = '') = 0
+            AND countIf(revenue_stream NOT IN ('pollen', 'kofi')) = 0
+        ) AS coverage_complete
+    FROM latest_sales
+    GROUP BY month
+
+NODE endpoint
+SQL >
+    %
+    SELECT
+        s.month AS month,
+        currency,
+        revenue_stream,
+        round(sum(gross_amount), 2) AS gross_sales,
+        round(sum(refund_amount), 2) AS refunds,
+        round(sum(reversal_amount), 2) AS reversals,
+        round(sum(gross_amount) - sum(refund_amount) - sum(reversal_amount), 2) AS net_sales,
+        round(sum(fee_amount), 2) AS stripe_fees,
+        round(sum(gross_amount) - sum(refund_amount) - sum(reversal_amount) - sum(fee_amount), 2) AS net_after_fees,
+        sum(payment_count) AS payments,
+        sum(refunds_count) AS refund_count,
+        min(c.coverage_complete) AS coverage_complete
+    FROM latest_sales AS s
+    INNER JOIN month_coverage AS c ON s.month = c.month
+    GROUP BY s.month, currency, revenue_stream
+    ORDER BY month DESC, revenue_stream, currency
+
+TYPE ENDPOINT

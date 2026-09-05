@@ -9,7 +9,11 @@ import {
 } from "./months";
 import { resolveProvider } from "./providerRegistry";
 
-export type LedgerTab = "op-transactions" | "op-pollen" | "op-cloud";
+export type LedgerTab =
+    | "op-transactions"
+    | "op-pollen"
+    | "op-cloud"
+    | "revenue-share-ledger";
 
 export type FacetOption = {
     value: string;
@@ -67,6 +71,10 @@ export function ledgerFacets(
     tab: LedgerTab,
     selection: LedgerFacetSelection,
 ): LedgerFacets {
+    if (tab === "revenue-share-ledger") {
+        return { vendors: [], categories: [] };
+    }
+
     if (tab === "op-transactions") {
         const rows = (data.opTransactions ?? []).filter(
             (row) =>

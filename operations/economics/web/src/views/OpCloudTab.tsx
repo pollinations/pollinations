@@ -5,6 +5,7 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
+    Tooltip,
 } from "@pollinations/ui";
 import { Fragment, useMemo, useState } from "react";
 import {
@@ -19,7 +20,7 @@ import {
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
 import type { DriveDocumentLink } from "../lib/documents";
-import { fmtNumber, fmtUtcDateTime } from "../lib/format";
+import { fmtMonthDay, fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -27,6 +28,10 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
+import {
+    resolveProvider,
+    resolveProviderAccount,
+} from "../lib/providerRegistry";
 import type { Data, OpCloudRow } from "../types";
 
 function resourceLabel(row: OpCloudRow): string {
@@ -36,6 +41,16 @@ function resourceLabel(row: OpCloudRow): string {
         row.resource_id ||
         row.resource_sku ||
         "–"
+    );
+}
+
+function accountLabel(row: OpCloudRow): string {
+    const provider = resolveProvider(row.vendor);
+    return (
+        (provider && resolveProviderAccount(provider, row.account_id)?.label) ||
+        row.account_name ||
+        row.account_id ||
+        "Unassigned"
     );
 }
 
@@ -88,6 +103,7 @@ export function OpCloudTab({
         () => [
             { key: "start", value: (row) => row.start },
             { key: "vendor", value: (row) => row.vendor },
+            { key: "account", value: accountLabel },
             { key: "type", value: (row) => costTypeLabel(row.type) },
             { key: "resource", value: resourceLabel },
             { key: "paid", value: (row) => row.paid },
@@ -119,6 +135,15 @@ export function OpCloudTab({
                     <TableRow>
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
                             Vendor
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("account")}
+                        >
+                            Account
+                        </TableHeaderCell>
+                        <TableHeaderCell rowSpan={2} {...headerProps("start")}>
+                            Coverage
                         </TableHeaderCell>
                         <TableHeaderCell rowSpan={2} {...headerProps("type")}>
                             Type
@@ -184,7 +209,26 @@ export function OpCloudTab({
                             return (
                                 <Fragment key={key}>
                                     <TableRow>
-                                        <TableCell>{row.vendor}</TableCell>
+                                        <TableCell>
+                                            {resolveProvider(row.vendor)
+                                                ?.label ?? row.vendor}
+                                        </TableCell>
+                                        <TableCell>
+                                            {accountLabel(row)}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap text-xs">
+                                            <Tooltip
+                                                triggerAs="span"
+                                                content={`${row.type === "balance" ? "Snapshot" : "Coverage"}: ${fmtUtcDateTime(row.start)}${row.end ? ` – ${fmtUtcDateTime(row.end)} (${row.type === "balance" ? "expiry" : "end exclusive"})` : ""}. UTC.`}
+                                            >
+                                                <span>
+                                                    {fmtMonthDay(row.start)}
+                                                    {row.end
+                                                        ? ` – ${fmtMonthDay(row.end)}${row.end.slice(0, 4) !== row.start.slice(0, 4) ? `, ${row.end.slice(0, 4)}` : ""}`
+                                                        : ""}
+                                                </span>
+                                            </Tooltip>
+                                        </TableCell>
                                         <TableCell>
                                             {costTypeLabel(row.type)}
                                         </TableCell>
@@ -224,7 +268,7 @@ export function OpCloudTab({
                                     {isExpanded ? (
                                         <TableRow>
                                             <TableCell
-                                                colSpan={9}
+                                                colSpan={11}
                                                 className="bg-theme-bg-active/40"
                                             >
                                                 <dl className="grid gap-4 p-2 sm:grid-cols-2 lg:grid-cols-4">

@@ -124,6 +124,6 @@ describe("ProviderCloseTab", () => {
         );
 
         expect(html).toContain("Documented gap");
-        expect(html).not.toContain("Not required");
+        expect(html).toContain("Calendar usage coverage: exception");
     });
 });

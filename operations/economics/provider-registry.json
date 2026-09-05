@@ -946,9 +946,15 @@
       "modelLabels": {
         "DeepSeek V3.2": "deepseek",
         "DeepSeek V4 Flash": "deepseek",
+        "DeepSeek V4 Flash 0731": "deepseek",
         "DeepSeek V4 Pro": "deepseek-pro",
+        "DeepSeek V4 Pro 0813": "deepseek-pro",
+        "flux-1-schnell-fp8": "flux",
         "GLM 5.1": "glm",
         "GLM 5.2": "glm",
+        "GLM 5.3": "glm-5.3",
+        "GLM 5.3 Flash": "z-ai/glm-5.3-flash",
+        "Inkling": "thinkingmachines/inkling",
         "Kimi K2.5": "kimi",
         "Kimi K2.6": "kimi",
         "Kimi K2.7 Code": "kimi-code",
@@ -966,11 +972,14 @@
         ],
         "MiniMax M3": "minimax",
         "MiniMax M3 1M": "minimax",
+        "Muse Glimmer 30B": "muse-glimmer",
+        "Nemotron Lightning 3.5": "nemotron-3.5-lightning",
         "Qwen 3.6 Plus": "qwen-large",
         "Qwen 3.7 Plus": "qwen-large",
+        "Qwen 3.8 Max": "qwen3.8-2.4t-a95b",
         "Qwen3 30B": "qwen-vision",
         "Qwen3 Embedding 8B": "qwen3-embedding-8b",
-        "flux-1-schnell-fp8": "flux"
+        "Qwen3.8-2.4T-A95B": "qwen3.8-2.4t-a95b"
       }
     },
     {

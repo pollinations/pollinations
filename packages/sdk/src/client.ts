@@ -21,6 +21,9 @@ import type {
     DeviceCodeResponse,
     DeviceTokenResponse,
     EarningsOptions,
+    EmbeddingInput,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -692,7 +695,8 @@ export class Pollinations {
         }
 
         const buffer = await response.arrayBuffer();
-        const contentType = response.headers.get("content-type") || "video/mp4";
+        const contentType =
+            response.headers.get("content-type") || "video/mp4";
 
         return { buffer, contentType, url: stripKeyFromUrl(url) };
     }
@@ -1192,6 +1196,65 @@ export class Pollinations {
         return response.json() as Promise<
             TranscriptionResponse | TranscriptionVerboseResponse
         >;
+    }
+
+    // ============================================================================
+    // Embeddings (OpenAI-compatible)
+    // ============================================================================
+
+    /**
+     * Generate vector embeddings (OpenAI-compatible).
+     *
+     * Accepts a text, a batch of texts, or multimodal content parts
+     * (text, image_url, input_audio, video_url) for multimodal models.
+     *
+     * @example
+     * ```ts
+     * const { data } = await pollinations.embeddings('Hello world');
+     * console.log(data[0].embedding);
+     * ```
+     */
+    async embeddings(
+        input: EmbeddingInput,
+        options: EmbeddingsOptions = {},
+    ): Promise<EmbeddingsResponse> {
+        if (
+            !input ||
+            (typeof input === "string" && input.length === 0) ||
+            (Array.isArray(input) && input.length === 0)
+        ) {
+            throw new PollinationsError(
+                "Input is required and must be a non-empty string or array",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = this.stripUndefined({
+            model: options.model,
+            input,
+            dimensions: options.dimensions,
+            encoding_format: options.encodingFormat,
+            task_type: options.taskType,
+            input_type: options.inputType,
+        });
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/embeddings`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        return response.json() as Promise<EmbeddingsResponse>;
     }
 
     // ============================================================================

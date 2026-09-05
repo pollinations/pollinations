@@ -471,6 +471,35 @@ const response = await chat([
 ]);
 ```
 
+## Embeddings
+
+Generate vector embeddings (OpenAI-compatible) for text or multimodal input:
+
+```javascript
+import { embeddings } from '@pollinations/sdk';
+
+// Single text
+const { data, usage } = await embeddings('Hello world');
+console.log(data[0].embedding); // [0.012, -0.034, ...]
+
+// Batch with options
+const batch = await embeddings(['first document', 'second document'], {
+  model: 'gemini-2',
+  dimensions: 768,
+});
+console.log(batch.data.length, batch.usage.total_tokens);
+```
+
+### Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `model` | string | Embedding model (server default: `gemini-2`) |
+| `dimensions` | number | Output dimensions, 128-4096 (model-specific limits apply) |
+| `encodingFormat` | string | `'float'` (default) or `'base64'` |
+| `taskType` | string | Gemini task hint, e.g. `'RETRIEVAL_QUERY'` |
+| `inputType` | string | Cohere retrieval role: `'query'` or `'document'` |
+
 ## List Available Models
 
 ```javascript
@@ -561,6 +590,7 @@ import type {
 | `videoUrl(prompt, options?)` | Get video URL |
 | `generateAudio(text, options?)` | Text-to-speech / music |
 | `transcribe(audio, options?)` | Speech-to-text |
+| `embeddings(input, options?)` | Vector embeddings |
 | `upload(data, options?)` | Upload media, optionally publishing it with `tags` |
 | `getTextModels()` | List text models |
 | `getImageModels()` | List image models |

@@ -549,6 +549,78 @@ export interface TranscriptionVerboseResponse extends TranscriptionResponse {
 }
 
 // ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Embedding model (use getModels() to fetch available models) */
+export type EmbeddingModel = string;
+
+/** A multimodal content part accepted by embedding models */
+export type EmbeddingContentPart =
+    | TextContentPart
+    | ImageContentPart
+    | AudioContentPart
+    | VideoContentPart;
+
+/**
+ * Input for embeddings: a text, a batch of texts, or multimodal content
+ * parts (text, image_url, input_audio, video_url).
+ */
+export type EmbeddingInput =
+    | string
+    | string[]
+    | EmbeddingContentPart
+    | EmbeddingContentPart[];
+
+/** Gemini text-specific task hint */
+export type EmbeddingTaskType =
+    | "SEMANTIC_SIMILARITY"
+    | "CLASSIFICATION"
+    | "CLUSTERING"
+    | "RETRIEVAL_DOCUMENT"
+    | "RETRIEVAL_QUERY"
+    | "CODE_RETRIEVAL_QUERY"
+    | "QUESTION_ANSWERING"
+    | "FACT_VERIFICATION";
+
+/** Options for embeddings (POST /v1/embeddings) */
+export interface EmbeddingsOptions extends RequestOptions {
+    /** Embedding model to use (server default: 'gemini-2') */
+    model?: EmbeddingModel;
+    /** Output embedding dimensions, 128-4096 (model-specific limits apply) */
+    dimensions?: number;
+    /** Output encoding for the embedding vector (default: 'float') */
+    encodingFormat?: "float" | "base64";
+    /** Gemini text-specific task hint */
+    taskType?: EmbeddingTaskType;
+    /** Cohere-specific input role: 'document' when indexing, 'query' when searching */
+    inputType?: "query" | "document";
+}
+
+/** A single embedding result */
+export interface Embedding {
+    object: "embedding";
+    /** Float vector, or base64 Float32 (little-endian) when encodingFormat='base64' */
+    embedding: number[] | string;
+    /** Index of the embedding in the list */
+    index: number;
+}
+
+/** Token usage for an embeddings request */
+export interface EmbeddingUsage {
+    prompt_tokens: number;
+    total_tokens: number;
+}
+
+/** Embeddings response (OpenAI-compatible) */
+export interface EmbeddingsResponse {
+    object: "list";
+    data: Embedding[];
+    model: string;
+    usage: EmbeddingUsage;
+}
+
+// ============================================================================
 // Media Upload
 // ============================================================================
 

@@ -40,6 +40,9 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EmbeddingInput,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -401,6 +404,26 @@ export async function transcribe(
     options?: TranscribeOptions,
 ): Promise<TranscriptionResponse | TranscriptionVerboseResponse> {
     return getClient().transcribe(audio, options as TranscribeOptions);
+}
+
+// ============================================================================
+// Embeddings Functions
+// ============================================================================
+
+/**
+ * Generate vector embeddings (OpenAI-compatible)
+ *
+ * @example
+ * ```ts
+ * const { data } = await embeddings('Hello world');
+ * console.log(data[0].embedding);
+ * ```
+ */
+export async function embeddings(
+    input: EmbeddingInput,
+    options?: EmbeddingsOptions,
+): Promise<EmbeddingsResponse> {
+    return getClient().embeddings(input, options);
 }
 
 // ============================================================================

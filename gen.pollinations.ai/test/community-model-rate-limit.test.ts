@@ -41,7 +41,7 @@ describe("model rate limiting", () => {
     it("publishes a catalog model's configured per-user RPM", () => {
         const definition: ModelDefinition = {
             aliases: [],
-            provider: "test",
+            provider: "community",
             perUserRpm: 0.5,
             brand: "Test",
             category: "text",

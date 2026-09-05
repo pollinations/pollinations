@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { OpPollenRow } from "../types";
 import {
+    canonicalModel,
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
@@ -77,7 +78,7 @@ describe("loadAll", () => {
 
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {
-        expect(canonicalVendor("vast")).toBe("vast.ai");
+        expect(canonicalVendor("vast")).toBe("vast");
     });
 
     it("joins Bedrock usage to AWS billing", () => {
@@ -87,11 +88,25 @@ describe("canonicalVendor", () => {
 
     it("joins account-specific aliases to their provider", () => {
         expect(canonicalVendor("azure-2")).toBe("azure");
-        expect(canonicalVendor("vastai")).toBe("vast.ai");
+        expect(canonicalVendor("vastai")).toBe("vast");
     });
 
     it("leaves canonical vendors unchanged", () => {
         expect(canonicalVendor("openai")).toBe("openai");
+    });
+});
+
+describe("canonicalModel", () => {
+    it("joins legacy and promoted model IDs through the shared registry", () => {
+        expect(canonicalModel("nova")).toBe(
+            canonicalModel("amazon/nova-2-lite-v1"),
+        );
+    });
+
+    it("leaves unknown and community model IDs visible", () => {
+        expect(canonicalModel(" Alice/Private-Model ")).toBe(
+            "Alice/Private-Model",
+        );
     });
 });
 
@@ -129,6 +144,23 @@ describe("canonicalPollenRows", () => {
             cost_quests: 4,
             requests_paid: 25,
             requests_quests: 12,
+        });
+    });
+
+    it("aggregates model aliases after canonicalization", () => {
+        const rows = canonicalPollenRows([
+            pollen("aws", { model: "nova" }),
+            pollen("aws", {
+                model: "amazon/nova-2-lite-v1",
+                requests_paid: 20,
+            }),
+        ]);
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            model: canonicalModel("nova"),
+            cost_paid: 2,
+            requests_paid: 25,
         });
     });
 

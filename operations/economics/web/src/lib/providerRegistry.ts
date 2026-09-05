@@ -1,3 +1,8 @@
+import {
+    isProviderId,
+    PROVIDER_IDENTITIES,
+    type ProviderId,
+} from "../../../../../shared/providers";
 import registryJson from "../../../provider-registry.json";
 import type {
     Data,
@@ -16,7 +21,7 @@ import {
 import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
 
 export type ProviderDefinition = {
-    id: string;
+    id: ProviderId;
     label: string;
     meteringBasis: MeteringBasis;
     aliases: string[];
@@ -51,17 +56,34 @@ export type ProviderAccountDefinition = {
     activeTo: string | null;
 };
 
+type ProviderOperationsDefinition = Omit<
+    ProviderDefinition,
+    "aliases" | "id" | "label"
+> & { id: string };
+
 type ProviderRegistryFile = {
     version: number;
-    providers: ProviderDefinition[];
+    providers: ProviderOperationsDefinition[];
 };
 
 export type ProviderReconciliationExplanation =
     | PollenWitnessExplanation
     | MeterDriftExplanation;
 
-export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
-    .providers;
+export const PROVIDER_REGISTRY: ProviderDefinition[] = (
+    registryJson as ProviderRegistryFile
+).providers.map((provider) => {
+    if (!isProviderId(provider.id)) {
+        throw new Error(`Unknown provider ID in Economics: ${provider.id}`);
+    }
+    const identity = PROVIDER_IDENTITIES[provider.id];
+    return {
+        ...provider,
+        id: provider.id,
+        label: identity.label,
+        aliases: [...identity.aliases],
+    };
+});
 const providerByAlias = new Map<string, ProviderDefinition>();
 for (const provider of PROVIDER_REGISTRY) {
     providerByAlias.set(provider.id, provider);

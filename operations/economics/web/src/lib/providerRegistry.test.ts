@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PROVIDER_IDENTITIES } from "../../../../../shared/providers";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
@@ -81,6 +82,12 @@ const data = (overrides: Partial<Data> = {}): Data => ({
 });
 
 describe("provider registry", () => {
+    it("configures every shared provider exactly once", () => {
+        expect(PROVIDER_REGISTRY.map(({ id }) => id).sort()).toEqual(
+            Object.keys(PROVIDER_IDENTITIES).sort(),
+        );
+    });
+
     it("keeps every canonical ID and alias unique", () => {
         const names = PROVIDER_REGISTRY.flatMap((provider) => [
             provider.id,
@@ -116,7 +123,7 @@ describe("provider registry", () => {
         expect(resolveProvider(" BedRock ")?.id).toBe("aws");
         expect(canonicalProvider("aws-bedrock")).toBe("aws");
         expect(canonicalProvider("azure-2")).toBe("azure");
-        expect(canonicalProvider("vastai")).toBe("vast.ai");
+        expect(canonicalProvider("vastai")).toBe("vast");
         expect(canonicalProvider("New-Provider")).toBe("new-provider");
         expect(resolveProvider("new-provider")).toBeUndefined();
     });
@@ -188,7 +195,7 @@ describe("provider registry", () => {
                 PRIVATE_CONFIG_FIXTURE,
             ),
         ).toMatchObject({
-            provider: "vast.ai",
+            provider: "vast",
             reason: "provider_attribution_transition",
         });
         expect(

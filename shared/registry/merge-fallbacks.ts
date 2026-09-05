@@ -1,3 +1,4 @@
+import type { ProviderId } from "../providers.ts";
 import type { ModelDefinition } from "./registry";
 
 /**
@@ -16,7 +17,7 @@ export type FallbackDefinition = Partial<
         ModelDefinition,
         "aliases" | "fallbacks" | "fallbackOnly" | "hidden" | "provider"
     >
-> & { provider: string };
+> & { provider: ProviderId };
 
 /**
  * Fallback routes, keyed by the model they serve and then by the id each route

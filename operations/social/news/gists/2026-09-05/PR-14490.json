@@ -1,0 +1,34 @@
+{
+  "pr_number": 14490,
+  "title": "fix: classify upstream timeouts and name common errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14490",
+  "merged_at": "2026-09-05T14:56:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Report upstream 408 timeouts as 504 while retaining the original upstream status and error body.\n- Preserve the existing no-fallback rule after Portkey exhausts our 290-second deadline.\n- Add missing machine-readable codes and messages for 408, 410, 413, 426, and 504.\n- Tests: 90 status, provider-client, fallback, and error-observability tests; gen typecheck passes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Timeouts get proper names",
+    "blurb": "When an upstream provider runs out the clock, the hive now labels the situation correctly instead of leaving everyone to interpret a mysterious 408. The original provider status and error body still make it home intact.",
+    "summary": "Upstream 408 timeouts are now returned as 504 responses while preserving the original upstream status and error body, and shared machine-readable error codes/messages now cover 408, 410, 413, 426, and 504 without changing the 290-second Portkey no-fallback rule.",
+    "impact": "API clients can reliably recognize gateway timeouts as 504 and handle five common HTTP failures through stable error codes while retaining upstream debugging details.",
+    "keywords": [
+      "api",
+      "timeouts",
+      "error-handling",
+      "upstream",
+      "Portkey",
+      "status-codes"
+    ],
+    "visual_concept": "A cozy API garden has a rain-soaked upstream clocktower marked 408 handing Polli a clearly labeled 504 parcel, while a retro terminal preserves a tiny original-error note. Polli, wearing a miniature mail carrier cap, calmly sorts the named error packets beside code-plants; the scene represents accurate timeout classification without losing diagnostic context.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny mail carrier cap, sorting a glowing lime green (#ecf874) error parcel labeled “504” beside a small rain-speckled clocktower labeled “408”; a retro terminal keeps an original error note safe among flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel outlines and a warm cream background."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14490.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny mail carrier cap, sorting a glowing lime green (#ecf874) error parcel labeled “504” beside a small rain-speckled clocktower labeled “408”; a retro terminal keeps an original error note safe among flowering code-plants. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with dark purple (#110518) pixel outlines and a warm cream background."
+  },
+  "generated_at": "2026-09-05T14:57:26.349563+00:00"
+}

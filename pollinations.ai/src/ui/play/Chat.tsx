@@ -336,6 +336,8 @@ function MediaView({ media }: { media: RenderedMedia }) {
                         as="a"
                         href={media.url}
                         download={`pollinations-${media.kind}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         size="sm"
                         aria-label={`Download ${media.kind}`}
                         title={`Download ${media.kind}`}

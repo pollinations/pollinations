@@ -1,0 +1,35 @@
+{
+  "pr_number": 14467,
+  "title": "feat: add Qwen3.8 Flash",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14467",
+  "merged_at": "2026-09-05T09:08:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds canonical `qwen/qwen3.8-flash` on OpenRouter pinned to Alibaba with provider fallbacks disabled; no aliases, paid-only, multiplier `1`, no Pollinations GPU.\n- Registers the exact OpenRouter/Alibaba Singapore rates: $0.15/M input, image, and video, $0.016/M cache read, $0.20/M cache write, $0.47/M output; single 0–1M tier, so no cost variants.\n- Adds `qwen3.8-flash-alibaba` as a direct DashScope Singapore fallback for the same checkpoint at identical rates (no fallback loss); it covers OpenRouter transport failures only.\n- Disables thinking for forced tool selection on both routes because Alibaba rejects `tool_choice` required/object in thinking mode; reuses the Qwen3.8 Max 0902 transform.\n\n## Verification\n\n- Local Gen E2E on the primary: text, `reasoning_effort=none`, streaming with terminal usage, `max_tokens` edge, JSON schema output, auto and forced tool calls, single and multiple images, video from two hosts, prompt cache hit (2,560 cached tokens), `/v1/responses`, `/text/{prompt}`, invalid image URL/tool schema/body 4xx, hidden route rejected, paid-only 402 at zero paid balance, 6-request burst with zero failures.\n- Forced fallback (invalid OpenRouter key locally): same matrix through direct Alibaba with `x-fallback-target` and `x-model-used: qwen3.8-flash-alibaba`, image/video tokens billed separately, cache hits, 5-request burst with zero failures.\n- Staging Tinybird: every request billed at the registry rates with cost equal to price; provider `openrouter` on the primary, `alibaba` with `fallback_used` on the fallback plus a zero-cost 502 attempt row. No `Missing conversion rate` warnings.\n- Focused tests: gen 200, enter 595; gen and enter typechecks; biome.\n\n## Route notes\n\n- OpenRouter folds image/video tokens into `prompt_tokens` at the same rate; the direct route reports them separately.\n- On the direct route `max_tokens` does not cap reasoning (a `max_tokens: 8` probe billed 3,472 reasoning tokens), same as `qwen3.7-flash-alibaba`.\n- Alibaba's ot",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "A flash in the Qwen",
+    "blurb": "Qwen3.8 Flash just landed in the hive: a paid-only, fast new text route with images, video, tools, JSON, streaming, and a spare route tucked under its wing. The bee checked both paths. Naturally, she brought a clipboard.",
+    "summary": "Added the paid-only canonical `qwen/qwen3.8-flash` model via OpenRouter pinned to Alibaba, with a direct DashScope Singapore fallback (`qwen3.8-flash-alibaba`), tool-safe thinking disabled, and registered rates from $0.15/M input to $0.47/M output.",
+    "impact": "Developers can call Qwen3.8 Flash through the existing text, chat, and Responses endpoints with streaming, structured output, tools, image/video input, prompt caching, and automatic Alibaba fallback when OpenRouter transport fails.",
+    "keywords": [
+      "qwen3.8-flash",
+      "qwen",
+      "alibaba",
+      "openrouter",
+      "text-api",
+      "tool-calling",
+      "fallbacks"
+    ],
+    "visual_concept": "Depict Qwen3.8 Flash as a small, fast glowing courier seed travelling between two cozy connected terminals: an OpenRouter terminal and an Alibaba Singapore terminal, representing the primary route and transport-only fallback. Polli, wearing a tiny courier cap and holding a route map, watches the model packet pass through a garden of code-plants; subtle tool icons, image frames, video tiles, and JSON braces show the supported inputs and outputs.",
+    "image_prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing a tiny courier cap and holding a route map beside two friendly retro terminals labeled \"OPENROUTER\" and \"ALIBABA SG\"; a glowing Qwen flash-seed travels safely between them through code-plants, tiny image tiles, video tiles, and curly JSON braces. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14467.jpg",
+    "prompt": "Cozy pixel art scene of the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing a tiny courier cap and holding a route map beside two friendly retro terminals labeled \"OPENROUTER\" and \"ALIBABA SG\"; a glowing Qwen flash-seed travels safely between them through code-plants, tiny image tiles, video tiles, and curly JSON braces. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-05T09:09:52.664073+00:00"
+}

@@ -10,6 +10,7 @@ import {
     sendErrorEventToTinybird,
     type TinybirdErrorEvent,
 } from "./events.ts";
+import { PaymentRequiredError } from "./http/payment-required-error.ts";
 import { ValidationError } from "./http/validation-error.ts";
 import {
     collectRequestInputs,
@@ -138,6 +139,7 @@ export type ImageInputErrorCode =
  * `getErrorCode(status)`, and the published schema must say so.
  */
 const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
+    402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"],
     400: [
         "failed_to_download_image",
         "invalid_image_url",
@@ -278,7 +280,16 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
                 message: err.message || getDefaultErrorMessage(err.status),
             });
         }
-        return c.json(createErrorResponse(err, status, timestamp), status);
+        return c.json(
+            createErrorResponse(
+                err,
+                status,
+                timestamp,
+                undefined,
+                err instanceof PaymentRequiredError ? err.errorCode : undefined,
+            ),
+            status,
+        );
     }
 
     if (err instanceof APIError) {

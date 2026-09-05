@@ -41,7 +41,6 @@ import { compact, useAppShowcase, usePlatformStats } from "../data/publicStats";
 import { routeHead } from "../routeMeta";
 import { QuestLeaderboard } from "../ui/components/QuestLeaderboard";
 import { BottomScene } from "../ui/site/BottomScene";
-import { DiscordPresenceBadge } from "../ui/site/DiscordPresenceBadge";
 import { HeroScene, postHeroSpacingClassName } from "../ui/site/HeroScene";
 
 export const Route = createFileRoute("/community")({
@@ -146,7 +145,11 @@ function FeedState({
 
 function CommunityParticipation() {
     const { data: issues, loading, failed } = useVotingIssues();
-    const { data: online } = useDiscordPresence();
+    const {
+        data: online,
+        loading: onlineLoading,
+        failed: onlineFailed,
+    } = useDiscordPresence();
     const {
         data: pullRequestCount,
         loading: pullRequestsLoading,
@@ -205,7 +208,23 @@ function CommunityParticipation() {
                       },
                   ],
         },
-        { ...WAYS_IN[3], metrics: [] },
+        {
+            ...WAYS_IN[3],
+            // The widget only exposes who is online now; a member total needs
+            // a bot token, so this is the one live number the card can show.
+            metrics:
+                onlineFailed || (!onlineLoading && online === null)
+                    ? []
+                    : [
+                          {
+                              value:
+                                  onlineLoading || online === null
+                                      ? null
+                                      : compact(online),
+                              label: "online in Discord",
+                          },
+                      ],
+        },
     ];
 
     return (
@@ -236,7 +255,6 @@ function CommunityParticipation() {
                 <div className="grid grid-cols-1 gap-5 min-[900px]:grid-cols-2 xl:grid-cols-4">
                     {ways.map((way) => {
                         const WayIcon = way.icon;
-                        const isTalk = way.label === "Talk";
 
                         return (
                             <Surface
@@ -281,12 +299,6 @@ function CommunityParticipation() {
                                             </dl>
                                         )}
                                         <div className="flex flex-col items-start gap-2">
-                                            {isTalk && (
-                                                <DiscordPresenceBadge
-                                                    online={online}
-                                                    glow={false}
-                                                />
-                                            )}
                                             <div className="flex flex-wrap gap-2">
                                                 {way.links.map((link) => (
                                                     <ExternalLinkButton

@@ -39,6 +39,8 @@ const DISCORD_PRESENCE_TTL_SECONDS = 30;
 const GITHUB_STARS_PATH = "/api/github-stars";
 const GITHUB_STARS_TTL_SECONDS = 15 * 60;
 
+const STALE_TTL_SECONDS = 24 * 60 * 60;
+
 async function cachedJson<T>(
     request: Request,
     ctx: ExecutionContext,
@@ -46,22 +48,38 @@ async function cachedJson<T>(
     load: () => Promise<T>,
 ) {
     const cache = (caches as CacheStorage & { default: Cache }).default;
-    const cacheKey = new Request(request.url, { method: "GET" });
+    // Key on the path only, so a query string cannot bypass the cache and
+    // spend the shared upstream quota.
+    const url = new URL(request.url);
+    const cacheKey = new Request(`${url.origin}${url.pathname}`);
+    const staleKey = new Request(`${url.origin}${url.pathname}?stale`);
     const cached = await cache.match(cacheKey);
     if (cached) return cached;
 
+    const headers = { "Cache-Control": `public, max-age=${ttlSeconds}` };
     try {
-        const result = Response.json(await load(), {
+        const value = await load();
+        const fresh = Response.json(value, { headers });
+        const stale = Response.json(value, {
             headers: {
-                "Cache-Control": `public, max-age=${ttlSeconds}`,
+                "Cache-Control": `public, max-age=${STALE_TTL_SECONDS}`,
             },
         });
-        ctx.waitUntil(cache.put(cacheKey, result.clone()));
-        return result;
+        ctx.waitUntil(
+            Promise.all([
+                cache.put(cacheKey, fresh.clone()),
+                cache.put(staleKey, stale),
+            ]),
+        );
+        return fresh;
     } catch {
+        // Serve the last good value while the upstream is down instead of
+        // letting every page view retry it.
+        const stale = await cache.match(staleKey);
+        if (stale) return new Response(stale.body, { headers });
         return Response.json(
             { error: "Live data is temporarily unavailable" },
-            { status: 502 },
+            { status: 502, headers: { "Cache-Control": "no-store" } },
         );
     }
 }

@@ -1,0 +1,35 @@
+{
+    "name": "sirius-elevator-terminal",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Terminal version of the Sirius Cybernetics Elevator Challenge — Ink + Pollinations BYOP device login",
+    "type": "module",
+    "bin": {
+        "sirius-elevator": "dist/cli.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc && node dist/cli.js",
+        "start": "node dist/cli.js",
+        "check": "biome check src"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "dependencies": {
+        "ink": "^5.0.0",
+        "ink-spinner": "^5.0.0",
+        "ink-text-input": "^6.0.0",
+        "marked": "^11.0.0",
+        "marked-terminal": "^7.0.0",
+        "open": "^10.0.0",
+        "react": "^18.3.1"
+    },
+    "devDependencies": {
+        "@types/marked-terminal": "^6.1.0",
+        "@types/node": "^20.0.0",
+        "@types/react": "^18.3.0",
+        "ink-testing-library": "^4.0.0",
+        "typescript": "^5.4.0"
+    }
+}

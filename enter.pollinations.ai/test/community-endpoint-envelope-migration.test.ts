@@ -20,25 +20,24 @@ type Row = {
  * requires drops the listing out of the catalog entirely.
  */
 describe("community endpoint envelope migration", () => {
-    it("selects one exact text endpoint and preserves queued prices without restoring stale targets", async () => {
+    it("backfills existing Chat registrations and preserves queued prices", async () => {
         await env.DB.prepare(`CREATE TABLE migration_single_text_endpoint (
             id TEXT PRIMARY KEY, type TEXT, base_url TEXT, payload TEXT, pending_payload TEXT
         )`).run();
         const rows = [
             {
-                id: "responses",
+                id: "chat-priced",
                 type: "proxy",
                 baseUrl: "https://api.example.com/v1",
                 payload: {
                     modality: "text",
-                    responsesUrl:
-                        "https://api.example.com/custom/infer?version=1",
+                    responsesUrl: null,
                     bearerTokenCiphertext: "cipher",
                     prices: { promptTextPrice: 1 },
                 },
                 pending: {
                     modality: "text",
-                    responsesUrl: "https://api.example.com/stale",
+                    responsesUrl: null,
                     prices: { promptTextPrice: 2 },
                     paidOnly: true,
                 },
@@ -50,7 +49,7 @@ describe("community endpoint envelope migration", () => {
                 payload: { modality: "text", responsesUrl: null },
                 pending: {
                     modality: "text",
-                    responsesUrl: "https://api.example.com/stale",
+                    responsesUrl: null,
                     prices: { promptTextPrice: 3 },
                 },
             },
@@ -63,11 +62,11 @@ describe("community endpoint envelope migration", () => {
                 pending: null,
             },
             {
-                id: "response-agent",
+                id: "chat-agent",
                 type: "endpoint_agent",
                 baseUrl: "https://agent.example.com/v1",
                 payload: {
-                    responsesUrl: "https://agent.example.com/run",
+                    responsesUrl: null,
                     perUserRpm: 5,
                 },
                 pending: null,
@@ -132,17 +131,17 @@ describe("community endpoint envelope migration", () => {
                 },
             ]),
         );
-        expect(byId.responses).toEqual({
-            url: "https://api.example.com/custom/infer?version=1",
+        expect(byId["chat-priced"]).toEqual({
+            url: "https://api.example.com/v1/chat/completions",
             payload: {
                 modality: "text",
-                api: "responses",
+                api: "chat_completions",
                 bearerTokenCiphertext: "cipher",
                 prices: { promptTextPrice: 1 },
             },
             pending: {
                 modality: "text",
-                api: "responses",
+                api: "chat_completions",
                 prices: { promptTextPrice: 2 },
                 paidOnly: true,
             },
@@ -157,13 +156,13 @@ describe("community endpoint envelope migration", () => {
             },
         });
         expect(byId["chat-exact"]).toEqual({
-            url: rows[2].baseUrl,
+            url: "https://agent.example.com/v1/chat/completions?version=1",
             payload: { api: "chat_completions", perUserRpm: 5 },
             pending: null,
         });
-        expect(byId["response-agent"]).toEqual({
-            url: "https://agent.example.com/run",
-            payload: { api: "responses", perUserRpm: 5 },
+        expect(byId["chat-agent"]).toEqual({
+            url: "https://agent.example.com/v1/chat/completions",
+            payload: { api: "chat_completions", perUserRpm: 5 },
             pending: null,
         });
         expect(byId.media).toEqual({

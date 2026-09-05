@@ -126,6 +126,20 @@ describe("canonical categories", () => {
         expect(categoryLabel("balance_sheet")).toBe("Cash adjustments");
     });
 
+    it("classifies creator payouts as Revenue Share settlements", () => {
+        expect(
+            transactionCategory(
+                transaction(
+                    "llm7.io",
+                    "creator_payout",
+                    "Community model creator payout",
+                    -100,
+                ),
+            ),
+        ).toBe("revenue_share");
+        expect(categoryLabel("revenue_share")).toBe("Revenue Share");
+    });
+
     it("folds office merchants into stable runway line items", () => {
         expect(runwayLineItem("office", "gaswerksiedlung")).toBe(
             "Rent & utilities",

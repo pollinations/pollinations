@@ -1,5 +1,5 @@
 {
-  "version": 14,
+  "version": 15,
   "providers": [
     {
       "id": "airforce",
@@ -22,6 +22,11 @@
         {
           "id": "5314153712077332",
           "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default",
+            "10451809460254"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         }
@@ -32,7 +37,8 @@
         {
           "workspace": "myceli.ai",
           "url": "https://billing-cost.console.alibabacloud.com/fortune/billing-account",
-          "accountId": "5314153712077332"
+          "accountId": "5314153712077332",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -59,12 +65,26 @@
       "aliases": [],
       "connector": "assemblyai",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "elliot@myceli.ai",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://www.assemblyai.com/dashboard/settings/billing"
+          "url": "https://www.assemblyai.com/dashboard/settings/billing",
+          "accountId": "elliot@myceli.ai",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -78,20 +98,43 @@
       ],
       "connector": "aws",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "301235909293",
+          "label": "Myceli AI payer",
+          "aliases": [
+            "default",
+            "202731947268",
+            "813596885972"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://us-east-1.console.aws.amazon.com/costmanagement/home#/credits"
+          "url": "https://us-east-1.console.aws.amazon.com/costmanagement/home?region=eu-north-1#/credits",
+          "accountId": "301235909293",
+          "loginEmail": "elliot@myceli.ai",
+          "label": "AWS"
         },
         {
           "workspace": "myceli.ai",
-          "url": "https://glass.automat-it.com/myceliai-aws/dashboard"
+          "url": "https://glass.automat-it.com/myceliai-aws/dashboard",
+          "accountId": "301235909293",
+          "loginEmail": "elliot@myceli.ai",
+          "label": "Glass"
         },
         {
           "workspace": "myceli.ai",
-          "url": "https://umbrellacost.io/cost-usage/cost-usage-explorer"
+          "url": "https://umbrellacost.io/cost-usage/cost-usage-explorer",
+          "accountId": "301235909293",
+          "loginEmail": "elliot@myceli.ai",
+          "label": "Umbrella"
         }
       ]
     },
@@ -104,12 +147,27 @@
       ],
       "connector": "azure",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31",
+          "label": "Thomas Haferlach",
+          "aliases": [
+            "default",
+            "7725a3f5-6483-4079-ba51-a317aa4fc09e"
+          ],
+          "loginEmail": "thomas@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "cli",
       "access": [
         {
-          "workspace": "myceli.ai",
-          "url": "https://portal.azure.com/#view/Microsoft_Azure_Billing/ModernBillingMenuBlade/~/BillingAccounts"
+          "workspace": "thomas@myceli.ai",
+          "url": "https://portal.azure.com/#view/Microsoft_Azure_GTM/Billing.MenuView/~/paymentMethodItem/scopeId/%2Fproviders%2FMicrosoft.Billing%2FbillingAccounts%2Fd6c5b3e7-63ac-515a-8674-de5afbaec90d%3Ad9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31%2FbillingProfiles%2F7E4U-QBXO-BG7-PGB/scope/BillingProfile",
+          "accountId": "d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31",
+          "loginEmail": "thomas@myceli.ai"
         }
       ]
     },
@@ -134,6 +192,7 @@
         {
           "id": "3000852661",
           "label": "Myceli.AI OÜ",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": "2026-05"
         }
@@ -144,7 +203,8 @@
         {
           "workspace": "myceli.ai",
           "url": "https://console.byteplus.com/finance/overview",
-          "accountId": "3000852661"
+          "accountId": "3000852661",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -159,12 +219,14 @@
         {
           "id": "pollinations",
           "label": "Pollinations.ai (legacy)",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-01",
           "activeTo": "2026-06"
         },
         {
           "id": "myceli",
           "label": "Myceli.AI OÜ",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-02",
           "activeTo": null
         }
@@ -175,12 +237,14 @@
         {
           "workspace": "myceli.ai",
           "url": "https://dash.cloudflare.com/b6ec751c0862027ba269faf7029b2501/billing/credits",
-          "accountId": "myceli"
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://dash.cloudflare.com/efdcb0933eaac64f27c0b295039b28f2/billing/invoices",
-          "accountId": "pollinations"
+          "accountId": "pollinations",
+          "loginEmail": "elliot@pollinations.ai"
         }
       ]
     },
@@ -211,12 +275,42 @@
       "aliases": [],
       "connector": "deepinfra",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "runtime",
+          "label": "ElliotEtag",
+          "aliases": [
+            "gh:36901823"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        },
+        {
+          "id": "team",
+          "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://deepinfra.com/dash/billing"
+          "url": "https://deepinfra.com/dash/billing",
+          "accountId": "team",
+          "loginEmail": "elliot@myceli.ai"
+        },
+        {
+          "workspace": "myceli.ai",
+          "url": "https://deepinfra.com/dash/billing",
+          "accountId": "runtime",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -227,12 +321,27 @@
       "aliases": [],
       "connector": "digitalocean",
       "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "4a4e317f-17c7-4fdb-9c79-907331a02d2b",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.digitalocean.com/organizations/4a4e317f-17c7-4fdb-9c79-907331a02d2b/billing"
+          "url": "https://cloud.digitalocean.com/organizations/4a4e317f-17c7-4fdb-9c79-907331a02d2b/billing",
+          "accountId": "4a4e317f-17c7-4fdb-9c79-907331a02d2b",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -246,7 +355,11 @@
       "accounts": [
         {
           "id": "da33283c-f2bf-414e-87e3-ab8e20cffc46",
-          "label": "Elliot's Project",
+          "label": "Pollinations",
+          "aliases": [
+            "elliots-project"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-08",
           "activeTo": null
         }
@@ -257,7 +370,8 @@
         {
           "workspace": "myceli.ai",
           "url": "https://console.e2b.dev/project/elliots-project/billing",
-          "accountId": "da33283c-f2bf-414e-87e3-ab8e20cffc46"
+          "accountId": "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -268,12 +382,26 @@
       "aliases": [],
       "connector": "elevenlabs",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "My Workspace",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://elevenlabs.io/app/subscription/creative"
+          "url": "https://elevenlabs.io/app/subscription/creative",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -288,6 +416,10 @@
         {
           "id": "elliot@myceli.ai",
           "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-08",
           "activeTo": null
         }
@@ -298,7 +430,8 @@
         {
           "workspace": "myceli.ai",
           "url": "https://dashboard.exa.ai/billing",
-          "accountId": "elliot@myceli.ai"
+          "accountId": "elliot@myceli.ai",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -309,12 +442,26 @@
       "aliases": [],
       "connector": "fal",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://fal.ai/dashboard/usage-billing"
+          "url": "https://fal.ai/dashboard/usage-billing",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -329,32 +476,37 @@
         {
           "id": "pollinations",
           "label": "Pollinations.AI",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-03",
-          "activeTo": null
+          "activeTo": "2026-08"
         },
         {
           "id": "et-fy",
           "label": "Pollinations",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-07",
-          "activeTo": null
+          "activeTo": "2026-08"
         },
         {
           "id": "neoglyph",
           "label": "Neoglyph",
+          "loginEmail": "elliot@neoglyph.ai",
           "activeFrom": "2026-05",
           "activeTo": null
         },
         {
           "id": "myceli",
           "label": "Myceli",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
-          "activeTo": null
+          "activeTo": "2026-08"
         },
         {
           "id": "pixelmarket",
           "label": "Pixelmarket",
+          "loginEmail": "elli@pixelmarket.ai",
           "activeFrom": "2026-05",
-          "activeTo": null
+          "activeTo": "2026-08"
         }
       ],
       "balanceTracking": true,
@@ -363,27 +515,32 @@
         {
           "workspace": "myceli.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "myceli"
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "pollinations"
+          "accountId": "pollinations",
+          "loginEmail": "elliot@pollinations.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "et-fy"
+          "accountId": "et-fy",
+          "loginEmail": "elliot@pollinations.ai"
         },
         {
           "workspace": "neoglyph.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "neoglyph"
+          "accountId": "neoglyph",
+          "loginEmail": "elliot@neoglyph.ai"
         },
         {
           "workspace": "pixelmarket.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "pixelmarket"
+          "accountId": "pixelmarket",
+          "loginEmail": "elli@pixelmarket.ai"
         }
       ]
     },
@@ -394,12 +551,27 @@
       "aliases": [],
       "connector": "google",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "0180E5-574541-B8F8FD",
+          "label": "My Billing Account",
+          "aliases": [
+            "default",
+            "stellar-verve-465920-b7"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "cli",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/credits/all"
+          "url": "https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/credits/all",
+          "accountId": "0180E5-574541-B8F8FD",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -426,6 +598,8 @@
       "aliases": [],
       "connector": "inception",
       "monthlyReview": true,
+      "activeFrom": "2026-06",
+      "activeTo": "2026-07",
       "balanceTracking": false,
       "collectionMethod": "dashboard",
       "access": [
@@ -442,12 +616,24 @@
       "aliases": [],
       "connector": "inferenceport",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "account",
+          "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default"
+          ],
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://console.inferenceport.ai"
+          "url": "https://console.inferenceport.ai",
+          "accountId": "account"
         }
       ]
     },
@@ -458,12 +644,24 @@
       "aliases": [],
       "connector": "io-net",
       "monthlyReview": false,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.io.net/cloud/billing"
+          "url": "https://cloud.io.net/cloud/billing",
+          "accountId": "myceli"
         }
       ]
     },
@@ -474,12 +672,28 @@
       "aliases": [],
       "connector": "lambda",
       "monthlyReview": true,
+      "activeFrom": "2026-03",
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "808f00c5d33c401192efc3b376d22b2f",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-03",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.lambda.ai/workspace/808f00c5d33c401192efc3b376d22b2f/usage"
+          "url": "https://cloud.lambda.ai/workspace/808f00c5d33c401192efc3b376d22b2f/usage",
+          "accountId": "808f00c5d33c401192efc3b376d22b2f",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -494,18 +708,21 @@
         {
           "id": "myceli-ai",
           "label": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         },
         {
           "id": "myceli-ai2",
           "label": "myceli-ai2",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         },
         {
           "id": "elliot-4",
           "label": "elliot-4",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         }
@@ -516,17 +733,20 @@
         {
           "workspace": "myceli.ai",
           "url": "https://modal.com/settings/myceli-ai/usage",
-          "accountId": "myceli-ai"
+          "accountId": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "myceli.ai",
           "url": "https://modal.com/settings/myceli-ai2/usage",
-          "accountId": "myceli-ai2"
+          "accountId": "myceli-ai2",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "myceli.ai",
           "url": "https://modal.com/settings/elliot-4/usage",
-          "accountId": "elliot-4"
+          "accountId": "elliot-4",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -537,12 +757,27 @@
       "aliases": [],
       "connector": "mistral",
       "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://admin.mistral.ai/organization/billing"
+          "url": "https://admin.mistral.ai/organization/billing",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -563,12 +798,26 @@
       "aliases": [],
       "connector": "openai",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli-ai",
+          "label": "Myceli AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://platform.openai.com/settings/organization/billing/credit-grants"
+          "url": "https://platform.openai.com/settings/organization/billing/credit-grants",
+          "accountId": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -583,12 +832,14 @@
         {
           "id": "myceli",
           "label": "Myceli.AI",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-05",
           "activeTo": null
         },
         {
           "id": "pollinations",
           "label": "PollinationsAI",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-07",
           "activeTo": null
         }
@@ -599,12 +850,14 @@
         {
           "workspace": "myceli.ai",
           "url": "https://openrouter.ai/settings/credits",
-          "accountId": "myceli"
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://openrouter.ai/settings/credits",
-          "accountId": "pollinations"
+          "accountId": "pollinations",
+          "loginEmail": "elliot@pollinations.ai"
         }
       ]
     },
@@ -615,13 +868,27 @@
       "aliases": [],
       "connector": "ovhcloud",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "fd415008-ovh",
+          "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
-        {
-          "workspace": "myceli.ai",
-          "url": "https://manager.eu.ovhcloud.com/#/dedicated/billing/credits"
-        }
+      {
+        "workspace": "myceli.ai",
+        "url": "https://manager.eu.ovhcloud.com/#/billing/payment/credits",
+        "accountId": "fd415008-ovh",
+        "loginEmail": "elliot@myceli.ai"
+      }
       ]
     },
     {
@@ -631,12 +898,26 @@
       "aliases": [],
       "connector": "perplexity",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "81749045",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://console.perplexity.ai/project/81749045/billing"
+          "url": "https://console.perplexity.ai/project/81749045/billing",
+          "accountId": "81749045",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -657,12 +938,27 @@
       "aliases": [],
       "connector": "pruna",
       "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://dashboard.pruna.ai/billing"
+          "url": "https://dashboard.pruna.ai/billing",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -673,12 +969,27 @@
       "aliases": [],
       "connector": "replicate",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli-ai",
+          "label": "myceli-ai",
+          "aliases": [
+            "default",
+            "7c3f0021-dbe0-51b7-b809-d9ba5fd9a157"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://replicate.com/account/billing"
+          "url": "https://replicate.com/account/billing",
+          "accountId": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -693,6 +1004,7 @@
         {
           "id": "thomash@pollinations.ai",
           "label": "Pollinations.ai",
+          "loginEmail": "thomash@pollinations.ai",
           "activeFrom": "2026-08",
           "activeTo": null
         }
@@ -700,10 +1012,11 @@
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
-        {
-          "workspace": "pollinations.ai",
-          "url": "https://dashboard.regolo.ai/subscriptions",
-          "accountId": "thomash@pollinations.ai"
+      {
+        "workspace": "myceli.ai",
+        "url": "https://dashboard.regolo.ai/subscriptions",
+        "accountId": "thomash@pollinations.ai",
+        "loginEmail": "thomash@pollinations.ai"
         }
       ]
     },
@@ -724,12 +1037,27 @@
       "aliases": [],
       "connector": "runpod",
       "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "user_3BOlJSA6zZE5N6rOLI5maKMqFRU",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://console.runpod.io/user/billing"
+          "url": "https://console.runpod.io/user/billing",
+          "accountId": "user_3BOlJSA6zZE5N6rOLI5maKMqFRU",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -806,12 +1134,26 @@
       "aliases": [],
       "connector": "stability",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://platform.stability.ai/account/credits"
+          "url": "https://platform.stability.ai/account/credits",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -823,7 +1165,7 @@
       "connector": "tinybird",
       "monthlyReview": true,
       "balanceTracking": false,
-      "collectionMethod": "cli",
+      "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
@@ -841,12 +1183,26 @@
       ],
       "connector": "vast-ai",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "cli",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.vast.ai/billing/"
+          "url": "https://cloud.vast.ai/billing/",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -857,12 +1213,27 @@
       "aliases": [],
       "connector": "vercel",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "pollinations",
+          "label": "Pollinations AI",
+          "aliases": [
+            "default",
+            "pollinations-ai"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://vercel.com/pollinations/~/ai-gateway"
+          "url": "https://vercel.com/pollinations/~/ai-gateway",
+          "accountId": "pollinations",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
@@ -877,6 +1248,10 @@
         {
           "id": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2",
           "label": "Myceli.AI OÜ — tuesday-cuticle-eggnog",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-03",
           "activeTo": null
         }
@@ -887,7 +1262,8 @@
         {
           "workspace": "myceli.ai",
           "url": "https://console.x.ai/team/ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2/settings/billing",
-          "accountId": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2"
+          "accountId": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     }

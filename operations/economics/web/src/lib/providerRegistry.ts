@@ -22,6 +22,8 @@ export type ProviderDefinition = {
     aliases: string[];
     connector: string | null;
     monthlyReview: boolean;
+    activeFrom?: string;
+    activeTo?: string | null;
     balanceTracking: boolean;
     collectionMethod: ProviderCollectionMethod | null;
     access?: ProviderAccessTarget[];
@@ -34,6 +36,8 @@ export type ProviderAccessTarget = {
     workspace: string;
     url: string;
     accountId?: string;
+    loginEmail?: string;
+    label?: string;
 };
 
 export type MeteringBasis =
@@ -47,6 +51,8 @@ export type MeteringBasis =
 export type ProviderAccountDefinition = {
     id: string;
     label: string;
+    aliases?: string[];
+    loginEmail?: string;
     activeFrom: string;
     activeTo: string | null;
 };
@@ -89,6 +95,45 @@ export function activeProviderAccounts(
         (account) =>
             account.activeFrom <= month &&
             (account.activeTo == null || account.activeTo >= month),
+    );
+}
+
+export function normalizeProviderAccountId(value?: string): string {
+    return normalizeProviderName(value?.trim() || "default");
+}
+
+export function resolveProviderAccount(
+    provider: ProviderDefinition,
+    value?: string,
+): ProviderAccountDefinition | undefined {
+    const normalized = normalizeProviderAccountId(value);
+    return provider.accounts?.find(
+        (account) =>
+            normalizeProviderAccountId(account.id) === normalized ||
+            (account.aliases ?? []).some(
+                (alias) => normalizeProviderAccountId(alias) === normalized,
+            ),
+    );
+}
+
+export function canonicalProviderAccountId(
+    provider: ProviderDefinition | undefined,
+    value?: string,
+): string {
+    const normalized = normalizeProviderAccountId(value);
+    return provider == null
+        ? normalized
+        : (resolveProviderAccount(provider, normalized)?.id ?? normalized);
+}
+
+function providerRequiresReview(
+    provider: ProviderDefinition,
+    month: string,
+): boolean {
+    return (
+        provider.monthlyReview &&
+        (provider.activeFrom == null || provider.activeFrom <= month) &&
+        (provider.activeTo == null || provider.activeTo >= month)
     );
 }
 
@@ -186,9 +231,15 @@ export function collectProviderObservations(
         vendor,
     }: ProviderObservation) => {
         const normalized = normalizeProviderName(vendor);
-        const normalizedAccountId = accountId
-            ? normalizeProviderName(accountId)
+        const definition = resolveProvider(normalized);
+        const resolvedAccount = definition
+            ? resolveProviderAccount(definition, accountId)
             : undefined;
+        const normalizedAccountId =
+            resolvedAccount?.id ??
+            (accountId?.trim()
+                ? normalizeProviderAccountId(accountId)
+                : undefined);
         if (!normalized || !/^\d{4}-\d{2}$/.test(month)) return;
         const key = `${month}|${normalized}|${source}|${normalizedAccountId ?? ""}`;
         const existing = observations.get(key);
@@ -323,12 +374,15 @@ export function providerReviewRows(
             observedAliases: [],
             sources: [],
             mapped: definition != null,
-            monthlyReview: definition?.monthlyReview ?? false,
+            monthlyReview: definition
+                ? providerRequiresReview(definition, reviewMonth)
+                : false,
             dashboardChecked: false,
             checkExplanation: null,
-            dashboardStatus: definition?.monthlyReview
-                ? "no activity"
-                : "not required",
+            dashboardStatus:
+                definition && providerRequiresReview(definition, reviewMonth)
+                    ? "no activity"
+                    : "not required",
             expectedAccounts,
             observedAccountIds: [],
             accountStatus: expectedAccounts.length
@@ -344,7 +398,7 @@ export function providerReviewRows(
 
     for (const reviewMonth of months) {
         for (const provider of PROVIDER_REGISTRY) {
-            if (!provider.monthlyReview) continue;
+            if (!providerRequiresReview(provider, reviewMonth)) continue;
             const key = `${reviewMonth}|${provider.id}`;
             rows.set(key, makeRow(reviewMonth, provider.id, provider));
         }
@@ -359,6 +413,7 @@ export function providerReviewRows(
             rows.get(key) ?? makeRow(observation.month, provider, definition);
         row.aliasSet.add(observation.vendor);
         row.sourceSet.add(observation.source);
+        if (definition?.monthlyReview) row.monthlyReview = true;
         row.dashboardChecked ||= observation.dashboardChecked;
         if (observation.source === "cloud") {
             if (observation.accountId) {
@@ -423,8 +478,7 @@ export function providerReviewRows(
                         ? ("reviewed gap" as const)
                         : row.dashboardChecked
                           ? ("recorded" as const)
-                          : row.mapped &&
-                              resolveProvider(row.provider)?.monthlyReview
+                          : row.mapped && row.monthlyReview
                             ? sourceSet.size > 0
                                 ? ("due" as const)
                                 : ("no activity" as const)

@@ -5,8 +5,16 @@ Canonical vendor: `azure`
 ## Verified — 2026-08-22
 
 - Status: client-credential authentication and the invoices API work.
-- Dashboard login: `thomas@myceli.ai`. In Azure Portal, open Cost Management +
-  Billing → Benefits → Azure credits.
+- Dashboard login: `thomas@myceli.ai`. Use the registry's billing-profile link
+  → Payment methods → Azure credits → View all credits (verified 2026-09-05).
+- Account routing: use only the Chrome window signed in as
+  `thomas@myceli.ai`; never open Azure in the `elliot@myceli.ai` window.
+- Billing account:
+  `d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31`.
+- Billing profile: `7E4U-QBXO-BG7-PGB`. Verify both the signed-in email and
+  billing profile before collecting; do not start from the generic portal.
+- Subscription `7725a3f5-6483-4079-ba51-a317aa4fc09e` is an alias of that
+  billing account for balance-ledger coverage, not a second balance.
 - The subscription Cost Management query also works. A 2026 year-to-date
   `ActualCost` query grouped by `ServiceName` and `Meter` returned exact model,
   SKU, infrastructure, usage-quantity, and month detail, including August MTD.
@@ -16,8 +24,9 @@ Canonical vendor: `azure`
 Primary evidence sources:
 
 - Invoice/payment: monthly Azure/Microsoft invoice, usually issued around day 9 for the previous calendar month.
-- Live credit balance and expiry: Azure Portal → Cost Management + Billing →
-  Benefits → Azure credits. Use the latest USD transaction balance after
+- Live credit balance and expiry: billing profile → Payment methods → Azure
+  credits. Use View all credits to select active grants; the summary can show
+  an exhausted grant's expiry. Use the latest USD transaction balance after
   unbilled eligible charges for the OP Cloud balance snapshot. The prominent
   EUR balance is an estimated display translated at a monthly benchmark rate.
 - API: Microsoft Billing invoices API through ARM.
@@ -91,9 +100,9 @@ Known traps:
   `reconciliation_notes` because Azure may still show
   `freeAzureCreditApplied.value == 0` and `azurePrepaymentApplied.value == 0`.
 - The running month has no full invoice until the next invoice is issued.
-- Local historical note: the first USD 100,000 startup lot is fully used. The
-  active USD 250,036 lot runs 2026-04-06 to 2028-04-06. Jan-Mar 2026 invoices
-  had no sponsorship credit and were card-charged in full.
+- Keep each active grant's amount, effective date, expiry, and status in the
+  evidence. Do not assign an exhausted grant's expiry to the current balance.
+  Jan-Mar 2026 invoices had no sponsorship credit and were card-charged in full.
 - Credit-transactions rows include finalized invoice balances and a gray,
   unbilled month-to-date row. For a current balance snapshot, use the balance
   after that unbilled row. For a closed-month reconciliation, use the finalized

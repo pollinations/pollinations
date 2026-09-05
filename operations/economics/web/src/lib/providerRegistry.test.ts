@@ -4,6 +4,7 @@ import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
     activeProviderAccounts,
     canonicalProvider,
+    canonicalProviderAccountId,
     collectProviderObservations,
     meterDriftExplanation,
     missingProviderMappings,
@@ -123,10 +124,23 @@ describe("provider registry", () => {
 
     it("keeps account IDs unique within a provider and applies lifecycle months", () => {
         for (const provider of PROVIDER_REGISTRY) {
+            if (provider.activeFrom != null) {
+                expect(provider.activeFrom).toMatch(/^\d{4}-\d{2}$/);
+            }
+            if (provider.activeTo != null) {
+                expect(provider.activeTo).toMatch(/^\d{4}-\d{2}$/);
+                expect(provider.activeTo >= (provider.activeFrom ?? "")).toBe(
+                    true,
+                );
+            }
             const accountIds = (provider.accounts ?? []).map(
                 (account) => account.id,
             );
             expect(new Set(accountIds).size).toBe(accountIds.length);
+            const accountNames = (provider.accounts ?? []).flatMap(
+                (account) => [account.id, ...(account.aliases ?? [])],
+            );
+            expect(new Set(accountNames).size).toBe(accountNames.length);
         }
 
         const cloudflare = resolveProvider("cloudflare");
@@ -165,6 +179,70 @@ describe("provider registry", () => {
         expect(activeProviderAccounts(regolo, "2026-08")).toEqual([
             expect.objectContaining({ id: "thomash@pollinations.ai" }),
         ]);
+        expect(regolo.access).toEqual([
+            expect.objectContaining({
+                workspace: "myceli.ai",
+                accountId: "thomash@pollinations.ai",
+                loginEmail: "thomash@pollinations.ai",
+            }),
+        ]);
+
+        const azure = resolveProvider("azure");
+        expect(azure).toBeDefined();
+        expect(
+            canonicalProviderAccountId(
+                azure,
+                "7725a3f5-6483-4079-ba51-a317aa4fc09e",
+            ),
+        ).toBe(
+            "d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31",
+        );
+
+        expect(canonicalProviderAccountId(e2b, "elliots-project")).toBe(
+            "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+        );
+
+        expect(canonicalProviderAccountId(resolveProvider("assemblyai"))).toBe(
+            "elliot@myceli.ai",
+        );
+        expect(
+            canonicalProviderAccountId(resolveProvider("aws"), "202731947268"),
+        ).toBe("301235909293");
+        expect(
+            canonicalProviderAccountId(resolveProvider("aws"), "813596885972"),
+        ).toBe("301235909293");
+        expect(
+            canonicalProviderAccountId(
+                resolveProvider("google"),
+                "stellar-verve-465920-b7",
+            ),
+        ).toBe("0180E5-574541-B8F8FD");
+        expect(
+            canonicalProviderAccountId(
+                resolveProvider("replicate"),
+                "7c3f0021-dbe0-51b7-b809-d9ba5fd9a157",
+            ),
+        ).toBe("myceli-ai");
+
+        const pausedAfterAugust = [
+            "digitalocean",
+            "mistral",
+            "pruna",
+            "runpod",
+        ];
+        for (const providerId of pausedAfterAugust) {
+            const provider = resolveProvider(providerId);
+            expect(provider).toBeDefined();
+            if (!provider) throw new Error(`${providerId} is not registered`);
+            expect(provider.activeTo).toBe("2026-08");
+            expect(activeProviderAccounts(provider, "2026-08")).toHaveLength(1);
+            expect(activeProviderAccounts(provider, "2026-09")).toEqual([]);
+        }
+        expect(
+            providerReviewRows(data(), "2026-09")
+                .map((row) => row.provider)
+                .filter((provider) => pausedAfterAugust.includes(provider)),
+        ).toEqual([]);
     });
 
     it("keeps source-backed Pollen witness explanations unique and canonical", () => {
@@ -408,22 +486,42 @@ describe("provider observations", () => {
         expect(observation.dashboardChecked).toBe(true);
     });
 
-    it("preserves provider account IDs before provider aggregation", () => {
-        const [observation] = collectProviderObservations(
+    it("canonicalizes provider account IDs before provider aggregation", () => {
+        const observations = collectProviderObservations(
             data({
                 opCloud: [
                     cloud({
                         vendor: "cloudflare",
                         account_id: "Myceli",
                     }),
+                    cloud({
+                        vendor: "assemblyai",
+                        account_id: "",
+                    }),
+                    cloud({
+                        vendor: "google",
+                        account_id: "stellar-verve-465920-b7",
+                    }),
                 ],
             }),
         );
 
-        expect(observation).toMatchObject({
-            vendor: "cloudflare",
-            accountId: "myceli",
-        });
+        expect(observations).toEqual(
+            expect.arrayContaining([
+                expect.objectContaining({
+                    vendor: "cloudflare",
+                    accountId: "myceli",
+                }),
+                expect.objectContaining({
+                    vendor: "assemblyai",
+                    accountId: "elliot@myceli.ai",
+                }),
+                expect.objectContaining({
+                    vendor: "google",
+                    accountId: "0180E5-574541-B8F8FD",
+                }),
+            ]),
+        );
     });
 });
 
@@ -497,6 +595,23 @@ describe("providerReviewRows", () => {
             mapped: true,
             dashboardStatus: "not required",
         });
+    });
+
+    it("keeps historical review windows without checking stopped providers", () => {
+        const september = providerReviewRows(data({}), "2026-09");
+
+        expect(september.some((row) => row.provider === "inception")).toBe(
+            false,
+        );
+        expect(september.some((row) => row.provider === "lambda")).toBe(false);
+
+        const [reactivated] = providerReviewRows(
+            data({
+                opPollen: [pollen({ month: "2026-09", vendor: "inception" })],
+            }),
+            "2026-09",
+        ).filter((row) => row.provider === "inception");
+        expect(reactivated.dashboardStatus).toBe("due");
     });
 
     it("flags incomplete multi-account evidence without treating accounts as aliases", () => {

@@ -2,9 +2,12 @@
 
 Canonical vendor: `modal`
 
-## Verified — 2026-08-20
+## Verified — 2026-09-04
 
 - Status: bounded billing CLI works with the stored token pair.
+- Login: `elliot@myceli.ai` in the Myceli browser workspace.
+- Workspaces: `myceli-ai`, `myceli-ai2`, `elliot-4`.
+- Each workspace has a Starter plan with `$30` included monthly compute credit.
 - Zero rows can be valid for a quiet/open period and are not an
   authentication failure.
 

@@ -2,9 +2,11 @@
 
 Canonical vendor: `ovhcloud`
 
-## Verified — 2026-07-10
+## Verified — 2026-09-04
 
 - Status: signed OVH credit API works end to end.
+- Account: `fd415008-ovh` (`Myceli.AI OÜ`), login `elliot@myceli.ai`.
+- Billing: <https://manager.eu.ovhcloud.com/#/billing/payment/credits>
 - Movement amounts use signed values: `USE` is negative and `VOUCHER` is
   positive. Preserve the provider date before shifting a monthly debit.
 
@@ -30,6 +32,9 @@ Collection endpoints:
 - `GET /me/bill/{billId}` and `GET /me/bill/{billId}/details` when the
   consumer key has invoice-detail permission.
 - Sign every request with the OVH server time; never log the signature inputs.
+- The current consumer key reads balances and movements but receives `403` for
+  bill/order details. Use invoice PDFs or the authenticated dashboard for SKU
+  classification; movement aggregates prove only exact voucher burn.
 
 Known traps:
 

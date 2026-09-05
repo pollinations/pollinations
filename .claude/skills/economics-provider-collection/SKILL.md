@@ -13,8 +13,8 @@ accounts, prepare a monthly close, or reconcile provider cost with Pollen.
 Read `operations/economics/provider-registry.json` first.
 
 - The registry owns canonical vendor IDs, aliases, account lifecycles,
-  active monthly-review status, balance-tracking decisions, access URLs, and
-  workspace domains.
+  account aliases and login emails, active monthly-review status,
+  balance-tracking decisions, access URLs, and workspace domains.
 - Active vendors have `monthlyReview: true`. Refresh only those during a normal
   monthly run.
 - Inactive vendors remain visible for history. Inspect them only when the user
@@ -39,9 +39,10 @@ Do not build a permanent provider integration for a bounded monthly task. Run
 the documented command or use the dashboard directly.
 
 For dashboard collection, group registry access targets by `workspace`. Open
-all URLs for one workspace together, verify that the matching browser profile
-is signed in, finish that group, then move to the next workspace. Never copy
-browser cookies, passwords, session tokens, or credential-reveal URLs.
+all URLs for one workspace together. First enumerate the connected browser
+windows, then use only the window whose visible email and organization match
+the registry target. Stop if the match is ambiguous. Never store browser-window
+IDs or copy cookies, passwords, session tokens, or credential-reveal URLs.
 
 Use only existing authorized credentials. Creating, rotating, synchronizing,
 or deploying a credential is outside collection and requires the repository's
@@ -59,9 +60,26 @@ For each active vendor and each active account, collect:
 - the invoice, statement, receipt, or provider export that proves the billed
   obligation or confirms that no payment was due.
 
+Store one balance snapshot per canonical account. Multiple grant lots use the
+same checked timestamp and distinct resource IDs (`current-balance-lot`), not
+an additional account-total row. A snapshot collected during
+the current calendar month closes the previous month; do not require repeated
+checks during that same close cycle. Account aliases only collapse IDs that are
+explicitly listed in the registry.
+
 Keep provider usage, provider balance, and bank payment as separate facts. A
 top-up is not usage. An invoice date is not automatically the usage month. A
 balance snapshot is current state, not historical burn.
+
+- Usage `start`/`end`: actual UTC coverage, end-exclusive; never replace billing
+  cycle dates with calendar-month boundaries or use collection time as coverage.
+- Credit snapshot `end`: verified expiry. Blank means unknown, not unlimited.
+  Use `resource_sku: current-balance-no-expiry` only with verified non-expiring
+  terms. Recheck omitted/changed terms; never silently extend old credits.
+  A user-approved forecast exception uses `current-balance-expiry-assumed`,
+  empty `end`, and the scoped approval in evidence; it is not verified terms.
+- Stripe: record `coverage_end` and `expected_accounts` for each account-month;
+  partial exports must not become a completed forecast baseline at rollover.
 
 If model or GPU detail is unavailable, preserve the exact provider total and
 state the missing granularity. Never allocate a total using an internal model
@@ -69,12 +87,29 @@ name or an undocumented ratio.
 
 ## Evidence and ledgers
 
-- Archive new invoices and raw provider exports in the accounting Google Drive
-  before linking them to the ledger.
+- Upload each new invoice/export to the accounting Google Drive immediately
+  after download; verify it there before continuing to the next provider.
 - `economics_compute_ledger` stores provider balances and usage facts.
 - `economics_bank_ledger` stores Wise-backed cash movements and their evidence.
+  Prefix new/reviewed evidence with `evidence_type=supplier_document` or
+  `evidence_type=payment_statement`. A statement proves payment, not a supplier
+  invoice. Add `evidence_requirement=payment` only after reviewing that exact
+  fact as payment-only (e.g. cashback/payout). Folders/forms are not documents.
+  Preserve existing lost-document exceptions. Link the exact invoice where
+  available; a legacy untyped link does not certify invoice completeness.
+- `economics_stripe_sales` stores reviewed Stripe account-month-currency sales,
+  refunds, reversals, fees, stream, and coverage. It never stores customer or
+  payment payloads.
 - `economics_pollen_usage` stores internal Paid and Quest consumption. Reconcile
   it at provider-month grain; provider model labels are display detail only.
+- D1 `user` is authoritative for creator GitHub usernames and current balances.
+  Paid and Quest Pollen are non-cashable usage exposure; Paid serves the full
+  catalog, Quest only the eligible catalog. Never classify either as Revenue
+  Share or subtract face value from cash runway.
+  A staging snapshot includes positive-balance users plus all Revenue Share
+  recipients. Keep only user ID, GitHub username, both balances, and sync time;
+  required name/email fields stay empty.
+- `creator_payout` is a one-time Revenue Share settlement and operating expense.
 - Reuse the original deterministic `entry_id` when correcting a fact. Never
   create a second identity for the same fact.
 - Treat the current month as partial.
@@ -86,6 +121,12 @@ must include the current base version, use a later `recorded_at`, and preserve
 immutable identity fields. Append only after explicit approval for the named
 batch and environment, then re-query every written ID and save a verified
 after-snapshot. Validate staging first; production requires separate approval.
+
+Staging verification uses
+`operations/economics/secrets/web.dev.json:TINYBIRD_ECONOMICS_READ_TOKEN`.
+Never use deprecated `TINYBIRD_OPS_READ_TOKEN` to verify the Economics staging
+app; it can resolve to another workspace. Use the scoped ingest token only for
+raw datasource backup/read and the approved append.
 
 ## Completion
 

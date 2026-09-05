@@ -22,6 +22,9 @@ Account identity:
   across accounts.
 - Record the authenticated account ID and display name alongside the payout and
   its balance transactions.
+- Live accounts: `acct_1SrY3q7rcjS3l7tr` → `pollen`;
+  `acct_1QzdqWGHtmCJlpeq` → `kofi`. Verify identities before each collection.
+  The Stripe MCP can read both with explicit `stripe_context` and `livemode: true`.
 
 Required credential:
 
@@ -42,12 +45,24 @@ Collection steps:
    transactions by `created[gte]` and exclusive `created[lt]`. Sum `net` only
    after filtering to the requested question; Stripe monetary fields are minor
    currency units.
+   MCP `GetBalanceTransactions` parameters must use nested
+   `created: {gte: <start>, lt: <end>}`; flat bracket keys were ignored.
+   Assert every returned timestamp is in range, IDs are unique, and the final
+   page has `has_more: false`. Archive one raw export per account immediately.
 5. Preserve currency. Do not assume the account or every transaction is EUR.
+6. P&L grain: account, UTC month, settlement currency. Use `reporting_category`:
+   `charge` → gross; `refund` → refunds; `charge_failure`/`dispute` → reversals;
+   `fee` → standalone fees. Include embedded `fee` once (also on reversals and
+   FX), including Ko-fi application fees. Exclude payouts and FX principal.
+   Reconcile net to included source transactions in integer minor units.
+   Stop on an unreviewed category; never silently omit it.
 
 Known traps:
 
 - A payout is a bank transfer, not the month in which revenue was earned. Keep
   it on its Wise settlement date in cash runway calculations.
+- Do not use webhook purchase currency for P&L. Adaptive Pricing and account
+  settlement-currency changes can make it differ from balance activity.
 - Automatic payouts can be reconciled to their settlement batch. Stripe cannot
   identify the exact transaction set for user-controlled instant or manual
   payouts; report that limitation instead of guessing.
@@ -65,11 +80,16 @@ Economics use:
 
 - Stripe payout cash belongs in `economics_bank_ledger`, category `revenue`, and
   should reconcile to Wise.
-- Stripe balance activity is supporting evidence for reconciliation. Do not
-  write it to `economics_compute_ledger`; Runway derives its revenue projection from verified
-  bank history.
-- Until Economics has a dedicated earned-revenue ledger, do not replace Wise
-  cash rows with Stripe activity-month totals.
+- Reviewed account-month-currency sales belong in `economics_stripe_sales`.
+  Reuse `stripe:<account_id>:<month>:<currency>` as `entry_id` for updates.
+- Set `revenue_stream` to `pollen` or `kofi` from the verified account identity.
+- Set `coverage_end` to the verified exclusive UTC export boundary and
+  `expected_accounts` to the required account count for that month. Record zero
+  activity explicitly; a missing account/export is not a zero. Forecasts require
+  complete coverage for every required account through the following month start.
+- Runway P&L separates Pollen/Ko-fi gross sales, refunds, and reversals. Fees
+  belong in Operations. Cash change and balance continue to use Wise payouts.
+- Do not write Stripe activity to `economics_compute_ledger`.
 
 Official references:
 

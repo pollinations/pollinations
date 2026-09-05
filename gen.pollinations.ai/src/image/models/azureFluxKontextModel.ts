@@ -3,7 +3,6 @@ import {
     ensureUpstreamOk,
     UpstreamError,
 } from "@shared/error.ts";
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type {
     AuthResult,
@@ -79,19 +78,19 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
         : undefined;
 }
 
-function shortString(value: unknown): string | undefined {
-    return typeof value === "string" ? value.slice(0, 500) : undefined;
+function stringValue(value: unknown): string | undefined {
+    return typeof value === "string" ? value : undefined;
 }
 
 function errorSummary(value: unknown): Record<string, string> | undefined {
-    if (typeof value === "string") return { message: value.slice(0, 500) };
+    if (typeof value === "string") return { message: value };
     const error = asRecord(value);
     if (!error) return undefined;
 
     const summary = {
-        code: shortString(error.code),
-        message: shortString(error.message),
-        type: shortString(error.type),
+        code: stringValue(error.code),
+        message: stringValue(error.message),
+        type: stringValue(error.type),
     };
     const entries = Object.entries(summary).filter(
         (entry): entry is [string, string] => Boolean(entry[1]),
@@ -108,24 +107,6 @@ function filteredCategories(value: unknown): string[] {
         .sort();
 }
 
-function summarizeUnexpectedResponse(data: AzureFluxResponse): string {
-    const first = data.data?.[0];
-    const root = data as Record<string, unknown>;
-    const firstRecord = asRecord(first);
-    const summary = {
-        responseKeys: Object.keys(root).sort(),
-        dataCount: Array.isArray(data.data) ? data.data.length : undefined,
-        firstDataKeys: firstRecord
-            ? Object.keys(firstRecord).sort()
-            : undefined,
-        finishReason: shortString(first?.finish_reason),
-        message: shortString(data.message) || shortString(first?.message),
-        error: errorSummary(data.error) || errorSummary(first?.error),
-        filteredCategories: filteredCategories(first?.content_filter_results),
-    };
-    return JSON.stringify(summary);
-}
-
 function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     const first = data.data?.[0];
     const categories = filteredCategories(first?.content_filter_results);
@@ -136,9 +117,9 @@ function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     const rootError = errorSummary(data.error);
     const itemError = errorSummary(first?.error);
     return firstContentPolicyMessage([
-        shortString(first?.finish_reason)?.replaceAll("_", " "),
-        shortString(data.message),
-        shortString(first?.message),
+        stringValue(first?.finish_reason)?.replaceAll("_", " "),
+        stringValue(data.message),
+        stringValue(first?.message),
         rootError?.message,
         rootError?.code?.replaceAll("_", " "),
         itemError?.message,
@@ -250,7 +231,7 @@ export async function callAzureFluxKontext(
             requestBody.input_image = buffer.toString("base64");
         } catch (error) {
             logError("Error processing image for editing:", error);
-            if (error instanceof HttpError) throw error;
+            if (error instanceof UpstreamError) throw error;
             throw new Error(`Failed to process image: ${error.message}`);
         }
     } else {
@@ -282,7 +263,7 @@ export async function callAzureFluxKontext(
 
     if (!data.data?.[0]?.b64_json) {
         const requestUrl = new URL(AZURE_FLUX_KONTEXT_ENDPOINT);
-        const responseBody = summarizeUnexpectedResponse(data);
+        const responseBody = JSON.stringify(data);
         const upstreamHeaders = collectUpstreamHeaders(response.headers);
         const rejectionReason = contentPolicyReason(data);
 
@@ -332,25 +313,22 @@ function validateFlux2Dimensions(
     height: number,
 ): void {
     if (width < AZURE_FLUX_2_MIN_SIDE || height < AZURE_FLUX_2_MIN_SIDE) {
-        throw new HttpError(
-            `${modelTitle} requires width and height of at least ${AZURE_FLUX_2_MIN_SIDE}px`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${modelTitle} requires width and height of at least ${AZURE_FLUX_2_MIN_SIDE}px`,
+        });
     }
     if (
         width % AZURE_FLUX_2_DIMENSION_STEP !== 0 ||
         height % AZURE_FLUX_2_DIMENSION_STEP !== 0
     ) {
-        throw new HttpError(
-            `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${modelTitle} requires width and height to be multiples of ${AZURE_FLUX_2_DIMENSION_STEP}px`,
+        });
     }
     if (width * height > AZURE_FLUX_2_MAX_PIXELS) {
-        throw new HttpError(
-            `${modelTitle} supports at most 4,194,304 pixels`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${modelTitle} supports at most 4,194,304 pixels`,
+        });
     }
 }
 
@@ -368,15 +346,16 @@ export async function callAzureFlux2(
     const model = safeParams.model as AzureFlux2Model;
     const config = AZURE_FLUX_2_CONFIG[model];
     if (!config) {
-        throw new HttpError(`Unsupported Azure FLUX.2 model: ${model}`, 400);
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported Azure FLUX.2 model: ${model}`,
+        });
     }
 
     validateFlux2Dimensions(config.title, safeParams.width, safeParams.height);
     if (safeParams.image.length > config.maxReferenceImages) {
-        throw new HttpError(
-            `${config.title} supports at most ${config.maxReferenceImages} reference images`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${config.title} supports at most ${config.maxReferenceImages} reference images`,
+        });
     }
 
     const apiKey = getImageEnv("AZURE_MYCELI_PROD_API_KEY");
@@ -406,10 +385,9 @@ export async function callAzureFlux2(
             const { buffer } = await downloadUserImage(imageUrl);
             const imageSafetyResult = await analyzeImageSafety(buffer);
             if (!imageSafetyResult.safe) {
-                const error = new HttpError(
-                    `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
-                    400,
-                );
+                const error = UpstreamError.fromProvider(400, {
+                    message: `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
+                });
                 await logGptImageError(
                     prompt,
                     safeParams,
@@ -443,7 +421,7 @@ export async function callAzureFlux2(
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
         const requestUrl = new URL(endpoint);
-        const responseBody = summarizeUnexpectedResponse(data);
+        const responseBody = JSON.stringify(data);
         const upstreamHeaders = collectUpstreamHeaders(response.headers);
         const rejectionReason = contentPolicyReason(data);
 
@@ -479,7 +457,7 @@ export async function callAzureFlux2(
             message: `Azure ${config.title} returned no billing metadata`,
             requestUrl: new URL(endpoint),
             upstreamStatus: response.status,
-            responseBody: summarizeUnexpectedResponse(data),
+            responseBody: JSON.stringify(data),
             upstreamHeaders: collectUpstreamHeaders(response.headers),
         });
     }

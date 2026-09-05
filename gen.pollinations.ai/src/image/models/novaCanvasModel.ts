@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -64,7 +64,9 @@ export async function callNovaCanvasAPI(
     const region = getImageEnv("AWS_REGION") || "us-east-1";
 
     if (!accessKeyId || !secretAccessKey) {
-        throw new HttpError("AWS credentials not configured", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "AWS credentials not configured",
+        });
     }
 
     const { width, height } = clampNovaCanvasDimensions(
@@ -146,14 +148,15 @@ export async function callNovaCanvasAPI(
 
         if (responseBody.error) {
             logError("Nova Canvas API error:", responseBody.error);
-            throw new HttpError(
-                `Nova Canvas generation failed: ${responseBody.error}`,
-                400,
-            );
+            throw UpstreamError.fromProvider(400, {
+                message: `Nova Canvas generation failed: ${responseBody.error}`,
+            });
         }
 
         if (!responseBody.images || responseBody.images.length === 0) {
-            throw new HttpError("Nova Canvas returned no images", 500);
+            throw UpstreamError.fromProvider(500, {
+                message: "Nova Canvas returned no images",
+            });
         }
 
         const imageBuffer = base64ToBuffer(responseBody.images[0]);
@@ -176,17 +179,14 @@ export async function callNovaCanvasAPI(
             },
         };
     } catch (error) {
-        if (error instanceof HttpError) throw error;
+        if (error instanceof UpstreamError) throw error;
         const message = error instanceof Error ? error.message : String(error);
         logError("Nova Canvas API call failed:", message);
         const status = getNovaCanvasErrorStatus(error);
-        throw new HttpError(
-            `Nova Canvas generation failed: ${message}`,
-            status,
-            status === 400
-                ? { validation: true, body: JSON.stringify({ message }) }
-                : { body: JSON.stringify({ message }) },
-        );
+        throw UpstreamError.fromProvider(status, {
+            message: `Nova Canvas generation failed: ${message}`,
+            responseBody: JSON.stringify({ message }),
+        });
     }
 }
 

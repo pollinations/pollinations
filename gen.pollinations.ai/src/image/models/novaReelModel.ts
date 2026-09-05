@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -55,20 +55,19 @@ function validateNovaReelRequest({
     const isMultiShot = durationSeconds > 6;
 
     if (hasImage && isMultiShot) {
-        throw new HttpError(
-            "Nova Reel reference images are only supported for 6 second videos.",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "Nova Reel reference images are only supported for 6 second videos.",
+        });
     }
 
     const promptLimit = isMultiShot
         ? MULTI_SHOT_PROMPT_LIMIT
         : SINGLE_SHOT_PROMPT_LIMIT;
     if (prompt.length > promptLimit) {
-        throw new HttpError(
-            `Nova Reel prompt too long: ${prompt.length} characters. Maximum is ${promptLimit}.`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Nova Reel prompt too long: ${prompt.length} characters. Maximum is ${promptLimit}.`,
+        });
     }
 }
 
@@ -85,10 +84,9 @@ async function normalizeReferenceImage(imageUrl: string): Promise<Buffer> {
         });
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new HttpError(
-            `Failed to process reference image: ${message}`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Failed to process reference image: ${message}`,
+        });
     }
 }
 
@@ -120,13 +118,14 @@ export async function callNovaReelAPI(
     const s3Bucket = getImageEnv("NOVA_REEL_S3_BUCKET");
 
     if (!accessKeyId || !secretAccessKey) {
-        throw new HttpError("AWS credentials not configured", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "AWS credentials not configured",
+        });
     }
     if (!s3Bucket) {
-        throw new HttpError(
-            "NOVA_REEL_S3_BUCKET environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "NOVA_REEL_S3_BUCKET environment variable is required",
+        });
     }
 
     logOps("Calling Nova Reel API:", {
@@ -160,7 +159,9 @@ export async function callNovaReelAPI(
     if (hasImage) {
         const imageUrl = Array.isArray(imageParam) ? imageParam[0] : imageParam;
         if (!imageUrl) {
-            throw new HttpError("Nova Reel reference image is missing", 400);
+            throw UpstreamError.fromProvider(400, {
+                message: "Nova Reel reference image is missing",
+            });
         }
         logOps("Adding reference image for I2V:", imageUrl);
         const buffer = await normalizeReferenceImage(imageUrl);
@@ -211,17 +212,18 @@ export async function callNovaReelAPI(
     try {
         const startResponse = await bedrockClient.send(startCommand);
         if (!startResponse.invocationArn) {
-            throw new HttpError("No invocation ARN returned", 500);
+            throw UpstreamError.fromProvider(500, {
+                message: "No invocation ARN returned",
+            });
         }
         invocationArn = startResponse.invocationArn;
         logOps("Nova Reel async invocation started:", invocationArn);
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         logError("Nova Reel StartAsyncInvoke failed:", message);
-        throw new HttpError(
-            `Nova Reel video generation failed to start: ${message}`,
-            getNovaReelInputErrorStatus(message),
-        );
+        throw UpstreamError.fromProvider(getNovaReelInputErrorStatus(message), {
+            message: `Nova Reel video generation failed to start: ${message}`,
+        });
     }
 
     // Poll for completion
@@ -246,7 +248,9 @@ export async function callNovaReelAPI(
                 const s3OutputUri =
                     pollResponse.outputDataConfig?.s3OutputDataConfig?.s3Uri;
                 if (!s3OutputUri) {
-                    throw new HttpError("No S3 output URI in response", 500);
+                    throw UpstreamError.fromProvider(500, {
+                        message: "No S3 output URI in response",
+                    });
                 }
 
                 logOps("Downloading video from S3:", s3OutputUri);
@@ -275,9 +279,11 @@ export async function callNovaReelAPI(
                 const failureMessage =
                     pollResponse.failureMessage || "Unknown error";
                 logError("Nova Reel generation failed:", failureMessage);
-                throw new HttpError(
-                    `Nova Reel video generation failed: ${failureMessage}`,
+                throw UpstreamError.fromProvider(
                     getNovaReelInputErrorStatus(failureMessage),
+                    {
+                        message: `Nova Reel video generation failed: ${failureMessage}`,
+                    },
                 );
             }
 
@@ -285,16 +291,15 @@ export async function callNovaReelAPI(
             await sleep(delayMs);
             delayMs = Math.min(delayMs * 1.1, 15000);
         } catch (error) {
-            if (error instanceof HttpError) throw error;
+            if (error instanceof UpstreamError) throw error;
             logError("Poll error:", error);
             await sleep(delayMs);
         }
     }
 
-    throw new HttpError(
-        "Nova Reel video generation timed out after 5 minutes",
-        504,
-    );
+    throw UpstreamError.fromProvider(504, {
+        message: "Nova Reel video generation timed out after 5 minutes",
+    });
 }
 
 /**
@@ -313,7 +318,9 @@ async function downloadFromS3(
     // Parse s3://bucket/key format
     const match = s3Uri.match(/^s3:\/\/([^/]+)\/(.+)$/);
     if (!match) {
-        throw new HttpError(`Invalid S3 URI: ${s3Uri}`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `Invalid S3 URI: ${s3Uri}`,
+        });
     }
 
     const bucket = match[1];
@@ -331,7 +338,9 @@ async function downloadFromS3(
     const response = await s3Client.send(getCommand);
 
     if (!response.Body) {
-        throw new HttpError("Empty S3 response body", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "Empty S3 response body",
+        });
     }
 
     // Convert stream to buffer

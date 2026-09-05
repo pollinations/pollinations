@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -38,14 +38,16 @@ async function readJson<T>(response: Response, message: string): Promise<T> {
     try {
         return (await response.json()) as T;
     } catch {
-        throw new HttpError(message, 502);
+        throw UpstreamError.fromProvider(502, { message });
     }
 }
 
 function remainingTime(deadline: number): number {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
-        throw new HttpError("Wan 3.0 generation timed out", 504);
+        throw UpstreamError.fromProvider(504, {
+            message: "Wan 3.0 generation timed out",
+        });
     }
     return remaining;
 }
@@ -55,11 +57,16 @@ export async function callWan3FalAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const apiKey = getImageEnv("FAL_KEY");
-    if (!apiKey) throw new HttpError("Wan 3.0 is not configured", 500);
+    if (!apiKey)
+        throw UpstreamError.fromProvider(500, {
+            message: "Wan 3.0 is not configured",
+        });
 
     const duration = safeParams.duration ?? WAN_3_DURATION_SECONDS;
     if (duration !== WAN_3_DURATION_SECONDS) {
-        throw new HttpError("Wan 3.0 supports exactly 5 seconds", 400);
+        throw UpstreamError.fromProvider(400, {
+            message: "Wan 3.0 supports exactly 5 seconds",
+        });
     }
 
     const images = safeParams.image ?? [];
@@ -70,10 +77,10 @@ export async function callWan3FalAPI(
         (safeParams.reference_audios?.length ?? 0) > 0;
 
     if (hasFrames && hasReference) {
-        throw new HttpError(
-            "Frame inputs (image[]) and reference media (reference_images, reference_videos, reference_audios) cannot be combined.",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "Frame inputs (image[]) and reference media (reference_images, reference_videos, reference_audios) cannot be combined.",
+        });
     }
 
     const resolution = safeParams.resolution ?? "480p";
@@ -129,7 +136,9 @@ export async function callWan3FalAPI(
         "Wan 3.0 returned an invalid submission",
     );
     if (!submission.status_url || !submission.response_url) {
-        throw new HttpError("Wan 3.0 returned an invalid submission", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Wan 3.0 returned an invalid submission",
+        });
     }
 
     while (true) {
@@ -144,13 +153,14 @@ export async function callWan3FalAPI(
         );
         if (status.status === "COMPLETED") break;
         if (status.status === "FAILED") {
-            throw new HttpError(
-                status.error || "Wan 3.0 generation failed",
-                502,
-            );
+            throw UpstreamError.fromProvider(502, {
+                message: status.error || "Wan 3.0 generation failed",
+            });
         }
         if (status.status !== "IN_QUEUE" && status.status !== "IN_PROGRESS") {
-            throw new HttpError("Wan 3.0 returned an invalid status", 502);
+            throw UpstreamError.fromProvider(502, {
+                message: "Wan 3.0 returned an invalid status",
+            });
         }
         await sleep(Math.min(WAN_3_POLL_INTERVAL_MS, remainingTime(deadline)));
     }
@@ -165,7 +175,9 @@ export async function callWan3FalAPI(
         "Wan 3.0 returned an invalid result",
     );
     if (!result.video?.url) {
-        throw new HttpError("Wan 3.0 returned no video", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Wan 3.0 returned no video",
+        });
     }
 
     const videoResponse = await fetchUpstream(result.video.url, {

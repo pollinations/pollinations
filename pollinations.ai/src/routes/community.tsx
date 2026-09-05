@@ -207,10 +207,7 @@ function CommunityParticipation() {
                       },
                   ],
         },
-        {
-            ...WAYS_IN[3],
-            metrics: [{ value: "19K", label: "Discord users" }],
-        },
+        { ...WAYS_IN[3], metrics: [] },
     ];
 
     return (

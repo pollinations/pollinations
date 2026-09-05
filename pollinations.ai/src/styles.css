@@ -190,13 +190,46 @@
     display: none;
 }
 
-.polli-playground-modality-button {
-    background-color: var(--playground-mode-background);
+@keyframes apps-spotlight-slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(1.25rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
-.polli-playground-modality-button:not([aria-pressed="true"]):hover {
-    background-color: var(--playground-mode-hover);
-    color: var(--playground-mode-hover-text) !important;
+@keyframes apps-spotlight-slide-in-back {
+    from {
+        opacity: 0;
+        transform: translateX(-1.25rem);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.apps-spotlight-slide {
+    animation: apps-spotlight-slide-in 420ms ease-out both;
+}
+
+.apps-spotlight-slide-back {
+    animation-name: apps-spotlight-slide-in-back;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .apps-spotlight-slide {
+        animation: none;
+    }
+}
+
+.playground-top-scene {
+    mask-image: linear-gradient(to bottom, black 0%, black 30%, transparent 100%);
 }
 
 .play-routing-value[data-customized="false"] {
@@ -322,14 +355,9 @@ main > * {
     mask-image: linear-gradient(to bottom, transparent 0%, black 34%);
 }
 
-/* Feature-card scenes are full-bleed backgrounds. Mirroring the hero's
-   two-axis dissolve keeps the upper-left copy area quiet while the artwork
-   resolves naturally into the lower-right corner. */
-.tool-card-scene {
-    mask-image:
-        linear-gradient(to right, transparent 8%, black 62%),
-        linear-gradient(to bottom, transparent 18%, black 62%);
-    mask-composite: intersect;
+/* Blend into the copy above; keep the landscape intact at both sides and below. */
+.first-call-scene {
+    mask-image: linear-gradient(to bottom, transparent, black 30%);
 }
 
 /* ── /play ─────────────────────────────────────────────────────────────

@@ -130,8 +130,6 @@ export function mediaHeaders(
 }
 
 export function throw3dError(error: unknown): never {
-    if (error instanceof UpstreamError) throw error;
-
     if (error instanceof HttpError) {
         throw new UpstreamError(remapUpstreamStatus(error.status), {
             message: error.message,
@@ -142,6 +140,8 @@ export function throw3dError(error: unknown): never {
             cause: error,
         });
     }
+    if (error instanceof UpstreamError) throw error;
+
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "3D model generation failed",

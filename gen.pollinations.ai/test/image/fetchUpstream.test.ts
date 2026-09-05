@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 import { HttpError } from "@shared/http-error.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchUpstream } from "../../src/image/utils/fetchUpstream.ts";
@@ -45,6 +46,7 @@ describe("fetchUpstream", () => {
             errorLabel: "Foo failed",
         }).catch((e) => e);
         expect(error).toBeInstanceOf(HttpError);
+        expect(error).toBeInstanceOf(UpstreamError);
         expect(error).toMatchObject({
             name: "HttpError",
             status: 502,

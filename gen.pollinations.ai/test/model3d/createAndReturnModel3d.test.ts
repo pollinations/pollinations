@@ -1,4 +1,6 @@
 import { createExecutionContext, env } from "cloudflare:test";
+import { UpstreamError } from "@shared/error.ts";
+import { HttpError } from "@shared/http-error.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
@@ -7,6 +9,7 @@ import worker from "../../src/index.ts";
 import { resetGenerationModelRegistryCache } from "../../src/model-registry.ts";
 import { createAndReturnModel3d } from "../../src/model3d/createAndReturnModel3d.ts";
 import { syncModel3dEnvironment } from "../../src/model3d/env.ts";
+import { throw3dError } from "../../src/model3d/handler.ts";
 import type { Model3dParams } from "../../src/model3d/params.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
@@ -67,6 +70,25 @@ describe("createAndReturnModel3d dispatch", () => {
                 baseParams("not-a-real-model") as Model3dParams,
             ),
         ).rejects.toThrow(/not supported/);
+    });
+});
+
+describe("3D error compatibility", () => {
+    it("remaps a legacy HttpError before passing through UpstreamError", () => {
+        const error = (() => {
+            try {
+                throw3dError(new HttpError("provider rate limited", 429));
+            } catch (caught) {
+                return caught;
+            }
+        })();
+
+        expect(error).toBeInstanceOf(UpstreamError);
+        expect(error).toMatchObject({
+            name: "UpstreamError",
+            status: 502,
+            upstreamStatus: 429,
+        });
     });
 });
 

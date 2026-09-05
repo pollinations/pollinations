@@ -1,37 +1,46 @@
+import type { ContentfulStatusCode } from "hono/utils/http-status";
+import { UpstreamError } from "./error.ts";
+
+function safeUrl(value?: string): URL | undefined {
+    if (!value) return undefined;
+    try {
+        return new URL(value);
+    } catch {
+        return undefined;
+    }
+}
+
 /**
- * Custom HTTP error class with status code.
+ * @deprecated Use UpstreamError for new code.
  *
- * Adds a status code and optional details/upstream URL to Error for passing
- * HTTP status codes through the error chain. `upstreamUrl` is the URL of the
- * upstream backend that produced the error (e.g. a provider enqueue endpoint),
- * threaded through to UpstreamError.requestUrl in the error envelope so
- * `upstreamHost` reflects the actual backend rather than the gen.pollinations.ai
- * request URL. Callers must not pass URLs that include credentials in query
- * strings; this codebase auths via headers, not query strings.
- *
- * `errorCode` is an optional stable, machine-readable code (mirrors
- * `UpstreamError.errorCode`) that the error funnels propagate into the response
- * envelope so callers can branch on a code instead of matching message prose.
+ * Preserves the legacy image/3D constructor and fields while making existing
+ * errors visible to the shared UpstreamError handler.
  */
-export class HttpError extends Error {
-    status: number;
+export class HttpError extends UpstreamError {
+    public override name = "HttpError";
+    // biome-ignore lint/suspicious/noExplicitAny: legacy callers attach provider-specific response shapes
     details?: any;
     upstreamUrl?: string;
-    errorCode?: string;
 
     constructor(
         message: string,
         status: number = 500,
+        // biome-ignore lint/suspicious/noExplicitAny: preserve the legacy constructor while callers migrate
         details?: any,
         upstreamUrl?: string,
         errorCode?: string,
     ) {
-        super(message);
-        this.name = "HttpError";
-        this.status = status;
+        const responseBody =
+            typeof details?.body === "string" ? details.body : undefined;
+        super(status as ContentfulStatusCode, {
+            message,
+            requestUrl: safeUrl(upstreamUrl),
+            upstreamStatus: status,
+            responseBody,
+            errorCode,
+        });
         this.details = details;
         this.upstreamUrl = upstreamUrl;
-        this.errorCode = errorCode;
 
         // Maintains proper stack trace for where our error was thrown (only available on V8)
         Error.captureStackTrace(this, HttpError);

@@ -21,7 +21,7 @@
     },
     "devDependencies": {
         "@cloudflare/vite-plugin": "^1.33.2",
-        "@cloudflare/vitest-pool-workers": "^0.10.15",
+        "@cloudflare/vitest-pool-workers": "^0.12.21",
         "@cloudflare/workers-types": "^4.20251202.0",
         "@hono/node-server": "^1.19.14",
         "@scalar/openapi-to-markdown": "0.3.23",

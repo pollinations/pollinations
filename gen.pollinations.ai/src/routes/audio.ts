@@ -60,7 +60,7 @@ import {
     UNDIARIZED_TRANSCRIPTION_RESPONSE_FORMATS,
 } from "./transcription-response.ts";
 
-const CreateSpeechRequestSchema = z
+export const CreateSpeechRequestSchema = z
     .object({
         model: z.string().optional(),
         input: z.string().min(1).max(10000).meta({

@@ -6,12 +6,13 @@ import type {
     GenerationRequestSnapshot,
 } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
+import { createAnonymousX402Routes } from "../routes/x402.ts";
 
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
 const BODY_CHUNK_BYTES = 1_000_000;
 const PAYMENT_OPERATION_KEY = "payment-operation";
-const PAYMENT_BODY_PREFIX = "payment-body:";
+const PAYMENT_REQUEST_KEY = "payment-request";
 
 export type PaymentResponseSnapshot = {
     status: number;
@@ -45,7 +46,7 @@ type PaymentOperation = {
     state: "running" | "generated" | "final";
     claimId?: string;
     leaseUntil?: number;
-    response?: Omit<PaymentResponseSnapshot, "body"> & { bodyChunks: number };
+    response?: Omit<PaymentResponseSnapshot, "body"> & { bodyKey: string };
     expiresAt?: number;
 };
 
@@ -71,6 +72,10 @@ type PersistedJob = Omit<GenerationJob, "request"> & {
     bodyChunks: number;
     started: boolean;
 };
+type PersistedPaymentRequest = Pick<
+    PersistedJob,
+    "request" | "bodyChunks" | "started"
+>;
 
 function bodyChunkKeys(count: number): string[] {
     return Array.from(
@@ -101,6 +106,86 @@ function unavailable(message: string): GenerationOutcome {
 
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
+    private readonly paymentWaiters = new Set<
+        (response: PaymentResponseSnapshot) => void
+    >();
+
+    /** The alarm, not the client connection, owns generation and settlement. */
+    async startPaymentRequestAndWait(
+        request: GenerationRequestSnapshot,
+    ): Promise<PaymentResponseSnapshot> {
+        let wait: Promise<PaymentResponseSnapshot> | undefined;
+        await this.ctx.blockConcurrencyWhile(async () => {
+            if (!(await this.ctx.storage.get(PAYMENT_REQUEST_KEY))) {
+                const stored = await this.persistRequest(request);
+                await this.ctx.storage.put(PAYMENT_REQUEST_KEY, {
+                    ...stored,
+                    started: false,
+                });
+                await this.ctx.storage.setAlarm(Date.now());
+            }
+            wait = new Promise((resolve) => this.paymentWaiters.add(resolve));
+        });
+        if (!wait) throw new Error("Payment waiter was not registered");
+        return wait;
+    }
+
+    private async executePaymentRequest(
+        stored: PersistedPaymentRequest,
+    ): Promise<void> {
+        let response = new Response(
+            "Detached payment execution was interrupted; retry with the same Idempotency-Key and payment.",
+            { status: 503 },
+        );
+        try {
+            if (!stored.started) {
+                await this.ctx.storage.put(PAYMENT_REQUEST_KEY, {
+                    ...stored,
+                    started: true,
+                });
+                const request = await this.restoreRequest(stored);
+                const pending: Promise<unknown>[] = [];
+                response = await createAnonymousX402Routes(
+                    this.env,
+                    true,
+                ).fetch(
+                    new Request(request.url, {
+                        method: request.method,
+                        headers: request.headers,
+                        body: request.body?.slice().buffer,
+                    }),
+                    this.env,
+                    {
+                        waitUntil: (promise: Promise<unknown>) => {
+                            pending.push(promise);
+                        },
+                        passThroughOnException: () => {},
+                        props: {},
+                    } as ExecutionContext,
+                );
+                await Promise.allSettled(pending);
+            }
+        } catch {
+            response = new Response(
+                "Detached payment execution failed; retry with the same Idempotency-Key and payment.",
+                { status: 503 },
+            );
+        }
+        const result: PaymentResponseSnapshot = {
+            status: response.status,
+            statusText: response.statusText,
+            headers: [...response.headers.entries()],
+            body: new Uint8Array(await response.arrayBuffer()),
+        };
+        await this.ctx.blockConcurrencyWhile(async () => {
+            await this.ctx.storage.delete([
+                PAYMENT_REQUEST_KEY,
+                ...bodyChunkKeys(stored.bodyChunks),
+            ]);
+            for (const resolve of this.paymentWaiters) resolve(result);
+            this.paymentWaiters.clear();
+        });
+    }
 
     async getFinalPaymentOperation(
         fingerprint: string,
@@ -299,60 +384,31 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         response: PaymentResponseSnapshot,
         operation: Omit<PaymentOperation, "response">,
     ): Promise<void> {
-        const chunks: Uint8Array[] = [];
-        for (let offset = 0; offset < response.body.byteLength; ) {
-            const end = Math.min(
-                offset + BODY_CHUNK_BYTES,
-                response.body.byteLength,
-            );
-            chunks.push(response.body.slice(offset, end));
-            offset = end;
-        }
-        const entries: Record<string, unknown> = {};
-        for (const [index, chunk] of chunks.entries()) {
-            entries[`${PAYMENT_BODY_PREFIX}${index}`] = chunk;
-        }
-        entries[PAYMENT_OPERATION_KEY] = {
+        const bodyKey = `x402/${this.ctx.id.toString()}/response`;
+        await this.env.IMAGE_BUCKET.put(bodyKey, response.body);
+        await this.ctx.storage.put(PAYMENT_OPERATION_KEY, {
             ...operation,
             response: {
                 status: response.status,
                 statusText: response.statusText,
                 headers: response.headers,
-                bodyChunks: chunks.length,
+                bodyKey,
             },
-        } satisfies PaymentOperation;
-        await this.ctx.storage.put(entries);
+        } satisfies PaymentOperation);
     }
 
     private async restorePaymentResponse(
         response: NonNullable<PaymentOperation["response"]>,
     ): Promise<PaymentResponseSnapshot> {
-        const keys = Array.from(
-            { length: response.bodyChunks },
-            (_, index) => `${PAYMENT_BODY_PREFIX}${index}`,
-        );
-        const stored = await this.ctx.storage.get<Uint8Array>(keys);
-        const chunks = keys.map((key) => stored.get(key));
-        if (chunks.some((chunk) => chunk === undefined)) {
+        const object = await this.env.IMAGE_BUCKET.get(response.bodyKey);
+        if (!object) {
             throw new Error("Persisted payment response is incomplete");
-        }
-        const size = chunks.reduce(
-            (total, chunk) => total + (chunk?.byteLength ?? 0),
-            0,
-        );
-        const body = new Uint8Array(size);
-        let offset = 0;
-        for (const chunk of chunks) {
-            if (!chunk)
-                throw new Error("Persisted payment response is incomplete");
-            body.set(chunk, offset);
-            offset += chunk.byteLength;
         }
         return {
             status: response.status,
             statusText: response.statusText,
             headers: response.headers,
-            body,
+            body: new Uint8Array(await object.arrayBuffer()),
         };
     }
 
@@ -387,6 +443,14 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     }
 
     async alarm(): Promise<void> {
+        const paymentRequest =
+            await this.ctx.storage.get<PersistedPaymentRequest>(
+                PAYMENT_REQUEST_KEY,
+            );
+        if (paymentRequest) {
+            await this.executePaymentRequest(paymentRequest);
+            return;
+        }
         const payment = await this.ctx.storage.get<PaymentOperation>(
             PAYMENT_OPERATION_KEY,
         );
@@ -396,13 +460,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 return;
             }
             await this.ctx.storage.deleteAlarm();
-            await this.ctx.storage.delete([
-                PAYMENT_OPERATION_KEY,
-                ...Array.from(
-                    { length: payment.response?.bodyChunks ?? 0 },
-                    (_, index) => `${PAYMENT_BODY_PREFIX}${index}`,
-                ),
-            ]);
+            if (payment.response?.bodyKey)
+                await this.env.IMAGE_BUCKET.delete(payment.response.bodyKey);
+            // Payment operations occupy their own named coordinator. This
+            // also clears expired chunks from the earlier staging prototype.
+            await this.ctx.storage.deleteAll();
             return;
         }
 
@@ -466,8 +528,10 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         }
     }
 
-    private async persist(job: GenerationJob): Promise<void> {
-        const body = job.request.body;
+    private async persistRequest(
+        snapshot: GenerationRequestSnapshot,
+    ): Promise<Omit<PersistedPaymentRequest, "started">> {
+        const body = snapshot.body;
         const chunks: Uint8Array[] = [];
         if (body !== undefined) {
             const bytes = body;
@@ -481,26 +545,28 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
         }
 
-        const { body: _body, ...request } = job.request;
-        const stored: PersistedJob = {
-            cache: job.cache,
-            auth: job.auth,
-            requestId: job.requestId,
-            balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
-            request,
-            bodyChunks: chunks.length,
-            started: false,
-        };
-        const entries: Record<string, unknown> = { [JOB_KEY]: stored };
+        const { body: _body, ...request } = snapshot;
+        const entries: Record<string, unknown> = {};
         for (const [index, chunk] of chunks.entries()) {
             entries[`${BODY_KEY_PREFIX}${index}`] = chunk;
         }
         await this.ctx.storage.put(entries);
+        return { request, bodyChunks: chunks.length };
+    }
+
+    private async persist(job: GenerationJob): Promise<void> {
+        const stored: PersistedJob = {
+            ...job,
+            ...(await this.persistRequest(job.request)),
+            started: false,
+        };
+        await this.ctx.storage.put(JOB_KEY, stored);
         await this.ctx.storage.setAlarm(Date.now());
     }
 
-    private async restore(job: PersistedJob): Promise<GenerationJob> {
+    private async restoreRequest(
+        job: PersistedPaymentRequest,
+    ): Promise<GenerationRequestSnapshot> {
         let body: Uint8Array | undefined;
         if (job.bodyChunks > 0) {
             const keys = bodyChunkKeys(job.bodyChunks);
@@ -526,14 +592,11 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
             body = bytes;
         }
-        return {
-            cache: job.cache,
-            auth: job.auth,
-            requestId: job.requestId,
-            balanceCheckResult: job.balanceCheckResult,
-            apiKeyBudgetEstimate: job.apiKeyBudgetEstimate,
-            request: { ...job.request, ...(body !== undefined && { body }) },
-        };
+        return { ...job.request, ...(body !== undefined && { body }) };
+    }
+
+    private async restore(job: PersistedJob): Promise<GenerationJob> {
+        return { ...job, request: await this.restoreRequest(job) };
     }
 
     private async finish(

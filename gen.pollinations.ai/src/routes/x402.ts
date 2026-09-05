@@ -1,6 +1,7 @@
-/** Anonymous x402 fallback for the existing OpenAI chat-completions route. */
+/** Anonymous x402 payment rail for bounded generation requests. */
 
 import { handleError } from "@shared/error.ts";
+import { requestId } from "@shared/middleware/request-id.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
     calculatePriceForModelDefinition,
@@ -15,7 +16,9 @@ import {
 import {
     type CreateChatCompletionRequest,
     CreateChatCompletionRequestSchema,
+    CreateImageRequestSchema,
 } from "@shared/schemas/openai.ts";
+import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import {
     type PaymentResumeCandidate,
     WEFT_REQUEST_EXTENSION_KEY,
@@ -24,7 +27,6 @@ import {
 } from "@weft-labs/sdk/facilitator/middleware";
 import {
     decodePaymentSignatureHeader,
-    type HTTPRequestContext,
     SETTLEMENT_OVERRIDES_HEADER,
 } from "@x402/core/http";
 import { validatePaymentPayload } from "@x402/core/schemas";
@@ -35,16 +37,28 @@ import stableStringify from "fast-json-stable-stringify";
 import { type Context, Hono, type MiddlewareHandler } from "hono";
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
 import type { Env } from "@/env.ts";
+import { prepareGenerationRequest } from "@/middleware/generation-cache.ts";
+import { logger } from "@/middleware/logger.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { track } from "@/middleware/track.ts";
+import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import type { PaymentResponseSnapshot } from "../durable-objects/GenerationCoordinator.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
+import { CreateSpeechRequestSchema, handleSpeech } from "./audio.ts";
 import {
     generateChatCompletion,
+    generateImageVideo,
+    generateTextContent,
     textBodyLimit,
 } from "./generation-handlers.ts";
+import {
+    formatOpenAIImageGeneration,
+    handleImageGeneration,
+    prepareOpenAIImageGeneration,
+} from "./images.ts";
 
 const ROUTE = "/v1/chat/completions";
 const DEFAULT_FACILITATOR_URL = "https://x402.weft.network";
@@ -53,17 +67,45 @@ const MIN_CHARGE_USD = 0.001;
 const MAX_X402_OUTPUT_TOKENS = 4096;
 const MAX_STORED_RESPONSE_BYTES = 20 * 1024 * 1024;
 const FINAL_RESPONSE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
-// Exceeds the public 300-second generation lifetime. A crashed owner cannot be
-// replaced while provider work may still be running.
-const OPERATION_LEASE_MS = 6 * 60 * 1000;
+// An alarm can run for 15 minutes. Never replace its owner while the previous
+// invocation could still be generating or settling.
+const OPERATION_LEASE_MS = 16 * 60 * 1000;
 const AnonymousX402RequestSchema = CreateChatCompletionRequestSchema.strict();
+export type X402Request = {
+    method: string;
+    path: string;
+    headers: Record<string, string>;
+    body: Record<string, unknown>;
+};
+
+export type X402Quote = {
+    model: string;
+    maximum: number;
+    usage: Usage;
+};
 const X402_USAGE_TYPES = new Set<keyof Usage>([
     "promptTextTokens",
     "promptCachedTokens",
     "completionTextTokens",
 ]);
+// completionAudioTokens means characters/UTF-8 bytes for these handlers,
+// but means a whole generation or output tokens for other audio models.
+const CHARACTER_BILLED_SPEECH = new Set([
+    "elevenlabs",
+    "elevenflash",
+    "eleven-multilingual-v2",
+    "eleven-dialogue",
+    "grok-tts",
+    "fish-audio-s2.1-pro",
+    "qwen-tts",
+    "qwen-tts-instruct",
+    "csm-1b",
+    "kokoro",
+]);
 
 function normalizedUsd(amount: number): number {
+    if (!Number.isFinite(amount) || amount < 0)
+        throw new Error("Invalid x402 price");
     return Math.max(
         MIN_CHARGE_USD,
         Math.ceil((amount - Number.EPSILON) * 1_000_000) / 1_000_000,
@@ -111,42 +153,120 @@ function supportsX402Rates(definition: ModelDefinition): boolean {
 async function modelEntry(env: CloudflareBindings, model: string) {
     const registry = await getGenerationModelRegistry(env);
     const entry = registry.resolve(model);
-    if (!entry || entry.eventType !== "generate.text") {
+    if (!entry) {
         throw new HTTPException(400, {
-            message: `Invalid text model: "${model}"`,
+            message: `Invalid model: "${model}"`,
         });
     }
     return entry;
 }
 
-async function maximumPrice(
+export async function quoteX402Request(
     env: CloudflareBindings,
-    body: CreateChatCompletionRequest,
-): Promise<number> {
-    const entry = await modelEntry(env, body.model);
-    return normalizedUsd(
+    request: X402Request,
+): Promise<X402Quote> {
+    const entry = await modelEntry(env, request.body.model as string);
+    const { definition } = entry;
+    const unsupported = () => {
+        throw new HTTPException(400, {
+            message:
+                "This request has no supported x402 spending ceiling; use a Pollinations API key.",
+        });
+    };
+    if (
+        entry.communityEndpoint ||
+        definition.search ||
+        definition.billing?.adjustments?.length
+    )
+        unsupported();
+    let usage: Usage;
+    if (entry.eventType === "generate.text") {
+        const body = AnonymousX402RequestSchema.parse(request.body);
+        validateChatShape(body);
+        if (!supportsX402Rates(definition)) unsupported();
+        usage = conservativeUsage(body);
+    } else {
+        // A usage bucket alone does not specify its unit. Only these existing
+        // contracts are bounded here: one image and character-billed speech.
+        // Variant-priced and duration/token-priced media need their own bounds.
+        if (definition.costVariants || definition.selectCostVariant)
+            unsupported();
+        if (definition.category === "image") {
+            if (request.body.response_format === "url") {
+                throw new HTTPException(400, {
+                    message:
+                        "x402 images require response_format: b64_json; a public URL would require a separate request.",
+                });
+            }
+            usage = { completionImageTokens: 1 };
+        } else if (
+            entry.eventType === "generate.audio" &&
+            definition.outputModalities?.includes("audio") &&
+            CHARACTER_BILLED_SPEECH.has(entry.id)
+        ) {
+            const body = CreateSpeechRequestSchema.strict().parse(request.body);
+            if (
+                body.reference_audio ||
+                body.composition_plan ||
+                body.conditioning_ref
+            )
+                unsupported();
+            usage = {
+                completionAudioTokens: new TextEncoder().encode(body.input)
+                    .length,
+            };
+        } else {
+            return unsupported();
+        }
+        const rates = Object.entries(definition.cost).filter(
+            ([, rate]) => (rate ?? 0) > 0,
+        );
+        if (!rates.length || rates.some(([unit]) => !(unit in usage)))
+            unsupported();
+    }
+    const maximumCost = { ...definition.cost };
+    for (const variant of Object.values(definition.costVariants ?? {})) {
+        for (const [unit, rate] of Object.entries(variant)) {
+            const usageType = unit as keyof Usage;
+            maximumCost[usageType] = Math.max(
+                maximumCost[usageType] ?? 0,
+                rate ?? 0,
+            );
+        }
+    }
+    const maximum = normalizedUsd(
         calculatePriceForModelDefinition(
             entry.id,
-            conservativeUsage(body),
-            entry.definition,
+            usage,
+            {
+                ...definition,
+                cost: maximumCost,
+                costVariants: undefined,
+                selectCostVariant: undefined,
+            },
             undefined,
             undefined,
         ).totalPrice,
     );
+    return { model: entry.id, maximum, usage };
 }
 
-function parseUsage(headers: Headers): Usage {
+function parseUsage(headers: Headers, quote: X402Quote): Usage {
     if (headers.get(USAGE_MISSING_HEADER) === "true") {
         throw new Error("Model usage headers are missing");
     }
     if (
+        quote.usage.promptTextTokens !== undefined &&
         !headers.has(USAGE_TYPE_HEADERS.promptTextTokens) &&
         !headers.has(USAGE_TYPE_HEADERS.promptCachedTokens)
     ) {
         throw new Error("Missing prompt usage header");
     }
-    if (!headers.has(USAGE_TYPE_HEADERS.completionTextTokens)) {
-        throw new Error("Missing completion usage header");
+    for (const unit of Object.keys(quote.usage) as (keyof Usage)[]) {
+        if (unit === "promptTextTokens") continue;
+        if (!headers.has(USAGE_TYPE_HEADERS[unit])) {
+            throw new Error(`Missing ${unit} usage header`);
+        }
     }
 
     const usage: Usage = {};
@@ -167,7 +287,7 @@ function parseUsage(headers: Headers): Usage {
 
 export async function priceActualUsage(
     env: CloudflareBindings,
-    body: CreateChatCompletionRequest,
+    quote: X402Quote,
     headers: Headers,
 ): Promise<number> {
     const usedModel = headers.get(MODEL_USED_HEADER);
@@ -177,53 +297,41 @@ export async function priceActualUsage(
     // Pollen prices fallbacks against the requested listing. Keep that same
     // quoted-model contract here; the served-model header is still required as
     // evidence that generation produced metered usage.
-    const quoted = await modelEntry(env, body.model);
-    if (!supportsX402Rates(quoted.definition)) {
-        throw new Error("Model uses unsupported x402 billing buckets");
-    }
+    const quoted = await modelEntry(env, quote.model);
     const actual = normalizedUsd(
         calculatePriceForModelDefinition(
             quoted.id,
-            parseUsage(headers),
+            parseUsage(headers, quote),
             quoted.definition,
             undefined,
             undefined,
         ).totalPrice,
     );
-    if (actual > (await maximumPrice(env, body))) {
+    if (actual > quote.maximum) {
         throw new Error("Actual usage exceeds the authorized maximum");
     }
     return actual;
 }
 
-const validateAnonymousShape = createMiddleware<Env>(async (c, next) => {
-    const body = c.req.valid("json" as never) as CreateChatCompletionRequest;
+function validateChatShape(body: CreateChatCompletionRequest) {
+    const reject = (message: string): never => {
+        throw new HTTPException(400, { message });
+    };
     if (!Number.isSafeInteger(body.max_tokens) || (body.max_tokens ?? 0) <= 0) {
-        return c.json(
-            { error: "x402 requires a positive max_tokens cap" },
-            400,
-        );
+        reject("x402 requires a positive max_tokens cap");
     }
     if ((body.max_tokens ?? 0) > MAX_X402_OUTPUT_TOKENS) {
-        return c.json(
-            {
-                error: `x402 max_tokens cannot exceed ${MAX_X402_OUTPUT_TOKENS}`,
-            },
-            400,
-        );
+        reject(`x402 max_tokens cannot exceed ${MAX_X402_OUTPUT_TOKENS}`);
     }
     if (body.stream) {
-        return c.json({ error: "Streaming is not supported with x402" }, 400);
+        reject("Streaming is not supported with x402");
     }
     if (
         body.messages.some(
             (message) => !message || Array.isArray(message.content),
         )
     ) {
-        return c.json(
-            { error: "Multimodal input is not supported with x402" },
-            400,
-        );
+        reject("Multimodal input is not supported with x402");
     }
     if (
         body.web_search_options ||
@@ -231,28 +339,11 @@ const validateAnonymousShape = createMiddleware<Env>(async (c, next) => {
         body.audio ||
         body.reasoning_effort
     ) {
-        return c.json(
-            {
-                error: "Search, audio, and explicit reasoning are not supported with x402",
-            },
-            400,
+        reject(
+            "Search, audio, and explicit reasoning are not supported with x402",
         );
     }
-    const entry = await modelEntry(c.env, body.model);
-    if (
-        entry.definition.search ||
-        entry.definition.billing?.adjustments?.length ||
-        !supportsX402Rates(entry.definition)
-    ) {
-        return c.json(
-            {
-                error: "Models with unsupported billing buckets are not supported with x402",
-            },
-            400,
-        );
-    }
-    await next();
-});
+}
 
 function paymentFromHeader(value: string): PaymentPayload {
     let payment: PaymentPayload;
@@ -341,7 +432,7 @@ async function paymentDetailsFromPayload(payment: PaymentPayload) {
 async function operationContextFor(
     env: CloudflareBindings,
     keyValue: string | undefined,
-    body: CreateChatCompletionRequest,
+    request: X402Request,
     payer: string,
 ) {
     const key = keyValue?.trim();
@@ -355,8 +446,8 @@ async function operationContextFor(
             message: "Payment operation coordination is unavailable",
         });
     }
-    const fingerprint = await sha256(stableStringify(body));
-    const operationName = await sha256(`${ROUTE}|${payer}|${key}`);
+    const fingerprint = await sha256(stableStringify(request));
+    const operationName = await sha256(`${payer}|${key}`);
     return {
         fingerprint,
         stub: env.GENERATION_COORDINATOR.getByName(
@@ -365,11 +456,36 @@ async function operationContextFor(
     };
 }
 
+export function describeX402Request(c: Context<Env>): X402Request {
+    const url = new URL(c.req.url);
+    url.searchParams.sort();
+    const body =
+        c.req.method === "GET"
+            ? c.req.valid("query" as never)
+            : c.req.valid("json" as never);
+    return {
+        method: c.req.method,
+        path: url.pathname + url.search,
+        headers:
+            c.req.header(SAFETY_HEADER_NAME) === undefined
+                ? {}
+                : {
+                      [SAFETY_HEADER_NAME]: c.req.header(
+                          SAFETY_HEADER_NAME,
+                      ) as string,
+                  },
+        body: {
+            ...(body as Record<string, unknown>),
+            ...(c.var.model && { model: c.var.model.resolved }),
+        },
+    };
+}
+
 async function operationContext(c: Context<Env>, payer: string) {
     return operationContextFor(
         c.env,
         c.req.header("idempotency-key"),
-        c.req.valid("json" as never) as CreateChatCompletionRequest,
+        describeX402Request(c),
         payer,
     );
 }
@@ -377,15 +493,14 @@ async function operationContext(c: Context<Env>, payer: string) {
 export async function resumeX402Operation(
     env: CloudflareBindings,
     key: string,
-    body: unknown,
+    request: X402Request,
     candidate: PaymentResumeCandidate,
 ) {
-    const validated = AnonymousX402RequestSchema.parse(body);
     const payment = await paymentDetailsFromPayload(candidate.paymentPayload);
     const { fingerprint, stub } = await operationContextFor(
         env,
         key,
-        validated,
+        request,
         payment.payer,
     );
     const operation = await stub.getGeneratedPaymentOperation(
@@ -397,15 +512,18 @@ export async function resumeX402Operation(
     return {
         paymentPayload: candidate.paymentPayload,
         paymentRequirements: candidate.paymentRequirements,
-        declaredExtensions: requestDeclaration(validated),
+        declaredExtensions: requestDeclaration(request.body),
     };
 }
 
-function requestInfo(body: CreateChatCompletionRequest) {
-    return { model: body.model, max_tokens: body.max_tokens };
+function requestInfo(body: Record<string, unknown>) {
+    return {
+        model: body.model,
+        ...(body.max_tokens !== undefined && { max_tokens: body.max_tokens }),
+    };
 }
 
-function requestDeclaration(body: CreateChatCompletionRequest) {
+function requestDeclaration(body: Record<string, unknown>) {
     return {
         [WEFT_REQUEST_EXTENSION_KEY]: {
             info: requestInfo(body),
@@ -522,10 +640,11 @@ export const runX402Operation = createMiddleware<Env>(async (c, next) => {
         return restoredResponse(start.response);
     }
 
-    // The provider call still runs in this Worker request, not inside the DO.
-    // A Worker crash can leave upstream work running; after the lease exceeds
-    // the public generation lifetime, a retry may repeat that rare operation.
-    // This is durable resume, not a claim of strict at-most-once execution.
+    if (c.var.auth) c.var.auth.paymentPayer = payment.payer;
+
+    // Production requests run this inside a coordinator alarm. After an alarm
+    // crash the lease prevents an overlapping provider call; it does not claim
+    // strict at-most-once execution across a crash before the result is saved.
     await next();
     if (!c.res.ok) return;
     const body = new Uint8Array(await c.res.clone().arrayBuffer());
@@ -570,7 +689,10 @@ function anonymousAuth(): MiddlewareHandler<Env> {
     };
 }
 
-export function createAnonymousX402Routes(env: CloudflareBindings) {
+export function createAnonymousX402Routes(
+    env: CloudflareBindings,
+    detached = false,
+) {
     const app = new Hono<Env>();
     app.onError(handleError);
     const payTo = env.WEFT_PAY_TO;
@@ -587,43 +709,28 @@ export function createAnonymousX402Routes(env: CloudflareBindings) {
         routes: Parameters<typeof weftPaymentMiddlewareHono>[0],
         config: Parameters<typeof weftPaymentMiddlewareHono>[1],
     ) => MiddlewareHandler<Env>;
-    const validatedBody = async (context: HTTPRequestContext) =>
-        AnonymousX402RequestSchema.parse(await context.adapter.getBody?.());
-
-    app.use(ROUTE, edgeRateLimit);
-    app.use(ROUTE, textBodyLimit);
-    app.use(ROUTE, validator("json", AnonymousX402RequestSchema));
-    app.use(ROUTE, anonymousAuth());
-    app.use(ROUTE, resolveModel("generate.text"));
-    app.use(ROUTE, validateAnonymousShape);
-    app.use(ROUTE, requireX402Idempotency);
-    app.use(ROUTE, finalX402Operation);
-    app.use(
-        ROUTE,
-        paymentMiddleware(
+    // Capture the validated request once. The payment rail does not need to
+    // know whether the handler returns chat JSON, image bytes, or audio bytes.
+    const pay = createMiddleware<Env>(async (c, next) => {
+        const request = describeX402Request(c);
+        const quote = await quoteX402Request(c.env, request);
+        return paymentMiddleware(
             {
-                [`POST ${ROUTE}`]: {
+                [`${request.method} *`]: {
                     accepts: [
                         {
                             scheme: "upto",
                             network,
                             payTo,
-                            maxTimeoutSeconds: 360,
-                            price: async (context) =>
-                                usdPrice(
-                                    await maximumPrice(
-                                        env,
-                                        await validatedBody(context),
-                                    ),
-                                ),
+                            maxTimeoutSeconds: OPERATION_LEASE_MS / 1000,
+                            price: usdPrice(quote.maximum),
                         },
                     ],
                     description:
-                        "OpenAI-compatible chat completions, priced per token.",
+                        "Pollinations generation, charged for actual usage up to the authorized ceiling.",
                     extensions: {
-                        [WEFT_REQUEST_EXTENSION_KEY]: async (
-                            context: HTTPRequestContext,
-                        ) => requestInfo(await validatedBody(context)),
+                        [WEFT_REQUEST_EXTENSION_KEY]: () =>
+                            requestInfo(request.body),
                     },
                 },
             },
@@ -632,38 +739,151 @@ export function createAnonymousX402Routes(env: CloudflareBindings) {
                 facilitator: {
                     url: env.WEFT_FACILITATOR_URL || DEFAULT_FACILITATOR_URL,
                 },
-                name: "Pollinations Text Generation",
+                name: "Pollinations Generation",
                 type: "api",
-                tags: ["ai", "llm", "inference"],
+                tags: ["ai", "inference"],
                 schemes: [{ network, server: new UptoEvmScheme() }],
-                resumeVerifiedPayment: async (context, candidate) =>
+                resumeVerifiedPayment: async (_context, candidate) =>
                     resumeX402Operation(
                         env,
-                        context.adapter.getHeader("idempotency-key") ?? "",
-                        await context.adapter.getBody?.(),
+                        c.req.header("idempotency-key") ?? "",
+                        request,
                         candidate,
                     ),
             },
-        ),
-    );
-    app.use(ROUTE, runX402Operation);
-    app.use(ROUTE, async (c, next) => {
-        await next();
-        if (!c.res.ok) return;
-        const body = c.req.valid(
-            "json" as never,
-        ) as CreateChatCompletionRequest;
-        c.header(
-            SETTLEMENT_OVERRIDES_HEADER,
-            JSON.stringify({
-                amount: usdPrice(
-                    await priceActualUsage(c.env, body, c.res.headers),
-                ),
+        )(c, async () => {
+            const response = await runX402Operation(c, async () => {
+                await next();
+                if (!c.res.ok) return;
+                c.header(
+                    SETTLEMENT_OVERRIDES_HEADER,
+                    JSON.stringify({
+                        amount: usdPrice(
+                            await priceActualUsage(c.env, quote, c.res.headers),
+                        ),
+                    }),
+                );
+            });
+            if (response) c.res = response;
+        });
+    });
+
+    const executeDurably = createMiddleware<Env>(async (c, next) => {
+        const request = describeX402Request(c);
+        await quoteX402Request(c.env, request);
+        const signature =
+            c.req.header("payment-signature") || c.req.header("x-payment");
+        if (detached || !signature) return next();
+        const payment = await paymentDetails(signature);
+        // Different proofs or requests must never join another buyer's waiter.
+        const name = await sha256(
+            stableStringify({
+                request,
+                proof: payment.proof,
+                key: c.req.header("idempotency-key"),
             }),
         );
+        const headers = new Headers({
+            "payment-signature": signature,
+            "idempotency-key": c.req.header("idempotency-key") as string,
+        });
+        for (const name of [
+            "accept",
+            "user-agent",
+            "referer",
+            "cf-connecting-ip",
+            "x-request-id",
+            SAFETY_HEADER_NAME,
+        ]) {
+            const value = c.req.header(name);
+            if (value !== undefined) headers.set(name, value);
+        }
+        if (request.method === "POST")
+            headers.set("content-type", "application/json");
+        const result = await c.env.GENERATION_COORDINATOR.getByName(
+            `x402-execution:${name}`,
+        ).startPaymentRequestAndWait({
+            url: c.req.url,
+            method: request.method,
+            headers: [...headers.entries()],
+            ...(request.method === "POST" && {
+                body: new TextEncoder().encode(JSON.stringify(request.body)),
+            }),
+        });
+        return restoredResponse(result);
     });
-    app.use(ROUTE, track("generate.text"));
-    app.post(ROUTE, generateChatCompletion);
+
+    for (const path of [
+        ROUTE,
+        "/text",
+        "/image/*",
+        "/v1/images/generations",
+        "/v1/audio/speech",
+    ]) {
+        app.use(
+            path,
+            requestId(),
+            logger,
+            edgeRateLimit,
+            textBodyLimit,
+            anonymousAuth(),
+        );
+    }
+    const payment = [
+        requireX402Idempotency,
+        executeDurably,
+        finalX402Operation,
+        pay,
+    ] as const;
+    app.post(
+        ROUTE,
+        validator("json", AnonymousX402RequestSchema),
+        resolveModel("generate.text"),
+        ...payment,
+        track("generate.text"),
+        generateChatCompletion,
+    );
+    app.post(
+        "/text",
+        validator("json", AnonymousX402RequestSchema),
+        resolveModel("generate.text"),
+        ...payment,
+        track("generate.text"),
+        generateTextContent,
+    );
+    app.get(
+        "/image/:prompt{[\\s\\S]+}",
+        validator("param", z.object({ prompt: z.string().min(1) })),
+        validator("query", GenerateImageRequestQueryParamsSchema),
+        resolveModel("generate.image"),
+        ...payment,
+        track("generate.image"),
+        generateImageVideo,
+    );
+    app.use(
+        "/v1/images/generations",
+        validator("json", CreateImageRequestSchema.strict()),
+        resolveModel("generate.image"),
+        ...payment,
+        track("generate.image"),
+    );
+    app.post(
+        "/v1/images/generations",
+        prepareOpenAIImageGeneration,
+        formatOpenAIImageGeneration,
+        prepareGenerationRequest,
+        handleImageGeneration,
+    );
+    app.post(
+        "/v1/audio/speech",
+        validator("json", CreateSpeechRequestSchema.strict()),
+        resolveModel("generate.audio", {
+            supportedEndpoint: "/v1/audio/speech",
+        }),
+        ...payment,
+        track("generate.audio"),
+        handleSpeech,
+    );
     return app;
 }
 
@@ -674,7 +894,18 @@ export function createX402Fallback(): MiddlewareHandler<Env> {
         // Any presented Pollinations credential, valid or invalid, stays on the
         // existing auth and Pollen pipeline. Only truly anonymous calls fall
         // back to x402.
-        if (c.req.method !== "POST") return next();
+        const supported =
+            c.req.method === "POST"
+                ? [
+                      ROUTE,
+                      "/text",
+                      "/v1/images/generations",
+                      "/v1/audio/speech",
+                  ].includes(c.req.path)
+                : c.req.method === "GET" &&
+                  c.req.path.startsWith("/image/") &&
+                  c.req.path !== "/image/models";
+        if (!supported) return next();
         const url = new URL(c.req.url);
         if (
             c.req.header("authorization") !== undefined ||
@@ -697,4 +928,4 @@ export function createX402Fallback(): MiddlewareHandler<Env> {
     };
 }
 
-export const x402Routes = new Hono<Env>().use(ROUTE, createX402Fallback());
+export const x402Routes = new Hono<Env>().use("*", createX402Fallback());

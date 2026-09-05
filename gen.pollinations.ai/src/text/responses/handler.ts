@@ -70,7 +70,9 @@ function directResponsesCandidates(
         if (!candidate.communityEndpoint) {
             return resolveDirectResponsesTarget(candidate.id, request);
         }
-        return candidate.communityEndpoint.responsesUrl ? undefined : null;
+        return candidate.communityEndpoint.api === "responses"
+            ? undefined
+            : null;
     };
     const primaryTarget = targetFor(primary);
     if (primaryTarget === null) {
@@ -108,7 +110,7 @@ async function responsesClientForAttempt(
 ): Promise<{ target: DirectResponsesTarget; fetcher?: typeof fetch }> {
     if (attempt.responsesTarget) return { target: attempt.responsesTarget };
     const endpoint = attempt.communityEndpoint;
-    if (!endpoint?.responsesUrl) {
+    if (endpoint?.api !== "responses") {
         throw new ResponsesInvalidRequestError(
             `Model ${attempt.id} does not support the stateless Responses API`,
         );

@@ -6,6 +6,7 @@ import {
     type EventSourceMessage,
     EventSourceParserStream,
 } from "eventsource-parser/stream";
+import { formatMcpCall, McpCallSchema } from "../agents/mcp.ts";
 import type { ChatCompletion, ChatMessage, ServiceError } from "../types.js";
 
 type JsonObject = Record<string, unknown>;
@@ -100,8 +101,24 @@ function responseMessage(output: ResponseItem[], requestUrl: URL): ChatMessage {
     const refusals: string[] = [];
     const reasoning: string[] = [];
     const toolCalls: JsonObject[] = [];
+    const seenUrls = new Set<string>();
 
     for (const item of output) {
+        if (item.type === "mcp_call") {
+            const call = McpCallSchema.safeParse(item);
+            if (!call.success) {
+                throw serviceError(
+                    "Responses provider returned a malformed MCP call",
+                    requestUrl,
+                );
+            }
+            if (
+                call.data.status === "completed" ||
+                call.data.status === "failed"
+            )
+                text.push(formatMcpCall(call.data, seenUrls));
+            continue;
+        }
         if (item.type === "reasoning") {
             for (const part of [
                 ...(item.summary ?? []),
@@ -250,6 +267,8 @@ export function responsesToChatStream(
     let nextToolIndex = 0;
     const toolIndexes = new Map<string, number>();
     const toolArgumentsSent = new Map<number, string>();
+    const mcpCallsSent = new Set<string>();
+    const seenUrls = new Set<string>();
     const textSent: Record<TextDeltaKind, Map<string, string>> = {
         content: new Map(),
         refusal: new Map(),
@@ -370,6 +389,29 @@ export function responsesToChatStream(
         );
         toolArgumentsSent.set(index, full);
     };
+    const emitMcpCall = (
+        controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>,
+        item: ResponseItem,
+    ) => {
+        const call = McpCallSchema.safeParse(item);
+        if (!call.success) {
+            fail(
+                controller,
+                "Responses provider returned a malformed MCP call",
+            );
+            return;
+        }
+        if (
+            !["completed", "failed"].includes(call.data.status) ||
+            mcpCallsSent.has(call.data.id)
+        )
+            return;
+        mcpCallsSent.add(call.data.id);
+        ensureRole(controller);
+        controller.enqueue(
+            chunk({ content: formatMcpCall(call.data, seenUrls) }),
+        );
+    };
     return source
         .pipeThrough(new TextDecoderStream())
         .pipeThrough(
@@ -489,7 +531,9 @@ export function responsesToChatStream(
                     }
                     if (type === "response.output_item.done") {
                         const item = (payload.item ?? {}) as ResponseItem;
-                        if (item.type === "function_call") {
+                        if (item.type === "mcp_call") {
+                            emitMcpCall(controller, item);
+                        } else if (item.type === "function_call") {
                             const index = addToolCall(controller, item, true);
                             emitToolArgumentsDone(
                                 controller,
@@ -558,8 +602,14 @@ export function responsesToChatStream(
                             payload) as ResponsesData;
                         fail(
                             controller,
-                            response.error?.message ??
+                            (type === "error" &&
+                            typeof payload.message === "string"
+                                ? payload.message
+                                : response.error?.message) ??
                                 "The model request failed",
+                            typeof payload.code === "string"
+                                ? payload.code
+                                : "upstream_error",
                         );
                         return;
                     }
@@ -583,12 +633,13 @@ export function responsesToChatStream(
                     id = response.id ?? id;
                     created = response.created_at ?? created;
                     model = response.model ?? model;
-                    const streamedMessage =
-                        textSent.content.size > 0 || textSent.refusal.size > 0;
-                    const streamedReasoning =
-                        textSent.reasoning_content.size > 0;
                     for (const item of response.output ?? []) {
                         if (!item || typeof item !== "object") continue;
+                        if (item.type === "mcp_call") {
+                            emitMcpCall(controller, item);
+                            if (terminal) return;
+                            continue;
+                        }
                         if (item.type === "function_call") {
                             const index = addToolCall(controller, item, true);
                             emitToolArgumentsDone(
@@ -599,7 +650,7 @@ export function responsesToChatStream(
                             if (terminal) return;
                             continue;
                         }
-                        if (item.type === "message" && !streamedMessage) {
+                        if (item.type === "message") {
                             for (const [index, part] of (
                                 item.content ?? []
                             ).entries()) {
@@ -621,7 +672,7 @@ export function responsesToChatStream(
                             }
                             continue;
                         }
-                        if (item.type === "reasoning" && !streamedReasoning) {
+                        if (item.type === "reasoning") {
                             for (const [index, part] of (
                                 item.summary ?? []
                             ).entries()) {

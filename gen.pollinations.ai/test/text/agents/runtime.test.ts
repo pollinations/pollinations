@@ -1,3 +1,4 @@
+import OpenAI from "openai";
 import {
     afterAll,
     beforeAll,
@@ -12,6 +13,10 @@ import {
     PromptAgentResponsesRequestSchema,
 } from "../../../src/text/agents/responses.ts";
 import type { PromptAgentRuntime } from "../../../src/text/agents/runtime.ts";
+import {
+    responsesToChatCompletion,
+    responsesToChatStream,
+} from "../../../src/text/responses/chatResponse.ts";
 
 type PromptAgentRequest = {
     messages?: unknown[];
@@ -56,8 +61,26 @@ async function runAgent(
 }
 
 function responseOutputText(body: unknown): string {
-    return (body as { output: { content: { text: string }[] }[] }).output[0]
-        .content[0].text;
+    return (
+        body as {
+            output: { type: string; content?: { text: string }[] }[];
+        }
+    ).output
+        .filter((item) => item.type === "message")
+        .flatMap((item) => item.content ?? [])
+        .map((part) => part.text)
+        .join("");
+}
+
+function chatOutputText(body: unknown): string {
+    const completion = responsesToChatCompletion(
+        body,
+        "test-agent",
+        new URL("https://gen.test/v1/responses"),
+    );
+    const content = completion.choices?.[0]?.message?.content;
+    if (typeof content !== "string") throw new Error("Missing Chat content");
+    return content;
 }
 
 function responseStreamEvents(body: string): Record<string, unknown>[] {
@@ -216,14 +239,32 @@ describe("prompt-agent runtime", () => {
         const responseText = await res.text();
         expect(res.status, responseText).toBe(200);
         const json = JSON.parse(responseText) as {
-            output: { content: { text: string }[] }[];
+            output: { type: string; content: { text: string }[] }[];
             status: string;
             usage: {
                 input_tokens: number;
                 tool_call_counts: Record<string, number>;
             };
         };
-        expect(responseOutputText(json)).toBe(
+        expect(responseOutputText(json)).toBe("checking done");
+        expect(json.output.map((item) => item.type)).toEqual([
+            "message",
+            "mcp_call",
+            "message",
+        ]);
+        expect(json.output[1]).toMatchObject({
+            id: "c1",
+            type: "mcp_call",
+            server_label: "exa",
+            name: "listModels",
+            arguments: "{}",
+            status: "completed",
+            output: JSON.stringify({
+                content: [{ type: "text", text: "found" }],
+            }),
+            error: null,
+        });
+        expect(chatOutputText(json)).toBe(
             "checking \n\n" +
                 '<details type="tool_calls" done="true" id="c1" name="listModels" arguments="{}">\n' +
                 "<summary>Tool Executed</summary>\n" +
@@ -380,7 +421,7 @@ describe("prompt-agent runtime", () => {
         };
         expect(response.status).toBe(200);
         expect(mcpToolCalls).toBe(16);
-        expect(body.usage.tool_call_counts.mcp_call).toBe(17);
+        expect(body.usage.tool_call_counts.mcp_call).toBe(16);
     });
 
     it("keeps running when the Pollinations MCP fails to load", async () => {
@@ -714,17 +755,85 @@ describe("prompt-agent runtime", () => {
         expect(response.status).toBe(200);
 
         let content: string;
+        let body: unknown;
         if (stream) {
-            content = responseStreamEvents(await response.text())
-                .map((event) =>
-                    event.type === "response.output_text.delta"
-                        ? String(event.delta ?? "")
-                        : "",
-                )
+            const sdkResponse = response.clone();
+            const sdk = new OpenAI({
+                apiKey: "test",
+                fetch: async () => sdkResponse,
+            });
+            const aggregated = sdk.responses
+                .stream({
+                    model: "test-agent",
+                    input: "draw a pirate",
+                    store: false,
+                })
+                .finalResponse();
+            const source = response.clone().body;
+            if (!source) throw new Error("Missing response stream");
+            const chatStream = responsesToChatStream(source, "test-agent");
+            const events = responseStreamEvents(await response.text());
+            expect(events.map((event) => event.sequence_number)).toEqual(
+                events.map((_, index) => index),
+            );
+            expect(events.map((event) => event.type)).toEqual([
+                "response.created",
+                "response.output_item.added",
+                "response.mcp_call.in_progress",
+                "response.mcp_call_arguments.done",
+                "response.mcp_call.completed",
+                "response.output_item.done",
+                "response.output_item.added",
+                "response.content_part.added",
+                "response.output_text.delta",
+                "response.output_text.done",
+                "response.content_part.done",
+                "response.output_item.done",
+                "response.completed",
+            ]);
+            body = events.at(-1)?.response;
+            expect((await aggregated).output).toMatchObject(
+                (body as { output: unknown[] }).output,
+            );
+            const chunks = responseStreamEvents(
+                await new Response(chatStream).text(),
+            );
+            content = chunks
+                .map((chunk) => {
+                    const choices = chunk.choices as {
+                        delta: { content?: string };
+                    }[];
+                    return choices?.[0]?.delta.content ?? "";
+                })
                 .join("");
         } else {
-            content = responseOutputText(await response.json());
+            body = await response.json();
+            content = chatOutputText(body);
         }
+        expect(responseOutputText(body)).toBe("Finished");
+        expect(body).toMatchObject({
+            output: [
+                {
+                    type: "mcp_call",
+                    id: "c1",
+                    server_label: "pollinations",
+                    name: "generateImage",
+                    arguments: '{"prompt":"a pirate"}',
+                    status: "completed",
+                    output: expect.stringContaining(
+                        "https://images.example/pirate.png",
+                    ),
+                    error: null,
+                },
+                {
+                    type: "message",
+                    content: [{ type: "output_text", text: "Finished" }],
+                },
+            ],
+        });
+        expect(JSON.stringify(body)).not.toContain(
+            "U0hPVUxEX05PVF9SRUFDSF9NT0RFTA==",
+        );
         expect(content).toContain(
             '<details type="tool_calls" done="true" id="c1" name="generateImage" arguments="{&quot;prompt&quot;:&quot;a pirate&quot;}">',
         );
@@ -835,12 +944,21 @@ describe("prompt-agent runtime", () => {
         });
 
         expect(response.status).toBe(200);
+        const sdkResponse = response.clone();
+        const sdk = new OpenAI({
+            apiKey: "test",
+            fetch: async () => sdkResponse,
+        });
+        await expect(
+            sdk.responses
+                .stream({ model: "test-agent", input: "hello", store: false })
+                .finalResponse(),
+        ).rejects.toThrow("Insufficient balance");
         const events = responseStreamEvents(await response.text());
         expect(events.find((event) => event.type === "error")).toMatchObject({
-            error: {
-                message: "Insufficient balance",
-                code: "agent_error",
-            },
+            message: "Insufficient balance",
+            code: "agent_error",
+            param: null,
         });
     });
 
@@ -1018,7 +1136,15 @@ describe("prompt-agent runtime", () => {
             output: { content: { text: string }[] }[];
             usage: { tool_call_counts: Record<string, number> };
         };
-        const content = responseOutputText(json);
+        expect(responseOutputText(json)).toBe("sorry, lookup failed");
+        expect(json.output[0]).toMatchObject({
+            type: "mcp_call",
+            id: "c1",
+            status: "failed",
+            error: expect.stringContaining("MCP HTTP Transport Error"),
+            output: null,
+        });
+        const content = chatOutputText(json);
         expect(content).toContain(
             '<details type="tool_calls" done="true" id="c1" name="listModels" arguments="{}">',
         );

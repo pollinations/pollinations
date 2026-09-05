@@ -3,6 +3,7 @@ import { createTestUser } from "@shared/test/fixtures/index.ts";
 import { describe, expect, it } from "vitest";
 import migrationSql from "../drizzle/0053_listing_envelope.sql?raw";
 import requiredTitleMigrationSql from "../drizzle/0057_require-community-titles.sql?raw";
+import singleEndpointMigrationSql from "../drizzle/0061_single_text_endpoint.sql?raw";
 
 type Row = {
     id: string;
@@ -19,6 +20,166 @@ type Row = {
  * requires drops the listing out of the catalog entirely.
  */
 describe("community endpoint envelope migration", () => {
+    it("selects one exact text endpoint and preserves queued prices without restoring stale targets", async () => {
+        await env.DB.prepare(`CREATE TABLE migration_single_text_endpoint (
+            id TEXT PRIMARY KEY, type TEXT, base_url TEXT, payload TEXT, pending_payload TEXT
+        )`).run();
+        const rows = [
+            {
+                id: "responses",
+                type: "proxy",
+                baseUrl: "https://api.example.com/v1",
+                payload: {
+                    modality: "text",
+                    responsesUrl:
+                        "https://api.example.com/custom/infer?version=1",
+                    bearerTokenCiphertext: "cipher",
+                    prices: { promptTextPrice: 1 },
+                },
+                pending: {
+                    modality: "text",
+                    responsesUrl: "https://api.example.com/stale",
+                    prices: { promptTextPrice: 2 },
+                    paidOnly: true,
+                },
+            },
+            {
+                id: "chat",
+                type: "proxy",
+                baseUrl: "https://api.example.com/v1/?version=1",
+                payload: { modality: "text", responsesUrl: null },
+                pending: {
+                    modality: "text",
+                    responsesUrl: "https://api.example.com/stale",
+                    prices: { promptTextPrice: 3 },
+                },
+            },
+            {
+                id: "chat-exact",
+                type: "endpoint_agent",
+                baseUrl:
+                    "https://agent.example.com/v1/chat/completions/?version=1",
+                payload: { perUserRpm: 5 },
+                pending: null,
+            },
+            {
+                id: "response-agent",
+                type: "endpoint_agent",
+                baseUrl: "https://agent.example.com/v1",
+                payload: {
+                    responsesUrl: "https://agent.example.com/run",
+                    perUserRpm: 5,
+                },
+                pending: null,
+            },
+            {
+                id: "media",
+                type: "proxy",
+                baseUrl: "https://media.example.com/generate?version=1",
+                payload: { modality: "image", responsesUrl: null },
+                pending: null,
+            },
+            {
+                id: "prompt",
+                type: "prompt_agent",
+                baseUrl: "https://agent-runtime.invalid/api/agent-runtime/v1",
+                payload: {
+                    systemPrompt: "Help",
+                    baseModel: "openai",
+                    mcpServers: [],
+                },
+                pending: null,
+            },
+        ];
+        for (const row of rows) {
+            await env.DB.prepare(
+                "INSERT INTO migration_single_text_endpoint VALUES (?, ?, ?, ?, ?)",
+            )
+                .bind(
+                    row.id,
+                    row.type,
+                    row.baseUrl,
+                    JSON.stringify(row.payload),
+                    row.pending === null ? null : JSON.stringify(row.pending),
+                )
+                .run();
+        }
+        const migration = singleEndpointMigrationSql.replaceAll(
+            "community_endpoint",
+            "migration_single_text_endpoint",
+        );
+        await env.DB.prepare(migration).run();
+        const read = async () =>
+            (
+                await env.DB.prepare(
+                    "SELECT * FROM migration_single_text_endpoint ORDER BY id",
+                ).all<{
+                    id: string;
+                    base_url: string;
+                    payload: string;
+                    pending_payload: string | null;
+                }>()
+            ).results;
+        const first = await read();
+        const byId = Object.fromEntries(
+            first.map((row) => [
+                row.id,
+                {
+                    url: row.base_url,
+                    payload: JSON.parse(row.payload),
+                    pending:
+                        row.pending_payload && JSON.parse(row.pending_payload),
+                },
+            ]),
+        );
+        expect(byId.responses).toEqual({
+            url: "https://api.example.com/custom/infer?version=1",
+            payload: {
+                modality: "text",
+                api: "responses",
+                bearerTokenCiphertext: "cipher",
+                prices: { promptTextPrice: 1 },
+            },
+            pending: {
+                modality: "text",
+                api: "responses",
+                prices: { promptTextPrice: 2 },
+                paidOnly: true,
+            },
+        });
+        expect(byId.chat).toEqual({
+            url: "https://api.example.com/v1/chat/completions?version=1",
+            payload: { modality: "text", api: "chat_completions" },
+            pending: {
+                modality: "text",
+                api: "chat_completions",
+                prices: { promptTextPrice: 3 },
+            },
+        });
+        expect(byId["chat-exact"]).toEqual({
+            url: rows[2].baseUrl,
+            payload: { api: "chat_completions", perUserRpm: 5 },
+            pending: null,
+        });
+        expect(byId["response-agent"]).toEqual({
+            url: "https://agent.example.com/run",
+            payload: { api: "responses", perUserRpm: 5 },
+            pending: null,
+        });
+        expect(byId.media).toEqual({
+            url: rows[4].baseUrl,
+            payload: { modality: "image", api: null },
+            pending: null,
+        });
+        expect(byId.prompt).toEqual({
+            url: rows[5].baseUrl,
+            payload: rows[5].payload,
+            pending: null,
+        });
+        await env.DB.prepare(migration).run();
+        expect(await read()).toEqual(first);
+    });
+
     it("types every row and packs only that type's fields", async () => {
         await createTestUser({ id: "owner" });
         await env.DB.prepare(`

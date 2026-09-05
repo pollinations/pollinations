@@ -1,0 +1,34 @@
+{
+  "pr_number": 14498,
+  "title": "fix(sdk): extract streaming fixes and missing request options",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14498",
+  "merged_at": "2026-09-05T19:37:31Z",
+  "labels": [],
+  "pr_body_excerpt": "- Extracts SDK changes from #14472 so they can ship without the website redesign. Addresses #14472; remaining website work stays there.\n- Uses eventsource-parser instead of custom SSE parsing. Requires standard event boundaries, discards incomplete events at EOF, and stops at [DONE] without inspecting trailing data.\n- Keeps request values and provider payloads unchanged, including extra fields. Retains existing malformed-response/API-error checks and cancellation, including #14487. Adds routing, resolution options, response types, and alpha.7.\n- All 51 client tests, typecheck, builds, and Biome pass. Full suite: 72/73 pass; the unchanged PKCE callback test still intermittently fails, as noted during the original extraction.\n- No website, shared UI, backend, deployment, or secret changes. Credits Elliot for the extracted work.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Streams find their banks",
+    "blurb": "The SDK’s streaming creek now follows proper SSE boundaries instead of reading tea leaves from raw chunks. Extra request options also made it safely through the garden gate.",
+    "summary": "The SDK now uses eventsource-parser for standards-compliant SSE streaming, stops cleanly at [DONE], preserves incomplete-event behavior and cancellation, and exposes routing, resolution, response-type, and alpha.7 request options.",
+    "impact": "SDK users get more reliable streamed responses while provider payloads and extra fields remain intact, with routing and generation options available directly in typed client requests.",
+    "keywords": [
+      "sdk",
+      "streaming",
+      "sse",
+      "eventsource-parser",
+      "request-options",
+      "typescript"
+    ],
+    "visual_concept": "Depict a tidy pixel stream of SSE event packets flowing through clearly marked stepping-stone boundaries into a cozy retro terminal, with a small [DONE] sign closing the channel. Polli, wearing tiny river-guide waders and holding a clipboard, watches the packets arrive intact while code-plants beside the terminal bloom with routing, resolution, and response-type tags.",
+    "image_prompt": "A cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny river-guide waders and guiding neat SSE data packets across stepping stones into a retro terminal glowing lime green (#ecf874); a pixel sign reads \"[DONE]\" while routing and resolution code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14498.jpg",
+    "prompt": "A cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny river-guide waders and guiding neat SSE data packets across stepping stones into a retro terminal glowing lime green (#ecf874); a pixel sign reads \"[DONE]\" while routing and resolution code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-05T19:38:32.959537+00:00"
+}

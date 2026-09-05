@@ -324,6 +324,31 @@ test("GET /api/account/usage forwards table filters to the pipe", async ({
     mocks,
 }) => {
     await mocks.enable("tinybird");
+    mocks.tinybird.state.usageResponse = [
+        {
+            cursor_event_id: "event-1",
+            timestamp: "2026-04-14 12:10:00",
+            type: "generate.text",
+            model: "gpt-a",
+            api_key_id: "key_a",
+            api_key: "alpha",
+            api_key_type: "secret",
+            meter_source: "tier",
+            input_text_tokens: 10,
+            input_cached_tokens: 0,
+            input_audio_tokens: 0,
+            input_audio_seconds: 0,
+            input_image_tokens: 0,
+            output_text_tokens: 20,
+            output_reasoning_tokens: 0,
+            output_audio_tokens: 0,
+            output_audio_seconds: 0,
+            output_image_tokens: 0,
+            output_video_seconds: 0,
+            cost_usd: 1,
+            response_time_ms: 123,
+        },
+    ];
 
     const response = await SELF.fetch(
         "http://localhost:3000/api/account/usage?days=30&limit=15&api_key_ids=key_b,key_a,key_a&models=gpt-b,gpt-a,gpt-a",

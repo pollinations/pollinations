@@ -91,7 +91,7 @@ describe("gpt-image-2 Azure routing", () => {
 
             await expect(
                 callGPTImage("test", params, userInfo, "gpt-image-2"),
-            ).rejects.toMatchObject({ status } satisfies Partial<HttpError>);
+            ).rejects.toMatchObject({ status } satisfies { status: number });
             expect(fetchMock).toHaveBeenCalledOnce();
         });
     }

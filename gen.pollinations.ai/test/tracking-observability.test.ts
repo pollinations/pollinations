@@ -2861,11 +2861,13 @@ describe("trackResponse missing usage", () => {
             usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
         };
         // Usage arrived, but the provider disconnected without [DONE].
-        const upstream = new Response(`data: ${JSON.stringify(event)}\n\n`);
+        const upstream = new Blob([
+            `data: ${JSON.stringify(event)}\n\n`,
+        ]).stream();
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(true),
-            new Response(requireChatStreamUsage(upstream.body!), {
+            new Response(requireChatStreamUsage(upstream), {
                 headers: { "content-type": "text/event-stream" },
             }),
             candidateFixture(),

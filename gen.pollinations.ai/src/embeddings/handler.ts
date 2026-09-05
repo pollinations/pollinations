@@ -165,13 +165,7 @@ async function generateFireworksEmbeddings(
     );
     const usage = extractFireworksUsage(result);
 
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
+    const data = toEmbeddingData(result.data, request.encoding_format);
 
     return embeddingsResponse(responseModel, data, usage);
 }
@@ -242,13 +236,7 @@ async function generateAzureOpenAIEmbeddings(
     );
     const usage = extractOpenAIUsage(result);
 
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
+    const data = toEmbeddingData(result.data, request.encoding_format);
 
     return embeddingsResponse(responseModel, data, usage);
 }
@@ -291,15 +279,22 @@ function cohereEmbeddingsResponse(
     modality: "text" | "image",
 ): Response {
     const usage = extractCohereAzureUsage(result, modality);
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
+    const data = toEmbeddingData(result.data, request.encoding_format);
 
     return embeddingsResponse(responseModel, data, usage);
+}
+
+function toEmbeddingData(
+    embeddings: { embedding: number[]; index: number }[],
+    encodingFormat: EmbeddingRequest["encoding_format"],
+): EmbeddingData[] {
+    return [...embeddings]
+        .sort((a, b) => a.index - b.index)
+        .map(({ embedding, index }) => ({
+            object: "embedding",
+            embedding: encodeEmbedding(embedding, encodingFormat),
+            index,
+        }));
 }
 
 function encodeEmbedding(

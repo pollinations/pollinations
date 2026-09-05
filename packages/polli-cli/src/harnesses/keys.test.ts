@@ -93,7 +93,7 @@ describe("harness keys", () => {
 
 describe("harness models", () => {
     it("only includes models supporting chat completions", async () => {
-        await expect(fetchHarnessModels()).resolves.toEqual([
+        await expect(fetchHarnessModels("chat")).resolves.toEqual([
             { id: "chat", contextWindow: 100, input: ["text"] },
             {
                 id: "publisher/chat",
@@ -101,5 +101,15 @@ describe("harness models", () => {
                 input: ["text"],
             },
         ]);
+    });
+
+    it.each([
+        "missing",
+        "realtime",
+        "owner/community-chat",
+    ])("rejects an unavailable harness model: %s", async (model) => {
+        await expect(fetchHarnessModels(model)).rejects.toThrow(
+            `Model "${model}" is not a tool-calling text model. Run: polli models`,
+        );
     });
 });

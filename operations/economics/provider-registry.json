@@ -182,7 +182,24 @@
             "model": "claude-legacy"
           }
         ],
-        "claude-opus-4-6": "claude-opus-4.6",
+        "claude-opus-4-6": [
+          {
+            "until": "2026-05",
+            "model": "claude-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "claude-large",
+              "claude-opus-4.6"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "claude-opus-4.6"
+          }
+        ],
         "claude-opus-4-7": "claude-opus-4.7",
         "claude-opus-4-8": "claude-large",
         "claude-opus-4.1": null,
@@ -229,11 +246,96 @@
       "modelLabels": {
         "4.3 Inp Glbl Tokens": "grok-large",
         "4.3 Outp Glbl Tokens": "grok-large",
-        "5.4 cd inp Gl 1M Tokens": "gpt-5.4",
-        "5.4 inp Gl 1M Tokens": "gpt-5.4",
-        "5.4 longco cd inp Gl 1M Tokens": "gpt-5.4",
-        "5.4 longco inp Gl 1M Tokens": "gpt-5.4",
-        "5.4 longco opt Gl 1M Tokens": "gpt-5.4",
+        "5.4 cd inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 longco cd inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 longco inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 longco opt Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
         "5.4 mini Inp Gl 1M Tokens": [
           "gpt-5.4-mini",
           "midijourney"
@@ -249,7 +351,24 @@
         "5.4 nano Inp Gl 1M Tokens": "openai",
         "5.4 nano Opt Gl 1M Tokens": "openai",
         "5.4 nano cd Inp Gl 1M Tokens": "openai",
-        "5.4 opt Gl 1M Tokens": "gpt-5.4",
+        "5.4 opt Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
         "5.5 LongCo inp Gl 1M Tokens": [
           "openai-large",
           "midijourney-large"
@@ -811,6 +930,7 @@
           }
         ],
         "MiniMax M3": "minimax",
+        "MiniMax M3 1M": "minimax",
         "Qwen 3.6 Plus": "qwen-large",
         "Qwen 3.7 Plus": "qwen-large",
         "Qwen3 30B": "qwen-vision",
@@ -849,6 +969,7 @@
         }
       ],
       "modelLabels": {
+        "gemini-2.5-flash": null,
         "gemini-2.5-flash-image": "nanobanana",
         "gemini-2.5-flash-lite": [
           "gemini-search",
@@ -1502,7 +1623,8 @@
         "wan-video/wan-2.7-i2v | wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-720p": "wan-pro",
         "wan-video/wan-2.7-image": "wan-image",
         "wan-video/wan-2.7-image-pro": "wan-image-pro",
-        "wan-video/wan-2.7-t2v": "wan-pro"
+        "wan-video/wan-2.7-t2v": "wan-pro",
+        "xai/grok-imagine-video": "grok-video-pro"
       }
     },
     {

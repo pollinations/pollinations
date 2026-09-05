@@ -208,6 +208,20 @@ describe("PollinationsChatTransport", () => {
         ).toBe("Found it.\n\n");
     });
 
+    it("releases text held for a possible link at the next newline", async () => {
+        const chunks = await chunksFrom([
+            contentChunk("const a = [\n", "chunk-1"),
+            contentChunk("  1,\n", "chunk-2"),
+            contentChunk("];", "chunk-3"),
+        ]);
+
+        expect(
+            chunks
+                .filter((chunk) => chunk.type === "text-delta")
+                .map((chunk) => chunk.delta),
+        ).toEqual(["const a = ", "[\n", "  1,\n", "];"]);
+    });
+
     it("buffers generated media links split across provider chunks", async () => {
         const chunks = await chunksFrom([
             contentChunk("![Res", "chunk-1"),

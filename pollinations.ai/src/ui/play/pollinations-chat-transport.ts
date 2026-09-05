@@ -275,6 +275,15 @@ export class PollinationsChatTransport
                     }
                     return 0;
                 };
+                // A markdown link cannot span a raw newline, so text held
+                // back for a possible link is released at the next one.
+                const releaseThroughNewline = () => {
+                    const newline = contentBuffer.indexOf("\n");
+                    if (newline < 0) return false;
+                    emitText(contentBuffer.slice(0, newline + 1));
+                    contentBuffer = contentBuffer.slice(newline + 1);
+                    return true;
+                };
                 const flushContent = (final = false) => {
                     while (contentBuffer) {
                         const lower = contentBuffer.toLowerCase();
@@ -340,6 +349,8 @@ export class PollinationsChatTransport
                             if (final) {
                                 emitText(contentBuffer);
                                 contentBuffer = "";
+                            } else if (releaseThroughNewline()) {
+                                continue;
                             }
                             return;
                         }
@@ -357,6 +368,8 @@ export class PollinationsChatTransport
                             if (final) {
                                 emitText(contentBuffer);
                                 contentBuffer = "";
+                            } else if (releaseThroughNewline()) {
+                                continue;
                             }
                             return;
                         }

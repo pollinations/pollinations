@@ -142,16 +142,44 @@ interface SSEParseResult<T> {
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
-    if (!chunk || typeof chunk !== "object" || !("error" in chunk)) return null;
+    if (!chunk || typeof chunk !== "object") return null;
+    const { error, choices } = chunk as {
+        error?: unknown;
+        choices?: { finish_reason?: unknown }[];
+    };
+    const failed =
+        Array.isArray(choices) &&
+        choices.some((choice) => choice?.finish_reason === "error");
+    if (error == null && !failed) return null;
 
-    const error = (chunk as { error: unknown }).error;
     let message = "Streaming request failed";
+    let status = 502;
+    let code = "STREAM_ERROR";
     if (typeof error === "string") message = error;
-    else if (error && typeof error === "object" && "message" in error) {
-        const errorMessage = (error as { message: unknown }).message;
+    else if (error && typeof error === "object") {
+        const {
+            message: errorMessage,
+            code: errorCode,
+            status: errorStatus,
+        } = error as { message?: unknown; code?: unknown; status?: unknown };
         if (typeof errorMessage === "string") message = errorMessage;
+        const numericStatus = Number(errorStatus ?? errorCode);
+        if (
+            Number.isInteger(numericStatus) &&
+            numericStatus >= 400 &&
+            numericStatus <= 599
+        ) {
+            status = numericStatus;
+        }
+        if (
+            typeof errorCode === "string" &&
+            errorCode &&
+            !Number.isFinite(Number(errorCode))
+        ) {
+            code = errorCode;
+        }
     }
-    return new PollinationsError(message, "STREAM_ERROR", 502);
+    return new PollinationsError(message, code, status);
 }
 
 // Parse SSE lines from buffer and extract data

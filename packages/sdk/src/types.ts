@@ -466,6 +466,62 @@ export interface AudioResponse {
 }
 
 // ============================================================================
+// Embeddings
+// ============================================================================
+
+/** Embedding model, e.g. 'openai-3-small', 'gemini-2', 'cohere-embed-v4' */
+export type EmbeddingModel = string;
+
+/** Gemini task hint (converted to the model's recommended instruction) */
+export type EmbeddingTaskType =
+    | "SEMANTIC_SIMILARITY"
+    | "CLASSIFICATION"
+    | "CLUSTERING"
+    | "RETRIEVAL_DOCUMENT"
+    | "RETRIEVAL_QUERY"
+    | "CODE_RETRIEVAL_QUERY"
+    | "QUESTION_ANSWERING"
+    | "FACT_VERIFICATION";
+
+/** Multimodal content part (text, image_url, input_audio, video_url) */
+export interface EmbeddingContentPart {
+    type: "text" | "image_url" | "input_audio" | "video_url";
+    text?: string;
+    image_url?: { url: string };
+    input_audio?: { data: string; format: string };
+    video_url?: { url: string; mime_type?: string };
+}
+
+export interface EmbeddingsOptions extends RequestOptions {
+    model?: EmbeddingModel;
+    /** Output dimensions (128-4096, model-specific limits apply) */
+    dimensions?: number;
+    task_type?: EmbeddingTaskType;
+    /** Cohere input role for retrieval */
+    input_type?: "query" | "document";
+    encoding_format?: "float" | "base64";
+}
+
+export interface EmbeddingObject {
+    object: "embedding";
+    /** Float array, or base64-encoded Float32 (little-endian) when encoding_format=base64 */
+    embedding: number[] | string;
+    index: number;
+}
+
+export interface EmbeddingUsage {
+    prompt_tokens: number;
+    total_tokens: number;
+}
+
+export interface EmbeddingResponse {
+    object: "list";
+    data: EmbeddingObject[];
+    model: string;
+    usage: EmbeddingUsage;
+}
+
+// ============================================================================
 // Speech-to-Text (Transcription)
 // ============================================================================
 

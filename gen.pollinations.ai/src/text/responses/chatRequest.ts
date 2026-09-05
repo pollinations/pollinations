@@ -436,7 +436,10 @@ export function chatToResponsesRequest(
     if (typeof options.reasoning_effort === "string") {
         request.reasoning = {
             effort: options.reasoning_effort,
-            ...(options.reasoning_effort === "none" ? {} : { summary: "auto" }),
+            // The managed-agent transport supports effort, but not summaries.
+            ...(options.reasoning_effort === "none" || options.responsesFetcher
+                ? {}
+                : { summary: "auto" }),
         };
     }
     if (maxOutputTokens != null) request.max_output_tokens = maxOutputTokens;

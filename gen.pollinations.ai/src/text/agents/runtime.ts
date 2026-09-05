@@ -1,4 +1,4 @@
-import { type CallToolResult, createMCPClient } from "@ai-sdk/mcp";
+import { createMCPClient } from "@ai-sdk/mcp";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import { getLogger } from "@logtape/logtape";
 import type { PromptAgentListingPayload } from "@shared/community-endpoints.ts";
@@ -12,9 +12,13 @@ import {
     type LanguageModelCallOptions,
     type ModelMessage,
     stepCountIs,
+    type TextStreamPart,
     ToolLoopAgent,
     type ToolLoopAgentSettings,
+    type ToolSet,
 } from "ai";
+
+import { safeMcpModelOutput } from "./mcp.ts";
 
 const log = getLogger(["gen", "prompt-agent-runtime"]);
 
@@ -47,11 +51,17 @@ type AgentStep = {
 };
 
 export type AgentOutput = {
-    content: string;
     finishReason: string;
     usage: AgentUsage;
     toolCallCounts: ToolCallCounts;
 };
+
+export type AgentPart =
+    | Extract<
+          TextStreamPart<ToolSet>,
+          { type: "tool-call" | "tool-result" | "tool-error" }
+      >
+    | { type: "text-delta"; text: string };
 
 export type PromptAgentGenerationSettings = Partial<
     Pick<
@@ -73,10 +83,6 @@ const MAX_TOOL_CALLS = 16;
 const MCP_INITIALIZATION_TIMEOUT_MS = 15_000;
 const STEP_LIMIT_MESSAGE =
     "The agent reached its maximum number of tool-use steps without a final answer.";
-
-function agentErrorMessage(error: unknown): string {
-    return error instanceof Error ? error.message : String(error);
-}
 
 async function loadMcpTools(
     serverId: McpServerId,
@@ -170,13 +176,12 @@ async function createAgent(
             ...tool,
             toModelOutput: safeMcpModelOutput,
             execute(input, options) {
-                toolCalls += 1;
-                toolCallCounts.mcp_call = toolCalls;
-                if (toolCalls > MAX_TOOL_CALLS) {
+                if (toolCalls >= MAX_TOOL_CALLS) {
                     throw new Error(
                         `Agent exceeded the maximum of ${MAX_TOOL_CALLS} tool calls`,
                     );
                 }
+                toolCallCounts.mcp_call = ++toolCalls;
                 return execute(input, options);
             },
         };
@@ -345,172 +350,11 @@ export function buildUsage(usage: AgentUsage, toolCallCounts: ToolCallCounts) {
     };
 }
 
-function safeMcpModelOutput({ output }: { output: unknown }) {
-    const result = output as CallToolResult;
-    if (!result?.content || !Array.isArray(result.content)) {
-        return {
-            type: "text" as const,
-            value: "Tool completed without text or linked output.",
-        };
-    }
-
-    const value: Array<{ type: "text"; text: string }> = [];
-    for (const part of result.content) {
-        if (part.type === "text") {
-            value.push({ type: "text", text: part.text });
-            continue;
-        }
-        if (part.type === "resource_link") {
-            value.push({
-                type: "text",
-                text: JSON.stringify({
-                    type: part.type,
-                    uri: part.uri,
-                    name: part.name,
-                    description: part.description,
-                    mimeType: part.mimeType,
-                }),
-            });
-            continue;
-        }
-        if (part.type === "resource" && "text" in part.resource) {
-            value.push({ type: "text", text: part.resource.text });
-            continue;
-        }
-        value.push({
-            type: "text",
-            text: `[${part.type} output omitted; use an HTTPS resource link]`,
-        });
-    }
-
-    return value.length > 0
-        ? { type: "content" as const, value }
-        : {
-              type: "text" as const,
-              value: "Tool completed without text or linked output.",
-          };
-}
-
-function escapeHtml(value: string): string {
-    return value.replace(
-        /[&<>"']/g,
-        (character) =>
-            ({
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#39;",
-            })[character] ?? character,
-    );
-}
-
-function toolOutputText(output: unknown): string {
-    const modelOutput = safeMcpModelOutput({ output });
-    return modelOutput.type === "text"
-        ? modelOutput.value
-        : modelOutput.value.map((part) => part.text).join("\n");
-}
-
-function mediaResultContent(
-    toolName: string,
-    output: unknown,
-    seenUrls: Set<string>,
-): string {
-    const result = output as CallToolResult;
-    if (
-        !result ||
-        typeof result !== "object" ||
-        !("content" in result) ||
-        !Array.isArray(result.content)
-    ) {
-        return "";
-    }
-
-    const links: string[] = [];
-    for (const part of result.content as Array<{
-        type: string;
-        uri?: string;
-        mimeType?: string;
-    }>) {
-        if (part.type !== "resource_link") continue;
-        const knownTool = toolName.startsWith("mcp__pollinations__generate");
-        const isMedia =
-            part.mimeType?.startsWith("image/") ||
-            part.mimeType?.startsWith("audio/") ||
-            part.mimeType?.startsWith("video/") ||
-            part.mimeType?.startsWith("model/") ||
-            knownTool;
-        if (!isMedia) continue;
-
-        try {
-            if (!part.uri) continue;
-            const url = new URL(part.uri);
-            if (url.protocol !== "https:" || seenUrls.has(url.href)) continue;
-            seenUrls.add(url.href);
-            if (
-                part.mimeType?.startsWith("image/") ||
-                toolName === "mcp__pollinations__generateImage"
-            ) {
-                links.push(`![Generated image](<${url.href}>)`);
-            } else {
-                const label = part.mimeType?.startsWith("audio/")
-                    ? "Generated audio"
-                    : part.mimeType?.startsWith("video/")
-                      ? "Generated video"
-                      : part.mimeType?.startsWith("model/")
-                        ? "Generated 3D model"
-                        : "Generated media";
-                links.push(`[${label}](<${url.href}>)`);
-            }
-        } catch {
-            // Ignore resource links that cannot be displayed safely.
-        }
-    }
-    if (links.length === 0) return "";
-    return `\n\n${links.join("\n\n")}\n\n`;
-}
-
-function toolResultContent(
-    part: {
-        toolCallId: string;
-        toolName: string;
-        input: unknown;
-        output: unknown;
-    },
-    seenUrls: Set<string>,
-): string {
-    const details = toolDetailsContent(
-        part,
-        "Tool Executed",
-        toolOutputText(part.output),
-    );
-    const media = mediaResultContent(part.toolName, part.output, seenUrls);
-    return `${details}${media || "\n\n"}`;
-}
-
-function toolDetailsContent(
-    part: { toolCallId: string; toolName: string; input: unknown },
-    summary: string,
-    output: string,
-): string {
-    const name = part.toolName.replace(/^mcp__[^_]+__/, "");
-    const argumentsJson = JSON.stringify(part.input ?? {});
-    return (
-        `\n\n<details type="tool_calls" done="true" ` +
-        `id="${escapeHtml(part.toolCallId)}" ` +
-        `name="${escapeHtml(name)}" ` +
-        `arguments="${escapeHtml(argumentsJson)}">\n` +
-        `<summary>${summary}</summary>\n` +
-        `${escapeHtml(output)}\n` +
-        "</details>"
-    );
-}
-
 export async function runPromptAgent(
     runtime: PromptAgentRuntime,
     messages: ModelMessage[],
     signal: AbortSignal,
+    onPart: (part: AgentPart) => void,
     settings: PromptAgentGenerationSettings = {},
 ): Promise<AgentOutput> {
     const { agent, close, toolCallCounts } = await createAgent(
@@ -524,29 +368,24 @@ export async function runPromptAgent(
             abortSignal: signal,
         });
         const limited = hitStepLimit(result.finishReason, result.steps.length);
-        const seenUrls = new Set<string>();
-        let content = "";
         for (const step of result.steps) {
             for (const part of step.content) {
-                if (part.type === "text") content += part.text;
-                if (part.type === "tool-result") {
-                    content += toolResultContent(part, seenUrls);
+                if (part.type === "text") {
+                    onPart({ type: "text-delta", text: part.text });
                 }
-                if (part.type === "tool-error") {
-                    content += `${toolDetailsContent(
-                        part,
-                        "Tool Failed",
-                        agentErrorMessage(part.error),
-                    )}\n\n`;
+                if (
+                    part.type === "tool-call" ||
+                    part.type === "tool-result" ||
+                    part.type === "tool-error"
+                ) {
+                    onPart(part);
                 }
             }
         }
-        const finalContent = limited
-            ? `${content}\n\n${STEP_LIMIT_MESSAGE}`
-            : content;
-        if (!finalContent.trim()) throw new Error("Agent produced no response");
+        if (limited) {
+            onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
+        }
         return {
-            content: finalContent,
             finishReason: limited
                 ? "length"
                 : openAIFinishReason(result.finishReason),
@@ -562,7 +401,7 @@ export async function streamPromptAgent(
     runtime: PromptAgentRuntime,
     messages: ModelMessage[],
     signal: AbortSignal,
-    onContent: (content: string) => void,
+    onPart: (part: AgentPart) => void,
     settings: PromptAgentGenerationSettings = {},
 ): Promise<AgentOutput> {
     const { agent, close, toolCallCounts } = await createAgent(
@@ -572,25 +411,16 @@ export async function streamPromptAgent(
     );
     try {
         const result = await agent.stream({ messages, abortSignal: signal });
-        const seenUrls = new Set<string>();
-        let content = "";
         for await (const part of result.fullStream) {
             if (part.type === "error") throw part.error;
-            let delta = "";
-            if (part.type === "text-delta") delta = part.text;
-            if (part.type === "tool-result") {
-                delta = toolResultContent(part, seenUrls);
+            if (
+                part.type === "text-delta" ||
+                part.type === "tool-call" ||
+                part.type === "tool-result" ||
+                part.type === "tool-error"
+            ) {
+                onPart(part);
             }
-            if (part.type === "tool-error") {
-                delta = `${toolDetailsContent(
-                    part,
-                    "Tool Failed",
-                    agentErrorMessage(part.error),
-                )}\n\n`;
-            }
-            if (!delta) continue;
-            content += delta;
-            onContent(delta);
         }
         const [reason, steps] = await Promise.all([
             result.finishReason,
@@ -598,13 +428,9 @@ export async function streamPromptAgent(
         ]);
         const limited = hitStepLimit(reason, steps.length);
         if (limited) {
-            const delta = `\n\n${STEP_LIMIT_MESSAGE}`;
-            content += delta;
-            onContent(delta);
+            onPart({ type: "text-delta", text: `\n\n${STEP_LIMIT_MESSAGE}` });
         }
-        if (!content.trim()) throw new Error("Agent produced no response");
         return {
-            content,
             finishReason: limited ? "length" : openAIFinishReason(reason),
             usage: strictAgentUsage(steps),
             toolCallCounts,

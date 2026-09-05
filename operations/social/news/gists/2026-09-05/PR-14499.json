@@ -1,0 +1,34 @@
+{
+  "pr_number": 14499,
+  "title": "refactor: unify raw request URL logging",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14499",
+  "merged_at": "2026-09-05T16:49:07Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces the configurable request-logger factory with one shared middleware and identical Gen/Enter re-exports.\n- Intentionally keeps raw public URLs in Gen’s log context, including credential query parameters, matching Enter’s policy as requested. Request/response log emission remains local/test-only.\n- Leaves structured error-input and realtime referrer telemetry redaction unchanged.\n- Verifies singleton reuse, query order/encoding/duplicates, context, environment behavior, and adjacent tracking: 116 distinct targeted tests passed, plus both service typechecks, Biome 2.3.10, and whitespace checks.\n- Follow-up to #14489; includes latest main. No deployment.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One log pipe, two hives",
+    "blurb": "Gen and Enter now share the same request logging middleware, so their raw URL notes travel through one well-tested little pipe.",
+    "summary": "Replaced separate configurable request-logger factories with a shared singleton middleware re-exported by both Gen and Enter, preserving raw public URL logging and existing error-input and realtime-referrer redaction behavior.",
+    "impact": "Developers get consistent Gen and Enter request-log context, including query ordering, encoding, and duplicate parameters, while local/test-only log emission and existing telemetry redaction remain intact.",
+    "keywords": [
+      "logging",
+      "middleware",
+      "gen",
+      "enter",
+      "observability",
+      "refactor"
+    ],
+    "visual_concept": "A cozy shared garden irrigation pipe connects two small retro terminal sheds labeled Gen and Enter; Polli, wearing a tiny plumber tool belt, checks that identical URL-shaped droplets flow through both pipes while sensitive telemetry notes remain safely tucked in sealed envelopes. Code-plants and flowers show the shared infrastructure growing cleanly.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny plumber tool belt, inspecting one shared lime green (#ecf874) glowing pipe that connects two friendly retro terminal sheds labeled “GEN” and “ENTER”; URL-shaped water droplets flow neatly into code-plants while sealed little envelopes represent protected telemetry. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the shared middleware garden."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14499.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny plumber tool belt, inspecting one shared lime green (#ecf874) glowing pipe that connects two friendly retro terminal sheds labeled “GEN” and “ENTER”; URL-shaped water droplets flow neatly into code-plants while sealed little envelopes represent protected telemetry. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the shared middleware garden."
+  },
+  "generated_at": "2026-09-05T16:50:08.016200+00:00"
+}

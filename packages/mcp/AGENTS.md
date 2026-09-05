@@ -6,6 +6,7 @@
 2. **No hardcoded model or voice enums.** Validate against the live registry via `utils/models.js` (5-minute cache). Tool param schemas should be `z.string()` with a "use listX for the live list" hint.
 3. **Don't transform response data.** Pass through API responses; only reshape when an MCP content block is required (for example, upload generated binary output and return a resource link).
 4. **Minimal tool surface.** Every tool is extra context for the LLM to reason over and a chance to pick the wrong one. Add only what's genuinely useful inside a host (Claude Desktop, Cursor, etc.).
+5. **Device flow uses the SDK's `authorizeDevice` contract, never a re-implementation.** The MCP device-login tools hit the same `enter.pollinations.ai` endpoints as the CLI and SDK, keep the `device_code` module-local, and surface only the short `user_code` and verification URL to the LLM.
 
 ## File Structure
 
@@ -23,6 +24,7 @@ packages/mcp/
       model3dService.js           # generate3D
       discoveryService.js        # listModels, getModelStatus
       authService.js             # setApiKey, getKeyInfo, clearApiKey  (local only — no API calls)
+      deviceLoginService.js      # startDeviceLogin, pollDeviceLogin, whoAmI (device flow)
       accountService.js          # getBalance                          (via /account/*)
     utils/
       authUtils.js               # in-memory key store and auth headers

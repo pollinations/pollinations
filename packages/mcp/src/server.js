@@ -3,6 +3,7 @@ import { z } from "zod";
 import { accountTools } from "./services/accountService.js";
 import { audioTools } from "./services/audioService.js";
 import { authTools } from "./services/authService.js";
+import { deviceLoginTools } from "./services/deviceLoginService.js";
 import { discoveryTools } from "./services/discoveryService.js";
 import { embeddingTools } from "./services/embeddingService.js";
 import { imageTools } from "./services/imageService.js";
@@ -18,6 +19,7 @@ const serviceTools = [
     ...model3dTools,
     ...discoveryTools,
     ...accountTools,
+    ...deviceLoginTools,
 ];
 
 export { createMcpHandler };

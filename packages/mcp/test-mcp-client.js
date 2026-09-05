@@ -54,8 +54,11 @@ const EXPECTED_TOOLS = [
     "getKeyInfo",
     "getModelStatus",
     "listModels",
+    "pollDeviceLogin",
     "setApiKey",
+    "startDeviceLogin",
     "transcribeAudio",
+    "whoAmI",
 ];
 
 const createTransport = () =>
@@ -238,4 +241,60 @@ if (offlineRegistryServer) {
 
 const passed = results.filter(Boolean).length;
 console.log(`\n${passed}/${results.length} passed`);
+
+if (process.argv.includes("--device-flow")) {
+    await runDeviceFlowSmoke();
+}
+
+async function runDeviceFlowSmoke() {
+    // Manual device-flow smoke: requires a human to approve in a browser.
+    // Run with: node test-mcp-client.js --device-flow
+    console.log(
+        "\n[device-flow] Starting real login against enter.pollinations.ai — approve in your browser.",
+    );
+    const deviceClient = await connectClient();
+    try {
+        const start = await deviceClient.callTool({
+            name: "startDeviceLogin",
+            arguments: {},
+        });
+        const startText = start.content?.[0]?.text || "";
+        console.log(`[device-flow] ${startText}`);
+
+        const deadline = Date.now() + 15 * 60 * 1000;
+        let approved = false;
+        while (Date.now() < deadline) {
+            await new Promise((resolve) => setTimeout(resolve, 5000));
+            const res = await deviceClient.callTool({
+                name: "pollDeviceLogin",
+                arguments: {},
+            });
+            const text = res.content?.[0]?.text || "";
+            const status = JSON.parse(text).status;
+            console.log(`[device-flow] poll -> ${status}`);
+            if (status === "approved") {
+                approved = true;
+                break;
+            }
+            if (status === "error" || status === "expired") {
+                throw new Error(`device flow ended: ${text}`);
+            }
+        }
+        if (!approved) throw new Error("device flow timed out");
+
+        const who = await deviceClient.callTool({
+            name: "whoAmI",
+            arguments: {},
+        });
+        console.log(`[device-flow] ${who.content?.[0]?.text || ""}`);
+        const balance = await deviceClient.callTool({
+            name: "getBalance",
+            arguments: {},
+        });
+        console.log(`[device-flow] ${balance.content?.[0]?.text || ""}`);
+        console.log("[device-flow] OK — real key minted and usable.");
+    } finally {
+        await deviceClient.close();
+    }
+}
 process.exit(passed === results.length ? 0 : 1);

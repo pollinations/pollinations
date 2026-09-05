@@ -54,7 +54,8 @@ seed control makes text-to-image prompts reproducible.
 
 Model loading, device polling, generation, and editing run on background
 threads. GIMP's GTK event loop remains responsive while network requests are in
-flight, and closing the dialog safely discards late callbacks.
+flight. During generation or editing, **Cancel request** discards any late
+response and leaves the dialog open for another attempt.
 
 The plug-in gives actionable messages for expired/revoked authorization
 (connect again), HTTP 402 (add Pollen), connection failures, malformed API

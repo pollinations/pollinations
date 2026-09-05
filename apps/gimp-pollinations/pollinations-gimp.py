@@ -60,6 +60,13 @@ class PollinationsDialog(Gtk.Dialog):
         self.generate_button = Gtk.Button(label="Generate")
         self.generate_button.connect("clicked", self._start_generation)
         self.get_action_area().pack_end(self.generate_button, False, False, 0)
+        self.cancel_request_button = Gtk.Button(label="Cancel request")
+        self.cancel_request_button.connect("clicked", self._cancel_generation)
+        self.cancel_request_button.set_no_show_all(True)
+        self.cancel_request_button.set_visible(False)
+        self.get_action_area().pack_end(
+            self.cancel_request_button, False, False, 0
+        )
         self.set_default_size(520, -1)
         self.image, self.drawable = image, drawable
         self.store = TokenStore()
@@ -155,6 +162,8 @@ class PollinationsDialog(Gtk.Dialog):
         self.generate_button.set_sensitive(not busy)
         self.connect_button.set_sensitive(not busy)
         self.disconnect_button.set_sensitive(not busy)
+        if not busy:
+            self.cancel_request_button.set_visible(False)
 
     def _run_worker(self, task, callback) -> None:
         self._job_id += 1
@@ -197,9 +206,7 @@ class PollinationsDialog(Gtk.Dialog):
         self._set_status("Starting Pollinations authorization…")
 
         def start():
-            device = self.client.start_device_authorization(app_key)
-            webbrowser.open(device.verification_uri_complete)
-            return device
+            return self.client.start_device_authorization(app_key)
 
         self._run_worker(start, self._authorization_started)
 
@@ -210,9 +217,16 @@ class PollinationsDialog(Gtk.Dialog):
             return
         self.device = device
         self.poll_interval = device.interval
-        self._set_status(
-            f"A browser was opened. Approve Pollinations access with code {device.user_code}."
-        )
+        opened = webbrowser.open(device.verification_uri_complete)
+        if opened:
+            self._set_status(
+                f"A browser was opened. Approve Pollinations access with code {device.user_code}."
+            )
+        else:
+            self._set_status(
+                f"Open {device.verification_uri_complete} and approve access with "
+                f"code {device.user_code}."
+            )
         self._schedule_poll()
 
     def _schedule_poll(self) -> None:
@@ -370,6 +384,7 @@ class PollinationsDialog(Gtk.Dialog):
             return
 
         self._set_busy(True)
+        self.cancel_request_button.set_visible(True)
         self._set_status(
             "Editing with Pollinations…"
             if edit
@@ -394,6 +409,15 @@ class PollinationsDialog(Gtk.Dialog):
             self.response(Gtk.ResponseType.OK)
 
         self._run_worker(generate, generated)
+
+    def _cancel_generation(self, _button: Gtk.Button) -> None:
+        self._job_id += 1
+        self.result = None
+        self.result_placement = None
+        self._set_busy(False)
+        self._set_status(
+            "Request cancelled. Any response already in flight will be discarded."
+        )
 
 
 def export_source_layer(

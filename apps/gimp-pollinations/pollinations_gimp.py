@@ -29,7 +29,7 @@ class PollinationsError(RuntimeError):
     """An error ready to show to a person using the plug-in."""
 
 
-class ConnectionError(PollinationsError):
+class PollinationsConnectionError(PollinationsError):
     pass
 
 
@@ -125,7 +125,7 @@ class PollinationsClient:
                     pass
             raise friendly_error(error.code, _error_message(body, error.code)) from error
         except URLError as error:
-            raise ConnectionError(
+            raise PollinationsConnectionError(
                 "Could not reach Pollinations. Check your connection and try again."
             ) from error
 

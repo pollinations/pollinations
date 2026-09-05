@@ -1,5 +1,6 @@
 import base64
 import json
+import subprocess
 import tempfile
 import unittest
 from io import BytesIO
@@ -16,6 +17,7 @@ from pollinations_gimp import (
     PollinationsClient,
     PollinationsError,
     SlowDownError,
+    TokenStore,
 )
 
 
@@ -160,6 +162,85 @@ class PollinationsClientTest(unittest.TestCase):
         client = PollinationsClient(request=FakeTransport([{"error": "slow_down"}]))
         with self.assertRaises(SlowDownError):
             client.poll_device_authorization("device-secret")
+
+
+class TokenStoreTest(unittest.TestCase):
+    def test_linux_keychain_round_trip(self):
+        stored = []
+
+        def run(command, **kwargs):
+            action = command[1]
+            if action == "store":
+                stored.append(kwargs["input"])
+                output = ""
+            elif action == "lookup":
+                output = stored[0] if stored else ""
+            else:
+                stored.clear()
+                output = ""
+            return subprocess.CompletedProcess(command, 0, output, "")
+
+        store = TokenStore()
+        with (
+            patch("pollinations_gimp.platform.system", return_value="Linux"),
+            patch.object(store, "_run", side_effect=run),
+        ):
+            store.save("sk_test")
+            self.assertEqual(store.load(), "sk_test")
+            store.clear()
+            self.assertIsNone(store.load())
+
+    def test_windows_keychain_round_trip_keeps_token_out_of_arguments(self):
+        stored = []
+
+        def run(command, **kwargs):
+            action = command[-1]
+            if action == "save":
+                self.assertNotIn(kwargs["input"], command)
+                stored.append(kwargs["input"])
+                output = ""
+            elif action == "load":
+                output = stored[0] if stored else ""
+            else:
+                stored.clear()
+                output = ""
+            return subprocess.CompletedProcess(command, 0, output, "")
+
+        store = TokenStore()
+        with (
+            patch("pollinations_gimp.platform.system", return_value="Windows"),
+            patch.object(store, "_run", side_effect=run),
+        ):
+            store.save("sk_test")
+            self.assertEqual(store.load(), "sk_test")
+            store.clear()
+            self.assertIsNone(store.load())
+
+    def test_macos_keychain_round_trip(self):
+        stored = []
+
+        def save(token):
+            stored.append(token)
+            return True
+
+        def load():
+            return stored[0] if stored else None
+
+        def clear():
+            stored.clear()
+            return True
+
+        store = TokenStore()
+        with (
+            patch("pollinations_gimp.platform.system", return_value="Darwin"),
+            patch("pollinations_gimp._macos_keychain_save", side_effect=save),
+            patch("pollinations_gimp._macos_keychain_load", side_effect=load),
+            patch("pollinations_gimp._macos_keychain_clear", side_effect=clear),
+        ):
+            store.save("sk_test")
+            self.assertEqual(store.load(), "sk_test")
+            store.clear()
+            self.assertIsNone(store.load())
 
 
 if __name__ == "__main__":

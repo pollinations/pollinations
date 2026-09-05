@@ -237,6 +237,38 @@ describe("pi harness", () => {
         expect(pi.status(ctx).configured).toBe(true);
     });
 
+    it("keeps the snapshot when stripping edited config fails", () => {
+        configurePi(ctx, settings);
+        writeFileSync(modelsFile(), "{");
+
+        expect(() => disablePi(ctx)).toThrow();
+        expect(snapshotFiles()).toHaveLength(1);
+        expect(read(modelsFile())).toBe("{");
+        expect(existsSync(authFile())).toBe(true);
+    });
+
+    it("restores an incomplete setup snapshot without checking hashes", () => {
+        mkdirSync(agentDir(), { recursive: true });
+        const original = '{"providers":{}}\n';
+        writeFileSync(modelsFile(), original);
+        configurePi(ctx, settings);
+        const path = join(
+            home,
+            ".pollinations",
+            "harnesses",
+            snapshotFiles()[0],
+        );
+        const snapshot = readJson(path);
+        snapshot.complete = false;
+        writeFileSync(path, JSON.stringify(snapshot));
+        writeFileSync(modelsFile(), "partially written config");
+
+        expect(disablePi(ctx).outcome).toBe("restored");
+        expect(read(modelsFile())).toBe(original);
+        expect(existsSync(authFile())).toBe(false);
+        expect(snapshotFiles()).toHaveLength(0);
+    });
+
     it("keeps one backup per harness home", () => {
         configurePi(ctx, settings);
         const moved = {

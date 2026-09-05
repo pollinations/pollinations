@@ -29,7 +29,9 @@ The endpoint is deliberately stateless. `store` must be `false`; `previous_respo
 
 The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
 
-For models backed by a native Responses endpoint, Pollinations forwards Responses requests directly and adapts Chat Completions requests to that endpoint. Managed prompt agents return native Responses JSON/SSE around their configured agent loop; their configured MCP tools remain available, while caller-supplied tools are rejected.
+Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+
+Managed prompt agents use Pollinations' configured Responses runtime and have no publisher-configured endpoint URL. Their configured MCP tools remain available; caller-supplied function tool definitions are ignored.
 
 ### Reasoning
 

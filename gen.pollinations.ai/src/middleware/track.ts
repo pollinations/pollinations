@@ -78,6 +78,11 @@ import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
+import {
+    CONTENT_POLICY_ERROR_CODE,
+    CONTENT_POLICY_STATUS,
+    isContentPolicyViolation,
+} from "@/image/utils/contentModeration.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import {
@@ -451,7 +456,10 @@ export const track = (eventType: EventType) =>
                         collectErrorData(response.status, c.get("error")),
                 });
 
-                if (responseTracking.errorOutput !== undefined) {
+                if (
+                    responseTracking.errorOutput !== undefined &&
+                    responseTracking.responseStatus >= 500
+                ) {
                     const errorTracking = responseTracking.errorTracking;
                     await sendErrorEventToTinybird(
                         {
@@ -714,16 +722,16 @@ export async function trackResponse(
     const billingInput = modelUsage?.pricingInput
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
-    const hasFinishReasonError =
+    const finishErrorStatus =
         eventType === "generate.text"
-            ? containsFinishReasonError(output)
-            : false;
-    if (hasFinishReasonError) {
+            ? finishReasonErrorStatus(output)
+            : undefined;
+    if (finishErrorStatus !== undefined) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
         const usage = modelUsage?.usage ?? {};
         return {
-            responseStatus: 502,
+            responseStatus: finishErrorStatus,
             cacheHit,
             isBilledUsage: false,
             fallbackUsed,
@@ -741,9 +749,14 @@ export async function trackResponse(
             usage,
             contentFilterResults,
             errorTracking: {
-                errorResponseCode: "upstream_finish_reason_error",
+                errorResponseCode:
+                    finishErrorStatus === CONTENT_POLICY_STATUS
+                        ? CONTENT_POLICY_ERROR_CODE
+                        : "upstream_finish_reason_error",
                 errorMessage:
-                    "Upstream ended generation with finish_reason=error",
+                    finishErrorStatus === CONTENT_POLICY_STATUS
+                        ? "Upstream rejected generation for content policy"
+                        : "Upstream ended generation with finish_reason=error",
             },
             errorOutput: output,
         };
@@ -827,12 +840,12 @@ export async function trackResponse(
     };
 }
 
-function containsFinishReasonError(output: unknown): boolean {
-    if (!output || typeof output !== "object") return false;
+function finishReasonErrorStatus(output: unknown): number | undefined {
+    if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
-        if (isResponsesFailure(event)) return true;
+        if (isResponsesFailure(event)) return 502;
         if (!event || typeof event !== "object") continue;
         const eventError = (event as { error?: unknown }).error;
         if (
@@ -840,18 +853,25 @@ function containsFinishReasonError(output: unknown): boolean {
             (typeof eventError !== "object" ||
                 (eventError as { code?: unknown }).code !== "usage_missing")
         ) {
-            return true;
+            return isContentPolicyViolation(JSON.stringify(eventError))
+                ? CONTENT_POLICY_STATUS
+                : 502;
         }
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
         for (const choice of choices) {
             if (!choice || typeof choice !== "object") continue;
-            const finish = choice as { finish_reason?: unknown };
+            const finish = choice as {
+                finish_reason?: unknown;
+                error?: unknown;
+            };
             if (finish.finish_reason !== "error") continue;
-            return true;
+            return isContentPolicyViolation(JSON.stringify(finish.error))
+                ? CONTENT_POLICY_STATUS
+                : 502;
         }
     }
-    return false;
+    return undefined;
 }
 
 function stringifyErrorOutput(output: unknown): string {
@@ -1247,17 +1267,20 @@ async function extractUsageAndContentFilterResultsStream(
 }> {
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
-        model: z.string(),
+        // Usage-only terminal chunks need not repeat model or choice metadata.
+        model: z.string().optional(),
         // Preserve Perplexity's provider-reported request cost for billing
         // rules that inspect the original event.
         usage: CompletionUsageSchema.extend({
             cost: z.unknown().nullish(),
         }).nullish(),
-        choices: z.array(
-            z.object({
-                content_filter_results: ContentFilterResultSchema.nullish(),
-            }),
-        ),
+        choices: z
+            .array(
+                z.object({
+                    content_filter_results: ContentFilterResultSchema.nullish(),
+                }),
+            )
+            .default([]),
         prompt_filter_results: z
             .array(
                 z.object({

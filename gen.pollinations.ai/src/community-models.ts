@@ -145,7 +145,8 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
-                    responsesUrl: communityResponsesUrl(baseUrl),
+                    baseUrl: communityResponsesUrl(baseUrl),
+                    api: "responses",
                 };
                 break;
             }
@@ -160,7 +161,7 @@ export async function getCommunityModelRegistryEntries(
                     ...agentDefaults,
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
-                    responsesUrl: payload.responsesUrl,
+                    api: payload.api,
                 };
                 break;
             }
@@ -178,7 +179,7 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,
-                    responsesUrl: payload.responsesUrl,
+                    api: payload.api,
                     ...payload.prices,
                 };
             }

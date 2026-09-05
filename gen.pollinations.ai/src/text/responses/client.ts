@@ -118,6 +118,7 @@ export async function callDirectResponses(
     try {
         response = await fetcher(target.endpoint, {
             method: "POST",
+            redirect: "manual",
             headers: {
                 "Content-Type": "application/json",
                 ...target.headers,

@@ -38,6 +38,7 @@ const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 
 interface Env {
     MEDIA_BUCKET: R2Bucket;
+    IMAGE_BUCKET: R2Bucket;
     MAX_FILE_SIZE: string;
     DB: D1Database;
 }
@@ -168,10 +169,14 @@ const UploadResponseSchema = z.object({
 const JsonUploadRequestSchema = z.object({
     data: z
         .string()
-        .min(1)
+        .optional()
         .describe(
             "Base64-encoded file bytes (with or without a data: prefix).",
         ),
+    genCacheKey: z
+        .string()
+        .optional()
+        .describe("Gen cache key to point to instead of uploading data bytes."),
     contentType: z
         .string()
         .optional()
@@ -395,30 +400,43 @@ api.post(
                 }
                 const body = parsedBody.data;
 
-                const base64Data = body.data.includes(",")
-                    ? body.data.split(",")[1]
-                    : body.data;
-                let binaryString: string;
-                try {
-                    binaryString = atob(base64Data);
-                } catch {
-                    return c.json({ error: "Invalid base64 data" }, 400);
-                }
-                const bytes = new Uint8Array(binaryString.length);
-                for (let i = 0; i < binaryString.length; i++) {
-                    bytes[i] = binaryString.charCodeAt(i);
-                }
-                fileBuffer = bytes.buffer;
+                if (body.genCacheKey) {
+                    fileBuffer = new ArrayBuffer(0);
+                    contentType =
+                        body.contentType || "application/octet-stream";
+                    fileName = body.name;
+                } else if (body.data) {
+                    const base64Data = body.data.includes(",")
+                        ? body.data.split(",")[1]
+                        : body.data;
+                    let binaryString: string;
+                    try {
+                        binaryString = atob(base64Data);
+                    } catch {
+                        return c.json({ error: "Invalid base64 data" }, 400);
+                    }
+                    const bytes = new Uint8Array(binaryString.length);
+                    for (let i = 0; i < binaryString.length; i++) {
+                        bytes[i] = binaryString.charCodeAt(i);
+                    }
+                    fileBuffer = bytes.buffer;
 
-                if (fileBuffer.byteLength > maxSize) {
-                    return c.json(fileTooLargeError(maxSize), 413);
-                }
-                if (fileBuffer.byteLength === 0) {
-                    return c.json({ error: "Empty file" }, 400);
-                }
+                    if (fileBuffer.byteLength > maxSize) {
+                        return c.json(fileTooLargeError(maxSize), 413);
+                    }
+                    if (fileBuffer.byteLength === 0) {
+                        return c.json({ error: "Empty file" }, 400);
+                    }
 
-                contentType = body.contentType || "application/octet-stream";
-                fileName = body.name;
+                    contentType =
+                        body.contentType || "application/octet-stream";
+                    fileName = body.name;
+                } else {
+                    return c.json(
+                        { error: "Must provide data or genCacheKey" },
+                        400,
+                    );
+                }
 
                 if (body.tags) {
                     const tagValues = Array.isArray(body.tags)
@@ -462,17 +480,26 @@ api.post(
                     ? PUBLISHED_CACHE_CONTROL
                     : IMMUTABLE_CACHE_CONTROL;
 
+            const customMetadata: Record<string, string> = {
+                uploadedAt: new Date().toISOString(),
+                originalName: fileName || "",
+                uploadedBy: authResult.name || "",
+                keyType: authResult.type,
+            };
+
+            if (requestContentType.includes("application/json")) {
+                const body = await c.req.json().catch(() => ({}));
+                if (body.genCacheKey) {
+                    customMetadata.genCacheKey = body.genCacheKey;
+                }
+            }
+
             await c.env.MEDIA_BUCKET.put(id, fileBuffer, {
                 httpMetadata: {
                     contentType,
                     cacheControl,
                 },
-                customMetadata: {
-                    uploadedAt: new Date().toISOString(),
-                    originalName: fileName || "",
-                    uploadedBy: authResult.name || "",
-                    keyType: authResult.type,
-                },
+                customMetadata,
             });
 
             // Tags are the publish action: only tagged uploads get catalog
@@ -727,6 +754,54 @@ api.get(
                 return c.json({ error: "Not found" }, 404);
             }
 
+            let responseBody: ReadableStream;
+            let objectSize = object.size;
+
+            if (object.customMetadata?.genCacheKey) {
+                const genObject = await c.env.IMAGE_BUCKET.get(
+                    object.customMetadata.genCacheKey,
+                );
+                if (!genObject) {
+                    return c.json({ error: "Underlying media not found" }, 404);
+                }
+
+                // If pointer object is old, touch it
+                const ageMs = Date.now() - object.uploaded.getTime();
+                if (ageMs >= 15 * 24 * 60 * 60 * 1000) {
+                    // 15 days
+                    c.executionCtx.waitUntil(
+                        c.env.MEDIA_BUCKET.put(id, "", {
+                            httpMetadata: object.httpMetadata,
+                            customMetadata: object.customMetadata,
+                            onlyIf: { etagMatches: object.etag },
+                        }).catch((err) =>
+                            console.error("Pointer TTL refresh error:", err),
+                        ),
+                    );
+                }
+
+                objectSize = genObject.size;
+                responseBody = refreshR2ObjectTtl(
+                    c.env.IMAGE_BUCKET,
+                    object.customMetadata.genCacheKey,
+                    genObject,
+                    (promise) => c.executionCtx.waitUntil(promise),
+                    (error) => {
+                        console.error("Gen TTL refresh error:", error);
+                    },
+                );
+            } else {
+                responseBody = refreshR2ObjectTtl(
+                    c.env.MEDIA_BUCKET,
+                    id,
+                    object,
+                    (promise) => c.executionCtx.waitUntil(promise),
+                    (error) => {
+                        console.error("TTL refresh error:", error);
+                    },
+                );
+            }
+
             const headers = new Headers();
             headers.set(
                 "Content-Type",
@@ -737,7 +812,7 @@ api.get(
                 object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
             );
             headers.set("X-Content-Id", id);
-            headers.set("X-Content-Size", object.size.toString());
+            headers.set("X-Content-Size", objectSize.toString());
 
             const originalName = object.customMetadata?.originalName;
             if (originalName) {
@@ -748,16 +823,6 @@ api.get(
                     `inline; filename*=UTF-8''${sanitized}`,
                 );
             }
-
-            const responseBody = refreshR2ObjectTtl(
-                c.env.MEDIA_BUCKET,
-                id,
-                object,
-                (promise) => c.executionCtx.waitUntil(promise),
-                (error) => {
-                    console.error("TTL refresh error:", error);
-                },
-            );
 
             return new Response(responseBody, { headers });
         } catch (error) {

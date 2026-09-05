@@ -440,7 +440,9 @@ export const track = (eventType: EventType) =>
                     : balanceTracking();
 
                 await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
+                    responseTracking.isBilledUsage
+                        ? responseTracking.price?.totalPrice || 0
+                        : 0,
                 );
 
                 const finalEvent = await emitRow({
@@ -474,7 +476,11 @@ export const track = (eventType: EventType) =>
                             duration_ms:
                                 endTime.getTime() - startTime.getTime(),
                             error_code: errorTracking?.errorResponseCode,
-                            error_class: "UpstreamFinishReasonError",
+                            error_class:
+                                errorTracking?.errorResponseCode ===
+                                "usage_missing"
+                                    ? "UpstreamUsageError"
+                                    : "UpstreamFinishReasonError",
                             message: errorTracking?.errorMessage,
                             upstream_status: response.status,
                             upstream_body: stringifyErrorOutput(
@@ -776,6 +782,24 @@ export async function trackResponse(
             output,
             input: pricingInput,
         });
+        if (eventType === "generate.text") {
+            // Usage is required by both text protocols. The HTTP stream may
+            // already be 200, but an incomplete generation is not a success.
+            // Retain independently knowable provider fees, never charge the user.
+            return {
+                ...notBilled(),
+                ...adjustmentOnlyBilling,
+                responseStatus: 502,
+                modelUsed: modelCalled,
+                usage: {},
+                contentFilterResults,
+                errorTracking: {
+                    errorResponseCode: "usage_missing",
+                    errorMessage: `Provider omitted valid usage for model ${resolvedModelRequested}`,
+                },
+                errorOutput: output ?? { streamEvents: [] },
+            };
+        }
         const hasKnownProviderCost = adjustmentOnlyBilling.cost.totalCost > 0;
         const hasBillablePrice = adjustmentOnlyBilling.price.totalPrice > 0;
         if (hasKnownProviderCost || hasBillablePrice) {
@@ -790,19 +814,9 @@ export async function trackResponse(
                 contentFilterResults,
             };
         }
-        // Nothing was charged and nothing could be. Mark the row so a billable
-        // text generation with no charge stays queryable instead of passing
-        // for an ordinary unbilled one.
         return notBilled({
             contentFilterResults,
             modelUsed: modelCalled,
-            errorTracking:
-                eventType === "generate.text"
-                    ? {
-                          errorResponseCode: "usage_missing",
-                          errorMessage: `No usage and no determinable charge for model ${resolvedModelRequested}`,
-                      }
-                    : undefined,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked

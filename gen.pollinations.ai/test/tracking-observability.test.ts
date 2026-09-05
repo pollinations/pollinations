@@ -705,7 +705,7 @@ describe("tracking observability", () => {
         ).toBe(false);
     });
 
-    it("does not bill a successful text response when upstream usage is missing", async () => {
+    it("records missing text usage as an unbilled 502 and logs its body", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -749,14 +749,21 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
+        expect(tinybirdRequests).toHaveLength(2);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            responseStatus: 200,
+            responseStatus: 502,
             isBilledUsage: false,
             totalCost: 0,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
+        });
+        expect(await tinybirdRequests[1].json()).toMatchObject({
+            status: 502,
+            upstream_status: 200,
+            error_code: "usage_missing",
+            error_class: "UpstreamUsageError",
+            upstream_body: expect.any(String),
         });
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
@@ -1080,7 +1087,7 @@ describe("tracking observability", () => {
         });
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
     });
-    it("still bills a flat request fee when token usage is missing", async () => {
+    it("records a flat provider fee but does not bill text with missing usage", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1125,14 +1132,15 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
+        expect(tinybirdRequests).toHaveLength(2);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            responseStatus: 200,
-            isBilledUsage: true,
+            responseStatus: 502,
+            isBilledUsage: false,
             modelUsed: "perplexity-fast",
             totalCost: 0.005,
-            totalPrice: 0.005,
+            totalPrice: 0,
+            errorResponseCode: "usage_missing",
             adjustmentCosts: {
                 "perplexity.sonar_low.search_request.v1": 0.005,
             },
@@ -1140,10 +1148,10 @@ describe("tracking observability", () => {
                 "perplexity.sonar_low.search_request.v1": 1,
             },
         });
-        expect(consumePollen).toHaveBeenCalledWith(0.005);
+        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
-    it("bills the quoted flat fee when a fallback without adjustments served", async () => {
+    it("does not bill the quoted flat fee when a fallback omitted usage", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1194,14 +1202,16 @@ describe("tracking observability", () => {
 
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            isBilledUsage: true,
+            isBilledUsage: false,
+            responseStatus: 502,
+            errorResponseCode: "usage_missing",
             fallbackUsed: true,
             modelUsed: "openai",
             totalCost: 0,
-            totalPrice: 0.005,
+            totalPrice: 0,
             devPrice: 0.005,
         });
-        expect(consumePollen).toHaveBeenCalledWith(0.005);
+        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("records a served flat cost without marking a zero-price fallback as billed", async () => {
@@ -2630,14 +2640,18 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
+        expect(tinybirdRequests).toHaveLength(2);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            responseStatus: 200,
+            responseStatus: 502,
             isBilledUsage: false,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
         });
+        const error = (await tinybirdRequests[1].json()) as {
+            upstream_body: string;
+        };
+        expect(JSON.parse(error.upstream_body)).toHaveProperty("streamEvents");
 
         const [after] = await db
             .select({ tierBalance: userTable.tierBalance })
@@ -2740,7 +2754,7 @@ describe("trackResponse modelUsed", () => {
             candidateFixture(),
         );
         expect(tracking).toMatchObject({
-            responseStatus: 200,
+            responseStatus: 502,
             isBilledUsage: false,
             modelUsed: "openai",
             errorTracking: { errorResponseCode: "usage_missing" },
@@ -2756,6 +2770,7 @@ describe("trackResponse modelUsed", () => {
         );
         expect(tracking.cacheHit).toBe(true);
         expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.responseStatus).toBe(200);
         expect(tracking.modelUsed).toBeUndefined();
     });
 
@@ -2859,15 +2874,17 @@ describe("trackResponse missing usage", () => {
         expect(tracking.errorTracking?.errorSource).toBeUndefined();
     });
 
-    it("leaves a model with a knowable flat fee unmarked", async () => {
+    it("retains a knowable provider fee without billing incomplete text", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(true, "perplexity-fast"),
             emptyStream(),
             candidateFixture("perplexity-fast"),
         );
-        expect(tracking.isBilledUsage).toBe(true);
-        expect(tracking.errorTracking).toBeUndefined();
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
     });
 });
 

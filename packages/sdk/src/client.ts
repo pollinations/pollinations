@@ -20,6 +20,8 @@ import type {
     DeviceCodeResponse,
     DeviceTokenResponse,
     EarningsOptions,
+    EmbeddingOptions,
+    EmbeddingResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -1082,6 +1084,69 @@ export class Pollinations {
      */
     async models(): Promise<ModelInfo[]> {
         return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
+    }
+
+    // ============================================================================
+    // Embeddings
+    // ============================================================================
+
+    /**
+     * Create vector embeddings from text.
+     *
+     * @example
+     * ```ts
+     * const response = await client.embeddings('Hello world');
+     * console.log(response.data[0].embedding);
+     *
+     * // Multiple inputs
+     * const response = await client.embeddings(['Hello', 'World'], {
+     *   model: 'gemini-2',
+     * });
+     * ```
+     */
+    async embeddings(
+        input: string | string[],
+        options: EmbeddingOptions = {},
+    ): Promise<EmbeddingResponse> {
+        if (!input || (Array.isArray(input) && input.length === 0)) {
+            throw new PollinationsError(
+                "Input is required and cannot be empty",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body: Record<string, unknown> = {
+            input,
+            model: options.model,
+        };
+
+        if (options.encodingFormat !== undefined) {
+            body.encoding_format = options.encodingFormat;
+        }
+        if (options.dimensions !== undefined) {
+            body.dimensions = options.dimensions;
+        }
+        if (options.user !== undefined) {
+            body.user = options.user;
+        }
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/embeddings`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(this.stripUndefined(body)),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        return response.json() as Promise<EmbeddingResponse>;
     }
 
     // ============================================================================

@@ -10,11 +10,12 @@ import {
 } from "react";
 import { cn } from "../lib/cn.ts";
 
-type ScrollAxis = "y" | "x";
+type ScrollAxis = "y" | "x" | "both";
 
 const axisClasses: Record<ScrollAxis, string> = {
     y: "polli:overflow-y-auto polli:overflow-x-hidden",
     x: "polli:overflow-x-auto polli:overflow-y-hidden",
+    both: "polli:overflow-auto",
 };
 
 type ScrollAreaOwnProps = {

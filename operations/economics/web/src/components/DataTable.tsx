@@ -29,7 +29,13 @@ export function TableScroller({ children }: { children: ReactNode }) {
     return (
         <section className="w-full max-w-full">
             <Surface className="overflow-hidden p-0">
-                <ScrollArea axis="x" className="pb-3">
+                <ScrollArea
+                    axis="both"
+                    tabIndex={0}
+                    role="region"
+                    aria-label="Scrollable data table"
+                    className="max-h-[70dvh] pb-3 [&_thead]:sticky [&_thead]:top-0 [&_thead]:z-20 [&_thead]:bg-surface-opaque [&_tbody>tr>td:first-child:not([colspan])]:sticky [&_tbody>tr>td:first-child:not([colspan])]:left-0 [&_tbody>tr>td:first-child:not([colspan])]:z-10 [&_tbody>tr>td:first-child:not([colspan])]:bg-surface-opaque [&_thead>tr:first-child>th:first-child]:sticky [&_thead>tr:first-child>th:first-child]:left-0 [&_thead>tr:first-child>th:first-child]:z-30 [&_thead>tr:first-child>th:first-child]:bg-surface-opaque"
+                >
                     {children}
                 </ScrollArea>
             </Surface>

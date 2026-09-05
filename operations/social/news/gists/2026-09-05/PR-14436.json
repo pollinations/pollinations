@@ -1,0 +1,33 @@
+{
+  "pr_number": 14436,
+  "title": "test: cover community speech CLI registration",
+  "author": "Apollohzl",
+  "url": "https://github.com/pollinations/pollinations/pull/14436",
+  "merged_at": "2026-09-05T02:49:34Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14474\n\n- Adds one focused CLI regression test for community `speech` registration.\n- Verifies `--modality speech` and `completionAudioPrice` reach the Account API body correctly.\n- Contains no duplicate production implementation; the selected TTS implementation landed in #14387.\n\nRunner-up bonus for the independently strong #14347 submission.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "Speech Gets a Seat",
+    "blurb": "A small guard bee now watches the CLI register community speech models correctly. The wiring stays wired.",
+    "summary": "Added a focused regression test confirming that Polli CLI community model registration passes `--modality speech` and `completionAudioPrice` into the Account API request body.",
+    "impact": "Developers gain ongoing test coverage for the speech-model registration path, helping keep its modality and audio pricing fields intact.",
+    "keywords": [
+      "polli-cli",
+      "speech",
+      "tts",
+      "community-models",
+      "regression-test"
+    ],
+    "visual_concept": "Polli, wearing tiny QA goggles and holding a clipboard, checks a cozy retro terminal command labeled `--modality speech`; a small code-plant grows beside an Account API envelope containing a musical note and price tag. This represents a test safeguarding the existing TTS registration wiring.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny QA goggles and checking a retro terminal labeled `--modality speech` with a clipboard; beside her, a lime green (#ecf874) code-plant grows from a warm cream pot and an API envelope bears a small music note and price tag. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-05/PR-14436.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush and light blue wings, wearing tiny QA goggles and checking a retro terminal labeled `--modality speech` with a clipboard; beside her, a lime green (#ecf874) code-plant grows from a warm cream pot and an API envelope bears a small music note and price tag. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle CRT glow, emotionally warm."
+  },
+  "generated_at": "2026-09-05T02:50:37.670259+00:00"
+}

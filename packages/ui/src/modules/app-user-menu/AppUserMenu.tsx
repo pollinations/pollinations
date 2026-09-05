@@ -1,8 +1,13 @@
 import { useAuthActions } from "@pollinations/sdk/react";
+import { cn } from "../../lib/cn.ts";
 import { ChevronIcon } from "../../primitives/ChevronIcon.tsx";
 import { Dropdown } from "../../primitives/Dropdown.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
-import { LockIcon } from "../../primitives/icons/index.tsx";
+import {
+    KeyIcon,
+    LogInIcon,
+    LogOutIcon,
+} from "../../primitives/icons/index.tsx";
 import {
     LoginButton,
     UserAvatar,
@@ -22,23 +27,30 @@ export type AppUserMenuLabels = {
 export type AppUserMenuProps = {
     dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
+    /** Match a large rectangular site action instead of the default pill. */
+    triggerVariant?: "pill" | "action";
 };
 
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect",
     appUserMenu: "App user menu",
     topUpAccount: "Top up account",
-    logout: "Log out from this app",
+    logout: "Log out",
 };
+
+const actionTriggerClass =
+    "polli:min-h-14 polli:rounded-xl polli:border-r-4 polli:border-b-4 polli:border-solid polli:border-theme-text-strong/20 polli:py-2 polli:hover:border-theme-text-strong/45";
 
 export function AppUserMenu({
     dashboardHref,
     labels: labelOverrides,
+    triggerVariant = "pill",
 }: AppUserMenuProps) {
     return (
         <AppUserMenuContent
             dashboardHref={dashboardHref}
             labels={labelOverrides}
+            triggerVariant={triggerVariant}
         />
     );
 }
@@ -46,7 +58,9 @@ export function AppUserMenu({
 function AppUserMenuContent({
     dashboardHref,
     labels: labelOverrides,
-}: Pick<AppUserMenuProps, "dashboardHref" | "labels">) {
+    triggerVariant,
+}: Required<Pick<AppUserMenuProps, "dashboardHref" | "triggerVariant">> &
+    Pick<AppUserMenuProps, "labels">) {
     const labels = { ...defaultLabels, ...labelOverrides };
     const { logout } = useAuthActions();
 
@@ -58,8 +72,15 @@ function AppUserMenuContent({
             className="polli:flex polli:shrink-0 polli:justify-end"
         >
             <WhenLoggedOut>
-                <LoginButton className="polli:gap-1.5 polli:whitespace-nowrap">
-                    <LockIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
+                <LoginButton
+                    appearance={triggerVariant === "action" ? "raised" : "pill"}
+                    className={cn(
+                        "polli:gap-1.5 polli:whitespace-nowrap",
+                        triggerVariant === "action" &&
+                            `${actionTriggerClass} polli:px-4`,
+                    )}
+                >
+                    <LogInIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
                     {labels.authorize}
                 </LoginButton>
             </WhenLoggedOut>
@@ -67,13 +88,18 @@ function AppUserMenuContent({
             <WhenLoggedIn>
                 <Dropdown
                     align="end"
-                    className="polli:w-64 polli:p-1"
+                    className="polli:w-max polli:bg-surface-opaque! polli:p-1"
                     trigger={(open) => (
                         <button
                             type="button"
                             data-theme="accent"
                             aria-label={labels.appUserMenu}
-                            className="polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:rounded-full polli:bg-theme-bg-active polli:py-1 polli:pl-1 polli:pr-3 polli:text-theme-text-base polli:shadow-sm polli:transition-colors polli:hover:bg-theme-bg-hover"
+                            className={cn(
+                                "polli-control polli:flex polli:min-w-0 polli:items-center polli:gap-2 polli:bg-theme-bg-active polli:text-theme-text-base polli:transition-colors polli:hover:bg-theme-bg-hover",
+                                triggerVariant === "action"
+                                    ? `${actionTriggerClass} polli:pl-2 polli:pr-4`
+                                    : "polli:rounded-full polli:py-1 polli:pl-1 polli:pr-3",
+                            )}
                         >
                             <UserAvatar
                                 size="md"
@@ -102,15 +128,18 @@ function AppUserMenuContent({
                                 rel="noopener noreferrer"
                                 onClick={close}
                             >
+                                <KeyIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
                                 {labels.topUpAccount}
                             </DropdownItem>
                             <DropdownItem
                                 type="button"
+                                className="polli:justify-start polli:text-left"
                                 onClick={() => {
                                     close();
                                     logout();
                                 }}
                             >
+                                <LogOutIcon className="polli:h-4 polli:w-4 polli:shrink-0" />
                                 {labels.logout}
                             </DropdownItem>
                         </div>

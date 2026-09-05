@@ -153,6 +153,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - `@pollinations/ui/gen` exports generation UI modules and modality helpers:
   `ModelSelector`, `ModalityChip`, `ModalityDot`, `ModalityTab`,
   `categoryLabel`, and `getModalityKey`.
+- `@pollinations/ui/markdown` exports `Markdown` and `Prose`, kept off the
+  root entry so react-markdown only loads where documents render.
 - `@pollinations/ui/brand/*` exports the canonical brand kit — `mark`,
   `wordmark`, `lockup-horizontal`, `lockup-stacked` (currentColor SVG masters
   plus `-black`/`-white` SVG + PNG), and the `polli/` mascot PNGs.
@@ -164,8 +166,8 @@ Wallet colors and utilities are bundled into the main stylesheet
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
   `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
   `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
-  `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`,
-  `Prose`, `Section`, `StatCard`.
+  `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`, `Section`,
+  `StatCard`.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
   `EditableCombobox.startContent` renders content inside a wrapping input shell
@@ -185,8 +187,8 @@ from `@pollinations/sdk/react` (`useAccountKeyUsage`, `useAccountKey`,
   such as auth, wallet, app-user-menu, and gen.
 - Public subpath exports (`@pollinations/ui/auth`,
   `@pollinations/ui/wallet`, `@pollinations/ui/gen`,
-  `@pollinations/ui/app-user-menu/sdk`) are built directly from those source
-  layers.
+  `@pollinations/ui/markdown`, `@pollinations/ui/app-user-menu/sdk`) are
+  built directly from those source layers.
 
 ## Theming
 

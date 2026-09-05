@@ -2,11 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+    <!-- Apply the saved/system color mode before first paint. The shared UI
+         toggle becomes the source of truth after React mounts. -->
+    <script>
+      (() => {
+        try {
+          let mode = localStorage.getItem("polli-color-mode");
+          if (mode !== "light" && mode !== "dark") {
+            mode = matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+          }
+          if (mode === "dark") document.documentElement.classList.add("dark");
+        } catch {
+          /* Ignore unavailable storage or system preference APIs. */
+        }
+      })();
+    </script>
     
-    <!-- Theme & Description -->
-    <meta name="theme-color" content="#E8F372" />
-    <meta name="description" content="Build AI apps with easy APIs and community support" />
+    <!-- Description -->
+    <meta name="description" content="Open infrastructure for text, image, audio and video generation, with one wallet and one API." />
     
     <!-- Favicons -->
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -25,12 +42,12 @@
     <!-- iOS Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="pollinations.ai" />
     
     <!-- Open Graph / Social Media -->
-    <meta property="og:title" content="pollinations.ai" />
-    <meta property="og:description" content="Build AI apps with easy APIs and community support" />
+    <meta property="og:title" content="pollinations.ai — Every model, one wallet." />
+    <meta property="og:description" content="Open infrastructure for text, image, audio and video generation, with one wallet and one API." />
     <meta property="og:image" content="https://pollinations.ai/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -42,24 +59,22 @@
     
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:site" content="@pollinations_ai" />
-    <meta name="twitter:title" content="pollinations.ai" />
-    <meta name="twitter:description" content="Build AI apps with easy APIs and community support" />
+    <meta name="twitter:title" content="pollinations.ai — Every model, one wallet." />
+    <meta name="twitter:description" content="Open infrastructure for text, image, audio and video generation, with one wallet and one API." />
     <meta name="twitter:image" content="https://pollinations.ai/og-image.png" />
     <meta name="twitter:image:alt" content="pollinations.ai logo" />
     
-    <!-- Fonts (display=swap prevents FOIT) -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=IBM+Plex+Mono:wght@400;700&display=swap" />
+    <!-- All four brand faces are self-hosted by @pollinations/ui. No
+         third-party font requests. -->
 
-    <title>pollinations.ai</title>
+    <title>pollinations.ai — Every model, one wallet.</title>
   </head>
   <body>
     <div id="root"></div>
     <noscript>
       <div style="font-family:sans-serif;padding:2rem;max-width:600px;margin:0 auto">
         <h1>pollinations.ai</h1>
-        <p>Build AI apps with easy APIs and community support. Generate images, text, audio and video with state-of-the-art AI models.</p>
+        <p>Open infrastructure for text, image, audio and video generation, with one wallet and one API.</p>
         <nav style="margin-top:1rem">
           <a href="/">Home</a> &middot;
           <a href="/play">Play</a> &middot;

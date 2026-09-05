@@ -615,6 +615,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         createVercelAIGatewayModelConfig({
             model: "meta/muse-spark-1.2",
         }),
+    "meta/muse-spark-1.3": () =>
+        createVercelAIGatewayModelConfig({
+            model: "meta/muse-spark-1.3",
+        }),
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>

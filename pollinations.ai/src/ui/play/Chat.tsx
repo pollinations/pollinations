@@ -678,13 +678,17 @@ function MessageCard({
                             part.type === "text" ? (
                                 isUser ? (
                                     <p
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
                                         key={`text:${index}`}
                                         className="whitespace-pre-wrap break-words"
                                     >
                                         {part.text}
                                     </p>
                                 ) : (
-                                    <Markdown key={`text:${index}`}>
+                                    <Markdown
+                                        // biome-ignore lint/suspicious/noArrayIndexKey: parts are positional and never reorder within a message
+                                        key={`text:${index}`}
+                                    >
                                         {part.text}
                                     </Markdown>
                                 )
@@ -1072,7 +1076,7 @@ export function Chat() {
             transcript.scrollTop = transcript.scrollHeight;
             setShowScrollButton(false);
         }
-    }, [messages, status]);
+    }, [messages]);
     useEffect(() => {
         if (isLoggedIn) return;
         uploadAbortRef.current?.abort();

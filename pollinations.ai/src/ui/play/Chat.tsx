@@ -1271,7 +1271,6 @@ export function Chat() {
                     className="min-h-0 flex-1"
                     viewportClassName="play-chat-transcript py-3"
                     aria-label="Conversation"
-                    aria-live="polite"
                     aria-busy={sending}
                     showScrollButton={showScrollButton}
                     onScrollToBottom={() => {

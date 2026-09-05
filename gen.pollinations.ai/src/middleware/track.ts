@@ -1247,17 +1247,20 @@ async function extractUsageAndContentFilterResultsStream(
 }> {
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
-        model: z.string(),
+        // Usage-only terminal chunks need not repeat model or choice metadata.
+        model: z.string().optional(),
         // Preserve Perplexity's provider-reported request cost for billing
         // rules that inspect the original event.
         usage: CompletionUsageSchema.extend({
             cost: z.unknown().nullish(),
         }).nullish(),
-        choices: z.array(
-            z.object({
-                content_filter_results: ContentFilterResultSchema.nullish(),
-            }),
-        ),
+        choices: z
+            .array(
+                z.object({
+                    content_filter_results: ContentFilterResultSchema.nullish(),
+                }),
+            )
+            .default([]),
         prompt_filter_results: z
             .array(
                 z.object({

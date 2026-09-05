@@ -58,6 +58,7 @@ import {
     type GenerationModelEntry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
+import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
@@ -2854,6 +2855,27 @@ describe("trackResponse modelUsed", () => {
 });
 
 describe("trackResponse missing usage", () => {
+    it("does not bill earlier usage when the stream subsequently fails validation", async () => {
+        const event = {
+            model: "openai",
+            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
+        };
+        // Usage arrived, but the provider disconnected without [DONE].
+        const upstream = new Response(`data: ${JSON.stringify(event)}\n\n`);
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream.body!), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+    });
+
     it.each([
         { choices: null },
         { choices: [{ content_filter_results: "unrecognized metadata" }] },

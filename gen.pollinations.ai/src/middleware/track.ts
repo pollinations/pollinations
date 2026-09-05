@@ -728,16 +728,14 @@ export async function trackResponse(
     const billingInput = modelUsage?.pricingInput
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
-    const finishErrorStatus =
-        eventType === "generate.text"
-            ? finishReasonErrorStatus(output)
-            : undefined;
-    if (finishErrorStatus !== undefined) {
+    const finishError =
+        eventType === "generate.text" ? finishReasonError(output) : undefined;
+    if (finishError) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
         const usage = modelUsage?.usage ?? {};
         return {
-            responseStatus: finishErrorStatus,
+            responseStatus: finishError.status,
             cacheHit,
             isBilledUsage: false,
             fallbackUsed,
@@ -756,13 +754,16 @@ export async function trackResponse(
             contentFilterResults,
             errorTracking: {
                 errorResponseCode:
-                    finishErrorStatus === CONTENT_POLICY_STATUS
+                    finishError.code ??
+                    (finishError.status === CONTENT_POLICY_STATUS
                         ? CONTENT_POLICY_ERROR_CODE
-                        : "upstream_finish_reason_error",
+                        : "upstream_finish_reason_error"),
                 errorMessage:
-                    finishErrorStatus === CONTENT_POLICY_STATUS
-                        ? "Upstream rejected generation for content policy"
-                        : "Upstream ended generation with finish_reason=error",
+                    finishError.code === "usage_missing"
+                        ? "Upstream stream failed usage validation"
+                        : finishError.status === CONTENT_POLICY_STATUS
+                          ? "Upstream rejected generation for content policy"
+                          : "Upstream ended generation with finish_reason=error",
             },
             errorOutput: output,
         };
@@ -854,22 +855,31 @@ export async function trackResponse(
     };
 }
 
-function finishReasonErrorStatus(output: unknown): number | undefined {
+function finishReasonError(
+    output: unknown,
+): { status: number; code?: "usage_missing" } | undefined {
     if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
-        if (isResponsesFailure(event)) return 502;
         if (!event || typeof event !== "object") continue;
         const eventError = (event as { error?: unknown }).error;
         if (
-            eventError &&
-            (typeof eventError !== "object" ||
-                (eventError as { code?: unknown }).code !== "usage_missing")
+            (eventError &&
+                typeof eventError === "object" &&
+                (eventError as { code?: unknown }).code === "usage_missing") ||
+            ((event as { type?: unknown }).type === "error" &&
+                (event as { code?: unknown }).code === "usage_missing")
         ) {
-            return isContentPolicyViolation(JSON.stringify(eventError))
-                ? CONTENT_POLICY_STATUS
-                : 502;
+            return { status: 502, code: "usage_missing" };
+        }
+        if (isResponsesFailure(event)) return { status: 502 };
+        if (eventError) {
+            return {
+                status: isContentPolicyViolation(JSON.stringify(eventError))
+                    ? CONTENT_POLICY_STATUS
+                    : 502,
+            };
         }
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
@@ -880,9 +890,11 @@ function finishReasonErrorStatus(output: unknown): number | undefined {
                 error?: unknown;
             };
             if (finish.finish_reason !== "error") continue;
-            return isContentPolicyViolation(JSON.stringify(finish.error))
-                ? CONTENT_POLICY_STATUS
-                : 502;
+            return {
+                status: isContentPolicyViolation(JSON.stringify(finish.error))
+                    ? CONTENT_POLICY_STATUS
+                    : 502,
+            };
         }
     }
     return undefined;

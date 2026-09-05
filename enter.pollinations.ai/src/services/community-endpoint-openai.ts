@@ -396,8 +396,8 @@ export async function testCommunitySpeechEndpoint({
     // No upstream usage object to relay: the gateway meters the request text,
     // so the probe reports the same shape the request path will store.
     return {
-        usage: { completionAudioTokens: [...input].length },
-        billableUsage: { completionAudioTokens: [...input].length },
+        usage: { completionAudioTokens: input.length },
+        billableUsage: { completionAudioTokens: input.length },
     };
 }
 

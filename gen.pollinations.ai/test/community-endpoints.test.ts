@@ -2173,7 +2173,7 @@ describe("community endpoint helpers", () => {
             ).toEqual(TEST_MP3_BYTES);
         });
 
-        it("counts unicode input as code points, not utf-16 units", async () => {
+        it("uses the existing UTF-16 character count for billing", async () => {
             vi.stubGlobal(
                 "fetch",
                 vi.fn(
@@ -2187,7 +2187,7 @@ describe("community endpoint helpers", () => {
             const response = await callCommunitySpeechEndpoint(
                 await speechEndpoint(),
                 {
-                    // 3 code points but 4 utf-16 units ("hi" + astral emoji)
+                    // First-party TTS uses JavaScript string length.
                     input: `hi${String.fromCodePoint(0x1f30d)}`,
                     voice: "alloy",
                     responseFormat: "mp3",
@@ -2200,7 +2200,7 @@ describe("community endpoint helpers", () => {
                         USAGE_TYPE_HEADERS.completionAudioTokens,
                     ),
                 ),
-            ).toBe(3);
+            ).toBe(4);
         });
 
         it("propagates upstream speech failures", async () => {

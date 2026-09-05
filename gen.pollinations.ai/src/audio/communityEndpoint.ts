@@ -51,7 +51,7 @@ export async function callCommunitySpeechEndpoint(
         secret,
     );
     const upstreamUrl = communityAudioSpeechUrl(endpoint.baseUrl);
-    const inputCharacters = [...options.input].length;
+    const inputCharacters = options.input.length;
 
     let response: Response;
     try {

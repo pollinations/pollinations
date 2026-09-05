@@ -2,13 +2,13 @@
 
 ## App Submission Handling
 
-Two-phase review via `apps-review-submissions.yml` (AI evidence + human decision). Source of truth: `operations/app-management/app.json`.
+Two-phase review: AI evidence + human decision via `apps-review-submissions.yml`. Source of truth: `operations/app-management/app.json`.
 
 Flow: user opens an `APP-SUBMISSION` issue → AI checks the live app and optional repository → `APP-NEEDS-INFO` or `APP-REVIEW` → maintainer adds `APP-APPROVED` → `apps-publish-submissions.yml` validates the issue again, prepends the app to `operations/app-management/app.json`, and opens an auto-merge PR that closes the issue via `Fixes #NNN`.
 
 `APP-SUBMISSION` is the persistent type label. `APP-NEEDS-INFO`, `APP-REVIEW`, and `APP-APPROVED` describe review state. Quest rewards are detected separately from the merged catalog and are not announced by the submission workflows.
 
-Manual edits: edit `operations/app-management/app.json`, then run `node operations/app-management/app.js validate`.
+After manual catalog edits, run `node operations/app-management/app.js validate`.
 
 Catalog fields: `emoji`, `name`, `url`, `description`, `language` (ISO code), `category`, `platform`, `githubUsername` (without `@`), `githubUserId` (string), `repositoryUrl`, `repositoryStars` (number or null), `discordUsername`, `other`, `submittedDate`, `issueUrl`, `approvedDate`, `byop` (boolean), `requests24h` (number).
 
@@ -23,7 +23,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 ## Repository Structure
 
 - `enter.pollinations.ai/` — Auth gateway + billing (Cloudflare Worker)
-- `gen.pollinations.ai/` — Edge router + text generation Worker
+- `gen.pollinations.ai/` — Edge router + image/text generation Worker
 - `operations/infrastructure/gpu/` — Image GPU backends, fleet inventory, and deployment tooling
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
@@ -39,7 +39,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for auth/billing.
 
 - Auth: `pk_` (frontend), `sk_` (backend). Keys: https://enter.pollinations.ai/keys
-- Billing: Pollen credits ($1 ≈ 1 Pollen). Full docs: `./APIDOCS.md`
+- Billing: Pollen credits ($1 ≈ 1 Pollen).
 - Pack checkout: Stripe. Polar is retired from runtime; do not add Polar SDKs,
   Worker bindings, webhooks, or automated writes. Historical Polar handling
   (pre-Stripe pack revenue, Nov 2025–Jan 2026) lives in the Economics provider
@@ -53,11 +53,10 @@ Primary: `https://gen.pollinations.ai` → routes to `enter.pollinations.ai` for
 
 ### Local Development
 
-Ports: enter `3000` (API at `/api/*`), gen `8788`. Run `npm run dev` per service.
-
-Image generation now runs inside `gen.pollinations.ai`; local image API tests should target the gen worker on port `8788`.
+Run `npm run dev` per service: enter on `3000` (API at `/api/*`), gen on `8788` (including image API tests).
 
 Local API test:
+
 ```bash
 curl "http://localhost:8788/image/test?model=flux" -H "Authorization: Bearer $TOKEN"
 curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKEN" ...
@@ -80,13 +79,11 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Prove identical-request disconnect/rejoin, one upstream execution, completed
   R2 cache retrieval, one wallet debit, and one billed Tinybird event.
 
-## ⚠️ YAGNI — You Aren't Gonna Need It (CRITICAL)
-
-**Follow YAGNI religiously:**
+## YAGNI — You Aren't Gonna Need It (CRITICAL)
 
 - Only implement what's needed now. Remove unused functions.
 - No speculative abstractions, "just in case" helpers, preemptive test utils/wrappers.
-- No backward-compat fallbacks — clean breaks beat bloat. When changing tokens/headers/APIs, update all consumers at once.
+- No backward-compat fallbacks. When changing tokens/headers/APIs, update all consumers at once.
 - When user says "keep it simple" — one function, one price, one config. Simplest thing that works.
 - Registry-declared fallback pairs are maintainer-owned; do not add runtime price, compatibility, target availability/privacy, or parameter-normalization guards unless a concrete declared pair requires one.
 
@@ -117,22 +114,17 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - If CI credentials lack a required permission, follow the Secret Mutation Safety approval gate before updating the scoped GitHub Actions secret and rerunning the workflow. Never bypass CI with a local Cloudflare OAuth session.
 - After the workflow succeeds, verify the active Worker version and required bindings before testing production traffic.
 
-## Tinybird Deployment Safety
-
-**CRITICAL — These rules apply whenever deploying to Tinybird:**
+## Tinybird Deployment Safety (CRITICAL)
 
 - Two workspaces: `pollinations_enter` (prod) and `pollinations_enter_staging` (staging + dev + local). Pipes and datasources must be deployed to **both** — no CI auto-deploy yet, tracked in #11127.
-- Use the Tinybird **Forward CLI** as `tb` (not Classic).
+- Use the Tinybird **Forward CLI** as `tb` (not Classic) from `enter.pollinations.ai/observability`, always with `--cloud` (otherwise it hits Tinybird Local/Docker).
 - Do not rely on `.tinyb` for workspace selection. Always pass an explicit workspace-scoped `TB_TOKEN` with `WORKSPACE:DEPLOY` and `--host https://api.europe-west2.gcp.tinybird.co`; never source deploy credentials from Enter runtime secrets.
 - Always validate and deploy to **staging first**, verify, then prod only when requested.
 - Validate first: `tb --cloud --host "$TB_HOST" deployment create --check --no-allow-destructive-operations`
 - Deploy staging: `tb --cloud --host "$TB_HOST" deployment create --wait --no-allow-destructive-operations`
 - Verify staging: `tb --staging --cloud --host "$TB_HOST" endpoint ls` and `tb --cloud --host "$TB_HOST" deployment ls`
-- Never `--allow-destructive-operations` without explicit permission
 - Never `tb push` (deprecated). Avoid `tb deploy`; use explicit `deployment create` commands so promotion is never accidental.
-- Never use `--auto` or `deployment promote` without explicit permission.
-- Always `--cloud` (otherwise CLI hits Tinybird Local/Docker)
-- Run from `enter.pollinations.ai/observability`
+- Never use `--allow-destructive-operations`, `--auto`, or `deployment promote` without explicit permission.
 - Verify all consumers within a workspace before modifying a pipe (pipes are NOT cross-workspace; each workspace has its own copy)
 - If validation reports datasource or pipe deletion, stop. Restore the missing definition or ask before deleting; do not override with destructive flags.
 - Forward materialized views cannot use `UNION`; split sources into separate materialized pipes writing to the same datasource.
@@ -159,40 +151,30 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 - Modern JS/TS, ES modules (all `.js` are ESM). Follow existing formatting. Comment complex logic.
 - Run `npx biome check --write <file>` after edits and before commits.
-- Before implementing: verify assumptions on web (APIs change), read related files, check related PRs/issues, and check existing utilities in `shared/` before writing new ones (auth, queue, registry, SSE parsing, retry wrappers).
-- When continuing prior work: read relevant code first; identify clear next steps.
-- Don't reimplement existing logic — search first.
+- Before implementing or resuming work: read related code, verify API assumptions on the web, check related PRs/issues, and identify next steps.
+- Reuse existing logic: search `shared/` for auth, queue, registry, SSE parsing, and retry utilities before writing new ones.
+- Use environment variables for credentials; validate input.
 - When adding a React browser/IIFE bundle, grep bundled dependencies'
   published dist for `react/jsx-runtime` and `react-dom` imports before
   choosing shim vs external; transitive deps such as `@ark-ui/react` Portal can
   reintroduce externals the package source does not import.
 
-## Common Mistakes to Avoid
-
-**IMPORTANT — Agents often make these mistakes (learned from session history):**
+### Commands & Files
 
 - Don't use `cd` in bash; use `cwd` parameter.
-- Don't run `pytest`; use `npm run test` or `npx vitest run`.
 - Don't create `.md` docs unless asked.
 - Always use absolute paths.
-- Don't edit files manually during a Claude Code session (busts cache).
-- Don't run `/compact` unless necessary (busts cache).
-- Don't let searches run wild — use targeted paths.
-- Don't modify test files to make tests pass — fix the code.
-- Run `npm run decrypt-vars` before tests in enter.pollinations.ai.
-- Test API keys in `enter.pollinations.ai/.testingtokens`.
-- Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
-- Don't request PR reviews or comment `polli` unless the user explicitly asks.
-- Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
+- Preserve Claude Code's cache: don't edit files manually during its sessions; run `/compact` only when necessary.
+- Search targeted paths.
+- Keep scratch files clearly labeled in `temp/`.
 - `packages/sdk` keeps its own `package-lock.json` because it is published standalone. After changing `packages/sdk/package.json`, regenerate it with `npm install --prefix packages/sdk --workspaces=false --package-lock-only`; a plain workspace install updates only the root lockfile.
 
 ## Testing
 
-Commands:
-- enter.pollinations.ai: `cd enter.pollinations.ai && npm run test` (vitest + CF Workers pool)
-- gen.pollinations.ai: `cd gen.pollinations.ai && npm run test` (vitest + CF Workers pool)
+Run `npm run test` with the working directory set to `enter.pollinations.ai` or `gen.pollinations.ai` (Vitest + CF Workers pool). Never use `pytest`. Before enter tests, run `npm run decrypt-vars`.
 
 Run individually — full suite is slow:
+
 ```bash
 npx vitest run --testNamePattern="name"
 npx vitest run test/file.test.ts
@@ -200,21 +182,22 @@ npx vitest run test/file.test.ts
 
 - Test real code, not mocks — use direct imports. Don't create mock infrastructure.
 - Read existing tests before adding; prefer extending existing files; follow existing conventions.
+- Don't modify test files to make tests pass — fix the code.
 - Snapshots (enter): VCR-style, replayed by default. `TEST_VCR_MODE=record` to record; default `replay-or-record`.
-- `.testingtokens` contains: `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
+- Test keys: `enter.pollinations.ai/.testingtokens` contains `ENTER_API_TOKEN_LOCAL`, `ENTER_API_TOKEN_REMOTE`, `ENTER_TOKEN`, `GITHUB_TOKEN`.
 - Production API tests should hit `gen.pollinations.ai`.
+- Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
-## Architecture & Common Tasks
+## Models & API Changes
 
-- Frontend → `pollinations.ai/`; image/text/gen gateway → `gen.pollinations.ai/`; image GPU backends → `operations/infrastructure/gpu/`; SDK/React → `packages/sdk/`; MCP → `packages/mcp/`.
+- Before model changes, read and follow `.claude/skills/model-management/SKILL.md`.
 - Text models: add config in `gen.pollinations.ai/src/text/configs/modelConfigs.ts`, entry in `gen.pollinations.ai/src/text/availableModels.ts`. Provider configs (Portkey/Bedrock/OpenAI-compat) in `gen.pollinations.ai/src/text/configs/providerConfigs.ts`.
 - Image models: handler in `gen.pollinations.ai/src/image/`, register in `shared/registry/image.ts`.
 - Update the model registry and OpenAPI source schemas/routes for new models.
+- Model descriptions must describe only capabilities or differentiators; never repeat the model title or name.
 - API changes: maintain backward compatibility; document; handle errors.
 - Never edit or regenerate `APIDOCS.md` in a feature PR. It is generated from the live OpenAPI schema after a successful production deploy by `.github/workflows/docs-regenerate-api-reference.yml`, which opens a separate docs PR. Make documentation changes in the source schemas, routes, introductions, or recipes instead.
 - API docs source text: strictly technical, no marketing; link dynamic endpoints (e.g. `/models`) vs hardcoded lists; no internal impl/env vars; minimal examples for both simplified and OpenAI-compatible endpoints.
-- Temp scratch files go in `temp/` clearly labeled.
-- Shrinking large snapshots: video/image snapshots can be 10–30 MB because stream chunks store raw binary as text (`TextDecoder` output in `vcr.ts:289`). To shrink: replace `response.body.data` array with one tiny chunk `[{"data": "<minimal-bytes>", "delay": 1}]`. For mp4, a valid 20-byte ftyp box is `\x00\x00\x00\x14ftypisom\x00\x00\x00\x00isom` (use `bytes.decode('latin-1')` in Python). Tests only check headers/status, not media content.
 
 ## Workflow Orchestration
 
@@ -222,11 +205,11 @@ npx vitest run test/file.test.ts
 - Delegate to a subagent only for large, genuinely independent tracks of work (e.g. a wide multi-file investigation). Don't delegate what you can finish in a handful of tool calls, and don't use subagents to verify your own work.
 - For competing community quest implementations, read and follow `.claude/skills/quest-solution-review/SKILL.md`.
 - After user correction: propose an AGENTS.md update capturing the pattern; iterate until mistake rate drops.
-- Bug reports: just fix them — point at logs/errors/failing tests and resolve. Fix failing CI without being asked how.
+- Fix reported bugs and failing CI; use logs, errors, or failing tests as evidence.
 
 ## Compact Instructions
 
-Preserve during compaction: modified files + line numbers, all code/diffs/impl details, test output + errors + command results, full plan + progress + pending, user preferences/corrections this session, architectural decisions + rationale.
+Preserve during compaction: modified files/lines, code/diffs/implementation details, test and command results/errors, plan/progress/pending work, user preferences/corrections, and architectural decisions/rationale.
 
 ## Git Workflow
 
@@ -238,6 +221,7 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 - "send to git" = git status, diff, branch, commit all, push, PR description.
 - Verify branch: `git branch --show-current` and confirm if unsure (branch mix-ups are a recurring mistake).
 - Avoid force pushes (`--force`, `--force-with-lease`) — prefer follow-up commits.
+- Don't request PR reviews or comment `polli` unless the user explicitly asks.
 - If the active PR is already merged, open a follow-up branch only when the user
   requests another PR.
 
@@ -245,15 +229,15 @@ Preserve during compaction: modified files + line numbers, all code/diffs/impl d
 
 Be concise. PRs/comments/issues: bullets, <200 words, no fluff.
 
+- PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
+- Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
+- Code reviews: focus on what needs improving; link specific lines; don't praise fine code or repeat obvious things.
+
 ### Pollinations identity
 
 - Pollinations.ai is the product brand. Use `hello@pollinations.ai` for public support, privacy, legal, and general customer contact, and `billing@pollinations.ai` for billing contact.
 - Myceli.AI OÜ is the registered legal entity and data controller. Preserve its legal name, copyright and ownership attribution, contributor identities, provider-account identities, infrastructure hostnames, and entity-specific operational contacts.
 - Never replace Myceli entity or infrastructure references merely because they differ from the Pollinations product brand. Change them only as part of an explicitly requested legal-entity or infrastructure migration.
-
-- PRs: "- Adds X", "- Fix Y"; 3-5 bullets; titles "fix:"/"feat:"/"Add"; no marketing.
-- Issue comments: bullets only; facts not opinions; link code; be direct (no "I think"/"maybe").
-- Code reviews: focus on what needs improving; link specific lines; don't praise fine code or repeat obvious things.
 
 ## GitHub Labels
 
@@ -262,6 +246,7 @@ Only use established labels (check with `mcp1_list_issues`). Don't create new la
 ## Contributor Attribution
 
 Commit format:
+
 ```
 feat: add feature
 

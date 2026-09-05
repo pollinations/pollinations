@@ -161,6 +161,7 @@ function addAmount(map: Map<string, number>, key: string, amount: number) {
 type BalanceAwareForecast = {
     facts: DerivedForecastFact[];
     flags: string[];
+    notices?: string[];
 };
 
 function daysInUtcMonth(month: string): number {
@@ -369,6 +370,7 @@ function balanceAwareForecasts(
     const facts: DerivedForecastFact[] = [];
     const flags: string[] = [];
     const issues = new Map<string, string>();
+    const notices: string[] = [];
     const currentMonth = now.toISOString().slice(0, 7);
     const previousMonth = monthShift(currentMonth, -1);
     for (const row of cloudRows) {
@@ -409,9 +411,24 @@ function balanceAwareForecasts(
             })),
         );
         flags.push(...result.flags);
+        notices.push(...(result.notices ?? []));
         if (result.flags.length) issues.set(row.vendor, result.flags.join(" "));
     }
-    // Cash paid to date is included once per vendor, not once per account.
+    // Postpaid plans already include the prior month's expected bill. Bank
+    // payments count toward that vendor-level target, not on top of it. This
+    // forecasts settlement timing; it does not certify invoice reconciliation.
+    const postpaidTargets = new Map<string, number>();
+    for (const fact of facts) {
+        if (
+            fact.month.slice(0, 7) === currentMonth &&
+            fact.amount < 0 &&
+            forecastPaymentTiming(fact.vendor, fact.category) === "postpaid"
+        ) {
+            addAmount(postpaidTargets, fact.vendor, -fact.amount);
+        }
+    }
+    // Prepaid top-up plans cover future shortfalls after the checked balance,
+    // so they still need cash already paid this month added once per vendor.
     for (const row of transactions) {
         if (
             row.kind !== "transaction" ||
@@ -421,20 +438,30 @@ function balanceAwareForecasts(
         const category = transactionCategory(row);
         const rule = automaticForecastRule(row.vendor, category);
         if (!rule || rule.paymentTiming === "direct") continue;
+        let amount = toUsd(row.amount, row.currency, row.date);
+        if (rule.paymentTiming === "postpaid" && amount < 0) {
+            const target = postpaidTargets.get(row.vendor) ?? 0;
+            postpaidTargets.set(row.vendor, Math.max(0, target + amount));
+            amount = Math.min(0, target + amount);
+            if (amount === 0) continue;
+        }
         facts.push({
             entry_id: `derived-bank-${row.entry_id}`,
             month: `${row.date.slice(0, 7)}-01`,
             vendor: row.vendor,
             category,
-            amount: toUsd(row.amount, row.currency, row.date),
+            amount,
             currency: "USD",
             method: "last",
             source: "derived",
-            evidence: "Verified current-month bank cash",
+            evidence:
+                rule.paymentTiming === "postpaid" && amount < 0
+                    ? "Verified current-month bank cash exceeding the estimated postpaid bill"
+                    : "Verified current-month bank cash",
             recorded_at: now.toISOString(),
         });
     }
-    return { facts, flags: [...new Set(flags)], issues };
+    return { facts, flags: [...new Set(flags)], notices, issues };
 }
 
 function accountBalanceForecasts(
@@ -445,6 +472,7 @@ function accountBalanceForecasts(
     const horizon = `${now.getUTCFullYear() + 1}-12`;
     if (cloudRows.length === 0) return { facts: [], flags: [] };
     const unresolved: string[] = [];
+    const notices: string[] = [];
 
     const balances = new Map(
         providerAccountBalanceRows({ opCloud: cloudRows }, now)
@@ -543,14 +571,6 @@ function accountBalanceForecasts(
             );
             continue;
         }
-        if (
-            rule.paymentTiming === "postpaid" &&
-            (previousPaidBurnByKey.get(key) ?? 0) > 0.005
-        ) {
-            unresolved.push(
-                `Opening ${lastMonth} postpaid settlement not reconciled for ${vendor} (${category}); confirm the invoice and matched payments before trusting current-month cash.`,
-            );
-        }
         const monthlyRate =
             currentBurn > 0 && coverageDay != null
                 ? (currentBurn / coverageDay) * daysThisMonth
@@ -597,6 +617,25 @@ function accountBalanceForecasts(
     };
 
     for (const [vendor, rates] of ratesByVendor) {
+        for (const rate of rates) {
+            if (rate.paymentTiming !== "postpaid") continue;
+            const bill = Math.max(
+                0,
+                previousPaidBurnByKey.get(matrixKey(rate.category, vendor)) ??
+                    0,
+            );
+            if (bill <= 0.005) continue;
+            addCash(
+                vendor,
+                rate.category,
+                currentMonth,
+                bill,
+                `Estimated ${lastMonth} postpaid bill from recorded cash-funded usage; expected in ${currentMonth}. Current-month vendor payments offset this estimate once. Invoice adjustments and payment matching remain unverified.`,
+            );
+            notices.push(
+                `${vendor} (${rate.category}): ${currentMonth} includes an estimated $${Math.round(bill).toLocaleString("en-US")} bill for ${lastMonth} usage, less payments recorded this month. Invoice reconciliation pending.`,
+            );
+        }
         const balance = balances.get(vendor);
         const directRates = rates.filter(
             (rate) => rate.paymentTiming === "direct",
@@ -762,6 +801,7 @@ function accountBalanceForecasts(
 
     return {
         facts,
+        notices,
         flags: [
             ...unresolved,
             ...(missingBalanceVendors.size === 0
@@ -958,7 +998,11 @@ export function buildRunway(
         stripeForecastUsable ? latestStripeSales : [],
     );
     const balanceAware = balanceAwareForecasts(bankRows, cloudRows, now);
-    flags.push(...ruleBased.flags, ...balanceAware.flags);
+    flags.push(
+        ...ruleBased.flags,
+        ...balanceAware.flags,
+        ...(balanceAware.notices ?? []),
+    );
     const effectiveForecastFacts = [...ruleBased.facts, ...balanceAware.facts];
 
     const invalidForecastVendors = new Set<string>();

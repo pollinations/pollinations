@@ -894,22 +894,152 @@ describe("buildRunway", () => {
         ).toBe(true);
     });
 
-    it("flags opening postpaid bills instead of presenting zero as a verified plan", () => {
-        const result = buildRunway([opening()], NOW, [
-            cloud({
-                start: "2026-07-01 00:00:00",
-                end: "2026-08-01 00:00:00",
-                paid: -700,
-            }),
-            balance("google", 0),
-        ]);
+    it("includes a pending postpaid bill as an explicit estimate without blocking later months", () => {
+        const result = buildRunway(
+            [opening()],
+            NOW,
+            [
+                cloud({
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -700,
+                }),
+                balance("google", 0),
+            ],
+            undefined,
+            [stripeSales()],
+        );
+        const google = result.rows.find((r) => r.vendor === "google");
+        expect(google?.forecastIssue).toBeUndefined();
+        expect(google?.values["2026-08:forecast"]).toBe(-700);
+        expect(google?.values["2026-09:forecast"]).toBeCloseTo(-700, 8);
+        expect(google?.forecastMethod).toBe("last");
+        expect(google?.assumptions["2026-08:forecast"][0].evidence).toContain(
+            "Estimated 2026-07 postpaid bill from recorded cash-funded usage",
+        );
+        expect(result.flags).toContain(
+            "google (compute): 2026-08 includes an estimated $700 bill for 2026-07 usage, less payments recorded this month. Invoice reconciliation pending.",
+        );
+        for (const month of ["2026-08", "2026-09"]) {
+            expect(
+                result.columns.find((c) => c.id === `${month}:forecast`)
+                    ?.forecastComplete,
+            ).toBe(true);
+        }
+        expect(result.currentCashUsd).toBe(20000);
+        expect(result.projectedMonthEndCashUsd).toBe(19395);
+        expect(result.runwayMonths).not.toBeNull();
+    });
+
+    it.each(
+        [0, 250, 700, 900].map((paid) => ({ paid })),
+    )("offsets $paid of current-month payments against the estimated bill exactly once", ({
+        paid,
+    }) => {
+        const result = buildRunway(
+            [opening(), ...(paid ? [transaction({ amount: -paid })] : [])],
+            NOW,
+            [
+                cloud({
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -700,
+                }),
+                balance("google", 0),
+            ],
+            undefined,
+            [stripeSales()],
+        );
+        const google = result.rows.find((r) => r.vendor === "google");
+        expect(google?.values["2026-08:forecast"]).toBe(-Math.max(paid, 700));
+        expect(google?.values["2026-09:forecast"]).toBeCloseTo(-700, 8);
+        expect(result.currentCashUsd).toBe(20000 - paid);
+        expect(result.remainingCurrentPlanUsd).toBe(
+            95 - Math.max(0, 700 - paid),
+        );
+        expect(result.projectedMonthEndCashUsd).toBe(
+            20095 - Math.max(700, paid),
+        );
+    });
+
+    it("matches payments once across a postpaid vendor's categories without consuming promotional credits", () => {
+        const result = buildRunway(
+            [
+                opening(),
+                transaction({ entry_id: "first", amount: -250 }),
+                transaction({ entry_id: "second", amount: -480 }),
+            ],
+            NOW,
+            [
+                cloud({
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -700,
+                    credit: -100,
+                }),
+                cloud({
+                    entry_id: "infra",
+                    type: "infrastructure",
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -30,
+                }),
+                balance("google", 0),
+            ],
+            undefined,
+            [stripeSales()],
+        );
+        const google = result.rows.filter((r) => r.vendor === "google");
+        expect(google).toHaveLength(2);
         expect(
-            result.rows.find((r) => r.vendor === "google")?.forecastIssue,
-        ).toContain("Opening 2026-07 postpaid settlement not reconciled");
-        expect(
-            result.columns.find((c) => c.id === "2026-08:forecast")
-                ?.forecastComplete,
-        ).toBe(false);
+            google.reduce((sum, r) => sum + r.values["2026-08:forecast"], 0),
+        ).toBe(-730);
+        expect(result.remainingCurrentPlanUsd).toBe(95);
+        expect(result.currentCashUsd).toBe(19270);
+        expect(result.projectedMonthEndCashUsd).toBe(19365);
+    });
+
+    it("does not offset another vendor's payment against a pending bill", () => {
+        const result = buildRunway(
+            [opening(), transaction({ vendor: "xai", amount: -100 })],
+            NOW,
+            [
+                cloud({
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -700,
+                }),
+                balance("google", 0),
+            ],
+            undefined,
+            [stripeSales()],
+        );
+        expect(result.remainingCurrentPlanUsd).toBe(-605);
+        expect(result.projectedMonthEndCashUsd).toBe(19295);
+    });
+
+    it("replaces the opening bill with the next period's usage at rollover", () => {
+        const result = buildRunway(
+            [opening()],
+            new Date("2026-09-05T12:00:00Z"),
+            [
+                cloud({
+                    entry_id: "july",
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -700,
+                }),
+                cloud({ end: "2026-09-01 00:00:00", paid: -80 }),
+                { ...balance("google", 0), start: "2026-09-01 00:00:00" },
+            ],
+            undefined,
+            [stripeSales({ month: "2026-08" })],
+        );
+        const google = result.rows.find((r) => r.vendor === "google");
+        expect(google?.values["2026-09:forecast"]).toBe(-80);
+        expect(google?.values["2026-10:forecast"]).toBe(-80);
+        expect(result.currentCashUsd).toBe(20000);
+        expect(result.projectedMonthEndCashUsd).toBe(20015);
     });
 
     it("does not use import timestamps as usage coverage", () => {

@@ -121,6 +121,29 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
+    "microsoft/mai-image-2.5-flash": {
+        aliases: [],
+        provider: "azure",
+        brand: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-09-05").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
+        // Azure Global Standard meters and invoiced usage, verified 2026-09-05.
+        // Output tokens = pixels / 1024, so a 1024x1024 image is 1,024 tokens.
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(1.75),
+            completionImageTokens: perMillion(19.5),
+        },
+        title: "MAI Image 2.5 Flash",
+        description:
+            "Quick photorealistic generation and single-reference editing with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1, // Azure MAI edit route takes one input image.
+    },
     "nanobanana": {
         aliases: ["google/gemini-2.5-flash-image"],
         provider: "openrouter",

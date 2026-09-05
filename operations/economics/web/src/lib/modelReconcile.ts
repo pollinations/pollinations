@@ -114,7 +114,6 @@ type ProviderMonth = {
     cashUsd: number;
     creditUsd: number;
     providerModels: Map<string, { cashUsd: number; creditUsd: number }>;
-    hasUnmappedProviderUsage: boolean;
 };
 
 function getOrInit<K, V>(map: Map<K, V>, key: K, make: () => V): V {
@@ -140,7 +139,6 @@ function providerMonth(
         cashUsd: 0,
         creditUsd: 0,
         providerModels: new Map(),
-        hasUnmappedProviderUsage: false,
     }));
 }
 
@@ -164,26 +162,6 @@ function fundingCreditShare(entry: ProviderMonth): number | null {
     return Math.min(1, Math.max(0, entry.creditUsd / usageUsd));
 }
 
-type FundingAllocation = {
-    paidCashUsd: number;
-    questCashUsd: number;
-    paidCreditUsd: number;
-    questCreditUsd: number;
-};
-
-function fundingAllocation(
-    entry: ProviderMonth,
-    paidWeight: number,
-    questWeight: number,
-): FundingAllocation {
-    return {
-        paidCashUsd: entry.cashUsd * paidWeight,
-        questCashUsd: entry.cashUsd * questWeight,
-        paidCreditUsd: entry.creditUsd * paidWeight,
-        questCreditUsd: entry.creditUsd * questWeight,
-    };
-}
-
 function nullFundingFields() {
     return {
         providerCashUsd: null,
@@ -200,27 +178,6 @@ function nullFundingFields() {
         questCashSubsidyUsd: null,
         netCashContributionUsd: null,
     };
-}
-
-function hasCompleteModelFunding(entry: ProviderMonth): boolean {
-    const meteredModels = new Set(
-        [...entry.pollenModels.values()]
-            .filter((model) => pollenMeterUsd(model) > ACTIVE_USD)
-            .map((model) => model.model),
-    );
-    const fundedModels = [...entry.providerModels.entries()].filter(
-        ([, funding]) =>
-            Math.abs(funding.cashUsd) + Math.abs(funding.creditUsd) >
-            ACTIVE_USD,
-    );
-
-    return (
-        !entry.hasUnmappedProviderUsage &&
-        meteredModels.size > 0 &&
-        fundedModels.length > 0 &&
-        fundedModels.every(([model]) => meteredModels.has(model)) &&
-        [...meteredModels].every((model) => entry.providerModels.has(model))
-    );
 }
 
 function modelFundingAllocation(
@@ -267,113 +224,32 @@ function modelFundingAllocation(
 }
 
 function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
-    const pollenModels = [...entry.pollenModels.values()];
-    if (hasCompleteModelFunding(entry)) {
-        return pollenModels
-            .map((model) =>
-                modelFundingAllocation(
-                    model,
-                    entry.providerModels.get(model.model) ?? {
-                        cashUsd: 0,
-                        creditUsd: 0,
-                    },
-                ),
-            )
-            .sort(
-                (a, b) =>
-                    (b.paidPollenUsd ?? 0) +
-                        (b.questPollenUsd ?? 0) -
-                        ((a.paidPollenUsd ?? 0) + (a.questPollenUsd ?? 0)) ||
-                    (b.providerUsageUsd ?? 0) - (a.providerUsageUsd ?? 0) ||
-                    a.model.localeCompare(b.model),
-            );
-    }
-    const totalWeight = pollenModels.reduce(
-        (sum, model) => sum + Math.max(0, pollenMeterUsd(model)),
-        0,
+    let matchedCash = 0;
+    let matchedCredit = 0;
+    const models = [...entry.pollenModels.values()].map(
+        (model): ModelAllocationRow => {
+            const funding = entry.providerModels.get(model.model);
+            if (funding) {
+                matchedCash += funding.cashUsd;
+                matchedCredit += funding.creditUsd;
+                return modelFundingAllocation(model, funding);
+            }
+            return {
+                model: model.model,
+                status: entry.hasProvider ? "unallocated" : "missing provider",
+                paidPollenUsd: model.paidPollenUsd,
+                questPollenUsd: model.questPollenUsd,
+                retainedPaidUsd: model.retainedPaidUsd,
+                pollenMeterUsd: pollenMeterUsd(model),
+                ...nullFundingFields(),
+            };
+        },
     );
-    const providerUsage = entry.cashUsd + entry.creditUsd;
-    const canAllocate =
-        entry.hasProvider &&
-        (totalWeight > ACTIVE_USD || Math.abs(providerUsage) <= ACTIVE_USD);
-
-    const models = pollenModels.map((model): ModelAllocationRow => {
-        const meterUsd = pollenMeterUsd(model);
-        const pollenFields = {
-            paidPollenUsd: model.paidPollenUsd,
-            questPollenUsd: model.questPollenUsd,
-            retainedPaidUsd: model.retainedPaidUsd,
-            pollenMeterUsd: meterUsd,
-        };
-        if (!entry.hasProvider) {
-            return {
-                model: model.model,
-                status: "missing provider",
-                ...pollenFields,
-                ...nullFundingFields(),
-            };
-        }
-
-        if (!canAllocate) {
-            const creditShare = fundingCreditShare(entry);
-            return {
-                model: model.model,
-                status: "unallocated",
-                ...pollenFields,
-                ...nullFundingFields(),
-                paidPollenOnCreditsUsd:
-                    creditShare == null
-                        ? null
-                        : model.paidPollenUsd * creditShare,
-                questPollenOnCreditsUsd:
-                    creditShare == null
-                        ? null
-                        : model.questPollenUsd * creditShare,
-                meterGapUsd: null,
-            };
-        }
-
-        const paidWeight =
-            totalWeight > ACTIVE_USD
-                ? Math.max(0, model.paidMeterUsd) / totalWeight
-                : 0;
-        const questWeight =
-            totalWeight > ACTIVE_USD
-                ? Math.max(0, model.questMeterUsd) / totalWeight
-                : 0;
-        const allocation = fundingAllocation(entry, paidWeight, questWeight);
-        const cash = allocation.paidCashUsd + allocation.questCashUsd;
-        const credit = allocation.paidCreditUsd + allocation.questCreditUsd;
-        const creditShare = fundingCreditShare(entry);
-        return {
-            model: model.model,
-            status: "allocated",
-            ...pollenFields,
-            providerCashUsd: cash,
-            providerCreditUsd: credit,
-            providerUsageUsd: cash + credit,
-            paidProviderCashUsd: allocation.paidCashUsd,
-            questProviderCashUsd: allocation.questCashUsd,
-            paidProviderCreditUsd: allocation.paidCreditUsd,
-            questProviderCreditUsd: allocation.questCreditUsd,
-            paidPollenOnCreditsUsd:
-                creditShare == null ? null : model.paidPollenUsd * creditShare,
-            questPollenOnCreditsUsd:
-                creditShare == null ? null : model.questPollenUsd * creditShare,
-            meterGapUsd: cash + credit - meterUsd,
-            paidContributionUsd: model.retainedPaidUsd - allocation.paidCashUsd,
-            questCashSubsidyUsd: allocation.questCashUsd,
-            netCashContributionUsd:
-                model.retainedPaidUsd -
-                allocation.paidCashUsd -
-                allocation.questCashUsd,
-        };
-    });
-
+    const cash = entry.cashUsd - matchedCash;
+    const credit = entry.creditUsd - matchedCredit;
     if (
         entry.hasProvider &&
-        (!entry.hasPollen ||
-            (!canAllocate && Math.abs(providerUsage) > ACTIVE_USD))
+        (!entry.hasPollen || Math.abs(cash) + Math.abs(credit) > ACTIVE_USD)
     ) {
         models.push({
             model: "Unallocated vendor usage",
@@ -382,22 +258,12 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
             questPollenUsd: null,
             retainedPaidUsd: null,
             pollenMeterUsd: null,
-            providerCashUsd: entry.cashUsd,
-            providerCreditUsd: entry.creditUsd,
-            providerUsageUsd: providerUsage,
-            paidProviderCashUsd: null,
-            questProviderCashUsd: null,
-            paidProviderCreditUsd: null,
-            questProviderCreditUsd: null,
-            paidPollenOnCreditsUsd: null,
-            questPollenOnCreditsUsd: null,
-            meterGapUsd: null,
-            paidContributionUsd: null,
-            questCashSubsidyUsd: null,
-            netCashContributionUsd: null,
+            ...nullFundingFields(),
+            providerCashUsd: cash,
+            providerCreditUsd: credit,
+            providerUsageUsd: cash + credit,
         });
     }
-
     return models.sort(
         (a, b) =>
             (b.paidPollenUsd ?? 0) +
@@ -408,10 +274,8 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     );
 }
 
-// Provider-month remains the trusted reconciliation grain. Exact model costs
-// are used only when every nonzero provider row carries a canonical Pollen
-// model ID and every metered Pollen model is covered. Any incomplete or raw
-// provider-label mapping falls back to provider-month proportional allocation.
+// Join only canonical model IDs. Keep unmatched costs separate; a missing model
+// must never redistribute the exact costs of another model.
 export function modelReconcileRows(data: Data): ModelReconcileRow[] {
     const entries = new Map<string, ProviderMonth>();
 
@@ -458,18 +322,14 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         const creditUsd = opCloudCreditBurnUsd(row);
         entry.cashUsd += cashUsd;
         entry.creditUsd += creditUsd;
-        if (Math.abs(cashUsd) + Math.abs(creditUsd) > ACTIVE_USD) {
-            const model = row.model.trim();
-            if (!model) {
-                entry.hasUnmappedProviderUsage = true;
-            } else {
-                const funding = getOrInit(entry.providerModels, model, () => ({
-                    cashUsd: 0,
-                    creditUsd: 0,
-                }));
-                funding.cashUsd += cashUsd;
-                funding.creditUsd += creditUsd;
-            }
+        const model = row.model.trim();
+        if (model) {
+            const funding = getOrInit(entry.providerModels, model, () => ({
+                cashUsd: 0,
+                creditUsd: 0,
+            }));
+            funding.cashUsd += cashUsd;
+            funding.creditUsd += creditUsd;
         }
     }
 

@@ -97,9 +97,8 @@ export function meterMatchPct(
     return (Math.min(pollen, provider) / total) * 100;
 }
 
-// Provider-month is the only authoritative cost-check grain. Model rows inherit
-// an allocation of the provider total, so repeating a pass/fail status on every
-// model would imply independent evidence that does not exist.
+// The reconciliation status compares the full provider month. Exact model costs
+// can be shown independently, but do not certify that the whole invoice matches.
 export function providerCostCheck(
     row: Pick<
         UnitEconomicsRow,
@@ -174,12 +173,7 @@ function modelNetCash(
         return null;
     }
 
-    // When provider spend cannot be allocated by model, keep both known sides
-    // visible: retained Pollen stays with its model and cash stays on the
-    // explicit unallocated row. Their sum still reconciles to the provider.
-    if (model.retainedPaidUsd != null && model.providerCashUsd == null) {
-        return model.retainedPaidUsd;
-    }
+    // Unknown model cost is not zero cost or a 100% margin.
     if (model.retainedPaidUsd == null && model.providerCashUsd != null) {
         return -model.providerCashUsd;
     }
@@ -197,11 +191,7 @@ function modelEconomicContribution(
         return null;
     }
 
-    // Preserve both known sides when a mixed provider-month cannot allocate
-    // cost by model. The model and explicit unallocated rows remain additive.
-    if (model.retainedPaidUsd != null && model.providerUsageUsd == null) {
-        return model.retainedPaidUsd;
-    }
+    // Only the residual cost itself is known; unmatched model profit is not.
     if (model.retainedPaidUsd == null && model.providerUsageUsd != null) {
         return -model.providerUsageUsd;
     }

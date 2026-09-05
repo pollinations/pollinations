@@ -92,7 +92,7 @@ describe("unitEconomicsRows", () => {
         const providers = modelReconcileRows(
             data({
                 opCloud: [
-                    cloud({ paid: -80, credit: -20 }),
+                    cloud({ model: "claude", paid: -80, credit: -20 }),
                     cloud({ vendor: "lambda", paid: -30, credit: -70 }),
                 ],
                 opPollen: [
@@ -144,12 +144,20 @@ describe("unitEconomicsRows", () => {
             expect(sum(models.map((row) => row.pollenMeterUsd))).toBeCloseTo(
                 provider.pollenMeterUsd ?? 0,
             );
-            expect(
-                sum(models.map((row) => row.netCashContributionUsd)),
-            ).toBeCloseTo(provider.netCashContributionUsd ?? 0);
-            expect(
-                sum(models.map((row) => row.economicContributionUsd)),
-            ).toBeCloseTo(provider.economicContributionUsd ?? 0);
+            if (models.every((row) => row.allocationStatus === "allocated")) {
+                expect(
+                    sum(models.map((row) => row.netCashContributionUsd)),
+                ).toBeCloseTo(provider.netCashContributionUsd ?? 0);
+                expect(
+                    sum(models.map((row) => row.economicContributionUsd)),
+                ).toBeCloseTo(provider.economicContributionUsd ?? 0);
+            } else {
+                const unmatched = models.find(
+                    (row) => row.paidPollenUsd != null,
+                );
+                expect(unmatched?.netCashContributionUsd).toBeNull();
+                expect(unmatched?.economicContributionUsd).toBeNull();
+            }
             expect(
                 (provider.netCashContributionUsd ?? 0) -
                     (provider.economicContributionUsd ?? 0),
@@ -169,10 +177,11 @@ describe("unitEconomicsRows", () => {
         const providers = modelReconcileRows(
             data({
                 opCloud: [
-                    cloud({ paid: -10 }),
+                    cloud({ model: "claude", paid: -10 }),
                     cloud({
                         start: "2026-08-01 00:00:00",
                         end: "2026-09-01 00:00:00",
+                        model: "claude",
                         paid: -20,
                     }),
                 ],

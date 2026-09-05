@@ -56,7 +56,10 @@ describe("modelReconcileRows", () => {
     it("splits paid and Quest traffic through cash and credit funding", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [cloud({ paid: -80, credit: -20 })],
+                opCloud: [
+                    cloud({ model: "claude", paid: -60, credit: -15 }),
+                    cloud({ model: "nova", paid: -20, credit: -5 }),
+                ],
                 opPollen: [
                     pollen({
                         model: "claude",
@@ -178,7 +181,7 @@ describe("modelReconcileRows", () => {
         expect(row.paidProviderCashUsd).toBe(100);
     });
 
-    it("falls back to provider-month allocation when canonical model coverage is incomplete", () => {
+    it("preserves exact costs when canonical model coverage is incomplete", () => {
         const [row] = modelReconcileRows(
             data({
                 opCloud: [
@@ -202,15 +205,56 @@ describe("modelReconcileRows", () => {
 
         const claude = row.models.find((model) => model.model === "claude");
         const nova = row.models.find((model) => model.model === "nova");
-        if (!claude || !nova) throw new Error("fallback models missing");
-        expect(claude.providerCashUsd).toBe(50);
-        expect(nova.providerCashUsd).toBe(50);
+        if (!claude || !nova) throw new Error("models missing");
+        expect(claude.providerCashUsd).toBe(100);
+        expect(claude.status).toBe("allocated");
+        expect(nova.providerCashUsd).toBeNull();
+        expect(nova.status).toBe("unallocated");
+        expect(row.providerCashUsd).toBe(100);
+        expect(row.paidProviderCashUsd).toBeNull();
+    });
+
+    it("keeps raw labels and model-less costs in a residual without changing exact matches", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({ model: "claude", paid: -40, credit: -10 }),
+                    cloud({ model: "Provider Claude Label", paid: -20 }),
+                    cloud({ model: "", credit: -30 }),
+                ],
+                opPollen: [
+                    pollen({ model: "claude", cost_paid: 30, price_paid: 60 }),
+                    pollen({ model: "nova", cost_paid: 70, price_paid: 80 }),
+                ],
+            }),
+        );
+        expect(row.models.find((m) => m.model === "claude")).toMatchObject({
+            status: "allocated",
+            providerCashUsd: 40,
+            providerCreditUsd: 10,
+        });
+        expect(row.models.find((m) => m.model === "nova")).toMatchObject({
+            status: "unallocated",
+            providerCashUsd: null,
+        });
+        expect(
+            row.models.find((m) => m.model === "Unallocated vendor usage"),
+        ).toMatchObject({
+            status: "unallocated",
+            providerCashUsd: 20,
+            providerCreditUsd: 30,
+        });
+        expect(
+            row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
+        ).toBe(100);
+        expect(row.providerUsageUsd).toBe(100);
+        expect(row.netCashContributionUsd).toBe(80);
     });
 
     it("identifies paid and Quest Pollen spent on credit-funded usage", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [cloud({ paid: -25, credit: -75 })],
+                opCloud: [cloud({ model: "claude", paid: -25, credit: -75 })],
                 opPollen: [
                     pollen({
                         cost_paid: 60,
@@ -359,7 +403,7 @@ describe("modelReconcileRows", () => {
         const rows = modelReconcileRows(
             data({
                 opCloud: [
-                    cloud({ paid: -50 }),
+                    cloud({ model: "claude", paid: -50 }),
                     cloud({ vendor: "modal", paid: -20 }),
                 ],
                 opPollen: [

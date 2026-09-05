@@ -125,7 +125,7 @@ function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
               : "text-theme-text-strong";
     const explanation =
         check.kind === "provider-level"
-            ? "Model costs are allocations. Check the vendor row against the vendor statement."
+            ? "Model costs require an exact model match in the vendor ledger. Unmatched costs stay unallocated; check totals on the vendor row."
             : check.kind === "missing-mapping"
               ? "Add this vendor to the canonical registry before interpreting its economics."
               : check.kind === "missing-source"
@@ -613,7 +613,7 @@ function UnitEconomicsTable({
                                 className={GROUP_BORDER}
                                 {...headerProps("providerCashUsd")}
                             >
-                                <HeaderHint hint="Vendor usage paid with real cash. Model rows receive an allocation from the vendor-month total.">
+                                <HeaderHint hint="Vendor usage paid with real cash. Model costs require an exact ledger model match; unmatched costs remain unallocated.">
                                     Cash
                                 </HeaderHint>
                             </TableHeaderCell>
@@ -629,7 +629,7 @@ function UnitEconomicsTable({
                                 align="right"
                                 {...headerProps("providerCreditUsd")}
                             >
-                                <HeaderHint hint="Vendor usage funded with consumed vendor credits. Model rows receive an allocation from the vendor-month total.">
+                                <HeaderHint hint="Vendor usage funded with consumed credits. Model costs require an exact ledger model match; unmatched costs remain unallocated.">
                                     Credit
                                 </HeaderHint>
                             </TableHeaderCell>

@@ -321,17 +321,33 @@ describe("Pollinations OAuth", () => {
         ).resolves.toBeNull();
     });
 
-    it("clears the session on logout", async () => {
+    it("clears the session without redirecting into automatic login", async () => {
         const auth = createPollinationsAuth(config);
         const response = await auth.handle(
             new Request("https://kpi.pollinations.ai/auth/logout"),
         );
 
-        expect(response?.status).toBe(302);
+        expect(response?.status).toBe(200);
+        expect(response?.headers.has("Location")).toBe(false);
+        expect(response?.headers.get("Cache-Control")).toBe("no-store");
+        expect(response?.headers.get("Content-Type")).toContain("text/html");
+        expect(await response?.text()).toContain('href="/auth/login"');
         expect(response?.headers.get("Set-Cookie")).toContain(
             "pollinations_session=;",
         );
         expect(response?.headers.get("Set-Cookie")).toContain("Max-Age=0");
+    });
+
+    it("clears only this dashboard's port-specific session on local logout", async () => {
+        const auth = createPollinationsAuth(config);
+        const response = await auth.handle(
+            new Request("http://localhost:3456/auth/logout"),
+        );
+        expect(response?.status).toBe(200);
+        expect(response?.headers.has("Location")).toBe(false);
+        expect(response?.headers.get("Set-Cookie")).toBe(
+            "pollinations_session_3456=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0",
+        );
     });
 
     it("isolates local cookies by port", async () => {

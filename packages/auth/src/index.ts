@@ -358,14 +358,23 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             );
         }
         if (url.pathname === LOGOUT_PATH) {
-            return redirect(new URL("/", url.origin).toString(), [
-                cookie(
-                    request,
-                    requestCookieName(request, SESSION_COOKIE),
-                    "",
-                    0,
-                ),
-            ]);
+            // The protected root would immediately sign the user back in
+            // through their separate, still-active Enter session.
+            return new Response(
+                '<!doctype html><html lang="en"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Signed out · Pollinations</title><body><main><h1>Signed out of this dashboard</h1><p>Your Pollinations account and connected apps remain signed in.</p><a href="/auth/login">Sign in again</a></main></body></html>',
+                {
+                    headers: {
+                        "Content-Type": "text/html; charset=utf-8",
+                        "Cache-Control": "no-store",
+                        "Set-Cookie": cookie(
+                            request,
+                            requestCookieName(request, SESSION_COOKIE),
+                            "",
+                            0,
+                        ),
+                    },
+                },
+            );
         }
         return null;
     }

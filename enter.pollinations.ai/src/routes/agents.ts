@@ -16,10 +16,10 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
-    agentRuntimeBaseUrl,
     BuiltinMcpServerIdSchema,
     PromptAgentInputSchema,
     parsePromptAgentConfig,
+    promptAgentApiBaseUrl,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
@@ -191,7 +191,7 @@ export const agentsRoutes = new Hono<Env>()
             });
             return c.json({
                 data: rows.map((row) =>
-                    toResponse(row, agentRuntimeBaseUrl(c.env)),
+                    toResponse(row, promptAgentApiBaseUrl(c.env)),
                 ),
             });
         },
@@ -224,7 +224,7 @@ export const agentsRoutes = new Hono<Env>()
             return c.json(
                 toResponse(
                     await requireOwnedAgent(db, c.req.param("id"), user.id),
-                    agentRuntimeBaseUrl(c.env),
+                    promptAgentApiBaseUrl(c.env),
                 ),
             );
         },
@@ -281,7 +281,7 @@ export const agentsRoutes = new Hono<Env>()
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
+            return c.json(toResponse(row, promptAgentApiBaseUrl(c.env)));
         },
     )
     .patch(
@@ -341,7 +341,7 @@ export const agentsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
+            return c.json(toResponse(row, promptAgentApiBaseUrl(c.env)));
         },
     )
     .delete(

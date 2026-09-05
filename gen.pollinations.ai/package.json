@@ -35,6 +35,8 @@
         "wrangler": "^4.52.1"
     },
     "dependencies": {
+        "@ai-sdk/mcp": "^2.0.32",
+        "@ai-sdk/openai-compatible": "^3.0.30",
         "@aws-sdk/client-bedrock-runtime": "^3.1040.0",
         "@aws-sdk/client-s3": "^3.1040.0",
         "@hono/standard-validator": "^0.2.2",
@@ -54,6 +56,7 @@
         "jose": "^6.2.3",
         "piexif-ts": "^2.1.0",
         "yaml": "^2.9.0",
+        "ai": "^7.0.66",
         "zod": "4.5.4"
     }
 }

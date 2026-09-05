@@ -177,16 +177,18 @@ export type DiaryDay = {
 export type DiaryPr = {
     number: number;
     date: string;
-    mergedAt: string;
     title: string;
     url: string;
     author: string;
 };
 
-type HistoryPullRequest = Omit<DiaryPr, "date">;
+type HistoryPullRequest = Omit<DiaryPr, "url">;
+
+type LivePullRequest = Omit<DiaryPr, "date"> & { mergedAt: string };
 
 type HistoryPayload = {
     generatedAt: string;
+    allTimeCount: number;
     pullRequests: HistoryPullRequest[];
 };
 
@@ -251,7 +253,7 @@ async function loadLivePullRequests(since: string) {
     const query = encodeURIComponent(
         `repo:${REPO} is:pr is:merged merged:>=${since}`,
     );
-    const pullRequests: HistoryPullRequest[] = [];
+    const pullRequests: LivePullRequest[] = [];
     let page = 1;
     let total = 1;
 
@@ -299,31 +301,37 @@ function loadPullRequestHistory() {
         }
         const payload = (await response.json()) as HistoryPayload;
         const archivedLatest =
-            payload.pullRequests[payload.pullRequests.length - 1]?.mergedAt;
+            payload.pullRequests[payload.pullRequests.length - 1]?.date;
         const livePullRequests = archivedLatest
-            ? await loadLivePullRequests(archivedLatest.slice(0, 10)).catch(
-                  () => [],
-              )
+            ? await loadLivePullRequests(archivedLatest).catch(() => [])
             : [];
         const uniquePullRequests = new Map(
             payload.pullRequests.map((pullRequest) => [
                 pullRequest.number,
-                pullRequest,
+                {
+                    ...pullRequest,
+                    url: `${REPO_URL}/pull/${pullRequest.number}`,
+                },
             ]),
         );
+        let liveAdditions = 0;
         for (const pullRequest of livePullRequests) {
-            uniquePullRequests.set(pullRequest.number, pullRequest);
+            if (!uniquePullRequests.has(pullRequest.number)) liveAdditions += 1;
+            uniquePullRequests.set(pullRequest.number, {
+                number: pullRequest.number,
+                date: pullRequest.mergedAt.slice(0, 10),
+                title: pullRequest.title,
+                url: pullRequest.url,
+                author: pullRequest.author,
+            });
         }
         const pullRequests = [...uniquePullRequests.values()]
-            .filter(
-                (pullRequest) =>
-                    pullRequest.mergedAt.slice(0, 10) >= NEWS_START_DAY,
-            )
-            .map((pullRequest) => ({
-                ...pullRequest,
-                date: pullRequest.mergedAt.slice(0, 10),
-            }))
-            .sort((left, right) => left.mergedAt.localeCompare(right.mergedAt));
+            .filter((pullRequest) => pullRequest.date >= NEWS_START_DAY)
+            .sort(
+                (left, right) =>
+                    left.date.localeCompare(right.date) ||
+                    left.number - right.number,
+            );
         const firstDay = pullRequests[0]?.date;
         const latestDay = pullRequests[pullRequests.length - 1]?.date;
         if (!firstDay || !latestDay) {
@@ -340,7 +348,7 @@ function loadPullRequestHistory() {
             byDate,
             firstDay,
             latestDay,
-            allTimeCount: uniquePullRequests.size,
+            allTimeCount: payload.allTimeCount + liveAdditions,
         };
     })();
     return historyCache;

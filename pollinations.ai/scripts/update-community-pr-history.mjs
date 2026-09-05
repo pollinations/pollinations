@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repository = "pollinations/pollinations";
+const historyStartDay = "2025-01-01";
 const query = `
     query($endCursor: String) {
         repository(owner: "pollinations", name: "pollinations") {
@@ -49,6 +50,17 @@ const pullRequests = pages
     }))
     .sort((left, right) => left.mergedAt.localeCompare(right.mergedAt));
 
+const diaryPullRequests = pullRequests
+    .filter(
+        (pullRequest) => pullRequest.mergedAt.slice(0, 10) >= historyStartDay,
+    )
+    .map(({ number, mergedAt, title, author }) => ({
+        number,
+        date: mergedAt.slice(0, 10),
+        title,
+        author,
+    }));
+
 const output = resolve(
     dirname(fileURLToPath(import.meta.url)),
     "../public/data/community-pr-history.json",
@@ -56,9 +68,13 @@ const output = resolve(
 mkdirSync(dirname(output), { recursive: true });
 writeFileSync(
     output,
-    `${JSON.stringify({ generatedAt: new Date().toISOString(), pullRequests })}\n`,
+    `${JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        allTimeCount: pullRequests.length,
+        pullRequests: diaryPullRequests,
+    })}\n`,
 );
 
 console.log(
-    `Saved ${pullRequests.length} merged pull requests from ${repository}.`,
+    `Saved ${diaryPullRequests.length} diary pull requests and an all-time total of ${pullRequests.length} from ${repository}.`,
 );

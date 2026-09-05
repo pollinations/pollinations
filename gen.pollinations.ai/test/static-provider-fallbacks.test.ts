@@ -278,6 +278,17 @@ describe("static provider fallbacks", () => {
             defaultOptions: { max_tokens: 64000 },
         });
         expect(
+            findModelByName("qwen3.8-flash-alibaba")?.config(),
+        ).toMatchObject({
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            model: "qwen3.8-flash",
+            defaultOptions: { max_tokens: 64000 },
+        });
+        expect(TEXT_SERVICES["qwen3.8-flash-alibaba"].cost).toEqual(
+            TEXT_SERVICES["qwen/qwen3.8-flash"].cost,
+        );
+        expect(
             findModelByName("mistral-small-3.2-deepinfra")?.config(),
         ).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",

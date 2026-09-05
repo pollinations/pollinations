@@ -37,24 +37,22 @@ afterAll(async () => {
     if (originalConfig) await configure({ ...originalConfig, reset: true });
 });
 
+it("uses the same middleware in both services", () => {
+    expect(genLogger).toBe(enterLogger);
+});
+
 describe.each([
-    [
-        "Gen",
-        genLogger,
-        "https://gen.pollinations.ai/log?key=%5Bredacted%5D&model=test",
-    ],
-    [
-        "Enter",
-        enterLogger,
-        "https://gen.pollinations.ai/log?key=test-value&model=test",
-    ],
-] as const)("%s request logger", (_name, logger, publicUrl) => {
+    ["Gen", genLogger],
+    ["Enter", enterLogger],
+] as const)("%s request logger", (_name, logger) => {
     it.each([
         "local",
         "test",
         "staging",
         "production",
-    ])("preserves context and log ordering in %s", async (environment) => {
+    ])("preserves raw URLs, context and log ordering in %s", async (environment) => {
+        const publicUrl =
+            "https://gen.pollinations.ai/log?key=test-value&token=test-token&key=second&text=a%20b";
         const app = new Hono<{
             Variables: LoggerVariables & { requestId: string };
         }>();
@@ -69,7 +67,7 @@ describe.each([
             return c.text("ok", 201);
         });
         const response = await app.request(
-            "https://internal.example/log?key=test-value&model=test",
+            "https://internal.example/log?key=test-value&token=test-token&key=second&text=a%20b",
             {
                 headers: {
                     "x-forwarded-host": "gen.pollinations.ai",

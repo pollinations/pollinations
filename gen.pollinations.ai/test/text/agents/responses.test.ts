@@ -605,19 +605,13 @@ describe("managed agent Responses runtime", () => {
     });
 
     it("rejects state and unsupported parameters", async () => {
-        vi.stubGlobal(
-            "fetch",
-            vi.fn(async () =>
-                Response.json(
-                    {
-                        error: {
-                            message: "No model call expected during validation",
-                        },
-                    },
-                    { status: 502 },
-                ),
+        const fetchMock = vi.fn(async () =>
+            Response.json(
+                { error: { message: "Test upstream unavailable" } },
+                { status: 502 },
             ),
         );
+        vi.stubGlobal("fetch", fetchMock);
         expect(
             PromptAgentResponsesRequestSchema.safeParse({
                 model: crypto.randomUUID(),
@@ -636,7 +630,8 @@ describe("managed agent Responses runtime", () => {
             new AbortController().signal,
             RUNTIME,
         );
-        expect(withTools.status).not.toBe(400);
+        expect(withTools.status).toBe(502);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
 
         for (const [field, value] of [
             ["max_tool_calls", { max_tool_calls: 2 }],
@@ -665,5 +660,6 @@ describe("managed agent Responses runtime", () => {
                 });
             }
         }
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

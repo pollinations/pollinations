@@ -135,10 +135,94 @@ function stripKeyFromUrl(url: string): string {
     return urlObj.toString();
 }
 
-// SSE parsing result
-interface SSEParseResult<T> {
-    chunks: T[];
-    remainingBuffer: string;
+interface SSEMessage {
+    data: string;
+}
+
+/** Incremental SSE decoder following event boundaries rather than network lines. */
+class SSEDecoder {
+    private buffer = "";
+    private data: string[] = [];
+
+    push(chunk: string, flush = false): SSEMessage[] {
+        this.buffer += chunk;
+        const messages: SSEMessage[] = [];
+
+        while (this.buffer.length > 0) {
+            const ending = this.nextLineEnding(flush);
+            if (!ending) break;
+            const line = this.buffer.slice(0, ending.index);
+            this.buffer = this.buffer.slice(ending.index + ending.length);
+            const message = this.processLine(line);
+            if (message) messages.push(message);
+        }
+
+        if (flush) {
+            if (this.buffer.length > 0) {
+                const message = this.processLine(this.buffer);
+                this.buffer = "";
+                if (message) messages.push(message);
+            }
+            const pending = this.dispatch();
+            if (pending) messages.push(pending);
+        }
+
+        return messages;
+    }
+
+    private nextLineEnding(
+        flush: boolean,
+    ): { index: number; length: number } | null {
+        for (let index = 0; index < this.buffer.length; index += 1) {
+            const character = this.buffer[index];
+            if (character === "\n") return { index, length: 1 };
+            if (character !== "\r") continue;
+            if (index + 1 === this.buffer.length && !flush) return null;
+            return {
+                index,
+                length: this.buffer[index + 1] === "\n" ? 2 : 1,
+            };
+        }
+        return null;
+    }
+
+    private processLine(line: string): SSEMessage | null {
+        if (line === "") return this.dispatch();
+        if (line.startsWith(":")) return null;
+
+        const separator = line.indexOf(":");
+        const field = separator < 0 ? line : line.slice(0, separator);
+        const rawValue = separator < 0 ? "" : line.slice(separator + 1);
+        const value = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
+        if (field === "data") {
+            // OpenAI-compatible streams commonly emit one JSON payload per
+            // data line without the blank SSE separator. Preserve legitimate
+            // multiline data until the accumulated JSON is complete.
+            const pending = this.hasCompleteData() ? this.dispatch() : null;
+            this.data.push(value);
+            return pending;
+        }
+        return null;
+    }
+
+    private hasCompleteData(): boolean {
+        if (this.data.length === 0) return false;
+        const data = this.data.join("\n").trim();
+        if (data === "[DONE]") return true;
+        try {
+            JSON.parse(data);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    private dispatch(): SSEMessage | null {
+        if (this.data.length === 0) return null;
+        const message = { data: this.data.join("\n") };
+        this.data = [];
+        return message;
+    }
 }
 
 function chatStreamError(chunk: unknown): PollinationsError | null {
@@ -182,26 +266,33 @@ function chatStreamError(chunk: unknown): PollinationsError | null {
     return new PollinationsError(message, code, status);
 }
 
-// Parse SSE lines from buffer and extract data
-function parseSSEBuffer<T>(
-    buffer: string,
-    parseChunk: (data: string) => T | null,
-): SSEParseResult<T> {
-    const lines = buffer.split("\n");
-    const remainingBuffer = lines.pop() || "";
-    const chunks: T[] = [];
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed === "data: [DONE]") continue;
-        if (trimmed.startsWith("data: ")) {
-            const parsed = parseChunk(trimmed.slice(6));
-            if (parsed !== null) {
-                chunks.push(parsed);
-            }
-        }
+function parseChatStreamData(data: string): ChatStreamChunk {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(data);
+    } catch {
+        throw new PollinationsError(
+            "Invalid JSON in chat completion stream",
+            "MALFORMED_STREAM",
+            502,
+        );
     }
+    const error = chatStreamError(parsed);
+    if (error) throw error;
 
-    return { chunks, remainingBuffer };
+    if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !("choices" in parsed) ||
+        !Array.isArray((parsed as { choices: unknown }).choices)
+    ) {
+        throw new PollinationsError(
+            "Invalid chat completion stream event",
+            "MALFORMED_STREAM",
+            502,
+        );
+    }
+    return parsed as ChatStreamChunk;
 }
 
 /**
@@ -334,6 +425,7 @@ export class Pollinations {
             model: options.model,
             width: options.width,
             height: options.height,
+            resolution: options.resolution,
             seed: options.seed,
             safe: options.safe,
             quality: options.quality,
@@ -625,6 +717,7 @@ export class Pollinations {
             model: options.model,
             duration: options.duration,
             aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
@@ -805,6 +898,7 @@ export class Pollinations {
         return this.stripUndefined({
             messages,
             model: options.model,
+            routing: options.routing,
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -921,46 +1015,73 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
-        let buffer = "";
+        const sseDecoder = new SSEDecoder();
+        let finished = false;
+        let completed = false;
+        const cancelReader = () => {
+            void reader.cancel().catch(() => undefined);
+        };
+        options.signal?.addEventListener("abort", cancelReader, { once: true });
+
+        const chunksFrom = function* (
+            messages: SSEMessage[],
+        ): Generator<ChatStreamChunk> {
+            for (const message of messages) {
+                if (options.signal?.aborted) {
+                    throw new PollinationsError(
+                        "Request was cancelled",
+                        "CANCELLED",
+                        499,
+                    );
+                }
+                if (!message.data) continue;
+                if (message.data.trim() === "[DONE]") {
+                    // Proxies may repeat [DONE]; the response is complete.
+                    finished = true;
+                    continue;
+                }
+                if (finished) {
+                    throw new PollinationsError(
+                        "Chat stream contained data after completion",
+                        "MALFORMED_STREAM",
+                        502,
+                    );
+                }
+                yield parseChatStreamData(message.data);
+            }
+        };
 
         try {
+            if (options.signal?.aborted) await reader.cancel();
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<unknown>(buffer, (data) => {
-                    try {
-                        return JSON.parse(data) as unknown;
-                    } catch {
-                        throw new PollinationsError(
-                            "Invalid JSON in chat completion stream",
-                            "MALFORMED_STREAM",
-                            502,
-                        );
-                    }
-                });
-
-                buffer = result.remainingBuffer;
-                for (const chunk of result.chunks) {
-                    const error = chatStreamError(chunk);
-                    if (error) throw error;
-                    if (
-                        !chunk ||
-                        typeof chunk !== "object" ||
-                        !("choices" in chunk) ||
-                        !Array.isArray((chunk as { choices: unknown }).choices)
-                    ) {
-                        throw new PollinationsError(
-                            "Invalid chat completion stream event",
-                            "MALFORMED_STREAM",
-                            502,
-                        );
-                    }
-                    yield chunk as ChatStreamChunk;
-                }
+                const text = decoder.decode(value, { stream: true });
+                yield* chunksFrom(sseDecoder.push(text));
             }
+            if (options.signal?.aborted) {
+                throw new PollinationsError(
+                    "Request was cancelled",
+                    "CANCELLED",
+                    499,
+                );
+            }
+            yield* chunksFrom(sseDecoder.push(decoder.decode(), true));
+            completed = true;
+        } catch (error) {
+            if (options.signal?.aborted) {
+                throw new PollinationsError(
+                    "Request was cancelled",
+                    "CANCELLED",
+                    499,
+                );
+            }
+            throw error;
         } finally {
+            options.signal?.removeEventListener("abort", cancelReader);
+            // An early break or a decoder error leaves the body open; cancel
+            // it so the connection is released.
+            if (!completed) await reader.cancel().catch(() => undefined);
             reader.releaseLock();
         }
     }

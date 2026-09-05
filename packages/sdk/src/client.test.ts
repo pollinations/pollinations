@@ -50,7 +50,11 @@ function makeResponse(
 
     if (kind === "stream") {
         const encoder = new TextEncoder();
-        const chunks = typeof body === "string" ? [encoder.encode(body)] : [];
+        const chunks = Array.isArray(body)
+            ? body.map((chunk) => encoder.encode(String(chunk)))
+            : typeof body === "string"
+              ? [encoder.encode(body)]
+              : [];
         let i = 0;
         resp.body = {
             getReader: () => ({
@@ -59,6 +63,7 @@ function makeResponse(
                         ? { done: false, value: chunks[i++] }
                         : { done: true, value: undefined },
                 releaseLock: () => {},
+                cancel: async () => {},
             }),
         };
     }
@@ -363,18 +368,21 @@ describe("Pollinations seed handling", () => {
             }),
         );
 
-        await client.image("a cat", { seed: -1 });
+        await client.image("a cat", { seed: -1, resolution: "2k" });
         await client.video("a long scene", {
             model: "nova-reel",
             duration: 120,
+            resolution: "1080p",
             seed: -1,
         });
 
-        const imageUrl = fetchMock.mock.calls[0][0] as string;
+        const imageUrl = new URL(fetchMock.mock.calls[0][0] as string);
         const videoUrl = new URL(fetchMock.mock.calls[1][0] as string);
-        expect(seedFromUrl(imageUrl)).toBe("-1");
+        expect(seedFromUrl(imageUrl.toString())).toBe("-1");
+        expect(imageUrl.searchParams.get("resolution")).toBe("2k");
         expect(videoUrl.searchParams.get("seed")).toBe("-1");
         expect(videoUrl.searchParams.get("duration")).toBe("120");
+        expect(videoUrl.searchParams.get("resolution")).toBe("1080p");
     });
 
     it("passes seed through text and chat requests consistently", async () => {
@@ -432,6 +440,345 @@ describe("Pollinations seed handling", () => {
         expect(body.reasoning_effort).toBe("medium");
         expect("thinking" in body).toBe(false);
         expect("thinking_budget" in body).toBe(false);
+    });
+});
+
+describe("Pollinations chat routing", () => {
+    it("serializes per-capability routing for chat requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await client.chat([{ role: "user", content: "hello" }], {
+            model: "floret",
+            routing: {
+                text: "openai",
+                web_search: "perplexity-fast",
+                image_generation: "flux",
+                image_editing: "nanobanana",
+                video: "veo",
+                audio: "elevenlabs",
+            },
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            model: "floret",
+            stream: false,
+            routing: {
+                text: "openai",
+                web_search: "perplexity-fast",
+                image_generation: "flux",
+                image_editing: "nanobanana",
+                video: "veo",
+                audio: "elevenlabs",
+            },
+        });
+    });
+
+    it("serializes partial routing for streaming chat requests", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"choices":[{"index":0,"delta":{"content":"ok"},"finish_reason":null}]}\n',
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        for await (const _chunk of client.chatStream(
+            [{ role: "user", content: "hello" }],
+            {
+                model: "floret",
+                routing: { video: "veo" },
+            },
+        )) {
+            // Consume the stream.
+        }
+
+        expect(bodyOf(fetchMock.mock.calls[0])).toMatchObject({
+            model: "floret",
+            stream: true,
+            routing: { video: "veo" },
+        });
+    });
+
+    it("omits routing when no override is provided", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse({ choices: [{ message: { content: "ok" } }] }),
+        );
+
+        await client.chat([{ role: "user", content: "hello" }], {
+            model: "floret",
+        });
+
+        expect(bodyOf(fetchMock.mock.calls[0]).routing).toBeUndefined();
+    });
+});
+
+describe("Pollinations chat streaming", () => {
+    it.each([
+        "\n",
+        "\r",
+        "\r\n",
+    ])("preserves UTF-8 and tool/usage events split at every byte (%j)", async (newline) => {
+        const events = [
+            {
+                choices: [
+                    {
+                        index: 0,
+                        delta: { content: "🌸 café" },
+                        finish_reason: null,
+                    },
+                ],
+            },
+            {
+                choices: [
+                    {
+                        index: 0,
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "call_1",
+                                    type: "function",
+                                    function: {
+                                        name: "search",
+                                        arguments: "{}",
+                                    },
+                                },
+                            ],
+                        },
+                        finish_reason: "tool_calls",
+                    },
+                ],
+            },
+            {
+                choices: [],
+                usage: {
+                    prompt_tokens: 2,
+                    completion_tokens: 3,
+                    total_tokens: 5,
+                },
+            },
+        ];
+        const sse = events
+            .map((event) => `data:${JSON.stringify(event)}${newline}${newline}`)
+            .join("");
+        const bytes = new TextEncoder().encode(
+            `${sse}data: [DONE]${newline}${newline}`,
+        );
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                for (const byte of bytes)
+                    controller.enqueue(Uint8Array.of(byte));
+                controller.close();
+            },
+        });
+        fetchMock.mockResolvedValue(new Response(body));
+
+        const chunks = [];
+        for await (const chunk of newClient().chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual(events);
+        expect(body.locked).toBe(false);
+    });
+
+    it("reads a final event without a trailing newline", async () => {
+        const event = { choices: [{ delta: { content: "last" } }] };
+        fetchMock.mockResolvedValue(
+            new Response(`data: ${JSON.stringify(event)}`),
+        );
+
+        const chunks = [];
+        for await (const chunk of newClient().chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual([event]);
+    });
+
+    it("cancels and releases the body when decoding fails", async () => {
+        const cancel = vi.fn();
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode("data: [invalid-json]\n\n"),
+                );
+            },
+            cancel,
+        });
+        fetchMock.mockResolvedValue(new Response(body));
+
+        await expect(
+            newClient()
+                .chatStream([{ role: "user", content: "hello" }])
+                .next(),
+        ).rejects.toMatchObject({ code: "MALFORMED_STREAM" });
+        expect(cancel).toHaveBeenCalledOnce();
+        expect(body.locked).toBe(false);
+    });
+
+    it("decodes SSE across chunk boundaries and ignores comment lines", async () => {
+        const client = newClient();
+        const chunk = {
+            id: "chatcmpl-test",
+            object: "chat.completion.chunk",
+            created: 1,
+            model: "floret",
+            choices: [
+                {
+                    index: 0,
+                    delta: { content: "ready" },
+                    finish_reason: null,
+                },
+            ],
+        };
+        const json = JSON.stringify(chunk);
+        const split = json.indexOf(',"choices"') + 1;
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                [
+                    ": keep-alive\r",
+                    `\n: ping\r\n\r\ndata: ${json.slice(0, split)}\r\ndata:${json.slice(split)}\r\n\r\ndata:[DONE]\r\n\r\n`,
+                ],
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const chunks = [];
+        for await (const chunk of client.chatStream([
+            { role: "user", content: "transcribe this" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toEqual([chunk]);
+    });
+
+    it("ignores a repeated [DONE] instead of failing a complete response", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"choices":[{"index":0,"delta":{"content":"done"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\ndata: [DONE]\n\n',
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+
+        const chunks = [];
+        for await (const chunk of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toHaveLength(1);
+    });
+
+    it("cancels the response body when the consumer stops early", async () => {
+        const client = newClient();
+        let cancelled = false;
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode(
+                        'data: {"choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}]}\n\n',
+                    ),
+                );
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
+        fetchMock.mockResolvedValue(
+            new Response(body, {
+                status: 200,
+                headers: { "content-type": "text/event-stream" },
+            }),
+        );
+
+        for await (const _chunk of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            break;
+        }
+
+        expect(cancelled).toBe(true);
+    });
+
+    it("surfaces stream errors instead of silently completing", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"error":{"message":"Agent failed"}}\n\ndata: [DONE]\n\n',
+                {
+                    kind: "stream",
+                    contentType: "text/event-stream",
+                },
+            ),
+        );
+
+        const consume = async () => {
+            for await (const _chunk of client.chatStream([
+                { role: "user", content: "hello" },
+            ])) {
+                // Consume the stream.
+            }
+        };
+
+        await expect(consume()).rejects.toMatchObject({
+            code: "STREAM_ERROR",
+            message: "Agent failed",
+        });
+    });
+
+    it("cancels an active response body when the caller aborts", async () => {
+        const client = newClient();
+        const encoder = new TextEncoder();
+        let cancelled = false;
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    encoder.encode(
+                        'data: {"choices":[{"index":0,"delta":{"content":"started"},"finish_reason":null}]}\n\n',
+                    ),
+                );
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
+        fetchMock.mockResolvedValue(
+            new Response(body, {
+                status: 200,
+                headers: { "content-type": "text/event-stream" },
+            }),
+        );
+        const controller = new AbortController();
+        const stream = client.chatStream([{ role: "user", content: "hello" }], {
+            signal: controller.signal,
+        });
+
+        await expect(stream.next()).resolves.toMatchObject({
+            value: { choices: [{ delta: { content: "started" } }] },
+        });
+        const pending = stream.next();
+        controller.abort();
+
+        await expect(pending).rejects.toMatchObject({ code: "CANCELLED" });
+        expect(cancelled).toBe(true);
     });
 });
 

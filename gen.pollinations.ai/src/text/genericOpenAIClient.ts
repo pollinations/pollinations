@@ -242,6 +242,7 @@ export async function genericOpenAIClient(
         try {
             response = await fetcher(endpointUrl, {
                 method: "POST",
+                redirect: "manual",
                 headers,
                 body: JSON.stringify(requestBody),
             });

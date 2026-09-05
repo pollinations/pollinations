@@ -569,7 +569,8 @@ const StoredCommunityEndpointPricesSchema = z.object(
 export const ProxyListingPayloadSchema = z
     .object({
         bearerTokenCiphertext: z.string().min(1),
-        api: CommunityEndpointApiSchema.nullable(),
+        // Media listings have no text API and do not need a data migration.
+        api: CommunityEndpointApiSchema.nullable().default(null),
         // Owner-set: callers may only spend Paid Pollen on this model. Rows
         // from before paid-only support are public-spend by default.
         paidOnly: z.boolean().default(false),

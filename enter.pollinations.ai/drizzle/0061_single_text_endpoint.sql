@@ -2,7 +2,6 @@
 -- already served both public APIs, so retain them in preference to Chat.
 WITH targets AS (
     SELECT id, base_url, payload, pending_payload,
-        type = 'endpoint_agent' OR json_extract(payload, '$.modality') = 'text' AS is_text,
         json_extract(payload, '$.responsesUrl') AS responses_url,
         CASE WHEN instr(base_url, '?') > 0
             THEN substr(base_url, 1, instr(base_url, '?') - 1)
@@ -11,21 +10,20 @@ WITH targets AS (
             THEN substr(base_url, instr(base_url, '?'))
             ELSE '' END AS query
     FROM community_endpoint
-    WHERE type IN ('proxy', 'endpoint_agent')
+    WHERE (type = 'endpoint_agent' OR
+        (type = 'proxy' AND json_extract(payload, '$.modality') = 'text'))
         AND json_type(payload, '$.api') IS NULL
 ), suffixes(suffix) AS (
     VALUES ('/chat/completions'), ('/responses'), ('/images/generations'),
         ('/images/edits'), ('/audio/transcriptions'), ('/audio/speech'), ('/embeddings')
 ), normalized AS (
     SELECT *, CASE
-        WHEN NOT is_text THEN NULL
         WHEN responses_url IS NOT NULL THEN 'responses'
         ELSE 'chat_completions' END AS api,
         rtrim(path, '/') AS trimmed_path
     FROM targets
 ), migrated AS (
     SELECT *, CASE
-        WHEN NOT is_text THEN base_url
         WHEN responses_url IS NOT NULL THEN responses_url
         WHEN substr(trimmed_path, -length('/chat/completions')) = '/chat/completions' THEN base_url
         ELSE coalesce((

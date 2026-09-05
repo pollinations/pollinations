@@ -31,7 +31,7 @@ The stateless surface follows the OpenAI Responses API and OpenResponses item/ev
 
 Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
 
-Managed prompt agents use their configured MCP tools and ignore caller-supplied function tool definitions. Their Responses output contains assistant messages and `mcp_call` items describing tools already executed by the server. Chat clients receive those results as text and media links, not function calls to execute. For stateless continuation, send previous output items with the next input; completed MCP items are treated as history and are not executed again.
+Managed prompt agents use Pollinations' configured Responses runtime and have no publisher-configured endpoint URL. They use their configured MCP tools and ignore caller-supplied function tool definitions. Their Responses output contains assistant messages and `mcp_call` items describing tools already executed by the server. Chat clients receive those results as text and media links, not function calls to execute. For stateless continuation, send previous output items with the next input; completed MCP items are treated as history and are not executed again.
 
 ### Reasoning
 

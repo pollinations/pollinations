@@ -168,9 +168,12 @@ describe("community endpoint envelope migration", () => {
         });
         expect(byId.media).toEqual({
             url: rows[4].baseUrl,
-            payload: { modality: "image", api: null },
+            payload: rows[4].payload,
             pending: null,
         });
+        expect(first.find((row) => row.id === "media")?.payload).toBe(
+            JSON.stringify(rows[4].payload),
+        );
         expect(byId.prompt).toEqual({
             url: rows[5].baseUrl,
             payload: rows[5].payload,

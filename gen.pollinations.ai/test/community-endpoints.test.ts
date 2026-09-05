@@ -195,7 +195,9 @@ function insertCommunityEndpoints(
             baseUrl:
                 type === "prompt_agent"
                     ? PROMPT_AGENT_BASE_URL_PLACEHOLDER
-                    : api === "chat_completions" && baseUrl
+                    : rawApi === undefined &&
+                        api === "chat_completions" &&
+                        baseUrl
                       ? communityChatCompletionsUrl(baseUrl)
                       : (baseUrl ?? ""),
             upstreamModel:
@@ -567,13 +569,16 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it("parses stored proxy payloads into the canonical schema", () => {
+    it.each([
+        null,
+        undefined,
+    ])("parses media payloads without a text API (%s)", (api) => {
         const payload = parseListingPayload(
             "proxy",
             JSON.stringify({
                 bearerTokenCiphertext: "ciphertext",
                 modality: "image",
-                api: null,
+                api,
                 imagePricing: "request",
                 inputModalities: ["image", "image"],
                 perUserRpm: null,
@@ -600,6 +605,27 @@ describe("community endpoint helpers", () => {
     });
 
     it("rejects stored payloads that do not match their listing schema", () => {
+        const textPayload = {
+            bearerTokenCiphertext: "ciphertext",
+            modality: "text",
+            imagePricing: "request",
+            inputModalities: ["text"],
+            perUserRpm: null,
+            fallbacks: [],
+            prices: {},
+        };
+        expect(
+            parseListingPayload("proxy", JSON.stringify(textPayload)),
+        ).toBeNull();
+        expect(
+            parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    ...textPayload,
+                    api: "chat_completions",
+                }),
+            ),
+        ).toMatchObject({ api: "chat_completions" });
         expect(parseListingPayload("proxy", "not json")).toBeNull();
         expect(
             parseListingPayload("proxy", JSON.stringify({ prices: {} })),
@@ -2499,11 +2525,13 @@ describe("community endpoint helpers", () => {
 });
 
 fixtureTest(
-    "routes chat completions through a registered community endpoint with its saved token",
+    "routes Chat through an exact community URL with its saved token and rejects Responses",
     async ({ apiKey }) => {
         const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `openai-${crypto.randomUUID().slice(0, 8)}`;
         const modelId = communityModelId(ownerGithubUsername, modelName);
+        const chatUrl =
+            "https://api.example.com/custom/generate?deployment=mini";
         const ownerUserId = await createTestUser({
             githubId: nextAllowedGithubId(),
             githubUsername: ownerGithubUsername,
@@ -2514,7 +2542,8 @@ fixtureTest(
             visibility: "public",
             name: modelName,
             description: "OpenAI via community endpoint",
-            baseUrl: "https://api.example.com/v1",
+            api: "chat_completions",
+            baseUrl: chatUrl,
             upstreamModel: "gpt-4.1-mini",
             bearerTokenCiphertext: await encryptSecret(
                 "Bearer sk_saved_token",
@@ -2529,16 +2558,17 @@ fixtureTest(
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
 
-            if (isChatCompletionsRequest(request)) {
-                await expectCommunityChatRequest(input, init, {
-                    customHost: "https://api.example.com/v1",
-                    bearerToken: "sk_saved_token",
-                    upstreamModel: "gpt-4.1-mini",
-                    body: {
-                        messages: [{ role: "user", content: "hello" }],
-                        max_tokens: 5,
-                        stream: false,
-                    },
+            if (request.url === chatUrl) {
+                expect(request.headers.get("authorization")).toBe(
+                    "Bearer sk_saved_token",
+                );
+                expect(request.headers.has("x-portkey-provider")).toBe(false);
+                expect(request.redirect).toBe("manual");
+                await expect(request.json()).resolves.toMatchObject({
+                    model: "gpt-4.1-mini",
+                    messages: [{ role: "user", content: "hello" }],
+                    max_tokens: 5,
+                    stream: false,
                 });
 
                 return Response.json({
@@ -2624,8 +2654,31 @@ fixtureTest(
             choices: [{ message: { content: "ok" } }],
         });
 
-        const upstreamCalls = fetchMock.mock.calls.filter(([input, init]) =>
-            isChatCompletionsRequest(new Request(input, init)),
+        const responses = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/responses", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ model: modelId, input: "hello" }),
+            }),
+        );
+        expect(responses.status).toBe(400);
+        expect(await responses.text()).toContain(
+            "does not support the stateless Responses API",
+        );
+        const models = (await (
+            await fetchGen("https://gen.pollinations.ai/v1/models")
+        ).json()) as { data: { id: string; supported_endpoints?: string[] }[] };
+        const supportedEndpoints = models.data.find(
+            (model) => model.id === modelId,
+        )?.supported_endpoints;
+        expect(supportedEndpoints).toContain("/v1/chat/completions");
+        expect(supportedEndpoints).not.toContain("/v1/responses");
+
+        const upstreamCalls = fetchMock.mock.calls.filter(
+            ([input, init]) => new Request(input, init).url === chatUrl,
         );
         expect(upstreamCalls).toHaveLength(2);
     },

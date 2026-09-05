@@ -8,9 +8,6 @@ import { useEffect, useState } from "react";
  * rather than as intent. Direction plus a distance threshold states in one
  * sentence: past `revealAt`, scrolling down hides it and any scroll up brings
  * it straight back.
- *
- * The old site's useHeaderVisibility only showed the header at scrollY < 10 —
- * once you scrolled it was gone until you returned to the very top.
  */
 export function useHideOnScroll({
     revealAt = 120,

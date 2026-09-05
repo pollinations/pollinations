@@ -1,8 +1,8 @@
 /**
  * Search-param contract for /apps.
  *
- * Category and platform are independent multi-select filters; Pollen Pay is a
- * boolean filter. Ranking is a separate single-select choice: it changes order
+ * Category is a single-select filter, platform a multi-select one and Pollen
+ * Pay a boolean. Ranking is a separate single-select choice: it changes order
  * without hiding apps.
  *
  * Same shape as enter's `model-search.ts` (PR #12458): `as const` whitelists,
@@ -75,7 +75,7 @@ export const PLATFORM_LABELS: Record<AppPlatform, string> = {
     api: "API",
 };
 
-export const APP_SORTS = ["fresh", "buzz"] as const;
+const APP_SORTS = ["fresh", "buzz"] as const;
 export type AppSort = (typeof APP_SORTS)[number];
 
 /**

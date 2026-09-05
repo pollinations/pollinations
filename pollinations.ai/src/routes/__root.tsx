@@ -45,9 +45,7 @@ function NotFoundPage() {
  * are separate pieces of the interface.
  *
  * The gap lives on this flex column, so sections carry no spacing of their
- * own. Before, Hello ran 64 / 72 / 64 / 64 / 0 as per-section bottom padding
- * while Apps used gap-14 and Play gap-10 — five values in five files, which
- * is what made a long page feel unstructured.
+ * own.
  *
  * The desktop nav sits on the desk, outside the card. On phones, only its menu
  * control floats over the sheet and takes no layout space. The chrome hides on

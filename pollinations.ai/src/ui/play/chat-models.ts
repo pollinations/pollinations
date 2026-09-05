@@ -30,7 +30,6 @@ export const AUTO_ROUTING: RoutingSelection = {
 export interface RoutingChoice {
     id: string;
     title: string;
-    description?: string;
 }
 
 export interface AgentChoice {
@@ -259,13 +258,7 @@ export function routingChoices(
             ) {
                 return [];
             }
-            return [
-                {
-                    id,
-                    title: model.title ?? model.name,
-                    description: model.description,
-                },
-            ];
+            return [{ id, title: model.title ?? model.name }];
         })
         .sort(
             (left, right) =>

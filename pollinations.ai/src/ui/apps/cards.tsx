@@ -83,22 +83,19 @@ function AppCoverImage({
     );
 }
 
-/**
- * Image on top, name and description below. The mockup runs it at two heights:
- * 150px on Hello's three-up shelf, 120px in the Apps spotlight strip.
- */
+/** Image on top, name and description below; the rail sets the image height. */
 export function AppTile({
     app,
-    imageClassName = "h-[150px]",
+    imageClassName,
     className,
     tabIndex,
 }: {
     app: DirectoryApp;
-    imageClassName?: string;
+    imageClassName: string;
     className?: string;
     tabIndex?: number;
 }) {
-    const cover = appCover(app.name, app.screenshot_url);
+    const cover = appCover(app.screenshot_url);
 
     return (
         <LinkCard
@@ -131,7 +128,7 @@ export function SpotlightTile({
     direction?: "forward" | "back";
 }) {
     const href = appHref(app);
-    const cover = appCover(app.name, app.screenshot_url);
+    const cover = appCover(app.screenshot_url);
     const slideClassName = cn(
         "apps-spotlight-slide",
         direction === "back" && "apps-spotlight-slide-back",
@@ -199,7 +196,7 @@ export function AppRow({ app }: { app: DirectoryApp }) {
     const profile = githubProfileUrl(app.github_username);
     const platform = platformsOf(app)[0];
     const href = appHref(app);
-    const cover = appCover(app.name, app.screenshot_url);
+    const cover = appCover(app.screenshot_url);
 
     return (
         <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-text-strong/10 border-b py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:py-4">

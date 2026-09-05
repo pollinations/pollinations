@@ -24,7 +24,7 @@ import {
     useAppDirectory,
 } from "../data/publicStats";
 // Hand-picked, and the only editorial thing on the page — every badge in
-// catalog.json is computed from traffic or recency, so none of them can say "we
+// app.json is computed from traffic or recency, so none of them can say "we
 // think this is good".
 import SPOTLIGHT from "../data/spotlight.json";
 import { routeHead } from "../routeMeta";

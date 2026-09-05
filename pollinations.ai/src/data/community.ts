@@ -87,8 +87,7 @@ type GhContributor = {
 
 export function useContributors(limit = 12) {
     return useAsync<Contributor[]>(async () => {
-        // One request, already ranked by commit count — the old page walked
-        // five pages of commits to rebuild the same ordering by hand.
+        // One request, already ranked by commit count.
         const rows = await github<GhContributor[]>(
             `/repos/${REPO}/contributors?per_page=${limit + 8}`,
         );
@@ -115,9 +114,7 @@ type VotingIssue = {
 
 /**
  * Maintainers mark these by prefixing the title, so that marker is the filter
- * rather than a hardcoded list of issue numbers — the three the old page
- * pinned (5543, 5321, 4826) are exactly what this returns, but a new one shows
- * up on its own.
+ * rather than a hardcoded list of issue numbers: a new one shows up on its own.
  */
 const VOTE_MARKER = "[Voting Issue]";
 
@@ -151,10 +148,8 @@ export function useVotingIssues(limit = 3) {
 
 const NEWS_RAW =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily";
-const NEWS_REPO_PATH = "operations/social/news/daily";
 const NEWS_MONTHLY_RAW =
     "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/monthly";
-const NEWS_MONTHLY_REPO_PATH = "operations/social/news/monthly";
 const NEWS_START_DAY = "2025-01-01";
 const FALLBACK_DIARY_IMAGES = [
     "2026-08-03",
@@ -167,29 +162,23 @@ const FALLBACK_DIARY_IMAGES = [
 export type DiaryDay = {
     date: string;
     prCount: number;
-    prs: DiaryPr[];
     title: string | null;
     summary: string | null;
     imageUrl: string | null;
-    url: string | null;
 };
 
-export type DiaryPr = {
+type DiaryPr = {
     number: number;
     date: string;
     title: string;
-    url: string;
     author: string;
 };
-
-type HistoryPullRequest = Omit<DiaryPr, "url">;
 
 type LivePullRequest = Omit<DiaryPr, "date"> & { mergedAt: string };
 
 type HistoryPayload = {
-    generatedAt: string;
     allTimeCount: number;
-    pullRequests: HistoryPullRequest[];
+    pullRequests: DiaryPr[];
 };
 
 type DiaryHistory = {
@@ -202,21 +191,16 @@ type DiaryHistory = {
 
 type DiaryRange = {
     month: string;
-    firstDay: string;
     latestDay: string;
     days: DiaryDay[];
-    hasEarlier: boolean;
-    hasLater: boolean;
 };
 
 export type DiaryMonth = {
     month: string;
     prCount: number;
-    representativeDate: string;
     title: string | null;
     summary: string | null;
     imageUrl: string | null;
-    url: string | null;
 };
 
 type DiaryAll = {
@@ -270,7 +254,6 @@ async function loadLivePullRequests(since: string) {
             items: {
                 number: number;
                 title: string;
-                html_url: string;
                 closed_at: string | null;
                 user: { login: string } | null;
             }[];
@@ -282,7 +265,6 @@ async function loadLivePullRequests(since: string) {
                 number: item.number,
                 mergedAt: item.closed_at,
                 title: item.title,
-                url: item.html_url,
                 author: item.user?.login ?? "community contributor",
             });
         }
@@ -308,10 +290,7 @@ function loadPullRequestHistory() {
         const uniquePullRequests = new Map(
             payload.pullRequests.map((pullRequest) => [
                 pullRequest.number,
-                {
-                    ...pullRequest,
-                    url: `${REPO_URL}/pull/${pullRequest.number}`,
-                },
+                pullRequest,
             ]),
         );
         let liveAdditions = 0;
@@ -321,7 +300,6 @@ function loadPullRequestHistory() {
                 number: pullRequest.number,
                 date: pullRequest.mergedAt.slice(0, 10),
                 title: pullRequest.title,
-                url: pullRequest.url,
                 author: pullRequest.author,
             });
         }
@@ -409,38 +387,26 @@ function toDiaryDay(
         return {
             date,
             prCount: pullRequests.length,
-            prs: pullRequests,
             title: daily.title,
             summary: daily.summary.split(/\n\s*\n/)[0].trim(),
             imageUrl: `${NEWS_RAW}/${date}/images/twitter.jpg`,
-            url: `${REPO_URL}/tree/news/${NEWS_REPO_PATH}/${date}`,
         };
     }
 
     const representative = pullRequests[stableIndex(date, pullRequests.length)];
     if (!representative) {
-        return {
-            date,
-            prCount: 0,
-            prs: [],
-            title: null,
-            summary: null,
-            imageUrl: null,
-            url: null,
-        };
+        return { date, prCount: 0, title: null, summary: null, imageUrl: null };
     }
 
     return {
         date,
         prCount: pullRequests.length,
-        prs: pullRequests,
         title: representative.title,
         summary: `${pullRequests.length} pull request${pullRequests.length === 1 ? "" : "s"} merged that day, including #${representative.number} from @${representative.author}.`,
         imageUrl:
             FALLBACK_DIARY_IMAGES[
                 stableIndex(date, FALLBACK_DIARY_IMAGES.length)
             ],
-        url: representative.url,
     };
 }
 
@@ -476,27 +442,17 @@ export function useBuildDiary(requestedMonth?: string) {
 
             return {
                 month,
-                firstDay: history.firstDay,
                 latestDay: history.latestDay,
-                days: range.map((date, index) => {
-                    return toDiaryDay(
+                days: range.map((date, index) =>
+                    toDiaryDay(
                         date,
                         dailySummaries[index],
                         history.byDate.get(date) ?? [],
-                    );
-                }),
-                hasEarlier: month > history.firstDay.slice(0, 7),
-                hasLater: month < newestMonth,
+                    ),
+                ),
             };
         },
-        {
-            month: "",
-            firstDay: "",
-            latestDay: "",
-            days: [],
-            hasEarlier: false,
-            hasLater: false,
-        },
+        { month: "", latestDay: "", days: [] },
         { key: requestedMonth ?? "latest" },
     );
 }
@@ -519,17 +475,12 @@ export function useBuildDiaryAll(options?: UseAsyncOptions) {
             const cursor = new Date(`${firstMonth}-01T00:00:00Z`);
             while (cursor.toISOString().slice(0, 7) <= latestMonth) {
                 const month = cursor.toISOString().slice(0, 7);
-                const pullRequests = byMonth.get(month) ?? [];
-                const representative =
-                    pullRequests[stableIndex(month, pullRequests.length)];
                 months.push({
                     month,
-                    prCount: pullRequests.length,
-                    representativeDate: representative?.date ?? `${month}-01`,
+                    prCount: byMonth.get(month)?.length ?? 0,
                     title: null,
                     summary: null,
                     imageUrl: null,
-                    url: null,
                 });
                 cursor.setUTCMonth(cursor.getUTCMonth() + 1);
             }
@@ -547,7 +498,6 @@ export function useBuildDiaryAll(options?: UseAsyncOptions) {
                         title: monthly.title,
                         summary: monthly.summary.split(/\n\s*\n/)[0].trim(),
                         imageUrl: `${NEWS_MONTHLY_RAW}/${item.month}/images/cover.jpg`,
-                        url: `${REPO_URL}/tree/news/${NEWS_MONTHLY_REPO_PATH}/${item.month}`,
                     };
                 }),
             };
@@ -561,7 +511,7 @@ export function useBuildDiaryAll(options?: UseAsyncOptions) {
 
 /**
  * Static on purpose: these are sponsorship relationships, not something an
- * API can measure. Carried over from the old site's content file.
+ * API can measure.
  */
 export const SUPPORTERS = [
     {

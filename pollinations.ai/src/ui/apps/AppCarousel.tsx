@@ -1,18 +1,10 @@
-import { ArrowRightIcon, cn, IconButton, ScrollArea } from "@pollinations/ui";
+import { ArrowRightIcon, IconButton, ScrollArea } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
 import type { DirectoryApp } from "../../data/publicStats";
 import { AppTile, SpotlightTile } from "./cards";
 
-const layouts = {
-    featured: {
-        image: "aspect-[16/7]",
-        item: "w-[92%] shrink-0 sm:w-[64%] lg:w-[44%]",
-    },
-    compact: {
-        image: "h-30",
-        item: "w-59 shrink-0",
-    },
-} as const;
+const TILE_IMAGE_CLASS = "h-30";
+const TILE_ITEM_CLASS = "w-59 shrink-0";
 
 export function SpotlightCarousel({ apps }: { apps: DirectoryApp[] }) {
     const [activeIndex, setActiveIndex] = useState(0);
@@ -96,14 +88,10 @@ export function SpotlightCarousel({ apps }: { apps: DirectoryApp[] }) {
 
 export function AppCarousel({
     apps,
-    size = "featured",
-    ariaLabel = "Featured apps",
-    className,
+    ariaLabel,
 }: {
     apps: DirectoryApp[];
-    size?: keyof typeof layouts;
-    ariaLabel?: string;
-    className?: string;
+    ariaLabel: string;
 }) {
     const scroller = useRef<HTMLDivElement>(null);
     const drag = useRef<{
@@ -113,7 +101,6 @@ export function AppCarousel({
     } | null>(null);
     const suppressClick = useRef(false);
     const [paused, setPaused] = useState(false);
-    const layout = layouts[size];
 
     useEffect(() => {
         if (
@@ -157,7 +144,7 @@ export function AppCarousel({
         <section
             aria-roledescription="carousel"
             aria-label={ariaLabel}
-            className={cn("flex min-w-0 flex-col gap-3", className)}
+            className="flex min-w-0 flex-col gap-3"
             onMouseEnter={() => setPaused(true)}
             onMouseLeave={() => setPaused(false)}
             onFocus={() => setPaused(true)}
@@ -224,11 +211,11 @@ export function AppCarousel({
                                         ? `${index + 1} of ${apps.length}`
                                         : undefined
                                 }
-                                className={layout.item}
+                                className={TILE_ITEM_CLASS}
                             >
                                 <AppTile
                                     app={app}
-                                    imageClassName={layout.image}
+                                    imageClassName={TILE_IMAGE_CLASS}
                                     className="h-full w-full"
                                     tabIndex={copy === 1 ? -1 : undefined}
                                 />

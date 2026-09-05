@@ -169,6 +169,21 @@ function currentWeekStart(now = new Date()): string {
 }
 
 /**
+ * Shared across callers. The hero and the dev kit both want these numbers, and
+ * without this each mount fires its own 113 KB /models request — two in
+ * flight at once, and the second came back empty, which showed up as a
+ * catalog of 0 models.
+ */
+let platformStats: Promise<PlatformStats | null> | null = null;
+
+export function usePlatformStats() {
+    return useAsync<PlatformStats | null>(() => {
+        platformStats ??= loadPlatformStats();
+        return platformStats;
+    }, null);
+}
+
+/**
  * Scale and reliability come from `weekly_health_stats` — 948 bytes for both,
  * versus 81 KB to sum `models/status`. Breadth still needs `/models`, which is
  * 113 KB; that's the one genuinely expensive number here, and it loads after
@@ -185,21 +200,6 @@ function currentWeekStart(now = new Date()): string {
  * default — plausibly how "1.5M daily requests" survived, an hour of traffic
  * read as a day.)
  */
-/**
- * Shared across callers. The hero and the dev kit both want these numbers, and
- * without this each mount fires its own 113 KB /models request — two in
- * flight at once, and the second came back empty, which showed up as a
- * catalog of 0 models.
- */
-let platformStats: Promise<PlatformStats | null> | null = null;
-
-export function usePlatformStats() {
-    return useAsync<PlatformStats | null>(() => {
-        platformStats ??= loadPlatformStats();
-        return platformStats;
-    }, null);
-}
-
 function loadPlatformStats(): Promise<PlatformStats | null> {
     return (async () => {
         const [weeks, models, mcpServers] = await Promise.all([

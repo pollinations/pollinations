@@ -49,7 +49,6 @@ export function LiveApps() {
             ) : (
                 <AppCarousel
                     apps={featured}
-                    size="compact"
                     ariaLabel="Apps built on Pollinations"
                 />
             )}

@@ -7,6 +7,7 @@ import type {
 } from "@/middleware/generation-deduplication.ts";
 import { executeGeneration } from "@/utils/execute-generation.ts";
 import { createAnonymousX402Routes } from "../routes/x402.ts";
+import { X402LiveStream } from "../utils/x402-stream.ts";
 
 const JOB_KEY = "job";
 const BODY_KEY_PREFIX = "body:";
@@ -106,15 +107,35 @@ function unavailable(message: string): GenerationOutcome {
 
 export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private readonly waiters = new Set<(outcome: GenerationOutcome) => void>();
-    private readonly paymentWaiters = new Set<
-        (response: PaymentResponseSnapshot) => void
-    >();
+    private readonly paymentWaiters = new Set<(response: Response) => void>();
+    private paymentStream?: X402LiveStream;
+
+    // Use the HTTP stream transport. Cancelling a body returned over DO RPC
+    // currently leaves an unhandled rejection in workerd (workers-sdk#11071).
+    override async fetch(request: Request): Promise<Response> {
+        return this.startPaymentRequestAndWait({
+            url: request.url,
+            method: request.method,
+            headers: [...request.headers.entries()],
+            ...(request.body && {
+                body: new Uint8Array(await request.arrayBuffer()),
+            }),
+        });
+    }
+
+    private openPaymentStream(headers: Headers): (chunk: Uint8Array) => void {
+        const stream = new X402LiveStream(headers);
+        this.paymentStream = stream;
+        for (const resolve of this.paymentWaiters) resolve(stream.response());
+        this.paymentWaiters.clear();
+        return (chunk) => stream.write(chunk);
+    }
 
     /** The alarm, not the client connection, owns generation and settlement. */
-    async startPaymentRequestAndWait(
+    private async startPaymentRequestAndWait(
         request: GenerationRequestSnapshot,
-    ): Promise<PaymentResponseSnapshot> {
-        let wait: Promise<PaymentResponseSnapshot> | undefined;
+    ): Promise<Response> {
+        let wait: Promise<Response> | undefined;
         await this.ctx.blockConcurrencyWhile(async () => {
             if (!(await this.ctx.storage.get(PAYMENT_REQUEST_KEY))) {
                 const stored = await this.persistRequest(request);
@@ -124,7 +145,9 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 });
                 await this.ctx.storage.setAlarm(Date.now());
             }
-            wait = new Promise((resolve) => this.paymentWaiters.add(resolve));
+            wait = this.paymentStream
+                ? Promise.resolve(this.paymentStream.response())
+                : new Promise((resolve) => this.paymentWaiters.add(resolve));
         });
         if (!wait) throw new Error("Payment waiter was not registered");
         return wait;
@@ -148,6 +171,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 response = await createAnonymousX402Routes(
                     this.env,
                     true,
+                    (headers) => this.openPaymentStream(headers),
                 ).fetch(
                     new Request(request.url, {
                         method: request.method,
@@ -171,18 +195,17 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
                 { status: 503 },
             );
         }
-        const result: PaymentResponseSnapshot = {
-            status: response.status,
-            statusText: response.statusText,
-            headers: [...response.headers.entries()],
-            body: new Uint8Array(await response.arrayBuffer()),
-        };
+        const body = await response.arrayBuffer();
         await this.ctx.blockConcurrencyWhile(async () => {
             await this.ctx.storage.delete([
                 PAYMENT_REQUEST_KEY,
                 ...bodyChunkKeys(stored.bodyChunks),
             ]);
-            for (const resolve of this.paymentWaiters) resolve(result);
+            this.paymentStream?.finish(response);
+            this.paymentStream = undefined;
+            for (const resolve of this.paymentWaiters) {
+                resolve(new Response(body.slice(0), response));
+            }
             this.paymentWaiters.clear();
         });
     }

@@ -40,6 +40,56 @@ afterEach(() => {
 });
 
 describe("GenerationCoordinator", () => {
+    it("returns live streams over HTTP and keeps the request when a caller disconnects", async () => {
+        vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `live-payment-${crypto.randomUUID()}`,
+        );
+        const request = {
+            url: "https://gen.pollinations.ai/not-a-generation-route",
+            method: "GET",
+            headers: [] as [string, string][],
+        };
+        const owner = stub.fetch(request.url, request);
+        await runInDurableObject(stub, async (coordinator, state) => {
+            await waitForAlarm(state);
+            const publish = coordinator["openPaymentStream"](
+                new Headers({ "content-type": "text/event-stream" }),
+            );
+            publish(new TextEncoder().encode('data: {"choices":[]}\n\n'));
+        });
+        const response = await owner;
+        expect(response.status).toBe(200);
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("Missing live response body");
+        expect(new TextDecoder().decode((await reader.read()).value)).toContain(
+            "choices",
+        );
+        await reader.cancel();
+
+        const rejoined = await stub.fetch(request.url, request);
+        await runInDurableObject(stub, async (coordinator, state) => {
+            const stored =
+                await state.storage.get<Record<string, unknown>>(
+                    "payment-request",
+                );
+            expect(stored).toBeDefined();
+            // Fail the existing alarm after it has opened the stream. This must
+            // terminate every reader, not return a second HTTP response.
+            await state.storage.put("payment-request", {
+                ...stored,
+                started: true,
+            });
+            await coordinator.alarm();
+            await state.storage.deleteAlarm();
+            expect(await state.storage.get("payment-request")).toBeUndefined();
+        });
+        const text = await rejoined.text();
+        expect(text).toContain("choices");
+        expect(text).toContain("payment_incomplete");
+        expect(text).not.toContain("[DONE]");
+    });
+
     it("runs a persisted payment request from its alarm and joins waiting callers", async () => {
         vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
         const stub = env.GENERATION_COORDINATOR.getByName(
@@ -54,8 +104,10 @@ describe("GenerationCoordinator", () => {
                     headers: [] as [string, string][],
                     body: new Uint8Array(2_100_000),
                 };
-                const owner = coordinator.startPaymentRequestAndWait(request);
-                const joiner = coordinator.startPaymentRequestAndWait(request);
+                const owner =
+                    coordinator["startPaymentRequestAndWait"](request);
+                const joiner =
+                    coordinator["startPaymentRequestAndWait"](request);
                 await waitForAlarm(state);
                 expect(await state.storage.get("body:2")).toBeInstanceOf(
                     Uint8Array,
@@ -63,7 +115,10 @@ describe("GenerationCoordinator", () => {
                 await coordinator.alarm();
                 await state.storage.deleteAlarm();
                 const responses = await Promise.all([owner, joiner]);
-                expect(responses[0]).toEqual(responses[1]);
+                expect(responses[0].status).toBe(responses[1].status);
+                expect(await responses[0].text()).toBe(
+                    await responses[1].text(),
+                );
                 return {
                     status: responses[0].status,
                     stored: await state.storage.get("payment-request"),
@@ -86,7 +141,7 @@ describe("GenerationCoordinator", () => {
         const response = await runInDurableObject(
             stub,
             async (coordinator, state) => {
-                const pending = coordinator.startPaymentRequestAndWait({
+                const pending = coordinator["startPaymentRequestAndWait"]({
                     url: "https://gen.pollinations.ai/not-a-generation-route",
                     method: "GET",
                     headers: [],
@@ -106,9 +161,7 @@ describe("GenerationCoordinator", () => {
             },
         );
         expect(response.status).toBe(503);
-        expect(new TextDecoder().decode(response.body)).toContain(
-            "interrupted",
-        );
+        expect(await response.text()).toContain("interrupted");
     });
 
     it("expires only final payment responses by alarm", async () => {

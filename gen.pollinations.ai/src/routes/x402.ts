@@ -47,6 +47,12 @@ import { track } from "@/middleware/track.ts";
 import { GenerateImageRequestQueryParamsSchema } from "@/schemas/image.ts";
 import type { PaymentResponseSnapshot } from "../durable-objects/GenerationCoordinator.ts";
 import { getGenerationModelRegistry } from "../model-registry.ts";
+import {
+    collectX402Stream,
+    MAX_X402_RESPONSE_BYTES,
+    X402_STREAM_DONE,
+    x402StreamReceipt,
+} from "../utils/x402-stream.ts";
 import { CreateSpeechRequestSchema, handleSpeech } from "./audio.ts";
 import {
     generateChatCompletion,
@@ -65,7 +71,6 @@ const DEFAULT_FACILITATOR_URL = "https://x402.weft.network";
 const DEFAULT_NETWORK = "eip155:84532";
 const MIN_CHARGE_USD = 0.001;
 const MAX_X402_OUTPUT_TOKENS = 4096;
-const MAX_STORED_RESPONSE_BYTES = 20 * 1024 * 1024;
 const FINAL_RESPONSE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 // An alarm can run for 15 minutes. Never replace its owner while the previous
 // invocation could still be generating or settling.
@@ -322,9 +327,6 @@ function validateChatShape(body: CreateChatCompletionRequest) {
     }
     if ((body.max_tokens ?? 0) > MAX_X402_OUTPUT_TOKENS) {
         reject(`x402 max_tokens cannot exceed ${MAX_X402_OUTPUT_TOKENS}`);
-    }
-    if (body.stream) {
-        reject("Streaming is not supported with x402");
     }
     if (
         body.messages.some(
@@ -586,8 +588,19 @@ export const finalX402Operation = createMiddleware<Env>(async (c, next) => {
 
     await next();
     if (!c.res.ok || !c.res.headers.has("PAYMENT-RESPONSE")) return;
+    if (describeX402Request(c).body.stream) {
+        const generated = await c.res.arrayBuffer();
+        c.res = new Response(
+            new Blob([
+                generated.slice(0, -X402_STREAM_DONE.length),
+                x402StreamReceipt(
+                    c.res.headers.get("PAYMENT-RESPONSE") as string,
+                ),
+            ]),
+            c.res,
+        );
+    }
     const body = new Uint8Array(await c.res.clone().arrayBuffer());
-    if (body.byteLength > MAX_STORED_RESPONSE_BYTES) return;
     const saved = await stub.completeFinalPaymentOperation(
         fingerprint,
         payment.identity,
@@ -648,7 +661,7 @@ export const runX402Operation = createMiddleware<Env>(async (c, next) => {
     await next();
     if (!c.res.ok) return;
     const body = new Uint8Array(await c.res.clone().arrayBuffer());
-    if (body.byteLength > MAX_STORED_RESPONSE_BYTES) {
+    if (body.byteLength > MAX_X402_RESPONSE_BYTES) {
         return c.text(
             "Generated response is too large for durable resume",
             502,
@@ -692,6 +705,7 @@ function anonymousAuth(): MiddlewareHandler<Env> {
 export function createAnonymousX402Routes(
     env: CloudflareBindings,
     detached = false,
+    onStream?: (headers: Headers) => (chunk: Uint8Array) => void,
 ) {
     const app = new Hono<Env>();
     app.onError(handleError);
@@ -755,6 +769,8 @@ export function createAnonymousX402Routes(
             const response = await runX402Operation(c, async () => {
                 await next();
                 if (!c.res.ok) return;
+                if (request.body.stream)
+                    c.res = await collectX402Stream(c.res, onStream);
                 c.header(
                     SETTLEMENT_OVERRIDES_HEADER,
                     JSON.stringify({
@@ -800,17 +816,15 @@ export function createAnonymousX402Routes(
         }
         if (request.method === "POST")
             headers.set("content-type", "application/json");
-        const result = await c.env.GENERATION_COORDINATOR.getByName(
+        return c.env.GENERATION_COORDINATOR.getByName(
             `x402-execution:${name}`,
-        ).startPaymentRequestAndWait({
-            url: c.req.url,
+        ).fetch(c.req.url, {
             method: request.method,
-            headers: [...headers.entries()],
+            headers,
             ...(request.method === "POST" && {
-                body: new TextEncoder().encode(JSON.stringify(request.body)),
+                body: JSON.stringify(request.body),
             }),
         });
-        return restoredResponse(result);
     });
 
     for (const path of [

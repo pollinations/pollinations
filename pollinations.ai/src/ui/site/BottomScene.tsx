@@ -14,6 +14,8 @@ export function BottomScene({
     ...props
 }: BottomSceneProps) {
     const { isDark } = useColorMode();
+    const activeScene = isDark ? nightScene : dayScene;
+    const compactScene = activeScene.replace(/\.webp$/, "-1024.webp");
 
     return (
         <div
@@ -25,7 +27,9 @@ export function BottomScene({
             {...props}
         >
             <img
-                src={isDark ? nightScene : dayScene}
+                src={activeScene}
+                srcSet={`${compactScene} 1024w, ${activeScene} 2048w`}
+                sizes="(max-width: 1440px) 100vw, 1440px"
                 alt=""
                 width={2048}
                 height={854}

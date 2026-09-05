@@ -987,6 +987,7 @@ export class Pollinations {
         const decoder = new TextDecoder();
         const sseDecoder = new SSEDecoder();
         let finished = false;
+        let completed = false;
         const cancelReader = () => {
             void reader.cancel().catch(() => undefined);
         };
@@ -996,17 +997,25 @@ export class Pollinations {
             messages: SSEMessage[],
         ): Generator<ChatStreamChunk> {
             for (const message of messages) {
+                if (options.signal?.aborted) {
+                    throw new PollinationsError(
+                        "Request was cancelled",
+                        "CANCELLED",
+                        499,
+                    );
+                }
                 if (!message.data) continue;
+                if (message.data.trim() === "[DONE]") {
+                    // Proxies may repeat [DONE]; the response is complete.
+                    finished = true;
+                    continue;
+                }
                 if (finished) {
                     throw new PollinationsError(
                         "Chat stream contained data after completion",
                         "MALFORMED_STREAM",
                         502,
                     );
-                }
-                if (message.data.trim() === "[DONE]") {
-                    finished = true;
-                    continue;
                 }
                 yield parseChatStreamData(message.data);
             }
@@ -1028,6 +1037,7 @@ export class Pollinations {
                 );
             }
             yield* chunksFrom(sseDecoder.push(decoder.decode(), true));
+            completed = true;
         } catch (error) {
             if (options.signal?.aborted) {
                 throw new PollinationsError(
@@ -1039,6 +1049,9 @@ export class Pollinations {
             throw error;
         } finally {
             options.signal?.removeEventListener("abort", cancelReader);
+            // An early break or a decoder error leaves the body open; cancel
+            // it so the connection is released.
+            if (!completed) await reader.cancel().catch(() => undefined);
             reader.releaseLock();
         }
     }

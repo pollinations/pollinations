@@ -63,6 +63,7 @@ function makeResponse(
                         ? { done: false, value: chunks[i++] }
                         : { done: true, value: undefined },
                 releaseLock: () => {},
+                cancel: async () => {},
             }),
         };
     }
@@ -557,6 +558,56 @@ describe("Pollinations chat streaming", () => {
         }
 
         expect(chunks).toEqual([chunk]);
+    });
+
+    it("ignores a repeated [DONE] instead of failing a complete response", async () => {
+        const client = newClient();
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                'data: {"choices":[{"index":0,"delta":{"content":"done"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\ndata: [DONE]\n\n',
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+
+        const chunks = [];
+        for await (const chunk of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
+
+        expect(chunks).toHaveLength(1);
+    });
+
+    it("cancels the response body when the consumer stops early", async () => {
+        const client = newClient();
+        let cancelled = false;
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                controller.enqueue(
+                    new TextEncoder().encode(
+                        'data: {"choices":[{"index":0,"delta":{"content":"a"},"finish_reason":null}]}\n\n',
+                    ),
+                );
+            },
+            cancel() {
+                cancelled = true;
+            },
+        });
+        fetchMock.mockResolvedValue(
+            new Response(body, {
+                status: 200,
+                headers: { "content-type": "text/event-stream" },
+            }),
+        );
+
+        for await (const _chunk of client.chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            break;
+        }
+
+        expect(cancelled).toBe(true);
     });
 
     it("surfaces stream errors instead of silently completing", async () => {

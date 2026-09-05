@@ -13,6 +13,7 @@ import type {
 import {
     canonicalProvider,
     collectProviderObservations,
+    pollenVendorOverride,
 } from "./providerRegistry";
 
 export const fixturesMode = (): boolean =>
@@ -243,9 +244,15 @@ export function canonicalPollenRows(
     const aggregated = new Map<string, OpPollenRow>();
 
     for (const sourceRow of rows) {
+        const vendor = canonicalVendor(sourceRow.vendor);
         const row = {
             ...sourceRow,
-            vendor: canonicalVendor(sourceRow.vendor),
+            vendor:
+                pollenVendorOverride(
+                    sourceRow.month,
+                    vendor,
+                    sourceRow.model.trim(),
+                ) ?? vendor,
         };
         if (POLLEN_VALUE_FIELDS.every((field) => Number(row[field]) === 0)) {
             continue;

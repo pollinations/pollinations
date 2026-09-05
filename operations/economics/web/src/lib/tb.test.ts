@@ -186,6 +186,24 @@ describe("canonicalPollenRows", () => {
         });
     });
 
+    it("re-attributes reviewed Pollen rows to the vendor whose bill carried them", () => {
+        // gptimage was tagged azure-2 (Pointflyer) through April 2026 while its
+        // gpt-image-1-mini deployments were billed on our own subscription.
+        const rows = canonicalPollenRows([
+            pollen("pointsflyer", { month: "2026-02", model: "gptimage" }),
+            pollen("pointsflyer", { month: "2026-02", model: "openai" }),
+            pollen("pointsflyer", { month: "2026-05", model: "gptimage" }),
+        ]);
+
+        expect(
+            rows.map((row) => `${row.month}|${row.vendor}|${row.model}`),
+        ).toEqual([
+            "2026-05|pointsflyer|gptimage",
+            "2026-02|azure|gptimage",
+            "2026-02|pointsflyer|openai",
+        ]);
+    });
+
     it("removes rows with no values or requests", () => {
         expect(
             canonicalPollenRows([

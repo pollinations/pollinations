@@ -69,8 +69,20 @@ export type ProviderAccountDefinition = {
     activeTo: string | null;
 };
 
+// A reviewed re-attribution of Pollen rows whose provider tag named a vendor
+// that never billed them. Bounded by month; evidence is mandatory.
+export type PollenVendorOverride = {
+    vendor: string;
+    model: string;
+    to: string;
+    from: string;
+    until: string;
+    evidence: string;
+};
+
 type ProviderRegistryFile = {
     version: number;
+    pollenVendorOverrides: PollenVendorOverride[];
     // Pollen model ids that no longer exist in the shared registry but still
     // identify historical costs. Removing a model from the product does not
     // invalidate what it cost.
@@ -87,6 +99,23 @@ export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
 export const RETIRED_MODELS: readonly string[] = (
     registryJson as ProviderRegistryFile
 ).retiredModels;
+export const POLLEN_VENDOR_OVERRIDES: readonly PollenVendorOverride[] = (
+    registryJson as ProviderRegistryFile
+).pollenVendorOverrides;
+
+export function pollenVendorOverride(
+    month: string,
+    vendor: string,
+    model: string,
+): string | undefined {
+    return POLLEN_VENDOR_OVERRIDES.find(
+        (override) =>
+            override.vendor === vendor &&
+            override.model === model &&
+            override.from <= month &&
+            month <= override.until,
+    )?.to;
+}
 const providerByAlias = new Map<string, ProviderDefinition>();
 for (const provider of PROVIDER_REGISTRY) {
     providerByAlias.set(provider.id, provider);

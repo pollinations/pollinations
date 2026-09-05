@@ -112,9 +112,12 @@ name or an undocumented ratio.
   key as `label | sku` or `label | line item` when one label bills several
   ids on separate lines, and use dated rules (`{ "until": "2026-05", "model":
   ... }`) when a label meant a different id in a different period. Ids no
-  longer in the shared registry stay valid through `retiredModels`. Unjoined
-  cost stays visible as needs mapping, shared upstream, or missing breakdown.
-  Never spread it across models.
+  longer in the shared registry stay valid through `retiredModels`. A Pollen
+  row whose provider tag names a vendor that never billed it is re-attributed
+  only through a bounded, evidenced `pollenVendorOverrides` entry (gptimage
+  tagged azure-2 while billed on our Azure subscription, Jan–Apr 2026).
+  Unjoined cost stays visible as needs mapping, shared upstream, or missing
+  breakdown. Never spread it across models.
 - D1 `user` is authoritative for creator GitHub usernames and current balances.
   Paid and Quest Pollen are non-cashable usage exposure; Paid serves the full
   catalog, Quest only the eligible catalog. Never classify either as Revenue

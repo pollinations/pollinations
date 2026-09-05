@@ -14,6 +14,7 @@ import {
     meterDriftExplanation,
     missingProviderMappings,
     normalizeProviderName,
+    POLLEN_VENDOR_OVERRIDES,
     PROVIDER_REGISTRY,
     pollenWitnessExplanation,
     providerCheckExplanation,
@@ -173,6 +174,19 @@ describe("provider registry", () => {
         expect(resolveProvider("elevenlabs")?.modelLabels).toMatchObject({
             eleven_v3: ["elevenlabs", "eleven-dialogue"],
         });
+    });
+
+    it("keeps every reviewed Pollen vendor override bounded and canonical", () => {
+        expect(POLLEN_VENDOR_OVERRIDES.length).toBeGreaterThan(0);
+        for (const override of POLLEN_VENDOR_OVERRIDES) {
+            expect(resolveProvider(override.vendor)?.id).toBe(override.vendor);
+            expect(resolveProvider(override.to)?.id).toBe(override.to);
+            expect(override.model).not.toBe("");
+            expect(override.from).toMatch(/^\d{4}-\d{2}$/);
+            expect(override.until).toMatch(/^\d{4}-\d{2}$/);
+            expect(override.until >= override.from).toBe(true);
+            expect(override.evidence.length).toBeGreaterThan(20);
+        }
     });
 
     it("resolves manually approved aliases and leaves unknown names visible", () => {

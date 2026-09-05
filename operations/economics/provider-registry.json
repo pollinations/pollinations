@@ -8,6 +8,16 @@
     "ltx-2",
     "mistral-ocr"
   ],
+  "pollenVendorOverrides": [
+    {
+      "vendor": "pointsflyer",
+      "model": "gptimage",
+      "to": "azure",
+      "from": "2026-01",
+      "until": "2026-04",
+      "evidence": "gptimage was registered with provider azure-2 (Pointflyer grant) through April 2026, but its gpt-image-1-mini deployments were billed on the Myceli Azure subscription 7725a3f5: the Cost Management export carries gpt img 1 mini meters of $648 (Jan), $1,244 (Feb), $1,106 (Mar), $190 (Apr) against Pollen meters of $960, $1,359, $1,171, $191, while Pollen tagged no gptimage as azure. No other azure-2 model has a matching meter on that subscription in those months."
+    }
+  ],
   "providers": [
     {
       "id": "airforce",
@@ -1490,7 +1500,7 @@
     },
     {
       "id": "pointsflyer",
-      "label": "PointsFlyer",
+      "label": "Pointflyer",
       "meteringBasis": "internal",
       "aliases": [],
       "connector": null,

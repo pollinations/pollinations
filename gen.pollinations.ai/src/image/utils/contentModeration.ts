@@ -31,6 +31,7 @@ const MODERATION_PATTERNS = [
     "illegal material",
     "unsafe content", // Azure Content Safety "contains unsafe content"
     "nsfw", // Replicate Qwen Image Edit "... contained NSFW content ..."
+    "content_safety_violation", // Azure MAI image 400 body "code":"content_safety_violation"
 ];
 
 // Provider-side blocks that quote content-policy wording but are NOT about this

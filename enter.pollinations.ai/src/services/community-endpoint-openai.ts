@@ -1,4 +1,5 @@
 import {
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
     communityChatCompletionsUrl,
     communityEmbeddingsUrl,
@@ -27,7 +28,7 @@ import {
     openaiImageUsageToUsage,
     openaiUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
-import { readResponseText } from "@shared/response-bytes.ts";
+import { readResponseBytes, readResponseText } from "@shared/response-bytes.ts";
 import { detectVideoMimeType } from "@shared/video-mime.ts";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
@@ -337,6 +338,85 @@ export async function testCommunityTranscriptionEndpoint({
         usage: { duration: promptAudioSeconds },
         billableUsage: { promptAudioSeconds },
     };
+}
+
+// Speech (TTS) endpoints bill the caller's input by character against the
+// same completion-audio fields the first-party TTS models use, so the probe
+// meters the request text it sent rather than anything in the response. What
+// the probe must prove is only that the endpoint answers a standard
+// OpenAI-shaped TTS request with real binary audio.
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const input = "Pollinations speech endpoint test.";
+    const response = await fetchCommunityAudio(
+        communityAudioSpeechUrl(baseUrl),
+        {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input,
+                voice: "alloy",
+                response_format: "mp3",
+            }),
+        },
+    );
+
+    if (!response.ok) {
+        // Error bodies are JSON on OpenAI-compatible endpoints; surface the
+        // upstream message so a wrong voice or format is diagnosable.
+        const text = new TextDecoder().decode(
+            await readResponseBytes(
+                response.clone(),
+                MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+                () => new Error("Endpoint response is too large"),
+            ),
+        );
+        throw new Error(endpointErrorMessage(response.status, parseJson(text)));
+    }
+
+    const bytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+        () => new Error("Endpoint response is too large"),
+    );
+    const contentType =
+        response.headers.get("content-type")?.split(";")[0]?.trim() ?? "";
+    if (!contentType.startsWith("audio/") || bytes.byteLength === 0) {
+        throw new Error(
+            "Endpoint did not return binary audio (expected an audio/* response body)",
+        );
+    }
+    // No upstream usage object to relay: the gateway meters the request text,
+    // so the probe reports the same shape the request path will store.
+    return {
+        usage: { completionAudioTokens: input.length },
+        billableUsage: { completionAudioTokens: input.length },
+    };
+}
+
+async function fetchCommunityAudio(
+    url: string,
+    init: RequestInit,
+): Promise<Response> {
+    try {
+        // Same redirect posture as fetchJson: the base URL is validated
+        // before we fetch, so following redirects would let the probe bounce
+        // to an unvalidated destination.
+        return await fetch(url, {
+            ...init,
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
 }
 
 export async function testCommunityEmbeddingEndpoint({

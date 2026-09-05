@@ -115,6 +115,13 @@ const EndpointFieldsSchema = {
         .describe(
             "OpenAI-compatible `/v1` base URL or full chat, image, or transcription URL. For video, the exact generation URL.",
         ),
+    responsesUrl: z
+        .string()
+        .url()
+        .nullable()
+        .describe(
+            "Exact OpenAI-compatible Responses endpoint URL. Null disables Responses support.",
+        ),
     upstreamModel: z.string().trim().min(1).max(253).optional(),
     bearerToken: z.string().min(1),
 } as const;
@@ -126,6 +133,9 @@ const ProxyCreateSchema = z
         description: EndpointFieldsSchema.description,
         visibility: VisibilitySchema.optional().default("private"),
         baseUrl: EndpointFieldsSchema.baseUrl,
+        responsesUrl: EndpointFieldsSchema.responsesUrl
+            .optional()
+            .default(null),
         bearerToken: EndpointFieldsSchema.bearerToken,
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         modality: ModalitySchema.optional().default("text"),
@@ -140,7 +150,16 @@ const ProxyCreateSchema = z
         fallbacks: FallbacksSchema.optional(),
         ...UpdatePriceFieldsSchema,
     })
-    .strict();
+    .strict()
+    .superRefine((input, ctx) => {
+        if (input.responsesUrl && input.modality !== "text") {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["responsesUrl"],
+                message: "responsesUrl is supported only for text models",
+            });
+        }
+    });
 export const CreateEndpointSchema = ProxyCreateSchema;
 export type ProxyCreateInput = z.infer<typeof ProxyCreateSchema>;
 
@@ -151,6 +170,9 @@ export const CreateEndpointAgentSchema = z
         description: EndpointFieldsSchema.description,
         visibility: VisibilitySchema.optional().default("private"),
         baseUrl: EndpointFieldsSchema.baseUrl,
+        responsesUrl: EndpointFieldsSchema.responsesUrl
+            .optional()
+            .default(null),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default(
             [],
@@ -171,6 +193,7 @@ const ProxyUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        responsesUrl: EndpointFieldsSchema.responsesUrl.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         bearerToken: EndpointFieldsSchema.bearerToken.optional(),
         perUserRpm: PerUserRpmSchema.optional(),
@@ -188,6 +211,7 @@ const EndpointAgentUpdateSchema = z
     .object({
         ...CommonUpdateFieldsSchema,
         baseUrl: EndpointFieldsSchema.baseUrl.optional(),
+        responsesUrl: EndpointFieldsSchema.responsesUrl.optional(),
         upstreamModel: EndpointFieldsSchema.upstreamModel,
         perUserRpm: PerUserRpmSchema.optional(),
     })
@@ -260,6 +284,7 @@ const CommunityEndpointResponseFieldsSchema = {
     title: z.string(),
     description: z.string().nullable(),
     baseUrl: z.string().url(),
+    responsesUrl: z.string().url().nullable(),
     upstreamModel: z.string().min(1),
     visibility: VisibilitySchema,
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema,

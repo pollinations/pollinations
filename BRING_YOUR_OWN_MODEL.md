@@ -8,7 +8,7 @@ Model publishing and [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md) solve
 
 | Model family | Required upstream endpoint | Pollinations endpoint |
 |---|---|---|
-| Text | `POST /v1/chat/completions` | `POST /v1/chat/completions` |
+| Text | `POST /v1/chat/completions`; optional exact `POST /v1/responses` URL | `POST /v1/chat/completions`; `POST /v1/responses` when configured |
 | Image | `POST /v1/images/generations` | `GET /image/{prompt}` or `POST /v1/images/generations` |
 | Image editing | `POST /v1/images/edits` in addition to image generation | `POST /v1/images/edits` |
 | Video | Exact endpoint URL entered at registration | `GET /video/{prompt}`, `GET /image/{prompt}`, or `POST /v1/images/generations` |
@@ -72,7 +72,7 @@ Owners receive 75% of the Pollen spent on their models. Paid and Quest Pollen ea
 
 1. Open [My Models](https://enter.pollinations.ai/my-models).
 2. Choose **Add model**.
-3. Select text, image, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For video, enter the exact generation URL and bearer token.
+3. Select text, image, transcription, or embedding and enter the upstream base URL, model id, and bearer token. For a text model with native Responses support, also enter its exact Responses URL. For video, enter the exact generation URL and bearer token.
 4. Fetch the upstream model list or run the endpoint test before saving.
 5. Save the model as private, then call its `owner/model` id through the normal Pollinations endpoint.
 6. If your account has publisher access, change visibility to public and set prices when it is ready for other users.
@@ -110,6 +110,8 @@ npx @pollinations/cli my-models create \
 
 Use `polli my-models list`, `update`, and `delete` for the rest of the lifecycle. API keys used for model management require the `account:keys` permission.
 
+For a text provider with native Responses support, add the exact URL with `--responses-url https://api.example.com/v1/responses`. Use `polli my-models update <id> --no-responses` to clear it. Pollinations does not derive or probe this URL: its presence declares the capability, and query parameters are preserved exactly.
+
 Embedding models use `--modality embedding`. For example, `--prompt-text-price 0.000001` charges 1 Pollen per 1M input tokens.
 
 ## Publishing Controls
@@ -139,6 +141,8 @@ curl https://gen.pollinations.ai/v1/chat/completions \
 ```
 
 Authenticated model-list requests include your own private models. Public discovery endpoints accept `community=true` to return only community models.
+
+When the registration includes `responsesUrl`, the model advertises `/v1/responses` in `supported_endpoints`. Responses calls are proxied to that exact URL, and Chat Completions calls use the same upstream through Pollinations' stateless adapter. Both paths require valid terminal usage for billing; a response with missing or malformed usage fails and remains unbilled.
 
 ## Fallbacks and Health
 

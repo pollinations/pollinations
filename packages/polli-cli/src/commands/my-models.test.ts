@@ -45,6 +45,18 @@ describe("modelBody", () => {
         });
     });
 
+    it("sets and clears the exact Responses endpoint", () => {
+        expect(
+            modelBody(
+                { responsesUrl: "https://example.com/v1/responses" },
+                false,
+            ),
+        ).toEqual({ responsesUrl: "https://example.com/v1/responses" });
+        expect(modelBody({ responses: false }, false)).toEqual({
+            responsesUrl: null,
+        });
+    });
+
     it("maps required safety features and clears them with none", () => {
         expect(
             modelBody(

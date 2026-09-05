@@ -1,3 +1,4 @@
+import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
@@ -27,10 +28,7 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type CommunityModelEnv = Pick<
-    CloudflareBindings,
-    "DB" | "AGENT_RUNTIME_BASE_URL"
->;
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB">;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
@@ -71,10 +69,7 @@ export async function getCommunityModelRegistryEntries(
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
-        const baseUrl =
-            row.type === "prompt_agent"
-                ? env.AGENT_RUNTIME_BASE_URL
-                : row.baseUrl;
+        const baseUrl = row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
@@ -150,6 +145,7 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
+                    responsesUrl: communityResponsesUrl(baseUrl),
                 };
                 break;
             }
@@ -164,6 +160,7 @@ export async function getCommunityModelRegistryEntries(
                     ...agentDefaults,
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
+                    responsesUrl: payload.responsesUrl,
                 };
                 break;
             }
@@ -181,6 +178,7 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,
+                    responsesUrl: payload.responsesUrl,
                     ...payload.prices,
                 };
             }

@@ -1,4 +1,5 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
+import { textEnvironmentValue } from "../environment.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
@@ -69,27 +70,23 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5-nano-2025-08-07": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5.4": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5.4-mini": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5.4-mini-chat": () =>
         createAzureModelConfig(
@@ -100,9 +97,8 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
     "gpt-5.5": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
         ),
     "gpt-5.5-chat": () =>
         createAzureModelConfig(
@@ -113,21 +109,23 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
     "gpt-5.6-sol": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5.6-terra": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "gpt-5.6-luna": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
+        ),
+    "gpt-6-astra": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra/chat/completions?api-version=2025-04-01-preview",
         ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
@@ -146,41 +144,36 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
     "grok-4-20-non-reasoning": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-non-reasoning/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "grok-4-20-reasoning": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "grok-4.3": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "grok-4.6": () => ({
         provider: "openai",
         directEndpoint:
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
         directAuthHeader: "api-key",
-        authKey: process.env.AZURE_MYCELI_PROD_API_KEY,
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
         model: "grok-4.6",
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
-        responsesApiKeyBinding: "AZURE_MYCELI_PROD_API_KEY",
     }),
 
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
 
     // -- OpenRouter (frontier models) ----------------------------------------
@@ -486,9 +479,8 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
     "Mistral-Large-3": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
 
     // -- Claude via AWS Bedrock -----------------------------------------------
@@ -627,15 +619,13 @@ export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-3.3-70B-Instruct/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
         ),
     "Llama-4-Maverick-17B-128E-Instruct-FP8": () =>
         createAzureResponsesModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
-            "AZURE_MYCELI_PROD_API_KEY",
             { requiresBase64ImageUrls: true },
         ),
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
@@ -679,14 +669,12 @@ export const portkeyConfig: PortkeyConfigMap = {
             "max-tokens": 1500,
             responsesEndpoint:
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
-            responsesApiKeyBinding: "OVHCLOUD_API_KEY",
         }),
     "qwen3-coder-30b-a3b-instruct": () =>
         createOVHcloudModelConfig({
             model: "Qwen3-Coder-30B-A3B-Instruct",
             responsesEndpoint:
                 "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
-            responsesApiKeyBinding: "OVHCLOUD_API_KEY",
         }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),

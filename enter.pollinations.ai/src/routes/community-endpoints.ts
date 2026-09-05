@@ -34,6 +34,7 @@ import {
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
+import { promptAgentApiBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
     type FallbackPrimary,
@@ -271,7 +272,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         toCommunityEndpointResponse(
                             endpoint,
                             ownerGithubUsername,
-                            c.env.AGENT_RUNTIME_BASE_URL,
+                            promptAgentApiBaseUrl(c.env),
                         ),
                     ),
                     provider: {
@@ -461,6 +462,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
+                responsesUrl: input.responsesUrl
+                    ? validateInputEndpointUrl(input.responsesUrl)
+                    : null,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -488,7 +492,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
+                    promptAgentApiBaseUrl(c.env),
                 ),
             );
         },
@@ -535,6 +539,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 normalizeInputBearerToken(input.bearerToken),
                 c.env.BETTER_AUTH_SECRET,
             );
+            const responsesUrl = input.responsesUrl
+                ? validateInputEndpointUrl(input.responsesUrl)
+                : null;
             const fallbacks = input.fallbacks
                 ? await resolveFallbacks(db, input.fallbacks, {
                       modelId,
@@ -544,6 +551,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 : [];
             const payload: ProxyListingPayload = {
                 bearerTokenCiphertext,
+                responsesUrl,
                 ...policy,
                 fallbacks,
             };
@@ -567,6 +575,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     pendingPayload: queuesPublication
                         ? JSON.stringify({
                               bearerTokenCiphertext,
+                              responsesUrl,
                               ...targetPolicy,
                               fallbacks,
                           } satisfies ProxyListingPayload)
@@ -581,7 +590,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
+                    promptAgentApiBaseUrl(c.env),
                 ),
             );
         },
@@ -830,7 +839,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 // Prompt configuration is edited through /account/agents.
                 // This route only updates shared listing state such as hidden.
             } else if (endpoint.type === "endpoint_agent") {
-                if (!parseListingPayload("endpoint_agent", endpoint.payload)) {
+                const current = parseListingPayload(
+                    "endpoint_agent",
+                    endpoint.payload,
+                );
+                if (!current) {
                     throw new Error(
                         `Invalid endpoint_agent payload for ${endpoint.id}`,
                     );
@@ -841,9 +854,20 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (input.perUserRpm !== undefined) {
+                if (
+                    input.perUserRpm !== undefined ||
+                    input.responsesUrl !== undefined
+                ) {
                     update.payload = JSON.stringify({
-                        perUserRpm: input.perUserRpm,
+                        perUserRpm: input.perUserRpm ?? current.perUserRpm,
+                        responsesUrl:
+                            input.responsesUrl === undefined
+                                ? current.responsesUrl
+                                : input.responsesUrl === null
+                                  ? null
+                                  : validateInputEndpointUrl(
+                                        input.responsesUrl,
+                                    ),
                     });
                 }
             } else {
@@ -863,6 +887,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 }).payload;
                 const queued = parseListingPayload("proxy", pendingPayload);
                 const targetBase = queued ?? stored;
+                if (input.responsesUrl != null && stored.modality !== "text") {
+                    throw new HTTPException(400, {
+                        message:
+                            "responsesUrl is supported only for text models",
+                    });
+                }
                 const targetVisibility = pendingVisibility ?? nextVisibility;
                 const targetPolicy = deriveUpdatedProxyPolicy(
                     targetBase,
@@ -904,6 +934,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               normalizeInputBearerToken(input.bearerToken),
                               c.env.BETTER_AUTH_SECRET,
                           );
+                const responsesUrl =
+                    input.responsesUrl === undefined
+                        ? stored.responsesUrl
+                        : input.responsesUrl === null
+                          ? null
+                          : validateInputEndpointUrl(input.responsesUrl);
                 if (input.baseUrl !== undefined) {
                     update.baseUrl = validateInputEndpointUrl(input.baseUrl);
                 }
@@ -913,6 +949,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (pendingReady || changesProxyPayload(input)) {
                     const payload: ProxyListingPayload = {
                         bearerTokenCiphertext,
+                        responsesUrl,
                         ...policy,
                         fallbacks,
                     };
@@ -924,6 +961,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if ((delayPricing && pricingChanged) || queuesPublication) {
                     const targetPayload: ProxyListingPayload = {
                         bearerTokenCiphertext,
+                        responsesUrl,
                         ...targetPolicy,
                         fallbacks,
                     };
@@ -931,6 +969,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     if (pricingChanged) {
                         pendingAt = new Date();
                     }
+                } else if (queued && input.responsesUrl !== undefined) {
+                    pendingPayload = JSON.stringify({
+                        ...queued,
+                        responsesUrl,
+                    } satisfies ProxyListingPayload);
                 }
             }
             update.pendingPayload = pendingPayload;
@@ -950,7 +993,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 toCommunityEndpointResponse(
                     row,
                     ownerGithubUsername,
-                    c.env.AGENT_RUNTIME_BASE_URL,
+                    promptAgentApiBaseUrl(c.env),
                 ),
             );
         },

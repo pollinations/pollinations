@@ -1,7 +1,7 @@
-import { cn, ScrollArea } from "@pollinations/ui";
+import { ArrowRightIcon, cn, IconButton, ScrollArea } from "@pollinations/ui";
 import { useEffect, useRef, useState } from "react";
 import type { DirectoryApp } from "../../data/publicStats";
-import { AppTile } from "./cards";
+import { AppTile, SpotlightTile } from "./cards";
 
 const layouts = {
     featured: {
@@ -13,6 +13,86 @@ const layouts = {
         item: "w-59 shrink-0",
     },
 } as const;
+
+export function SpotlightCarousel({ apps }: { apps: DirectoryApp[] }) {
+    const [activeIndex, setActiveIndex] = useState(0);
+    const [direction, setDirection] = useState<1 | -1>(1);
+    const [paused, setPaused] = useState(false);
+
+    useEffect(() => {
+        setActiveIndex((index) => (apps.length ? index % apps.length : 0));
+    }, [apps.length]);
+
+    useEffect(() => {
+        if (
+            paused ||
+            apps.length < 2 ||
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ) {
+            return;
+        }
+
+        const interval = window.setInterval(() => {
+            setDirection(1);
+            setActiveIndex((index) => (index + 1) % apps.length);
+        }, 5_500);
+
+        return () => window.clearInterval(interval);
+    }, [apps.length, paused]);
+
+    const app = apps[activeIndex];
+    if (!app) return null;
+
+    const move = (step: 1 | -1) => {
+        setDirection(step);
+        setActiveIndex((index) => (index + step + apps.length) % apps.length);
+    };
+
+    return (
+        <section
+            aria-label="Featured apps"
+            aria-roledescription="carousel"
+            className="min-w-0 overflow-hidden"
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocusCapture={() => setPaused(true)}
+            onBlurCapture={(event) => {
+                if (
+                    !event.currentTarget.contains(event.relatedTarget as Node)
+                ) {
+                    setPaused(false);
+                }
+            }}
+        >
+            <SpotlightTile
+                app={app}
+                direction={direction === -1 ? "back" : "forward"}
+                action={
+                    apps.length > 1 ? (
+                        <div className="flex items-center gap-1.5">
+                            <IconButton
+                                size="sm"
+                                aria-label="Previous featured app"
+                                onClick={() => move(-1)}
+                                className="bg-theme-bg-subtle text-theme-text-strong shadow-none"
+                            >
+                                <ArrowRightIcon className="size-3.5 rotate-180" />
+                            </IconButton>
+                            <IconButton
+                                size="sm"
+                                aria-label="Next featured app"
+                                onClick={() => move(1)}
+                                className="bg-theme-bg-subtle text-theme-text-strong shadow-none"
+                            >
+                                <ArrowRightIcon className="size-3.5" />
+                            </IconButton>
+                        </div>
+                    ) : undefined
+                }
+            />
+        </section>
+    );
+}
 
 export function AppCarousel({
     apps,

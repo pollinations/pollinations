@@ -1,8 +1,9 @@
 /**
  * Search-param contract for /apps.
  *
- * Category and platform are independent multi-select filters. Ranking is a
- * separate single-select choice: it changes order without hiding apps.
+ * Category and platform are independent multi-select filters; Pollen Pay is a
+ * boolean filter. Ranking is a separate single-select choice: it changes order
+ * without hiding apps.
  *
  * Same shape as enter's `model-search.ts` (PR #12458): `as const` whitelists,
  * a typed guard, and empty selections elided so a default view has a clean
@@ -22,6 +23,7 @@ export const APP_CATEGORIES = [
     "video_audio",
 ] as const;
 type AppCategory = (typeof APP_CATEGORIES)[number];
+export type { AppCategory };
 
 export const CATEGORY_LABELS: Record<AppCategory, string> = {
     image: "Image",
@@ -53,7 +55,7 @@ export const APP_PLATFORMS = [
     "wordpress",
     "api",
 ] as const;
-type AppPlatform = (typeof APP_PLATFORMS)[number];
+export type AppPlatform = (typeof APP_PLATFORMS)[number];
 
 export const PLATFORM_LABELS: Record<AppPlatform, string> = {
     web: "Web",
@@ -73,18 +75,17 @@ export const PLATFORM_LABELS: Record<AppPlatform, string> = {
     api: "API",
 };
 
-export const APP_SORTS = ["fresh", "buzz", "pollen"] as const;
+export const APP_SORTS = ["fresh", "buzz"] as const;
 export type AppSort = (typeof APP_SORTS)[number];
 
 /**
- * Axes are stored comma-joined, not as arrays. TanStack serialises an array
- * as JSON, which turns ?category=games,build into
- * ?category=%5B%22games%22%2C%22build%22%5D — unreadable, and impossible to
- * edit by hand or paste into a doc.
+ * Platforms are stored comma-joined, not as arrays. TanStack serialises an
+ * array as JSON, producing unreadable URLs that are difficult to edit or share.
  */
 export type AppSearch = {
-    category?: string;
+    category?: AppCategory;
     platform?: string;
+    pollen?: boolean;
     sort?: AppSort;
     q?: string;
 };
@@ -107,6 +108,15 @@ function cleanList<T extends string>(
     return unique.length > 0 ? unique.join(",") : undefined;
 }
 
+function cleanValue<T extends string>(
+    values: readonly T[],
+    raw: unknown,
+): T | undefined {
+    if (typeof raw !== "string") return undefined;
+    const value = raw.trim();
+    return values.includes(value as T) ? (value as T) : undefined;
+}
+
 /** Read one axis back as a typed list. */
 export function listOf<T extends string>(
     values: readonly T[],
@@ -120,24 +130,23 @@ export function listOf<T extends string>(
 
 export function validateAppSearch(search: Record<string, unknown>): AppSearch {
     const q = typeof search.q === "string" ? search.q.trim() : "";
+    const pollen =
+        search.pollen === true || search.pollen === "true"
+            ? true
+            : search.pollen === false || search.pollen === "false"
+              ? false
+              : undefined;
     const requestedSort =
         typeof search.sort === "string" &&
         APP_SORTS.includes(search.sort as AppSort)
             ? (search.sort as AppSort)
             : "fresh";
     return {
-        category: cleanList(APP_CATEGORIES, search.category),
+        category: cleanValue(APP_CATEGORIES, search.category),
         platform: cleanList(APP_PLATFORMS, search.platform),
+        pollen,
         // Fresh is the default, so keep the default URL clean.
         sort: requestedSort === "fresh" ? undefined : requestedSort,
         q: q === "" ? undefined : q,
     };
-}
-
-/** Add or remove one value, returning undefined when the axis empties. */
-export function toggle(current: string | undefined, value: string) {
-    const set = new Set(current ? current.split(",") : []);
-    if (set.has(value)) set.delete(value);
-    else set.add(value);
-    return set.size > 0 ? [...set].join(",") : undefined;
 }

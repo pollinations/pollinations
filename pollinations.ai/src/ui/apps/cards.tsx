@@ -1,6 +1,7 @@
 import {
     Chip,
     ClockIcon,
+    cn,
     GitHubIcon,
     InlineLink,
     LinkCard,
@@ -8,8 +9,7 @@ import {
     TrendUpIcon,
     WalletIcon,
 } from "@pollinations/ui";
-import { Markdown } from "@pollinations/ui/markdown";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 import {
     type DirectoryApp,
     formatStars,
@@ -42,11 +42,7 @@ function AppSignals({ app }: { app: DirectoryApp }) {
                 </span>
             ) : null}
             {isPollen(app) ? (
-                <span
-                    role="img"
-                    title="Accepts Pollen"
-                    aria-label="Accepts Pollen"
-                >
+                <span role="img" title="Pollen Pay" aria-label="Pollen Pay">
                     <WalletIcon className="size-4" />
                 </span>
             ) : null}
@@ -74,6 +70,7 @@ function AppCoverImage({
             alt=""
             aria-hidden="true"
             loading="lazy"
+            decoding="async"
             width={1200}
             height={600}
             onError={
@@ -124,6 +121,78 @@ export function AppTile({
     );
 }
 
+export function SpotlightTile({
+    app,
+    action,
+    direction = "forward",
+}: {
+    app: DirectoryApp;
+    action?: ReactNode;
+    direction?: "forward" | "back";
+}) {
+    const href = appHref(app);
+    const cover = appCover(app.name, app.screenshot_url);
+    const slideClassName = cn(
+        "apps-spotlight-slide",
+        direction === "back" && "apps-spotlight-slide-back",
+    );
+    const image = (
+        <AppCoverImage src={cover} className="aspect-[16/7] sm:aspect-[18/7]" />
+    );
+
+    return (
+        <article>
+            {href ? (
+                <a
+                    key={`${app.name}-image`}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Open ${app.name}`}
+                    className={cn(
+                        "block focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-theme-border-strong",
+                        slideClassName,
+                    )}
+                >
+                    {image}
+                </a>
+            ) : (
+                image
+            )}
+            <div className="flex h-[8.5rem] items-start justify-between gap-3 px-5 py-4">
+                <div
+                    key={`${app.name}-copy`}
+                    className={cn(
+                        "flex min-w-0 flex-1 flex-col gap-1.5",
+                        slideClassName,
+                    )}
+                >
+                    {href ? (
+                        <a
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="truncate rounded-sm font-body text-lg font-semibold text-theme-text-strong hover:text-theme-text-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-theme-border-strong"
+                        >
+                            {app.name}
+                        </a>
+                    ) : (
+                        <span className="truncate font-body text-lg font-semibold text-theme-text-strong">
+                            {app.name}
+                        </span>
+                    )}
+                    <p className="line-clamp-3 text-sm leading-relaxed text-theme-text-base">
+                        {app.description}
+                    </p>
+                </div>
+                <div key="spotlight-controls" className="shrink-0">
+                    {action}
+                </div>
+            </div>
+        </article>
+    );
+}
+
 /** Compact directory row: the screenshot sets the mood without dominating. */
 export function AppRow({ app }: { app: DirectoryApp }) {
     const stars = formatStars(app.github_repository_stars);
@@ -133,7 +202,7 @@ export function AppRow({ app }: { app: DirectoryApp }) {
     const cover = appCover(app.name, app.screenshot_url);
 
     return (
-        <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-border/70 border-b py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:py-4">
+        <article className="grid grid-cols-[6rem_minmax(0,1fr)] items-start gap-3 border-theme-text-strong/10 border-b py-3.5 sm:grid-cols-[9rem_minmax(0,1fr)] sm:gap-5 sm:py-4">
             {href && (
                 <a
                     href={href}
@@ -159,9 +228,9 @@ export function AppRow({ app }: { app: DirectoryApp }) {
                     )}
                     <AppSignals app={app} />
                 </div>
-                <Markdown className="line-clamp-2 text-sm text-theme-text-base [&_p]:m-0">
+                <p className="line-clamp-2 text-sm text-theme-text-base">
                     {app.description}
-                </Markdown>
+                </p>
                 <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 pt-1 text-xs text-theme-text-muted">
                     {profile && (
                         <a

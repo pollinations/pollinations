@@ -8,6 +8,7 @@ import {
     cn,
     DatabaseIcon,
     Drawer,
+    DropdownItem,
     EyeIcon,
     GlobeIcon,
     Heading,
@@ -17,6 +18,7 @@ import {
     NavItem,
     RocketIcon,
     ScrollArea,
+    SignOutIcon,
     SproutIcon,
     Text,
     UsageIcon,
@@ -756,12 +758,14 @@ export default function App() {
                 <AccountMenu
                     name={accountName(accountUser)}
                     avatarUrl={accountUser.picture}
-                    onSignOut={() =>
-                        window.location.assign(fixtures ? "/" : "/auth/logout")
-                    }
                     className="polli:w-full"
                     side="top"
-                />
+                >
+                    <DropdownItem as="a" href={fixtures ? "/" : "/auth/logout"}>
+                        <SignOutIcon aria-hidden="true" />
+                        Sign Out
+                    </DropdownItem>
+                </AccountMenu>
             )}
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}

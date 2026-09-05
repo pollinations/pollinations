@@ -5,7 +5,9 @@ import {
     Button,
     ColorModeToggle,
     DownloadIcon,
+    DropdownItem,
     Heading,
+    SignOutIcon,
     StatCard,
     Surface,
     Text,
@@ -71,8 +73,12 @@ function AccountControls({ accountUser }) {
                 <AccountMenu
                     name={accountName(accountUser)}
                     avatarUrl={accountUser.picture}
-                    onSignOut={() => window.location.assign("/auth/logout")}
-                />
+                >
+                    <DropdownItem as="a" href="/auth/logout">
+                        <SignOutIcon aria-hidden="true" />
+                        Sign Out
+                    </DropdownItem>
+                </AccountMenu>
             )}
         </>
     );

@@ -30,6 +30,7 @@ import {
     testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
@@ -502,7 +503,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Create My Model",
             description:
-                "Register a private or public community text, image, video, transcription, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
+                "Register a private or public community text, image, video, transcription, speech, or embedding model. Private is the default. Public models require an allowlisted account and become public after 3 hours. API keys require `account:keys`. The upstream bearer token is encrypted and never returned.",
             responses: {
                 200: {
                     description: "Created community model",
@@ -643,7 +644,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -695,11 +696,13 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               ? await testCommunityTranscriptionEndpoint(
                                     modelInput,
                                 )
-                              : input.modality === "embedding"
-                                ? await testCommunityEmbeddingEndpoint(
-                                      modelInput,
-                                  )
-                                : await testCommunityEndpoint(modelInput);
+                              : input.modality === "speech"
+                                ? await testCommunitySpeechEndpoint(modelInput)
+                                : input.modality === "embedding"
+                                  ? await testCommunityEmbeddingEndpoint(
+                                        modelInput,
+                                    )
+                                  : await testCommunityEndpoint(modelInput);
                 }
                 return c.json({
                     ok: true,
@@ -712,9 +715,11 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               ? "Endpoint responded with playable video"
                               : input.modality === "transcription"
                                 ? "Endpoint responded with transcription text"
-                                : input.modality === "embedding"
-                                  ? "Endpoint responded with embedding data"
-                                  : "Endpoint responded with usage",
+                                : input.modality === "speech"
+                                  ? "Endpoint responded with audio data"
+                                  : input.modality === "embedding"
+                                    ? "Endpoint responded with embedding data"
+                                    : "Endpoint responded with usage",
                     ...result,
                 });
             } catch (error) {

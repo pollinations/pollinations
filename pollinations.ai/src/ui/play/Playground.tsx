@@ -295,20 +295,6 @@ function audioTaskForModel(model: PlaygroundModel): AudioTask {
     return "speech-generation";
 }
 
-/** Modality tabs only switch modes; model selection belongs to the media card. */
-function modalityButtonStyle(active: boolean): CSSProperties {
-    return {
-        "--playground-mode-background": active
-            ? "var(--polli-color-bg-active)"
-            : "transparent",
-        "--playground-mode-hover": "var(--polli-color-bg-hover)",
-        "--playground-mode-hover-text": "var(--polli-color-text-hover)",
-        color: active
-            ? "var(--polli-color-text-strong)"
-            : "var(--polli-color-text-soft)",
-    } as CSSProperties;
-}
-
 function ModalityTabs({
     activeCategory,
     onSelectCategory,
@@ -329,8 +315,7 @@ function ModalityTabs({
                         key={category}
                         active={active}
                         size="lg"
-                        style={modalityButtonStyle(active)}
-                        className="polli-playground-modality-button gap-2"
+                        className="gap-2"
                         onClick={() => onSelectCategory(category)}
                     >
                         <CategoryIcon className="h-4 w-4 shrink-0" />
@@ -1121,7 +1106,7 @@ export function Playground() {
             </FieldStack>
         ) : null;
     return (
-        <div className="flex w-full flex-col text-theme-text-base">
+        <div className="relative z-10 flex w-full flex-col text-theme-text-base">
             <ModalityTabs
                 activeCategory={activeCategory}
                 onSelectCategory={selectCategory}
@@ -1139,7 +1124,7 @@ export function Playground() {
                             </Alert>
                         </div>
                     )}
-                    <div className="flex flex-col gap-4 pt-4">
+                    <div className="flex flex-col gap-4 pt-6">
                         <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                             {activeCategory === "audio" && (
                                 <AudioTaskPicker

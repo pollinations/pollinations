@@ -1214,7 +1214,7 @@ export function Chat() {
     if (!selectedAgent) {
         return (
             <section className="min-w-0" aria-label="Agent chat">
-                <div className="pt-4 pb-3">
+                <div className="pt-6 pb-3">
                     <AgentPicker
                         agents={agents}
                         selectedAgentId={null}
@@ -1251,7 +1251,7 @@ export function Chat() {
     return (
         <section className="min-w-0" aria-label={`${assistantName} chat`}>
             <div className="play-chat-window flex min-h-0 flex-col">
-                <div className="pt-4 pb-3">
+                <div className="pt-6 pb-3">
                     <AgentPicker
                         agents={agents}
                         selectedAgentId={selectedAgent?.id ?? null}

@@ -1,5 +1,5 @@
 import { PolliProvider } from "@pollinations/sdk/react";
-import { ContentHeader } from "@pollinations/ui";
+import { ContentHeader, useColorMode } from "@pollinations/ui";
 import { AppUserMenu } from "@pollinations/ui/app-user-menu/sdk";
 import { createFileRoute } from "@tanstack/react-router";
 import { ENTER_URL, POLLI_APP_KEY } from "../config";
@@ -30,6 +30,27 @@ function AccountAction() {
                 }}
             />
         </div>
+    );
+}
+
+function PlaygroundSky() {
+    const { isDark } = useColorMode();
+
+    return (
+        <img
+            src={
+                isDark
+                    ? "/heroes/play-controls-night.webp"
+                    : "/heroes/play-controls-day.webp"
+            }
+            alt=""
+            aria-hidden="true"
+            width={1915}
+            height={821}
+            loading="lazy"
+            decoding="async"
+            className="playground-top-scene pointer-events-none absolute inset-x-0 top-0 h-40 w-full select-none object-cover object-top"
+        />
     );
 }
 
@@ -78,7 +99,8 @@ function PlayPage() {
                     <AccountAction />
                 </HeroScene>
             </PageCard>
-            <PageCard className="pt-6 sm:pt-8">
+            <PageCard className="relative isolate pt-6 sm:pt-8">
+                <PlaygroundSky />
                 <Playground />
                 <BottomScene
                     dayScene="/heroes/play-bottom-day.webp"

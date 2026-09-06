@@ -10,11 +10,12 @@ accounts, prepare a monthly close, or reconcile provider cost with Pollen.
 
 ## Source of truth
 
-Read `operations/economics/web/src/providerConfig.ts` and `shared/providers.ts` first.
+Read `operations/economics/web/src/providerConfig.ts` first.
 
-- `shared/providers.ts` owns provider IDs, display names, and historical aliases.
-- Economics configuration owns account lifecycles, active monthly-review
-  status, balance-tracking decisions, access URLs, and workspace domains.
+- Economics configuration owns vendor IDs, display names, account lifecycles,
+  active monthly-review status, balance-tracking decisions, access URLs, and
+  workspace domains.
+- Historical name mappings live only in Economics' `lib/providerRegistry.ts`.
 - Active vendors have `monthlyReview: true`. Refresh only those during a normal
   monthly run.
 - Inactive vendors remain visible for history. Inspect them only when the user

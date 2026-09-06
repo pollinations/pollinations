@@ -1,7 +1,6 @@
-import type { ProviderId } from "../../../../shared/providers";
-
-export type EconomicsProviderConfig = {
-    id: ProviderId;
+export type ProviderDefinition = {
+    id: string;
+    label: string;
     meteringBasis: MeteringBasis;
     connector: string | null;
     monthlyReview: boolean;
@@ -31,11 +30,10 @@ export type ProviderAccountDefinition = {
     activeTo: string | null;
 };
 
-// Only providers with Economics configuration belong here. Shared identities
-// do not require accounting settings.
-export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
+export const PROVIDER_REGISTRY: ProviderDefinition[] = [
     {
         id: "airforce",
+        label: "Airforce",
         meteringBasis: "internal",
         connector: null,
         monthlyReview: false,
@@ -43,6 +41,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "alibaba",
+        label: "Alibaba",
         meteringBasis: "direct",
         connector: "alibaba",
         monthlyReview: true,
@@ -65,6 +64,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "anthropic",
+        label: "Anthropic",
         meteringBasis: "direct",
         connector: "anthropic",
         monthlyReview: true,
@@ -78,6 +78,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "assemblyai",
+        label: "AssemblyAI",
         meteringBasis: "direct",
         connector: "assemblyai",
         monthlyReview: true,
@@ -91,6 +92,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "aws",
+        label: "AWS",
         meteringBasis: "mixed",
         connector: "aws",
         monthlyReview: true,
@@ -112,6 +114,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "azure",
+        label: "Azure",
         meteringBasis: "mixed",
         connector: "azure",
         monthlyReview: true,
@@ -125,6 +128,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "bpai",
+        label: "BPAI",
         meteringBasis: "internal",
         connector: null,
         monthlyReview: false,
@@ -132,6 +136,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "bytedance",
+        label: "BytePlus / ByteDance",
         meteringBasis: "direct",
         connector: "bytedance",
         monthlyReview: false,
@@ -154,6 +159,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "cloudflare",
+        label: "Cloudflare",
         meteringBasis: "not_applicable",
         connector: "cloudflare",
         monthlyReview: true,
@@ -187,6 +193,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "community",
+        label: "Community models",
         meteringBasis: "internal",
         connector: "community",
         monthlyReview: false,
@@ -194,6 +201,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "composio",
+        label: "Composio",
         meteringBasis: "direct",
         connector: null,
         monthlyReview: true,
@@ -201,6 +209,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "daytona",
+        label: "Daytona",
         meteringBasis: "not_applicable",
         connector: "daytona",
         monthlyReview: false,
@@ -208,6 +217,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "deepinfra",
+        label: "DeepInfra",
         meteringBasis: "direct",
         connector: "deepinfra",
         monthlyReview: true,
@@ -221,6 +231,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "digitalocean",
+        label: "DigitalOcean",
         meteringBasis: "capacity",
         connector: "digitalocean",
         monthlyReview: true,
@@ -234,6 +245,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "e2b",
+        label: "E2B",
         meteringBasis: "capacity",
         connector: "e2b",
         monthlyReview: true,
@@ -256,6 +268,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "elevenlabs",
+        label: "ElevenLabs",
         meteringBasis: "direct",
         connector: "elevenlabs",
         monthlyReview: true,
@@ -269,6 +282,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "exa",
+        label: "Exa",
         meteringBasis: "direct",
         connector: "exa",
         monthlyReview: true,
@@ -291,6 +305,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "fal",
+        label: "fal.ai",
         meteringBasis: "direct",
         connector: "fal",
         monthlyReview: true,
@@ -304,6 +319,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "fireworks",
+        label: "Fireworks",
         meteringBasis: "direct",
         connector: "fireworks",
         monthlyReview: true,
@@ -370,6 +386,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "google",
+        label: "Google Cloud",
         meteringBasis: "mixed",
         connector: "google",
         monthlyReview: true,
@@ -383,6 +400,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "github",
+        label: "GitHub",
         meteringBasis: "not_applicable",
         connector: "github",
         monthlyReview: true,
@@ -396,6 +414,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "inception",
+        label: "Inception",
         meteringBasis: "direct",
         connector: "inception",
         monthlyReview: true,
@@ -409,6 +428,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "inferenceport",
+        label: "InferencePort",
         meteringBasis: "direct",
         connector: "inferenceport",
         monthlyReview: true,
@@ -422,6 +442,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "io.net",
+        label: "io.net",
         meteringBasis: "capacity",
         connector: "io-net",
         monthlyReview: false,
@@ -435,6 +456,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "lambda",
+        label: "Lambda Cloud",
         meteringBasis: "capacity",
         connector: "lambda",
         monthlyReview: true,
@@ -448,6 +470,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "modal",
+        label: "Modal",
         meteringBasis: "capacity",
         connector: "modal",
         monthlyReview: true,
@@ -492,6 +515,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "mistral",
+        label: "Mistral AI",
         meteringBasis: "direct",
         connector: "mistral",
         monthlyReview: true,
@@ -505,6 +529,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "nebius",
+        label: "Nebius",
         meteringBasis: "capacity",
         connector: null,
         monthlyReview: false,
@@ -512,6 +537,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "openai",
+        label: "OpenAI",
         meteringBasis: "direct",
         connector: "openai",
         monthlyReview: true,
@@ -525,6 +551,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "openrouter",
+        label: "OpenRouter",
         meteringBasis: "direct",
         connector: "openrouter",
         monthlyReview: true,
@@ -558,6 +585,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "ovhcloud",
+        label: "OVHcloud",
         meteringBasis: "capacity",
         connector: "ovhcloud",
         monthlyReview: true,
@@ -571,6 +599,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "perplexity",
+        label: "Perplexity",
         meteringBasis: "direct",
         connector: "perplexity",
         monthlyReview: true,
@@ -584,6 +613,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "pointsflyer",
+        label: "PointsFlyer",
         meteringBasis: "internal",
         connector: null,
         monthlyReview: false,
@@ -591,6 +621,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "pruna",
+        label: "Pruna AI",
         meteringBasis: "direct",
         connector: "pruna",
         monthlyReview: true,
@@ -604,6 +635,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "replicate",
+        label: "Replicate",
         meteringBasis: "direct",
         connector: "replicate",
         monthlyReview: true,
@@ -617,6 +649,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "regolo",
+        label: "Regolo.ai",
         meteringBasis: "direct",
         connector: "regolo",
         monthlyReview: true,
@@ -639,6 +672,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "retell",
+        label: "Retell AI",
         meteringBasis: "direct",
         connector: "retell",
         monthlyReview: false,
@@ -646,6 +680,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "runpod",
+        label: "RunPod",
         meteringBasis: "mixed",
         connector: "runpod",
         monthlyReview: true,
@@ -659,6 +694,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "scaleway",
+        label: "Scaleway",
         meteringBasis: "mixed",
         connector: "scaleway",
         monthlyReview: false,
@@ -692,6 +728,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "self-hosted",
+        label: "Self-hosted",
         meteringBasis: "internal",
         connector: null,
         monthlyReview: false,
@@ -699,6 +736,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "self-issued",
+        label: "Self-issued",
         meteringBasis: "not_applicable",
         connector: null,
         monthlyReview: false,
@@ -706,6 +744,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "seraphyn",
+        label: "Seraphyn",
         meteringBasis: "internal",
         connector: null,
         monthlyReview: false,
@@ -713,6 +752,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "stability",
+        label: "Stability AI",
         meteringBasis: "direct",
         connector: "stability",
         monthlyReview: true,
@@ -726,6 +766,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "tinybird",
+        label: "Tinybird",
         meteringBasis: "not_applicable",
         connector: "tinybird",
         monthlyReview: true,
@@ -739,6 +780,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "vast",
+        label: "Vast.ai",
         meteringBasis: "capacity",
         connector: "vast-ai",
         monthlyReview: true,
@@ -752,6 +794,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "vercel",
+        label: "Vercel AI Gateway",
         meteringBasis: "direct",
         connector: "vercel",
         monthlyReview: true,
@@ -765,6 +808,7 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
     },
     {
         id: "xai",
+        label: "xAI",
         meteringBasis: "direct",
         connector: "xai",
         monthlyReview: true,

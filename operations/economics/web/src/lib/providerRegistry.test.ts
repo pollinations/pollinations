@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { PROVIDER_IDENTITIES } from "../../../../../shared/providers";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
+import { PROVIDER_REGISTRY } from "../providerConfig";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
 import {
     activeProviderAccounts,
@@ -8,8 +8,6 @@ import {
     collectProviderObservations,
     meterDriftExplanation,
     missingProviderMappings,
-    normalizeProviderName,
-    PROVIDER_REGISTRY,
     pollenWitnessExplanation,
     providerCheckExplanation,
     providerMeteringBasis,
@@ -85,14 +83,6 @@ describe("provider registry", () => {
     it("keeps Economics provider IDs unique", () => {
         const ids = PROVIDER_REGISTRY.map(({ id }) => id);
         expect(new Set(ids).size).toBe(ids.length);
-    });
-
-    it("keeps every canonical ID and alias unique", () => {
-        const names = Object.entries(PROVIDER_IDENTITIES)
-            .flatMap(([id, provider]) => [id, ...provider.aliases])
-            .map(normalizeProviderName);
-
-        expect(new Set(names).size).toBe(names.length);
     });
 
     it("classifies every provider by how its bill should reconcile to Pollen", () => {

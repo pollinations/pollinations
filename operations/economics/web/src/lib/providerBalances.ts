@@ -1,4 +1,7 @@
-import type { ProviderAccessTarget } from "../providerConfig";
+import {
+    PROVIDER_REGISTRY,
+    type ProviderAccessTarget,
+} from "../providerConfig";
 import type { Data, OpCloudRow, OpTransactionRow } from "../types";
 import {
     isBankMovement,
@@ -14,11 +17,7 @@ import {
 import { toUsd } from "./fx";
 import { monthLabel, monthShift, WINDOW_START } from "./months";
 import { isPrepaidVendor } from "./providerFunding";
-import {
-    activeProviderAccounts,
-    PROVIDER_REGISTRY,
-    resolveProvider,
-} from "./providerRegistry";
+import { activeProviderAccounts, resolveProvider } from "./providerRegistry";
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
 

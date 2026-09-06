@@ -1,9 +1,8 @@
-import { PROVIDER_IDENTITIES } from "../../../../../shared/providers";
 import {
-    ECONOMICS_PROVIDERS,
-    type EconomicsProviderConfig,
     type MeteringBasis,
+    PROVIDER_REGISTRY,
     type ProviderAccountDefinition,
+    type ProviderDefinition,
 } from "../providerConfig";
 import type {
     Data,
@@ -21,33 +20,30 @@ import {
 } from "./categories";
 import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
 
-export type ProviderDefinition = EconomicsProviderConfig & {
-    label: string;
-    aliases: string[];
-};
-
 export type ProviderReconciliationExplanation =
     | PollenWitnessExplanation
     | MeterDriftExplanation;
 
-export const PROVIDER_REGISTRY: ProviderDefinition[] = ECONOMICS_PROVIDERS.map(
-    (provider) => ({
-        ...provider,
-        ...PROVIDER_IDENTITIES[provider.id],
-    }),
+const providerById = new Map(
+    PROVIDER_REGISTRY.map((provider) => [provider.id, provider]),
 );
-const providerByAlias = new Map<string, ProviderDefinition>();
-for (const provider of PROVIDER_REGISTRY) {
-    providerByAlias.set(provider.id, provider);
-    for (const alias of provider.aliases) providerByAlias.set(alias, provider);
-}
+
+// Historical Tinybird and ledger names; these only affect Economics reporting.
+const HISTORICAL_PROVIDER_NAMES: Record<string, string> = {
+    "aws-bedrock": "aws",
+    bedrock: "aws",
+    "azure-2": "azure",
+    "vast.ai": "vast",
+    vastai: "vast",
+};
 
 export function normalizeProviderName(value: string): string {
     return value.trim().toLowerCase();
 }
 
 export function resolveProvider(value: string): ProviderDefinition | undefined {
-    return providerByAlias.get(normalizeProviderName(value));
+    const name = normalizeProviderName(value);
+    return providerById.get(HISTORICAL_PROVIDER_NAMES[name] ?? name);
 }
 
 export function providerMeteringBasis(value: string): MeteringBasis {

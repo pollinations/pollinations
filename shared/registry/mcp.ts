@@ -1,4 +1,3 @@
-import type { ProviderId } from "../providers.ts";
 import {
     type BillingRateDefinition,
     type PublicPriceInfo,
@@ -49,7 +48,7 @@ export type McpServerDefinition = McpServerDefinitionBase &
         | { billing: "downstream" }
         | {
               billing: "usage_receipt";
-              provider: ProviderId;
+              provider: string;
           }
     );
 

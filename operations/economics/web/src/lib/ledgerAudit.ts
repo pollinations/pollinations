@@ -1,5 +1,4 @@
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
-import { cloudCategory } from "./categories";
 import {
     hasReconciledTransactionEvidence,
     isAcknowledgedLostTransactionEvidence,
@@ -14,6 +13,7 @@ import {
 } from "./months";
 import { isCloudSource, isTransactionSource } from "./provenance";
 import {
+    ledgerCategory,
     missingProviderMappings,
     transactionCategory,
 } from "./providerRegistry";
@@ -89,7 +89,7 @@ function invalidCloud(row: OpCloudRow): boolean {
         !present(row.entry_id) ||
         !isCloudSource(row.source) ||
         !present(row.vendor) ||
-        (!balance && cloudCategory(row) === "uncategorized") ||
+        (!balance && ledgerCategory(row) === "uncategorized") ||
         !isMonthKey(String(row.start ?? "").slice(0, 7)) ||
         !finite(row.credit) ||
         !finite(row.paid) ||

@@ -78,11 +78,11 @@ Collection steps:
 9. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
 10. Use this skill for saved raw evidence.
 
-For the detailed provider ledger, use `groupBy=service`. Preserve the AWS
-account ID in `resource_id`, classify `Amazon Bedrock` and services ending in
-`[Amazon Bedrock Edition]` as inference, and normalize the named edition to the
-canonical model slug. Bedrock Guardrails usage types and all other services are
-infrastructure.
+For the detailed provider ledger, use `groupBy=service` and `source: api` for
+Umbrella API results. Preserve the raw service label and AWS account identity;
+model joins belong in the registry. Classify `Amazon Bedrock` and services
+ending in `[Amazon Bedrock Edition]` as inference. Bedrock Guardrails usage
+types and other infrastructure services are infrastructure.
 
 ## Verified — 2026-09-05
 

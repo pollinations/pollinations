@@ -102,6 +102,10 @@ name or an undocumented ratio.
   Layout, file naming, month folder IDs, and the coverage check are in
   `references/drive-archive.md`.
 - `economics_compute_ledger` stores provider balances and usage facts.
+  Usage is negative `paid`/`credit`; a billing refund is positive `paid`.
+  Grants and balance snapshots are positive, not usage. `source` names the
+  collection method (`api`, `cli`, `export`, `invoice`, `dashboard`), not the
+  billing portal. Preserve signed amounts when fixing a classification.
 - `economics_bank_ledger` stores Wise-backed cash movements and their evidence.
   Prefix new/reviewed evidence with `evidence_type=supplier_document` or
   `evidence_type=payment_statement`. A statement proves payment, not a supplier

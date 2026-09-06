@@ -159,7 +159,7 @@ describe("provider registry", () => {
         );
     });
 
-    it("classifies ledger rows by type first and by registry vendor for everything else", () => {
+    it("uses explicit ledger categories and registry categories for subscriptions and adjustments only", () => {
         expect(ledgerCategory({ vendor: "aws", type: "inference" })).toBe(
             "compute",
         );
@@ -182,6 +182,18 @@ describe("provider registry", () => {
         expect(
             ledgerCategory({ vendor: "never-seen", type: "subscription" }),
         ).toBe("uncategorized");
+        expect(ledgerCategory({ vendor: "retell", type: "subscription" })).toBe(
+            "compute",
+        );
+        expect(ledgerCategory({ vendor: "google", type: "adjustment" })).toBe(
+            "compute",
+        );
+        expect(
+            ledgerCategory({ vendor: "google", type: "infrastructure" }),
+        ).toBe("infrastructure");
+        expect(ledgerCategory({ vendor: "google", type: "unknown" })).toBe(
+            "uncategorized",
+        );
     });
 
     it("classifies every provider by how its bill should reconcile to Pollen", () => {

@@ -67,6 +67,29 @@ const data = (over: Partial<Data> = {}): Data => ({
 });
 
 describe("monthlyLedgerAuditRows", () => {
+    it("accepts invoice subscriptions and adjustments under the same categories as P&L", () => {
+        const [row] = monthlyLedgerAuditRows(
+            data({
+                opCloud: [
+                    cloud({
+                        entry_id: "phone-rental",
+                        vendor: "retell",
+                        type: "subscription",
+                        paid: -10,
+                    }),
+                    cloud({
+                        entry_id: "billing-refund",
+                        vendor: "google",
+                        type: "adjustment",
+                        paid: 5,
+                    }),
+                ],
+            }),
+            "2026-07",
+            "2026-08",
+        );
+        expect(row.invalidRows).toBe(0);
+    });
     it("reports a structurally clean, reconciled closed month", () => {
         const [row] = monthlyLedgerAuditRows(
             data({

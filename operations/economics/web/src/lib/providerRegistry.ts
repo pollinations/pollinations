@@ -13,6 +13,7 @@ import type {
 import {
     type Category,
     type CategoryValue,
+    cloudCategory,
     isCategory,
     isComputeOrInfrastructureCategory,
 } from "./categories";
@@ -209,17 +210,16 @@ export function cashOnlyTransaction(
     return rule?.cashOnly === true;
 }
 
-// The P&L category of a vendor ledger row: the ledger type decides compute
-// and infrastructure; every other type (subscriptions, services) takes the
-// registry category of the vendor, so a GitHub invoice is Development and a
-// Google Workspace invoice is Operations without a per-row category.
+// Explicit service types decide the category. Invoice subscriptions and
+// adjustments use the reviewed vendor category; unknown types stay invalid.
 export function ledgerCategory(
     row: Pick<OpCloudRow, "type" | "vendor">,
 ): CategoryValue {
     const type = normalizeProviderName(row.type);
-    if (type === "inference" || type === "gpu") return "compute";
-    if (type === "infra") return "infrastructure";
-    if (type === "balance") return "uncategorized";
+    const categoryFromType = cloudCategory(row);
+    if (categoryFromType !== "uncategorized") return categoryFromType;
+    if (type !== "subscription" && type !== "adjustment")
+        return "uncategorized";
     const category = resolveProvider(row.vendor)?.category;
     return category && category !== "uncategorized"
         ? category

@@ -166,6 +166,16 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000009,
     },
   },
+  "cohere-embed-v4-azure-sweden": {
+    "cost": {
+      "promptImageTokens": 0.00000047,
+      "promptTextTokens": 0.00000012,
+    },
+    "price": {
+      "promptImageTokens": 0.0000003525,
+      "promptTextTokens": 0.00000009,
+    },
+  },
   "command-a-plus": {
     "cost": {
       "completionTextTokens": 0.0000032,

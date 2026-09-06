@@ -33,6 +33,8 @@ const TEST_QWEN_PROVIDER_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
 const AZURE_HOST = "myceli-prod-eastus.cognitiveservices.azure.com";
+const AZURE_SWEDEN_HOST =
+    "myceli-prod-swedencentral.cognitiveservices.azure.com";
 const FIREWORKS_HOST = "api.fireworks.ai";
 const TINYBIRD_STATS_HOST = "api.europe-west2.gcp.tinybird.co";
 
@@ -69,6 +71,7 @@ function createEmbeddingMocks() {
     env.GOOGLE_PROJECT_ID = "test-project";
     env.OPENAI_API_KEY = "test-openai-api-key";
     env.AZURE_MYCELI_PROD_API_KEY = "test-azure-api-key";
+    env.AZURE_MYCELI_PROD_SWEDEN_API_KEY = "test-azure-sweden-api-key";
     env.FIREWORKS_NEO_API_KEY = "test-fireworks-neo-api-key";
     process.env.GOOGLE_PROJECT_ID = env.GOOGLE_PROJECT_ID;
 
@@ -219,50 +222,69 @@ function createAzureOpenAIMock(): MockAPI<{
 function createCohereAzureMock(): MockAPI<{
     requests: unknown[];
     urls: string[];
+    failPrimary?: boolean;
+    apiKeys: (string | null)[];
 }> {
-    const state: { requests: unknown[]; urls: string[] } = {
+    const state: {
+        requests: unknown[];
+        urls: string[];
+        failPrimary?: boolean;
+        apiKeys: (string | null)[];
+    } = {
         requests: [],
         urls: [],
+        apiKeys: [],
+    };
+    const handler = async (request: Request) => {
+        const body = (await request.json()) as {
+            input?: (string | { image: string; text?: string })[];
+            input_type?: string;
+            dimensions?: number;
+            model?: string;
+        };
+        state.urls.push(request.url);
+        state.requests.push(body);
+        state.apiKeys.push(request.headers.get("api-key"));
+        if (state.failPrimary && new URL(request.url).hostname === AZURE_HOST) {
+            return Response.json(
+                { error: { message: "Primary unavailable" } },
+                { status: 503 },
+            );
+        }
+
+        const inputs = body.input ?? [];
+        const dimensions = body.dimensions ?? 1536;
+
+        return Response.json({
+            object: "list",
+            data: inputs
+                .map((_, index) => ({
+                    object: "embedding",
+                    embedding: Array.from(
+                        { length: dimensions },
+                        (_, valueIndex) => index + valueIndex / 10,
+                    ),
+                    index,
+                }))
+                .reverse(),
+            model: body.model,
+            usage: {
+                prompt_tokens: inputs.length * 4,
+                total_tokens: inputs.length * 4,
+            },
+        });
     };
     return {
         state,
         handlerMap: {
-            [AZURE_HOST]: async (request) => {
-                const body = (await request.json()) as {
-                    input?: (string | { image: string; text?: string })[];
-                    input_type?: string;
-                    dimensions?: number;
-                    model?: string;
-                };
-                state.urls.push(request.url);
-                state.requests.push(body);
-
-                const inputs = body.input ?? [];
-                const dimensions = body.dimensions ?? 1536;
-
-                return Response.json({
-                    object: "list",
-                    data: inputs
-                        .map((_, index) => ({
-                            object: "embedding",
-                            embedding: Array.from(
-                                { length: dimensions },
-                                (_, valueIndex) => index + valueIndex / 10,
-                            ),
-                            index,
-                        }))
-                        .reverse(),
-                    model: body.model,
-                    usage: {
-                        prompt_tokens: inputs.length * 4,
-                        total_tokens: inputs.length * 4,
-                    },
-                });
-            },
+            [AZURE_HOST]: handler,
+            [AZURE_SWEDEN_HOST]: handler,
         },
         reset: () => {
             state.requests = [];
             state.urls = [];
+            state.apiKeys = [];
+            state.failPrimary = undefined;
         },
     };
 }
@@ -789,6 +811,82 @@ describe("POST /v1/embeddings", () => {
         });
     });
 
+    test.for([
+        "text",
+        "image",
+    ])("rescues Cohere %s embeddings through Sweden without changing the quote", async (modality, {
+        apiKey,
+        mocks,
+    }) => {
+        await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+        mocks.cohereAzure.state.failPrimary = true;
+        const input =
+            modality === "image"
+                ? [
+                      {
+                          type: "image_url",
+                          image_url: {
+                              url: "data:image/png;base64,aGVsbG8=",
+                          },
+                      },
+                  ]
+                : ["Hello", "World"];
+        const { response, wait } = await fetchWorker("/v1/embeddings", {
+            method: "POST",
+            headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${apiKey}`,
+            },
+            body: buildEmbeddingsBody({
+                model: TEST_COHERE_MODEL,
+                input,
+                dimensions: 256,
+                input_type: "query",
+            }),
+        });
+        expect(response.status).toBe(200);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            "config.targets[1]",
+        );
+        const body = (await response.json()) as {
+            model: string;
+            data: { embedding: number[] }[];
+        };
+        expect(body.data[0].embedding).toHaveLength(256);
+        expect(
+            mocks.cohereAzure.state.urls.map((url) => new URL(url).hostname),
+        ).toEqual([AZURE_HOST, AZURE_SWEDEN_HOST]);
+        expect(mocks.cohereAzure.state.apiKeys).toEqual([
+            "test-azure-api-key",
+            "test-azure-sweden-api-key",
+        ]);
+        expect(mocks.cohereAzure.state.requests).toEqual([
+            expect.objectContaining({
+                model: TEST_COHERE_PROVIDER_MODEL,
+                input_type: "query",
+                dimensions: 256,
+            }),
+            expect.objectContaining({
+                model: TEST_COHERE_PROVIDER_MODEL,
+                input_type: "query",
+                dimensions: 256,
+            }),
+        ]);
+        await wait();
+        const events = mocks.tinybird.state.events;
+        const billed = events.filter((event) => event.isBilledUsage);
+        expect(billed).toHaveLength(1);
+        expect(billed[0]).toMatchObject({
+            modelRequested: TEST_COHERE_MODEL,
+            modelUsed: "cohere-embed-v4-azure-sweden",
+            totalCost:
+                modality === "image"
+                    ? (4 * 0.47) / 1_000_000
+                    : (8 * 0.12) / 1_000_000,
+            totalPrice: modality === "image" ? 0.00000141 : 0.00000072,
+        });
+    });
+
     test("passes Cohere query input_type through Azure", async ({
         apiKey,
         mocks,
@@ -1228,6 +1326,9 @@ describe("embedding models", () => {
             output_modalities?: string[];
             context_length?: number;
         }[];
+        expect(data.map((model) => model.name)).not.toContain(
+            "cohere-embed-v4-azure-sweden",
+        );
         expect(data).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({
@@ -1265,6 +1366,9 @@ describe("embedding models", () => {
             data: { id: string; supported_endpoints?: string[] }[];
         };
         expect(data.object).toBe("list");
+        expect(data.data.map((model) => model.id)).not.toContain(
+            "cohere-embed-v4-azure-sweden",
+        );
         expect(data.data).toEqual(
             expect.arrayContaining([
                 expect.objectContaining({

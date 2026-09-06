@@ -1,3 +1,4 @@
+import { mergeFallbacks } from "./merge-fallbacks";
 import { perMillion } from "./price-helpers";
 import type { ModelDefinition } from "./registry";
 
@@ -5,7 +6,7 @@ export type EmbeddingServiceId = keyof typeof EMBEDDING_SERVICES;
 
 export const DEFAULT_EMBEDDING_MODEL: EmbeddingServiceId = "openai-3-small";
 
-export const EMBEDDING_SERVICES = {
+const EMBEDDING_BASE_SERVICES = {
     "gemini-2": {
         aliases: ["embedding", "google/gemini-embedding-2"],
         provider: "google",
@@ -99,3 +100,9 @@ export const EMBEDDING_SERVICES = {
         contextLength: 40960,
     },
 } as const satisfies Record<string, ModelDefinition>;
+
+export const EMBEDDING_SERVICES = mergeFallbacks(EMBEDDING_BASE_SERVICES, {
+    "cohere-embed-v4": {
+        "cohere-embed-v4-azure-sweden": { provider: "azure" },
+    },
+});

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14516,
+  "title": "fix: return structured MCP call errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14516",
+  "merged_at": "2026-09-06T21:51:46Z",
+  "labels": [],
+  "pr_body_excerpt": "Follow-up to #14510.\n\n- Replace managed Responses MCP error strings with HTTP, protocol, and execution error objects defined by the [current OpenAI SDK](https://github.com/openai/openai-python/blob/v3.8.0/src/openai/types/responses/mcp_tool_call_error.py).\n- Validate errors with Zod, retain sanitized tool results, and preserve readable Chat rendering and stateless replay. Previously returned string errors are no longer accepted in replay.\n- Keep recovery, usage accounting, and top-level request failures unchanged. Network errors carry a simple message, without a synthetic MCP result. No legacy-error compatibility or cause-chain fallbacks.\n- Adversarially reviewed against the actual SDK; removed tests for unreachable SDK error codes. All 164 targeted tests, Gen typecheck, and Biome pass after simplification. Updated with main; net production change is 58 lines across three modules.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Errors learn to speak MCP",
+    "blurb": "Managed MCP calls now return proper structured error objects instead of a string-shaped shrug. Tool failures keep their useful, sanitized context, so the hive can recover and replay without guessing.",
+    "summary": "Managed Responses MCP tool-call failures now use the current OpenAI SDK's validated HTTP, protocol, and execution error objects instead of string errors, while preserving sanitized results, readable chat output, and stateless replay.",
+    "impact": "Developers receive typed MCP error data they can reliably inspect and replay, while network failures remain clear top-level messages without invented tool results.",
+    "keywords": [
+      "mcp",
+      "openai-sdk",
+      "structured-errors",
+      "agents",
+      "tool-calls",
+      "zod"
+    ],
+    "visual_concept": "A cozy MCP repair bench: Polli, wearing tiny mechanic goggles, sorts three clearly different error cards labeled HTTP, PROTOCOL, and EXECUTION into a retro terminal that renders them as neat structured blocks. A small code-plant grows beside the terminal to represent reliable replay and recovery; the monitor robot can hold a sanitized tool-result printout.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and tiny mechanic goggles, carefully files three glowing cards marked “HTTP”, “PROTOCOL”, and “EXECUTION” into a retro terminal showing tidy structured error blocks; a cheerful CRT monitor robot holds a clean tool-result printout beside sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14516.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and tiny mechanic goggles, carefully files three glowing cards marked “HTTP”, “PROTOCOL”, and “EXECUTION” into a retro terminal showing tidy structured error blocks; a cheerful CRT monitor robot holds a clean tool-result printout beside sprouting code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-06T21:52:45.065707+00:00"
+}

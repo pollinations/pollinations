@@ -199,7 +199,7 @@ async function createAgent(
                 };
             },
             createStreamExtractor() {
-                let usage: CompletionUsage | undefined;
+                let usage: unknown;
                 return {
                     processChunk(chunk) {
                         if (
@@ -208,12 +208,18 @@ async function createAgent(
                             "usage" in chunk &&
                             chunk.usage != null
                         ) {
-                            usage = completionUsage(chunk.usage);
+                            // Providers may send provisional counts before final usage.
+                            usage = chunk.usage;
                         }
                     },
                     buildMetadata() {
                         return {
-                            pollinations: { completionUsage: usage ?? null },
+                            pollinations: {
+                                completionUsage:
+                                    usage == null
+                                        ? null
+                                        : completionUsage(usage),
+                            },
                         };
                     },
                 };

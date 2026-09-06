@@ -36,7 +36,6 @@
 ## Packages
 - **NPM SDK (@pollinations/sdk):** https://www.npmjs.com/package/@pollinations/sdk
 - **NPM UI (@pollinations/ui):** https://www.npmjs.com/package/@pollinations/ui
-- **NPM MCP (@pollinations/mcp):** https://www.npmjs.com/package/@pollinations/mcp
 - **NPM CLI (@pollinations/cli):** https://www.npmjs.com/package/@pollinations/cli
 
 ## Socials

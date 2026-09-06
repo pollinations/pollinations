@@ -69,7 +69,7 @@ test("serves health and requires bearer auth", async () => {
     assert.equal(oldEndpoint.status, 404);
 });
 
-test("serves modern and legacy clients without sessions", async () => {
+test("serves Streamable HTTP without sessions", async () => {
     const modern = await connectClient({
         versionNegotiation: { mode: "auto" },
     });
@@ -80,14 +80,6 @@ test("serves modern and legacy clients without sessions", async () => {
         EXPECTED_TOOLS,
     );
     await modern.close();
-
-    const legacy = await connectClient();
-    assert.equal(legacy.getProtocolEra(), "legacy");
-    assert.deepEqual(
-        (await legacy.listTools()).tools.map(({ name }) => name).sort(),
-        EXPECTED_TOOLS,
-    );
-    await legacy.close();
 });
 
 test("rejects JSON-RPC batches", async () => {

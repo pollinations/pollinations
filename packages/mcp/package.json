@@ -1,70 +1,17 @@
 {
-    "name": "@pollinations/mcp",
+    "name": "pollinations-mcp-core",
     "version": "2.5.0",
-    "description": "Model Context Protocol (MCP) server for pollinations.ai - image, text, audio & video generation",
+    "private": true,
+    "description": "Internal tool handlers for the hosted Pollinations MCP server",
     "type": "module",
-    "bin": {
-        "pollinations-mcp": "pollinations-mcp.js"
-    },
-    "files": [
-        "src/**/*",
-        "pollinations-mcp.js",
-        "README.md",
-        "LICENSE"
-    ],
     "scripts": {
-        "test": "node --test test/*.test.js && node test-mcp-client.js",
-        "start": "node src/index.js"
+        "test": "node --test test/*.test.js"
     },
-    "keywords": [
-        "pollinations",
-        "ai",
-        "image",
-        "video",
-        "text",
-        "audio",
-        "generation",
-        "model-context-protocol",
-        "mcp",
-        "stdio",
-        "openai-compatible"
-    ],
-    "author": "pollinations.ai <hello@pollinations.ai>",
-    "contributors": [
-        {
-            "name": "Circuit-Overtime",
-            "email": "ayushman@myceli.ai"
-        },
-        {
-            "name": "ElliotEtag",
-            "email": "elliot@myceli.ai"
-        }
-    ],
-    "license": "MIT",
     "dependencies": {
         "@modelcontextprotocol/server": "^2.0.0",
         "zod": "^4.2.0"
     },
-    "devDependencies": {
-        "@modelcontextprotocol/client": "^2.0.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/pollinations/pollinations.git",
-        "directory": "packages/mcp"
-    },
-    "bugs": {
-        "url": "https://github.com/pollinations/pollinations/issues"
-    },
-    "homepage": "https://github.com/pollinations/pollinations#readme",
     "engines": {
         "node": ">=20.0.0"
-    },
-    "publishConfig": {
-        "access": "public"
-    },
-    "funding": {
-        "type": "github",
-        "url": "https://github.com/sponsors/pollinations"
     }
 }

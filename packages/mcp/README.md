@@ -38,18 +38,6 @@ For all Pollinations-hosted MCP servers, see the
 | `getModelStatus` | Inspect recent requests, errors, and latency | `/v1/models/status` |
 | `getBalance` | Check remaining Pollen; requires `account:usage` | `/account/balance` |
 
-## Local device login
-
-The stdio package lets an MCP host sign in without asking the user to paste an
-API key into the conversation:
-
-1. `startDeviceLogin` returns a browser approval URL and short user code.
-2. `pollDeviceLogin` checks approval once and activates the session key.
-3. `whoAmI` confirms the connected account.
-
-The device code and resulting key stay inside the local MCP process. These
-stateful tools are not exposed by the hosted stateless endpoint.
-
 Generated media is uploaded unlisted to `media.pollinations.ai` and returned as
 an MCP resource link, so binary data does not consume model context. Anyone
 with the link can access it, and it expires after 30 days.
@@ -64,9 +52,6 @@ Requires Node.js 20 or newer. Run the tests with:
 ```bash
 npm test
 ```
-
-Set `POLLINATIONS_API_KEY` to add live model, authentication, generation, and
-balance checks.
 
 The hosted Cloudflare Worker lives in [`apps/mcp/`](../../apps/mcp/) and is
 routed through Gen.

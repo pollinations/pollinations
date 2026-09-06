@@ -4,9 +4,8 @@ import {
 } from "../../packages/mcp/src/server.js";
 
 const mcpHandler = createMcpHandler(
-    () => buildServer({ includeAuthTools: false }),
+    () => buildServer(),
     {
-        legacy: "stateless",
         onerror: (error) => console.error(error),
     },
 );

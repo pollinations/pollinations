@@ -17401,27 +17401,6 @@
     "screenshotUrl": "https://media.pollinations.ai/d4e0f497-3b41-4ea3-8f2d-2d95eef818a7"
   },
   {
-    "emoji": "🔌",
-    "name": "Pollinations MCP Server (Official)",
-    "url": "https://www.npmjs.com/package/@pollinations/mcp",
-    "description": "Official MCP server for Pollinations: generate text, images, and audio.",
-    "language": null,
-    "category": "build",
-    "platform": "library",
-    "githubUsername": "pollinations",
-    "githubUserId": "86964862",
-    "repositoryUrl": "https://github.com/pollinations/pollinations/tree/main/packages/mcp",
-    "repositoryStars": 5027,
-    "discordUsername": null,
-    "other": null,
-    "submittedDate": "2025-06-04",
-    "issueUrl": null,
-    "approvedDate": "2024-11-01",
-    "byop": false,
-    "requests24h": 0,
-    "screenshotUrl": "https://media.pollinations.ai/3be0e70d-c2c5-49c0-874c-547efc9151c0"
-  },
-  {
     "emoji": "🖼️",
     "name": "FlowGPT",
     "url": "https://flowgpt.com/p/instant-image-generation-with-chatgpt-and-pollinationsai",

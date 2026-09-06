@@ -2,7 +2,6 @@ import {
     Alert,
     Button,
     Chip,
-    ClockIcon,
     ColorModeToggle,
     cn,
     DatabaseIcon,
@@ -125,7 +124,7 @@ const INSIGHT_TABS = [
     },
     {
         id: "vendors",
-        label: "Vendors",
+        label: "Providers",
         note: "Direct AI-delivery economics by vendor-month across managed inference and GPU capacity; shared infrastructure is excluded.",
         icon: GlobeIcon,
     },
@@ -143,7 +142,7 @@ const INSIGHT_TABS = [
     },
     {
         id: "revenue-share",
-        label: "Revenue Share",
+        label: "Rev share",
         note: "Community-model and BYOP economics by creator, with Paid and Quest rewards kept separate.",
         icon: SproutIcon,
     },
@@ -160,7 +159,7 @@ const LEDGER_INSIGHT_TABS = [
         id: "balances",
         label: "Balances",
         note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
-        icon: ClockIcon,
+        icon: DatabaseIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
@@ -195,7 +194,7 @@ const TABS = [
     {
         id: "op-cloud",
         source: "opCloud",
-        label: "Vendor ledger",
+        label: "Vendor",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
         pipe: "economics_compute_ledger_api",
         note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
@@ -220,7 +219,7 @@ const TABS = [
     {
         id: "revenue-share-ledger",
         source: "revenueShare",
-        label: "Revenue Share",
+        label: "Rev share",
         codes: ["TB"],
         pipe: "economics_revenue_share_api",
         note: "Monthly creator-earning ledger by creator and App or Community Model. Paid and Quest earnings remain separate; associated usage can overlap when one request has both source types.",
@@ -231,6 +230,20 @@ const TABS = [
             ).length,
     },
 ] satisfies readonly LedgerDrawerItem[];
+
+const LEDGER_SOURCES = TABS.map((item) => item.source);
+
+// Fill the ledger sources missing from `target` with the ones `donor` holds.
+function withLedgerSources(target: Data, donor: Data | null): Data {
+    if (!donor) return target;
+    const filled = { ...target };
+    for (const source of LEDGER_SOURCES) {
+        if (filled[source] == null && donor[source] != null) {
+            (filled as Record<DataSource, unknown>)[source] = donor[source];
+        }
+    }
+    return filled;
+}
 
 function isLedgerTab(value: ActiveView): value is LedgerTab {
     return TABS.some((item) => item.id === value);
@@ -567,7 +580,7 @@ function viewInfoContent(activeView: ActiveView) {
     if (activeView === "revenue-share") {
         return (
             <span className="block max-w-72">
-                <strong>Revenue Share</strong>
+                <strong>Rev share</strong>
                 <InfoLine>
                     One row per creator combines their BYOP apps and Community
                     models. Each request is associated with every creator whose
@@ -798,11 +811,33 @@ export default function App() {
         setLoadedView(null);
         loadAll(VIEW_SOURCES[activeView], controller.signal)
             .then((loaded) => {
-                if (!cancelled && retryKey === attempt) {
-                    setData(loaded);
-                    setLoadedView(activeView);
-                    setLoading(false);
-                }
+                if (cancelled || retryKey !== attempt) return;
+                // Keep the ledger sources already in memory so the row-count
+                // chips stay populated across view switches.
+                let merged = loaded;
+                setData((current) => {
+                    merged = withLedgerSources(loaded, current);
+                    return merged;
+                });
+                setLoadedView(activeView);
+                setLoading(false);
+                const missing = LEDGER_SOURCES.filter(
+                    (source) => merged[source] == null,
+                );
+                if (missing.length === 0) return;
+                loadAll(missing, controller.signal)
+                    .then((extra) => {
+                        if (cancelled || retryKey !== attempt) return;
+                        setData((current) =>
+                            current
+                                ? withLedgerSources(current, extra)
+                                : current,
+                        );
+                    })
+                    .catch(() => {
+                        // Counts stay hidden for the sources that failed; the
+                        // active view is unaffected.
+                    });
             })
             .catch((caught: unknown) => {
                 if (cancelled || retryKey !== attempt) return;

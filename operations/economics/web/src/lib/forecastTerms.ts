@@ -53,7 +53,12 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "direct",
     },
 
-    // Metered compute and infrastructure that should project from OP Cloud.
+    // Metered compute and infrastructure projected from the Compute ledger.
+    "assemblyai|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "alibaba|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -146,6 +151,21 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
+    "openai|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "ovhcloud|compute": {
+        method: "last",
+        paymentTiming: "postpaid",
+        automaticUsage: true,
+    },
+    "ovhcloud|infrastructure": {
+        method: "last",
+        paymentTiming: "postpaid",
+        automaticUsage: true,
+    },
     "perplexity|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -180,14 +200,20 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
 
     // Reviewed historical or discontinued metered lines. One-time means their
     // observed cash stays historical and is never repeated automatically.
+    "airforce|compute": { method: "one_off", paymentTiming: null },
     "anthropic|compute": { method: "one_off", paymentTiming: "prepaid" },
     "bytedance|compute": { method: "one_off", paymentTiming: "postpaid" },
     "daytona|infrastructure": {
         method: "one_off",
         paymentTiming: "direct",
     },
+    "digitalocean|infrastructure": {
+        method: "one_off",
+        paymentTiming: "postpaid",
+    },
     "io.net|compute": { method: "one_off", paymentTiming: "prepaid" },
     "lambda|compute": { method: "one_off", paymentTiming: "direct" },
+    "pointsflyer|compute": { method: "one_off", paymentTiming: null },
     "retell|compute": { method: "one_off", paymentTiming: "direct" },
     // Scaleway stopped after February 2026: no invoices, no vouchers left.
     "scaleway|compute": { method: "one_off", paymentTiming: "postpaid" },
@@ -195,6 +221,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "one_off",
         paymentTiming: "postpaid",
     },
+    "seraphyn|compute": { method: "one_off", paymentTiming: null },
     "stability|compute": { method: "one_off", paymentTiming: "prepaid" },
 
     // Development

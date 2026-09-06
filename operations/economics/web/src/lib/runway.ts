@@ -1499,39 +1499,10 @@ export function buildRunway(
             a.category.localeCompare(b.category) ||
             a.vendor.localeCompare(b.vendor),
     );
-    // Usage paid entirely from provider credits, by a vendor the bank never
-    // pays, needs no cash calculation mode: it cannot move the runway.
-    const creditOnlyKeys = new Set(
-        [...identities.entries()]
-            .filter(([key, identity]) => {
-                if (pnlSource(identity.category) !== "ledger") return false;
-                if (ledgerVendorPayments.has(identity.vendor)) return false;
-                if (forecastLineRule(identity.vendor, identity.category)) {
-                    return false;
-                }
-                let paid = 0;
-                let credit = 0;
-                for (const month of observedMonths) {
-                    paid += Math.abs(actualByMonth.get(month)?.get(key) ?? 0);
-                    credit += Math.abs(
-                        creditFundedByMonth.get(month)?.get(key) ?? 0,
-                    );
-                }
-                return paid <= 0.005 && credit > 0.005;
-            })
-            .map(([key]) => key),
-    );
-    const isCreditOnly = (row: RunwayMatrixRow) =>
-        creditOnlyKeys.has(matrixKey(row.category, row.vendor));
-    const unmodeledRows = rows.filter(
-        (row) => row.forecastMethod == null && !isCreditOnly(row),
-    );
+    const unmodeledRows = rows.filter((row) => row.forecastMethod == null);
     for (const row of rows) {
         row.forecastIssue =
             ledgerIssues.get(row.vendor) ??
-            (isCreditOnly(row)
-                ? "Paid from provider credits; no cash forecast"
-                : undefined) ??
             balanceAware.issues.get(row.vendor) ??
             (!stripeForecastUsable && STRIPE_LINES.includes(row.vendor)
                 ? "Stripe month coverage is incomplete"

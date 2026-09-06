@@ -1367,11 +1367,11 @@ describe("ledger-based P&L categories", () => {
         ).toBe(false);
     });
 
-    it("does not demand a cash forecast rule for usage that never touches cash", () => {
+    it("does not assume credit-funded usage can never need cash", () => {
         const result = buildRunway([opening(5_000)], NOW, [
             cloud({
-                entry_id: "ovh-july-voucher",
-                vendor: "ovhcloud",
+                entry_id: "unreviewed-july-credit",
+                vendor: "unreviewed-provider",
                 type: "inference",
                 start: "2026-07-01 00:00:00",
                 end: "2026-08-01 00:00:00",
@@ -1379,25 +1379,85 @@ describe("ledger-based P&L categories", () => {
                 credit: -500,
             }),
         ]);
-        const ovh = result.rows.find(
-            (row) => row.category === "compute" && row.vendor === "ovhcloud",
+        const row = result.rows.find(
+            (row) => row.vendor === "unreviewed-provider",
         );
 
-        expect(ovh?.values["2026-07:actual"]).toBe(0);
-        expect(ovh?.creditValues?.["2026-07:actual"]).toBe(-500);
-        expect(ovh?.forecastIssue).toContain("credit");
+        expect(row?.values["2026-07:actual"]).toBe(0);
+        expect(row?.creditValues?.["2026-07:actual"]).toBe(-500);
+        expect(row?.forecastIssue).toBe("Calculation mode missing");
         expect(
             result.flags.some(
                 (flag) =>
                     /Calculation mode missing/.test(flag) &&
-                    /ovhcloud/.test(flag),
+                    /unreviewed-provider/.test(flag),
             ),
-        ).toBe(false);
+        ).toBe(true);
         expect(
             result.columns
                 .filter((column) => column.kind === "forecast")
-                .every((column) => column.forecastComplete !== false),
+                .every((column) => column.forecastComplete === false),
         ).toBe(true);
+    });
+
+    it.each([
+        "assemblyai",
+        "openai",
+    ])("budgets continued %s API usage after prepaid credit runs out", (vendor) => {
+        const result = buildRunway([opening()], NOW, [
+            cloud({ vendor, paid: 0, credit: -220 }),
+            {
+                ...balance(vendor, 0, 100),
+                end: "2027-12-31",
+            },
+        ]);
+        const row = result.rows.find(
+            (row) => row.vendor === vendor && row.category === "compute",
+        );
+        // 220 through August 22 => 310/month. Remaining August usage
+        // consumes 90 credits; September's 310 uses the final 10 first.
+        expect(row?.forecastMethod).toBe("last");
+        expect(row?.forecastPaymentTiming).toBe("prepaid");
+        expect(row?.forecastIssue).toBeUndefined();
+        expect(row?.values["2026-08:forecast"]).toBe(0);
+        expect(row?.values["2026-09:forecast"]).toBeCloseTo(-300);
+        expect(row?.values["2026-10:forecast"]).toBeCloseTo(-310);
+    });
+
+    it("budgets OVH compute and infrastructure against one shared credit balance", () => {
+        const result = buildRunway([opening()], NOW, [
+            cloud({
+                entry_id: "ovh-compute",
+                vendor: "ovhcloud",
+                paid: 0,
+                credit: -220,
+            }),
+            cloud({
+                entry_id: "ovh-infra",
+                vendor: "ovhcloud",
+                type: "infra",
+                paid: 0,
+                credit: -110,
+            }),
+            { ...balance("ovhcloud", 0, 150), end: "2027-12-31" },
+        ]);
+        const rows = result.rows.filter((row) => row.vendor === "ovhcloud");
+        expect(rows).toHaveLength(2);
+        for (const row of rows) {
+            expect(row.forecastMethod).toBe("last");
+            expect(row.forecastPaymentTiming).toBe("postpaid");
+            expect(row.forecastIssue).toBeUndefined();
+        }
+        const cash = (month: string) =>
+            rows.reduce(
+                (sum, row) => sum + (row.values[`${month}:forecast`] ?? 0),
+                0,
+            );
+        // 465/month together. August consumes 135 remaining credits;
+        // September consumes the last 15, leaving 450 payable in October.
+        expect(cash("2026-09")).toBe(0);
+        expect(cash("2026-10")).toBeCloseTo(-450);
+        expect(cash("2026-11")).toBeCloseTo(-465);
     });
 
     it("classifies subscription invoices in the ledger through the vendor registry", () => {

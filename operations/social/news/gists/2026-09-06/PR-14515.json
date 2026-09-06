@@ -1,0 +1,34 @@
+{
+  "pr_number": 14515,
+  "title": "fix: unblock dashboard loading from billing and earnings",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14515",
+  "merged_at": "2026-09-06T21:20:46Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes Stripe billing from the shared dashboard loader; only the Pollen page fetches it. Previously every signed-in dashboard page waited for Stripe before rendering.\n- Lets weekly earnings load after the dashboard renders using the router's existing `Await`. Wallet balances remain visible while earnings are pending or unavailable.\n- Shows a loading message while Pollen waits for billing. Keeps the change to two route files, with no new dependencies or caching logic.\n- Addresses #14000. The reported long delay was not reproduced; this removes confirmed blocking dependencies, without assuming catalog size caused the incident.\n- Validation: production frontend build, TypeScript, and Biome pass. Actual loader, router, and rendering checks cover deferred/failed earnings, signed-out loading, Pollen-only billing and its pending state, and pack navigation preserving billing data.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Dashboard leaves the loading dock",
+    "blurb": "The dashboard no longer holds every page hostage while Stripe clears its throat. Billing now stays on the Pollen page, and weekly earnings can arrive fashionably late.",
+    "summary": "Removed Stripe billing from the shared dashboard loader so only the Pollen route fetches it, while weekly earnings now render through deferred Await loading without hiding wallet balances.",
+    "impact": "Signed-in dashboard pages can render without waiting for billing, and users keep seeing wallet balances while weekly earnings load or are temporarily unavailable.",
+    "keywords": [
+      "dashboard",
+      "billing",
+      "Stripe",
+      "Pollen",
+      "earnings",
+      "loading"
+    ],
+    "visual_concept": "A cozy dashboard garden where Polli helps a retro terminal display a visible wallet balance immediately, while a small Pollen-only billing kiosk calmly loads in the background. Show weekly earnings arriving later as a little envelope carried along a vine, making the distinction between instant dashboard access and deferred data clear.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending a retro dashboard terminal that already shows a glowing wallet balance while a small Pollen billing kiosk in the background displays pixel text 'LOADING'. Weekly earnings arrive gently on a vine-delivered envelope beside code-plants and flowers, with prominent lime green (#ecf874), warm cream and lavender pastels, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14515.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny tool belt, tending a retro dashboard terminal that already shows a glowing wallet balance while a small Pollen billing kiosk in the background displays pixel text 'LOADING'. Weekly earnings arrive gently on a vine-delivered envelope beside code-plants and flowers, with prominent lime green (#ecf874), warm cream and lavender pastels, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes."
+  },
+  "generated_at": "2026-09-06T21:21:51.091450+00:00"
+}

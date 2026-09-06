@@ -4,6 +4,7 @@ import { fxEstimatedMonths, toUsd } from "./fx";
 describe("toUsd", () => {
     it("converts EUR at the month rate, accepting full dates", () => {
         expect(toUsd(100, "EUR", "2026-06-20")).toBeCloseTo(115.18, 2);
+        expect(toUsd(100, "EUR", "2026-07-31")).toBeCloseTo(114.17, 2);
         expect(toUsd(100, "EUR", "2026-08-31")).toBeCloseTo(115.93, 2);
     });
 
@@ -14,6 +15,7 @@ describe("toUsd", () => {
 
     it("converts CAD at the month rate", () => {
         expect(toUsd(100, "CAD", "2025-05-08")).toBeCloseTo(72.08, 2);
+        expect(toUsd(100, "CAD", "2025-06-08")).toBeCloseTo(73.1, 2);
     });
 
     it("throws on a past CAD month missing from the table", () => {

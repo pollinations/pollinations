@@ -21,7 +21,7 @@ const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
-const GROK_POLL_TIMEOUT_MS = 3 * 60 * 1000;
+const GROK_15_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 const HAPPYHORSE_ASPECT_RATIOS = [
     "16:9",
     "9:16",
@@ -173,7 +173,8 @@ export async function callOpenRouterGrokVideoAPI(
 
     const { buffer, providerCost } = await generateOpenRouterVideo(
         requestBody,
-        GROK_POLL_TIMEOUT_MS,
+        // Base Grok's 15-second clips can complete after the old 3-minute cutoff.
+        isVersion15 ? GROK_15_POLL_TIMEOUT_MS : 5 * 60 * 1000,
     );
 
     logOps("Grok Video Pro generation complete", {

@@ -1,5 +1,5 @@
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, assert, describe, expect, it, vi } from "vitest";
 import { type FallbackAttempt, withModelFallback } from "../../src/fallback.ts";
 import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
@@ -444,7 +444,47 @@ describe("OpenRouter Grok Video Pro", () => {
         expect(result.durationSeconds).toBe(15);
     });
 
-    it("enforces a three-minute timeout", async () => {
+    it("accepts a base Grok fallback that completes after three minutes", async () => {
+        vi.useFakeTimers();
+        setOpenRouterEnv();
+        const startedAt = Date.now();
+        const requests: Record<string, unknown>[] = [];
+        const fetchMock = mockGrokFetch(requests);
+        const completedFetch = fetchMock.getMockImplementation();
+        assert(completedFetch);
+        fetchMock.mockImplementation(async (url, init) => {
+            if (
+                url.toString() === GROK_POLL_URL &&
+                Date.now() - startedAt < 195_000
+            ) {
+                return Response.json({ status: "pending" });
+            }
+            return completedFetch(url, init);
+        });
+
+        const resultPromise = createAndReturnVideo(
+            "animate this frame",
+            {
+                ...baseParams,
+                model: "grok-video-pro-openrouter",
+                duration: 15,
+                image: ["https://example.com/start.png"],
+            },
+            "grok-late-completion",
+        );
+        await vi.advanceTimersByTimeAsync(195_000);
+        const result = await resultPromise;
+        expect(result.trackingData).toEqual({
+            actualModel: "grok-video-pro-openrouter",
+            usage: { promptImageTokens: 1, completionVideoSeconds: 15 },
+        });
+        expect(requests).toHaveLength(1);
+    });
+
+    it.each([
+        ["grok-video-pro-openrouter", 5],
+        ["grok-imagine-video-1.5", 3],
+    ] as const)("enforces a %s timeout of %i minutes", async (model, minutes) => {
         vi.useFakeTimers();
         setOpenRouterEnv();
 
@@ -476,15 +516,15 @@ describe("OpenRouter Grok Video Pro", () => {
 
         const resultPromise = callOpenRouterGrokVideoAPI(
             "a calm ocean at sunrise",
-            { ...baseParams, model: "grok-video-pro" },
+            { ...baseParams, model },
         );
         const rejection = expect(resultPromise).rejects.toMatchObject({
             status: 504,
         });
 
-        await vi.advanceTimersByTimeAsync(3 * 60 * 1000);
+        await vi.advanceTimersByTimeAsync(minutes * 60 * 1000);
         await rejection;
-        expect(pollAttempts).toBe(6);
+        expect(pollAttempts).toBe(minutes * 2);
     });
 
     it.each([

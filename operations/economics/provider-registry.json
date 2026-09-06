@@ -1313,6 +1313,7 @@
         "gemini-3.6-flash": "gemini-search-large",
         "gemini-mm-embedding": "gemini-2",
         "gemini-omni-flash": "google/gemini-omni-1.1-flash",
+        "LLM Grounding with Google Search tool - Predictions": "gemini-search",
         "veo-3-fast": [
           "veo",
           "veo-1080p"

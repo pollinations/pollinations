@@ -37,8 +37,8 @@ export type UnitEconomicsRow = EconomicsValues & {
     economicContributionUsd: number | null;
     sourceStatus: ModelReconcileStatus;
     allocationStatus: ModelAllocationStatus | null;
-    // Billed-together detail, present on model-grain rows only.
-    group?: string | null;
+    // Grouped-row detail, present on model-grain rows only.
+    members?: string[] | null;
     lines?: { label: string; usd: number }[] | null;
 };
 
@@ -169,7 +169,6 @@ export function providerCostCheck(
 const RESIDUAL_STATUSES = new Set<ModelAllocationStatus>([
     "unallocated",
     "needs mapping",
-    "shared upstream",
     "missing breakdown",
     "provider only",
 ]);
@@ -243,7 +242,7 @@ export function unitEconomicsRows(
             model: "All models",
             sourceStatus: provider.status,
             allocationStatus: null,
-            group: null,
+            members: null,
             lines: null,
             economicContributionUsd:
                 provider.status === "both sources" &&
@@ -264,7 +263,7 @@ export function unitEconomicsRows(
                 model: model.model,
                 sourceStatus: provider.status,
                 allocationStatus: model.status,
-                group: model.group ?? null,
+                members: model.members ?? null,
                 lines: model.lines ?? null,
                 ...economicsValues(model),
                 economicContributionUsd: modelEconomicContribution(

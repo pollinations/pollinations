@@ -25,15 +25,12 @@ export type ModelAllocationStatus =
     | "missing provider"
     | "unallocated"
     | "needs mapping"
-    | "shared upstream"
     | "missing breakdown"
-    | "provider only"
-    | "shared member";
+    | "provider only";
 
 // Residual cost by reason, per vendor month.
 export type ResidualBuckets = {
     allocatedUsd: number;
-    billedTogetherUsd: number;
     missingBreakdownUsd: number;
     needsMappingUsd: number;
     providerOnlyUsd: number;
@@ -59,9 +56,9 @@ export type ModelAllocationRow = {
     paidContributionUsd: number | null;
     questCashSubsidyUsd: number | null;
     netCashContributionUsd: number | null;
-    // For a member of a billed-together group: the group row's name.
-    group?: string;
-    // For a billed-together row: the provider billing lines it sums.
+    // For a grouped row: the Pollen ids the provider bills on one line.
+    members?: string[];
+    // For a grouped row: the provider billing lines it sums.
     lines?: { label: string; usd: number }[];
 };
 
@@ -298,7 +295,6 @@ function residualRow(
 function emptyBuckets(): ResidualBuckets {
     return {
         allocatedUsd: 0,
-        billedTogetherUsd: 0,
         missingBreakdownUsd: 0,
         needsMappingUsd: 0,
         providerOnlyUsd: 0,
@@ -314,9 +310,6 @@ export function residualBuckets(
         switch (model.status) {
             case "allocated":
                 buckets.allocatedUsd += usd;
-                break;
-            case "shared upstream":
-                buckets.billedTogetherUsd += usd;
                 break;
             case "missing breakdown":
                 buckets.missingBreakdownUsd += usd;
@@ -334,35 +327,108 @@ export function residualBuckets(
     return buckets;
 }
 
-function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
-    const memberGroup = new Map<string, string>();
-    for (const [key, group] of entry.sharedGroups) {
-        for (const model of group.models) memberGroup.set(model, key);
+// Pollen ids the provider bills on one line are the same model on the same
+// provider. They form one accounting row: the members' Pollen usage summed,
+// the shared lines plus each member's own lines attached, never split.
+function groupedClusters(entry: ProviderMonth): string[][] {
+    const parent = new Map<string, string>();
+    const find = (model: string): string => {
+        let root = model;
+        while (parent.get(root) !== undefined && parent.get(root) !== root) {
+            root = parent.get(root) as string;
+        }
+        return root;
+    };
+    const union = (a: string, b: string) => {
+        const ra = find(a);
+        const rb = find(b);
+        if (ra !== rb) parent.set(rb, ra);
+    };
+    const order: string[] = [];
+    for (const group of entry.sharedGroups.values()) {
+        if (!hasFunding(group)) continue;
+        for (const model of group.models) {
+            if (!parent.has(model)) {
+                parent.set(model, model);
+                order.push(model);
+            }
+            union(group.models[0], model);
+        }
     }
-    const models = [...entry.pollenModels.values()].map(
-        (model): ModelAllocationRow => {
-            const funding = entry.providerModels.get(model.model);
-            if (funding) return modelFundingAllocation(model, funding);
-            const group = memberGroup.get(model.model);
-            return {
-                model: model.model,
-                status: group
-                    ? "shared member"
-                    : entry.hasProvider
-                      ? "unallocated"
-                      : "missing provider",
-                paidPollenUsd: model.paidPollenUsd,
-                questPollenUsd: model.questPollenUsd,
-                retainedPaidUsd: model.retainedPaidUsd,
-                pollenMeterUsd: pollenMeterUsd(model),
-                ...nullFundingFields(),
-                ...(group ? { group } : {}),
-            };
-        },
+    const clusters = new Map<string, string[]>();
+    for (const model of order) {
+        getOrInit(clusters, find(model), () => []).push(model);
+    }
+    return [...clusters.values()];
+}
+
+function groupedRow(
+    entry: ProviderMonth,
+    members: string[],
+): ModelAllocationRow {
+    const merged: PollenModel = {
+        model: members.join(" + "),
+        paidPollenUsd: 0,
+        questPollenUsd: 0,
+        retainedPaidUsd: 0,
+        paidMeterUsd: 0,
+        questMeterUsd: 0,
+    };
+    const funding = emptyFunding();
+    const lines: { label: string; usd: number }[] = [];
+    const memberSet = new Set(members);
+    for (const group of entry.sharedGroups.values()) {
+        if (!hasFunding(group) || !group.models.some((m) => memberSet.has(m))) {
+            continue;
+        }
+        addFunding(funding, group.cashUsd, group.creditUsd);
+        for (const [label, usd] of group.lines) lines.push({ label, usd });
+    }
+    for (const member of members) {
+        const model = entry.pollenModels.get(member);
+        if (model) {
+            merged.paidPollenUsd += model.paidPollenUsd;
+            merged.questPollenUsd += model.questPollenUsd;
+            merged.retainedPaidUsd += model.retainedPaidUsd;
+            merged.paidMeterUsd += model.paidMeterUsd;
+            merged.questMeterUsd += model.questMeterUsd;
+        }
+        const own = entry.providerModels.get(member);
+        if (own && hasFunding(own)) {
+            addFunding(funding, own.cashUsd, own.creditUsd);
+            lines.push({ label: member, usd: own.cashUsd + own.creditUsd });
+        }
+    }
+    return { ...modelFundingAllocation(merged, funding), members, lines };
+}
+
+function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
+    const clusters = groupedClusters(entry);
+    const grouped = new Set(clusters.flat());
+    const models: ModelAllocationRow[] = clusters.map((members) =>
+        groupedRow(entry, members),
     );
+    for (const model of entry.pollenModels.values()) {
+        if (grouped.has(model.model)) continue;
+        const funding = entry.providerModels.get(model.model);
+        if (funding) {
+            models.push(modelFundingAllocation(model, funding));
+            continue;
+        }
+        models.push({
+            model: model.model,
+            status: entry.hasProvider ? "unallocated" : "missing provider",
+            paidPollenUsd: model.paidPollenUsd,
+            questPollenUsd: model.questPollenUsd,
+            retainedPaidUsd: model.retainedPaidUsd,
+            pollenMeterUsd: pollenMeterUsd(model),
+            ...nullFundingFields(),
+        });
+    }
     // A ledger line with no cash and no credit (for example a corrected fact
     // re-appended at zero) records no usage and is not a residual.
     for (const [model, funding] of entry.providerModels) {
+        if (grouped.has(model)) continue;
         if (!entry.pollenModels.has(model) && hasFunding(funding)) {
             models.push(residualRow(model, "provider only", funding));
         }
@@ -370,13 +436,6 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     for (const [label, funding] of entry.providerOnlyLabels) {
         if (!hasFunding(funding)) continue;
         models.push(residualRow(label, "provider only", funding));
-    }
-    for (const [key, group] of entry.sharedGroups) {
-        if (!hasFunding(group)) continue;
-        models.push({
-            ...residualRow(key, "shared upstream", group),
-            lines: [...group.lines].map(([label, usd]) => ({ label, usd })),
-        });
     }
     if (hasFunding(entry.unmapped)) {
         models.push(

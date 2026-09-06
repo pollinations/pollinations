@@ -32,7 +32,6 @@ import {
 } from "../lib/computeModes";
 import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
-    type ModelAllocationStatus,
     type ModelReconcileRow,
     type ModelReconcileSummary,
     modelReconcileRows,
@@ -89,35 +88,20 @@ function MixGauge({
     );
 }
 
-// One chip per situation. A billed-together row carries its billing lines in
-// the hint; a member points at its group instead of reading as a gap.
+// One chip per situation. A grouped row is one model the provider bills on a
+// single line under several Pollen ids; the hint lists its billing lines.
 function allocationChip(row: UnitEconomicsRow) {
     const status = row.allocationStatus;
-    if (status == null || status === "allocated") return null;
-    if (status === "shared upstream") {
+    if (status == null) return null;
+    if (status === "allocated") {
+        if (!row.members?.length) return null;
         const lines = (row.lines ?? [])
             .map((line) => `${line.label}: ${fmtUsd(line.usd)}`)
             .join("\n");
         return (
             <span title={lines || undefined}>
                 <Chip intent="neutral" size="sm">
-                    billed together · {row.lines?.length ?? 0} line
-                    {(row.lines?.length ?? 0) === 1 ? "" : "s"}
-                </Chip>
-            </span>
-        );
-    }
-    if (status === "shared member") {
-        const others = (row.group ?? "")
-            .split(" + ")
-            .filter((model) => model !== row.model)
-            .join(", ");
-        return (
-            <span
-                title={`Cost is on the billed-together row ${row.group ?? ""}`}
-            >
-                <Chip intent="neutral" size="sm">
-                    billed with {others}
+                    grouped · {row.members.length} Pollen ids
                 </Chip>
             </span>
         );
@@ -149,11 +133,6 @@ function ResidualBucketChips({
             label: "assigned to models",
             usd: buckets.allocatedUsd,
             intent: "success",
-        },
-        {
-            label: "billed together",
-            usd: buckets.billedTogetherUsd,
-            intent: "neutral",
         },
         {
             label: "missing breakdown",
@@ -212,7 +191,7 @@ function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
               : "text-theme-text-strong";
     const explanation =
         check.kind === "provider-level"
-            ? "Model costs join by exact Pollen id or through reviewed provider labels. Unjoined cost stays visible as needs mapping, shared upstream, or missing breakdown; check totals on the vendor row."
+            ? "Model costs join by exact Pollen id or through reviewed provider labels. Pollen ids billed on one provider line form one grouped row. Unjoined cost stays visible as needs mapping or missing breakdown; check totals on the vendor row."
             : check.kind === "missing-mapping"
               ? "Add this vendor to the canonical registry before interpreting its economics."
               : check.kind === "missing-source"

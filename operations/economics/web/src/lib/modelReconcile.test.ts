@@ -424,7 +424,7 @@ describe("modelReconcileRows", () => {
         expect(row.models).toHaveLength(2);
     });
 
-    it("keeps a label that serves several Pollen models billed together, never split", () => {
+    it("joins a label that serves several Pollen models as one grouped row", () => {
         const [row] = modelReconcileRows(
             data({
                 opCloud: [
@@ -462,24 +462,26 @@ describe("modelReconcileRows", () => {
         expect(row.models.find((m) => m.model === "elevenmusic")).toMatchObject(
             { status: "allocated", providerCashUsd: 50 },
         );
-        expect(row.models.find((m) => m.model === "elevenlabs")).toMatchObject({
-            status: "shared member",
-            group: "elevenlabs + eleven-dialogue",
-            providerCashUsd: null,
-        });
+        expect(row.models.map((m) => m.model).sort()).toEqual([
+            "elevenlabs + eleven-dialogue",
+            "elevenmusic",
+        ]);
         expect(
             row.models.find((m) => m.model === "elevenlabs + eleven-dialogue"),
         ).toMatchObject({
-            status: "shared upstream",
+            status: "allocated",
+            members: ["elevenlabs", "eleven-dialogue"],
             providerCashUsd: 100,
+            pollenMeterUsd: 95,
             lines: [{ label: "eleven_v3", usd: 100 }],
         });
         expect(
             row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
         ).toBe(150);
+        expect(row.buckets.allocatedUsd).toBe(150);
     });
 
-    it("shows one billed-together row per upstream group and marks its members", () => {
+    it("shows one grouped row per upstream and folds a member's own lines into it", () => {
         const [row] = modelReconcileRows(
             data({
                 opCloud: [
@@ -494,6 +496,12 @@ describe("modelReconcileRows", () => {
                         paid: -50,
                     }),
                     cloud({
+                        entry_id: "cloud-test-own",
+                        vendor: "azure",
+                        model: "openai-large",
+                        paid: -30,
+                    }),
+                    cloud({
                         vendor: "azure",
                         model: "Kontext Pro glbl Images",
                         paid: -20,
@@ -504,11 +512,13 @@ describe("modelReconcileRows", () => {
                         vendor: "azure",
                         model: "openai-large",
                         cost_paid: 120,
+                        price_paid: 240,
                     }),
                     pollen({
                         vendor: "azure",
                         model: "midijourney-large",
                         cost_paid: 5,
+                        price_paid: 10,
                     }),
                     pollen({
                         vendor: "azure",
@@ -519,31 +529,28 @@ describe("modelReconcileRows", () => {
             }),
         );
 
-        const group = row.models.filter((m) => m.status === "shared upstream");
-        expect(group).toEqual([
-            expect.objectContaining({
-                model: "openai-large + midijourney-large",
-                providerCashUsd: 150,
-                lines: [
-                    { label: "5.5 ShortCo opt Gl 1M Tokens", usd: 100 },
-                    { label: "5.5 ShortCo inp Gl 1M Tokens", usd: 50 },
-                ],
-            }),
+        expect(row.models.map((m) => m.model).sort()).toEqual([
+            "kontext",
+            "openai-large + midijourney-large",
         ]);
         expect(
-            row.models.find((m) => m.model === "openai-large"),
+            row.models.find(
+                (m) => m.model === "openai-large + midijourney-large",
+            ),
         ).toMatchObject({
-            status: "shared member",
-            group: "openai-large + midijourney-large",
-            providerCashUsd: null,
-            pollenMeterUsd: 120,
+            status: "allocated",
+            members: ["openai-large", "midijourney-large"],
+            providerCashUsd: 180,
+            pollenMeterUsd: 125,
+            paidPollenUsd: 250,
+            lines: [
+                { label: "5.5 ShortCo opt Gl 1M Tokens", usd: 100 },
+                { label: "5.5 ShortCo inp Gl 1M Tokens", usd: 50 },
+                { label: "openai-large", usd: 30 },
+            ],
         });
-        expect(
-            row.models.find((m) => m.model === "midijourney-large"),
-        ).toMatchObject({ status: "shared member" });
         expect(row.buckets).toEqual({
-            allocatedUsd: 20,
-            billedTogetherUsd: 150,
+            allocatedUsd: 200,
             missingBreakdownUsd: 0,
             needsMappingUsd: 0,
             providerOnlyUsd: 0,
@@ -564,7 +571,6 @@ describe("modelReconcileRows", () => {
 
         expect(modelReconcileSummary(rows).buckets).toEqual({
             allocatedUsd: 40,
-            billedTogetherUsd: 0,
             missingBreakdownUsd: 30,
             needsMappingUsd: 5,
             providerOnlyUsd: 0,

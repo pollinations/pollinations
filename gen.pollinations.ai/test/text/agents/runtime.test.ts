@@ -259,6 +259,11 @@ describe("prompt-agent runtime", () => {
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
         // Usage from both model rounds is summed into the total.
         expect(json.usage.input_tokens).toBe(14);
+        expect(
+            mcpRequests
+                .filter((request) => request.method === "DELETE")
+                .map((request) => request.headers.get("Mcp-Session-Id")),
+        ).toEqual(["session-1"]);
         const mcpPosts = mcpRequests.filter(
             (request) => request.method === "POST",
         );
@@ -407,14 +412,19 @@ describe("prompt-agent runtime", () => {
         expect(body.usage.tool_call_counts.mcp_call).toBe(16);
     });
 
-    it("keeps running when the Pollinations MCP fails to load", async () => {
+    it.each([
+        false,
+        true,
+    ])("fails when a selected MCP cannot initialize, stream:%s", async (stream) => {
         let modelCalls = 0;
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
                 if (request.url === POLLINATIONS_MCP_PROXY_URL) {
-                    return new Response("Method Not Allowed", { status: 405 });
+                    return new Response("Selected MCP is unavailable", {
+                        status: 503,
+                    });
                 }
                 modelCalls++;
                 return Response.json({
@@ -436,7 +446,7 @@ describe("prompt-agent runtime", () => {
         );
 
         const res = await runAgent(
-            { messages: [{ role: "user", content: "hi" }] },
+            { messages: [{ role: "user", content: "hi" }], stream },
             {
                 ...BASE_RUNTIME,
                 config: {
@@ -447,9 +457,149 @@ describe("prompt-agent runtime", () => {
         );
 
         const text = await res.text();
-        expect(res.status, text).toBe(200);
-        expect(modelCalls).toBeGreaterThan(0);
-        expect(responseOutputText(JSON.parse(text))).toBe("still here");
+        expect(modelCalls).toBe(0);
+        if (stream) {
+            expect(res.status).toBe(200);
+            const events = responseStreamEvents(text);
+            expect(
+                events.find((event) => event.type === "response.failed"),
+            ).toMatchObject({
+                response: {
+                    status: "failed",
+                    error: {
+                        code: "agent_error",
+                        message: expect.stringContaining(
+                            "Selected MCP is unavailable",
+                        ),
+                    },
+                    output: [],
+                    usage: null,
+                },
+            });
+            expect(
+                events.some((event) => event.type === "response.completed"),
+            ).toBe(false);
+            expect(text).toContain("data: [DONE]");
+        } else {
+            expect(res.status, text).toBe(502);
+            expect(JSON.parse(text)).toMatchObject({
+                error: {
+                    code: "agent_error",
+                    message: expect.stringContaining(
+                        "Selected MCP is unavailable",
+                    ),
+                },
+            });
+        }
+    });
+
+    it.each([
+        false,
+        true,
+    ])("closes MCP sessions when tool listing fails, late sibling:%s", async (withSibling) => {
+        const closedSessions: (string | null)[] = [];
+        let releaseSibling: () => void;
+        const failedClientClosed = new Promise<void>((resolve) => {
+            releaseSibling = resolve;
+        });
+        let modelCalls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (
+                    ![POLLINATIONS_MCP_PROXY_URL, EXA_MCP_PROXY_URL].includes(
+                        request.url,
+                    )
+                ) {
+                    modelCalls++;
+                    throw new Error(
+                        "The base model must not run with missing tools",
+                    );
+                }
+                if (request.method === "GET")
+                    return new Response(null, { status: 405 });
+                if (request.method === "DELETE") {
+                    closedSessions.push(request.headers.get("Mcp-Session-Id"));
+                    if (request.url === POLLINATIONS_MCP_PROXY_URL)
+                        releaseSibling();
+                    return new Response(null, { status: 200 });
+                }
+                const body = (await request.json()) as {
+                    id?: number;
+                    method: string;
+                };
+                if (body.method === "initialize") {
+                    if (request.url === EXA_MCP_PROXY_URL) {
+                        // Open the sibling session only after the failed client's cleanup.
+                        await failedClientClosed;
+                    }
+                    return Response.json(
+                        {
+                            jsonrpc: "2.0",
+                            id: body.id,
+                            result: {
+                                protocolVersion: "2025-06-18",
+                                capabilities: { tools: {} },
+                                serverInfo: {
+                                    name: "test-mcp",
+                                    version: "1.0.0",
+                                },
+                            },
+                        },
+                        {
+                            headers: {
+                                "Mcp-Session-Id":
+                                    request.url === POLLINATIONS_MCP_PROXY_URL
+                                        ? "failed-session"
+                                        : "sibling-session",
+                            },
+                        },
+                    );
+                }
+                if (body.method === "notifications/initialized")
+                    return new Response(null, { status: 202 });
+                if (body.method === "tools/list") {
+                    if (request.url === POLLINATIONS_MCP_PROXY_URL) {
+                        return new Response("Tool catalog unavailable", {
+                            status: 503,
+                        });
+                    }
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        result: { tools: [] },
+                    });
+                }
+                throw new Error(`Unexpected MCP method: ${body.method}`);
+            }),
+        );
+
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "hi" }] },
+            {
+                ...BASE_RUNTIME,
+                config: {
+                    ...BASE_RUNTIME.config,
+                    mcpServers: withSibling
+                        ? ["pollinations", "exa"]
+                        : ["pollinations"],
+                },
+            },
+        );
+
+        expect(response.status).toBe(502);
+        await expect(response.json()).resolves.toMatchObject({
+            error: {
+                message: expect.stringContaining("Tool catalog unavailable"),
+            },
+        });
+        expect(modelCalls).toBe(0);
+        expect(closedSessions).toEqual(
+            withSibling
+                ? ["failed-session", "sibling-session"]
+                : ["failed-session"],
+        );
     });
 
     it("passes the caller token and exposes the Pollinations MCP tools", async () => {

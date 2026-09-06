@@ -2,6 +2,7 @@ import {
     Alert,
     Chip,
     cn,
+    DatabaseIcon,
     Heading,
     TableBody,
     TableCell,
@@ -11,7 +12,7 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { useMemo, useState } from "react";
+import { type ComponentType, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -121,10 +122,19 @@ export function paymentTimingHint(timing: ForecastPaymentTiming | null) {
     return null;
 }
 
-function ForecastBadge({ hint, label }: { hint: string; label: string }) {
+function ForecastBadge({
+    hint,
+    label,
+    icon: Icon,
+}: {
+    hint: string;
+    label: string;
+    icon?: ComponentType<{ className?: string }>;
+}) {
     return (
         <Tooltip triggerAs="span" content={hint}>
             <Chip intent="neutral" size="sm">
+                {Icon ? <Icon className="h-3 w-3" /> : null}
                 {label}
             </Chip>
         </Tooltip>
@@ -534,9 +544,10 @@ function RunwayCategoryRows({
                     {group.category !== "revenue" &&
                         group.category !== "balance_sheet" && (
                             <ForecastBadge
+                                icon={DatabaseIcon}
                                 label={
                                     pnlSource(group.category) === "ledger"
-                                        ? "vendor ledger"
+                                        ? "vendor"
                                         : "bank"
                                 }
                                 hint={

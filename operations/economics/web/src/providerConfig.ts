@@ -6,12 +6,9 @@ export type EconomicsProviderConfig = {
     connector: string | null;
     monthlyReview: boolean;
     balanceTracking: boolean;
-    collectionMethod: ProviderCollectionMethod | null;
     access?: ProviderAccessTarget[];
     accounts?: ProviderAccountDefinition[];
 };
-
-export type ProviderCollectionMethod = "api" | "cli" | "dashboard" | "internal";
 
 export type ProviderAccessTarget = {
     workspace: string;
@@ -43,7 +40,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "alibaba",
@@ -59,7 +55,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -74,7 +69,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "anthropic",
         monthlyReview: true,
         balanceTracking: false,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -88,7 +82,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "assemblyai",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -102,7 +95,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "aws",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -124,7 +116,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "azure",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "cli",
         access: [
             {
                 workspace: "myceli.ai",
@@ -138,7 +129,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "bytedance",
@@ -154,7 +144,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -183,7 +172,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -203,7 +191,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "community",
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: "internal",
     },
     {
         id: "composio",
@@ -211,7 +198,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: true,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "daytona",
@@ -219,7 +205,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "daytona",
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: "api",
     },
     {
         id: "deepinfra",
@@ -227,7 +212,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "deepinfra",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -241,7 +225,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "digitalocean",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -263,7 +246,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -278,7 +260,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "elevenlabs",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -300,7 +281,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -315,7 +295,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "fal",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -361,7 +340,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "cli",
         access: [
             {
                 workspace: "myceli.ai",
@@ -396,7 +374,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "google",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "cli",
         access: [
             {
                 workspace: "myceli.ai",
@@ -410,7 +387,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "github",
         monthlyReview: true,
         balanceTracking: false,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -424,7 +400,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "inception",
         monthlyReview: true,
         balanceTracking: false,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -438,7 +413,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "inferenceport",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -452,7 +426,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "io-net",
         monthlyReview: false,
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -466,7 +439,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "lambda",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -500,7 +472,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "cli",
         access: [
             {
                 workspace: "myceli.ai",
@@ -525,7 +496,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "mistral",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -539,7 +509,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "openai",
@@ -547,7 +516,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "openai",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -575,7 +543,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -595,7 +562,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "ovhcloud",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -609,7 +575,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "perplexity",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -623,7 +588,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "pruna",
@@ -631,7 +595,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "pruna",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -645,7 +608,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "replicate",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -667,7 +629,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "pollinations.ai",
@@ -682,7 +643,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "retell",
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: "dashboard",
     },
     {
         id: "runpod",
@@ -690,7 +650,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "runpod",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -718,7 +677,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "pollinations.ai",
@@ -738,7 +696,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "self-issued",
@@ -746,7 +703,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "seraphyn",
@@ -754,7 +710,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: null,
         monthlyReview: false,
         balanceTracking: false,
-        collectionMethod: null,
     },
     {
         id: "stability",
@@ -762,7 +717,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "stability",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "dashboard",
         access: [
             {
                 workspace: "myceli.ai",
@@ -776,7 +730,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "tinybird",
         monthlyReview: true,
         balanceTracking: false,
-        collectionMethod: "cli",
         access: [
             {
                 workspace: "myceli.ai",
@@ -790,7 +743,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "vast-ai",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "cli",
         access: [
             {
                 workspace: "myceli.ai",
@@ -804,7 +756,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
         connector: "vercel",
         monthlyReview: true,
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",
@@ -826,7 +777,6 @@ export const ECONOMICS_PROVIDERS: EconomicsProviderConfig[] = [
             },
         ],
         balanceTracking: true,
-        collectionMethod: "api",
         access: [
             {
                 workspace: "myceli.ai",

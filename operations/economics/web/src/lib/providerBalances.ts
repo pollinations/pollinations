@@ -1,7 +1,4 @@
-import type {
-    ProviderAccessTarget,
-    ProviderCollectionMethod,
-} from "../providerConfig";
+import type { ProviderAccessTarget } from "../providerConfig";
 import type { Data, OpCloudRow, OpTransactionRow } from "../types";
 import {
     isBankMovement,
@@ -482,7 +479,6 @@ export type ProviderBalanceRow = {
     label: string;
     active: boolean;
     balanceTracking: boolean;
-    collectionMethod: ProviderCollectionMethod | null;
     access: ProviderAccessTarget[];
     cashBalanceUsd: number | null;
     creditBalanceUsd: number | null;
@@ -869,7 +865,6 @@ export function providerBalanceRows(
             label: definition?.label ?? vendor,
             active,
             balanceTracking,
-            collectionMethod: definition?.collectionMethod ?? null,
             access: definition?.access ?? [],
             cashBalanceUsd,
             creditBalanceUsd,

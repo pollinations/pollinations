@@ -235,10 +235,6 @@ export function BalancesTab({ data }: { data: Data }) {
         () => [
             { key: "vendor", value: (row) => row.vendor },
             { key: "active", value: (row) => Number(row.active) },
-            {
-                key: "collectionMethod",
-                value: (row) => row.collectionMethod,
-            },
             { key: "creditBalanceUsd", value: (row) => row.creditBalanceUsd },
             {
                 key: "creditDepletionDate",
@@ -289,12 +285,6 @@ export function BalancesTab({ data }: { data: Data }) {
                                 {...headerProps("active")}
                             >
                                 Status
-                            </TableHeaderCell>
-                            <TableHeaderCell
-                                rowSpan={2}
-                                {...headerProps("collectionMethod")}
-                            >
-                                Collection
                             </TableHeaderCell>
                             <TableHeaderCell rowSpan={2}>
                                 Access
@@ -390,9 +380,6 @@ export function BalancesTab({ data }: { data: Data }) {
                                                         : "inactive"}
                                                 </Chip>
                                             </TableCell>
-                                            <TableCell className="uppercase text-xs text-theme-text-soft">
-                                                {row.collectionMethod ?? "–"}
-                                            </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                                                     {row.access.length === 0
@@ -475,7 +462,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                         {isExpanded && (
                                             <TableRow>
                                                 <TableCell
-                                                    colSpan={8}
+                                                    colSpan={7}
                                                     className="bg-theme-bg-active/40"
                                                 >
                                                     <BalanceHistory row={row} />

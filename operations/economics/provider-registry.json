@@ -1,6 +1,7 @@
 {
-  "version": 25,
+  "version": 26,
   "retiredModels": [
+    "kimi-k2-thinking",
     "chickytutor",
     "claude-legacy",
     "gemini-legacy",
@@ -1577,6 +1578,9 @@
         }
       ],
       "modelLabels": {
+        "claude-opus-4.5": "claude-large",
+        "claude-sonnet-4.5": "claude",
+        "deepseek-v3.2": "deepseek",
         "gemini-2.5-flash": null,
         "gemini-2.5-flash-image": "nanobanana",
         "gemini-2.5-flash-lite": [
@@ -1603,6 +1607,7 @@
         ],
         "gemini-3.5-flash-lite": "gemini-search-fast",
         "gemini-3.6-flash": "gemini-search-large",
+        "kimi-k2-thinking": "kimi-k2-thinking",
         "gemini-mm-embedding": "gemini-2",
         "gemini-omni-flash": "google/gemini-omni-1.1-flash",
         "LLM Grounding with Google Search tool - Predictions": "gemini-search",

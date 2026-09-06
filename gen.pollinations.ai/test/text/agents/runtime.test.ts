@@ -910,6 +910,71 @@ describe("prompt-agent runtime", () => {
         expect(completed.usage.input_tokens).toBe(6);
     });
 
+    it.each([
+        "complete",
+        "partial",
+        "missing",
+    ])("validates %s final usage after provisional streamed usage", async (finalUsage) => {
+        const events = [
+            {
+                choices: [{ index: 0, delta: { content: "Hello" } }],
+                usage: {
+                    prompt_tokens: 6,
+                    ...(finalUsage === "partial"
+                        ? { completion_tokens: 0, total_tokens: 6 }
+                        : {}),
+                },
+            },
+            ...(finalUsage === "missing"
+                ? []
+                : [
+                      {
+                          choices: [
+                              { index: 0, delta: {}, finish_reason: "stop" },
+                          ],
+                          usage:
+                              finalUsage === "partial"
+                                  ? { prompt_tokens: 6 }
+                                  : {
+                                        prompt_tokens: 6,
+                                        completion_tokens: 4,
+                                        total_tokens: 10,
+                                    },
+                      },
+                  ]),
+        ];
+        const response = await runAgent(
+            { messages: [{ role: "user", content: "hi" }], stream: true },
+            {
+                ...BASE_RUNTIME,
+                fetcher: async () =>
+                    new Response(
+                        `${events
+                            .map(
+                                (event) => `data: ${JSON.stringify(event)}\n\n`,
+                            )
+                            .join("")}data: [DONE]\n\n`,
+                        { headers: { "content-type": "text/event-stream" } },
+                    ),
+            },
+        );
+        const output = responseStreamEvents(await response.text());
+        if (finalUsage !== "complete") {
+            expect(output.at(-1)).toMatchObject({ type: "response.failed" });
+            expect(
+                output.some((event) => event.type === "response.completed"),
+            ).toBe(false);
+            return;
+        }
+        expect(output.at(-1)).toMatchObject({
+            type: "response.completed",
+            response: {
+                usage: { input_tokens: 6, output_tokens: 4, total_tokens: 10 },
+            },
+        });
+        expect(output.some((event) => event.type === "error")).toBe(false);
+    });
+
     it("streams base-model errors as terminal errors", async () => {
         vi.stubGlobal(
             "fetch",

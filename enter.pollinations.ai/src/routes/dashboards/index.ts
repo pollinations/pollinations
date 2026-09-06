@@ -13,8 +13,7 @@ export const dashboardRoutes = new Hono<Env>()
     })
     .use("*", auth({ allowSessionCookie: true, allowApiKey: false }))
     .use("*", async (c, next) => {
-        await c.var.auth.requireAuthorization();
-        if (!c.var.auth.user || !isAdminUser(c.var.auth.user)) {
+        if (!isAdminUser(c.var.auth.requireUser())) {
             throw new HTTPException(403, { message: "Admin access required" });
         }
         await next();

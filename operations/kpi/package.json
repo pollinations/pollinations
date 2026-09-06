@@ -15,7 +15,6 @@
     "dependencies": {
         "@pollinations/auth": "file:../../packages/auth",
         "@pollinations/ui": "file:../../packages/ui",
-        "hono": "^4.0.0",
         "react": "^19.2.0",
         "react-dom": "^19.2.0"
     },

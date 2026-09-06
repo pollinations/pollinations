@@ -78,6 +78,8 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         // Only the trusted Grafana client is registered, so
         // consent is skipped. Explicit consent requests fail closed here.
         consentPage: "/error",
+        // Clients are seeded by migrations, not managed through the public API.
+        clientPrivileges: () => false,
         scopes: ["openid", "profile", "email"],
         grantTypes: ["authorization_code"],
         accessTokenExpiresIn: 60,

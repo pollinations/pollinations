@@ -164,3 +164,18 @@ test("permits the dashboard's sign-in preflight without broadening other API rou
         "true",
     );
 });
+
+test("starts GitHub sign-in from the static dashboard", async () => {
+    const response = await SELF.fetch(`${BASE}/api/auth/sign-in/social`, {
+        method: "POST",
+        headers: { Origin: ORIGIN, "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: "github", callbackURL: `${ORIGIN}/` }),
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Access-Control-Allow-Credentials")).toBe(
+        "true",
+    );
+    const body = (await response.json()) as { url: string };
+    expect(new URL(body.url).origin).toBe("https://github.com");
+    expect(response.headers.get("Set-Cookie")).toBeTruthy();
+});

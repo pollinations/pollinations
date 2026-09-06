@@ -11,9 +11,7 @@ Grafana OSS dashboard for Pollinations platform observability.
 ```
 Local:   Browser -> localhost:3000 -> Grafana -> Tinybird
 Prod:    Browser -> observability.pollinations.ai -> Cloudflare Worker
-         -> Pollinations OAuth -> Grafana container -> Tinybird
-Origin:  Browser -> observability.myceli.ai -> Cloudflare Worker
-         -> Pollinations OAuth -> Grafana container -> Tinybird
+         -> Grafana container (Enter OAuth login) -> Tinybird
 ```
 
 The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
@@ -80,6 +78,8 @@ Auth provider. Its callback is
 PKCE is required; no client secret or custom Worker session is used. Grafana maps
 Pollinations `admin` to its `Editor` role and rejects other users with strict role
 mapping. Anonymous, Basic Auth and auth-proxy access are disabled.
+Grafana keeps its own session for up to 12 hours; signing out of Enter or removing
+the admin role does not immediately revoke an existing Grafana session.
 
 Deploy Enter's OAuth migration/provider before changing the Grafana deployment.
 Verify real admin/non-admin login and logout on the Pollinations hostname.
@@ -102,16 +102,11 @@ npm install
 
 # Validate Worker config and container image (requires Docker)
 npm run check
-
-# Requires Docker locally so Wrangler can build and push the Grafana image.
-# Secrets are pushed from secrets/secrets.vars.json via SOPS.
-npm run deploy:production
 ```
 
-Production deploys are wired through
-`.github/workflows/deploy-applications.yml` on the `production` branch.
-The workflow deploys the container Worker, pushes filtered Grafana secrets, and
-checks both `/api/health` endpoints.
+Deploy production only through `.github/workflows/deploy-applications.yml`
+from the `production` branch. Its secret synchronization requires separate,
+scoped approval. The workflow checks the Pollinations `/api/health` endpoint.
 
 ## DigitalOcean Deployment (Legacy)
 

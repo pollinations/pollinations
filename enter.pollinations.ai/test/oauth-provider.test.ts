@@ -53,19 +53,7 @@ async function completeFlow(sessionToken: string) {
     const code = callback.searchParams.get("code");
     if (!code) throw new Error("Expected authorization code");
 
-    const tokenResponse = await SELF.fetch(`${BASE}/api/auth/oauth2/token`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-            grant_type: "authorization_code",
-            code,
-            client_id: CLIENT_ID,
-            redirect_uri: REDIRECT_URI,
-            code_verifier: VERIFIER,
-        }),
-    });
+    const tokenResponse = await exchangeCode(code);
     const token = (await tokenResponse.json()) as {
         access_token: string;
         expires_in: number;
@@ -85,7 +73,66 @@ async function completeFlow(sessionToken: string) {
     };
 }
 
+function exchangeCode(code: string, verifier = VERIFIER) {
+    return SELF.fetch(`${BASE}/api/auth/oauth2/token`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+            grant_type: "authorization_code",
+            code,
+            client_id: CLIENT_ID,
+            redirect_uri: REDIRECT_URI,
+            code_verifier: verifier,
+            // Grafana's InParams auth style sends an empty public-client secret.
+            client_secret: "",
+        }),
+    });
+}
+
 describe("Better Auth OAuth Provider", () => {
+    test("rejects a wrong PKCE verifier", async ({ sessionToken }) => {
+        const response = await authorize(sessionToken);
+        const callback = new URL(response.headers.get("Location") || "");
+        const code = callback.searchParams.get("code") || "";
+        expect(code).toBeTruthy();
+        const tokenResponse = await exchangeCode(code, "wrong-verifier");
+        expect(tokenResponse.status).toBe(401);
+    });
+
+    test("does not exchange the same code twice", async ({ sessionToken }) => {
+        const { callback } = await completeFlow(sessionToken);
+        const replay = await exchangeCode(
+            callback.searchParams.get("code") || "",
+        );
+        expect(replay.ok).toBe(false);
+        expect(await replay.json()).not.toHaveProperty("access_token");
+    });
+
+    test.for([
+        ["register", 403],
+        ["create-client", 401],
+    ] as const)("rejects client creation through %s", async ([path, status], {
+        sessionToken,
+    }) => {
+        const response = await SELF.fetch(`${BASE}/api/auth/oauth2/${path}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                Cookie: `better-auth.session_token=${sessionToken}`,
+                Origin: BASE,
+            },
+            body: JSON.stringify({
+                client_name: "Unregistered dashboard",
+                redirect_uris: ["https://untrusted.pollinations.ai/callback"],
+                token_endpoint_auth_method: "none",
+                ...(path === "create-client" && { skip_consent: true }),
+            }),
+        });
+        expect(response.status).toBe(status);
+    });
+
     test("continues the standard flow through sign-in", async () => {
         const response = await authorize();
         expect(response.status).toBe(302);

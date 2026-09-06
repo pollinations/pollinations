@@ -20,7 +20,6 @@ import type { Data } from "../types";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -72,14 +71,7 @@ function BankRowsCell({ row }: { row: MonthlyLedgerAuditRow }) {
     return (
         <TableCell align="right" className={GROUP_BORDER}>
             {row.missingBankData ? (
-                <Tooltip
-                    triggerAs="span"
-                    content="No bank transactions are present for this closed month. Confirm the statement import before closing it."
-                >
-                    <span className="text-intent-warning-text underline decoration-dotted underline-offset-2">
-                        0
-                    </span>
-                </Tooltip>
+                <span className="text-intent-warning-text">0</span>
             ) : (
                 row.transactionRows.toLocaleString()
             )}
@@ -208,9 +200,7 @@ export function MonthlyLedgerAuditPanel({
                             align="right"
                             className={GROUP_BORDER}
                         >
-                            <HeaderHint hint="Transactions with evidence that is missing or still unresolved. These items block the monthly close. Hover a non-zero count to see the number for each vendor.">
-                                Missing
-                            </HeaderHint>
+                            Missing
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps(
@@ -218,39 +208,29 @@ export function MonthlyLedgerAuditPanel({
                             )}
                             align="right"
                         >
-                            <HeaderHint hint="Permanent evidence losses that are documented and accepted. These remain visible but do not block the monthly close. Hover a non-zero count to see the number for each vendor.">
-                                Exceptions
-                            </HeaderHint>
+                            Exceptions
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("missingMappings")}
                             align="right"
                             className={GROUP_BORDER}
                         >
-                            <HeaderHint hint="Unique vendor names that do not resolve to the canonical vendor registry. These must be mapped before the month is structurally clean. Hover a non-zero count to see the vendors.">
-                                Unmapped vendors
-                            </HeaderHint>
+                            Unmapped vendors
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("estimatedFx")}>
-                            <HeaderHint hint="Published uses that month's recorded exchange rate. Estimated uses the latest published rate for a current or future month; a closed month without its rate fails instead of being guessed.">
-                                FX rate
-                            </HeaderHint>
+                            FX rate
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("invalidRows")}
                             align="right"
                         >
-                            <HeaderHint hint="Ledger rows that fail required identity, date, source, category, currency, or numeric-value checks. Invalid rows block a structurally clean month. Hover a non-zero count to see the vendors.">
-                                Invalid rows
-                            </HeaderHint>
+                            Invalid rows
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("duplicateRows")}
                             align="right"
                         >
-                            <HeaderHint hint="Extra ledger rows sharing the same source and entry ID. Duplicate rows block a structurally clean month. Hover a non-zero count to see the vendors.">
-                                Duplicates
-                            </HeaderHint>
+                            Duplicates
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>

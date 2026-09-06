@@ -87,21 +87,6 @@ export function forecastMethodLabel(method: RunwayMatrixRow["forecastMethod"]) {
     return null;
 }
 
-export function forecastMethodHint(method: RunwayMatrixRow["forecastMethod"]) {
-    if (method === "fixed") return "Uses a fixed monthly amount.";
-    if (method === "funded") {
-        return "Covered by verified vendor credits or prepaid balance.";
-    }
-    if (method === "last") {
-        return "Uses the latest reviewed monthly run rate.";
-    }
-    if (method === "one_off") return "Included only in this month.";
-    if (method === "mixed") {
-        return "Combines reviewed calculation methods. Hover a planned amount to see each component.";
-    }
-    return null;
-}
-
 export function paymentTimingLabel(timing: ForecastPaymentTiming | null) {
     if (timing === "direct") return "DIRECT";
     if (timing === "prepaid") return "PREPAID";
@@ -109,62 +94,32 @@ export function paymentTimingLabel(timing: ForecastPaymentTiming | null) {
     return null;
 }
 
-export function paymentTimingHint(timing: ForecastPaymentTiming | null) {
-    if (timing === "direct") {
-        return "Cash moves in the projected month.";
-    }
-    if (timing === "prepaid") {
-        return "The existing balance is consumed first; cash moves when a top-up is needed.";
-    }
-    if (timing === "postpaid") {
-        return "Usage is paid after the service period.";
-    }
-    return null;
-}
-
 function ForecastBadge({
-    hint,
     label,
     icon: Icon,
 }: {
-    hint: string;
     label: string;
     icon?: ComponentType<{ className?: string }>;
 }) {
     return (
-        <Tooltip triggerAs="span" content={hint}>
-            <Chip intent="neutral" size="sm">
-                {Icon ? <Icon className="h-3 w-3" /> : null}
-                {label}
-            </Chip>
-        </Tooltip>
+        <Chip intent="neutral" size="sm">
+            {Icon ? <Icon className="h-3 w-3" /> : null}
+            {label}
+        </Chip>
     );
 }
 
 function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
     if (row.vendor === "processor settlement timing") {
-        return (
-            <Tooltip
-                triggerAs="span"
-                content="Wise Stripe payouts minus Pollen and Ko-fi sales after refunds, reversals, and fees. Transfers between the processor balance and the bank change cash, not sales."
-            >
-                <span>Stripe settlement timing</span>
-            </Tooltip>
-        );
+        return <span>Stripe settlement timing</span>;
     }
     const methodLabel = forecastMethodLabel(row.forecastMethod);
-    const methodHint = forecastMethodHint(row.forecastMethod);
     const timingLabel = paymentTimingLabel(row.forecastPaymentTiming);
-    const timingHint = paymentTimingHint(row.forecastPaymentTiming);
     return (
         <span className="inline-flex items-center gap-1.5">
             <span>{row.vendor}</span>
-            {methodLabel && methodHint && (
-                <ForecastBadge label={methodLabel} hint={methodHint} />
-            )}
-            {timingLabel && timingHint && (
-                <ForecastBadge label={timingLabel} hint={timingHint} />
-            )}
+            {methodLabel && <ForecastBadge label={methodLabel} />}
+            {timingLabel && <ForecastBadge label={timingLabel} />}
         </span>
     );
 }
@@ -423,12 +378,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             {data.userBalances?.[0] ? (
                 <section className="flex flex-col gap-2">
                     <Heading as="h2" size="card">
-                        <Tooltip
-                            triggerAs="span"
-                            content={`Current balances users can spend without another payment. They cannot be cashed out and are not deducted from cash runway. D1 snapshot: ${fmtPeriod(data.userBalances[0].synced_at)}.`}
-                        >
-                            <span className="cursor-help">Unspent Pollen</span>
-                        </Tooltip>
+                        Unspent Pollen
                     </Heading>
                     <StatCards
                         items={[
@@ -549,11 +499,6 @@ function RunwayCategoryRows({
                                     pnlSource(group.category) === "ledger"
                                         ? "vendor"
                                         : "bank"
-                                }
-                                hint={
-                                    pnlSource(group.category) === "ledger"
-                                        ? "Actual columns come from the vendor ledger by service month: invoices and usage, paid or credit-funded. Bank payments to these vendors stay in cash only."
-                                        : "Actual columns are bank movements categorized by the vendor registry."
                                 }
                             />
                         )}

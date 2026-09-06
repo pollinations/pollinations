@@ -129,17 +129,13 @@ function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
                             className={GROUP_BORDER}
                             {...headerProps("paidUsage")}
                         >
-                            <HeaderHint hint="Cash-backed Paid Pollen charged on the selected revenue-share activity.">
-                                Used
-                            </HeaderHint>
+                            Used
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             {...headerProps("paidCreatorEarnings")}
                         >
-                            <HeaderHint hint="Paid Pollen earned by this creator from their apps and community models.">
-                                Earnings
-                            </HeaderHint>
+                            Earnings
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
@@ -175,17 +171,13 @@ function RevenueShareTable({ rows }: { rows: RevenueShareRow[] }) {
                             className={GROUP_BORDER}
                             {...headerProps("questUsage")}
                         >
-                            <HeaderHint hint="Quest Pollen used. It stays inside the Pollinations economy and is never fiat revenue.">
-                                Used
-                            </HeaderHint>
+                            Used
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             {...headerProps("questCreatorEarnings")}
                         >
-                            <HeaderHint hint="Quest Pollen earned by this creator. It remains non-cashable Quest Pollen.">
-                                Earnings
-                            </HeaderHint>
+                            Earnings
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>

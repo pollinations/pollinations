@@ -734,9 +734,7 @@ function UnitEconomicsTable({
                                     className={GROUP_BORDER}
                                     {...headerProps("providerCostCheck")}
                                 >
-                                    <HeaderHint hint="Whether internal logged cost agrees with vendor evidence. Hover a value for logged cost, vendor actual, gap, and basis.">
-                                        Cost check
-                                    </HeaderHint>
+                                    Cost check
                                 </TableHeaderCell>
                             )}
                         </TableRow>
@@ -761,42 +759,32 @@ function UnitEconomicsTable({
                                 align="center"
                                 {...headerProps("pollenMix")}
                             >
-                                <HeaderHint hint="Usage mix — amber is Paid Pollen and green is Quest Pollen, using the shared wallet colors.">
-                                    Usage mix
-                                </HeaderHint>
+                                Usage mix
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("questPollenUsd")}
                             >
-                                <HeaderHint hint="Quest Pollen consumed by customers. Quest is free usage and never fiat revenue.">
-                                    Quest used
-                                </HeaderHint>
+                                Quest used
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
                                 {...headerProps("providerCashUsd")}
                             >
-                                <HeaderHint hint="Vendor usage paid with real cash. Model costs join by exact Pollen id or through reviewed provider labels; unjoined cost stays in named residual rows.">
-                                    Cash
-                                </HeaderHint>
+                                Cash
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="center"
                                 {...headerProps("providerFundingMix")}
                             >
-                                <HeaderHint hint="Vendor funding mix — strong neutral is real cash and muted neutral is consumed vendor credit.">
-                                    Funding mix
-                                </HeaderHint>
+                                Funding mix
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("providerCreditUsd")}
                             >
-                                <HeaderHint hint="Vendor usage funded with consumed credits. Model costs join by exact Pollen id or through reviewed provider labels; unjoined cost stays in named residual rows.">
-                                    Credit
-                                </HeaderHint>
+                                Credit
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -809,9 +797,7 @@ function UnitEconomicsTable({
                                 align="right"
                                 {...headerProps("currentPerformancePct")}
                             >
-                                <HeaderHint hint="Current result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -824,9 +810,7 @@ function UnitEconomicsTable({
                                 align="right"
                                 {...headerProps("fullCostPerformancePct")}
                             >
-                                <HeaderHint hint="Full-cost result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>

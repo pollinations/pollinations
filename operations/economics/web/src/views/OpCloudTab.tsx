@@ -5,13 +5,11 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Tooltip,
 } from "@pollinations/ui";
 import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -176,17 +174,13 @@ export function OpCloudTab({
                             className={GROUP_BORDER}
                             {...headerProps("paid")}
                         >
-                            <HeaderHint hint="Usage rows: negative is cash-funded cost and positive is a refund. Balance rows: current cash prepaid.">
-                                Paid
-                            </HeaderHint>
+                            Paid
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             {...headerProps("credit")}
                         >
-                            <HeaderHint hint="Usage rows: negative is credit-funded cost and positive is a grant. Balance rows: current free credit.">
-                                Credit
-                            </HeaderHint>
+                            Credit
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
                             Currency
@@ -217,17 +211,12 @@ export function OpCloudTab({
                                             {accountLabel(row)}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap text-xs">
-                                            <Tooltip
-                                                triggerAs="span"
-                                                content={`${row.type === "balance" ? "Snapshot" : "Coverage"}: ${fmtUtcDateTime(row.start)}${row.end ? ` – ${fmtUtcDateTime(row.end)} (${row.type === "balance" ? "expiry" : "end exclusive"})` : ""}. UTC.`}
-                                            >
-                                                <span>
-                                                    {fmtMonthDay(row.start)}
-                                                    {row.end
-                                                        ? ` – ${fmtMonthDay(row.end)}${row.end.slice(0, 4) !== row.start.slice(0, 4) ? `, ${row.end.slice(0, 4)}` : ""}`
-                                                        : ""}
-                                                </span>
-                                            </Tooltip>
+                                            <span>
+                                                {fmtMonthDay(row.start)}
+                                                {row.end
+                                                    ? ` – ${fmtMonthDay(row.end)}${row.end.slice(0, 4) !== row.start.slice(0, 4) ? `, ${row.end.slice(0, 4)}` : ""}`
+                                                    : ""}
+                                            </span>
                                         </TableCell>
                                         <TableCell>
                                             {costTypeLabel(row.type)}

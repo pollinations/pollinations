@@ -12,7 +12,6 @@ import { CreatorIdentity } from "../components/CreatorIdentity";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -129,34 +128,26 @@ export function RevenueShareLedgerTab({
                             className={GROUP_BORDER}
                             {...headerProps("paidUsage")}
                         >
-                            <HeaderHint hint="Paid Pollen used on requests associated with this product. It can overlap another source on the same request.">
-                                Used
-                            </HeaderHint>
+                            Used
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             {...headerProps("paidEarnings")}
                         >
-                            <HeaderHint hint="Cash-backed earning credited to this developer for this product.">
-                                Earnings
-                            </HeaderHint>
+                            Earnings
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             className={GROUP_BORDER}
                             {...headerProps("questUsage")}
                         >
-                            <HeaderHint hint="Quest Pollen used on requests associated with this product. It can overlap another source on the same request.">
-                                Used
-                            </HeaderHint>
+                            Used
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             {...headerProps("questEarnings")}
                         >
-                            <HeaderHint hint="Non-cashable Quest Pollen credited to this developer for this product.">
-                                Earnings
-                            </HeaderHint>
+                            Earnings
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>

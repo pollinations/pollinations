@@ -999,23 +999,13 @@ export function GpuTab({
                                 className={GROUP_BORDER}
                                 {...headerProps("retainedUsd")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Cash-backed Pollen used on this workload after owner, BYOP, and model payouts.",
-                                        tables: "economics_pollen_usage_api",
-                                    }}
-                                >
-                                    Retained Paid
-                                </HeaderHint>
+                                Retained Paid
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("questUsd")}
                             >
-                                <HeaderHint hint="Free Quest Pollen used on this workload; it is not fiat revenue.">
-                                    Quest
-                                </HeaderHint>
+                                Quest
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -1055,9 +1045,7 @@ export function GpuTab({
                                 align="right"
                                 {...headerProps("currentPerformancePct")}
                             >
-                                <HeaderHint hint="Current result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -1070,9 +1058,7 @@ export function GpuTab({
                                 align="right"
                                 {...headerProps("fullCostPerformancePct")}
                             >
-                                <HeaderHint hint="Full-cost result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>

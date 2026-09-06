@@ -7,9 +7,7 @@ import type { Data } from "../types";
 import {
     fmtRunwayTableValue,
     fmtRunwayUsd,
-    forecastMethodHint,
     forecastMethodLabel,
-    paymentTimingHint,
     paymentTimingLabel,
     RunwayTab,
     runwayMonthLabel,
@@ -63,37 +61,11 @@ describe("RunwayTab labels", () => {
         expect(forecastMethodLabel(null)).toBeNull();
     });
 
-    it("explains forecast methods on vendor hover", () => {
-        expect(forecastMethodHint("fixed")).toBe(
-            "Uses a fixed monthly amount.",
-        );
-        expect(forecastMethodHint("funded")).toBe(
-            "Covered by verified vendor credits or prepaid balance.",
-        );
-        expect(forecastMethodHint("last")).toBe(
-            "Uses the latest reviewed monthly run rate.",
-        );
-        expect(forecastMethodHint("one_off")).toBe(
-            "Included only in this month.",
-        );
-        expect(forecastMethodHint(null)).toBeNull();
-        expect(forecastMethodHint("mixed")).toContain("each component");
-    });
-
-    it("explains when forecast cash moves", () => {
+    it("uses plain labels for the payment timing", () => {
         expect(paymentTimingLabel("direct")).toBe("DIRECT");
         expect(paymentTimingLabel("prepaid")).toBe("PREPAID");
         expect(paymentTimingLabel("postpaid")).toBe("POSTPAID");
         expect(paymentTimingLabel(null)).toBeNull();
-        expect(paymentTimingHint("direct")).toBe(
-            "Cash moves in the projected month.",
-        );
-        expect(paymentTimingHint("prepaid")).toContain(
-            "existing balance is consumed first",
-        );
-        expect(paymentTimingHint("postpaid")).toBe(
-            "Usage is paid after the service period.",
-        );
     });
 
     it("uses the same projection rules for labels and calculations", () => {

@@ -11,7 +11,6 @@ import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -120,16 +119,7 @@ export function OpTransactionsTab({
                             className={GROUP_BORDER}
                             {...headerProps("amount")}
                         >
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Signed Wise value. Ordinary rows are cash movements; the opening-balance row is a non-movement anchor used only to reconstruct cash.",
-                                    tables: "economics_bank_ledger_api",
-                                    sources: "WISE",
-                                }}
-                            >
-                                Amount
-                            </HeaderHint>
+                            Amount
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
                             Currency
@@ -141,9 +131,7 @@ export function OpTransactionsTab({
                             Description
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            <HeaderHint hint="Supporting document matched to this Wise cash movement. The transaction is the source of truth; Close reuses this same link when verifying vendor payments.">
-                                Document
-                            </HeaderHint>
+                            Document
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>

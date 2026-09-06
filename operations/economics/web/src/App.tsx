@@ -1,6 +1,7 @@
 import {
     Alert,
     Button,
+    ChevronIcon,
     Chip,
     ColorModeToggle,
     cn,
@@ -259,18 +260,41 @@ function codesLabel(codes: readonly ProvenanceCode[]) {
     return codes.length ? `${codes.join(", ")} · ` : "";
 }
 
-function MobileMenuButton({
+const NAV_COLLAPSED_KEY = "economics.nav.collapsed";
+
+function readNavCollapsed() {
+    try {
+        return window.localStorage.getItem(NAV_COLLAPSED_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+function writeNavCollapsed(collapsed: boolean) {
+    try {
+        window.localStorage.setItem(NAV_COLLAPSED_KEY, collapsed ? "1" : "0");
+    } catch {
+        // Storage can be unavailable; the fold then lasts for the session.
+    }
+}
+
+function NavMenuButton({
     buttonRef,
+    desktopVisible,
     onOpen,
 }: {
     buttonRef: RefObject<HTMLButtonElement | null>;
+    desktopVisible: boolean;
     onOpen: () => void;
 }) {
     return (
         <IconButton
             ref={buttonRef}
             size="md"
-            className="fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+            className={cn(
+                "fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque",
+                !desktopVisible && "md:hidden",
+            )}
             onClick={onOpen}
             title="Open navigation"
         >
@@ -387,11 +411,13 @@ function EconomicsDrawer({
     activeView,
     data,
     footer,
+    onCollapse,
     onViewChange,
 }: {
     activeView: ActiveView;
     data: Data | null;
     footer: ReactNode;
+    onCollapse?: () => void;
     onViewChange: (value: ActiveView) => void;
 }) {
     return (
@@ -400,8 +426,18 @@ function EconomicsDrawer({
             className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
             aria-label="Economics navigation"
         >
-            <div className="hidden shrink-0 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:block">
+            <div className="hidden shrink-0 items-center justify-between gap-2 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:flex">
                 <EconomicsBrand size="desktop" />
+                {onCollapse && (
+                    <IconButton
+                        size="sm"
+                        className="shrink-0 text-theme-text-soft hover:text-theme-text-strong"
+                        onClick={onCollapse}
+                        title="Hide navigation"
+                    >
+                        <ChevronIcon className="h-4 w-4 rotate-90" />
+                    </IconButton>
+                )}
             </div>
             <ScrollArea className="-mr-2 min-h-0 flex-1 pt-3">
                 <EconomicsNav
@@ -431,7 +467,23 @@ function EconomicsShell({
     onViewChange: (value: ActiveView) => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(readNavCollapsed);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+    const setNavCollapsed = (value: boolean) => {
+        setCollapsed(value);
+        writeNavCollapsed(value);
+    };
+
+    const openNav = () => {
+        // On desktop the floating button unfolds the sidebar; on mobile it
+        // opens the overlay drawer.
+        if (collapsed && window.matchMedia("(min-width: 768px)").matches) {
+            setNavCollapsed(false);
+            return;
+        }
+        setIsDrawerOpen(true);
+    };
 
     const closeDrawer = () => {
         setIsDrawerOpen(false);
@@ -457,7 +509,15 @@ function EconomicsShell({
             data-theme="amber"
             className="flex h-dvh min-h-0 overflow-hidden bg-app-bg font-body text-theme-text-strong"
         >
-            <div className="hidden md:block">{drawer}</div>
+            <div className={collapsed ? "hidden" : "hidden md:block"}>
+                <EconomicsDrawer
+                    activeView={activeView}
+                    data={data}
+                    footer={footer}
+                    onCollapse={() => setNavCollapsed(true)}
+                    onViewChange={handleViewChange}
+                />
+            </div>
             <Drawer
                 open={isDrawerOpen}
                 onOpenChange={(open) => {
@@ -482,12 +542,21 @@ function EconomicsShell({
                     {drawer}
                 </div>
             </Drawer>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
-                <MobileMenuButton
+            <div
+                className={cn(
+                    "flex min-w-0 flex-1 flex-col",
+                    !collapsed && "md:ml-60",
+                )}
+            >
+                <NavMenuButton
                     buttonRef={menuButtonRef}
-                    onOpen={() => setIsDrawerOpen(true)}
+                    desktopVisible={collapsed}
+                    onOpen={openNav}
                 />
-                <ScrollArea axis="y" className="min-h-0 flex-1">
+                <ScrollArea
+                    axis="y"
+                    className={cn("min-h-0 flex-1", collapsed && "md:pt-10")}
+                >
                     {children}
                 </ScrollArea>
             </div>
@@ -1001,14 +1070,7 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
             </div>
-            <div className="flex items-center justify-between gap-2">
-                <Button
-                    size="sm"
-                    disabled={loading}
-                    onClick={() => setAttempt((value) => value + 1)}
-                >
-                    {loading ? "Refreshing…" : "Refresh"}
-                </Button>
+            <div className="flex items-center justify-end gap-2">
                 <ColorModeToggle />
             </div>
         </>

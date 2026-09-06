@@ -13,7 +13,6 @@ import { useMemo } from "react";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -78,36 +77,23 @@ function BalanceStatus({ row }: { row: ProviderAccountBalanceRow }) {
                       ? fmtPeriod(row.balanceAsOf)
                       : "Checked"
                   : "Not checked";
-    const hint =
-        status === "not_applicable"
-            ? "This vendor has no wallet, credit pool, or quota balance to refresh. Monthly usage and invoices are checked separately."
-            : status === "archived"
-              ? `This provider is inactive. Its last recorded balance${row.balanceAsOf ? ` is dated ${fmtPeriod(row.balanceAsOf)}` : " has no snapshot"}; no monthly refresh is required.`
-              : status === "stale"
-                ? `The last balance snapshot${row.balanceAsOf ? ` is dated ${fmtPeriod(row.balanceAsOf)}` : " is old"}. Refresh this active provider.`
-                : status === "checked"
-                  ? `Current balance snapshot checked${row.balanceAsOf ? ` on ${fmtPeriod(row.balanceAsOf)}` : ""}.`
-                  : "No current Compute ledger balance snapshot exists for this account.";
-    const fullHint = row.balanceNote ? `${hint} ${row.balanceNote}.` : hint;
     return (
-        <Tooltip triggerAs="span" content={fullHint}>
-            <span className="flex flex-col whitespace-nowrap text-sm">
-                <span
-                    className={
-                        needsAttention
-                            ? "text-intent-warning-text"
-                            : "text-theme-text-soft"
-                    }
-                >
-                    {label}
-                </span>
-                {row.balanceNote && (
-                    <span className="max-w-56 truncate text-xs text-theme-text-soft">
-                        {row.balanceNote}
-                    </span>
-                )}
+        <span className="flex flex-col whitespace-nowrap text-sm">
+            <span
+                className={
+                    needsAttention
+                        ? "text-intent-warning-text"
+                        : "text-theme-text-soft"
+                }
+            >
+                {label}
             </span>
-        </Tooltip>
+            {row.balanceNote && (
+                <span className="max-w-56 truncate text-xs text-theme-text-soft">
+                    {row.balanceNote}
+                </span>
+            )}
+        </span>
     );
 }
 
@@ -228,16 +214,7 @@ export function BalancesTab({ data }: { data: Data }) {
                                 className={GROUP_BORDER}
                                 {...headerProps("cashBalanceUsd")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Latest dated Compute ledger balance snapshot for this account. Inactive accounts keep their last known snapshot.",
-                                        tables: "economics_compute_ledger_api",
-                                        formula: "latest balance snapshot",
-                                    }}
-                                >
-                                    Cash prepaid
-                                </HeaderHint>
+                                Cash prepaid
                             </TableHeaderCell>
                         </TableRow>
                         <TableRow>
@@ -246,23 +223,12 @@ export function BalancesTab({ data }: { data: Data }) {
                                 className={GROUP_BORDER}
                                 {...headerProps("creditBalanceUsd")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Latest dated Compute ledger balance snapshot for this account. Inactive accounts keep their last known snapshot.",
-                                        tables: "economics_compute_ledger_api",
-                                        formula: "latest balance snapshot",
-                                    }}
-                                >
-                                    Left
-                                </HeaderHint>
+                                Left
                             </TableHeaderCell>
                             <TableHeaderCell
                                 {...headerProps("creditDepletionDate")}
                             >
-                                <HeaderHint hint="Estimated credit depletion date, or the expiry date when unused credit expires first.">
-                                    Runs out
-                                </HeaderHint>
+                                Runs out
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -345,41 +311,23 @@ export function BalancesTab({ data }: { data: Data }) {
                                         now,
                                     )}
                                 >
-                                    <Tooltip
-                                        triggerAs="span"
-                                        content={
-                                            row.creditDepletionReason ===
-                                            "expiry"
-                                                ? "Next verified credit expiry; only the lots expiring on this date lapse. Other lots keep their own dates."
-                                                : row.expiryAssumed
-                                                  ? "User-approved planning assumption: consume this balance before any expiry. Provider non-expiry is not verified."
-                                                  : row.creditTermsKnown
-                                                    ? "Estimated from recent usage; not a contractual expiry."
-                                                    : "Credit expiry has not been verified. No exhaustion date is guaranteed."
-                                        }
-                                    >
-                                        <span>
-                                            {row.creditDepletionDate
-                                                ? new Date(
-                                                      `${row.creditDepletionDate}T12:00:00Z`,
-                                                  ).toLocaleDateString(
-                                                      "en-US",
-                                                      {
-                                                          month: "short",
-                                                          day: "numeric",
-                                                          year: "numeric",
-                                                          timeZone: "UTC",
-                                                      },
-                                                  )
-                                                : (row.creditBalanceUsd ?? 0) >
-                                                        0 &&
-                                                    !row.creditTermsKnown
-                                                  ? row.expiryAssumed
-                                                      ? "Assumed"
-                                                      : "Unverified"
-                                                  : "–"}
-                                        </span>
-                                    </Tooltip>
+                                    <span>
+                                        {row.creditDepletionDate
+                                            ? new Date(
+                                                  `${row.creditDepletionDate}T12:00:00Z`,
+                                              ).toLocaleDateString("en-US", {
+                                                  month: "short",
+                                                  day: "numeric",
+                                                  year: "numeric",
+                                                  timeZone: "UTC",
+                                              })
+                                            : (row.creditBalanceUsd ?? 0) > 0 &&
+                                                !row.creditTermsKnown
+                                              ? row.expiryAssumed
+                                                  ? "Assumed"
+                                                  : "Unverified"
+                                              : "–"}
+                                    </span>
                                 </TableCell>
                                 <TableCell
                                     align="right"

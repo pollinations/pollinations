@@ -1,7 +1,7 @@
 import type { Data } from "../types";
 import { toUsd } from "./fx";
 import { type MonthFilterValue, matchesMonth, WINDOW_START } from "./months";
-import { canonicalVendor } from "./tb";
+import { canonicalProvider } from "./providerRegistry";
 
 const MONTH_KEY = /^\d{4}-\d{2}$/;
 
@@ -34,7 +34,7 @@ export function communityEconomicsRows(
 
     for (const source of data.opPollen ?? []) {
         if (
-            canonicalVendor(source.vendor) !== "community" ||
+            canonicalProvider(source.vendor) !== "community" ||
             !MONTH_KEY.test(source.month) ||
             source.month < WINDOW_START ||
             !matchesMonth(source.month, monthFilter)

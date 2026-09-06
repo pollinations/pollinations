@@ -29,21 +29,20 @@ const providerById = new Map(
 );
 
 // Historical Tinybird and ledger names; these only affect Economics reporting.
-const HISTORICAL_PROVIDER_NAMES: Record<string, string> = {
-    "aws-bedrock": "aws",
-    bedrock: "aws",
-    "azure-2": "azure",
-    vast: "vast.ai",
-    vastai: "vast.ai",
-};
+const HISTORICAL_PROVIDER_NAMES = new Map([
+    ["aws-bedrock", "aws"],
+    ["bedrock", "aws"],
+    ["azure-2", "azure"],
+    ["vast", "vast.ai"],
+    ["vastai", "vast.ai"],
+]);
 
-export function normalizeProviderName(value: string): string {
+function normalizeProviderName(value: string): string {
     return value.trim().toLowerCase();
 }
 
 export function resolveProvider(value: string): ProviderDefinition | undefined {
-    const name = normalizeProviderName(value);
-    return providerById.get(HISTORICAL_PROVIDER_NAMES[name] ?? name);
+    return providerById.get(canonicalProvider(value));
 }
 
 export function providerMeteringBasis(value: string): MeteringBasis {
@@ -66,7 +65,7 @@ export function activeProviderAccounts(
 // the economics tables while the registry coverage check flags them.
 export function canonicalProvider(value: string): string {
     const normalized = normalizeProviderName(value);
-    return resolveProvider(normalized)?.id ?? normalized;
+    return HISTORICAL_PROVIDER_NAMES.get(normalized) ?? normalized;
 }
 
 function explanationByKey<T extends { month: string; provider: string }>(

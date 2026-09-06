@@ -13,7 +13,7 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "./months";
-import { canonicalVendor } from "./tb";
+import { canonicalProvider } from "./providerRegistry";
 
 const ACTIVE_USD = 0.0001;
 const MONTH_KEY = /^\d{4}-\d{2}$/;
@@ -130,7 +130,7 @@ function providerMonth(
     month: string,
     vendor: string,
 ): ProviderMonth {
-    const canonical = canonicalVendor(vendor.trim());
+    const canonical = canonicalProvider(vendor);
     return getOrInit(rows, `${month}|${canonical}`, () => ({
         month,
         vendor: canonical,

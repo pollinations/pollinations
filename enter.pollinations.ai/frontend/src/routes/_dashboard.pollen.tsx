@@ -6,7 +6,13 @@ import {
     POLLEN_PACKS,
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import {
+    Await,
+    createFileRoute,
+    redirect,
+    useNavigate,
+} from "@tanstack/react-router";
+import { apiClient } from "../api.ts";
 import { BuyPollenPanel, PollenBalance } from "../components/pollen";
 import { Route as DashboardRoute } from "./_dashboard.tsx";
 
@@ -27,14 +33,16 @@ export const Route = createFileRoute("/_dashboard/pollen")({
             });
         }
     },
+    loader: () =>
+        apiClient.stripe.billing.$get().then((r) => (r.ok ? r.json() : null)),
     component: PollenPage,
 });
 
 function PollenPage() {
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const { tierBalance, packBalance, paidWeek, tierWeek, billingState } =
-        DashboardRoute.useLoaderData();
+    const wallet = DashboardRoute.useLoaderData();
+    const billingState = Route.useLoaderData();
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
 
     function selectPack(amount: number): void {
@@ -45,12 +53,12 @@ function PollenPage() {
     return (
         <div className="flex flex-col gap-6">
             <Section title="Wallet" framed>
-                <PollenBalance
-                    tierBalance={tierBalance}
-                    packBalance={packBalance}
-                    paidWeek={paidWeek}
-                    tierWeek={tierWeek}
-                />
+                <Await
+                    promise={wallet.earnings}
+                    fallback={<PollenBalance {...wallet} />}
+                >
+                    {(earnings) => <PollenBalance {...wallet} {...earnings} />}
+                </Await>
             </Section>
             <Section title="Top-up" framed id="buy-pollen">
                 <BuyPollenPanel

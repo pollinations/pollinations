@@ -1406,8 +1406,17 @@ describe("prompt-agent runtime", () => {
         expect(toolCalls).toBe(0);
     });
 
-    it("feeds a failing tool's error back to the model instead of 502", async () => {
+    it.each(
+        ["http", "protocol", "execution", "network"].flatMap((kind) =>
+            [false, true].map((stream) => ({ kind, stream })),
+        ),
+    )("returns structured $kind tool errors with stream=$stream", async ({
+        kind,
+        stream,
+    }) => {
         let modelCalls = 0;
+        const failureMessage = "upstream boom <failed>";
+        const binaryData = "UFJJVkFURV9CSU5BUlk=";
         const fetchMock = vi.fn(
             async (input: RequestInfo | URL, init?: RequestInit) => {
                 const request = new Request(input, init);
@@ -1453,54 +1462,100 @@ describe("prompt-agent runtime", () => {
                             },
                         });
                     }
-                    // tools/call fails upstream.
-                    return new Response("upstream boom", { status: 500 });
+                    if (kind === "http") {
+                        return new Response(failureMessage, {
+                            status: 500,
+                        });
+                    }
+                    if (kind === "network") throw new Error(failureMessage);
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: body.id,
+                        ...(kind === "protocol"
+                            ? {
+                                  error: {
+                                      code: -32603,
+                                      message: failureMessage,
+                                  },
+                              }
+                            : {
+                                  result: {
+                                      isError: true,
+                                      content: [
+                                          {
+                                              type: "text",
+                                              text: failureMessage,
+                                          },
+                                          {
+                                              type: "image",
+                                              data: binaryData,
+                                              mimeType: "image/png",
+                                          },
+                                      ],
+                                  },
+                              }),
+                    });
                 }
 
                 modelCalls++;
-                // First turn: ask for the MCP tool.
-                if (modelCalls === 1) {
+                if (modelCalls === 2) {
+                    const body = await request.json();
+                    expect(JSON.stringify(body)).toContain(failureMessage);
+                    expect(JSON.stringify(body)).not.toContain(binaryData);
+                }
+                const message =
+                    modelCalls === 1
+                        ? {
+                              role: "assistant",
+                              content: "",
+                              tool_calls: [
+                                  {
+                                      index: 0,
+                                      id: "c1",
+                                      type: "function",
+                                      function: {
+                                          name: "mcp__pollinations__listModels",
+                                          arguments: "{}",
+                                      },
+                                  },
+                              ],
+                          }
+                        : {
+                              role: "assistant",
+                              content: "sorry, lookup failed",
+                          };
+                const finish_reason = modelCalls === 1 ? "tool_calls" : "stop";
+                const usage = {
+                    prompt_tokens: 2,
+                    completion_tokens: 2,
+                    total_tokens: 4,
+                };
+                if (!stream) {
                     return Response.json({
-                        choices: [
-                            {
-                                message: {
-                                    role: "assistant",
-                                    content: "",
-                                    tool_calls: [
-                                        {
-                                            id: "c1",
-                                            function: {
-                                                name: "mcp__pollinations__listModels",
-                                                arguments: "{}",
-                                            },
-                                        },
-                                    ],
-                                },
-                            },
-                        ],
-                        usage: {
-                            prompt_tokens: 3,
-                            completion_tokens: 1,
-                            total_tokens: 4,
-                        },
+                        choices: [{ message, finish_reason }],
+                        usage,
                     });
                 }
-                // Next model turn recovers and answers.
-                return Response.json({
-                    choices: [
+                return new Response(
+                    `${[
                         {
-                            message: {
-                                role: "assistant",
-                                content: "sorry, lookup failed",
-                            },
+                            choices: [
+                                {
+                                    index: 0,
+                                    delta: message,
+                                    finish_reason: null,
+                                },
+                            ],
                         },
-                    ],
-                    usage: {
-                        prompt_tokens: 2,
-                        completion_tokens: 2,
-                        total_tokens: 4,
-                    },
-                });
+                        {
+                            choices: [{ index: 0, delta: {}, finish_reason }],
+                            usage,
+                        },
+                    ]
+                        .map((event) => `data: ${JSON.stringify(event)}\n\n`)
+                        .join("")}data: [DONE]\n\n`,
+                    { headers: { "content-type": "text/event-stream" } },
+                );
             },
         );
         vi.stubGlobal("fetch", fetchMock);
@@ -1508,6 +1563,7 @@ describe("prompt-agent runtime", () => {
         const res = await runAgent(
             {
                 messages: [{ role: "user", content: "look up cats" }],
+                stream,
             },
             {
                 ...BASE_RUNTIME,
@@ -1518,28 +1574,101 @@ describe("prompt-agent runtime", () => {
             },
         );
         // A tool failure does not fail the request.
+        expect(res.status).toBe(200);
+        const chatSource = res.clone().body;
+        if (!chatSource) throw new Error("Missing response body");
         const responseText = await res.text();
-        expect(res.status, responseText).toBe(200);
-        const json = JSON.parse(responseText) as {
-            output: { content: { text: string }[] }[];
-            usage: { tool_call_counts: Record<string, number> };
-        };
+        const events = stream ? responseStreamEvents(responseText) : [];
+        const json = stream
+            ? events.at(-1)?.response
+            : JSON.parse(responseText);
         expect(responseOutputText(json)).toBe("sorry, lookup failed");
-        expect(json.output[0]).toMatchObject({
+        const error =
+            kind === "http" || kind === "protocol"
+                ? {
+                      type:
+                          kind === "http" ? "http_error" : "mcp_protocol_error",
+                      code: kind === "http" ? 500 : -32603,
+                      message: expect.stringContaining(failureMessage),
+                  }
+                : {
+                      type: "mcp_tool_execution_error",
+                      content:
+                          kind === "network"
+                              ? expect.stringContaining(failureMessage)
+                              : {
+                                    isError: true,
+                                    content: expect.arrayContaining([
+                                        {
+                                            type: "text",
+                                            text: expect.stringContaining(
+                                                failureMessage,
+                                            ),
+                                        },
+                                    ]),
+                                },
+                  };
+        const failedCall = {
             type: "mcp_call",
             id: "c1",
             status: "failed",
-            error: expect.stringContaining("MCP HTTP Transport Error"),
-            output: null,
+            error,
+        };
+        expect(json).toMatchObject({
+            status: "completed",
+            output: [
+                expect.objectContaining(failedCall),
+                expect.objectContaining({ type: "message" }),
+            ],
+            usage: {
+                input_tokens: 4,
+                output_tokens: 4,
+                total_tokens: 8,
+                tool_call_counts: { mcp_call: 1 },
+            },
         });
-        const content = chatOutputText(json);
+        expect(JSON.stringify(json)).not.toContain(binaryData);
+        if (stream) {
+            expect(events.map((event) => event.sequence_number)).toEqual(
+                events.map((_, index) => index),
+            );
+            expect(
+                events.filter(
+                    (event) => event.type === "response.mcp_call.failed",
+                ),
+            ).toHaveLength(1);
+            expect(
+                events.find(
+                    (event) => event.type === "response.output_item.done",
+                ),
+            ).toMatchObject({ item: failedCall });
+            expect(events.at(-1)?.type).toBe("response.completed");
+        }
+        const content = stream
+            ? responseStreamEvents(
+                  await new Response(
+                      responsesToChatStream(chatSource, "test-agent"),
+                  ).text(),
+              )
+                  .map(
+                      (chunk) =>
+                          (
+                              chunk.choices as {
+                                  delta: { content?: string };
+                              }[]
+                          )?.[0]?.delta.content ?? "",
+                  )
+                  .join("")
+            : chatOutputText(json);
         expect(content).toContain(
             '<details type="tool_calls" done="true" id="c1" name="listModels" arguments="{}">',
         );
         expect(content).toContain("<summary>Tool Failed</summary>");
-        expect(content).toContain("MCP HTTP Transport Error");
+        expect(content).toContain("upstream boom &lt;failed&gt;");
+        expect(content).not.toContain("[object Object]");
+        expect(content).not.toContain(binaryData);
         expect(content.endsWith("sorry, lookup failed")).toBe(true);
-        // The (failed) tool call is still counted — the owner's tool ran.
-        expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
+        // The model recovers on the next turn after the failed tool.
+        expect(modelCalls).toBe(2);
     });
 });

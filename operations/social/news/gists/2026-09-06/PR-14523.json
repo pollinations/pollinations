@@ -1,0 +1,35 @@
+{
+  "pr_number": 14523,
+  "title": "fix: harden Polli scraping, data controls, and request handling",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14523",
+  "merged_at": "2026-09-06T22:57:44Z",
+  "labels": [],
+  "pr_body_excerpt": "## Browser workload and production responsiveness\n\n- Reuse one Crawl4AI browser on a dedicated event-loop thread across Discord and Granian API callers.\n- Give browser jobs isolated contexts/pages; cap execution at two active jobs with two bounded waiting slots.\n- Bound queue waits by request timeout, reject excess load, and release capacity after cancellation cleanup.\n- Serialize browser startup, close partially initialized crawlers, and drain active tasks before browser shutdown.\n- Reject persistent session IDs and conflicting headless settings instead of accumulating retained pages.\n- Run semantic extraction in a spawned subprocess with one-job admission, CPU-thread limits, timeout termination and process reaping.\n- Handle Crawl4AI cosine extraction with one remaining text chunk without SciPy clustering failure.\n- Close shared scraper resources during bot shutdown.\n- Reject overlapping conversations in the same channel while allowing other channels to proceed.\n- Retry empty model replies and provide a fallback response instead of silently ending after typing.\n\n## Web tools and dependencies\n\n- Upgrade Crawl4AI to 0.9.3, Scrapling to 0.4.15 and Python Playwright to 1.62.0.\n- Install Scrapling fetcher/RAG extras; use class-based AsyncFetcher, safe redirects and native main-content Markdown.\n- Pin sentence-transformers/Transformers to a compatible pairing; update supporting dependency constraints.\n- Remove redundant unpinned Playwright installation from Docker.\n- Correct rnet constructor options and Crawl4AI regex constant mappings.\n- Preserve honest empty structured extraction results and report provider extraction errors as failures.\n- Decode HTML entities in extracted URL values while preserving original source spans and non-URL values.\n- Bound serialized multi-scrape responses, including Unicode and oversized URLs, with explicit truncation/omission metadata.\n- Preserve usable web-search source URLs and annotation/citation context.\n\n## GitHub data and PR reviews\n\n",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli Learns Queue Etiquette",
+    "blurb": "Polli’s web-scraping kit got sturdier: shared browser lanes, bounded queues, tidier shutdowns, and a backup line for when a model goes quiet. The little bee now knows that infinite tabs are not a personality trait.",
+    "summary": "Hardened the Polli app’s web and conversation handling with a shared Crawl4AI browser limited to two active jobs plus two waiting slots, isolated pages, timeout-aware admission, subprocess-bounded semantic extraction, safer scrape output, and fallback handling for empty model replies.",
+    "impact": "Polli users get more responsive Discord and API conversations under load, safer bounded scraping results and redirects, preserved search citations, and clear recovery instead of silent failures when a model returns an empty reply.",
+    "keywords": [
+      "polli",
+      "web-scraping",
+      "crawl4ai",
+      "discord",
+      "request-handling",
+      "github",
+      "reliability"
+    ],
+    "visual_concept": "Depict Polli as a careful web librarian in a cozy garden-hackerspace, managing a small two-lane browser-job queue while a CRT monitor robot watches tidy web pages flow through safely. Show bounded little queue gates, isolated glowing browser windows, clipped-but-labeled scrolls for large scrape results, and code-plants growing around the terminal to represent reliable data handling without overload.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing a tiny librarian visor and calmly directing two glowing browser-page carts through a small lime green (#ecf874) queue gate in a garden hackerspace; a chunky CRT monitor robot holds a neatly labeled source scroll beside code-plants and soft pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font sign reading \"2 JOBS\", emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14523.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded translucent light-blue wings, wearing a tiny librarian visor and calmly directing two glowing browser-page carts through a small lime green (#ecf874) queue gate in a garden hackerspace; a chunky CRT monitor robot holds a neatly labeled source scroll beside code-plants and soft pastel flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font sign reading \"2 JOBS\", emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-06T22:58:48.729417+00:00"
+}

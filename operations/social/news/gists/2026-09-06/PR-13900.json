@@ -1,0 +1,34 @@
+{
+  "pr_number": 13900,
+  "title": "fix: report selected MCP startup failures in managed agents",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13900",
+  "merged_at": "2026-09-06T21:02:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Ports selected-MCP startup failure handling to the current Gen runtime on main, including #14511; does not restore the removed Enter runtime.\n- Returns HTTP 502, or terminal response.failed for streaming, when initialization or tool listing fails; the base model is not called.\n- Closes failed and parallel sessions, including late-opening siblings. Uses the MCP client directly without redundant close callbacks; preserves original error details.\n- Drops obsolete README and receipt-header changes; current proxy authorization, billing protections, and successful tool behavior remain unchanged.\n- Simplification and review passes complete with no blocking findings. All GitHub checks pass on cd35b9f70, including the full Gen suite, typecheck, formatting, and CodeQL. All 109 focused tests also pass locally, including single-close verification after a successful tool loop.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The agent reports back",
+    "blurb": "Managed agents now tell you when a selected MCP tool server fails to wake up, instead of quietly sending the base model into the weeds. The hive closes the spare doors behind it, too.",
+    "summary": "Managed-agent MCP startup and tool-listing failures now return HTTP 502 for regular requests or a terminal response.failed event for streams, without calling the base model, while failed parallel MCP sessions are closed safely.",
+    "impact": "Developers get the original MCP failure details promptly, avoid an unnecessary base-model call, and can rely on selected and late-opening sibling sessions being cleaned up after initialization errors.",
+    "keywords": [
+      "mcp",
+      "managed-agents",
+      "streaming",
+      "error-handling",
+      "gen-api",
+      "session-cleanup"
+    ],
+    "visual_concept": "Depict a cozy managed-agent garden shed where Polli is a careful tool-server keeper: a selected MCP tool cabinet has failed to start and shows a clear little 502 notice, while a nearby retro terminal calmly displays response.failed. Polli closes a few small parallel greenhouse doors with tidy session tags, keeping the healthy code-plants and tool loop undisturbed; use the monitor robot as an eager assistant holding a diagnostic printout.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt while gently closing little MCP greenhouse doors; a retro terminal glows lime green (#ecf874) with simple pixel text “502” and “response.failed,” while a cheerful CRT-monitor robot holds an error printout beside healthy code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-13900.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-shed hackerspace: Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt while gently closing little MCP greenhouse doors; a retro terminal glows lime green (#ecf874) with simple pixel text “502” and “response.failed,” while a cheerful CRT-monitor robot holds an error printout beside healthy code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-06T21:03:12.984231+00:00"
+}

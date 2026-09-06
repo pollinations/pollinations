@@ -53,6 +53,7 @@ import {
     yearsOf,
 } from "./lib/months";
 import type { ProvenanceCode } from "./lib/provenance";
+import { providerAccountBalanceRows } from "./lib/providerBalances";
 import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { BalancesTab } from "./views/CreditsTab";
@@ -113,6 +114,9 @@ type DrawerItem<Id extends string> = {
     label: string;
     note: string;
     icon: ComponentType<{ className?: string }>;
+    // Ledger-like insight views show their row count once `source` is loaded.
+    source?: DataSource;
+    rows?: (data: Data) => number;
 };
 
 const INSIGHT_TABS = [
@@ -160,6 +164,8 @@ const LEDGER_INSIGHT_TABS = [
         label: "Balances",
         note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
         icon: DatabaseIcon,
+        source: "opCloud",
+        rows: (data) => providerAccountBalanceRows(data, new Date()).length,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
@@ -304,19 +310,37 @@ function EconomicsNav({
     data: Data | null;
     onViewChange: (value: ActiveView) => void;
 }) {
-    const insightItem = (item: DrawerItem<InsightTab>) => (
-        <NavItem
-            key={item.id}
-            type="button"
-            data-theme="accent"
-            icon={item.icon}
-            active={activeView === item.id}
-            title={item.note}
-            onClick={() => onViewChange(item.id)}
-        >
-            {item.label}
-        </NavItem>
-    );
+    const insightItem = (item: DrawerItem<InsightTab>) => {
+        const count =
+            item.rows && item.source && data?.[item.source] != null
+                ? item.rows(data)
+                : null;
+        return (
+            <NavItem
+                key={item.id}
+                type="button"
+                data-theme="accent"
+                icon={item.icon}
+                active={activeView === item.id}
+                title={
+                    count != null ? `${count} rows\n${item.note}` : item.note
+                }
+                onClick={() => onViewChange(item.id)}
+            >
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {count == null ? null : (
+                    <Chip
+                        data-theme="neutral"
+                        intent="neutral"
+                        size="sm"
+                        className="ml-auto bg-transparent text-theme-text-soft"
+                    >
+                        {count}
+                    </Chip>
+                )}
+            </NavItem>
+        );
+    };
     const rawItem = (item: (typeof TABS)[number]) => {
         const count = data?.[item.source] != null ? item.rows(data) : null;
         const title = `${codesLabel(item.codes)}${item.pipe}${count != null ? ` · ${count} rows` : ""}\n${item.note}`;

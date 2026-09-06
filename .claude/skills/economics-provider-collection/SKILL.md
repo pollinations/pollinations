@@ -118,6 +118,9 @@ name or an undocumented ratio.
   fact as payment-only (e.g. cashback/payout). Folders/forms are not documents.
   Preserve existing lost-document exceptions. Link the exact invoice where
   available; a legacy untyped link does not certify invoice completeness.
+  For cross-currency payments, match the invoice to Wise's original/exchanged
+  amount, not a monthly FX estimate. Preserve the bank debit and its fees.
+  A split-currency card payment has multiple Bank rows but one supplier invoice.
 - `economics_stripe_sales` stores reviewed Stripe account-month-currency sales,
   refunds, reversals, fees, stream, and coverage. It never stores customer or
   payment payloads.

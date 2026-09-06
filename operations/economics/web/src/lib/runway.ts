@@ -8,8 +8,6 @@ import {
     cloudCategory,
     EXPENSE_CATEGORY_ORDER,
     forecastCategory,
-    runwayLineItem,
-    transactionCategory,
 } from "./categories";
 import {
     isOpCloudBalanceRow,
@@ -34,6 +32,8 @@ import {
     canonicalProviderAccountId,
     resolveProvider,
     resolveProviderAccount,
+    runwayLineItem,
+    transactionCategory,
 } from "./providerRegistry";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;

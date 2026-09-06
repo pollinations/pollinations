@@ -19,7 +19,7 @@ import {
 } from "../components/DataTable";
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
-import { categoryLabel, transactionCategory } from "../lib/categories";
+import { categoryLabel } from "../lib/categories";
 import type { DriveDocumentLink } from "../lib/documents";
 import { fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
@@ -29,6 +29,7 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
+import { transactionCategory } from "../lib/providerRegistry";
 import type { Data, OpTransactionRow } from "../types";
 
 export function OpTransactionsTab({

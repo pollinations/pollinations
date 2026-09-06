@@ -13,8 +13,13 @@ accounts, prepare a monthly close, or reconcile provider cost with Pollen.
 Read `operations/economics/provider-registry.json` first.
 
 - The registry owns canonical vendor IDs, aliases, account lifecycles,
-  account aliases and login emails, active monthly-review status,
-  balance-tracking decisions, access URLs, and workspace domains.
+  active monthly-review status, balance-tracking decisions, access URLs, and
+  workspace domains. It is also the only vendor list: every bank or Runway
+  counterparty is registered with its business `category` (`compute`,
+  `infrastructure`, `development`, `operations`, `revenue_share`, `office`,
+  `admin`, `payroll`), optional `cashRules` (bank-description rules for mixed
+  vendors) and `runwayLine`. A new vendor in a bank statement needs a registry
+  entry before its cash can be categorized.
 - Active vendors have `monthlyReview: true`. Refresh only those during a normal
   monthly run.
 - Inactive vendors remain visible for history. Inspect them only when the user

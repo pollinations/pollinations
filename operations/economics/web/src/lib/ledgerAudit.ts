@@ -1,5 +1,5 @@
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
-import { cloudCategory, transactionCategory } from "./categories";
+import { cloudCategory } from "./categories";
 import {
     hasReconciledTransactionEvidence,
     isAcknowledgedLostTransactionEvidence,
@@ -13,7 +13,10 @@ import {
     matchesMonth,
 } from "./months";
 import { isCloudSource, isTransactionSource } from "./provenance";
-import { missingProviderMappings } from "./providerRegistry";
+import {
+    missingProviderMappings,
+    transactionCategory,
+} from "./providerRegistry";
 
 const CURRENCY_RE = /^[A-Z]{3}$/;
 const POLLEN_MEASURES: (keyof OpPollenRow)[] = [

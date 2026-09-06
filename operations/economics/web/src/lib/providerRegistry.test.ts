@@ -5,6 +5,7 @@ import {
 } from "../../../../../shared/registry/registry";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import { CATEGORY_IDS } from "./categories";
 import { isDatedRules } from "./modelIdentity";
 import {
     activeProviderAccounts,
@@ -96,6 +97,36 @@ describe("provider registry", () => {
         ]).map(normalizeProviderName);
 
         expect(new Set(names).size).toBe(names.length);
+    });
+
+    it("gives every vendor one reviewed business category", () => {
+        const categories = new Set<string>([...CATEGORY_IDS, "uncategorized"]);
+        for (const provider of PROVIDER_REGISTRY) {
+            expect(categories.has(provider.category)).toBe(true);
+            for (const rule of provider.cashRules ?? []) {
+                expect(categories.has(rule.category)).toBe(true);
+                expect(rule.category).not.toBe("uncategorized");
+                expect(
+                    (rule.match?.length ?? 0) > 0 ||
+                        (rule.equals?.length ?? 0) > 0 ||
+                        rule.inflow === true,
+                ).toBe(true);
+                for (const needle of rule.match ?? []) {
+                    expect(needle).toBe(needle.trim().toLowerCase());
+                }
+            }
+            if (provider.runwayLine != null) {
+                expect(provider.runwayLine.trim().length).toBeGreaterThan(0);
+            }
+        }
+        // Compute and infrastructure providers keep their business category.
+        expect(resolveProvider("aws")?.category).toBe("compute");
+        expect(resolveProvider("cloudflare")?.category).toBe("infrastructure");
+        expect(resolveProvider("tinybird")?.category).toBe("infrastructure");
+        expect(resolveProvider("google-workspace")?.category).toBe(
+            "operations",
+        );
+        expect(resolveProvider("deel")?.category).toBe("payroll");
     });
 
     it("classifies every provider by how its bill should reconcile to Pollen", () => {

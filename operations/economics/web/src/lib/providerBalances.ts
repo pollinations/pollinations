@@ -2,7 +2,6 @@ import type { Data, OpCloudRow, OpTransactionRow } from "../types";
 import {
     isBankMovement,
     isComputeOrInfrastructureCategory,
-    transactionCategory,
 } from "./categories";
 import {
     isOpCloudBalanceRow,
@@ -23,6 +22,7 @@ import {
     type ProviderDefinition,
     resolveProvider,
     resolveProviderAccount,
+    transactionCategory,
 } from "./providerRegistry";
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;

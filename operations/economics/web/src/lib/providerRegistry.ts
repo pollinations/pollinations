@@ -4,20 +4,40 @@ import type {
     EconomicsPrivateConfig,
     MeterDriftExplanation,
     OpCloudRow,
+    OpTransactionRow,
     PollenWitnessExplanation,
     ProviderCheckExplanation,
     ProviderObservation,
     ProviderObservationSource,
 } from "../types";
 import {
+    type Category,
+    type CategoryValue,
+    isCategory,
     isComputeOrInfrastructureCategory,
-    transactionCategory,
 } from "./categories";
 import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
+
+// Bank movements of one vendor can serve several business purposes. Rules run
+// in order on the lowercase description (any `match` substring, any exact
+// `equals`) or on inflows; the first hit wins, otherwise `category` applies.
+export type CashRule = {
+    match?: string[];
+    equals?: string[];
+    inflow?: boolean;
+    category: Category;
+};
 
 export type ProviderDefinition = {
     id: string;
     label: string;
+    // Business category of the vendor's cash in the P&L. "uncategorized"
+    // marks a vendor seen in the bank ledger that nobody has reviewed yet:
+    // a canonical supplied category is trusted until the review lands.
+    category: CategoryValue;
+    cashRules?: CashRule[];
+    // Runway line the vendor is folded into (office merchants, admin purposes).
+    runwayLine?: string;
     meteringBasis: MeteringBasis;
     aliases: string[];
     connector: string | null;
@@ -128,6 +148,53 @@ export function normalizeProviderName(value: string): string {
 
 export function resolveProvider(value: string): ProviderDefinition | undefined {
     return providerByAlias.get(normalizeProviderName(value));
+}
+
+function cashRuleMatches(
+    rule: CashRule,
+    description: string,
+    amount: number,
+): boolean {
+    return (
+        (rule.match ?? []).some((needle) => description.includes(needle)) ||
+        (rule.equals ?? []).includes(description) ||
+        (rule.inflow === true && amount > 0)
+    );
+}
+
+// The P&L category of a bank movement, decided by the vendor registry.
+export function transactionCategory(
+    row: Pick<
+        OpTransactionRow,
+        "amount" | "category" | "description" | "kind" | "vendor"
+    >,
+): CategoryValue {
+    if (row.kind === "opening_balance") return "balance_sheet";
+
+    const supplied = normalizeProviderName(row.category);
+    if (supplied === "creator_payout") return "revenue_share";
+    // A reviewed deposit/refund or other balance-sheet movement is not a
+    // recurring vendor expense (for example a Deel deposit is not payroll).
+    if (supplied === "balance_sheet") return "balance_sheet";
+
+    const provider = resolveProvider(row.vendor);
+    if (provider) {
+        const description = normalizeProviderName(row.description);
+        const rule = (provider.cashRules ?? []).find((candidate) =>
+            cashRuleMatches(candidate, description, Number(row.amount)),
+        );
+        if (rule) return rule.category;
+        if (provider.category !== "uncategorized") return provider.category;
+    }
+    return isCategory(supplied) ? supplied : "uncategorized";
+}
+
+// The Runway line a vendor's cash is shown under.
+export function runwayLineItem(category: string, vendor: string): string {
+    const provider = resolveProvider(vendor);
+    return provider?.runwayLine != null && provider.category === category
+        ? provider.runwayLine
+        : vendor;
 }
 
 export function providerMeteringBasis(value: string): MeteringBasis {

@@ -254,7 +254,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "fixed",
         paymentTiming: "direct",
     },
-    "tax office|admin": { method: "one_off", paymentTiming: "direct" },
     "taxes|admin": { method: "one_off", paymentTiming: "direct" },
     "ayushman|payroll": { method: "one_off", paymentTiming: "direct" },
     "deel|payroll": {

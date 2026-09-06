@@ -1,5 +1,5 @@
 import type { Data } from "../types";
-import { categoryLabel, transactionCategory } from "./categories";
+import { categoryLabel } from "./categories";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -7,7 +7,7 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "./months";
-import { resolveProvider } from "./providerRegistry";
+import { resolveProvider, transactionCategory } from "./providerRegistry";
 
 export type LedgerTab =
     | "op-transactions"

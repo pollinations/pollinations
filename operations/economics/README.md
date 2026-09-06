@@ -31,6 +31,16 @@ The canonical Economics Tinybird datasource and pipe definitions
 (`economics_*`) live in
 [`enter.pollinations.ai/observability/`](../../enter.pollinations.ai/observability/).
 
+`operations/economics/provider-registry.json` is the single vendor list. Every
+counterparty that appears in the bank ledger, the compute ledger, or a Runway
+line is registered there with its identity (aliases, accounts, connector) and
+its business category (`category`, plus `cashRules` for vendors whose bank
+description decides between purposes, and `runwayLine` for merchants folded
+into one Runway line). `web/src/lib/categories.ts` only defines the category
+vocabulary; the compute ledger `type` still maps `inference`/`gpu` to compute
+and `infra` to infrastructure. A vendor registered as `uncategorized` has not
+been reviewed yet and keeps its canonical supplied category until it is.
+
 Runway is derived mathematically from `economics_bank_ledger_api`,
 `economics_compute_ledger_api`,
 checked balances, and the reviewed calculation rules in

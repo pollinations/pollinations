@@ -1,5 +1,5 @@
 {
-  "version": 17,
+  "version": 18,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -24,7 +24,19 @@
     {
       "id": "airforce",
       "label": "Airforce",
+      "category": "compute",
       "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "alexandre-silveira",
+      "label": "Alexandre Silveira",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -34,6 +46,7 @@
     {
       "id": "alibaba",
       "label": "Alibaba",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "alibaba",
@@ -80,8 +93,32 @@
       }
     },
     {
+      "id": "amazon",
+      "label": "Amazon",
+      "category": "office",
+      "runwayLine": "Furniture & equipment",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "anthropic",
       "label": "Anthropic",
+      "category": "compute",
+      "cashRules": [
+        {
+          "match": [
+            "subscription"
+          ],
+          "equals": [
+            "claude"
+          ],
+          "category": "development"
+        }
+      ],
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "anthropic",
@@ -110,6 +147,7 @@
     {
       "id": "assemblyai",
       "label": "AssemblyAI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "assemblyai",
@@ -150,6 +188,7 @@
     {
       "id": "aws",
       "label": "AWS",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [
         "aws-bedrock",
@@ -270,8 +309,20 @@
       }
     },
     {
+      "id": "ayushman",
+      "label": "Ayushman",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "azure",
       "label": "Azure",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [
         "azure-2"
@@ -723,9 +774,33 @@
       }
     },
     {
+      "id": "barbara-khamouguinoff",
+      "label": "Barbara Khamouguinoff",
+      "category": "office",
+      "runwayLine": "Cleaning",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "bpai",
       "label": "BPAI",
+      "category": "compute",
       "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "buffer",
+      "label": "Buffer",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -735,6 +810,7 @@
     {
       "id": "bytedance",
       "label": "BytePlus / ByteDance",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "bytedance",
@@ -760,8 +836,20 @@
       ]
     },
     {
+      "id": "canva",
+      "label": "Canva",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "cloudflare",
       "label": "Cloudflare",
+      "category": "infrastructure",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": "cloudflare",
@@ -800,8 +888,20 @@
       ]
     },
     {
+      "id": "coinflow",
+      "label": "Coinflow",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "community",
       "label": "Community models",
+      "category": "compute",
       "meteringBasis": "internal",
       "aliases": [],
       "connector": "community",
@@ -810,8 +910,20 @@
       "collectionMethod": "internal"
     },
     {
+      "id": "cursor",
+      "label": "Cursor",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "daytona",
       "label": "Daytona",
+      "category": "infrastructure",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": "daytona",
@@ -820,8 +932,20 @@
       "collectionMethod": "api"
     },
     {
+      "id": "deel",
+      "label": "Deel",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "deepinfra",
       "label": "DeepInfra",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "deepinfra",
@@ -882,8 +1006,21 @@
       }
     },
     {
+      "id": "denns-biomarkt",
+      "label": "Denns Biomarkt",
+      "category": "office",
+      "runwayLine": "Food & drink",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "digitalocean",
       "label": "DigitalOcean",
+      "category": "infrastructure",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "digitalocean",
@@ -913,8 +1050,20 @@
       ]
     },
     {
+      "id": "discord",
+      "label": "Discord",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "e2b",
       "label": "E2B",
+      "category": "infrastructure",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "e2b",
@@ -945,6 +1094,7 @@
     {
       "id": "elevenlabs",
       "label": "ElevenLabs",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "elevenlabs",
@@ -989,8 +1139,55 @@
       }
     },
     {
+      "id": "elixpo",
+      "label": "Elixpo",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "elliot-fouchy",
+      "label": "Elliot Fouchy",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "enty",
+      "label": "Enty",
+      "category": "admin",
+      "runwayLine": "Accounting & filings",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "estonia",
+      "label": "Estonian Tax and Customs Board",
+      "category": "admin",
+      "runwayLine": "Taxes",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "exa",
       "label": "Exa",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "exa",
@@ -1021,6 +1218,7 @@
     {
       "id": "fal",
       "label": "fal.ai",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "fal",
@@ -1076,8 +1274,20 @@
       ]
     },
     {
+      "id": "figma",
+      "label": "Figma",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "fireworks",
       "label": "Fireworks",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "fireworks",
@@ -1282,8 +1492,57 @@
       }
     },
     {
+      "id": "gaswerksiedlung",
+      "label": "Gaswerksiedlung",
+      "category": "office",
+      "runwayLine": "Rent & utilities",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "gitbook",
+      "label": "Gitbook",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "category": "development",
+      "cashRules": [
+        {
+          "match": [
+            "sponsor"
+          ],
+          "category": "revenue"
+        }
+      ],
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": "github",
+      "monthlyReview": true,
+      "balanceTracking": false,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://github.com/enterprises/myceli-ai/billing"
+        }
+      ]
+    },
+    {
       "id": "google",
       "label": "Google Cloud",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [],
       "connector": "google",
@@ -1352,24 +1611,31 @@
       }
     },
     {
-      "id": "github",
-      "label": "GitHub",
+      "id": "google-workspace",
+      "label": "Google Workspace",
+      "category": "operations",
       "meteringBasis": "not_applicable",
       "aliases": [],
-      "connector": "github",
-      "monthlyReview": true,
+      "connector": null,
+      "monthlyReview": false,
       "balanceTracking": false,
-      "collectionMethod": "api",
-      "access": [
-        {
-          "workspace": "myceli.ai",
-          "url": "https://github.com/enterprises/myceli-ai/billing"
-        }
-      ]
+      "collectionMethod": null
+    },
+    {
+      "id": "hellweg",
+      "label": "Hellweg",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "inception",
       "label": "Inception",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "inception",
@@ -1388,6 +1654,7 @@
     {
       "id": "inferenceport",
       "label": "InferencePort",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "inferenceport",
@@ -1424,8 +1691,20 @@
       }
     },
     {
+      "id": "investment",
+      "label": "Investment",
+      "category": "balance_sheet",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "io.net",
       "label": "io.net",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "io-net",
@@ -1452,8 +1731,31 @@
       ]
     },
     {
+      "id": "jasper-schedensack",
+      "label": "Jasper Schedensack",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "joshua-peschke",
+      "label": "Joshua Peschke",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "lambda",
       "label": "Lambda Cloud",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "lambda",
@@ -1484,8 +1786,88 @@
       ]
     },
     {
+      "id": "leik",
+      "label": "Leik",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "llm7.io",
+      "label": "LLM7.io",
+      "category": "revenue_share",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "mentat",
+      "label": "Mentat",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "miles-mobility",
+      "label": "Miles Mobility",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "mistral",
+      "label": "Mistral AI",
+      "category": "compute",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "mistral",
+      "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://admin.mistral.ai/organization/billing",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
+        }
+      ],
+      "modelLabels": {
+        "mistral-ocr": "mistral-ocr"
+      }
+    },
+    {
       "id": "modal",
       "label": "Modal",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "modal",
@@ -1543,43 +1925,66 @@
       }
     },
     {
-      "id": "mistral",
-      "label": "Mistral AI",
-      "meteringBasis": "direct",
+      "id": "namecheap",
+      "label": "Namecheap",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
       "aliases": [],
-      "connector": "mistral",
-      "monthlyReview": true,
-      "activeTo": "2026-08",
-      "accounts": [
-        {
-          "id": "myceli",
-          "label": "Myceli.AI",
-          "aliases": [
-            "default"
-          ],
-          "loginEmail": "elliot@myceli.ai",
-          "activeFrom": "2026-01",
-          "activeTo": "2026-08"
-        }
-      ],
-      "balanceTracking": true,
-      "collectionMethod": "api",
-      "access": [
-        {
-          "workspace": "myceli.ai",
-          "url": "https://admin.mistral.ai/organization/billing",
-          "accountId": "myceli",
-          "loginEmail": "elliot@myceli.ai"
-        }
-      ],
-      "modelLabels": {
-        "mistral-ocr": "mistral-ocr"
-      }
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "naturenergie",
+      "label": "Naturenergie",
+      "category": "office",
+      "runwayLine": "Rent & utilities",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "nebius",
       "label": "Nebius",
+      "category": "compute",
       "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "netlify",
+      "label": "Netlify",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "notion",
+      "label": "Notion",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "noumi",
+      "label": "Noumi",
+      "category": "office",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -1589,6 +1994,16 @@
     {
       "id": "openai",
       "label": "OpenAI",
+      "category": "compute",
+      "cashRules": [
+        {
+          "match": [
+            "chatgpt",
+            "chat gpt"
+          ],
+          "category": "development"
+        }
+      ],
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "openai",
@@ -1628,6 +2043,7 @@
     {
       "id": "openrouter",
       "label": "OpenRouter",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "openrouter",
@@ -1818,6 +2234,7 @@
     {
       "id": "ovhcloud",
       "label": "OVHcloud",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "ovhcloud",
@@ -1869,8 +2286,20 @@
       ]
     },
     {
+      "id": "paypal",
+      "label": "PayPal",
+      "category": "revenue",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "perplexity",
       "label": "Perplexity",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "perplexity",
@@ -1922,6 +2351,7 @@
     {
       "id": "pointsflyer",
       "label": "Pointflyer",
+      "category": "compute",
       "meteringBasis": "internal",
       "aliases": [],
       "connector": null,
@@ -1936,8 +2366,47 @@
       }
     },
     {
+      "id": "polar",
+      "label": "Polar",
+      "category": "admin",
+      "cashRules": [
+        {
+          "match": [
+            "hubben",
+            "self-purchase checkout test"
+          ],
+          "inflow": true,
+          "category": "revenue"
+        },
+        {
+          "match": [
+            "myceli-ai"
+          ],
+          "category": "balance_sheet"
+        }
+      ],
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "protonvpn",
+      "label": "Proton VPN",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "pruna",
       "label": "Pruna AI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "pruna",
@@ -1967,8 +2436,48 @@
       ]
     },
     {
+      "id": "regolo",
+      "label": "Regolo.ai",
+      "category": "compute",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "regolo",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "thomash@pollinations.ai",
+          "label": "Pollinations.ai",
+          "loginEmail": "thomash@pollinations.ai",
+          "activeFrom": "2026-08",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://dashboard.regolo.ai/subscriptions",
+          "accountId": "thomash@pollinations.ai",
+          "loginEmail": "thomash@pollinations.ai"
+        }
+      ]
+    },
+    {
+      "id": "replacement-accountant",
+      "label": "Replacement accountant",
+      "category": "admin",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "replicate",
       "label": "Replicate",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "replicate",
@@ -2064,35 +2573,9 @@
       }
     },
     {
-      "id": "regolo",
-      "label": "Regolo.ai",
-      "meteringBasis": "direct",
-      "aliases": [],
-      "connector": "regolo",
-      "monthlyReview": true,
-      "accounts": [
-        {
-          "id": "thomash@pollinations.ai",
-          "label": "Pollinations.ai",
-          "loginEmail": "thomash@pollinations.ai",
-          "activeFrom": "2026-08",
-          "activeTo": null
-        }
-      ],
-      "balanceTracking": true,
-      "collectionMethod": "dashboard",
-      "access": [
-        {
-          "workspace": "myceli.ai",
-          "url": "https://dashboard.regolo.ai/subscriptions",
-          "accountId": "thomash@pollinations.ai",
-          "loginEmail": "thomash@pollinations.ai"
-        }
-      ]
-    },
-    {
       "id": "retell",
       "label": "Retell AI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "retell",
@@ -2101,8 +2584,31 @@
       "collectionMethod": "dashboard"
     },
     {
+      "id": "roblox",
+      "label": "Roblox",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "rossmann",
+      "label": "Rossmann",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "runpod",
       "label": "RunPod",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [],
       "connector": "runpod",
@@ -2134,6 +2640,7 @@
     {
       "id": "scaleway",
       "label": "Scaleway",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [],
       "connector": "scaleway",
@@ -2174,6 +2681,7 @@
     {
       "id": "self-hosted",
       "label": "Self-hosted",
+      "category": "compute",
       "meteringBasis": "internal",
       "aliases": [],
       "connector": null,
@@ -2184,6 +2692,7 @@
     {
       "id": "self-issued",
       "label": "Self-issued",
+      "category": "balance_sheet",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
@@ -2194,7 +2703,42 @@
     {
       "id": "seraphyn",
       "label": "Seraphyn",
+      "category": "compute",
       "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "slack",
+      "label": "Slack",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "so-lab-x",
+      "label": "So Lab X",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "space-berlin",
+      "label": "Space Berlin",
+      "category": "office",
+      "runwayLine": "Food & drink",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -2204,6 +2748,7 @@
     {
       "id": "stability",
       "label": "Stability AI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "stability",
@@ -2232,8 +2777,76 @@
       ]
     },
     {
+      "id": "stripe",
+      "label": "Stripe",
+      "category": "revenue",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "super",
+      "label": "Super",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "tele2",
+      "label": "Tele2",
+      "category": "operations",
+      "runwayLine": "Telecom",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "telnyx",
+      "label": "Telnyx",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "thomas-haferlach",
+      "label": "Thomas Haferlach",
+      "category": "balance_sheet",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "thot",
+      "label": "Thot",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "tinybird",
       "label": "Tinybird",
+      "category": "infrastructure",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": "tinybird",
@@ -2248,8 +2861,31 @@
       ]
     },
     {
+      "id": "tools",
+      "label": "Tools",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "typeless",
+      "label": "Typeless",
+      "category": "development",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "vast.ai",
       "label": "Vast.ai",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [
         "vast",
@@ -2283,6 +2919,7 @@
     {
       "id": "vercel",
       "label": "Vercel AI Gateway",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "vercel",
@@ -2317,8 +2954,51 @@
       }
     },
     {
+      "id": "windsurf",
+      "label": "Windsurf",
+      "category": "development",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "wise",
+      "label": "Wise",
+      "category": "admin",
+      "cashRules": [
+        {
+          "match": [
+            "cashback"
+          ],
+          "inflow": true,
+          "category": "revenue"
+        }
+      ],
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "wispr",
+      "label": "Wispr",
+      "category": "development",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "xai",
       "label": "xAI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "xai",
@@ -2352,6 +3032,29 @@
         "grok-imagine-video": "grok-video-pro",
         "grok-imagine-video-1.5": "grok-imagine-video-1.5"
       }
+    },
+    {
+      "id": "zara-home",
+      "label": "Zara Home",
+      "category": "office",
+      "runwayLine": "Furniture & equipment",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "zola",
+      "label": "Zola",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     }
   ]
 }

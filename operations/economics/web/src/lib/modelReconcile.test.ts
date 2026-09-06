@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import {
+    assignedSharePct,
     modelReconcileRows,
     modelReconcileSummary,
     visibleModelReconcileRows,
@@ -917,5 +918,29 @@ describe("modelReconcileRows", () => {
         expect(summary.questCashSubsidyUsd).toBe(0);
         expect(summary.netCashContributionUsd).toBe(10);
         expect(summary.pollenOnlyMeterUsd).toBe(10);
+    });
+});
+
+describe("assignedSharePct", () => {
+    it("is the assigned share of every bucket, grouped rows included", () => {
+        expect(
+            assignedSharePct({
+                allocatedUsd: 995,
+                missingBreakdownUsd: 3,
+                needsMappingUsd: 0,
+                providerOnlyUsd: 2,
+            }),
+        ).toBeCloseTo(99.5, 6);
+    });
+
+    it("is null when there is no provider cost to assign", () => {
+        expect(
+            assignedSharePct({
+                allocatedUsd: 0,
+                missingBreakdownUsd: 0,
+                needsMappingUsd: 0,
+                providerOnlyUsd: 0,
+            }),
+        ).toBeNull();
     });
 });

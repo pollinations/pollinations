@@ -307,6 +307,17 @@ function emptyBuckets(): ResidualBuckets {
     };
 }
 
+// Share of a vendor month's cost that a model row owns, grouped rows included.
+export function assignedSharePct(buckets: ResidualBuckets): number | null {
+    const total =
+        buckets.allocatedUsd +
+        buckets.missingBreakdownUsd +
+        buckets.needsMappingUsd +
+        buckets.providerOnlyUsd;
+    if (total <= ACTIVE_USD) return null;
+    return (buckets.allocatedUsd / total) * 100;
+}
+
 export function residualBuckets(
     models: readonly ModelAllocationRow[],
 ): ResidualBuckets {

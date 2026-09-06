@@ -22,7 +22,11 @@ import {
     type GaugePalette,
     GaugeSummary,
 } from "../components/EconomicsGauge";
-import { StatCards, type StatItem } from "../components/StatCards";
+import {
+    StatCards,
+    type StatItem,
+    type StatTone,
+} from "../components/StatCards";
 import {
     type ComputeMode,
     computeModeIndex,
@@ -32,6 +36,7 @@ import {
 } from "../lib/computeModes";
 import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
+    assignedSharePct,
     type ModelReconcileRow,
     type ModelReconcileSummary,
     modelReconcileRows,
@@ -517,8 +522,29 @@ function UnitEconomicsTable({
                 "mixed",
     ).length;
 
+    const assignedPct =
+        view === "inference" ? assignedSharePct(summary.buckets) : null;
     const stats = useMemo<StatItem[]>(
         () => [
+            ...(view === "inference"
+                ? [
+                      {
+                          label: "Assigned to models",
+                          value:
+                              assignedPct == null
+                                  ? "Unknown"
+                                  : fmtUnsignedPct(assignedPct),
+                          tone: (assignedPct == null
+                              ? "base"
+                              : assignedPct >= 99
+                                ? "success"
+                                : assignedPct < 95
+                                  ? "warn"
+                                  : "base") as StatTone,
+                          detail: `${fmtUsd(summary.buckets.allocatedUsd)} of ${fmtUsd(summary.providerUsageUsd)} vendor cost · grouped rows included`,
+                      },
+                  ]
+                : []),
             {
                 label: "Retained Paid",
                 value: fmtUsd(summary.retainedPaidUsd),
@@ -593,11 +619,13 @@ function UnitEconomicsTable({
             currentResultUsd,
             fullCostPerformancePct,
             fullCostResultUsd,
+            assignedPct,
             knownCurrentRows.length,
             knownFullCostRows.length,
             summary,
             unknownCurrentVendorMonths,
             unknownFullCostVendorMonths,
+            view,
         ],
     );
 

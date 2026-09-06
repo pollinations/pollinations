@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { OpPollenRow } from "../types";
 import {
-    canonicalModel,
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
@@ -36,6 +35,41 @@ describe("Tinybird pipe contracts", () => {
 });
 
 describe("loadAll", () => {
+    it("preserves provider ledger model labels while normalizing vendors", async () => {
+        const rows = ["claude-opus-4.5", "claude-opus-4.6", "nova"].map(
+            (model) => ({
+                ...(FIXTURES.economics_compute_ledger_api[0] as Record<
+                    string,
+                    unknown
+                >),
+                vendor: "bedrock",
+                model,
+            }),
+        );
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const pipe = decodeURIComponent(
+                    String(input).split("/").at(-1) ?? "",
+                );
+                return Promise.resolve(
+                    Response.json({
+                        data:
+                            pipe === "economics_compute_ledger_api"
+                                ? rows
+                                : FIXTURES[pipe],
+                    }),
+                );
+            }),
+        );
+
+        const result = await loadAll();
+
+        expect(result.opCloud).toEqual(
+            rows.map((row) => ({ ...row, vendor: "aws" })),
+        );
+    });
+
     it("requires and parses the authenticated private configuration", async () => {
         vi.stubGlobal(
             "fetch",
@@ -79,6 +113,7 @@ describe("loadAll", () => {
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {
         expect(canonicalVendor("vast")).toBe("vast");
+        expect(canonicalVendor("vast.ai")).toBe("vast");
     });
 
     it("joins Bedrock usage to AWS billing", () => {
@@ -93,20 +128,6 @@ describe("canonicalVendor", () => {
 
     it("leaves canonical vendors unchanged", () => {
         expect(canonicalVendor("openai")).toBe("openai");
-    });
-});
-
-describe("canonicalModel", () => {
-    it("joins legacy and promoted model IDs through the shared registry", () => {
-        expect(canonicalModel("nova")).toBe(
-            canonicalModel("amazon/nova-2-lite-v1"),
-        );
-    });
-
-    it("leaves unknown and community model IDs visible", () => {
-        expect(canonicalModel(" Alice/Private-Model ")).toBe(
-            "Alice/Private-Model",
-        );
     });
 });
 
@@ -132,7 +153,19 @@ describe("canonicalPollenRows", () => {
         ...overrides,
     });
 
-    it("aggregates aliases after canonicalization", () => {
+    it("preserves historical model IDs when current routing aliases overlap", () => {
+        const rows = canonicalPollenRows([
+            pollen("bedrock", { model: "claude-opus-4.5" }),
+            pollen("aws", { model: "claude-opus-4.6", requests_paid: 20 }),
+        ]);
+
+        expect(rows).toEqual([
+            pollen("aws", { model: "claude-opus-4.5" }),
+            pollen("aws", { model: "claude-opus-4.6", requests_paid: 20 }),
+        ]);
+    });
+
+    it("aggregates provider aliases for the same recorded model", () => {
         const [row] = canonicalPollenRows([
             pollen("aws"),
             pollen("bedrock", { cost_paid: 10, requests_paid: 20 }),
@@ -147,7 +180,7 @@ describe("canonicalPollenRows", () => {
         });
     });
 
-    it("aggregates model aliases after canonicalization", () => {
+    it("keeps metered model aliases separate", () => {
         const rows = canonicalPollenRows([
             pollen("aws", { model: "nova" }),
             pollen("aws", {
@@ -156,12 +189,13 @@ describe("canonicalPollenRows", () => {
             }),
         ]);
 
-        expect(rows).toHaveLength(1);
-        expect(rows[0]).toMatchObject({
-            model: canonicalModel("nova"),
-            cost_paid: 2,
-            requests_paid: 25,
-        });
+        expect(rows).toEqual([
+            pollen("aws", {
+                model: "amazon/nova-2-lite-v1",
+                requests_paid: 20,
+            }),
+            pollen("aws", { model: "nova" }),
+        ]);
     });
 
     it("removes rows with no values or requests", () => {

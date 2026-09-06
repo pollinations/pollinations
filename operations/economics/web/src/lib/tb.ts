@@ -1,4 +1,3 @@
-import { resolveModelName } from "../../../../../shared/registry/registry";
 import { FIXTURES } from "../fixtures";
 import type {
     Data,
@@ -170,17 +169,6 @@ export function canonicalVendor(vendor: string): string {
     return canonicalProvider(vendor);
 }
 
-export function canonicalModel(model: string): string {
-    const normalized = model.trim();
-    if (!normalized) return normalized;
-    try {
-        return resolveModelName(normalized);
-    } catch {
-        // Preserve unknown, community, and manually attributed workload IDs.
-        return normalized;
-    }
-}
-
 const POLLEN_VALUE_FIELDS = [
     "cost_paid",
     "cost_quests",
@@ -207,7 +195,6 @@ export function canonicalPollenRows(
         const row = {
             ...sourceRow,
             vendor: canonicalVendor(sourceRow.vendor),
-            model: canonicalModel(sourceRow.model),
         };
         if (POLLEN_VALUE_FIELDS.every((field) => Number(row[field]) === 0)) {
             continue;
@@ -251,13 +238,9 @@ export async function loadAll(): Promise<Data> {
     }
     const privateConfig = parsePrivateConfig(privateConfigRows[0]);
 
-    const canonicalizeVendor = <T extends { vendor: string }>(row: T): T => ({
+    const canonicalize = <T extends { vendor: string }>(row: T): T => ({
         ...row,
         vendor: canonicalVendor(row.vendor),
-    });
-    const canonicalizeCloud = (row: OpCloudRow): OpCloudRow => ({
-        ...canonicalizeVendor(row),
-        model: canonicalModel(row.model),
     });
 
     const providerObservations = collectProviderObservations({
@@ -267,8 +250,8 @@ export async function loadAll(): Promise<Data> {
     });
 
     return {
-        opTransactions: opTransactions.map(canonicalizeVendor),
-        opCloud: opCloud.map(canonicalizeCloud),
+        opTransactions: opTransactions.map(canonicalize),
+        opCloud: opCloud.map(canonicalize),
         opPollen: canonicalPollenRows(opPollen),
         providerObservations,
         privateConfig,

@@ -36,9 +36,9 @@ export const Route = createFileRoute("/_dashboard/pollen")({
     loader: () =>
         apiClient.stripe.billing.$get().then((r) => (r.ok ? r.json() : null)),
     pendingComponent: () => (
-        <p role="status" className="text-theme-text-muted">
+        <output className="text-theme-text-muted">
             Loading billing details…
-        </p>
+        </output>
     ),
     component: PollenPage,
 });

@@ -11,7 +11,6 @@ import {
     GlobeIcon,
     Heading,
     IconButton,
-    InfoTip,
     Input,
     MenuIcon,
     NavItem,
@@ -19,6 +18,7 @@ import {
     ScrollArea,
     SproutIcon,
     Text,
+    Tooltip,
     UsageIcon,
     WalletIcon,
     XIcon,
@@ -602,9 +602,22 @@ function InfoItem({ lead, children }: { lead: string; children: ReactNode }) {
 
 function ViewInfo({ children }: { children: ReactNode }) {
     return (
-        <span className="block w-80 max-w-[85vw] space-y-2.5 text-left">
+        <span className="block max-w-full space-y-2.5 text-left">
             {children}
         </span>
+    );
+}
+
+// The one explanatory hover per page: the "i" next to the title. Wider than
+// the default tooltip and clamped to the viewport, since it sits at the
+// right edge of the page.
+function PageTip({ content, label }: { content: ReactNode; label: string }) {
+    return (
+        <Tooltip content={content} ariaLabel={label} maxWidth={380}>
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-theme-border bg-theme-bg-active font-bold text-[10px] text-theme-text-strong leading-none transition-colors hover:bg-theme-bg-hover">
+                i
+            </span>
+        </Tooltip>
     );
 }
 
@@ -1227,7 +1240,7 @@ export default function App() {
                                     {viewTitle}
                                 </Heading>
                                 {viewInfo && (
-                                    <InfoTip
+                                    <PageTip
                                         content={viewInfo}
                                         label={`${viewTitle} info`}
                                     />

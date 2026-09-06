@@ -9,6 +9,8 @@ import { model3dTools } from "./services/model3dService.js";
 import { textTools } from "./services/textService.js";
 import { validateApiBaseUrl } from "./utils/coreUtils.js";
 
+const SERVER_VERSION = "2.5.1";
+
 const tools = [
     ...imageTools,
     ...textTools,
@@ -21,8 +23,7 @@ const tools = [
 
 export { createMcpHandler };
 
-function createServerInstructions(apiBaseUrl, version) {
-    return `# Pollinations MCP Server v${version}
+const SERVER_INSTRUCTIONS = `# Pollinations MCP Server v${SERVER_VERSION}
 
 ## Authentication
 Send a Pollinations API key with every MCP request:
@@ -45,20 +46,16 @@ Pollinations is a live multi-model gateway. Never decide that a requested model 
 - Use getModelStatus for recent health and latency, not model discovery.
 
 ## API Endpoint
-All requests go through: ${apiBaseUrl}`;
-}
+All requests go through: ${validateApiBaseUrl()}`;
 
-export function buildServer({
-    apiBaseUrl = validateApiBaseUrl(),
-    version = "2.5.0",
-} = {}) {
+export function buildServer() {
     const server = new McpServer(
         {
             name: "pollinations-mcp",
-            version,
+            version: SERVER_VERSION,
         },
         {
-            instructions: createServerInstructions(apiBaseUrl, version),
+            instructions: SERVER_INSTRUCTIONS,
             capabilities: {
                 tools: {},
             },

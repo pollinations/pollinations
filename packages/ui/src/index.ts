@@ -12,6 +12,8 @@ export {
 export {
     EditableCombobox,
     type EditableComboboxProps,
+    EditableComboboxToken,
+    type EditableComboboxTokenProps,
 } from "./compositions/EditableCombobox.tsx";
 export {
     ExternalLinkButton,
@@ -53,6 +55,10 @@ export {
     periodBucketKeyToDate,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export {
+    AccountMenu,
+    type AccountMenuProps,
+} from "./modules/account-menu/AccountMenu.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export {
     ButtonGroup,
@@ -81,6 +87,7 @@ export {
     IconButton,
     type IconButtonIntent,
     type IconButtonProps,
+    type IconButtonVariant,
 } from "./primitives/IconButton.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";

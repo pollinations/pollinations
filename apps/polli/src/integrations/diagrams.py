@@ -14,8 +14,8 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import re
 from pathlib import Path
-
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ RENDER_TIMEOUT_MS = 20_000
 MAX_SOURCE_CHARS = 12_000
 
 # Discord renders on dark backgrounds far more often than light ones.
-BACKGROUND = "#1e1f22"
+BACKGROUND = "#0d0d0d"
 
 # Every diagram type Mermaid 11 supports. Listed explicitly so the tool description can
 # name them — an LLM picks a diagram far more reliably when it can see the options.
@@ -69,9 +69,31 @@ _HTML_TEMPLATE = """<!DOCTYPE html>
     <script>
       mermaid.initialize({{
         startOnLoad: true,
-        theme: "dark",
+        theme: "base",
         securityLevel: "strict",
-        fontFamily: "ui-sans-serif, system-ui, sans-serif",
+        fontFamily: "Noto Sans, ui-sans-serif, system-ui, sans-serif",
+        flowchart: {{ curve: "basis", nodeSpacing: 54, rankSpacing: 70, padding: 18 }},
+        sequence: {{ diagramMarginX: 42, diagramMarginY: 28, actorMargin: 72, messageMargin: 42 }},
+        themeVariables: {{
+          background: "#0d0d0d",
+          primaryColor: "#1f232b",
+          primaryTextColor: "#ffffff",
+          primaryBorderColor: "#3987e5",
+          secondaryColor: "#202a27",
+          secondaryTextColor: "#ffffff",
+          secondaryBorderColor: "#199e70",
+          tertiaryColor: "#29231b",
+          tertiaryTextColor: "#ffffff",
+          tertiaryBorderColor: "#c98500",
+          lineColor: "#898781",
+          textColor: "#ffffff",
+          mainBkg: "#1a1a19",
+          nodeBorder: "#3987e5",
+          clusterBkg: "#151515",
+          clusterBorder: "#383835",
+          edgeLabelBackground: "#1a1a19",
+          fontSize: "17px",
+        }},
       }});
     </script>
   </body>
@@ -85,6 +107,16 @@ class DiagramError(RuntimeError):
 def _escape(source: str) -> str:
     """Escape for embedding inside <pre>. Mermaid reads the element's text content."""
     return source.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def diagram_viewport(source: str) -> tuple[int, int]:
+    lines = source.count("\n") + 1
+    nodes = max(source.count("-->"), source.count("---"), source.count("participant")) + 1
+    width = min(1920, max(1100, 900 + nodes * 35))
+    height = min(1080, max(800, 650 + lines * 12))
+    if re.search(r"^\s*(?:flowchart|graph)\s+(?:LR|RL)\b", source, re.MULTILINE):
+        height = min(height, 800)
+    return width, height
 
 
 def detect_diagram_type(source: str) -> str | None:
@@ -101,9 +133,12 @@ def detect_diagram_type(source: str) -> str | None:
     return None
 
 
-async def render_mermaid(source: str, *, width: int = 1100, height: int = 800) -> io.BytesIO:
+async def render_mermaid(source: str, *, width: int | None = None, height: int | None = None) -> io.BytesIO:
     """Render Mermaid source to a PNG."""
     source = source.strip()
+    adaptive_width, adaptive_height = diagram_viewport(source)
+    width = width or adaptive_width
+    height = height or adaptive_height
     if not source:
         raise DiagramError("Diagram source is empty")
     if len(source) > MAX_SOURCE_CHARS:
@@ -138,23 +173,20 @@ async def render_mermaid(source: str, *, width: int = 1100, height: int = 800) -
                     # Mermaid replaces the block with an error graphic on bad syntax, so a
                     # missing <svg> almost always means the source itself is invalid.
                     raise DiagramError(
-                        "Mermaid could not render this diagram — check the syntax for the "
-                        "declared diagram type."
+                        "Mermaid could not render this diagram — check the syntax for the " "declared diagram type."
                     ) from e
 
                 # Invalid syntax doesn't throw — Mermaid swaps in an error graphic that is
                 # still a valid <svg>. Posting that would show users a picture of an error
                 # message, so detect it and report the failure as text instead.
-                error_text = await page.evaluate(
-                    """() => {
+                error_text = await page.evaluate("""() => {
                         const el = document.querySelector('.mermaid');
                         if (!el) return null;
                         const svg = el.querySelector('svg');
                         const isError = (svg && svg.getAttribute('aria-roledescription') === 'error')
                             || !!el.querySelector('.error-icon, .error-text');
                         return isError ? (el.innerText || 'Syntax error').trim() : null;
-                    }"""
-                )
+                    }""")
                 if error_text:
                     first_line = error_text.split("\n")[0]
                     raise DiagramError(f"Invalid Mermaid syntax: {first_line}")

@@ -119,6 +119,7 @@ Only the names are changing. Model behavior and pricing stay the same.
 | Gemini 3.1 Pro Preview | `gemini-large` | `google/gemini-3.1-pro-preview` |
 | Gemini 3.5 Flash Lite | `gemini-flash-lite-3.5` | `google/gemini-3.5-flash-lite` |
 | Gemini 3.7 Flash | `gemini` | `google/gemini-3.7-flash` |
+| Gemini 3.8 Flash | — | `google/gemini-3.8-flash` |
 | Gemini Embedding 2 | `gemini-2` | `google/gemini-embedding-2` |
 | Gemma 4 26B A4B | `gemma` | `google/gemma-4-26b-a4b-it` |
 | Gemma 4 31B | `gemma-4-31b` | `google/gemma-4-31b-it` |

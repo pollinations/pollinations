@@ -1,5 +1,4 @@
 import { signAgentRunToken } from "@shared/auth/agent-run-token.ts";
-import { communityOpenAIBaseUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
     isFreeCommunityEndpoint,
@@ -85,6 +84,33 @@ export async function communityEndpointGatewayContext({
     parentApiKeyId?: string;
 }): Promise<TransformOptions> {
     const { messages: _messages, ...requestDataWithoutMessages } = requestData;
+    const modelConfig = await communityEndpointModelConfig({
+        endpoint,
+        secret,
+        parentRequestId,
+        parentApiKeyId,
+    });
+    return {
+        ...requestDataWithoutMessages,
+        modelConfig,
+        modelDef: modelDefinition,
+        requestedModel: endpoint.modelId,
+        portkeyGatewayUrl,
+        userApiKey,
+    };
+}
+
+export async function communityEndpointModelConfig({
+    endpoint,
+    secret,
+    parentRequestId,
+    parentApiKeyId,
+}: {
+    endpoint: CommunityEndpointRuntime;
+    secret: string;
+    parentRequestId: string;
+    parentApiKeyId?: string;
+}): Promise<Record<string, unknown>> {
     const runToken = await mintDelegatedToken({
         endpoint,
         parentApiKeyId,
@@ -104,16 +130,11 @@ export async function communityEndpointGatewayContext({
     if (!authKey) throw new Error("Agent request has no agent run token");
 
     return {
-        ...requestDataWithoutMessages,
-        modelConfig: {
-            provider: "openai",
-            "custom-host": communityOpenAIBaseUrl(endpoint.baseUrl),
-            authKey,
-            model: endpoint.upstreamModel,
-        },
-        modelDef: modelDefinition,
-        requestedModel: endpoint.modelId,
-        portkeyGatewayUrl,
-        userApiKey,
+        provider: "openai",
+        authKey,
+        model: endpoint.upstreamModel,
+        ...(endpoint.api === "responses"
+            ? { responsesEndpoint: endpoint.baseUrl }
+            : { directEndpoint: endpoint.baseUrl }),
     };
 }

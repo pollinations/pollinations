@@ -1,5 +1,8 @@
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
-import { cleanNullAndUndefined } from "../utils/objectCleaners.js";
+import {
+    cleanNullAndUndefined,
+    isPlainObject,
+} from "../utils/objectCleaners.js";
 import type { DirectResponsesTarget } from "./client.js";
 
 export class ResponsesInvalidRequestError extends Error {
@@ -58,6 +61,17 @@ export function buildDirectResponsesRequestBody(
         store: false,
     };
     delete body.safe;
+
+    const toolChoice = body.tool_choice;
+    if (
+        target.disableReasoningForForcedTools &&
+        (toolChoice === "required" || isPlainObject(toolChoice))
+    ) {
+        body.reasoning = {
+            ...(isPlainObject(body.reasoning) ? body.reasoning : {}),
+            effort: "none",
+        };
+    }
 
     // SDKs often serialize inert state fields. Do not forward them because
     // this endpoint has no Pollinations or provider-side response state.

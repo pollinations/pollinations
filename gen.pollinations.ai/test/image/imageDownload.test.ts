@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     downloadUserImage,
@@ -24,10 +24,10 @@ describe("downloadUserImage", () => {
 
         const error = await downloadUserImage(imageUrl).catch((cause) => cause);
 
-        expect(error).toBeInstanceOf(HttpError);
+        expect(error).toBeInstanceOf(UpstreamError);
         expect(error).toMatchObject({
             status: 400,
-            details: { validation: true },
+            requestUrl: new URL(imageUrl),
             errorCode: "failed_to_download_image",
             message: `Failed to read image ${imageUrl}: Network connection lost`,
         });
@@ -59,7 +59,7 @@ describe("downloadUserImage", () => {
         await expect(downloadUserImage(imageUrl)).rejects.toMatchObject({
             name: "UserImageError",
             status: 400,
-            details: { validation: true },
+            requestUrl: new URL(imageUrl),
             errorCode: "unsupported_image_media_type",
         });
     });

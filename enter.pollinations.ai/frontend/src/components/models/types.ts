@@ -66,6 +66,7 @@ export type ModelPrice = {
     brandUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
+    supportedEndpoints?: string[];
     capabilities: ModelCapability[];
     paidOnly?: boolean;
     free?: boolean;

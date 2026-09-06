@@ -7,8 +7,13 @@ import * as identity from "./groups/identity.ts";
 import * as modelUsage from "./groups/model-usage.ts";
 import type { QuestCard, QuestEvaluationContext, QuestGroup } from "./types.ts";
 
+export const ACCOUNT_SETUP_QUEST_GROUP: QuestGroup = {
+    id: "account-setup",
+    ...accountSetup,
+};
+
 export const QUEST_GROUPS: QuestGroup[] = [
-    { id: "account-setup", ...accountSetup },
+    ACCOUNT_SETUP_QUEST_GROUP,
     { id: "app-growth", ...appGrowth },
     { id: "discord-community", ...discordCommunity },
     { id: "model-usage", ...modelUsage },

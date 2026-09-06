@@ -19,6 +19,8 @@ test("manages connected apps through the authenticated account", async ({
             {
                 id: "ca_test",
                 toolkit: "github",
+                name: "GitHub",
+                logo: "https://logos.composio.test/github",
                 status: "ACTIVE",
             },
         ],

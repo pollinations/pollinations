@@ -1,7 +1,8 @@
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import debug from "debug";
 import { Hono } from "hono";
-import { describeRoute } from "hono-openapi";
+import { describeRoute, resolver } from "hono-openapi";
+import { z } from "zod";
 import type { Env } from "@/env.ts";
 
 const log = debug("pollinations:model-status");
@@ -17,11 +18,42 @@ const MAX_MINUTES = 7 * 24 * 60;
 const DATA_TIMESTAMP_HEADER = "X-Model-Status-Timestamp";
 const STALE_HEADER = "X-Model-Status-Stale";
 
-type ModelHealthResponse = {
-    data: unknown[];
-    meta?: unknown;
-    [key: string]: unknown;
-};
+const ModelHealthRowSchema = z.object({
+    model: z.string(),
+    event_type: z.string(),
+    provider: z.string(),
+    model_used: z.string(),
+    total_requests: z.number().int().nonnegative(),
+    status_2xx: z.number().int().nonnegative(),
+    errors_4xx: z.number().int().nonnegative(),
+    errors_5xx: z.number().int().nonnegative(),
+    own_calls: z.number().int().nonnegative(),
+    own_calls_ok: z.number().int().nonnegative(),
+    primary_5xx: z.number().int().nonnegative(),
+    primary_retried_503s: z.number().int().nonnegative(),
+    fallback_rescues: z.number().int().nonnegative(),
+    last_error_at: z.string(),
+    latency_p50_ms: z.number().nonnegative().nullable(),
+    latency_p95_ms: z.number().nonnegative().nullable(),
+    avg_latency_ms: z.number().nonnegative().nullable(),
+    last_request_at: z.string(),
+    tokens_per_second: z.number().nonnegative().nullable(),
+});
+
+const ModelHealthResponseSchema = z.object({
+    data: z.array(ModelHealthRowSchema),
+    meta: z.array(z.object({ name: z.string(), type: z.string() })).optional(),
+    rows: z.number().int().nonnegative().optional(),
+    statistics: z
+        .object({
+            elapsed: z.number().nonnegative(),
+            rows_read: z.number().int().nonnegative(),
+            bytes_read: z.number().int().nonnegative(),
+        })
+        .optional(),
+});
+
+type ModelHealthResponse = z.infer<typeof ModelHealthResponseSchema>;
 
 type CacheEntry = { data: ModelHealthResponse; timestamp: number };
 
@@ -57,16 +89,34 @@ export const modelStatusRoutes = new Hono<Env>().get(
             "The optional `minutes` query parameter controls the rolling window and must be an integer between 1 and 10080.",
             `The ${DATA_TIMESTAMP_HEADER} response header reports when the data was fetched from Tinybird; ${STALE_HEADER} is set when stale data is returned during an upstream failure.`,
         ].join("\n"),
+        parameters: [
+            {
+                name: "minutes",
+                in: "query",
+                required: false,
+                description: `Rolling window in minutes (default ${DEFAULT_MINUTES}, maximum ${MAX_MINUTES}).`,
+                schema: {
+                    type: "integer",
+                    minimum: 1,
+                    maximum: MAX_MINUTES,
+                    default: DEFAULT_MINUTES,
+                },
+            },
+            {
+                name: "format",
+                in: "query",
+                required: false,
+                description:
+                    "Optional compatibility parameter. Only `raw` is accepted.",
+                schema: { type: "string", enum: ["raw"] },
+            },
+        ],
         responses: {
             200: {
                 description: "Success",
                 content: {
                     "application/json": {
-                        schema: {
-                            type: "object",
-                            description:
-                                "Tinybird response containing raw model health rows.",
-                        },
+                        schema: resolver(ModelHealthResponseSchema),
                     },
                 },
             },

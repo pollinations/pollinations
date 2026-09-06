@@ -1,6 +1,6 @@
 import { normalizeCommunityAssetUrl } from "./community-endpoint-urls.ts";
 import { COMMUNITY_ENDPOINT_TIMEOUT_MS } from "./community-endpoints.ts";
-import { HttpError } from "./http-error.ts";
+import { UpstreamError } from "./error.ts";
 import { readResponseBytes } from "./response-bytes.ts";
 
 export const MAX_COMMUNITY_IMAGE_BYTES = 20 * 1024 * 1024;
@@ -17,7 +17,7 @@ export const MAX_COMMUNITY_MEDIA_RESPONSE_BYTES =
  *
  * Returns null when the body carries no usable image, so each caller can
  * phrase that in its own words. A URL that is unsafe, unreachable, or oversized
- * throws HttpError(502) — the gen funnel renders that status directly, and the
+ * throws UpstreamError(502) — the gen funnel renders that status directly, and the
  * enter probe flattens it to a 400 with the same message.
  */
 export async function firstCommunityImageBytes(
@@ -84,12 +84,16 @@ export async function firstCommunityVideoBytes(
                 video.b64_json.length >
                 Math.ceil((MAX_COMMUNITY_VIDEO_BYTES * 4) / 3) + 128
             ) {
-                throw new HttpError("Endpoint video is larger than 20 MB", 502);
+                throw UpstreamError.fromProvider(502, {
+                    message: "Endpoint video is larger than 20 MB",
+                });
             }
             const bytes = decodeCommunityBase64(video.b64_json);
             if (!bytes) continue;
             if (bytes.byteLength > MAX_COMMUNITY_VIDEO_BYTES) {
-                throw new HttpError("Endpoint video is larger than 20 MB", 502);
+                throw UpstreamError.fromProvider(502, {
+                    message: "Endpoint video is larger than 20 MB",
+                });
             }
             return bytes;
         }
@@ -133,25 +137,26 @@ async function fetchCommunityImageBytes(
             signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
-        throw new HttpError(
-            "Endpoint image URL timed out or could not connect",
-            502,
-            { error: error instanceof Error ? error.message : String(error) },
-            url,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "Endpoint image URL timed out or could not connect",
+            responseBody: JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+            }),
+            requestUrl: new URL(url),
+        });
     }
     if (!response.ok) {
-        throw new HttpError(
-            `Endpoint image URL responded ${response.status}`,
-            502,
-            undefined,
-            url,
-        );
+        throw new UpstreamError(502, {
+            message: `Endpoint image URL responded ${response.status}`,
+            upstreamStatus: response.status,
+            responseBody: await response.text().catch(() => undefined),
+            requestUrl: new URL(url),
+        });
     }
-    return readResponseBytes(
-        response,
-        MAX_COMMUNITY_IMAGE_BYTES,
-        () => new HttpError("Endpoint image is larger than 20 MB", 502),
+    return readResponseBytes(response, MAX_COMMUNITY_IMAGE_BYTES, () =>
+        UpstreamError.fromProvider(502, {
+            message: "Endpoint image is larger than 20 MB",
+        }),
     );
 }
 
@@ -167,31 +172,38 @@ async function fetchCommunityVideoBytes(
             signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
-        throw new HttpError(
-            "Endpoint video URL timed out or could not connect",
-            502,
-            { error: error instanceof Error ? error.message : String(error) },
-            url,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "Endpoint video URL timed out or could not connect",
+            responseBody: JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+            }),
+            requestUrl: new URL(url),
+        });
     }
     if (!response.ok) {
-        throw new HttpError(
-            `Endpoint video URL responded ${response.status}`,
-            502,
-            undefined,
-            url,
-        );
+        throw new UpstreamError(502, {
+            message: `Endpoint video URL responded ${response.status}`,
+            upstreamStatus: response.status,
+            responseBody: await response.text().catch(() => undefined),
+            requestUrl: new URL(url),
+        });
     }
     try {
         return await readResponseBytes(
             response,
             MAX_COMMUNITY_VIDEO_BYTES,
-            () => new HttpError("Endpoint video is larger than 20 MB", 502),
+            () =>
+                UpstreamError.fromProvider(502, {
+                    message: "Endpoint video is larger than 20 MB",
+                }),
         );
     } catch (error) {
-        if (error instanceof HttpError) throw error;
-        throw new HttpError("Endpoint video could not be read", 502, {
-            error: error instanceof Error ? error.message : String(error),
+        if (error instanceof UpstreamError) throw error;
+        throw UpstreamError.fromProvider(502, {
+            message: "Endpoint video could not be read",
+            responseBody: JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+            }),
         });
     }
 }
@@ -204,6 +216,8 @@ function safeCommunityAssetUrl(
     try {
         return normalizeCommunityAssetUrl(value, endpointBaseUrl);
     } catch {
-        throw new HttpError(`Endpoint returned an unsafe ${kind} URL`, 502);
+        throw UpstreamError.fromProvider(502, {
+            message: `Endpoint returned an unsafe ${kind} URL`,
+        });
     }
 }

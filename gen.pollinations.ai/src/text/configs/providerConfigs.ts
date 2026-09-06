@@ -1,3 +1,5 @@
+import { textEnvironmentValue } from "../environment.js";
+
 // =============================================================================
 // Shared Types
 // =============================================================================
@@ -70,14 +72,12 @@ export function createAzureModelConfig(
 export function createAzureResponsesModelConfig(
     apiKey: string | undefined,
     endpoint: string,
-    responsesApiKeyBinding: string,
     overrides: ModelOverride = {},
 ): ProviderConfig {
     const { resourceName } = parseAzureEndpoint(endpoint);
     return createAzureModelConfig(apiKey, endpoint, {
         responsesEndpoint: `https://${resourceName}.openai.azure.com/openai/v1/responses`,
         responsesAuthHeader: "api-key",
-        responsesApiKeyBinding,
         ...overrides,
     });
 }
@@ -99,11 +99,10 @@ export function createFireworksModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://api.fireworks.ai/inference/v1",
-        process.env.FIREWORKS_NEO_API_KEY,
+        textEnvironmentValue("FIREWORKS_NEO_API_KEY"),
         {
             responsesEndpoint:
                 "https://api.fireworks.ai/inference/v1/responses",
-            responsesApiKeyBinding: "FIREWORKS_NEO_API_KEY",
             ...overrides,
         },
     );
@@ -126,8 +125,7 @@ export function createOpenRouterModelConfig(
         provider: "openrouter",
         directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
         responsesEndpoint: "https://openrouter.ai/api/v1/responses",
-        responsesApiKeyBinding: "OPENROUTER_API_KEY",
-        authKey: process.env.OPENROUTER_API_KEY,
+        authKey: textEnvironmentValue("OPENROUTER_API_KEY"),
         ...overrides,
     };
 }
@@ -149,10 +147,9 @@ export function createVercelAIGatewayModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://ai-gateway.vercel.sh/v1",
-        process.env.AI_GATEWAY_API_KEY,
+        textEnvironmentValue("AI_GATEWAY_API_KEY"),
         {
             responsesEndpoint: "https://ai-gateway.vercel.sh/v1/responses",
-            responsesApiKeyBinding: "AI_GATEWAY_API_KEY",
             ...overrides,
         },
     );
@@ -173,7 +170,7 @@ export function createOVHcloudModelConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net/api/openai_compat/v1",
-        process.env.OVHCLOUD_API_KEY,
+        textEnvironmentValue("OVHCLOUD_API_KEY"),
         overrides,
     );
 }
@@ -183,7 +180,7 @@ export function createOVHcloudOAIConfig(
 ): ProviderConfig {
     return createOpenAICompatibleConfig(
         "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1",
-        process.env.OVHCLOUD_API_KEY,
+        textEnvironmentValue("OVHCLOUD_API_KEY"),
         overrides,
     );
 }

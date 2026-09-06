@@ -95,11 +95,12 @@ describe("model categories", () => {
         ]);
     });
 
-    it("defaults to community models and accepts categories independently", () => {
-        expect(validateModelSearch({ scope: "community" })).toEqual({
-            scope: undefined,
+    it("accepts categories independently of the model query", () => {
+        expect(validateModelSearch({})).toEqual({
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: undefined,
         });
         for (const category of [
@@ -112,21 +113,35 @@ describe("model categories", () => {
         ] as const) {
             expect(validateModelSearch({ category }).category).toBe(category);
         }
-        expect(
-            validateModelSearch({ scope: "pollinations", category: "image" }),
-        ).toEqual({
-            scope: "pollinations",
+        expect(validateModelSearch({ category: "image" })).toEqual({
             category: "image",
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
+            sort: undefined,
+        });
+        expect(
+            validateModelSearch({
+                category: "agent",
+                q: "source:community",
+                agentQ: "capability:tool-calling",
+                mcpQ: "github",
+            }),
+        ).toEqual({
+            category: "agent",
+            q: "source:community",
+            agentQ: "capability:tool-calling",
+            mcpQ: "github",
             sort: undefined,
         });
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
         expect(validateModelSearch({ sort: "brand" })).toEqual({
-            scope: undefined,
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: "brand",
         });
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
@@ -137,15 +152,17 @@ describe("model categories", () => {
             "brand-desc",
         );
         expect(validateModelSearch({ sort: "recommended" })).toEqual({
-            scope: undefined,
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: undefined,
         });
         expect(validateModelSearch({ sort: "newest" })).toEqual({
-            scope: undefined,
             category: undefined,
             q: undefined,
+            agentQ: undefined,
+            mcpQ: undefined,
             sort: "newest",
         });
     });
@@ -153,5 +170,11 @@ describe("model categories", () => {
     it("trims model search queries and drops whitespace-only values", () => {
         expect(validateModelSearch({ q: "  flux  " }).q).toBe("flux");
         expect(validateModelSearch({ q: "   " }).q).toBeUndefined();
+        expect(validateModelSearch({ q: " source:community " }).q).toBe(
+            "source:community",
+        );
+        expect(
+            validateModelSearch({ agentQ: " capability:agent ", mcpQ: "  " }),
+        ).toMatchObject({ agentQ: "capability:agent", mcpQ: undefined });
     });
 });

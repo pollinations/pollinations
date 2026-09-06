@@ -10,10 +10,17 @@ import {
     type DirectResponsesTarget,
     resolveDirectResponsesTarget,
 } from "@/text/responses/client.ts";
-import { validateDirectResponsesRequest } from "@/text/responses/request.ts";
-import { createResponsesStreamUsageValidator } from "@/text/responses/stream.ts";
+import {
+    buildDirectResponsesRequestBody,
+    validateDirectResponsesRequest,
+} from "@/text/responses/request.ts";
+import {
+    createResponsesStreamUsageValidator,
+    requireResponsesStreamUsage,
+} from "@/text/responses/stream.ts";
 import {
     getResponsesEventUsage,
+    isResponsesFailure,
     normalizeResponsesTerminalEvent,
 } from "@/text/responses/tracking.ts";
 
@@ -45,6 +52,31 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("preserves the complete raw provider error envelope", async () => {
+        const directRequest = request();
+        const body = JSON.stringify(
+            {
+                error: { message: "Rate limited" },
+                token: "test-only",
+                trace: "x".repeat(20000),
+            },
+            null,
+            2,
+        );
+        const fetcher = vi.fn(async () => new Response(body, { status: 429 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                authorizedTarget(directRequest),
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+    });
+
     it.each([
         ["store", { store: true }],
         ["previous_response_id", { previous_response_id: "resp_previous" }],
@@ -129,6 +161,30 @@ describe("direct Responses transport", () => {
         ).toBeNull();
     });
 
+    it.each([
+        ["required", "required", "none"],
+        ["function object", { type: "function", name: "lookup" }, "none"],
+        ["auto", "auto", "high"],
+    ])("normalizes Qwen3.8 Max 0902 reasoning for %s tool choice", (_label, toolChoice, expectedEffort) => {
+        const directRequest = request({
+            model: "qwen/qwen3.8-max-0902",
+            reasoning: { effort: "high" },
+            tool_choice: toolChoice,
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected direct target");
+
+        expect(
+            buildDirectResponsesRequestBody(directRequest, target),
+        ).toMatchObject({
+            reasoning: { effort: expectedEffort },
+            tool_choice: toolChoice,
+        });
+    });
+
     it("passes Responses JSON directly with only target resolution and defaults", async () => {
         const body = {
             id: "resp_test",
@@ -152,6 +208,7 @@ describe("direct Responses transport", () => {
                     input: "Hello",
                     store: false,
                     max_output_tokens: 64000,
+                    max_tool_calls: 4,
                     provider: { sort: "price" },
                     tools: [
                         {
@@ -166,10 +223,12 @@ describe("direct Responses transport", () => {
                     "Bearer openrouter-test-key",
                 );
                 expect(init?.signal).toBeUndefined();
+                expect(init?.redirect).toBe("manual");
                 return Response.json(body);
             },
         );
         const directRequest = request({
+            max_tool_calls: 4,
             tools: [
                 {
                     type: "function",
@@ -197,6 +256,19 @@ describe("direct Responses transport", () => {
                 output: [],
             }),
         ).toThrow();
+    });
+
+    it("accepts a failed Responses envelope with null usage", () => {
+        expect(
+            CreateResponseResponseSchema.parse({
+                id: "resp_failed",
+                object: "response",
+                model: "qwen/qwen3.7-plus",
+                status: "failed",
+                output: [],
+                usage: null,
+            }),
+        ).toMatchObject({ status: "failed", usage: null });
     });
 
     it("rejects malformed usage detail fields consumed by billing", () => {
@@ -252,6 +324,46 @@ describe("direct Responses transport", () => {
         );
     });
 
+    it("accepts an explicit error as a terminal unbillable stream outcome", () => {
+        const validator = createResponsesStreamUsageValidator();
+        const error = { type: "error", code: "agent_error", message: "failed" };
+        validator.feed(
+            encoder.encode(`event: error\ndata: ${JSON.stringify(error)}\n\n`),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+        expect(isResponsesFailure(error)).toBe(true);
+    });
+
+    it("continues event numbering when missing usage fails a stream", async () => {
+        const source = new Response(
+            'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"partial","sequence_number":7}\n\n',
+        ).body as ReadableStream<Uint8Array<ArrayBuffer>>;
+        const output = await new Response(
+            requireResponsesStreamUsage(source),
+        ).text();
+        expect(output).toContain('"sequence_number":8');
+        expect(output).toContain('"code":"usage_missing"');
+        expect(output).not.toContain("[DONE]");
+    });
+
+    it("accepts response.failed with null usage as an unbillable outcome", () => {
+        const validator = createResponsesStreamUsageValidator();
+        const failed = {
+            type: "response.failed",
+            response: { status: "failed", usage: null },
+        };
+        validator.feed(
+            encoder.encode(
+                `event: response.failed\ndata: ${JSON.stringify(failed)}\n\n`,
+            ),
+        );
+
+        expect(() => validator.finish()).not.toThrow();
+        expect(isResponsesFailure(failed)).toBe(true);
+        expect(getResponsesEventUsage(failed)).toBeNull();
+    });
+
     it("normalizes terminal type from the SSE event field for tracking", () => {
         const event = normalizeResponsesTerminalEvent(
             {
@@ -269,6 +381,7 @@ describe("direct Responses transport", () => {
 
         expect(getResponsesEventUsage(event)).toEqual({
             model: "qwen/qwen3.7-plus",
+            hasExplicitCacheHit: false,
             usage: expect.objectContaining({
                 promptTextTokens: 2,
                 completionTextTokens: 1,

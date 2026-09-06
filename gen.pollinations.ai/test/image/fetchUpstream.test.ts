@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchUpstream } from "../../src/image/utils/fetchUpstream.ts";
 
@@ -7,6 +7,48 @@ afterEach(() => {
 });
 
 describe("fetchUpstream", () => {
+    it("keeps a malformed provider output URL as a retryable upstream failure", async () => {
+        const cause = new TypeError("Invalid URL");
+        const fetcher = vi.fn(async () => {
+            throw cause;
+        });
+        await expect(
+            fetchUpstream("not-a-url", {}, fetcher),
+        ).rejects.toMatchObject({
+            name: "UpstreamError",
+            status: 502,
+            upstreamStatus: 502,
+            requestUrl: undefined,
+            message: "Upstream request failed: Invalid URL",
+            cause,
+        });
+    });
+
+    it("retains the status and URL when reading the provider error body fails", async () => {
+        const cause = new TypeError(
+            "Network connection lost while reading error body",
+        );
+        const response = new Response(
+            new ReadableStream({
+                start(controller) {
+                    controller.error(cause);
+                },
+            }),
+            { status: 503, headers: { "x-request-id": "provider-request" } },
+        );
+        const fetcher = vi.fn(async () => response);
+        await expect(
+            fetchUpstream("https://provider.test/generate", {}, fetcher),
+        ).rejects.toMatchObject({
+            status: 503,
+            upstreamStatus: 503,
+            requestUrl: new URL("https://provider.test/generate"),
+            upstreamHeaders: { "x-request-id": "provider-request" },
+            message: cause.message,
+            cause,
+        });
+    });
+
     it("returns the response unchanged on 2xx", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response('{"ok":true}', { status: 200 }),
@@ -35,7 +77,7 @@ describe("fetchUpstream", () => {
         expect(await response.text()).toBe("vpc");
     });
 
-    it("throws HttpError with upstreamUrl populated on non-ok response", async () => {
+    it("preserves the provider body and request URL on non-ok response", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             new Response("backend exploded", { status: 502 }),
         );
@@ -44,16 +86,18 @@ describe("fetchUpstream", () => {
         const error = await fetchUpstream(url, {
             errorLabel: "Foo failed",
         }).catch((e) => e);
-        expect(error).toBeInstanceOf(HttpError);
+        expect(error).toBeInstanceOf(UpstreamError);
         expect(error).toMatchObject({
-            name: "HttpError",
+            name: "UpstreamError",
             status: 502,
-            upstreamUrl: url,
-            message: "Foo failed: backend exploded",
+            requestUrl: new URL(url),
+            upstreamStatus: 502,
+            responseBody: "backend exploded",
+            message: "backend exploded",
         });
     });
 
-    it("throws HttpError with upstreamUrl when fetch itself rejects", async () => {
+    it("keeps the request URL when fetch itself rejects", async () => {
         vi.spyOn(globalThis, "fetch").mockRejectedValue(
             new TypeError("Network connection lost"),
         );
@@ -62,9 +106,9 @@ describe("fetchUpstream", () => {
         await expect(
             fetchUpstream(url, { errorLabel: "Failed to download output" }),
         ).rejects.toMatchObject({
-            name: "HttpError",
+            name: "UpstreamError",
             status: 502,
-            upstreamUrl: url,
+            requestUrl: new URL(url),
             message: "Failed to download output: Network connection lost",
         });
     });
@@ -77,7 +121,8 @@ describe("fetchUpstream", () => {
         await expect(
             fetchUpstream("https://example.com/api"),
         ).rejects.toMatchObject({
-            message: "Upstream request failed",
+            message:
+                "We're temporarily down for maintenance. Sorry about that!",
             status: 503,
         });
     });

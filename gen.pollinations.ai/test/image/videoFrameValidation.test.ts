@@ -23,6 +23,7 @@ const VIDEO_FRAME_LIMITS = [
     ["wan-fal", 1],
     ["wan-3.0", 2],
     ["wan-fast", 2],
+    ["wan-fast-fal", 2],
     ["wan-pro", 2],
     ["grok-video-pro", 1],
     ["grok-video-pro-fal", 1],
@@ -31,6 +32,7 @@ const VIDEO_FRAME_LIMITS = [
     ["seedance-2.5", 2],
     ["happyhorse-1.1", 1],
     ["minimax-h3", 0],
+    ["minimax/minimax-h3-max-turbo", 2],
     ["p-video", 1],
     ["nova-reel", 1],
 ] as const satisfies readonly (readonly [ImageModelName, number])[];

@@ -1,6 +1,7 @@
 import type { Usage } from "@shared/registry/registry.ts";
 import {
     buildUsageHeaders,
+    hasExplicitPromptCacheHit,
     openaiUsageToUsage,
     parseUsageHeaders,
     responsesUsageToUsage,
@@ -73,6 +74,30 @@ describe("buildUsageHeaders", () => {
     });
 });
 
+describe("hasExplicitPromptCacheHit", () => {
+    it("recognizes Alibaba chat and Responses explicit-cache hits", () => {
+        expect(
+            hasExplicitPromptCacheHit({
+                prompt_tokens_details: { cache_type: "ephemeral" },
+            }),
+        ).toBe(true);
+        expect(
+            hasExplicitPromptCacheHit({
+                input_tokens_details: { cache_type: "ephemeral" },
+            }),
+        ).toBe(true);
+    });
+
+    it("does not treat an explicit-cache request or implicit hit as a hit", () => {
+        expect(
+            hasExplicitPromptCacheHit({
+                prompt_tokens_details: { cache_type: "implicit" },
+            }),
+        ).toBe(false);
+        expect(hasExplicitPromptCacheHit({ cached_tokens: 100 })).toBe(false);
+    });
+});
+
 describe("openaiUsageToUsage", () => {
     it("should convert basic OpenAI usage format", () => {
         const openaiUsage = {
@@ -138,6 +163,23 @@ describe("openaiUsageToUsage", () => {
         expect(usage.promptCacheWriteTokens).toBe(8584);
         expect(usage.promptCachedTokens).toBe(0);
         expect(usage.completionTextTokens).toBe(8);
+    });
+
+    it("should handle Alibaba nested cache creation tokens", () => {
+        const usage = openaiUsageToUsage({
+            prompt_tokens: 2719,
+            completion_tokens: 5,
+            total_tokens: 2724,
+            prompt_tokens_details: {
+                cached_tokens: 0,
+                cache_creation_input_tokens: 2704,
+            },
+        });
+
+        expect(usage.promptTextTokens).toBe(15);
+        expect(usage.promptCacheWriteTokens).toBe(2704);
+        expect(usage.promptCachedTokens).toBe(0);
+        expect(usage.completionTextTokens).toBe(5);
     });
 
     it("should handle reasoning tokens in completion_tokens_details", () => {

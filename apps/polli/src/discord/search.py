@@ -1,11 +1,13 @@
+import asyncio
 import logging
 from typing import Any
 
 import aiohttp
+
 import discord
 
-from ..utils.regex import re
 from ..core.config import config
+from ..utils.regex import re
 
 logger = logging.getLogger(__name__)
 
@@ -30,12 +32,35 @@ def parse_discord_mentions(text: str) -> dict[str, list[int]]:
     return result
 
 
-DISCORD_API_BASE = "https://discord.com/api/v10"
+SEARCH_RETRIES = 3
+SEARCH_CONCURRENCY = 2
+
+
+def _is_private_thread(thread) -> bool:
+    return getattr(thread, "type", None) in {discord.ChannelType.private_thread, "private_thread"}
+
+
+def _thread_is_accessible(thread, member) -> bool:
+    if member is None:
+        return (
+            not _is_private_thread(thread)
+            and bool(thread.permissions_for(thread.guild.default_role).view_channel)
+            and bool(getattr(thread.permissions_for(thread.guild.default_role), "read_message_history", False))
+            if getattr(thread, "guild", None)
+            else not _is_private_thread(thread)
+        )
+    permissions = thread.permissions_for(member)
+    if not permissions.view_channel or not getattr(permissions, "read_message_history", False):
+        return False
+    if not _is_private_thread(thread) or permissions.manage_threads:
+        return True
+    return any(getattr(candidate, "id", None) == member.id for candidate in getattr(thread, "members", []))
 
 
 class DiscordSearchClient:
     def __init__(self):
         self._session: aiohttp.ClientSession | None = None
+        self._search_slots = __import__("asyncio").Semaphore(SEARCH_CONCURRENCY)
 
     @property
     def headers(self) -> dict:
@@ -74,8 +99,6 @@ class DiscordSearchClient:
         offset: int = 0,
         accessible_channel_ids: set | None = None,
     ) -> dict[str, Any]:
-        import asyncio
-
         session = await self.get_session()
         params = {"content": query[:1024]}
         if channel_id:
@@ -108,56 +131,80 @@ class DiscordSearchClient:
             params["limit"] = min(limit, 25)
         if offset:
             params["offset"] = min(offset, 9975)
-        params["include_nsfw"] = "true"
-        url = f"{DISCORD_API_BASE}/guilds/{guild_id}/messages/search"
-        max_retries = 3
-        for attempt in range(max_retries):
+        params["include_nsfw"] = "false"
+        url = f"{config.discord.api_base}/guilds/{guild_id}/messages/search"
+        for attempt in range(SEARCH_RETRIES):
             try:
-                async with session.get(url, headers=self.headers, params=params) as resp:
-                    if resp.status == 200:
-                        data = await resp.json()
-                        messages = self._format_messages(data.get("messages", []))
-                        total_results = data.get("total_results", len(messages))
-                        if accessible_channel_ids is not None:
-                            original_count = len(messages)
-                            messages = [m for m in messages if int(m.get("channel_id", 0)) in accessible_channel_ids]
-                            filtered_count = original_count - len(messages)
-                            if filtered_count > 0:
-                                logger.info(f"SECURITY: Filtered {filtered_count} messages from private channels")
-                        return {
-                            "success": True,
-                            "total_results": total_results,
-                            "returned": len(messages),
-                            "offset": offset,
-                            "messages": messages,
-                        }
-                    elif resp.status == 202:
-                        retry_after = 2
-                        try:
-                            data = await resp.json()
-                            retry_after = data.get("retry_after", 2)
-                        except Exception:
-                            pass
-                        if attempt < max_retries - 1:
-                            logger.info(f"Search index not ready, retrying in {retry_after}s...")
-                            await asyncio.sleep(retry_after)
-                            continue
-                        return {"error": "Search index not ready. Try again in a few seconds."}
-                    elif resp.status == 403:
-                        return {"error": "Bot doesn't have permission to search messages in this guild"}
-                    elif resp.status == 429:
-                        retry_after = resp.headers.get("Retry-After", "unknown")
-                        return {"error": f"Rate limited. Retry after {retry_after} seconds"}
-                    else:
+                async with self._search_slots:
+                    async with session.get(url, headers=self.headers, params=params) as resp:
+                        if resp.status == 200:
+                            try:
+                                data = await resp.json()
+                            except (aiohttp.ContentTypeError, ValueError):
+                                return {"error": "Discord search returned an invalid response."}
+                            raw_messages = data.get("messages")
+                            if not isinstance(raw_messages, list):
+                                return {"error": "Discord search returned an invalid response."}
+                            messages = self._format_messages(raw_messages, guild_id)
+                            if accessible_channel_ids is not None:
+                                original_count = len(messages)
+                                messages = [
+                                    message
+                                    for message in messages
+                                    if int(message.get("channel_id", 0)) in accessible_channel_ids
+                                ]
+                                filtered_count = original_count - len(messages)
+                                if filtered_count:
+                                    logger.info("SECURITY: Filtered %s inaccessible messages", filtered_count)
+                            return {
+                                "success": True,
+                                "returned": len(messages),
+                                "has_more": (
+                                    bool(data.get("total_results", 0) > offset + min(limit, 25))
+                                    if accessible_channel_ids is None
+                                    else None
+                                ),
+                                "messages": messages,
+                                "scope": {
+                                    "guild_id": str(guild_id),
+                                    "channel_id": str(channel_id) if channel_id else None,
+                                },
+                                **(
+                                    {
+                                        "note": "No accessible indexed matches were returned for these filters. This is not proof that a message does not exist; recent messages may not be indexed yet. Verify the channel/thread and use bounded history for recent messages."
+                                    }
+                                    if not messages
+                                    else {}
+                                ),
+                            }
+                        if resp.status in (202, 429):
+                            retry_after = 2.0
+                            try:
+                                data = await resp.json()
+                                retry_after = float(data.get("retry_after", retry_after))
+                            except Exception:
+                                header = resp.headers.get("Retry-After")
+                                retry_after = float(header) if header else retry_after
+                            if attempt < SEARCH_RETRIES - 1 and 0 <= retry_after <= 30:
+                                await asyncio.sleep(retry_after)
+                                continue
+                            return {"error": "Discord search is temporarily unavailable; retry shortly."}
+                        if resp.status == 403:
+                            return {"error": "Bot doesn't have permission to search messages in this guild"}
                         text = await resp.text()
-                        logger.error(f"Message search failed: {resp.status} - {text}")
+                        logger.error("Message search failed: %s - %s", resp.status, text)
                         return {"error": f"Search failed: {resp.status}"}
-            except Exception as e:
-                logger.error(f"Message search error: {e}")
-                return {"error": str(e)}
+            except asyncio.CancelledError:
+                raise
+            except (aiohttp.ClientError, TimeoutError) as error:
+                logger.warning("Discord message search request failed: %s", type(error).__name__)
+                return {"error": "Discord search is temporarily unavailable; retry shortly."}
+            except Exception as error:
+                logger.exception("Unexpected Discord message search failure: %s", type(error).__name__)
+                return {"error": "Discord search failed unexpectedly."}
         return {"error": "Search failed after retries"}
 
-    def _format_messages(self, messages: list[list[dict]]) -> list[dict]:
+    def _format_messages(self, messages: list[list[dict]], guild_id: int) -> list[dict]:
         formatted = []
         for msg_group in messages:
             for msg in msg_group:
@@ -171,10 +218,22 @@ class DiscordSearchClient:
                         "timestamp": msg.get("timestamp"),
                         "attachments": len(msg.get("attachments", [])),
                         "embeds": len(msg.get("embeds", [])),
-                        "jump_url": f"https://discord.com/channels/{msg.get('guild_id', '@me')}/{msg.get('channel_id')}/{msg.get('id')}",
+                        "jump_url": f"https://discord.com/channels/{guild_id}/{msg.get('channel_id')}/{msg.get('id')}",
                     }
                 )
         return formatted
+
+    async def _ensure_member_cache(self, guild: discord.Guild) -> dict[str, Any] | None:
+        if guild.chunked:
+            return None
+        try:
+            await guild.chunk(cache=True)
+        except (discord.DiscordException, TimeoutError) as error:
+            logger.warning("Unable to populate complete member cache: %s", type(error).__name__)
+            return {"error": "Unable to retrieve the complete member list for this server."}
+        if not guild.chunked:
+            return {"error": "Unable to retrieve the complete member list for this server."}
+        return None
 
     async def search_members(
         self,
@@ -186,6 +245,7 @@ class DiscordSearchClient:
     ) -> dict[str, Any]:
         try:
             members = []
+            total: int | None = 0
             if user_id:
                 member = guild.get_member(user_id)
                 if not member:
@@ -194,22 +254,40 @@ class DiscordSearchClient:
                     except discord.NotFound:
                         return {
                             "success": True,
-                            "count": 0,
+                            "returned": 0,
+                            "total": 0,
                             "members": [],
                             "note": f"User {user_id} not found in this server",
                         }
                 members = [member]
+                total = 1
             elif query:
-                found = await guild.query_members(query=query, limit=limit)
-                members = found
-            elif role_id:
-                role = guild.get_role(role_id)
-                if role:
+                if role_id:
+                    cache_error = await self._ensure_member_cache(guild)
+                    if cache_error:
+                        return cache_error
+                    query_lower = query.casefold()
+                    members = [
+                        member
+                        for member in guild.members
+                        if any(role.id == role_id for role in member.roles) and query_lower in member.name.casefold()
+                    ][:limit]
+                else:
+                    members = await guild.query_members(query=query, limit=limit)
+                total = None
+            else:
+                cache_error = await self._ensure_member_cache(guild)
+                if cache_error:
+                    return cache_error
+                if role_id:
+                    role = guild.get_role(role_id)
+                    if not role:
+                        return {"error": f"Role {role_id} not found"}
+                    total = len(role.members)
                     members = role.members[:limit]
                 else:
-                    return {"error": f"Role {role_id} not found"}
-            else:
-                members = list(guild.members)[:limit]
+                    total = len(guild.members)
+                    members = list(guild.members)[:limit]
             formatted = []
             for m in members:
                 formatted.append(
@@ -225,7 +303,8 @@ class DiscordSearchClient:
                 )
             return {
                 "success": True,
-                "count": len(formatted),
+                "returned": len(formatted),
+                "total": total,
                 "members": formatted,
             }
         except Exception as e:
@@ -249,6 +328,9 @@ class DiscordSearchClient:
                 "news": discord.ChannelType.news,
                 "stage": discord.ChannelType.stage_voice,
             }
+            media_type = getattr(discord.ChannelType, "media", None)
+            if media_type is not None:
+                type_map["media"] = media_type
             channels = list(guild.channels)
             if can_view_channel:
                 channels = [c for c in channels if can_view_channel(c)]
@@ -290,19 +372,22 @@ class DiscordSearchClient:
     ) -> dict[str, Any]:
         try:
             threads = []
+            seen_ids = set()
             active_threads = guild.threads
             for t in active_threads:
-                if can_view_channel and t.parent:
-                    if not can_view_channel(t.parent):
-                        continue
+                if can_view_channel and not can_view_channel(t):
+                    continue
                 threads.append(t)
+                seen_ids.add(t.id)
             if include_archived:
                 for channel in guild.text_channels:
                     if can_view_channel and not can_view_channel(channel):
                         continue
                     try:
                         async for thread in channel.archived_threads(limit=50):
-                            threads.append(thread)
+                            if thread.id not in seen_ids and (not can_view_channel or can_view_channel(thread)):
+                                threads.append(thread)
+                                seen_ids.add(thread.id)
                     except discord.Forbidden:
                         continue
                     except Exception:
@@ -344,11 +429,15 @@ class DiscordSearchClient:
         limit: int = 50,
     ) -> dict[str, Any]:
         try:
+            cache_error = await self._ensure_member_cache(guild)
+            if cache_error:
+                return cache_error
             roles = list(guild.roles)
             if query:
                 query_lower = query.lower()
                 roles = [r for r in roles if query_lower in r.name.lower()]
             roles = [r for r in roles if r.name != "@everyone"]
+            total = len(roles)
             roles = roles[:limit]
             formatted = []
             for r in roles:
@@ -366,7 +455,8 @@ class DiscordSearchClient:
                 formatted.append(role_data)
             return {
                 "success": True,
-                "count": len(formatted),
+                "returned": len(formatted),
+                "total": total,
                 "roles": formatted,
             }
         except Exception as e:
@@ -547,7 +637,24 @@ async def tool_discord_search(
     _context: dict | None = None,
     **kwargs,
 ) -> dict[str, Any]:
-    result_count = max(1, min(top_n, 100))
+    if not isinstance(top_n, int) or isinstance(top_n, bool) or not 1 <= top_n <= 25:
+        return {"error": "top_n must be an integer between 1 and 25"}
+    if not isinstance(offset, int) or isinstance(offset, bool) or not 0 <= offset <= 9975:
+        return {"error": "offset must be an integer between 0 and 9975"}
+    if not isinstance(action, str) or action.lower() not in {
+        "messages",
+        "members",
+        "channels",
+        "threads",
+        "roles",
+        "history",
+        "context",
+        "thread_history",
+    }:
+        return {
+            "error": "action must be one of: messages, members, channels, threads, roles, history, context, thread_history"
+        }
+    result_count = top_n
     if not _context:
         return {"error": "No context provided - cannot access Discord guild"}
     guild = _context.get("discord_guild")
@@ -557,23 +664,37 @@ async def tool_discord_search(
     def extract_id(value: int | str | None, pattern: str) -> int | None:
         if value is None:
             return None
-        if isinstance(value, int):
+        if isinstance(value, int) and not isinstance(value, bool):
             return value
-        try:
+        if not isinstance(value, str):
+            return None
+        if value.isdecimal():
             return int(value)
-        except (ValueError, TypeError):
-            pass
-        match = re.search(pattern, str(value))
-        if match:
-            return int(match.group(1))
-        return None
+        match = re.fullmatch(pattern, value)
+        return int(match.group(1)) if match else None
 
-    channel_id = extract_id(channel_id, r"<#(\d+)>")
-    user_id = extract_id(user_id, r"<@!?(\d+)>")
-    role_id = extract_id(role_id, r"<@&(\d+)>")
-    message_id = extract_id(message_id, r"(\d+)")
-    thread_id = extract_id(thread_id, r"(\d+)")
-    mentions = extract_id(mentions, r"<@!?(\d+)>")
+    def validated_id(name: str, value: int | str | None, pattern: str) -> int | None:
+        parsed = extract_id(value, pattern)
+        if value is not None and (parsed is None or parsed <= 0):
+            raise ValueError(f"{name} must be a Discord snowflake or supported mention")
+        return parsed
+
+    try:
+        channel_id = validated_id("channel_id", channel_id, r"<#(\d+)>")
+        user_id = validated_id("user_id", user_id, r"<@!?(\d+)>")
+        role_id = validated_id("role_id", role_id, r"<@&(\d+)>")
+        message_id = validated_id("message_id", message_id, r"(\d+)")
+        thread_id = validated_id("thread_id", thread_id, r"(\d+)")
+        mentions = validated_id("mentions", mentions, r"<@!?(\d+)>")
+        if not isinstance(top_n, int) or isinstance(top_n, bool) or not 1 <= top_n <= 25:
+            raise ValueError("top_n must be an integer between 1 and 25")
+        if not isinstance(offset, int) or isinstance(offset, bool) or not 0 <= offset <= 9975:
+            raise ValueError("offset must be an integer between 0 and 9975")
+        for name, value in (("before", before), ("after", after)):
+            if value is not None and (not isinstance(value, str) or not value.isdecimal() or int(value) <= 0):
+                raise ValueError(f"{name} must be a positive message snowflake")
+    except ValueError as error:
+        return {"error": str(error)}
     bot = _context.get("discord_bot")
     bot_member = guild.me if guild else None
     requesting_user_id = _context.get("user_id")
@@ -583,32 +704,38 @@ async def tool_discord_search(
             requesting_member = await guild.fetch_member(requesting_user_id)
             logger.info(f"Fetched member {requesting_user_id} for permission check")
         except discord.NotFound:
-            logger.warning(
-                f"SECURITY: User {requesting_user_id} not found in guild - restricting to public channels only"
-            )
-        except Exception as e:
-            logger.warning(
-                f"SECURITY: Failed to fetch member {requesting_user_id}: {e} - restricting to public channels only"
-            )
+            logger.warning("Discord requester membership could not be verified: not found")
+        except Exception as error:
+            logger.warning("Discord requester membership could not be verified: %s", type(error).__name__)
+
+    if not _context.get("is_http_api") and requesting_member is None:
+        return {"error": "Unable to verify your Discord membership for this server."}
 
     def bot_can_access(channel) -> bool:
         if not bot_member:
-            return True
+            return False
         perms = channel.permissions_for(bot_member)
-        return perms.view_channel
+        return bool(perms.view_channel and getattr(perms, "read_message_history", False))
 
     def user_can_view(channel) -> bool:
-        if requesting_member:
-            perms = channel.permissions_for(requesting_member)
-            return perms.view_channel
-        else:
-            everyone_role = guild.default_role
-            if everyone_role:
-                perms = channel.permissions_for(everyone_role)
-                return perms.view_channel
+        if not requesting_member:
             return False
+        perms = channel.permissions_for(requesting_member)
+        return bool(perms.view_channel and getattr(perms, "read_message_history", False))
+
+    def public_can_view(channel) -> bool:
+        everyone_role = guild.default_role
+        if not everyone_role:
+            return False
+        perms = channel.permissions_for(everyone_role)
+        return bool(perms.view_channel and getattr(perms, "read_message_history", False))
 
     def can_view_channel(channel) -> bool:
+        if isinstance(channel, discord.Thread):
+            member = None if _context.get("is_http_api") else requesting_member
+            return bot_can_access(channel) and _thread_is_accessible(channel, member)
+        if _context.get("is_http_api"):
+            return bot_can_access(channel) and public_can_view(channel)
         return bot_can_access(channel) and user_can_view(channel)
 
     accessible_channel_ids = set()
@@ -617,8 +744,7 @@ async def tool_discord_search(
             if can_view_channel(ch):
                 accessible_channel_ids.add(ch.id)
     for thread in guild.threads:
-        parent = guild.get_channel(thread.parent_id)
-        if parent and can_view_channel(parent):
+        if can_view_channel(thread):
             accessible_channel_ids.add(thread.id)
     action = action.lower()
     if query:
@@ -637,14 +763,23 @@ async def tool_discord_search(
             channel_id = ch_mentions["channel_ids"][0]
     if channel_name and not channel_id:
         for ch in guild.channels:
-            if channel_name.lower() in ch.name.lower():
-                if can_view_channel(ch):
-                    channel_id = ch.id
-                    break
+            if channel_name.lower() in ch.name.lower() and can_view_channel(ch):
+                channel_id = ch.id
+                break
+        if not channel_id:
+            return {"error": f"Channel '{channel_name}' was not found or is not accessible"}
     if channel_id:
         target_channel = guild.get_channel(channel_id)
-        if target_channel and not can_view_channel(target_channel):
+        if not target_channel:
+            try:
+                target_channel = await bot.fetch_channel(channel_id) if bot else None
+            except (discord.Forbidden, discord.NotFound, aiohttp.ClientError):
+                target_channel = None
+        if not target_channel or getattr(target_channel, "guild", guild) not in (None, guild):
+            return {"error": f"Channel {channel_id} not found"}
+        if not can_view_channel(target_channel):
             return {"error": "You don't have permission to access that channel"}
+        accessible_channel_ids.add(target_channel.id)
     if role_name and not role_id:
         for r in guild.roles:
             if role_name.lower() in r.name.lower():
@@ -675,6 +810,8 @@ async def tool_discord_search(
         )
         return result
     elif action == "members":
+        if _context.get("is_http_api"):
+            return {"error": "Member search is available only from Discord"}
         return await discord_search_client.search_members(
             guild=guild,
             query=query,
@@ -699,6 +836,10 @@ async def tool_discord_search(
             can_view_channel=can_view_channel,
         )
     elif action == "roles":
+        if _context.get("is_http_api"):
+            return {"error": "Role search is available only from Discord"}
+        if include_members and not _context.get("is_admin"):
+            return {"error": "Role member expansion requires admin access"}
         return await discord_search_client.search_roles(
             guild=guild,
             query=query,
@@ -751,9 +892,14 @@ async def tool_discord_search(
         if not thread:
             try:
                 thread = await guild.fetch_channel(thread_id)
-            except Exception:
+            except (discord.Forbidden, discord.NotFound, aiohttp.ClientError):
                 return {"error": f"Thread {thread_id} not found"}
-        if thread.parent and not can_view_channel(thread.parent):
+        if getattr(thread, "guild", guild) not in (None, guild):
+            return {"error": f"Thread {thread_id} not found"}
+        if not isinstance(thread, discord.Thread):
+            return {"error": f"Channel {thread_id} is not a thread"}
+        thread_member = None if _context.get("is_http_api") else requesting_member
+        if not bot_can_access(thread) or not _thread_is_accessible(thread, thread_member):
             return {"error": "You don't have permission to view that thread"}
         before_id = int(before) if before else None
         return await discord_search_client.get_thread_history(

@@ -9,14 +9,19 @@ on:
         description: 'Date to summarize (YYYY-MM-DD). For daily: yesterday. For weekly: week start (Sunday).'
         required: false
         type: string
+      target_month:
+        description: 'Month to summarize (YYYY-MM). Defaults to the previous completed month.'
+        required: false
+        type: string
       mode:
-        description: 'Force daily or weekly mode (auto-detects by day-of-week if empty)'
+        description: 'Choose one generator, or auto-run the calendar schedule'
         required: false
         type: choice
         options:
           - auto
           - daily
           - weekly
+          - monthly
 
 jobs:
   generate-summary:
@@ -49,24 +54,45 @@ jobs:
       - name: Overlay news branch data
         run: git fetch origin news && git checkout origin/news -- operations/social/news/ || echo "No news branch data yet"
 
-      - name: Determine mode (daily vs weekly)
+      - name: Determine generators
         id: mode
         run: |
           MODE="${{ github.event.inputs.mode || 'auto' }}"
+          RUN_DAILY=false
+          RUN_DAILY_BUFFER=false
+          RUN_WEEKLY=false
+          RUN_MONTHLY=false
+          MONTHLY_TARGET="${{ github.event.inputs.target_month || '' }}"
           if [ "$MODE" = "auto" ]; then
             DOW=$(date -u +%u)  # 1=Monday, 7=Sunday
+            DOM=$(date -u +%d)
+            RUN_DAILY=true
             if [ "$DOW" = "7" ]; then
-              MODE="weekly"
+              RUN_WEEKLY=true
             else
-              MODE="daily"
+              RUN_DAILY_BUFFER=true
             fi
+            if [ "$DOM" = "01" ]; then
+              RUN_MONTHLY=true
+            fi
+          elif [ "$MODE" = "daily" ]; then
+            RUN_DAILY=true
+            RUN_DAILY_BUFFER=true
+          elif [ "$MODE" = "weekly" ]; then
+            RUN_WEEKLY=true
+          elif [ "$MODE" = "monthly" ]; then
+            RUN_MONTHLY=true
           fi
-          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
-          echo "Mode: $MODE"
+          echo "daily=$RUN_DAILY" >> "$GITHUB_OUTPUT"
+          echo "daily_buffer=$RUN_DAILY_BUFFER" >> "$GITHUB_OUTPUT"
+          echo "weekly=$RUN_WEEKLY" >> "$GITHUB_OUTPUT"
+          echo "monthly=$RUN_MONTHLY" >> "$GITHUB_OUTPUT"
+          echo "monthly_target=$MONTHLY_TARGET" >> "$GITHUB_OUTPUT"
+          echo "Daily: $RUN_DAILY · Daily Buffer: $RUN_DAILY_BUFFER · Weekly: $RUN_WEEKLY · Monthly: $RUN_MONTHLY"
 
       # ── Daily: generate + stage to Buffer ──────────────────────────
       - name: Generate daily summary
-        if: steps.mode.outputs.mode == 'daily'
+        if: steps.mode.outputs.daily == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
@@ -76,7 +102,7 @@ jobs:
         run: python operations/social/scripts/generate_daily.py
 
       - name: Stage daily posts to Buffer
-        if: steps.mode.outputs.mode == 'daily'
+        if: steps.mode.outputs.daily_buffer == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -87,7 +113,7 @@ jobs:
 
       # ── Weekly: generate + stage to Buffer ─────────────────────────
       - name: Generate weekly digest
-        if: steps.mode.outputs.mode == 'weekly'
+        if: steps.mode.outputs.weekly == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
@@ -96,7 +122,7 @@ jobs:
         run: python operations/social/scripts/generate_weekly.py
 
       - name: Stage weekly posts to Buffer
-        if: steps.mode.outputs.mode == 'weekly'
+        if: steps.mode.outputs.weekly == 'true'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -104,3 +130,17 @@ jobs:
           PUBLISH_MODE: buffer
           WEEK_START_DATE: ${{ github.event.inputs.target_date || '' }}
         run: python operations/social/scripts/publish_weekly.py
+
+      # ── Monthly: website archive only ──────────────────────────────
+      - name: Refresh news branch for monthly digest
+        if: steps.mode.outputs.monthly == 'true'
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/
+
+      - name: Generate monthly build diary
+        if: steps.mode.outputs.monthly == 'true'
+        env:
+          GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
+          POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_NEWS_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          TARGET_MONTH: ${{ steps.mode.outputs.monthly_target }}
+        run: python operations/social/scripts/generate_monthly.py

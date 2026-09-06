@@ -2,6 +2,7 @@ import type { BalanceCheckResult } from "@shared/billing/balance.ts";
 import { SAFETY_HEADER_NAME } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
+import { HTTPException } from "hono/http-exception";
 import type {
     AuthVariables,
     GenerationAuthSnapshot,
@@ -154,7 +155,8 @@ async function createJob(
     };
 }
 
-function failedResponse(error: GenerationErrorSnapshot): Response {
+/** Replays an error response already handled by the detached executor. */
+function replayFailedResponse(error: GenerationErrorSnapshot): Response {
     const status =
         error.httpStatus >= 400 && error.httpStatus <= 599
             ? error.httpStatus
@@ -179,8 +181,8 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             c.get("log").error(
                 "Generation cache identity or coordinator binding is missing",
             );
-            return new Response("Generation coordination is unavailable", {
-                status: 503,
+            throw new HTTPException(503, {
+                message: "Generation coordination is unavailable",
             });
         }
 
@@ -208,13 +210,13 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                     retryable: rpcError.retryable,
                 },
             );
-            return new Response("Generation coordination is unavailable", {
-                status: 503,
+            throw new HTTPException(503, {
+                message: "Generation coordination is unavailable",
             });
         }
         if (outcome.status === "failed") {
             if (c.var.track) c.var.track.detachedExecutionTracked = true;
-            return failedResponse(outcome.error);
+            return replayFailedResponse(outcome.error);
         }
 
         let response: Response | null;
@@ -228,15 +230,14 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 "Error reading completed generation from cache: {error}",
                 { error },
             );
-            return new Response("Generation cache is temporarily unavailable", {
-                status: 503,
+            throw new HTTPException(503, {
+                message: "Generation cache is temporarily unavailable",
             });
         }
         if (!response) {
-            return new Response(
-                "Generation completed without a durable cache entry",
-                { status: 503 },
-            );
+            throw new HTTPException(503, {
+                message: "Generation completed without a durable cache entry",
+            });
         }
         c.header("X-Cache", "HIT");
         response.headers.set("X-Cache", "HIT");

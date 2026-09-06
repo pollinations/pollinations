@@ -33,7 +33,7 @@ interface ModelDefinition {
     name: string;
     config: (options?: TransformOptions) => Record<string, unknown>;
     transform?: TransformFn;
-    /** Route through the Azure Responses API instead of Chat Completions. */
+    /** Route Chat requests through the model's declared Responses endpoint. */
     useResponsesApi?: boolean;
 }
 
@@ -48,6 +48,26 @@ const grokTransform: TransformFn = (messages, options) =>
     usesGrokReasoning(options)
         ? { messages, options }
         : stripReasoning(messages, options);
+
+// Alibaba rejects forced tool selection while thinking is enabled.
+const qwenForcedToolTransform: TransformFn = (messages, options) => {
+    const toolChoice = options.tool_choice;
+    const forcesTool =
+        toolChoice === "required" ||
+        (typeof toolChoice === "object" && toolChoice !== null);
+    return {
+        messages,
+        options: forcesTool
+            ? { ...options, reasoning_effort: "none" }
+            : options,
+    };
+};
+
+const qwenReasoningToggle = createReasoningEffortTransform("toggle");
+const qwenFlashTransform: TransformFn = async (messages, options) => {
+    const toggled = await qwenReasoningToggle(messages, options);
+    return qwenForcedToolTransform(toggled.messages, toggled.options);
+};
 
 const models: ModelDefinition[] = [
     {
@@ -87,6 +107,11 @@ const models: ModelDefinition[] = [
     {
         name: "gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-astra",
+        config: portkeyConfig["gpt-6-astra"],
         useResponsesApi: true,
     },
     {
@@ -156,9 +181,29 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["qwen/qwen3.8-max"],
     },
     {
+        name: "qwen/qwen3.8-max-0902",
+        config: portkeyConfig["qwen3.8-max-0902"],
+        transform: qwenForcedToolTransform,
+    },
+    {
         name: "qwen3.7-flash",
         config: portkeyConfig["qwen/qwen3.7-flash"],
         transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen3.7-flash-alibaba",
+        config: portkeyConfig["qwen3.7-flash-alibaba"],
+        transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen/qwen3.8-flash",
+        config: portkeyConfig["qwen/qwen3.8-flash"],
+        transform: qwenFlashTransform,
+    },
+    {
+        name: "qwen3.8-flash-alibaba",
+        config: portkeyConfig["qwen3.8-flash-alibaba"],
+        transform: qwenFlashTransform,
     },
     {
         name: "qwen-vision",
@@ -191,6 +236,11 @@ const models: ModelDefinition[] = [
         name: "mistral-small-3.2",
         config: portkeyConfig["mistral-small-2503"],
         // Mistral rejects reasoning_effort with 400; strip it.
+        transform: stripReasoning,
+    },
+    {
+        name: "mistral-small-3.2-deepinfra",
+        config: portkeyConfig["mistral-small-3.2-deepinfra"],
         transform: stripReasoning,
     },
     {
@@ -355,6 +405,15 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["gemini-openrouter-ai-studio-priority"],
         transform: pipe(
             adaptGoogleSearchToolForOpenRouter,
+            createGeminiThinkingTransform("v3-pro"),
+        ),
+    },
+    {
+        name: "google/gemini-3.8-flash",
+        config: portkeyConfig["google/gemini-3.8-flash"],
+        transform: pipe(
+            adaptGoogleSearchToolForOpenRouter,
+            // Gemini 3.8 requires reasoning; map `none` to its lowest level.
             createGeminiThinkingTransform("v3-pro"),
         ),
     },
@@ -594,8 +653,8 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "llama-scout-openrouter-deepinfra",
-        config: portkeyConfig["llama-scout-openrouter-deepinfra"],
+        name: "llama-scout-openrouter-vertex",
+        config: portkeyConfig["llama-scout-openrouter-vertex"],
         transform: stripReasoning,
     },
     {

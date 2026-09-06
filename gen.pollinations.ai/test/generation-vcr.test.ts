@@ -138,11 +138,21 @@ function createGenerationMocks() {
                     : { type: "response.completed" }),
                 response,
             };
+            const invalidUsageChunk =
+                body.input === "vcr invalid usage after valid usage"
+                    ? `event: response.completed\ndata: ${JSON.stringify({
+                          type: "response.completed",
+                          response: {
+                              ...response,
+                              usage: { input_tokens: 12 },
+                          },
+                      })}\n\n`
+                    : "";
             return new Response(
                 `event: response.output_text.delta\ndata: ${JSON.stringify({
                     type: "response.output_text.delta",
                     delta: "direct response",
-                })}\n\nevent: response.completed\ndata: ${JSON.stringify(terminalEvent)}\n\n`,
+                })}\n\nevent: response.completed\ndata: ${JSON.stringify(terminalEvent)}\n\n${invalidUsageChunk}`,
                 { headers: { "content-type": "text/event-stream" } },
             );
         }
@@ -414,8 +424,25 @@ async function fakePortkeyResponse(request: Request) {
         const usageChunk = prompt.includes("vcr missing chat stream usage")
             ? ""
             : `data: ${JSON.stringify(usageEvent)}\n\n`;
+        const invalidUsageChunk = prompt.includes(
+            "vcr invalid usage after valid usage",
+        )
+            ? `data: ${JSON.stringify({ ...usageEvent, usage: { prompt_tokens: 7 } })}\n\n`
+            : "";
+        const earlyUsageChunk = prompt.includes("vcr early usage")
+            ? `data: ${JSON.stringify({
+                  ...streamEvent,
+                  usage: prompt.includes("partial")
+                      ? { prompt_tokens: 7 }
+                      : {
+                            prompt_tokens: 7,
+                            completion_tokens: 0,
+                            total_tokens: 7,
+                        },
+              })}\n\n`
+            : "";
         return new Response(
-            `data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}data: [DONE]\n\n`,
+            `${earlyUsageChunk}data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}${invalidUsageChunk}data: [DONE]\n\n`,
             {
                 headers: {
                     "content-type": "text/event-stream; charset=utf-8",
@@ -773,6 +800,104 @@ test("chat streaming without usage fails closed and remains unbilled", async ({
         upstream_body: expect.any(String),
     });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test.for([
+    "/v1/chat/completions",
+    "/v1/responses",
+])("%s does not bill valid usage followed by a stream validation error", async (path, {
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
+    const caller = await createTestApiKey({
+        name: "invalid-usage-after-valid-usage",
+        user: { packBalance: 100 },
+    });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const prompt = "vcr invalid usage after valid usage";
+    const { response, wait } = await fetchWorker(path, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            stream: true,
+            ...(path === "/v1/responses"
+                ? { model: "qwen-large", input: prompt }
+                : {
+                      model: "openai-fast",
+                      messages: [{ role: "user", content: prompt }],
+                  }),
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain('"total_tokens":');
+    expect(stream).toContain('"code":"usage_missing"');
+    expect(stream).not.toContain("[DONE]");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
+    });
+    expect(mocks.tinybird.state.events[0].totalCost).toBeGreaterThan(0);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
+        status: 502,
+        upstream_status: 200,
+        error_code: "usage_missing",
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test.for([
+    "partial",
+    "valid",
+])("chat bills final usage after %s early usage", async (kind, { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            stream: true,
+            messages: [{ role: "user", content: `vcr early usage ${kind}` }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("[DONE]");
+    expect(stream).not.toContain("usage_missing");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: true,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+    expect(event.totalPrice).toBeGreaterThan(0);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(0);
+    const balanceAfter = await getUserBalance(db, caller.userId);
+    expect(balanceBefore.packBalance - balanceAfter.packBalance).toBeCloseTo(
+        event.totalPrice,
+        12,
+    );
 });
 
 test("Chat uses a native Responses target and preserves billing usage", async ({

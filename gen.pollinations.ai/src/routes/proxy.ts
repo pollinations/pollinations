@@ -672,11 +672,11 @@ export const proxyRoutes = new Hono<Env>()
             description: [
                 "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
                 "",
-                "Built-in models, community proxies, and external endpoint agents use their configured native Responses URL. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Chat Completions requests for these models are adapted to the same Responses route.",
+                "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.",
                 "",
                 "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
                 "",
-                "Response storage, previous response IDs, conversations, background execution, and encrypted or reusable state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents use only their configured MCP tools.",
+                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
                 "",
                 "Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.",
             ].join("\n"),

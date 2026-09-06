@@ -19,6 +19,7 @@ function eventType(value: unknown): string | undefined {
 export function createResponsesStreamUsageValidator() {
     const decoder = new TextDecoder();
     let terminalSeen = false;
+    let sequenceNumber = -1;
     let validationError: ResponsesUsageError | undefined;
 
     const parser = createParser({
@@ -38,6 +39,16 @@ export function createResponsesStreamUsageValidator() {
                 return;
             }
 
+            if (
+                event &&
+                typeof event === "object" &&
+                "sequence_number" in event
+            ) {
+                const value = event.sequence_number;
+                if (typeof value === "number" && Number.isSafeInteger(value)) {
+                    sequenceNumber = Math.max(sequenceNumber, value);
+                }
+            }
             const type = eventType(event) ?? message.event;
             if (type === "error" || type === "response.failed") {
                 terminalSeen = true;
@@ -59,6 +70,9 @@ export function createResponsesStreamUsageValidator() {
     });
 
     return {
+        get nextSequenceNumber() {
+            return sequenceNumber + 1;
+        },
         feed(chunk: Uint8Array) {
             parser.feed(decoder.decode(chunk, { stream: true }));
             if (validationError) throw validationError;
@@ -84,6 +98,7 @@ export function createResponsesStreamUsageValidator() {
  */
 function responsesUsageErrorEvent(
     error: ResponsesUsageError,
+    sequenceNumber: number,
 ): Uint8Array<ArrayBuffer> {
     return new TextEncoder().encode(
         `event: error\ndata: ${JSON.stringify({
@@ -91,7 +106,7 @@ function responsesUsageErrorEvent(
             code: "usage_missing",
             message: error.message,
             param: null,
-            sequence_number: 0,
+            sequence_number: sequenceNumber,
         })}\n\n`,
     );
 }
@@ -99,12 +114,10 @@ function responsesUsageErrorEvent(
 export function requireResponsesStreamUsage(
     body: ReadableStream<Uint8Array<ArrayBuffer>>,
 ): ReadableStream<Uint8Array<ArrayBuffer>> {
-    return validatedSSEStream(
-        body,
-        createResponsesStreamUsageValidator(),
-        (error) => {
-            if (!(error instanceof ResponsesUsageError)) throw error;
-            return responsesUsageErrorEvent(error);
-        },
-    );
+    const validator = createResponsesStreamUsageValidator();
+
+    return validatedSSEStream(body, validator, (error) => {
+        if (!(error instanceof ResponsesUsageError)) throw error;
+        return responsesUsageErrorEvent(error, validator.nextSequenceNumber);
+    });
 }

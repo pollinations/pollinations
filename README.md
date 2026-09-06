@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-05** – **🤖 Managed agents, neatly arranged** The Responses API now returns replayable agent runs with ordered assistant and MCP results, lifecycle SSE events, media links, usage, and per-child billing—without making you invent another wrapper. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-05** – **🎵 Community TTS has arrived** Publishers can register OpenAI-compatible speech models, and users can receive streamed audio in its native format through the same platform auth, caching, and billing systems. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-05** – **🚀 Qwen3.8 Flash** Call `qwen/qwen3.8-flash` for streaming chat, structured output, tool use, image/video input, and prompt caching—with an automatic Alibaba fallback when the first route gets lost. [Available models](https://gen.pollinations.ai/v1/models)
+- **2026-09-05** – **🎨 MAI Image 2.5 Flash** Generate images or edit a JPEG/PNG with one reference image using `microsoft/mai-image-2.5-flash` via `/image` or the OpenAI-compatible Images API. [Image models](https://gen.pollinations.ai/image/models)
 - **2026-09-04** – **🚀 GPT-6 Astra** Call `openai/gpt-6-astra` for tool use, structured output, vision, streaming, and prompt caching through one predictable model ID. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-04** – **🎨 MiniMax H3 Max Turbo** Generate guided video with synchronized audio, first/last-frame inputs, 480p or 768p output, and clips up to 15 seconds. [Try the API](https://gen.pollinations.ai/docs)
 - **2026-09-04** – **✨ Responses API for more models** Use OpenAI-compatible `/v1/responses` across built-in, community, and agent-backed text models—with tools, structured output, streaming, and reasoning intact. [API docs](https://gen.pollinations.ai/docs)
 - **2026-09-04** – **🔗 Pollinations MCP in Open WebUI** Run Pollinations MCP tools from Open WebUI using your own consent key and Pollen balance. Your wallet, your tool calls. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
 - **2026-09-04** – **🎯 Pollin Uptime** A serverless multimodal playground routes chat, vision, images, video, and voice through a four-layer fallback cascade. [Try it](https://brhost.eu.org) <!-- app -->
 - **2026-09-04** – **🌟 Nectar MCP** Give MCP clients dedicated tools for Pollinations image generation and editing, video creation, and speech generation. [View repo](https://github.com/pinkpixel-dev/nectar-mcp) <!-- app -->
-- **2026-09-03** – **🚀 Qwen3.8 Max 0902** The exact Qwen checkpoint is now available for chat and Responses API calls, with streaming, tool use, image/video input, structured output, and prompt caching. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-03** – **✨ Open WebUI for Pollinations** A full chat workspace with every Pollinations text model and MCP-powered image, video, and audio tools—without leaving the conversation. [Try it](https://openwebui.pollinations.ai) <!-- app -->
-- **2026-09-03** – **🔗 Polli joins OpenClaw** Run `polli harness openclaw on` to wire Pollinations models and managed media-generation skills into OpenClaw. The claw has access to pixels now.
-- **2026-09-03** – **🎯 AI Homework Solver** A Pollinations-powered study helper for multiple-choice, short-answer, true/false, and fill-in-the-blank questions joined the learn collection. [Try it](https://zizoisu.github.io/ai-homework-solver) <!-- app -->
 ---
 
 ## 🌱 Introduction

@@ -470,6 +470,7 @@ class PolliBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
+        intents.members = True
         super().__init__(command_prefix="!", intents=intents)
         self.issue_notifier = None
         self.webhook_server = None
@@ -1247,9 +1248,12 @@ async def process_message(
     if isinstance(channel, discord.Thread):
         context_channel_id = channel.id
         context_thread_id: int | None = channel.id
+        parent_channel_id: int | None = channel.parent_id
     else:
         context_channel_id = channel.id
         context_thread_id = None
+        parent_channel_id = None
+    source_channel_id = source_message.channel.id if source_message else session.channel_id
 
     tool_context = {
         "is_admin": user_is_admin,
@@ -1259,6 +1263,8 @@ async def process_message(
         "reporter": session.original_author_name,
         "channel_id": context_channel_id,
         "thread_id": context_thread_id,
+        "source_channel_id": source_channel_id,
+        "parent_channel_id": parent_channel_id,
         "guild_id": (channel.guild.id if channel.guild else None),
         "user_role_ids": ([r.id for r in user.roles] if isinstance(user, discord.Member) else []),
         # For github_issue create - link back to Discord message

@@ -3,6 +3,10 @@ import {
     waitOnExecutionContext,
 } from "cloudflare:test";
 import {
+    firstCommunityImageBytes,
+    firstCommunityVideoBytes,
+} from "@shared/community-media.ts";
+import {
     ensureUpstreamOk,
     getErrorCodesForStatus,
     handleError,
@@ -17,6 +21,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { handleChatCompletionLocal } from "@/text/handler.ts";
+import { isRetryableFallbackError } from "../src/fallback.ts";
 import { throwImageError } from "../src/image/handler.ts";
 import { throw3dError } from "../src/model3d/handler.ts";
 import { throwTextError } from "../src/text/errors.ts";
@@ -63,6 +68,75 @@ function createTextTestApp() {
 }
 
 describe("error observability", () => {
+    it.each([
+        ["image", firstCommunityImageBytes],
+        ["video", firstCommunityVideoBytes],
+    ] as const)("preserves a retryable community %s failure when its error body cannot be read", async (kind, readMedia) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                new ReadableStream({
+                    start(controller) {
+                        controller.error(
+                            new TypeError("invalid compressed data"),
+                        );
+                    },
+                }),
+                { status: 503 },
+            ),
+        );
+        const error = await readMedia(
+            { data: [{ url: "https://assets.test/output" }] },
+            "https://provider.test",
+        ).catch((error) => error);
+        expect(error).toBeInstanceOf(UpstreamError);
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 503,
+            requestUrl: new URL("https://assets.test/output"),
+            message: `Endpoint ${kind} URL responded 503`,
+            responseBody: undefined,
+        });
+        expect(isRetryableFallbackError(error)).toBe(true);
+    });
+
+    it.each([
+        "ContentModerationError",
+        "content_policy_violation",
+        "content_safety_violation",
+    ])("classifies provider code/type %s without rewriting its body", async (type) => {
+        const responseBody = JSON.stringify({
+            error: { type, message: "Request rejected" },
+        });
+        const error = await ensureUpstreamOk(
+            new Response(responseBody, { status: 403 }),
+            "https://provider.test",
+        ).catch((error) => error);
+        expect(isRetryableFallbackError(error)).toBe(false);
+        try {
+            throwImageError(error);
+        } catch (caught) {
+            expect(caught).toMatchObject({
+                status: 422,
+                errorCode: "content_policy_violation",
+                responseBody,
+            });
+        }
+    });
+
+    it("does not classify echoed prompt words as an image moderation failure", async () => {
+        const responseBody = JSON.stringify({
+            error: { code: "over_capacity" },
+            request: { prompt: "Explain the NSFW label" },
+        });
+        const error = await ensureUpstreamOk(
+            new Response(responseBody, { status: 503 }),
+            "https://provider.test",
+        ).catch((error) => error);
+        expect(isRetryableFallbackError(error)).toBe(true);
+        expect(() => throwImageError(error)).toThrow(error);
+        expect(error).toMatchObject({ status: 503, responseBody });
+    });
+
     it.each([
         ["image", throwImageError],
         ["3D", throw3dError],

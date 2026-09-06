@@ -8,6 +8,29 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("keeps an embedded quota error retryable when diagnostics echo moderation words", async () => {
+        const responseBody = JSON.stringify({
+            error: {
+                message: "Provider rate limited",
+                code: 429,
+                details: { diagnostic: "quota reached" },
+            },
+            request: { prompt: "Explain the NSFW label" },
+        });
+        const fetcher = vi.fn(async () => new Response(responseBody));
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "test" }],
+            { model: "test-model" },
+            { endpoint: "https://provider.test/chat", fetcher },
+        ).catch((error) => error);
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody,
+        });
+        expect(isRetryableFallbackError(error)).toBe(true);
+    });
+
     it.each([
         200, 429,
     ])("retains the complete raw provider envelope at HTTP %s", async (status) => {
@@ -595,7 +618,9 @@ describe("genericOpenAIClient", () => {
         401, 402, 403, 429, 503,
     ])("keeps provider error.code=%s eligible for fallback", async (code) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
-            Response.json({ error: { code, message: "Provider unavailable" } }),
+            Response.json({
+                error: { code, message: "Provider unavailable" },
+            }),
         );
         const error = await genericOpenAIClient(
             [{ role: "user", content: "hello" }],

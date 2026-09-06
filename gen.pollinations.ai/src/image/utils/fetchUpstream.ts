@@ -36,7 +36,8 @@ export async function fetchUpstream(
         const message = error instanceof Error ? error.message : String(error);
         throw UpstreamError.fromProvider(502, {
             message: `${errorLabel}: ${message}`,
-            requestUrl: new URL(url),
+            requestUrl: URL.parse(url) ?? undefined,
+            cause: error,
         });
     }
 

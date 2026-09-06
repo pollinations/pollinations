@@ -7,7 +7,10 @@ import {
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
-import { firstContentPolicyMessage } from "./image/utils/contentModeration.ts";
+import {
+    firstContentPolicyMessage,
+    providerErrorText,
+} from "./image/utils/contentModeration.ts";
 import type { GenerationModelEntry } from "./model-registry.ts";
 
 /** Formats the served target marker in Portkey's header shape. */
@@ -144,13 +147,10 @@ function isPortkeyRequestTimeout(failure: UpstreamFailure): boolean {
 }
 
 /**
- * Every place a provider might have put its reason. Content-policy detection is
- * a case-insensitive substring match, so the whole details bag is worth handing
- * over rather than the one field each client happens to parse out — the image
- * client carries the raw `responseBody`, while text routing also uses parsed
- * `details` to distinguish provider errors from gateway failures.
+ * Read provider error fields consistently with the image boundary, without
+ * mistaking echoed request inputs for a content-policy rejection.
  */
-function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
+function upstreamFailureText(failure: UpstreamFailure): (string | undefined)[] {
     const { details } = failure;
     let detailsText: string | null = null;
     if (typeof details === "string") {
@@ -163,9 +163,13 @@ function upstreamFailureText(failure: UpstreamFailure): (string | null)[] {
         }
     }
     return [
-        detailsText,
-        typeof failure.responseBody === "string" ? failure.responseBody : null,
-        failure.message ?? null,
+        providerErrorText(detailsText),
+        providerErrorText(
+            typeof failure.responseBody === "string"
+                ? failure.responseBody
+                : undefined,
+        ),
+        providerErrorText(failure.message),
     ];
 }
 

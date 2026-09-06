@@ -47,6 +47,7 @@ import {
     CONTENT_POLICY_ERROR_CODE,
     CONTENT_POLICY_STATUS,
     firstContentPolicyMessage,
+    providerErrorText,
 } from "./utils/contentModeration.ts";
 import {
     bufferToUint8Array,
@@ -232,8 +233,8 @@ export function throwImageError(error: unknown): never {
     // Explicit codes (including user-image failures) already define the public contract.
     if (upstream.errorCode) throw upstream;
     const moderation = firstContentPolicyMessage([
-        imageProviderMessage(upstream.responseBody),
-        upstream.message,
+        providerErrorText(upstream.responseBody),
+        providerErrorText(upstream.message),
     ]);
     const status = moderation
         ? CONTENT_POLICY_STATUS
@@ -249,27 +250,6 @@ export function throwImageError(error: unknown): never {
     });
 }
 
-// Inspect only provider error fields for classification, never echoed prompts or inputs.
-// The original body is returned unchanged, not reconstructed from this message.
-function imageProviderMessage(body: string | undefined): string | undefined {
-    if (!body) return undefined;
-    try {
-        const parsed = JSON.parse(body);
-        if (Array.isArray(parsed.detail)) {
-            return parsed.detail
-                .map((detail: { msg?: string }) => detail.msg)
-                .join("; ");
-        }
-        const message =
-            parsed.detail ??
-            parsed.message ??
-            parsed.error?.message ??
-            parsed.error;
-        return typeof message === "string" ? message : undefined;
-    } catch {
-        return undefined;
-    }
-}
 function assertNonEmptyMedia(buffer: Buffer, label: string): void {
     if (buffer.length === 0) {
         throw UpstreamError.fromProvider(502, {

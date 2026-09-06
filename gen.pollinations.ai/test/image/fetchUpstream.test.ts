@@ -7,6 +7,23 @@ afterEach(() => {
 });
 
 describe("fetchUpstream", () => {
+    it("keeps a malformed provider output URL as a retryable upstream failure", async () => {
+        const cause = new TypeError("Invalid URL");
+        const fetcher = vi.fn(async () => {
+            throw cause;
+        });
+        await expect(
+            fetchUpstream("not-a-url", {}, fetcher),
+        ).rejects.toMatchObject({
+            name: "UpstreamError",
+            status: 502,
+            upstreamStatus: 502,
+            requestUrl: undefined,
+            message: "Upstream request failed: Invalid URL",
+            cause,
+        });
+    });
+
     it("retains the status and URL when reading the provider error body fails", async () => {
         const cause = new TypeError(
             "Network connection lost while reading error body",

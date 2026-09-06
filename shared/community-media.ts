@@ -149,7 +149,7 @@ async function fetchCommunityImageBytes(
         throw new UpstreamError(502, {
             message: `Endpoint image URL responded ${response.status}`,
             upstreamStatus: response.status,
-            responseBody: await response.text(),
+            responseBody: await response.text().catch(() => undefined),
             requestUrl: new URL(url),
         });
     }
@@ -184,7 +184,7 @@ async function fetchCommunityVideoBytes(
         throw new UpstreamError(502, {
             message: `Endpoint video URL responded ${response.status}`,
             upstreamStatus: response.status,
-            responseBody: await response.text(),
+            responseBody: await response.text().catch(() => undefined),
             requestUrl: new URL(url),
         });
     }

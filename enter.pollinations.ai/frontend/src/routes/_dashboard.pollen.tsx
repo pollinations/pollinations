@@ -35,13 +35,20 @@ export const Route = createFileRoute("/_dashboard/pollen")({
     },
     loader: () =>
         apiClient.stripe.billing.$get().then((r) => (r.ok ? r.json() : null)),
+    pendingComponent: () => (
+        <p role="status" className="text-theme-text-muted">
+            Loading billing details…
+        </p>
+    ),
     component: PollenPage,
 });
 
 function PollenPage() {
     const { pack } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const wallet = DashboardRoute.useLoaderData();
+    const { tierBalance, packBalance, earnings } =
+        DashboardRoute.useLoaderData();
+    const balances = { tierBalance, packBalance };
     const billingState = Route.useLoaderData();
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
 
@@ -54,10 +61,12 @@ function PollenPage() {
         <div className="flex flex-col gap-6">
             <Section title="Wallet" framed>
                 <Await
-                    promise={wallet.earnings}
-                    fallback={<PollenBalance {...wallet} />}
+                    promise={earnings}
+                    fallback={<PollenBalance {...balances} />}
                 >
-                    {(earnings) => <PollenBalance {...wallet} {...earnings} />}
+                    {(earnings) => (
+                        <PollenBalance {...balances} {...earnings} />
+                    )}
                 </Await>
             </Section>
             <Section title="Top-up" framed id="buy-pollen">

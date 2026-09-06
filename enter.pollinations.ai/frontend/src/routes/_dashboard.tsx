@@ -92,6 +92,10 @@ export const Route = createFileRoute("/_dashboard")({
 
 function DashboardLayout() {
     const data = Route.useLoaderData();
+    const balances = {
+        tierBalance: data.tierBalance,
+        packBalance: data.packBalance,
+    };
     const [isSigningOut, setIsSigningOut] = useState(false);
 
     async function handleSignOut(): Promise<void> {
@@ -118,10 +122,10 @@ function DashboardLayout() {
                 data.user ? (
                     <Await
                         promise={data.earnings}
-                        fallback={<SidebarWallet {...data} />}
+                        fallback={<SidebarWallet {...balances} />}
                     >
                         {(earnings) => (
-                            <SidebarWallet {...data} {...earnings} />
+                            <SidebarWallet {...balances} {...earnings} />
                         )}
                     </Await>
                 ) : undefined

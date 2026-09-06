@@ -41,7 +41,10 @@ Known traps:
 
 - OpenAI org costs API is paginated with `has_more` and `next_page`.
 - Use day buckets for month attribution.
-- Sum `results[].amount.value` across buckets for `amount`.
+- Sum `results[].amount.value` within each project/line-item group; reconcile
+  the sum to the organization total without adding a duplicate total row.
 - Convert API currency values such as `usd` to schema/reporting currency `USD`.
-- If using `group_by`, put project/model/line-item breakdowns in `cost_details`.
+- Write one Compute row per group: `account_id` identifies the organization,
+  `resource_id` the project, and `resource_sku` the raw line item. Apply the
+  central skill's signed `paid`/`credit` convention with funding evidence.
 - Credits/grants can pay usage before cash transactions appear.

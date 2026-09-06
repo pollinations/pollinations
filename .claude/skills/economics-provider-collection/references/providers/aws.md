@@ -127,25 +127,11 @@ Known traps:
   monthly consumed usage. Do not book that balance as provider cost. Use
   `costType=cost` for service usage and reconcile the closed-month total to the
   settlement/credit-burn evidence separately.
-- Service-name classification matters: Bedrock is model/inference; EC2, CloudFront, RDS, support, discounts, and credits are infra.
+- Service-name classification matters: Bedrock models are inference; EC2,
+  CloudFront, RDS, support and Guardrails are infrastructure. Discounts and
+  credits are funding/adjustments, not a separate infrastructure service.
 - Cost-and-usage rows are month-grain. Use `startDate=<YYYY-MM-01>` and `endDate=<first day of next month>` for a bounded calendar month. Treat dates as UTC/calendar-month boundaries unless the export explicitly states otherwise.
-- Expected response row fields include `usage_date`, `service_name`, and `total_cost`. Map `total_cost` to `amount`, `service_name` to `cost_details[].label`, and Bedrock service names to `cost_category: model` / `op_cloud_type: inference`.
+- Preserve `service_name` in `resource_name` and the usage type in
+  `resource_sku`. Write one Compute row per account/service/usage-type group,
+  using `type: inference` or `infra` and the evidenced signed funding split.
 - Credits can consume invoices before cash is paid; do not force cash transaction matches for credit-funded months.
-
-Redacted example row:
-
-```json
-{
-  "usage_date": "2026-06",
-  "service_name": "Amazon Bedrock",
-  "total_cost": "123.45"
-}
-```
-
-Mapping:
-
-- `amount`: `123.45`
-- `currency`: `USD`
-- `cost_category`: `model`
-- `op_cloud_type`: `inference`
-- `cost_details[].label`: `Amazon Bedrock`

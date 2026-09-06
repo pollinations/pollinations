@@ -38,6 +38,24 @@ Current balance snapshot:
 - Save a snapshot only when the user asks for balance now. The all-time counters
   do not prove month-to-date usage without a separately evidenced baseline.
 
+## Verified — 2026-09-06
+
+- Completed months for the Myceli organization: open the Activity Explore
+  view with explicit UTC bounds in the `elliot@myceli.ai` browser session,
+
+  ```
+  https://openrouter.ai/activity/explore?from=<YYYY-MM-01>T00:00:00.000Z&to=<next-YYYY-MM-01>T00:00:00.000Z
+  ```
+
+  The table lists every model with rounded values; the exact figures come from
+  the page's own `POST /api/frontend/v1/private/analytics-query` responses.
+  The app does not use `window.fetch`, so capture them by wrapping
+  `Response.prototype.json` and `Response.prototype.text` in the page, then
+  switching the metric (Request Count, then back to Total Usage). Union the
+  `total_usage` and `request_count` rows by model; the total must equal the
+  month's credits-usage line. Book one row per model with the display name as
+  the label and the slug in `resource_id`.
+
 Known traps:
 
 - Use the management API key. Runtime keys cannot read activity.

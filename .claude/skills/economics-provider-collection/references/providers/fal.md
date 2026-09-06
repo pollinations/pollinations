@@ -36,6 +36,17 @@ Collection steps:
 3. Save dashboard/invoice/price evidence to `data/inbox/` and use
    this skill to extract or reconcile it.
 
+## Verified — 2026-09-06
+
+- The Usage dashboard takes the month as a URL parameter:
+
+  ```
+  https://fal.ai/dashboard/usage-billing?dateRange=<YYYY-MM-01>T00:00:00Z_to_<YYYY-MM-last>T23:59:59Z
+  ```
+
+  The Model API Usage table (two pages) lists every endpoint with quantity,
+  unit and cost; book one row per endpoint with the endpoint slug as the label.
+
 Known traps:
 
 - Auth uses `Authorization: Key`, not `Bearer`.

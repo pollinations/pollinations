@@ -36,6 +36,24 @@ Collection endpoints:
   bill/order details. Use invoice PDFs or the authenticated dashboard for SKU
   classification; movement aggregates prove only exact voucher burn.
 
+## Verified — 2026-09-06
+
+- Invoice line items without the bill-detail API permission: in the signed-in
+  manager tab (`manager.eu.ovhcloud.com`), the manager's own API proxy answers
+  with the session:
+
+  ```
+  fetch('/engine/apiv6/me/bill/<billId>/details', {credentials: 'include'})
+  fetch('/engine/apiv6/me/bill/<billId>/details/<detailId>', {credentials: 'include'})
+  ```
+
+  Each detail carries `description`, `periodStart`, `periodEnd`, `quantity`,
+  `unitPrice.value` and `totalPrice.value` (EUR). AI Endpoints lines name the
+  model (`gpt-oss-20b`, `Qwen3-Coder-30B-A3B-Instruct`, `whisper-large-v3`) and
+  are inference; `Public Cloud Snapshots` lines are infra; ignore the
+  `Use of your Voucher account` lines (they net each line to zero). Invoices
+  issued on the 1st cover the previous month's service period.
+
 Known traps:
 
 - OVH API requests require signed headers using the application key, application secret, consumer key, method, URL, body, and OVH server timestamp.

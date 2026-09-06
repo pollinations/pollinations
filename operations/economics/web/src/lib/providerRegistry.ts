@@ -33,8 +33,8 @@ const HISTORICAL_PROVIDER_NAMES: Record<string, string> = {
     "aws-bedrock": "aws",
     bedrock: "aws",
     "azure-2": "azure",
-    vast: "vast.ai",
-    vastai: "vast.ai",
+    "vast.ai": "vast",
+    vastai: "vast",
 };
 
 export function normalizeProviderName(value: string): string {

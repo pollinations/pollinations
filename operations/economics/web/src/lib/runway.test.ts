@@ -426,11 +426,11 @@ describe("buildRunway", () => {
 
     it("refuses a balance-aware projection without a checked balance", () => {
         const result = buildRunway([opening()], NOW, [
-            cloud({ vendor: "vast.ai", type: "gpu" }),
+            cloud({ vendor: "vast", type: "gpu" }),
         ]);
 
         expect(result.flags).toContain(
-            "Checked balance missing for vast.ai; prepaid or postpaid run-rate cash is not forecast.",
+            "Checked balance missing for vast; prepaid or postpaid run-rate cash is not forecast.",
         );
     });
 

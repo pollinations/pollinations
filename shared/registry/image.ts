@@ -1456,7 +1456,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "nova-canvas": {
         aliases: ["amazon-nova-canvas", "amazon/nova-canvas-v1"],
-        provider: "bedrock",
+        provider: "aws",
         brand: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
@@ -1490,7 +1490,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "nova-reel": {
         aliases: ["amazon-nova-reel", "amazon/nova-reel-v1"],
-        provider: "bedrock",
+        provider: "aws",
         brand: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

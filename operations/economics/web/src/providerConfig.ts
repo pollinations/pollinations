@@ -779,7 +779,7 @@ export const PROVIDER_REGISTRY: ProviderDefinition[] = [
         ],
     },
     {
-        id: "vast.ai",
+        id: "vast",
         label: "Vast.ai",
         meteringBasis: "capacity",
         connector: "vast-ai",

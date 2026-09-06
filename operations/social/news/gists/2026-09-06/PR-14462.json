@@ -1,0 +1,35 @@
+{
+  "pr_number": 14462,
+  "title": "fix: restore Polli and improve PR reviews",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14462",
+  "merged_at": "2026-09-06T15:41:13Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restores Polli generation, visual, and repository tools after the model update; improves chart, table, and Mermaid rendering.\n- Hardens contributor authorization and keeps `!polli` general-purpose with evidence-based PR review guidance.\n- Fixes incomplete Discord member/role listings, enables Members intent, preserves source-channel context, and corrects message links.\n- Enforces requester/bot channel permissions and public-only HTTP search scope, validates search inputs, and handles rate-limit delays.\n- Adds regressions, opt-in read-only live tests, and [seven Discord verification screenshots](https://github.com/pollinations/pollinations/tree/d67377c55/apps/polli/docs/verification/2026-09-06). Prior local validation: 68 passed, 1 live test skipped; Black/Ruff passed. Screenshots show thread context, message/member/role search, PNG output, and Discord-to-GitHub mapping; the table PNG has visible overlap/clipping. Post-merge public-link and final verification remain pending.",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Polli found her tools",
+    "blurb": "Polli has her generation tools back and a much better map of Discord. She can now follow threads, find the right messages and members, and turn charts and diagrams into things humans can actually inspect.",
+    "summary": "Restored Polli's generation, visual, and repository tools after the model update, while hardening Discord search, member and role listings, channel permissions, source-context links, and chart/table/Mermaid rendering.",
+    "impact": "Discord users and contributors get more reliable Polli reviews and lookups: thread-aware results, complete member and role searches, correct message links, safer public-only search, and improved PNG visuals.",
+    "keywords": [
+      "polli",
+      "discord",
+      "pr-reviews",
+      "search",
+      "charts",
+      "mermaid",
+      "permissions"
+    ],
+    "visual_concept": "Depict Polli as a careful code reviewer in a cozy Discord garden-workshop, using a magnifying glass to trace glowing thread lines from a retro CRT terminal to a GitHub pull-request scroll. A helpful monitor robot can hold a clean chart and Mermaid diagram, while flowering code-plants represent restored tools and reliable search context.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny reviewer glasses and using a magnifying glass over glowing Discord thread lines connecting a CRT terminal to a GitHub PR scroll; a chunky monitor robot proudly holds a neat chart beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"THREAD FOUND\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14462.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny reviewer glasses and using a magnifying glass over glowing Discord thread lines connecting a CRT terminal to a GitHub PR scroll; a chunky monitor robot proudly holds a neat chart beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"THREAD FOUND\"."
+  },
+  "generated_at": "2026-09-06T15:42:11.956480+00:00"
+}

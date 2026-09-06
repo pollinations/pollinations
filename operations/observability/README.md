@@ -73,10 +73,16 @@ The public OAuth client ID is configured in `wrangler.toml`.
 | `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` Tinybird workspace |
 | `TINYBIRD_LEGACY_READ_TOKEN` | Read token for the legacy `pollinations_ai` workspace |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
-| `POLLINATIONS_AUTH_SESSION_SECRET` | Signs the Worker's private session cookie |
 
-Dashboard access requires the `admin` role on the Pollinations account in the
-Better Auth database.
+Grafana's built-in Generic OAuth client signs in through Enter's official Better
+Auth provider. Its callback is
+`https://observability.pollinations.ai/login/generic_oauth`.
+PKCE is required; no client secret or custom Worker session is used. Grafana maps
+Pollinations `admin` to its `Editor` role and rejects other users with strict role
+mapping. Anonymous, Basic Auth and auth-proxy access are disabled.
+
+Deploy Enter's OAuth migration/provider before changing the Grafana deployment.
+Verify real admin/non-admin login and logout on the Pollinations hostname.
 
 `CLOUDFLARE_TUNNEL_TOKEN` is only used by the legacy DigitalOcean deployment.
 

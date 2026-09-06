@@ -1,5 +1,9 @@
-import { createPollinationsAuth } from "@pollinations/auth";
+import {
+    getInstallationToken,
+    githubAppCredentialsFromEnv,
+} from "@shared/github/app-auth.ts";
 import { Hono } from "hono";
+import type { Env } from "../../env.ts";
 
 // Data start date - Oct 1, 2025
 const DATA_START_DATE = "2025-10-01";
@@ -8,27 +12,16 @@ const DATA_START_TIMESTAMP_SEC = Math.floor(DATA_START_TIMESTAMP_MS / 1000);
 
 const MAX_WEEKS_BACK = 20;
 
-type Env = {
-    TINYBIRD_READ_TOKEN: string;
-    TINYBIRD_API: string;
-    GITHUB_TOKEN?: string;
-    GITHUB_REPO: string;
-    POLLINATIONS_AUTH_BASE_URL?: string;
-    POLLINATIONS_AUTH_SESSION_SECRET: string;
-    POLLINATIONS_OAUTH_CLIENT_ID: string;
-    ASSETS: Fetcher;
-};
-
 // Helper to fetch from Tinybird with caching, retry, and error logging
 // Uses Cloudflare Cache API to avoid hammering Tinybird on concurrent page loads
 const TINYBIRD_CACHE_TTL = 1800; // 30 minutes
 // Part of the cache key, not the request. A pipe that gains a column keeps
 // serving the old shape for TINYBIRD_CACHE_TTL because a Worker redeploy does
-// not touch caches.default — bump this in the same commit as the pipe change.
+// not clear the cache — bump this in the same commit as the pipe change.
 const TINYBIRD_CACHE_VERSION = "5";
 
 async function fetchTinybird(
-    env: Env,
+    env: Env["Bindings"],
     pipe: string,
     params: Record<string, string | number> = {},
 ): Promise<{
@@ -41,10 +34,10 @@ async function fetchTinybird(
     for (const [k, v] of Object.entries(params)) {
         query.set(k, String(v));
     }
-    const url = `${env.TINYBIRD_API}/v0/pipes/${pipe}.json?${query}`;
+    const url = `${new URL(env.TINYBIRD_INGEST_URL).origin}/v0/pipes/${pipe}.json?${query}`;
 
     // Check Cloudflare edge cache first
-    const cache = caches.default;
+    const cache = await caches.open("admin-kpi");
     const cacheKey = new Request(`${url}&__v=${TINYBIRD_CACHE_VERSION}`);
     const cached = await cache.match(cacheKey);
     if (cached) {
@@ -130,7 +123,7 @@ function getWeekMondays(weeksBack: number): string[] {
 // Fetch a Tinybird pipe week-by-week (serial) and merge results.
 // Each call queries a single week via start_date, avoiding the 10s timeout.
 async function fetchTinybirdByWeek(
-    env: Env,
+    env: Env["Bindings"],
     pipe: string,
     weeksBack: number,
 ): Promise<{ data: unknown[]; errors: string[] }> {
@@ -152,35 +145,10 @@ async function fetchTinybirdByWeek(
     return { data: allData, errors };
 }
 
-const app = new Hono<{ Bindings: Env }>();
-
-app.use("*", async (c, next) => {
-    let auth: ReturnType<typeof createPollinationsAuth>;
-    try {
-        auth = createPollinationsAuth({
-            clientId: c.env.POLLINATIONS_OAUTH_CLIENT_ID,
-            sessionSecret: c.env.POLLINATIONS_AUTH_SESSION_SECRET,
-            baseUrl: c.env.POLLINATIONS_AUTH_BASE_URL,
-        });
-    } catch {
-        return c.json({ error: "KPI configuration unavailable" }, 500);
-    }
-
-    if (c.req.path === "/api/health") return next();
-
-    const authResponse = await auth.handle(c.req.raw);
-    if (authResponse) return authResponse;
-    if (await auth.getUser(c.req.raw)) return next();
-
-    return c.req.path.startsWith("/api/")
-        ? c.json({ error: "Unauthorized" }, 401)
-        : auth.signIn(c.req.raw);
-});
-
-app.get("/api/health", (c) => c.json({ ok: true }));
+export const kpiRoutes = new Hono<Env>();
 
 // Tinybird: Weekly registrations (from Oct 1, 2025)
-app.get("/api/kpi/registrations", async (c) => {
+kpiRoutes.get("/registrations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_registrations", {
         min_created_at: DATA_START_TIMESTAMP_SEC,
     });
@@ -190,7 +158,7 @@ app.get("/api/kpi/registrations", async (c) => {
 
 // D7 Activations: users who made their first API request within 7 days of registration
 // Fully computed in Tinybird by joining d1_user with generation_event_v2
-app.get("/api/kpi/activations", async (c) => {
+kpiRoutes.get("/activations", async (c) => {
     const result = await fetchTinybird(c.env, "kpi_activations", {
         min_created_at: DATA_START_TIMESTAMP_SEC,
     });
@@ -209,7 +177,7 @@ function parseWeeksBack(
 }
 
 // Tinybird: WAU — fetched week-by-week to avoid 10s timeout
-app.get("/api/kpi/wau", async (c) => {
+kpiRoutes.get("/wau", async (c) => {
     const result = await fetchTinybirdByWeek(
         c.env,
         "weekly_active_users",
@@ -219,7 +187,7 @@ app.get("/api/kpi/wau", async (c) => {
 });
 
 // Tinybird: Usage stats — fetched week-by-week to avoid 10s timeout
-app.get("/api/kpi/usage", async (c) => {
+kpiRoutes.get("/usage", async (c) => {
     const result = await fetchTinybirdByWeek(
         c.env,
         "weekly_usage_stats",
@@ -229,7 +197,7 @@ app.get("/api/kpi/usage", async (c) => {
 });
 
 // Tinybird: Retention — multi-week cohort query, cannot split by week
-app.get("/api/kpi/retention", async (c) => {
+kpiRoutes.get("/retention", async (c) => {
     const result = await fetchTinybird(c.env, "weekly_retention", {
         weeks_back: parseWeeksBack(c, 8),
     });
@@ -238,7 +206,7 @@ app.get("/api/kpi/retention", async (c) => {
 });
 
 // Tinybird: Health stats — fetched week-by-week to avoid 10s timeout
-app.get("/api/kpi/health", async (c) => {
+kpiRoutes.get("/health", async (c) => {
     const result = await fetchTinybirdByWeek(
         c.env,
         "weekly_health_stats",
@@ -263,7 +231,7 @@ function getWeekStart(date: Date): string {
 
 // Tinybird: Fetch and aggregate daily Stripe revenue into weekly
 async function fetchStripeRevenue(
-    env: Env,
+    env: Env["Bindings"],
     weeksBack: number,
 ): Promise<Array<{ week: string; revenue: number; purchases: number }>> {
     // Include the current partial week plus every requested full week.
@@ -297,7 +265,7 @@ async function fetchStripeRevenue(
         .sort((a, b) => a.week.localeCompare(b.week));
 }
 
-app.get("/api/kpi/revenue", async (c) => {
+kpiRoutes.get("/revenue", async (c) => {
     const result = (await fetchStripeRevenue(c.env, parseWeeksBack(c))).map(
         (row) => ({
             ...row,
@@ -309,7 +277,7 @@ app.get("/api/kpi/revenue", async (c) => {
 });
 
 // Tinybird: B2B/B2C User Segments — fetched week-by-week to avoid 10s timeout
-app.get("/api/kpi/user-segments", async (c) => {
+kpiRoutes.get("/user-segments", async (c) => {
     const result = await fetchTinybirdByWeek(
         c.env,
         "weekly_user_segment",
@@ -318,22 +286,21 @@ app.get("/api/kpi/user-segments", async (c) => {
     return c.json({ data: result.data });
 });
 
-function githubHeaders(env: Env): Record<string, string> {
-    const headers: Record<string, string> = {
+async function githubHeaders(
+    env: Env["Bindings"],
+): Promise<Record<string, string>> {
+    return {
         "User-Agent": "KPI-Dashboard",
         Accept: "application/vnd.github+json",
+        Authorization: `Bearer ${await getInstallationToken(githubAppCredentialsFromEnv(env), "pollinations")}`,
     };
-    if (env.GITHUB_TOKEN) {
-        headers.Authorization = `token ${env.GITHUB_TOKEN}`;
-    }
-    return headers;
 }
 
 // GitHub: App submissions — weekly counts from issue labels
-app.get("/api/kpi/app-submissions", async (c) => {
-    const headers = githubHeaders(c.env);
+kpiRoutes.get("/app-submissions", async (c) => {
+    const headers = await githubHeaders(c.env);
 
-    const repo = c.env.GITHUB_REPO;
+    const repo = "pollinations/pollinations";
     const since = DATA_START_DATE;
     const weeklySubmissions: Record<string, number> = {};
     let page = 1;
@@ -374,11 +341,11 @@ app.get("/api/kpi/app-submissions", async (c) => {
 });
 
 // GitHub: Stars
-app.get("/api/kpi/github", async (c) => {
-    const headers = githubHeaders(c.env);
+kpiRoutes.get("/github", async (c) => {
+    const headers = await githubHeaders(c.env);
 
     const res = await fetch(
-        `https://api.github.com/repos/${c.env.GITHUB_REPO}`,
+        "https://api.github.com/repos/pollinations/pollinations",
         { headers },
     );
 
@@ -395,8 +362,3 @@ app.get("/api/kpi/github", async (c) => {
         watchers: data.subscribers_count || 0,
     });
 });
-
-// Everything else is the SPA shell, served only after OAuth authentication.
-app.get("*", (c) => c.env.ASSETS.fetch(c.req.raw));
-
-export default app;

@@ -86,26 +86,10 @@ INSERT INTO `oauth_client` (
     `grant_types`, `response_types`, `public`, `type`, `require_pkce`
 ) VALUES
 (
-    'internal-kpi', 'pk_Bxny9FSNDpousKqW', false, true,
-    '["openid","profile","email"]', unixepoch(), unixepoch(),
-    'Pollinations KPI',
-    '["https://kpi.pollinations.ai/auth/callback","https://kpi.myceli.ai/auth/callback","http://127.0.0.1:3456/auth/callback"]',
-    'none', '["authorization_code"]', '["code"]', true,
-    'user-agent-based', true
-),
-(
-    'internal-economics', 'pk_LBL0KnkHI6AZopCc', false, true,
-    '["openid","profile","email"]', unixepoch(), unixepoch(),
-    'Pollinations Economics',
-    '["https://economics.pollinations.ai/auth/callback","https://economics.myceli.ai/auth/callback","http://127.0.0.1:4180/auth/callback"]',
-    'none', '["authorization_code"]', '["code"]', true,
-    'user-agent-based', true
-),
-(
     'internal-observability', 'pk_vVa38CFt1R1gGScW', false, true,
     '["openid","profile","email"]', unixepoch(), unixepoch(),
     'Pollinations Observability',
-    '["https://observability.pollinations.ai/auth/callback","https://observability.myceli.ai/auth/callback","http://127.0.0.1:3000/auth/callback"]',
+    '["https://observability.pollinations.ai/login/generic_oauth"]',
     'none', '["authorization_code"]', '["code"]', true,
     'user-agent-based', true
 );

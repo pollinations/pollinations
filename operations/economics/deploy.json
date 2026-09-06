@@ -3,11 +3,9 @@
   "credentials": "myceli",
   "sops": "economics",
   "install": "npm ci --prefix ../..",
-  "build": "npm run build --prefix web",
-  "deploy": "sops exec-file --no-fifo secrets/web.json 'node web/scripts/check-tinybird-contract.mjs --secrets-file {} && cd web && npx wrangler deploy --secrets-file {}'",
+  "deploy": "npm run deploy --prefix web",
   "verify": [
-    "https://economics.myceli.ai/api/health",
-    "https://economics.pollinations.ai/api/health"
+    "https://economics.pollinations.ai/"
   ],
   "watch": [
     "packages/auth/",

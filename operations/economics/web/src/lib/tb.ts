@@ -1,3 +1,4 @@
+import { dashboard } from "../auth";
 import { FIXTURES } from "../fixtures";
 import type {
     Data,
@@ -132,7 +133,9 @@ async function fetchPipe<T>(pipe: string): Promise<T[]> {
         return validatePipeRows<T>(pipe, rows);
     }
 
-    const res = await fetch(`/api/pipes/${encodeURIComponent(pipe)}`);
+    const res = await dashboard.fetch(
+        `/economics/pipes/${encodeURIComponent(pipe)}`,
+    );
     if (!res.ok) throw new TbError(pipe, res.status);
 
     const body = (await res.json()) as { data?: unknown[] };

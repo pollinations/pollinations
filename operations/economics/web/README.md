@@ -1,6 +1,6 @@
 # Economics Web
 
-Economics UI for `economics.myceli.ai` and `economics.pollinations.ai`, backed
+Economics UI for `economics.pollinations.ai`, backed
 by OP Tinybird pipe outputs in `enter.pollinations.ai/observability/`.
 The app has three operating views:
 
@@ -12,17 +12,19 @@ The app has three operating views:
 
 ```bash
 npm install
-npm run dev
+VITE_ENTER_URL=http://127.0.0.1:3000 npm run dev
 ```
 
 The dev server is pinned to `http://127.0.0.1:4180`.
 
-Auth uses Pollinations OAuth backed by the Cloudflare Worker. For local development,
-the OAuth configuration and the staging-only Tinybird reader are assembled from
-`../secrets/web.json` and `../secrets/web.dev.json` into the ignored `.dev.vars`
-file. Production deployment continues to use `../secrets/web.json`. No secret is
-bundled or stored in the browser. Access requires the `admin` role on the
-Pollinations account in the Better Auth database.
+Run Enter locally on port 3000 as well. The dashboard uses Enter's existing
+Better Auth session, just like account settings. No dashboard secrets or
+separate session are needed. Production defaults to `https://enter.pollinations.ai`.
+
+Private reads go to `/api/dashboards/economics/pipes/:pipe` on Enter, which
+requires an admin session and uses `TINYBIRD_ECONOMICS_READ_TOKEN` server-side.
+That dedicated read token must be provisioned in Enter before rollout, with
+separate approval. Deploy Enter before this static frontend.
 
 ## Fixtures Mode
 
@@ -38,15 +40,10 @@ development reads the verified production snapshot in staging.
 Write-side conventions (entry_id, idempotent corrections) live in the
 Economics ingest agent's own system prompt.
 
-The app is a read-only mirror; all reads go through the Worker proxy. In
-deployed environments the Worker authenticates every request before serving
-the SPA shell or any static asset, so private forecast assumptions and
-reconciliation explanations cannot be downloaded before login. Localhost keeps
-direct asset access for development and fixture mode. The public workers.dev
-origin is disabled; only the two configured custom domains serve the app.
-Production deployment stops before changing the Worker unless all four required
-pipes already respond from the production Tinybird workspace. Deploy and verify
-Tinybird schema changes before promoting a Worker that reads them.
+The frontend and its demo fixtures are public static assets. Real ledger data,
+forecast assumptions and reconciliation explanations are loaded only through
+Enter's protected read endpoints. GitHub Actions deploys the frontend without
+synchronizing any dashboard secrets.
 
 Runway reconstructs cash from one statement-backed opening-balance row in
 `economics_bank_ledger` plus later bank movements. Closed months are actuals. The

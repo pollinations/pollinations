@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "predev": "npm run build --prefix ../../../packages/ui && npm run decrypt-vars",
-    "decrypt-vars": "sops exec-env ../secrets/web.json 'sops exec-env ../secrets/web.dev.json \"node scripts/write-dev-vars.mjs\"'",
+    "predev": "npm run build --prefix ../../../packages/ui",
     "build": "vite build",
     "prebuild": "npm run build --prefix ../../../packages/ui",
     "deploy": "npm run build && wrangler deploy",
@@ -23,7 +22,6 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
-    "@cloudflare/vite-plugin": "^1.45.0",
     "@cloudflare/workers-types": "^5.20260715.1",
     "@tailwindcss/vite": "^4.0.0",
     "@types/node": "^22.10.0",

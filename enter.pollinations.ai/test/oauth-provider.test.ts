@@ -5,8 +5,9 @@ import { describe, expect } from "vitest";
 import { test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";
-const CLIENT_ID = "pk_Bxny9FSNDpousKqW";
-const REDIRECT_URI = "https://kpi.pollinations.ai/auth/callback";
+const CLIENT_ID = "pk_vVa38CFt1R1gGScW";
+const REDIRECT_URI =
+    "https://observability.pollinations.ai/login/generic_oauth";
 const VERIFIER = "test-verifier-that-is-at-least-forty-three-characters";
 
 function base64Url(bytes: Uint8Array) {

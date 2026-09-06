@@ -264,6 +264,7 @@ TINYBIRD_INGEST_URL = "http://localhost:7181/v0/events?name=generation_event_v2"
 TINYBIRD_STRIPE_INGEST_URL = "http://localhost:7181/v0/events?name=stripe_event"
 TINYBIRD_INGEST_TOKEN = "test_tinybird_ingest_token"
 TINYBIRD_READ_TOKEN = "test_tinybird_read_token"
+TINYBIRD_ECONOMICS_READ_TOKEN = "test_economics_read_token"
 STRIPE_MODE = "sandbox"
 STRIPE_SUCCESS_URL = "http://localhost:3000"
 # Placeholders, not credentials. The Stripe tests run against the mock in

@@ -12,7 +12,8 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { authClient } from "./auth";
 import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
@@ -72,11 +73,11 @@ function AccountControls({ accountUser }) {
             {accountUser && (
                 <AccountMenu
                     name={accountName(accountUser)}
-                    avatarUrl={accountUser.picture}
+                    avatarUrl={accountUser.image}
                 >
-                    <DropdownItem as="a" href="/auth/logout">
+                    <DropdownItem onClick={() => authClient.signOut()}>
                         <SignOutIcon aria-hidden="true" />
-                        Sign Out
+                        Sign out of Pollinations
                     </DropdownItem>
                 </AccountMenu>
             )}
@@ -135,32 +136,51 @@ function LoadingScreen({ done, active, accountUser }) {
 const EXPLORER_ID = "kpi-explorer";
 
 function accountName(user) {
-    return user.preferred_username || user.name || user.email;
+    return user.name || user.email;
 }
 
 export default function App() {
+    const { data: session, isPending, error } = authClient.useSession();
+    if (isPending)
+        return (
+            <main>
+                <Text>Checking sign-in…</Text>
+            </main>
+        );
+    if (error)
+        return (
+            <main>
+                <Alert>Could not check your session. Please reload.</Alert>
+            </main>
+        );
+    if (!session?.user)
+        return (
+            <main className="p-8">
+                <Heading>KPI dashboard</Heading>
+                <Text>Sign in with your Pollinations admin account.</Text>
+                <Button
+                    onClick={() =>
+                        authClient.signIn.social({
+                            provider: "github",
+                            callbackURL: window.location.href,
+                        })
+                    }
+                >
+                    Sign in
+                </Button>
+            </main>
+        );
+    return <Dashboard accountUser={session.user} />;
+}
+
+function Dashboard({ accountUser }) {
     // Which unit each cycling row is showing, and which row the explorer plots.
     // Both live here so the chart follows the table.
     const [viewIndex, setViewIndex] = useState({});
     const [explored, setExplored] = useState("registrations:0");
-    const [accountUser, setAccountUser] = useState(null);
     const [weeks, setWeeks] = useState(() =>
         weeksFromSearch(window.location.search),
     );
-
-    useEffect(() => {
-        let cancelled = false;
-        fetch("/auth/session", { headers: { Accept: "application/json" } })
-            .then((response) => (response.ok ? response.json() : null))
-            .then((session) => {
-                if (!cancelled) setAccountUser(session?.user ?? null);
-            })
-            .catch(() => undefined);
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     const changeWeeks = (event) => {
         const next = Number(event.target.value);

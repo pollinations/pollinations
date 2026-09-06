@@ -1,5 +1,4 @@
 name = "myceli-economics"
-main = "worker/index.ts"
 compatibility_date = "2026-07-15"
 workers_dev = false
 
@@ -9,15 +8,5 @@ routes = [
 ]
 
 [assets]
-binding = "ASSETS"
+directory = "./dist"
 not_found_handling = "single-page-application"
-run_worker_first = true
-
-[vars]
-TINYBIRD_API = "https://api.europe-west2.gcp.tinybird.co"
-TINYBIRD_POLLEN_PIPE = "economics_pollen_usage_api"
-POLLINATIONS_OAUTH_CLIENT_ID = "pk_LBL0KnkHI6AZopCc"
-
-# Secrets:
-# - POLLINATIONS_AUTH_SESSION_SECRET
-# - TINYBIRD_ECONOMICS_READ_TOKEN

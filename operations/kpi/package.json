@@ -4,7 +4,6 @@
     "version": "1.0.0",
     "type": "module",
     "scripts": {
-        "decrypt-vars": "sops decrypt secrets/env.json --output-type dotenv > .dev.vars",
         "predev": "npm run build --prefix ../../packages/ui",
         "dev": "vite",
         "test": "vitest run",
@@ -21,7 +20,6 @@
         "react-dom": "^19.2.0"
     },
     "devDependencies": {
-        "@cloudflare/vite-plugin": "^1.45.0",
         "@cloudflare/workers-types": "^5.20260715.1",
         "@tailwindcss/vite": "^4.0.0",
         "@vitejs/plugin-react": "^5.1.1",

@@ -3,10 +3,9 @@
   "credentials": "myceli",
   "sops": "default",
   "install": "npm ci --prefix ../.. && npm ci",
-  "deploy": "npm run deploy && sops exec-file --no-fifo secrets/env.json 'npx wrangler secret bulk {}'",
+  "deploy": "npm run deploy",
   "verify": [
-    "https://kpi.myceli.ai/api/health",
-    "https://kpi.pollinations.ai/api/health"
+    "https://kpi.pollinations.ai/"
   ],
   "watch": [
     "packages/auth/",

@@ -22,16 +22,18 @@ North star: weekly active paying customers.
 
 ```bash
 npm ci --prefix ../.. && npm ci
-npm run decrypt-vars          # Worker configuration → .dev.vars (needs the age key)
-npm run dev                   # http://127.0.0.1:3456
+VITE_ENTER_URL=http://127.0.0.1:3000 npm run dev  # http://127.0.0.1:3456
 ```
 
-Access is limited to Pollinations accounts whose Better Auth database role
-includes `admin`, shared by the three internal apps.
+Run Enter locally on port 3000. The static frontend uses Enter's existing Better
+Auth session. Private reads go to `/api/dashboards/kpi/*` on Enter and require
+an admin account. Enter uses its existing Tinybird reader and GitHub App;
+no dashboard password, OAuth client or session secret is needed.
 
 ## Deploy
 
 Through GitHub Actions only: `Deploy / Applications` runs on pushes to
 `production` that touch `operations/**`, discovers this folder via `deploy.json`
-and runs `npm run deploy` plus a `wrangler secret bulk` from `secrets/env.json`.
+and runs `npm run deploy` without synchronizing dashboard secrets.
+Deploy the Enter data routes before the frontend.
 Use `workflow_dispatch` with `operations/kpi` to force a deploy.

@@ -36,6 +36,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { authClient } from "./auth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import {
     FilterBar,
@@ -70,7 +71,7 @@ import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
 type AccountUser = {
     email: string;
     name?: string;
-    picture?: string;
+    image?: string | null;
     preferred_username?: string;
 };
 
@@ -650,10 +651,46 @@ function viewInfoContent(activeView: ActiveView) {
 }
 
 export default function App() {
+    if (fixturesMode()) return <Dashboard accountUser={FIXTURE_ACCOUNT_USER} />;
+    return <AuthenticatedDashboard />;
+}
+
+function AuthenticatedDashboard() {
+    const { data: session, isPending, error } = authClient.useSession();
+    if (isPending)
+        return (
+            <main>
+                <Text>Checking sign-in…</Text>
+            </main>
+        );
+    if (error)
+        return (
+            <main>
+                <Alert>Could not check your session. Please reload.</Alert>
+            </main>
+        );
+    if (!session?.user)
+        return (
+            <main className="p-8">
+                <Heading>Economics dashboard</Heading>
+                <Text>Sign in with your Pollinations admin account.</Text>
+                <Button
+                    onClick={() =>
+                        authClient.signIn.social({
+                            provider: "github",
+                            callbackURL: window.location.href,
+                        })
+                    }
+                >
+                    Sign in
+                </Button>
+            </main>
+        );
+    return <Dashboard accountUser={session.user} />;
+}
+
+function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const fixtures = fixturesMode();
-    const [accountUser, setAccountUser] = useState<AccountUser | null>(() =>
-        fixtures ? FIXTURE_ACCOUNT_USER : null,
-    );
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
     const [activeView, setActiveView] = useState<ActiveView>("runway");
@@ -662,26 +699,6 @@ export default function App() {
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
     const [attempt, setAttempt] = useState(0);
-
-    useEffect(() => {
-        if (fixtures) return;
-
-        let cancelled = false;
-        fetch("/auth/session", { headers: { Accept: "application/json" } })
-            .then(async (response) =>
-                response.ok
-                    ? ((await response.json()) as { user?: AccountUser })
-                    : null,
-            )
-            .then((session) => {
-                if (!cancelled) setAccountUser(session?.user ?? null);
-            })
-            .catch(() => undefined);
-
-        return () => {
-            cancelled = true;
-        };
-    }, [fixtures]);
 
     useEffect(() => {
         const retryKey = attempt;
@@ -695,7 +712,7 @@ export default function App() {
                 if (cancelled || retryKey !== attempt) return;
 
                 if (caught instanceof TbError && caught.status === 401) {
-                    window.location.assign("/auth/login");
+                    window.location.reload();
                 } else {
                     setError(
                         caught instanceof Error
@@ -757,13 +774,19 @@ export default function App() {
             {accountUser && (
                 <AccountMenu
                     name={accountName(accountUser)}
-                    avatarUrl={accountUser.picture}
+                    avatarUrl={accountUser.image}
                     className="polli:w-full"
                     side="top"
                 >
-                    <DropdownItem as="a" href={fixtures ? "/" : "/auth/logout"}>
+                    <DropdownItem
+                        onClick={() =>
+                            fixtures
+                                ? window.location.assign("/")
+                                : authClient.signOut()
+                        }
+                    >
                         <SignOutIcon aria-hidden="true" />
-                        Sign Out
+                        Sign out of Pollinations
                     </DropdownItem>
                 </AccountMenu>
             )}

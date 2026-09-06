@@ -35,7 +35,7 @@ import { discordConfigFromEnv } from "./services/discord.ts";
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
 
-function isAdminUser(user: { id: string; role?: string | null }) {
+export function isAdminUser(user: { id: string; role?: string | null }) {
     return (
         ADMIN_USER_IDS.includes(user.id) ||
         user.role
@@ -75,7 +75,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 
     const oauthProviderPlugin = oauthProvider({
         loginPage: "/sign-in",
-        // Only the trusted first-party dashboard clients are registered, so
+        // Only the trusted Grafana client is registered, so
         // consent is skipped. Explicit consent requests fail closed here.
         consentPage: "/error",
         scopes: ["openid", "profile", "email"],
@@ -200,6 +200,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             ...AUTH_TRUSTED_ORIGINS,
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            ...(env.ENVIRONMENT === "production"
+                ? []
+                : ["http://127.0.0.1:3456", "http://127.0.0.1:4180"]),
         ],
         user: {
             additionalFields: authAdditionalFields.user,

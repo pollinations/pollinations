@@ -252,10 +252,18 @@
         "claude-sonnet-4.6": "claude",
         "USE1-Guardrail-ContentPolicyUnitsConsumed": null,
         "USE1-Guardrail-SensitiveInformationPolicyPaidUnitsConsumed": null,
+        "USE1-Kimi-K2-Thinking-input-tokens": "kimi",
+        "USE1-Kimi-K2-Thinking-output-tokens": "kimi",
+        "USE1-minimax.minimax-m2.5-input-tokens": "minimax",
+        "USE1-minimax.minimax-m2.5-output-tokens": "minimax",
+        "USE1-moonshotai.kimi-k2.5-input-tokens": "kimi",
+        "USE1-moonshotai.kimi-k2.5-output-tokens": "kimi",
         "USE1-Nova2.0Lite-input-tokens": "nova",
         "USE1-Nova2.0Lite-output-tokens": "nova",
         "USE1-NovaCanvas-T2I-1024-Standard": "nova-canvas",
         "USE1-NovaCanvas-T2I-2048-Standard": "nova-canvas",
+        "USE1-NovaLite-input-tokens": "nova-fast",
+        "USE1-NovaLite-output-tokens": "nova-fast",
         "USE1-NovaMicro-input-tokens": "nova-fast",
         "USE1-NovaMicro-output-tokens": "nova-fast",
         "USE1-NovaReel-T2V-Medfps-HDRes": "nova-reel"
@@ -595,6 +603,8 @@
           "midijourney"
         ],
         "gpt aud 0828 Inp glbl Tokens": "openai-audio-large",
+        "gpt aud 0828 Outp glbl Tokens": "openai-audio-large",
+        "gpt aud 0828 txt Inp glbl Tokens": "openai-audio-large",
         "gpt aud 0828 txt Outp glbl Tokens": "openai-audio-large",
         "gpt aud 1.5 inp Gl 1M Tokens": "openai-audio-large",
         "gpt aud 1.5 opt Gl 1M Tokens": "openai-audio-large",
@@ -607,10 +617,13 @@
         "gpt img 1 mini inp img glbl Tokens": "gptimage",
         "gpt img 1 mini inp txt glbl Tokens": "gptimage",
         "gpt img 1 mini out img glbl Tokens": "gptimage",
+        "gpt img 1.5 in img DZ 1M Tokens": "gptimage-large",
         "gpt img 1.5 in img gl 1M Tokens": "gptimage-large",
+        "gpt img 1.5 in txt DZ 1M Tokens": "gptimage-large",
         "gpt img 1.5 in txt gl 1M Tokens": "gptimage-large",
         "gpt img 1.5 out img DZ 1M Tokens": "gptimage-large",
         "gpt img 1.5 out img gl 1M Tokens": "gptimage-large",
+        "gpt img 1.5 out txt DZ 1M Tokens": "gptimage-large",
         "gpt img 1.5 out txt gl 1M Tokens": "gptimage-large",
         "gpt-live-transcribe Gl Unit": "gpt-live-transcribe",
         "gpt-realtime-2 Audio cd inp Gl 1M Tokens": "gpt-realtime-2",
@@ -854,6 +867,7 @@
       "modelLabels": {
         "ByteDance/Seedance-2.0": null,
         "deepseek-ai/DeepSeek-V4-Flash": "deepseek",
+        "deepseek-ai/DeepSeek-V4-Pro": "deepseek-pro",
         "google/gemma-4-26B-A4B-it": "gemma",
         "hexgrad/Kokoro-82M": "kokoro",
         "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": "nemotron",
@@ -1896,7 +1910,8 @@
       "modelLabels": {
         "gpt-4.1-2025-04-14": "midijourney",
         "gpt-5-mini-2025-08-07": "openai",
-        "gpt-5-nano-2025-08-07": "openai-fast"
+        "gpt-5-nano-2025-08-07": "openai-fast",
+        "gpt-5.4-nano-2026-03-17": "openai"
       }
     },
     {
@@ -1977,6 +1992,7 @@
         "ideogram-ai/ideogram-v4-balanced": "ideogram-v4-balanced",
         "ideogram-ai/ideogram-v4-quality": "ideogram-v4-quality",
         "ideogram-ai/ideogram-v4-turbo": "ideogram-v4-turbo",
+        "lightricks/ltx-2-pro": null,
         "prunaai/p-image": "p-image",
         "prunaai/p-image-edit": "p-image-edit",
         "prunaai/p-image-upscale": null,

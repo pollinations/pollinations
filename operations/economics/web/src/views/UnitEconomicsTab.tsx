@@ -7,7 +7,7 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -41,7 +41,9 @@ import {
 import type { MonthFilterValue } from "../lib/months";
 import { signedToneOrSoft } from "../lib/tone";
 import {
+    matchesSituation,
     providerCostCheck,
+    type Situation,
     type UnitEconomicsGrain,
     type UnitEconomicsRow,
     unitEconomicsRows,
@@ -123,32 +125,51 @@ function allocationChip(row: UnitEconomicsRow) {
     );
 }
 
+// Each chip summarises one situation and, when clicked, filters the table to
+// the rows behind it; clicking the active chip clears the filter.
 function ResidualBucketChips({
     buckets,
+    groupedUsd,
+    active,
+    onSelect,
 }: {
     buckets: ModelReconcileSummary["buckets"];
+    groupedUsd: number;
+    active: Situation;
+    onSelect: (situation: Situation) => void;
 }) {
     const items: {
+        situation: Situation;
         label: string;
         usd: number;
         intent: "success" | "neutral" | "danger" | "warning";
     }[] = [
         {
+            situation: "assigned",
             label: "assigned to models",
             usd: buckets.allocatedUsd,
             intent: "success",
         },
         {
+            situation: "grouped",
+            label: "grouped",
+            usd: groupedUsd,
+            intent: "neutral",
+        },
+        {
+            situation: "missing breakdown",
             label: "missing breakdown",
             usd: buckets.missingBreakdownUsd,
             intent: "danger",
         },
         {
+            situation: "needs mapping",
             label: "needs mapping",
             usd: buckets.needsMappingUsd,
             intent: "warning",
         },
         {
+            situation: "no Pollen model",
             label: "no Pollen model",
             usd: buckets.providerOnlyUsd,
             intent: "neutral",
@@ -158,11 +179,33 @@ function ResidualBucketChips({
         <div className="flex flex-wrap items-center gap-2">
             {items
                 .filter((item) => item.usd > 0.005)
-                .map((item) => (
-                    <Chip intent={item.intent} size="sm" key={item.label}>
-                        {fmtUsd(item.usd)} {item.label}
-                    </Chip>
-                ))}
+                .map((item) => {
+                    const selected = active === item.situation;
+                    return (
+                        <button
+                            type="button"
+                            key={item.situation}
+                            aria-pressed={selected}
+                            title={
+                                selected
+                                    ? "Show all rows"
+                                    : `Show only ${item.label} rows`
+                            }
+                            onClick={() =>
+                                onSelect(selected ? "all" : item.situation)
+                            }
+                            className={
+                                selected
+                                    ? "rounded-lg ring-2 ring-theme-text-strong"
+                                    : "rounded-lg opacity-90 hover:opacity-100"
+                            }
+                        >
+                            <Chip intent={item.intent} size="sm">
+                                {fmtUsd(item.usd)} {item.label}
+                            </Chip>
+                        </button>
+                    );
+                })}
         </div>
     );
 }
@@ -386,9 +429,24 @@ function UnitEconomicsTable({
             }).filter(hasEconomicActivity),
         [allVendorMonths, month],
     );
-    const rows = useMemo(
+    const [situation, setSituation] = useState<Situation>("all");
+    const allRows = useMemo(
         () => unitEconomicsRows(vendorMonths, grain),
         [grain, vendorMonths],
+    );
+    const rows = useMemo(
+        () =>
+            grain === "model"
+                ? allRows.filter((row) => matchesSituation(row, situation))
+                : allRows,
+        [allRows, grain, situation],
+    );
+    const groupedUsd = useMemo(
+        () =>
+            allRows
+                .filter((row) => matchesSituation(row, "grouped"))
+                .reduce((sum, row) => sum + (row.providerUsageUsd ?? 0), 0),
+        [allRows],
     );
     const vendorEconomics = useMemo(
         () => unitEconomicsRows(vendorMonths, "provider"),
@@ -548,7 +606,12 @@ function UnitEconomicsTable({
             <StatCards items={stats} />
 
             {view === "inference" && (
-                <ResidualBucketChips buckets={summary.buckets} />
+                <ResidualBucketChips
+                    buckets={summary.buckets}
+                    groupedUsd={groupedUsd}
+                    active={situation}
+                    onSelect={setSituation}
+                />
             )}
 
             {(includesPartialMonth ||

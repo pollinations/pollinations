@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Data, OpCloudRow, OpPollenRow } from "../types";
 import { modelReconcileRows } from "./modelReconcile";
 import {
+    matchesSituation,
     meterMatchPct,
     providerCostCheck,
     type UnitEconomicsRow,
@@ -263,5 +264,50 @@ describe("providerCostCheck", () => {
         expect(
             providerCostCheck(economicsRow({ vendor: "new-provider" })).kind,
         ).toBe("missing-mapping");
+    });
+});
+
+describe("matchesSituation", () => {
+    const row = (over: Partial<UnitEconomicsRow>): UnitEconomicsRow =>
+        ({
+            grain: "model",
+            month: "2026-08",
+            vendor: "azure",
+            model: "x",
+            allocationStatus: "allocated",
+            sourceStatus: "both sources",
+            members: null,
+            lines: null,
+            ...over,
+        }) as UnitEconomicsRow;
+
+    it("maps each chip to the rows it summarises", () => {
+        const assigned = row({ allocationStatus: "allocated" });
+        const grouped = row({
+            allocationStatus: "allocated",
+            members: ["openai-large", "midijourney-large"],
+        });
+        const breakdown = row({ allocationStatus: "missing breakdown" });
+        const mapping = row({ allocationStatus: "needs mapping" });
+        const noModel = row({ allocationStatus: "provider only" });
+        const rows = [assigned, grouped, breakdown, mapping, noModel];
+
+        expect(rows.filter((r) => matchesSituation(r, "all"))).toEqual(rows);
+        expect(rows.filter((r) => matchesSituation(r, "assigned"))).toEqual([
+            assigned,
+            grouped,
+        ]);
+        expect(rows.filter((r) => matchesSituation(r, "grouped"))).toEqual([
+            grouped,
+        ]);
+        expect(
+            rows.filter((r) => matchesSituation(r, "missing breakdown")),
+        ).toEqual([breakdown]);
+        expect(
+            rows.filter((r) => matchesSituation(r, "needs mapping")),
+        ).toEqual([mapping]);
+        expect(
+            rows.filter((r) => matchesSituation(r, "no Pollen model")),
+        ).toEqual([noModel]);
     });
 });

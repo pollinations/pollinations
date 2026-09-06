@@ -230,6 +230,37 @@ function modelMeterGap(
     return null;
 }
 
+// The situation chips above the inference table double as row filters.
+export type Situation =
+    | "all"
+    | "assigned"
+    | "grouped"
+    | "missing breakdown"
+    | "needs mapping"
+    | "no Pollen model";
+
+export function matchesSituation(
+    row: Pick<UnitEconomicsRow, "allocationStatus" | "members">,
+    situation: Situation,
+): boolean {
+    switch (situation) {
+        case "all":
+            return true;
+        case "assigned":
+            return row.allocationStatus === "allocated";
+        case "grouped":
+            return (
+                row.allocationStatus === "allocated" &&
+                (row.members?.length ?? 0) > 0
+            );
+        case "missing breakdown":
+        case "needs mapping":
+            return row.allocationStatus === situation;
+        case "no Pollen model":
+            return row.allocationStatus === "provider only";
+    }
+}
+
 export function unitEconomicsRows(
     providers: readonly ModelReconcileRow[],
     grain: UnitEconomicsGrain,

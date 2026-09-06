@@ -9,6 +9,31 @@ Canonical vendor: `lambda`
   dashboard exposes complete calendar-month history by instance, instance type,
   region, duration, hours, rate, and spend.
 
+## Verified — 2026-09-06
+
+- Weekly invoices arrive by email from `Lambda <no-reply@lambdal.com>` with
+  the subject "Here is your invoice" and one PDF attachment named
+  `invoice-lambda_<MMYYYY><seq>.pdf`. Collect them with
+  `gog gmail search 'from:(lambda) invoice after:YYYY/MM/DD before:YYYY/MM/DD' --json`,
+  then `gog gmail get <id> --json` and
+  `gog gmail attachment <messageId> <attachmentId> --json`.
+- Each PDF states `Billing Period` (Monday to Monday), `Sub Total`,
+  `Promotional Credits`, and `Amount Due (USD)`. The usage month is the
+  calendar month of the dashboard rows, never the invoice week.
+- Billing page: `https://cloud.lambda.ai/billing` (Credits table with the
+  grant, Credit activity per invoice, Payment History with a `View` link per
+  invoice). Grant `451fc717`: $7,500 granted 2026-03-30, expired 2026-08-15
+  with $0.00 remaining.
+- Reconciliation done 2026-09-06: the 18 weekly invoices from
+  `lambda_04202614208` (Mar 30 – Apr 6) to `lambda_08202613480`
+  (Jul 27 – Aug 3) sum to $7,509.56 = $7,500.00 promotional credit + $9.56
+  card. The staging ledger's calendar-month rows (Mar – Aug 2026) sum to
+  $7,508.48 (credit burn $7,495.04 + paid $13.44). Per-month differences are
+  the weekly-versus-monthly grain, not missing usage.
+- Archive: all 18 invoices are in the accounting Drive under
+  `2026/<MM Month>/Invoices` as `YYYY-MM-DD__Lambda__invoice-lambda-<id>.pdf`
+  (invoice date).
+
 Primary evidence sources:
 
 - Current instances: `GET https://cloud.lambda.ai/api/v1/instances`.

@@ -118,6 +118,19 @@ Collection steps:
   `billing get-usage` USAGE TOTAL to the cent.
 - The Orb page is a JavaScript app: `curl` returns a 1.5 KB shell. Read it in
   the signed-in browser (page text), or use the page's Download invoice PDF.
+  The "Download invoice" link resolves to
+  `https://assets.withorb.com/invoice/<org>/<id>?token=…`, which `curl`
+  downloads as a PDF without cookies (read the `href` of the link with
+  `javascript_tool` in the open tab).
+- `-a <account id>` must be paired with that account's `--api-key`; the
+  default `~/.fireworks/auth.ini` key is Neoglyph's, so `-a pollinations`
+  without `--api-key` still returns `PermissionDenied`.
+- Archive (2026-09-06): every Orb postpaid invoice of the four accounts is in
+  the accounting Drive under `2026/<MM Month>/Invoices` as
+  `YYYY-MM-DD__Fireworks__<invoice number>__<Account>.pdf` — Myceli
+  `ETIXZH-00001` … `00008` (Feb – Sep 2026), Pollinations `EOQNTM-00001` …
+  `00010`, Neoglyph `XJKRPG-00001` … `00004`, Pixelmarket `ZDLLPK-00001` …
+  `00004`. Neoglyph and Pixelmarket invoices are all $0.00 usage.
 - `firectl billing get-usage --api-key "$KEY" -a <id> --start-time YYYY-MM-DD
   --end-time YYYY-MM-DD --usage-type serverless --group-by model_name` accepts
   dates only (no ISO time) and, for these accounts, prints the account-cost

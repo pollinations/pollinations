@@ -94,6 +94,8 @@ name or an undocumented ratio.
 
 - Upload each new invoice/export to the accounting Google Drive immediately
   after download; verify it there before continuing to the next provider.
+  Layout, file naming, month folder IDs, and the coverage check are in
+  `references/drive-archive.md`.
 - `economics_compute_ledger` stores provider balances and usage facts.
 - `economics_bank_ledger` stores Wise-backed cash movements and their evidence.
   Prefix new/reviewed evidence with `evidence_type=supplier_document` or

@@ -4,6 +4,7 @@ import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
+    calculateUsageBilling,
     getVisibleAudioModels,
     getVisibleImageModels,
     getVisibleTextModels,
@@ -126,6 +127,58 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("preserves the Astra quote while recording Data Zone costs", () => {
+        const primary = TEXT_SERVICES["openai/gpt-6-astra"];
+        const fallback = TEXT_SERVICES["gpt-6-astra-azure-datazone"];
+        expect(primary.cost).toEqual({
+            promptTextTokens: 10 / 1_000_000,
+            promptCachedTokens: 1 / 1_000_000,
+            promptCacheWriteTokens: 12.5 / 1_000_000,
+            completionTextTokens: 50 / 1_000_000,
+        });
+        expect(fallback.cost).toEqual({
+            promptTextTokens: 11 / 1_000_000,
+            promptCachedTokens: 1.1 / 1_000_000,
+            promptCacheWriteTokens: 13.75 / 1_000_000,
+            completionTextTokens: 55 / 1_000_000,
+        });
+        expect(fallback.costVariants?.long_context).toEqual({
+            promptTextTokens: 22 / 1_000_000,
+            promptCachedTokens: 2.2 / 1_000_000,
+            promptCacheWriteTokens: 27.5 / 1_000_000,
+            completionTextTokens: 82.5 / 1_000_000,
+        });
+        expect(fallback.selectCostVariant).toBe(primary.selectCostVariant);
+        expect(
+            fallback.selectCostVariant?.({
+                usage: { promptTextTokens: 272_000 },
+            }),
+        ).toBeUndefined();
+        expect(
+            fallback.selectCostVariant?.({
+                usage: { promptTextTokens: 272_000, promptCachedTokens: 1 },
+            }),
+        ).toBe("long_context");
+        expect(fallback.priceMultiplier).toBe(0.75);
+        expect(fallback.paidOnly).not.toBe(true);
+        const billing = calculateUsageBilling({
+            model: "openai/gpt-6-astra",
+            usage: { promptTextTokens: 11, completionTextTokens: 5 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
+        expect(billing.price.totalPrice).toBe(0.00027);
+        const model = findModelByName("gpt-6-astra-azure-datazone");
+        expect(model?.useResponsesApi).toBe(true);
+        expect(model?.config()).toMatchObject({
+            "azure-deployment-id": "gpt-6-astra-datazone",
+            "azure-resource-name": "myceli-prod-eastus",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),

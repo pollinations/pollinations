@@ -115,6 +115,11 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "gpt-6-astra-azure-datazone",
+        config: portkeyConfig["gpt-6-astra-azure-datazone"],
+        useResponsesApi: true,
+    },
+    {
         name: "mercury",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,

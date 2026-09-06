@@ -127,6 +127,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra/chat/completions?api-version=2025-04-01-preview",
         ),
+    "gpt-6-astra-azure-datazone": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra-datazone/chat/completions?api-version=2025-04-01-preview",
+        ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>

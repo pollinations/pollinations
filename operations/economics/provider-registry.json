@@ -1,5 +1,5 @@
 {
-  "version": 23,
+  "version": 24,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -1381,6 +1381,7 @@
         "DeepSeek V4 Pro 0813": "deepseek-pro",
         "flux-1-dev-fp8": null,
         "flux-1-schnell-fp8": "flux",
+        "GLM 4.7": "glm",
         "GLM 5": "glm",
         "GLM 5.1": "glm",
         "GLM 5.2": "glm",

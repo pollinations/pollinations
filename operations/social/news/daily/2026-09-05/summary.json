@@ -1,0 +1,75 @@
+{
+  "date": "2026-09-05",
+  "period_start": "2026-09-05",
+  "period_end": "2026-09-05",
+  "title": "Managed agents now speak structured Responses",
+  "summary": "A dense reliability day: structured agents, community TTS and new models, plus a thorough cleanup of the strange places streaming likes to fail.\n\nManaged agents gained replayable structured output across Responses and Chat: ordered assistant and MCP results, lifecycle SSE events, media and tool results, strict usage data, and validation for unsupported reasoning-summary requests. Agent activity is now considerably less archaeological to consume.\n\nSpeech is now a first-class community-model modality, so publishers can register OpenAI-compatible TTS endpoints and stream native audio through the usual auth, caching, rewards, and fallback machinery. The model catalog also picked up Qwen3.8 Flash for text and multimodal work plus MAI Image 2.5 Flash for image generation and single-reference editing. Community text registrations now use one precise upstream API URL, making the dashboard and CLI flow clearer while preserving the right API style.\n\nA broad pass through text and SDK streaming fixed the awkward edges: standards-compliant SSE parsing, clean [DONE] handling, intact events when terminal usage is missing, useful terminal error statuses, and stable timeout codes. Simple Responses-backed text requests no longer send an unwanted default seed, while worker rejection handling now behaves around malformed upstream JSON and SSE instead of producing theatrical diagnostics.",
+  "pr_count": 16,
+  "prs": [
+    {
+      "number": 14360,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14387,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14467,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14469,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14477,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14479,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14482,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14485,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14487,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14488,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14490,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14491,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14492,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14493,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14494,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14498,
+      "date": "2026-09-05"
+    }
+  ],
+  "generated_at": "2026-09-06T06:26:32.155060+00:00"
+}

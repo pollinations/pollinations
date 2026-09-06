@@ -2,12 +2,7 @@ import { z } from "zod";
 
 const McpCallErrorSchema = z.discriminatedUnion("type", [
     z.object({
-        type: z.literal("mcp_protocol_error"),
-        code: z.number().int(),
-        message: z.string(),
-    }),
-    z.object({
-        type: z.literal("http_error"),
+        type: z.enum(["mcp_protocol_error", "http_error"]),
         code: z.number().int(),
         message: z.string(),
     }),
@@ -54,7 +49,7 @@ export function mcpCallError(error: unknown): McpCallError {
     }
     return {
         type: "mcp_tool_execution_error",
-        content: { content: [{ type: "text", text: message }], isError: true },
+        content: message,
     };
 }
 

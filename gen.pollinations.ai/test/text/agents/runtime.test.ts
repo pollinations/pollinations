@@ -1593,15 +1593,20 @@ describe("prompt-agent runtime", () => {
                   }
                 : {
                       type: "mcp_tool_execution_error",
-                      content: {
-                          isError: true,
-                          content: expect.arrayContaining([
-                              {
-                                  type: "text",
-                                  text: expect.stringContaining(failureMessage),
-                              },
-                          ]),
-                      },
+                      content:
+                          kind === "network"
+                              ? expect.stringContaining(failureMessage)
+                              : {
+                                    isError: true,
+                                    content: expect.arrayContaining([
+                                        {
+                                            type: "text",
+                                            text: expect.stringContaining(
+                                                failureMessage,
+                                            ),
+                                        },
+                                    ]),
+                                },
                   };
         const failedCall = {
             type: "mcp_call",

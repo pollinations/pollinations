@@ -26,7 +26,7 @@ const VIDEO_FRAME_LIMITS = [
     ["wan-fast-fal", 2],
     ["wan-pro", 2],
     ["grok-video-pro", 1],
-    ["grok-video-pro-fal", 1],
+    ["grok-video-pro-openrouter", 1],
     ["grok-imagine-video-1.5", 1],
     ["grok-imagine-video-1.5-fal", 1],
     ["seedance-2.5", 2],

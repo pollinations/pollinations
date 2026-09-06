@@ -1,4 +1,7 @@
+import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { type FallbackAttempt, withModelFallback } from "../../src/fallback.ts";
+import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callHappyHorseAPI,
@@ -267,21 +270,73 @@ function mockGrokFetch(requests: Record<string, unknown>[]) {
 }
 
 describe("OpenRouter Grok Video Pro", () => {
+    it("falls back from a Fal 503 to the same model on OpenRouter", async () => {
+        syncImageEnv(
+            {
+                FAL_KEY: "test-fal-key",
+                OPENROUTER_API_KEY: "openrouter-test-key",
+            } as CloudflareBindings,
+            ["FAL_KEY", "OPENROUTER_API_KEY"],
+        );
+        const requests: Record<string, unknown>[] = [];
+        mockGrokFetch(requests).mockImplementationOnce(async (url) => {
+            expect(url).toBe(
+                "https://queue.fal.run/xai/grok-imagine-video/image-to-video",
+            );
+            return Response.json(
+                { error: "temporarily unavailable" },
+                { status: 503 },
+            );
+        });
+        const candidates = [
+            "grok-video-pro",
+            ...IMAGE_SERVICES["grok-video-pro"].fallbacks,
+        ].map((id) => ({
+            id: id as ImageParams["model"],
+            definition: IMAGE_SERVICES[id as keyof typeof IMAGE_SERVICES],
+        }));
+        const attempts: FallbackAttempt[] = [];
+        const { result, index, candidate } = await withModelFallback(
+            candidates,
+            ({ id }) =>
+                createAndReturnVideo(
+                    "move",
+                    {
+                        ...baseParams,
+                        model: id,
+                        duration: 15,
+                        image: ["https://example.com/start.png"],
+                    },
+                    "grok-fallback-test",
+                ),
+            attempts,
+        );
+        expect(index).toBe(1);
+        expect(candidate.definition.provider).toBe("openrouter");
+        expect(attempts.map(({ settled }) => settled)).toEqual([false, true]);
+        expect(result.trackingData).toEqual({
+            actualModel: "grok-video-pro-openrouter",
+            usage: { promptImageTokens: 1, completionVideoSeconds: 15 },
+        });
+        expect(requests[0].model).toBe("x-ai/grok-imagine-video");
+    });
+
     it("submits the exact 720p route and honors an explicit aspect ratio", async () => {
         setOpenRouterEnv();
         const requests: Record<string, unknown>[] = [];
         mockGrokFetch(requests);
 
-        const result = await callOpenRouterGrokVideoAPI(
+        const result = await createAndReturnVideo(
             "a calm ocean at sunrise",
             {
                 ...baseParams,
-                model: "grok-video-pro",
+                model: "grok-video-pro-openrouter",
                 dimensionsExplicit: false,
                 width: 1024,
                 height: 1024,
                 aspectRatio: "16:9",
             },
+            "grok-fallback-test",
         );
 
         expect(requests).toEqual([
@@ -298,7 +353,7 @@ describe("OpenRouter Grok Video Pro", () => {
             mimeType: "video/mp4",
             durationSeconds: 5,
             trackingData: {
-                actualModel: "grok-video-pro",
+                actualModel: "grok-video-pro-openrouter",
                 usage: { completionVideoSeconds: 5 },
             },
         });

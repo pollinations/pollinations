@@ -80,7 +80,7 @@ export async function createAndReturnVideo(
         case "seedance-pro-fal":
         case "wan-fal":
         case "wan-fast-fal":
-        case "grok-video-pro-fal":
+        case "grok-video-pro":
         case "grok-imagine-video-1.5-fal":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
@@ -107,7 +107,7 @@ export async function createAndReturnVideo(
         case "nova-reel":
             result = await callNovaReelAPI(prompt, safeParams, requestId);
             break;
-        case "grok-video-pro":
+        case "grok-video-pro-openrouter":
         case "grok-imagine-video-1.5":
             result = await callOpenRouterGrokVideoAPI(prompt, safeParams);
             break;

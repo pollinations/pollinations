@@ -120,7 +120,7 @@ export async function callHappyHorseAPI(
     };
 }
 
-function resolveGrokDuration(duration?: number): number {
+export function resolveGrokDuration(duration?: number): number {
     const requested = duration || 5;
     if (!Number.isInteger(requested)) {
         throw UpstreamError.fromProvider(400, {
@@ -131,7 +131,9 @@ function resolveGrokDuration(duration?: number): number {
     return Math.min(Math.max(requested, 1), 15);
 }
 
-function resolveGrokAspectRatio(safeParams: ImageParams): string | undefined {
+export function resolveGrokAspectRatio(
+    safeParams: ImageParams,
+): string | undefined {
     if (
         !safeParams.dimensionsExplicit &&
         safeParams.aspectRatio &&

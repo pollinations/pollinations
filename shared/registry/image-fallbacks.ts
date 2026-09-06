@@ -111,8 +111,8 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "grok-video-pro": {
-        "grok-video-pro-fal": {
-            provider: "fal",
+        "grok-video-pro-openrouter": {
+            provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },

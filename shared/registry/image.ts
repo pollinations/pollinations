@@ -1119,7 +1119,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "grok-video-pro": {
         aliases: ["grok-imagine-video", "x-ai/grok-imagine-video"],
-        provider: "openrouter",
+        provider: "fal",
         brand: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

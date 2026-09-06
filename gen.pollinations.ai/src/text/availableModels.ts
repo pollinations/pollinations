@@ -317,6 +317,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.6"],
     },
     {
+        name: "grok-4.6-azure-sweden",
+        config: portkeyConfig["grok-4.6-azure-sweden"],
+    },
+    {
         name: "openai-audio",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
         // Audio models don't support reasoning_effort.

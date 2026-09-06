@@ -9,6 +9,12 @@ import { perMillion } from "./price-helpers";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "grok-4.6": {
+        "grok-4.6-azure-sweden": {
+            provider: "azure",
+            addedDate: new Date("2026-09-06").getTime(),
+        },
+    },
     deepseek: {
         "deepseek-deepinfra": {
             provider: "deepinfra",

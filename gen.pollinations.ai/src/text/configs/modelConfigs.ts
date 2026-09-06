@@ -169,6 +169,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesAuthHeader: "api-key",
     }),
 
+    "grok-4.6-azure-sweden": () => ({
+        ...portkeyConfig["grok-4.6"](),
+        directEndpoint:
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+        responsesEndpoint:
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+    }),
+
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
         createAzureResponsesModelConfig(

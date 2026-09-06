@@ -1,4 +1,8 @@
+import { calculateUsageBilling } from "@shared/registry/registry.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
+import { openaiUsageToUsage } from "@shared/registry/usage-headers.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { withModelFallback } from "../../src/fallback.ts";
 import { generateTextPortkey } from "../../src/text/generateTextPortkey.js";
 
 const azureModelConfig = {
@@ -17,6 +21,81 @@ afterEach(() => {
 });
 
 describe("generateTextPortkey", () => {
+    it("falls back from East US to Sweden Grok and bills image and reasoning usage", async () => {
+        const hosts: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                const url = new URL(String(input));
+                hosts.push(url.hostname);
+                expect(JSON.parse(String(init?.body)).model).toBe("grok-4.6");
+                expect(new Headers(init?.headers).has("api-key")).toBe(true);
+                if (
+                    url.hostname ===
+                    "myceli-prod-eastus.cognitiveservices.azure.com"
+                ) {
+                    return Response.json(
+                        { error: { message: "Capacity exhausted" } },
+                        { status: 429 },
+                    );
+                }
+                return Response.json({
+                    model: "grok-4.6",
+                    choices: [
+                        {
+                            index: 0,
+                            message: { role: "assistant", content: "Example" },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    // Observed Sweden usage: reasoning is additive to completion_tokens.
+                    usage: {
+                        prompt_tokens: 91,
+                        completion_tokens: 22,
+                        total_tokens: 353,
+                        prompt_tokens_details: {
+                            text_tokens: 15,
+                            image_tokens: 76,
+                        },
+                        completion_tokens_details: { reasoning_tokens: 240 },
+                    },
+                });
+            },
+        );
+        const { result, index } = await withModelFallback(
+            ["grok-4.6", ...TEXT_SERVICES["grok-4.6"].fallbacks].map((id) => ({
+                id,
+                definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+            })),
+            ({ id }) =>
+                generateTextPortkey(
+                    [{ role: "user", content: "Read the image." }],
+                    { model: id },
+                ),
+        );
+        expect(index).toBe(1);
+        expect(hosts).toEqual([
+            "myceli-prod-eastus.cognitiveservices.azure.com",
+            "myceli-prod-swedencentral.cognitiveservices.azure.com",
+        ]);
+        const usage = openaiUsageToUsage(
+            result.usage as Parameters<typeof openaiUsageToUsage>[0],
+        );
+        expect(usage).toMatchObject({
+            promptTextTokens: 15,
+            promptImageTokens: 76,
+            completionTextTokens: 22,
+            completionReasoningTokens: 240,
+        });
+        const billing = calculateUsageBilling({
+            model: "grok-4.6",
+            usage,
+            servedBy: TEXT_SERVICES["grok-4.6-azure-sweden"],
+            quotedBy: TEXT_SERVICES["grok-4.6"],
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.001754, 12);
+        expect(billing.price.totalPrice).toBe(0.0013155);
+    });
+
     it("calls OpenRouter directly and preserves its request and response fields", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

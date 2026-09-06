@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-05",
+  "period_start": "2026-09-05",
+  "period_end": "2026-09-05",
+  "generated_at": "2026-09-06T06:26:32.155060+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-05/images/reddit.jpg"
+    }
+  ],
+  "title": "16 merged PRs: Responses, models, streaming fixes",
+  "text": "Today’s 16 merged PRs were mostly about making the API less ambiguous when things go sideways.\n\nManaged agents now return structured Responses output ([#14360](https://github.com/pollinations/pollinations/pull/14360)). Community models gained speech/TTS, Qwen3.8 Flash, and MAI Image 2.5 Flash ([#14387](https://github.com/pollinations/pollinations/pull/14387), [#14467](https://github.com/pollinations/pollinations/pull/14467), [#14469](https://github.com/pollinations/pollinations/pull/14469)). Text registrations now use one upstream API per community registration, rather than quietly mixing paths ([#14479](https://github.com/pollinations/pollinations/pull/14479)).\n\nThe less visible work is probably the part most users will notice: streamed SDK errors now preserve their semantics; missing usage no longer corrupts SSE; worker promise rejections are handled consistently; and request options no longer disappear in SDK streaming paths ([#14487](https://github.com/pollinations/pollinations/pull/14487), [#14493](https://github.com/pollinations/pollinations/pull/14493), [#14491](https://github.com/pollinations/pollinations/pull/14491), [#14498](https://github.com/pollinations/pollinations/pull/14498)).\n\nContent-policy rejections are now 4xx, upstream timeouts get named, and key-budget failures are distinguished from wallet-payment failures. Errors should increasingly describe the failure that occurred, which remains a surprisingly non-default property of networked software.\n\nREADME and generated API docs also caught up: [repo](https://github.com/pollinations/pollinations) and [APIDOCS.md](https://github.com/pollinations/pollinations/blob/master/APIDOCS.md)."
+}

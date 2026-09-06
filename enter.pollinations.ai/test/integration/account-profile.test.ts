@@ -22,6 +22,7 @@ describe("GET /api/account/profile", () => {
         expect(data).not.toHaveProperty("tier");
         expect(data).not.toHaveProperty("nextResetAt");
         expect(data.communityEndpointsAllowed).toBe(false);
+        expect(data.discordAvailable).toBe(true);
         expect(data).toHaveProperty("name");
         expect(data).toHaveProperty("email");
     });
@@ -41,6 +42,7 @@ describe("GET /api/account/profile", () => {
         expect(data).not.toHaveProperty("tier");
         expect(data).not.toHaveProperty("nextResetAt");
         expect(data.communityEndpointsAllowed).toBe(false);
+        expect(data.discordAvailable).toBe(true);
         expect(data).not.toHaveProperty("name");
         expect(data).not.toHaveProperty("email");
     });

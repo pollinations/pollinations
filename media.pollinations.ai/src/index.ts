@@ -23,6 +23,8 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 
+export { MediaUpload } from "./media-upload.ts";
+
 const DOMAIN = "media.pollinations.ai";
 // gen.pollinations.ai proxies /account/* to enter — using the public path
 // keeps internal services consistent with the documented SDK/external usage.

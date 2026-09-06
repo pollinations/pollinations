@@ -1,6 +1,6 @@
 import { base64ToBuffer } from "../../image/utils/imageDownload.ts";
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
-import { requireImages, toHttpError } from "../modelUtils.ts";
+import { requireImages, toUpstreamError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
 import { InferenceportError, runInferenceport } from "./inferenceportClient.ts";
 
@@ -26,6 +26,6 @@ export async function callTrellis2(
             contentType: "model/gltf-binary",
         };
     } catch (err) {
-        throw toHttpError(err);
+        throw toUpstreamError(err);
     }
 }

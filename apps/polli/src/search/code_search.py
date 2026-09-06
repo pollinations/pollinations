@@ -12,6 +12,7 @@ import logging
 import aiohttp
 
 from ..core.config import config
+from ..core.request_auth import authorization_or
 from ..utils.cache import TTLCache
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ async def _embed_query(query: str) -> list[float]:
         "dimensions": config.code_search.embed_dimensions,
     }
     headers = {
-        "Authorization": f"Bearer {config.ai.token}",
+        "Authorization": authorization_or(config.ai.token),
         "Content-Type": "application/json",
     }
     async with session.post(config.ai.embeddings_url, json=payload, headers=headers) as resp:
@@ -98,6 +99,7 @@ async def search_code(query: str, top_k: int | None = None) -> list[dict]:
                 "language": metadata.get("language"),
                 "app": metadata.get("app"),
                 "similarity": round(match["score"], 3),
+                "revision": metadata.get("git_sha"),
             }
         )
 

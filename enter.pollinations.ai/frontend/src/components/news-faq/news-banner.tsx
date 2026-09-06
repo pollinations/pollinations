@@ -131,15 +131,47 @@ function formatNewsDate(date: string): string {
 
 /** Hand-curated, pinned announcements — stacked white cards. */
 export const Announcements: FC = () => {
-    if (PINNED_NEWS.length === 0) return null;
     return (
         <div className="flex flex-col gap-3">
+            <CanonicalModelSlugAnnouncement />
             {PINNED_NEWS.map((item) => (
                 <PinnedNews key={item.title} item={item} />
             ))}
         </div>
     );
 };
+
+const CanonicalModelSlugAnnouncement: FC = () => (
+    <Surface
+        id="canonical-model-slugs"
+        variant="card"
+        className="scroll-mt-4 leading-relaxed"
+    >
+        <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-muted">
+            Scheduled change · Sep 7, 2026 at 14:00 UTC
+        </div>
+        <div className="flex items-baseline gap-2 font-semibold text-ink-900 text-base sm:text-lg">
+            <span aria-hidden="true" className="shrink-0">
+                🧪
+            </span>
+            <span>We're standardizing model IDs</span>
+        </div>
+        <p className="mt-1 text-sm text-ink-700">
+            Model IDs will use the publisher and official model name—for
+            example, <code>flux</code> →{" "}
+            <code>black-forest-labs/flux.1-schnell</code>. You can use the new
+            IDs now. Existing IDs will keep working.
+        </p>
+        <a
+            href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
+        >
+            View all model ID changes →
+        </a>
+    </Surface>
+);
 
 export const NewsBanner: FC = () => {
     const [highlights, setHighlights] = useState<Highlight[]>([]);

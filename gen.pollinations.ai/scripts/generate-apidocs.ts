@@ -771,7 +771,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
+**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
 }
 
 function renderTableOfContents(
@@ -948,6 +948,10 @@ const CURATED_BODIES: Record<string, Json> = {
         model: "openai",
         messages: [{ role: "user", content: "Hello!" }],
     },
+    postV1Responses: {
+        model: "openai",
+        input: "Hello!",
+    },
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
         model: "flux",
@@ -992,6 +996,11 @@ const CURATED_BODIES: Record<string, Json> = {
     postAccountMyModelsByIdUpdate: {
         description: "Updated model description",
     },
+    postAccountMyModelsEndpointAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        baseUrl: "https://agent.example.com/v1",
+    },
     postAccountAgents: {
         name: "my-agent",
         title: "My Agent",
@@ -1003,6 +1012,9 @@ const CURATED_BODIES: Record<string, Json> = {
         systemPrompt: "You are a concise assistant.",
         baseModel: "openai",
         mcpServers: ["pollinations"],
+    },
+    postAccountIntegrations: {
+        toolkit: "github",
     },
     post3dByPrompt: {
         model: "hyper3d-rodin",

@@ -26,6 +26,21 @@ function bill(
     });
 }
 
+function fallbackBill(
+    model: ModelName,
+    servedBy: ModelName,
+    usage: BillingArgs["usage"],
+    input?: BillingArgs["input"],
+) {
+    return calculateUsageBilling({
+        model,
+        usage,
+        servedBy: getRegistryModelDefinition(servedBy),
+        quotedBy: getRegistryModelDefinition(model),
+        input,
+    });
+}
+
 describe("long-context cost variants", () => {
     it.each([
         ["gpt-5.4", 272_000],
@@ -34,6 +49,7 @@ describe("long-context cost variants", () => {
         ["gpt-5.6-sol", 272_000],
         ["gpt-5.6-terra", 272_000],
         ["gpt-5.6-luna", 272_000],
+        ["openai/gpt-6-astra", 272_000],
     ] satisfies [
         ModelName,
         number,
@@ -81,24 +97,6 @@ describe("long-context cost variants", () => {
         expect(
             bill("qwen-large", {
                 promptTextTokens: 256_001,
-            }).costVariant,
-        ).toBe("long_context");
-    });
-
-    it("Grok uses OpenRouter's inclusive 200K boundary", () => {
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 199_999,
-            }).costVariant,
-        ).toBeUndefined();
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).costVariant,
-        ).toBe("long_context");
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_001,
             }).costVariant,
         ).toBe("long_context");
     });
@@ -190,6 +188,50 @@ describe("long-context cost variants", () => {
         }
     });
 
+    it.each([
+        [32_000, undefined],
+        [32_001, "context_32k"],
+        [256_000, "context_32k"],
+        [256_001, "context_256k"],
+    ] as const)("direct Alibaba uses its strict tier boundary at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(
+            bill("qwen3.7-flash-alibaba", { promptTextTokens }).costVariant,
+        ).toBe(expectedVariant);
+    });
+
+    it("records direct Alibaba explicit-cache cost without changing the quote", () => {
+        const billing = fallbackBill(
+            "qwen3.7-flash",
+            "qwen3.7-flash-alibaba",
+            { promptCachedTokens: 10_000 },
+            { hasExplicitCacheHit: true },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.00003, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00006, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.00003, 12);
+    });
+
+    it("keeps the Llama Scout quote and records the absorbed Vertex loss", () => {
+        const billing = fallbackBill(
+            "llama-scout",
+            "llama-scout-openrouter-vertex",
+            {
+                promptTextTokens: 1_000_000,
+                promptImageTokens: 1_000_000,
+                completionTextTokens: 1_000_000,
+            },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(1.2, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
+        expect(billing.servedPrice).toBeCloseTo(1.2, 12);
+        expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
+            0.7,
+            12,
+        );
+    });
+
     it("reprices the whole GPT-5.5 request one token above 272K", () => {
         const billing = bill("openai-large", {
             promptTextTokens: 272_001,
@@ -203,16 +245,17 @@ describe("long-context cost variants", () => {
             12,
         );
         expect(billing.priceDefinition).toMatchObject({
-            promptTextTokens: 10 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 45 / 1e6,
+            promptTextTokens: (10 / 1e6) * 0.75,
+            promptCachedTokens: (1 / 1e6) * 0.75,
+            completionTextTokens: (45 / 1e6) * 0.75,
         });
     });
 
     it.each([
-        ["gpt-5.6-sol", 10, 1, 12.5, 45, 0.5],
-        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.625],
-        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 1],
+        ["gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
+        ["gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
+        ["gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
+        ["openai/gpt-6-astra", 20, 2, 25, 75, 0.75],
     ] satisfies [
         ModelName,
         number,
@@ -317,7 +360,7 @@ describe("long-context cost variants", () => {
         expect(long.adjustments[0].cost).toBeCloseTo(0.375, 12);
     });
 
-    it("Qwen and Grok apply their advertised long-context sheets", () => {
+    it("Qwen applies its advertised long-context sheet", () => {
         expect(
             bill("qwen-large", {
                 promptTextTokens: 256_000,
@@ -327,15 +370,6 @@ describe("long-context cost variants", () => {
             promptCachedTokens: 0.192 / 1e6,
             promptCacheWriteTokens: 1.2 / 1e6,
             completionTextTokens: 3.84 / 1e6,
-        });
-        expect(
-            bill("grok-4.6", {
-                promptTextTokens: 200_000,
-            }).priceDefinition,
-        ).toMatchObject({
-            promptTextTokens: 4 / 1e6,
-            promptCachedTokens: 1 / 1e6,
-            completionTextTokens: 12 / 1e6,
         });
     });
 
@@ -491,6 +525,39 @@ describe("resolution cost variants", () => {
             );
             expect(billing.cost.totalCost).toBeCloseTo(6 * rate, 12);
         }
+    });
+
+    it("uses the Replicate video-in rates for Seedance reference videos", () => {
+        expect(
+            bill("seedance-2.0", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.18, 12);
+        expect(
+            bill("seedance-2.5", { completionVideoSeconds: 4 }).cost.totalCost,
+        ).toBeCloseTo(4 * 0.1028, 12);
+
+        const seedance20 = bill(
+            "seedance-2.0",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance20.costVariant).toBe("video_in");
+        expect(seedance20.cost.totalCost).toBeCloseTo(4 * 0.22, 12);
+
+        const seedance25_480p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true },
+        );
+        expect(seedance25_480p.costVariant).toBe("video_in_480p");
+        expect(seedance25_480p.cost.totalCost).toBeCloseTo(4 * 0.4304, 12);
+
+        const seedance25_720p = bill(
+            "seedance-2.5",
+            { completionVideoSeconds: 4 },
+            { hasReferenceVideo: true, resolution: "720p" },
+        );
+        expect(seedance25_720p.costVariant).toBe("video_in_720p");
+        expect(seedance25_720p.cost.totalCost).toBeCloseTo(4 * 0.9676, 12);
     });
 
     it("publishes supported resolutions with effective variant pricing", () => {
@@ -688,6 +755,60 @@ describe("selection safety and composition", () => {
     });
 });
 
+describe("FLUX.2 image billing", () => {
+    it("bills Pro's initial premium plus rounded input and output megapixels", () => {
+        const billing = bill("flux-2-pro", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "azure.flux_2_pro.initial_output_megapixel.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("attributes the Replicate fallback execution fee to Replicate", () => {
+        const billing = calculateUsageBilling({
+            model: "flux-2-pro",
+            usage: {
+                promptImageTokens: 2,
+                completionImageTokens: 4,
+            },
+            servedBy: getRegistryModelDefinition("flux-2-pro-replicate"),
+            quotedBy: getRegistryModelDefinition("flux-2-pro"),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "replicate.flux_2_pro.run.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("bills Flex input and output megapixels at the same rate", () => {
+        const billing = bill("flux-2-flex", {
+            promptImageTokens: 2,
+            completionImageTokens: 4,
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.3, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.225, 12);
+        expect(billing.adjustments).toEqual([]);
+    });
+});
+
 describe("registry-wide variant invariants", () => {
     it("variant sheets only contain valid finite rates from the base sheet", () => {
         for (const model of getModels()) {
@@ -723,6 +844,14 @@ describe("registry-wide variant invariants", () => {
     it("every advertised non-default resolution selects a variant", () => {
         for (const model of getModels()) {
             const definition = getRegistryModelDefinition(model);
+            // Token-metered video routes keep one per-token rate; resolution
+            // changes the provider-reported output-token quantity instead.
+            if (
+                definition.cost.completionVideoTokens !== undefined &&
+                !definition.costVariants
+            ) {
+                continue;
+            }
             for (const resolution of definition.resolutions?.slice(1) ?? []) {
                 const variant = definition.selectCostVariant?.({
                     usage: {},

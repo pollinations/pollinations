@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "predev": "npm run build --prefix ../../../packages/ui && npm run decrypt-vars",
-    "decrypt-vars": "sops decrypt ../secrets/web.json --output .dev.vars --output-type dotenv",
+    "decrypt-vars": "sops exec-env ../secrets/web.json 'sops exec-env ../secrets/web.dev.json \"node scripts/write-dev-vars.mjs\"'",
     "build": "vite build",
     "prebuild": "npm run build --prefix ../../../packages/ui",
     "deploy": "npm run build && wrangler deploy",

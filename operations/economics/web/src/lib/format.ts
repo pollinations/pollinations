@@ -57,10 +57,6 @@ export function fmtUtcDateTime(value: string | null | undefined): string {
     return `${date} ${time}`;
 }
 
-export function utcDateTimeTitle(value: string | null | undefined): string {
-    return value ?? "";
-}
-
 export function fmtSmartNumber(
     value: number,
     {
@@ -145,11 +141,6 @@ export function fmtMarginPct(value: number | null): string {
 export function fmtUnsignedPct(value: number | null | undefined): string {
     if (value == null || !Number.isFinite(value)) return "–";
     return `${fmtSmartNumber(value)}%`;
-}
-
-export function fmtMultiplier(value: number | null): string {
-    if (value == null || !Number.isFinite(value)) return "–";
-    return `${fmtSmartNumber(value)}×`;
 }
 
 // 4-decimal dollar format for tiny unit costs (e.g. eff $/req).

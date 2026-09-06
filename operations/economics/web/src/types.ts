@@ -1,5 +1,6 @@
 export type OpTransactionRow = {
     entry_id: string;
+    kind: "transaction" | "opening_balance";
     source: string;
     date: string;
     vendor: string;
@@ -12,8 +13,11 @@ export type OpTransactionRow = {
 };
 
 export type OpCloudRow = {
+    entry_id: string;
     source: string;
     vendor: string;
+    account_id?: string;
+    account_name?: string;
     type: "inference" | "gpu" | "infra" | string;
     start: string;
     end: string;
@@ -30,7 +34,9 @@ export type OpCloudRow = {
 };
 
 export type OpPollenRow = {
-    source: string;
+    // The live aggregate endpoint does not emit a source column; fixtures may
+    // still name their synthetic source for provenance in tests.
+    source?: string;
     month: string;
     vendor: string;
     model: string;
@@ -47,16 +53,76 @@ export type OpPollenRow = {
     requests_quests: number;
 };
 
-export type OpRunwayRow = {
-    entry_id: string;
-    kind: "opening_balance" | "forecast" | string;
-    date: string;
+export type ProviderObservationSource = "transactions" | "cloud" | "pollen";
+
+// Captured before provider aliases are canonicalized so the registry can show
+// exactly which raw Tinybird names were observed.
+export type ProviderObservation = {
+    month: string;
     vendor: string;
-    category: string;
+    source: ProviderObservationSource;
+    dashboardChecked: boolean;
+    accountId?: string;
+};
+
+export type ForecastPaymentTiming = "direct" | "postpaid" | "prepaid";
+
+export type ForecastAmount = {
     amount: number;
-    currency: string;
-    source: string;
-    evidence: string;
+    currency: "EUR" | "USD";
+};
+
+export type ScheduledForecastAmount = ForecastAmount & {
+    month: string;
+    note: string;
+};
+
+export type PrivateForecastRule = {
+    fixedAmounts?: ForecastAmount[];
+    activeFrom?: string;
+    activeThrough?: string;
+    scheduledAmounts?: ScheduledForecastAmount[];
+};
+
+export type ProviderCheckExplanation = {
+    month: string;
+    provider: string;
+    reason: "unverifiable_history";
+    explanation: string;
+    evidence: string[];
+};
+
+export type PollenWitnessExplanation = {
+    month: string;
+    provider: string;
+    reason:
+        | "pre_meter_coverage"
+        | "provider_attribution_transition"
+        | "provider_only_residual"
+        | "unverifiable_history";
+    explanation: string;
+    evidence: string[];
+};
+
+export type MeterDriftExplanation = {
+    month: string;
+    provider: string;
+    reason: "historical_tracking_gap";
+    explanation: string;
+    evidence: string[];
+};
+
+export type EconomicsPrivateConfig = {
+    forecastRules: Record<string, PrivateForecastRule>;
+    reconciliation: {
+        providerCheckExplanations: ProviderCheckExplanation[];
+        meterDriftExplanations: MeterDriftExplanation[];
+        pollenWitnessExplanations: PollenWitnessExplanation[];
+    };
+};
+
+export type EconomicsPrivateConfigRow = {
+    config: string;
     recorded_at: string;
 };
 
@@ -64,5 +130,6 @@ export type Data = {
     opTransactions?: OpTransactionRow[];
     opCloud?: OpCloudRow[];
     opPollen?: OpPollenRow[];
-    opRunway?: OpRunwayRow[];
+    providerObservations?: ProviderObservation[];
+    privateConfig?: EconomicsPrivateConfig;
 };

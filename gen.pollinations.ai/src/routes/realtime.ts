@@ -68,12 +68,6 @@ const REALTIME_ROUTES = {
         deployment: "gpt-realtime-2-1-mini",
         apiKeyEnv: "AZURE_MYCELI_PROD_EASTUS2_API_KEY",
     },
-    "gpt-realtime-2": {
-        endpoint:
-            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",
-        deployment: "gpt-realtime-2",
-        apiKeyEnv: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
-    },
     "gpt-live-transcribe": {
         endpoint:
             "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/realtime",

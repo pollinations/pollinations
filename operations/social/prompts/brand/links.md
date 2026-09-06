@@ -20,7 +20,7 @@
 - **Contributor Guide:** https://github.com/pollinations/pollinations/blob/master/CONTRIBUTING.md
 - **React SDK & UI:** https://react.pollinations.ai
 - **Connect User Wallets:** https://gen.pollinations.ai/docs#tag/connect-user-wallets
-- **MCP Server Docs:** https://gen.pollinations.ai/docs#tag/mcp-server
+- **MCP Servers Docs:** https://gen.pollinations.ai/docs#tag/mcp-servers
 - **MCP Protocol (contribute):** https://mcp.sequa.ai/v1/pollinations/contribute
 
 ## Apps & Community

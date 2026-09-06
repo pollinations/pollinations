@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
     fmtMarginPct,
     fmtMonthYear,
-    fmtMultiplier,
     fmtNumber,
     fmtPct,
     fmtPeriod,
@@ -10,7 +9,6 @@ import {
     fmtUnsignedPct,
     fmtUsd,
     fmtUtcDateTime,
-    utcDateTimeTitle,
 } from "./format";
 
 describe("format", () => {
@@ -44,13 +42,6 @@ describe("format", () => {
         expect(fmtUtcDateTime("2026-07-01")).toBe("2026-07-01");
         expect(fmtUtcDateTime("")).toBe("-");
         expect(fmtUtcDateTime("unknown")).toBe("unknown");
-    });
-
-    it("utcDateTimeTitle keeps the full stored value visible", () => {
-        expect(utcDateTimeTitle("2026-07-08 16:38:12")).toBe(
-            "2026-07-08 16:38:12",
-        );
-        expect(utcDateTimeTitle("")).toBe("");
     });
 });
 
@@ -147,17 +138,5 @@ describe("fmtUnsignedPct", () => {
     it("renders missing values as an en dash", () => {
         expect(fmtUnsignedPct(null)).toBe("–");
         expect(fmtUnsignedPct(undefined)).toBe("–");
-    });
-});
-
-describe("fmtMultiplier", () => {
-    it("renders adaptive multipliers", () => {
-        expect(fmtMultiplier(1.09876)).toBe("1.09×");
-        expect(fmtMultiplier(0.0009)).toBe("<0.01×");
-    });
-
-    it("renders null and non-finite as an en dash", () => {
-        expect(fmtMultiplier(null)).toBe("–");
-        expect(fmtMultiplier(Number.POSITIVE_INFINITY)).toBe("–");
     });
 });

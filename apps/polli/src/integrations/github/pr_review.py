@@ -33,8 +33,18 @@ SKIP_FILE_PATTERNS = [
 # Path segments that mark security-sensitive files, reviewed on their own rather than
 # batched with unrelated small files.
 HIGH_PRIORITY_PATTERNS = [
-    "auth", "login", "password", "secret", "token", "api", "security",
-    "crypto", "session", "credential", "key", "private",
+    "auth",
+    "login",
+    "password",
+    "secret",
+    "token",
+    "api",
+    "security",
+    "crypto",
+    "session",
+    "credential",
+    "key",
+    "private",
 ]
 
 
@@ -143,11 +153,13 @@ class PRReviewMixin:
             if current_filename and current_lines and not self._should_skip_file(current_filename):
                 formatted = self._format_file_hunks(current_filename, "\n".join(current_lines))
                 if formatted:
-                    files.append({
-                        "filename": current_filename,
-                        "diff": formatted,
-                        "high_priority": self._is_high_priority(current_filename),
-                    })
+                    files.append(
+                        {
+                            "filename": current_filename,
+                            "diff": formatted,
+                            "high_priority": self._is_high_priority(current_filename),
+                        }
+                    )
 
         for line in diff_text.split("\n"):
             if line.startswith("diff --git"):
@@ -177,7 +189,9 @@ class PRReviewMixin:
         regardless of their original position.
         """
         solo = [[f] for f in files if len(f["diff"]) >= self.MIN_HUNK_CHARS_FOR_SOLO_REVIEW or f["high_priority"]]
-        batchable = [f for f in files if len(f["diff"]) < self.MIN_HUNK_CHARS_FOR_SOLO_REVIEW and not f["high_priority"]]
+        batchable = [
+            f for f in files if len(f["diff"]) < self.MIN_HUNK_CHARS_FOR_SOLO_REVIEW and not f["high_priority"]
+        ]
 
         batches: list[list[dict]] = list(solo)
         current_batch: list[dict] = []
@@ -223,7 +237,12 @@ class PRReviewMixin:
                     return {"filenames": filenames, "findings": "", "high_priority": high_priority, "error": str(e)}
 
             if not response:
-                return {"filenames": filenames, "findings": "", "high_priority": high_priority, "error": "empty response"}
+                return {
+                    "filenames": filenames,
+                    "findings": "",
+                    "high_priority": high_priority,
+                    "error": "empty response",
+                }
 
             findings = self._parse_review(response)
             return {"filenames": filenames, "findings": findings, "high_priority": high_priority}

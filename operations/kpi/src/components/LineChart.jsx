@@ -209,9 +209,14 @@ export function LineChart({
     const axisLabel = (tick, seriesIndex) => {
         const scale = scaleOf(seriesIndex);
         const tickFormat = dual ? formatOf(series[seriesIndex]) : format;
-        if (tickFormat === "percent") {
+        if (
+            tickFormat === "percent" ||
+            tickFormat === "percentPrecise" ||
+            tickFormat === "perThousand"
+        ) {
             const decimals = scale.step >= 1 ? 0 : scale.step >= 0.1 ? 1 : 2;
-            return `${tick.toFixed(decimals)}%`;
+            const suffix = tickFormat === "perThousand" ? " / 1K" : "%";
+            return `${tick.toFixed(decimals)}${suffix}`;
         }
         return formatValue(
             tick,

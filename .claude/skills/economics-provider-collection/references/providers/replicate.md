@@ -1,0 +1,92 @@
+# Replicate Connector Guide
+
+Canonical vendor: `replicate`
+
+## Verified — 2026-08-20
+
+- Status: account and predictions APIs work; billing is available from the
+  logged-in dashboard and invoice JSON downloads.
+- The token resolved to an organization account.
+- Predictions prove operational activity, not the amount charged.
+
+Primary evidence sources:
+
+- Invoice/payment: Replicate invoice PDF, billing receipt email, billing UI screenshot, or Wise/card transaction.
+- Dashboard: Replicate account billing page for monthly spend, invoices, and payment context.
+- API account check: `GET https://api.replicate.com/v1/account`
+- API recent predictions: `GET https://api.replicate.com/v1/predictions`
+- API model schema: `GET https://api.replicate.com/v1/models/{owner}/{name}`
+- Pricing evidence: public Replicate model pages. Pricing is not exposed in the model API.
+- Internal usage context: Tinybird `generation_event_v2` rows where `model_provider = 'replicate'`.
+- Exact provider detail: open a monthly invoice and use `Download JSON`. The
+  JSON includes model, SKU label, quantity, unit, unit cost, line cost,
+  adjustments, gross usage, and invoice status.
+
+Required credential:
+
+- `REPLICATE_API_TOKEN`
+
+Collection steps:
+
+1. For invoices, receipts, or billing screenshots, place the original evidence in `data/inbox/`.
+2. Validate the token before API collection:
+
+   ```bash
+   curl -sS "https://api.replicate.com/v1/account" \
+     -H "Authorization: Bearer $REPLICATE_API_TOKEN"
+   ```
+
+   For production evidence, expect the account to be the `myceli-ai` organization.
+
+3. For prediction evidence, query a bounded period where possible:
+
+   ```bash
+   curl -sS "https://api.replicate.com/v1/predictions?created_after=<iso_start>&created_before=<iso_end>" \
+     -H "Authorization: Bearer $REPLICATE_API_TOKEN"
+   ```
+
+   Save raw JSON to `data/inbox/replicate-<period>-predictions.json`. Follow `next` pagination only as far as needed for the requested period.
+
+4. For model schema evidence, fetch each relevant model:
+
+   ```bash
+   curl -sS "https://api.replicate.com/v1/models/<owner>/<name>" \
+     -H "Authorization: Bearer $REPLICATE_API_TOKEN"
+   ```
+
+   Save raw JSON to `data/inbox/replicate-<model>-schema-<date>.json` when model input/output fields are part of the investigation.
+
+5. For model pricing, save model page screenshots or short HTML/text evidence from the public model page. Do not infer pricing from `metrics.predict_time`.
+6. For invoice reconciliation, compare Replicate cash/invoice evidence with Tinybird metered Replicate model costs. Treat any remainder as a Replicate-wide reconciliation item until the missing source is identified.
+7. Use this skill for saved raw evidence.
+8. Prefer finalized invoice JSON over a manual monthly aggregate. Draft invoice
+   JSON is appropriate for the open month when it is timestamped and marked
+   provisional.
+
+Seedance 2.0 pricing witness:
+
+- Validated 2026-05-07 from the public model page and completed prediction
+  metrics.
+- `non_video_in` at 720p is $0.18 per output second.
+- `video_in` at 720p is $0.22 per output second.
+- Pollinations exposes `non_video_in` at 720p; audio and image input do not
+  change that tier.
+- Re-check the public Replicate model page before changing the registry price.
+
+Known traps:
+
+- Replicate has no public invoice export API and no per-model spend API. Monthly cash evidence must come from invoices, receipts, Wise/card records, or the billing UI.
+- The predictions API is operational evidence, not a billing ledger. It is useful for finding models, statuses, sources, and recent runs, but it may not be enough to reconstruct a closed month.
+- The predictions API returns 100 records per page. Do not rely on older `prediction_count` examples to limit page size.
+- `metrics.predict_time` is CPU/GPU runtime, not our user-facing price and not necessarily the provider invoice amount.
+- Failed and canceled runs have provider-specific billing behavior. Do not assume zero cost unless the Replicate billing evidence supports it.
+- Public model pricing lives on model pages, not in the API response.
+- Official model predictions use `/v1/models/{owner}/{name}/predictions`; pinned/community predictions use `/v1/predictions` with a version hash.
+- A provider-wide invoice gap should not be assigned to a single model price until untracked models, web UI runs, private deployments, storage/egress, background jobs, failed-but-billed work, and missing invoice lines have been checked.
+- Replicate's monthly invoice gross is authoritative for `economics_compute_ledger`; prepaid
+  adjustments reduce cash due but do not reduce model usage cost.
+- An adjustment labeled `One-time credit purchase applied` is purchased prepaid
+  balance. Keep that usage in `paid`; it is not a promotional provider credit.
+- The billing overview can lag the open invoice briefly. On 2026-08-20 it
+  displayed $968.89 while the downloaded draft moments later contained
+  $969.1874. Use the downloaded JSON total.

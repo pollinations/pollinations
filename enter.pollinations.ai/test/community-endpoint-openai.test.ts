@@ -1,16 +1,262 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
+    CreateEndpointAgentSchema,
+    CreateEndpointSchema,
+    TestEndpointSchema,
+    UpdateEndpointSchema,
+} from "../src/routes/community-endpoints/schemas.ts";
+import {
     listCommunityEndpointModels,
+    testCommunityEmbeddingEndpoint,
     testCommunityEndpoint,
     testCommunityImageEndpoint,
+    testCommunitySpeechEndpoint,
     testCommunityTranscriptionEndpoint,
+    testCommunityVideoEndpoint,
 } from "../src/services/community-endpoint-openai.ts";
 
 afterEach(() => {
     vi.unstubAllGlobals();
 });
 
+describe("community endpoint test input", () => {
+    const endpoint = {
+        baseUrl: "https://api.example.com/generate-video",
+        bearerToken: "sk_saved_token",
+    };
+
+    it("does not require an upstream model for video", () => {
+        expect(
+            TestEndpointSchema.safeParse({ ...endpoint, modality: "video" })
+                .success,
+        ).toBe(true);
+    });
+
+    it("requires an upstream model for OpenAI-compatible modalities", () => {
+        expect(TestEndpointSchema.safeParse(endpoint).success).toBe(false);
+    });
+
+    it("accepts exactly one selected text API and endpoint URL", () => {
+        const text = {
+            api: "responses",
+            url: "https://api.example.com/custom/infer?version=1",
+            bearerToken: "test-provider-token",
+            model: "test-model",
+        };
+        expect(TestEndpointSchema.safeParse(text).success).toBe(true);
+        expect(
+            TestEndpointSchema.safeParse({ ...text, baseUrl: text.url })
+                .success,
+        ).toBe(false);
+        expect(
+            TestEndpointSchema.safeParse({ ...text, responsesUrl: text.url })
+                .success,
+        ).toBe(false);
+        expect(
+            TestEndpointSchema.safeParse({ ...text, api: undefined }).success,
+        ).toBe(false);
+        expect(
+            TestEndpointSchema.safeParse({ ...text, modality: "image" })
+                .success,
+        ).toBe(false);
+
+        const listing = {
+            name: "test-model",
+            title: "Test model",
+            api: text.api,
+            url: text.url,
+        };
+        expect(CreateEndpointAgentSchema.safeParse(listing).success).toBe(true);
+        expect(
+            CreateEndpointSchema.safeParse({
+                ...listing,
+                bearerToken: text.bearerToken,
+            }).success,
+        ).toBe(true);
+        expect(
+            CreateEndpointAgentSchema.safeParse({
+                ...listing,
+                baseUrl: text.url,
+            }).success,
+        ).toBe(false);
+        expect(
+            UpdateEndpointSchema.safeParse({ api: "chat_completions" }).success,
+        ).toBe(false);
+        expect(UpdateEndpointSchema.safeParse({ url: text.url }).success).toBe(
+            false,
+        );
+        expect(
+            UpdateEndpointSchema.safeParse({
+                api: "chat_completions",
+                url: text.url,
+            }).success,
+        ).toBe(true);
+    });
+});
+
 describe("community endpoint OpenAI service", () => {
+    it.each([
+        true,
+        false,
+    ])("probes Responses JSON and SSE at the exact URL (data type: %s)", async (includeType) => {
+        const usage = {
+            input_tokens: 12,
+            output_tokens: 3,
+            total_tokens: 15,
+            input_tokens_details: { cached_tokens: 4, cache_write_tokens: 2 },
+            output_tokens_details: { reasoning_tokens: 1 },
+        };
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/custom/infer?version=1",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer test-provider-token",
+            );
+            const body = (await request.json()) as { stream: boolean };
+            expect(body).toMatchObject({
+                model: "test-model",
+                input: "Reply with OK.",
+                store: false,
+            });
+            expect(body).not.toHaveProperty("messages");
+            const response = {
+                id: "resp_1",
+                object: "response",
+                model: "test-model",
+                status: "completed",
+                output: [],
+                usage,
+            };
+            return body.stream
+                ? new Response(
+                      `event: response.completed\ndata: ${JSON.stringify({ ...(includeType ? { type: "response.completed" } : {}), response })}\n\ndata: [DONE]\n\n`,
+                      { headers: { "content-type": "text/event-stream" } },
+                  )
+                : Response.json(response);
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityEndpoint({
+                api: "responses",
+                url: "https://api.example.com/custom/infer?version=1",
+                model: "test-model",
+                bearerToken: "test-provider-token",
+            }),
+        ).resolves.toMatchObject({
+            usage,
+            billableUsage: {
+                promptCachedTokens: 4,
+                promptCacheWriteTokens: 2,
+                completionReasoningTokens: 1,
+            },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    it.each([
+        "responses",
+        "chat_completions",
+    ] as const)("rejects %s streams with missing or malformed usage", async (api) => {
+        for (const usage of [
+            undefined,
+            { total_tokens: 3, input_tokens: "2", output_tokens: 1 },
+            { prompt_tokens: -1, completion_tokens: 1, total_tokens: 0 },
+        ]) {
+            vi.stubGlobal(
+                "fetch",
+                vi.fn(async (_input, init) => {
+                    const { stream } = JSON.parse(init.body);
+                    if (!stream)
+                        return Response.json(
+                            api === "responses"
+                                ? {
+                                      id: "resp_1",
+                                      object: "response",
+                                      model: "test-model",
+                                      status: "completed",
+                                      output: [],
+                                      usage: {
+                                          input_tokens: 2,
+                                          output_tokens: 1,
+                                          total_tokens: 3,
+                                      },
+                                  }
+                                : {
+                                      choices: [{ message: { content: "OK" } }],
+                                      usage: {
+                                          prompt_tokens: 2,
+                                          completion_tokens: 1,
+                                          total_tokens: 3,
+                                      },
+                                  },
+                        );
+                    const terminal =
+                        api === "responses"
+                            ? {
+                                  type: "response.completed",
+                                  response: { usage },
+                              }
+                            : { choices: [], usage };
+                    return new Response(
+                        `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
+                        { headers: { "content-type": "text/event-stream" } },
+                    );
+                }),
+            );
+            await expect(
+                testCommunityEndpoint({
+                    api,
+                    url: "https://api.example.com/infer",
+                    model: "test-model",
+                    bearerToken: "test-provider-token",
+                }),
+            ).rejects.toThrow("valid terminal streaming usage");
+        }
+    });
+
+    it.each([
+        "responses",
+        "chat_completions",
+    ] as const)("rejects a %s streaming probe with the wrong content type", async (api) => {
+        const response = {
+            id: "resp_1",
+            object: "response",
+            model: "test-model",
+            status: "completed",
+            output: [],
+            choices: [{ message: { content: "OK" } }],
+            usage: {
+                input_tokens: 2,
+                output_tokens: 1,
+                prompt_tokens: 2,
+                completion_tokens: 1,
+                total_tokens: 3,
+            },
+        };
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (_input, init) => {
+                const { stream } = JSON.parse(init.body);
+                return stream
+                    ? new Response(
+                          `data: ${JSON.stringify({ type: "response.completed", response, usage: response.usage })}\n\ndata: [DONE]\n\n`,
+                      )
+                    : Response.json(response);
+            }),
+        );
+        await expect(
+            testCommunityEndpoint({
+                api,
+                url: "https://api.example.com/infer",
+                model: "test-model",
+                bearerToken: "test-provider-token",
+            }),
+        ).rejects.toThrow("text/event-stream");
+    });
+
     it("fetches model lists with Authorization", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
@@ -34,6 +280,42 @@ describe("community endpoint OpenAI service", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 
+    it("preserves endpoint query strings when building the models URL", async () => {
+        const fetchMock = vi.fn(async (input) => {
+            expect(String(input)).toBe(
+                "https://api.example.com/v1/models?api-version=2026-08-01",
+            );
+            return Response.json({ data: [{ id: "gpt-4.1" }] });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1/?api-version=2026-08-01",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual(["gpt-4.1"]);
+    });
+
+    it("bounds model-list responses before parsing provider JSON", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response("{}", {
+                        headers: { "content-length": "999999999" },
+                    }),
+            ),
+        );
+
+        await expect(
+            listCommunityEndpointModels({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+            }),
+        ).rejects.toThrow("Endpoint response is too large");
+    });
+
     it("sends the bearer token when testing an endpoint", async () => {
         const fetchMock = vi.fn(async (input, init) => {
             const request = new Request(input, init);
@@ -48,11 +330,21 @@ describe("community endpoint OpenAI service", () => {
             expect(request.headers.get("authorization")).toBe(
                 "Bearer sk_saved_token",
             );
-            await expect(request.json()).resolves.toMatchObject({
+            const body = (await request.json()) as { stream: boolean };
+            expect(body).toMatchObject({
                 model: "gpt-4.1-mini",
                 messages: [{ role: "user", content: "Reply with OK." }],
-                stream: false,
             });
+            if (body.stream) {
+                expect(body).toHaveProperty(
+                    "stream_options.include_usage",
+                    true,
+                );
+                return new Response(
+                    'data: {"choices":[],"usage":{"prompt_tokens":4,"completion_tokens":1,"total_tokens":5}}\n\ndata: [DONE]\n\n',
+                    { headers: { "content-type": "text/event-stream" } },
+                );
+            }
             return Response.json({
                 choices: [
                     {
@@ -72,7 +364,8 @@ describe("community endpoint OpenAI service", () => {
 
         await expect(
             testCommunityEndpoint({
-                baseUrl: "https://api.example.com/v1",
+                api: "chat_completions",
+                url: "https://api.example.com/v1/chat/completions",
                 bearerToken: "Bearer sk_saved_token",
                 model: "gpt-4.1-mini",
             }),
@@ -96,7 +389,7 @@ describe("community endpoint OpenAI service", () => {
             },
         });
 
-        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
     });
 
     it("detects token billing when image endpoints return OpenAI usage", async () => {
@@ -293,13 +586,48 @@ describe("community endpoint OpenAI service", () => {
 
         await expect(
             testCommunityEndpoint({
-                baseUrl: "https://api.example.com/v1",
+                api: "chat_completions",
+                url: "https://api.example.com/v1/chat/completions",
                 bearerToken: "sk_saved_token",
                 model: "gpt-4.1-mini",
             }),
         ).rejects.toThrow(
             "Endpoint responded 401 after we sent Authorization: Authentication required",
         );
+    });
+
+    it("probes the exact synchronous video endpoint", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe(
+                "https://api.example.com/generate-video?version=1",
+            );
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                prompt: "A green sprout gently moving in the breeze.",
+                duration: 5,
+            });
+            return Response.json({
+                data: [
+                    {
+                        b64_json: "AAAAFGZ0eXBpc29tAAAAAGlzb20AAAAJbWRhdAA=",
+                    },
+                ],
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunityVideoEndpoint({
+                baseUrl: "https://api.example.com/generate-video?version=1",
+                bearerToken: "sk_saved_token",
+            }),
+        ).resolves.toEqual({
+            usage: { duration: 5 },
+            billableUsage: { completionVideoSeconds: 5 },
+        });
     });
 
     it("probes transcription endpoints with a sample audio file and OpenAI duration usage", async () => {
@@ -449,5 +777,135 @@ describe("community endpoint OpenAI service", () => {
                 model: "whisper-1",
             }),
         ).rejects.toThrow("Endpoint did not return OpenAI transcription text");
+    });
+
+    it("probes speech endpoints with a standard OpenAI TTS request", async () => {
+        const fetchMock = vi.fn(async (input, init) => {
+            const request = new Request(input, init);
+            expect(request.url).toBe("https://api.example.com/v1/audio/speech");
+            expect(request.headers.get("authorization")).toBe(
+                "Bearer sk_saved_token",
+            );
+            await expect(request.json()).resolves.toEqual({
+                model: "kokoro-1",
+                input: "Pollinations speech endpoint test.",
+                voice: "alloy",
+                response_format: "mp3",
+            });
+            return new Response(new Uint8Array([73, 68, 51, 3, 4, 0, 0, 0]), {
+                headers: { "Content-Type": "audio/mpeg" },
+            });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "kokoro-1",
+            }),
+        ).resolves.toEqual({
+            // The probe meters the request text it sent: 34 code points.
+            usage: { completionAudioTokens: 34 },
+            billableUsage: { completionAudioTokens: 34 },
+        });
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects speech upstreams that answer without binary audio", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({ data: [{ b64_json: "aGVsbG8=" }] }),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "kokoro-1",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return binary audio (expected an audio/* response body)",
+        );
+    });
+
+    it("rejects empty speech audio, since the sample is real text", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(
+                async () =>
+                    new Response(new Uint8Array(0), {
+                        headers: { "Content-Type": "audio/mpeg" },
+                    }),
+            ),
+        );
+
+        await expect(
+            testCommunitySpeechEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "kokoro-1",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return binary audio (expected an audio/* response body)",
+        );
+    });
+
+    it("probes embedding endpoints and returns billable prompt tokens", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                    usage: { prompt_tokens: 12, total_tokens: 12 },
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).resolves.toEqual({
+            usage: { prompt_tokens: 12, total_tokens: 12 },
+            billableUsage: { promptTextTokens: 12 },
+        });
+    });
+
+    it("rejects embedding upstreams that omit billable token usage", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                Response.json({
+                    data: [
+                        {
+                            embedding: Array.from({ length: 4 }, () =>
+                                Math.random(),
+                            ),
+                        },
+                    ],
+                }),
+            ),
+        );
+
+        await expect(
+            testCommunityEmbeddingEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "Bearer sk_saved_token",
+                model: "text-embedding-3-small",
+            }),
+        ).rejects.toThrow(
+            "Endpoint did not return billable OpenAI token usage",
+        );
     });
 });

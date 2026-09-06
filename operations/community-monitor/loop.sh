@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One fresh Claude process per monitor cycle. systemd waits 30 minutes after
+# One fresh Claude process per monitor cycle. systemd waits 60 minutes after
 # this process exits before starting the next one.
 set -euo pipefail
 cd /home/ubuntu/monitor

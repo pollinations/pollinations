@@ -1,0 +1,56 @@
+DESCRIPTION >
+    Materializes canonical Pollen economics directly from generation_event_v2.
+    The January 2026 combined meter is attributed from its recorded balance
+    priority (Quest first, then paid), and the retired crypto meter is paid.
+    Azure-2 and BPAI are the time-bounded Pointsflyer grant through April 2026.
+    Community sale price is retained, while community provider cost is zero;
+    owner payouts remain in model_paid and model_quests.
+
+NODE economics_pollen_usage_mv_node
+SQL >
+    SELECT
+        month,
+        vendor,
+        model,
+        sumState(if(funding = 'paid' AND total_price > 0 AND vendor != 'community', total_cost, 0)) AS cost_paid,
+        sumState(if(funding = 'quest' AND total_price > 0 AND vendor != 'community', total_cost, 0)) AS cost_quests,
+        sumState(if(funding = 'paid' AND total_price > 0, total_price, 0)) AS price_paid,
+        sumState(if(funding = 'quest' AND total_price > 0, total_price, 0)) AS price_quests,
+        sumState(toUInt64(funding = 'paid' AND total_price > 0)) AS requests_paid,
+        sumState(toUInt64(funding = 'quest' AND total_price > 0)) AS requests_quests,
+        sumState(if(api_key_created_for_user_id != 'undefined' AND total_price > dev_price AND funding = 'paid', total_price - dev_price, 0)) AS byop_paid,
+        sumState(if(api_key_created_for_user_id != 'undefined' AND total_price > dev_price AND funding = 'quest', total_price - dev_price, 0)) AS byop_quests,
+        sumState(if(community_model_reward_user_id != 'undefined' AND community_model_reward_amount > 0 AND funding = 'paid', community_model_reward_amount, 0)) AS model_paid,
+        sumState(if(community_model_reward_user_id != 'undefined' AND community_model_reward_amount > 0 AND funding = 'quest', community_model_reward_amount, 0)) AS model_quests
+    FROM
+    (
+        SELECT
+            formatDateTime(toStartOfMonth(start_time), '%Y-%m') AS month,
+            if(
+                start_time < toDateTime('2026-05-01 00:00:00')
+                AND model_provider_used IN ('azure-2', 'bpai'),
+                'pointsflyer',
+                model_provider_used
+            ) AS vendor,
+            resolved_model_requested AS model,
+            multiIf(
+                selected_meter_slug IN ('v1:meter:pack', 'v1:meter:crypto'), 'paid',
+                selected_meter_slug = 'v1:meter:tier', 'quest',
+                selected_meter_slug = 'local:combined' AND balances['local:tier'] > 0, 'quest',
+                selected_meter_slug = 'local:combined' AND balances['local:pack'] > 0, 'paid',
+                ''
+            ) AS funding,
+            total_cost,
+            total_price,
+            dev_price,
+            api_key_created_for_user_id,
+            community_model_reward_user_id,
+            community_model_reward_amount
+        FROM generation_event_v2
+        WHERE start_time >= toDateTime('2026-01-01 00:00:00')
+          AND (total_price > 0 OR community_model_reward_amount > 0)
+    )
+    GROUP BY month, vendor, model
+
+TYPE MATERIALIZED
+DATASOURCE economics_pollen_usage

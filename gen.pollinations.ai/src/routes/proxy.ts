@@ -36,6 +36,7 @@ import {
     getImageModelIds,
     getVideoModelIds,
 } from "@shared/registry/image.ts";
+import { ModelInfoSchema } from "@shared/registry/model-info.ts";
 import {
     DEFAULT_3D_MODEL,
     getModel3dModelIds,
@@ -49,6 +50,8 @@ import {
     CreateChatCompletionResponseSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
+    CreateResponseRequestSchema,
+    CreateResponseResponseSchema,
     GetModelResponseSchema,
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
@@ -75,6 +78,7 @@ import {
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
+import { generateCreateResponse } from "@/text/responses/handler.ts";
 import {
     apiKeyBudgetReservation,
     generationAccess,
@@ -95,6 +99,10 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import { handleRealtimeWebSocket } from "./realtime.ts";
+
+const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
+    description: "List of models with pricing and metadata",
+});
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = getImageModelIds()
@@ -174,6 +182,18 @@ const chatCompletionHandlers = factory.createHandlers(
     deduplicateGeneration,
     apiKeyBudgetReservation,
     generateChatCompletion,
+);
+
+const responsesHandlers = factory.createHandlers(
+    textBodyLimit,
+    validator("json", CreateResponseRequestSchema),
+    resolveModel("generate.text"),
+    track("generate.text"),
+    textCache,
+    generationAccess,
+    deduplicateGeneration,
+    apiKeyBudgetReservation,
+    generateCreateResponse,
 );
 
 // Helper to filter models by API key permissions and paid balance.
@@ -288,6 +308,11 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         object: "model" as const,
         created: Math.floor(entry.definition.addedDate / 1000),
         owned_by: entry.info.brand,
+        aliases: entry.info.aliases,
+        category: entry.info.category,
+        community: entry.info.community,
+        title: entry.info.title,
+        description: entry.info.description,
         input_modalities: entry.info.input_modalities,
         output_modalities: entry.info.output_modalities,
         supported_endpoints: entry.supportedEndpoints,
@@ -438,12 +463,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -464,12 +484,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -484,18 +499,13 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `outputModalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
             responses: {
                 200: {
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -516,12 +526,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -542,12 +547,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -570,12 +570,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -598,12 +593,7 @@ export const proxyRoutes = new Hono<Env>()
                     description: "Success",
                     content: {
                         "application/json": {
-                            schema: resolver(
-                                z.array(z.any()).meta({
-                                    description:
-                                        "List of embedding models with pricing and metadata",
-                                }),
-                            ),
+                            schema: resolver(ModelInfoListSchema),
                         },
                     },
                 },
@@ -647,22 +637,70 @@ export const proxyRoutes = new Hono<Env>()
                 "Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by pointing it to `https://gen.pollinations.ai`.",
                 "",
                 "Supports streaming, function calling, vision (image input), structured outputs, and reasoning/thinking modes depending on the model.",
+                "",
+                "Successful JSON responses contain usage. Streaming responses contain a usage chunk before `[DONE]`; missing provider usage fails the response.",
             ].join("\n"),
             responses: {
                 200: {
-                    description: "Success",
+                    description: "Chat completion JSON or SSE stream",
                     content: {
                         "application/json": {
                             schema: resolver(
                                 CreateChatCompletionResponseSchema,
                             ),
                         },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "OpenAI-compatible Chat Completions SSE events ending with a usage chunk and data: [DONE]",
+                                }),
+                            ),
+                        },
                     },
                 },
-                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500),
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
             },
         }),
         ...chatCompletionHandlers,
+    )
+    .post(
+        "/v1/responses",
+        describeRoute({
+            tags: ["✍️ Text"],
+            summary: "Create Response",
+            description: [
+                "Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.",
+                "",
+                "Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.",
+                "",
+                "OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.",
+                "",
+                "Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.",
+                "",
+                "Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.",
+            ].join("\n"),
+            responses: {
+                200: {
+                    description: "Responses JSON or semantic Responses SSE",
+                    content: {
+                        "application/json": {
+                            schema: resolver(CreateResponseResponseSchema),
+                        },
+                        "text/event-stream": {
+                            schema: resolver(
+                                z.string().meta({
+                                    description:
+                                        "Responses API SSE events ending with response.completed, response.incomplete, or response.failed; completed and incomplete responses contain usage, and a data: [DONE] marker may follow",
+                                }),
+                            ),
+                        },
+                    },
+                },
+                ...errorResponseDescriptions(400, 401, 402, 403, 429, 500, 502),
+            },
+        }),
+        ...responsesHandlers,
     )
     .post(
         "/v1/embeddings",
@@ -842,6 +880,8 @@ export const proxyRoutes = new Hono<Env>()
                 "Use `duration` to set video length, `aspectRatio` for orientation, and `audio` where the selected model supports audio output.",
                 "",
                 "You can pass reference images via the `image` parameter: `image[0]` is the start frame, and `image[1]` is the end frame for models with `end_frame` in `video_capabilities`.",
+                "",
+                "Seedance 2.0 and 2.5 also accept `reference_images`, `reference_videos`, and `reference_audios` for guidance distinct from frame controls. Separate URLs with `|`; commas inside URLs are preserved.",
                 "",
                 "Browse all available models and their `video_capabilities` at [`/image/models`](https://gen.pollinations.ai/image/models).",
             ].join("\n"),

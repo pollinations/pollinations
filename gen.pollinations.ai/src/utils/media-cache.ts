@@ -5,7 +5,10 @@
  */
 
 import type { Logger } from "@logtape/logtape";
-import { parseSafeFeatures } from "@shared/schemas/safety.ts";
+import {
+    parseSafeFeatures,
+    type SafetyFeature,
+} from "@shared/schemas/safety.ts";
 import { removeUnset } from "@shared/util.ts";
 import type { Context } from "hono";
 
@@ -32,7 +35,11 @@ function hasActiveSafety(value: string | null | undefined): boolean {
     return parseSafeFeatures(value).size > 0;
 }
 
-export function generateCacheKey(url: URL, safeHeader?: string | null): string {
+export function generateCacheKey(
+    url: URL,
+    safeHeader?: string | null,
+    requiredSafetyFeatures: readonly SafetyFeature[] = [],
+): string {
     const normalizedUrl = new URL(url);
     const hasQuerySafe = normalizedUrl.searchParams.has("safe");
     const usesSafety = hasActiveSafety(normalizedUrl.searchParams.get("safe"));
@@ -50,7 +57,13 @@ export function generateCacheKey(url: URL, safeHeader?: string | null): string {
     if (safeHeader !== undefined && safeHeader !== null && !hasQuerySafe) {
         normalizedUrl.searchParams.append("__safe_header", safeHeader);
     }
-    if (usesSafety || usesHeaderSafety) {
+    if (requiredSafetyFeatures.length > 0) {
+        normalizedUrl.searchParams.append(
+            "__required_safety",
+            [...new Set(requiredSafetyFeatures)].sort().join(","),
+        );
+    }
+    if (usesSafety || usesHeaderSafety || requiredSafetyFeatures.length > 0) {
         normalizedUrl.searchParams.append("__safety", SAFETY_CACHE_VERSION);
     }
 

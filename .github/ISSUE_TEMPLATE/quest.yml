@@ -13,7 +13,7 @@ body:
         1. Read the issue and submit a focused PR against `main`. Multiple contributors may submit solutions; no assignment is needed before starting.
         2. **Start the PR description with `Fixes #N`** so GitHub links it to this quest.
         3. Maintainers compare completed approaches and select the best one, preferring correctness, clarity, and minimal code.
-        4. The selected contributor is assigned before merge so the reward goes to the right person.
+        4. The author of the selected merged PR earns the reward; no issue assignment is needed.
         5. After merge, open [enter.pollinations.ai](https://enter.pollinations.ai/quests), check quests, and claim the pending reward.
 
         Need help? Drop a comment here or ask in [Discord #dev-talk](https://discord.com/channels/885844321461485618/920274483896516609).

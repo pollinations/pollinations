@@ -19,6 +19,7 @@ export interface Model {
     outputModalities?: string[];
     voices?: string[];
     paid_only?: boolean;
+    community?: boolean;
 }
 
 interface UseModelListReturn {
@@ -46,6 +47,7 @@ type RawModel =
           output_modalities?: string[];
           voices?: string[];
           paid_only?: boolean;
+          community?: boolean;
       }
     | string;
 
@@ -105,6 +107,7 @@ function apiModelToModel(model: RawModel, type: Model["type"]): Model | null {
         outputModalities: model.output_modalities,
         voices: model.voices,
         paid_only: model.paid_only,
+        community: model.community === true,
     };
 }
 

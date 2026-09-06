@@ -1,0 +1,34 @@
+name: Deploy / Polli
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/polli/**"
+      - "operations/deployment/**"
+      - ".github/workflows/deploy-polli.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-apps-polli
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Deploy apps/polli
+        env:
+          POLLI_AZURE_HOST: ${{ secrets.POLLI_AZURE_HOST }}
+          POLLI_AZURE_USER: ${{ secrets.POLLI_AZURE_USER }}
+          POLLI_AZURE_SSH_KEY: ${{ secrets.POLLI_AZURE_SSH_KEY }}
+        run: operations/deployment/deploy.sh apps/polli

@@ -346,6 +346,17 @@ describe("API Key Management", () => {
             expect(created.metadata.clientId).toBeUndefined();
             expect(created.metadata.createdForUserId).toBeUndefined();
             expect(created.metadata.createdForApp).toBeUndefined();
+
+            const db = drizzle(env.DB, { schema });
+            await expect
+                .poll(async () => {
+                    const reward = await db.query.rewards.findFirst({
+                        where: (rewards, { eq }) =>
+                            eq(rewards.questId, "first_api_key"),
+                    });
+                    return Boolean(reward?.claimedAt);
+                })
+                .toBe(true);
         });
 
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
@@ -906,7 +917,12 @@ describe("API Key Management", () => {
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
                 name: "key-with-alias-and-unknown-model",
-                allowedModels: ["flux", "nanobanana2", "retired-model"],
+                allowedModels: [
+                    "flux",
+                    "nanobanana2",
+                    "gpt-realtime-2",
+                    "retired-model",
+                ],
             });
 
             const response = await SELF.fetch(
@@ -924,6 +940,7 @@ describe("API Key Management", () => {
             expect(listed?.permissions?.models).toEqual([
                 "flux",
                 "nanobanana-2",
+                "gpt-realtime-2.1",
             ]);
 
             const db = drizzle(env.DB, { schema });
@@ -933,6 +950,7 @@ describe("API Key Management", () => {
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
                 "flux",
                 "nanobanana-2",
+                "gpt-realtime-2.1",
                 "retired-model",
             ]);
         });
@@ -951,8 +969,9 @@ describe("API Key Management", () => {
             const key = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
-            expect(key?.userId).toBeTruthy();
-            const ownerUserId = key?.userId as string;
+            expect(key?.configId).toBe("default");
+            expect(key?.referenceId).toBeTruthy();
+            const ownerUserId = key?.referenceId as string;
 
             await db
                 .update(schema.user)
@@ -971,6 +990,7 @@ describe("API Key Management", () => {
                     id: "owner-private-model",
                     ownerUserId,
                     name: "private-model",
+                    title: "Owner private model",
                     baseUrl: "https://owner.example.com/v1",
                     upstreamModel: "private-model",
                     payload: JSON.stringify({
@@ -990,6 +1010,7 @@ describe("API Key Management", () => {
                     id: "other-private-model",
                     ownerUserId: "other-model-owner-id",
                     name: "private-model",
+                    title: "Other private model",
                     baseUrl: "https://other.example.com/v1",
                     upstreamModel: "private-model",
                     payload: JSON.stringify({

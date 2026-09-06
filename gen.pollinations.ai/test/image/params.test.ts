@@ -64,6 +64,14 @@ describe("ImageParamsSchema", () => {
                 }).success,
             ).toBe(true);
         }
+        for (const resolution of ["480p", "768p"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max-turbo",
+                    resolution,
+                }).success,
+            ).toBe(true);
+        }
     });
 
     it("accepts 768p on the OpenAI-compatible image route", () => {
@@ -74,6 +82,22 @@ describe("ImageParamsSchema", () => {
                 resolution: "768p",
             }).success,
         ).toBe(true);
+    });
+
+    it("rejects native-only reference media on OpenAI POST requests", () => {
+        for (const field of [
+            "reference_images",
+            "reference_videos",
+            "reference_audios",
+        ] as const) {
+            const result = CreateImageRequestSchema.safeParse({
+                model: "seedance-2.0",
+                prompt: "a paper boat",
+                [field]: ["https://media.example/reference.bin"],
+            });
+
+            expect(result.success, field).toBe(false);
+        }
     });
 
     it("enforces the public minimax-h3 contract", () => {
@@ -95,12 +119,65 @@ describe("ImageParamsSchema", () => {
                 fps: 30,
             }).success,
         ).toBe(false);
-        expect(
-            ImageParamsSchema.safeParse({
-                model: "minimax-h3",
-                image: "https://example.com/frame.png",
-            }).success,
-        ).toBe(false);
+    });
+
+    it("enforces the public MiniMax H3 Max Turbo contract", () => {
+        for (const duration of [5, 10, 15]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max-turbo",
+                    duration,
+                }).success,
+            ).toBe(true);
+        }
+        for (const params of [
+            { duration: 6 },
+            { resolution: "2k" },
+            { aspectRatio: "9:21" },
+            { fps: 30 },
+        ]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "minimax/minimax-h3-max-turbo",
+                    ...params,
+                }).success,
+            ).toBe(false);
+        }
+    });
+
+    it("bounds video duration for every public route", () => {
+        for (const duration of [1, 120]) {
+            expect(
+                ImageParamsSchema.safeParse({ model: "flux", duration })
+                    .success,
+            ).toBe(true);
+        }
+        for (const duration of [0, 1.5, 121, 1e308]) {
+            expect(
+                ImageParamsSchema.safeParse({ model: "flux", duration })
+                    .success,
+                String(duration),
+            ).toBe(false);
+        }
+    });
+
+    it("enforces the public Gemini Omni 1.1 Flash contract", () => {
+        for (const resolution of ["360p", "720p", "1080p", "4k"] as const) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "google/gemini-omni-1.1-flash",
+                    resolution,
+                }).success,
+            ).toBe(true);
+        }
+        for (const params of [{ aspectRatio: "1:1" }, { fps: 30 }]) {
+            expect(
+                ImageParamsSchema.safeParse({
+                    model: "google/gemini-omni-1.1-flash",
+                    ...params,
+                }).success,
+            ).toBe(false);
+        }
     });
 
     it("rejects unsupported Grok Imagine Image 2.0 quality", () => {
@@ -160,5 +237,59 @@ describe("ImageParamsSchema", () => {
                 message: "flux does not accept a resolution parameter.",
             });
         }
+    });
+
+    it("parses and validates reference media independently from frame images", () => {
+        const result = ImageParamsSchema.safeParse({
+            model: "seedance-2.0",
+            reference_images:
+                "https://media.example/image,a.png| |https://media.example/image-b.png|",
+            reference_videos: "https://media.example/video.mp4",
+            reference_audios: "https://media.example/audio.mp3",
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.reference_images).toEqual([
+                "https://media.example/image,a.png",
+                "https://media.example/image-b.png",
+            ]);
+            expect(result.data.reference_videos).toEqual([
+                "https://media.example/video.mp4",
+            ]);
+        }
+    });
+
+    it("rejects reference media on unsupported models", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0-mini",
+                reference_images: "https://media.example/image.png",
+            }).success,
+        ).toBe(false);
+    });
+
+    it("passes provider-specific reference combinations through", () => {
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0",
+                image: "https://media.example/frame.png",
+                reference_images: "https://media.example/image.png",
+            }).success,
+        ).toBe(true);
+        expect(
+            ImageParamsSchema.safeParse({
+                model: "seedance-2.0",
+                reference_audios: "https://media.example/audio.mp3",
+            }).success,
+        ).toBe(true);
+    });
+
+    it("rejects unsafe reference media URLs", () => {
+        const invalidUrl = ImageParamsSchema.safeParse({
+            model: "seedance-2.5",
+            reference_images: "http://127.0.0.1/image.png",
+        });
+        expect(invalidUrl.success).toBe(false);
     });
 });

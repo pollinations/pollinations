@@ -1,5 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import {
+    COMMUNITY_ENDPOINT_CHANGE_DELAY_MS,
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     parseListingPayload,
 } from "@shared/community-endpoints.ts";
@@ -36,6 +37,25 @@ async function postModel(
     return response.json<Record<string, unknown>>();
 }
 
+async function advancePendingPastDelay(id: string): Promise<void> {
+    await drizzle(env.DB)
+        .update(schema.communityEndpoint)
+        .set({
+            pendingAt: new Date(
+                Date.now() - COMMUNITY_ENDPOINT_CHANGE_DELAY_MS - 1000,
+            ),
+        })
+        .where(eq(schema.communityEndpoint.id, id));
+}
+
+async function publishPendingModel(
+    sessionToken: string,
+    id: string,
+): Promise<Record<string, unknown>> {
+    await advancePendingPastDelay(id);
+    return postModel(sessionToken, `/${id}/update`, {});
+}
+
 describe("community endpoint configuration policy", () => {
     test("creates a private endpoint agent without proxy credentials or pricing", async ({
         sessionToken,
@@ -44,7 +64,9 @@ describe("community endpoint configuration policy", () => {
             name: "external-agent",
             title: "External agent",
             description: "Runs on its owner's server",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
+            requiredSafetyFeatures: ["sexual"],
         });
 
         expect(created).toMatchObject({
@@ -54,8 +76,10 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             visibility: "private",
-            baseUrl: "https://agent.example.com/v1",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
+            requiredSafetyFeatures: ["sexual"],
             perUserRpm: null,
         });
         expect(created).not.toHaveProperty("bearerToken");
@@ -69,13 +93,27 @@ describe("community endpoint configuration policy", () => {
         });
         expect(stored).toMatchObject({
             type: "endpoint_agent",
-            baseUrl: "https://agent.example.com/v1",
+            baseUrl: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
+            requiredSafetyFeatures: ["sexual"],
             visibility: "private",
         });
         expect(
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
-        ).toEqual({ perUserRpm: null });
+        ).toEqual({
+            perUserRpm: null,
+            api: "responses",
+        });
+
+        const updated = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { requiredSafetyFeatures: ["violence"] },
+        );
+        expect(updated.requiredSafetyFeatures).toEqual(["violence"]);
+        expect(updated.url).toBe(
+            "https://agent.example.com/custom/responses?version=1",
+        );
     });
 
     test("rejects proxy-only fields and unapproved public endpoint agents", async ({
@@ -93,7 +131,8 @@ describe("community endpoint configuration policy", () => {
         const input = {
             name: "external-agent",
             title: "External agent",
-            baseUrl: "https://agent.example.com/v1",
+            api: "chat_completions",
+            url: "https://agent.example.com/v1/chat/completions",
         };
 
         const proxyField = await request({
@@ -120,6 +159,7 @@ describe("community endpoint configuration policy", () => {
                 modality: "image",
                 imagePricing: "request",
                 inputModalities: ["audio"],
+                requiredSafetyFeatures: [],
                 advertised: { contextLength: 32000 },
                 paidOnly: false,
             }),
@@ -139,15 +179,21 @@ describe("community endpoint configuration policy", () => {
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
         });
+        const published = await publishPendingModel(
+            sessionToken,
+            created.id as string,
+        );
 
-        expect(created).toMatchObject({
+        expect(published).toMatchObject({
             modality: "image",
             imagePricing: "request",
             inputModalities: ["text", "image"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             paidOnly: true,
             perUserRpm: 2.5,
             completionImagePrice: 0.2,
@@ -167,12 +213,20 @@ describe("community endpoint configuration policy", () => {
             promptImagePrice: 0,
             completionImagePrice: 0.2,
             paidOnly: true,
+            requiredSafetyFeatures: ["sexual", "violence"],
             pending: {
                 imagePricing: "tokens",
                 promptImagePrice: 0.000001,
                 completionImagePrice: 0,
             },
         });
+
+        const safetyDisabled = await postModel(
+            sessionToken,
+            `/${created.id as string}/update`,
+            { requiredSafetyFeatures: [] },
+        );
+        expect(safetyDisabled.requiredSafetyFeatures).toEqual([]);
 
         const privateModel = await postModel(
             sessionToken,
@@ -198,31 +252,46 @@ describe("community endpoint configuration policy", () => {
             name: "cheaper-fallback",
             title: "Cheaper fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000001,
         });
+        await advancePendingPastDelay(cheaper.id as string);
         const expensive = await postModel(sessionToken, "", {
             name: "expensive-fallback",
             title: "Expensive fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000003,
         });
+        await publishPendingModel(sessionToken, expensive.id as string);
         const cheaperModelId = cheaper.modelId as string;
         const expensiveModelId = expensive.modelId as string;
         const primary = await postModel(sessionToken, "", {
             name: "primary-with-fallback",
             title: "Primary with fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000002,
             fallbacks: [cheaperModelId],
         });
+        const resaved = await postModel(
+            sessionToken,
+            `/${primary.id as string}/update`,
+            { visibility: "public", fallbacks: [cheaperModelId] },
+        );
+        expect(resaved.pending).toMatchObject({ visibility: "public" });
+        const publishedPrimary = await publishPendingModel(
+            sessionToken,
+            primary.id as string,
+        );
 
-        expect(primary.fallbacks).toEqual([cheaperModelId]);
+        expect(publishedPrimary.fallbacks).toEqual([cheaperModelId]);
 
         const response = await SELF.fetch(
             `${endpointUrl}/${primary.id as string}/fallback-candidates`,
@@ -247,7 +316,8 @@ describe("community endpoint configuration policy", () => {
             name: "text-policy",
             title: "Text policy",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             modality: "text",
             perUserRpm: 3,
@@ -257,6 +327,7 @@ describe("community endpoint configuration policy", () => {
             },
             promptTextPrice: 0.000001,
         });
+        await publishPendingModel(sessionToken, created.id as string);
 
         const cleared = await postModel(
             sessionToken,

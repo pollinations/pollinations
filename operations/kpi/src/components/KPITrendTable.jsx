@@ -88,10 +88,13 @@ export function KPITrendTable({ weeklyData, viewIndex, onCycle, onGraph }) {
                                     ? kpiValue(kpi, previousFull)
                                     : null,
                             );
+                            const improving = kpi.lowerIsBetter
+                                ? change < 0
+                                : change > 0;
                             const tone =
                                 change == null || Math.abs(change) <= 5
                                     ? "text-theme-text-muted"
-                                    : change > 0
+                                    : improving
                                       ? "text-intent-success-text"
                                       : "text-intent-danger-text";
                             return (

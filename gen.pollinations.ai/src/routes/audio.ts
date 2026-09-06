@@ -16,6 +16,7 @@ import {
 } from "@shared/registry/usage-headers.ts";
 import { readResponseBytes } from "@shared/response-bytes.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
+import { validateUserMediaUrl } from "@shared/user-media-url.ts";
 import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
 import { type Context, Hono } from "hono";
 import type { ContentfulStatusCode } from "hono/utils/http-status";
@@ -30,11 +31,7 @@ import { audioCache } from "@/middleware/media-cache.ts";
 import { resolveModel } from "@/middleware/model.ts";
 import { frontendKeyRateLimit } from "@/middleware/rate-limit-durable.ts";
 import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
-import {
-    applySafety,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
@@ -43,13 +40,15 @@ import {
     apiKeyBudgetReservation,
     generationAccess,
 } from "@/utils/generation-access.ts";
-import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
+import {
+    callCommunitySpeechEndpoint,
+    callCommunityTranscriptionEndpoint,
+} from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
 } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
-import { validateUserMediaUrl } from "../utils/user-media-url.ts";
 import { transcribeWithAssemblyAi } from "./assemblyai-transcription.ts";
 import type { SimpleAudioQuery } from "./generation-handlers.ts";
 import {
@@ -2544,6 +2543,10 @@ async function dispatchAudioGeneration(
         text: string;
         voice: string;
         responseFormat: string;
+        // Present when this candidate is a community endpoint; speech models
+        // are dispatched through their upstream instead of a first-party
+        // provider below.
+        communityEndpoint?: FallbackCandidate["communityEndpoint"];
         seed?: number;
         duration?: number;
         seconds?: number;
@@ -2592,7 +2595,19 @@ async function dispatchAudioGeneration(
         falKey,
         stabilityApiKey,
         log,
+        communityEndpoint,
     } = opts;
+
+    if (communityEndpoint?.modality === "speech") {
+        return withSafetyHeaders(
+            c,
+            await callCommunitySpeechEndpoint(
+                communityEndpoint,
+                { input: text, voice, responseFormat },
+                c.env.BETTER_AUTH_SECRET,
+            ),
+        );
+    }
 
     if (model === "elevenmusic") {
         return withSafetyHeaders(
@@ -2789,7 +2804,7 @@ async function generateAudioFromSpeechRequest(
 
     if (c.var.model.resolved === "eleven-dialogue") {
         const inputs = parseDialogueInput(input);
-        const safeTexts = await applySafetyToTexts(
+        const safeTexts = await applySafetyToInput(
             c,
             inputs.map((turn) => turn.text),
             safe,
@@ -2808,7 +2823,7 @@ async function generateAudioFromSpeechRequest(
         return withSafetyHeaders(c, response);
     }
 
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     const referenceAudio = reference_audio
         ? await fetchReferenceAudio(reference_audio)
         : undefined;
@@ -2818,6 +2833,7 @@ async function generateAudioFromSpeechRequest(
             text: safeInput,
             voice,
             responseFormat: response_format,
+            communityEndpoint: candidate.communityEndpoint,
             seed,
             duration,
             seconds,
@@ -2964,7 +2980,7 @@ export async function handleSpeechWithTimestamps(
                 "Timestamped speech supports mp3, opus, aac, wav, and pcm output.",
         });
     }
-    const safeInput = await applySafety(c, input, safe);
+    const safeInput = await applySafetyToInput(c, input, safe);
     return withAudioFallback(c, (candidate) =>
         generateElevenLabsSpeechWithTimestamps({
             modelName: candidate.id as ElevenLabsTtsModelName,
@@ -3078,8 +3094,11 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
 
-        const ovhApiKey = c.env.OVHCLOUD_API_KEY;
-        if (!ovhApiKey) {
+        const isDeepInfra = candidate.id === "whisper-deepinfra";
+        const providerApiKey = isDeepInfra
+            ? c.env.DEEPINFRA_API_KEY
+            : c.env.OVHCLOUD_API_KEY;
+        if (!providerApiKey) {
             throw new UpstreamError(500 as ContentfulStatusCode, {
                 message:
                     "Transcription service is not configured (missing API key)",
@@ -3097,15 +3116,24 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
         whisperFormData.append("file", file, filename);
         if (language) whisperFormData.append("language", language);
         whisperFormData.append("response_format", "verbose_json");
-        whisperFormData.append("model", "whisper-large-v3");
-        whisperFormData.append("timestamp_granularities[]", "word");
+        whisperFormData.append(
+            "model",
+            isDeepInfra ? "openai/whisper-large-v3" : "whisper-large-v3",
+        );
+        whisperFormData.append(
+            isDeepInfra
+                ? "timestamp_granularities"
+                : "timestamp_granularities[]",
+            "word",
+        );
 
-        const whisperUrl =
-            "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
+        const whisperUrl = isDeepInfra
+            ? "https://api.deepinfra.com/v1/audio/transcriptions"
+            : "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/audio/transcriptions";
         const response = await ensureUpstreamOk(
             await fetch(whisperUrl, {
                 method: "POST",
-                headers: { Authorization: `Bearer ${ovhApiKey}` },
+                headers: { Authorization: `Bearer ${providerApiKey}` },
                 body: whisperFormData,
             }),
             whisperUrl,
@@ -3119,7 +3147,15 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
                 message: "Whisper returned an unexpected (non-JSON) response",
             });
         }
-        const billedSeconds = extractWhisperUsage(whisper, log);
+        const billedSeconds = isDeepInfra
+            ? whisper.duration
+            : extractWhisperUsage(whisper, log);
+        if (typeof billedSeconds !== "number" || billedSeconds <= 0) {
+            throw new UpstreamError(502 as ContentfulStatusCode, {
+                message:
+                    "Whisper response did not include valid duration metering",
+            });
+        }
         const usageHeaders = buildUsageHeaders(
             candidate.id,
             createAudioSecondsUsage(billedSeconds),
@@ -3697,6 +3733,7 @@ export function parsePositiveInt(
 interface WhisperVerboseJson {
     text: string;
     language?: string;
+    duration?: number;
     usage?: { seconds?: number };
     words?: NormalizedWord[];
     segments?: NormalizedSegment[];

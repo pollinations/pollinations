@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Pruna image generation via DeepInfra and video generation via Replicate.
  *
@@ -6,7 +7,6 @@
  * uses one canonical model with request-selected resolution pricing.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -16,7 +16,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
@@ -28,6 +28,7 @@ const DEEPINFRA_TIMEOUT_MS = 120_000;
 const DEEPINFRA_IMAGE_MODELS = {
     "p-image": "PrunaAI/p-image",
     "p-image-edit": "PrunaAI/p-image-Edit",
+    "flux-deepinfra": "black-forest-labs/FLUX-1-schnell",
 } as const;
 
 // p-image-edit / p-video accept up to this many reference images.
@@ -70,6 +71,14 @@ interface PImageEditInput {
     seed?: number;
 }
 
+interface FluxSchnellInput {
+    prompt: string;
+    width: number;
+    height: number;
+    num_images: 1;
+    seed?: number;
+}
+
 interface PVideoInput {
     prompt: string;
     resolution: "720p" | "1080p";
@@ -90,17 +99,19 @@ interface DeepInfraImageOutput {
     inference_status?: DeepInfraInferenceStatus;
 }
 
-async function generatePrunaImage(
+async function generateDeepInfraImage(
     actualModel: keyof typeof DEEPINFRA_IMAGE_MODELS,
-    input: PImageInput | PImageEditInput,
+    input: PImageInput | PImageEditInput | FluxSchnellInput,
 ): Promise<ImageGenerationResult> {
-    const displayName = `Pruna ${actualModel}`;
+    const displayName =
+        actualModel === "flux-deepinfra"
+            ? "FLUX.1 Schnell"
+            : `Pruna ${actualModel}`;
     const apiKey = getImageEnv("DEEPINFRA_API_KEY");
     if (!apiKey) {
-        throw new HttpError(
-            "DEEPINFRA_API_KEY environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "DEEPINFRA_API_KEY environment variable is required",
+        });
     }
 
     const url = `${DEEPINFRA_INFERENCE_BASE}/${DEEPINFRA_IMAGE_MODELS[actualModel]}`;
@@ -119,15 +130,16 @@ async function generatePrunaImage(
     try {
         result = (await response.json()) as DeepInfraImageOutput;
     } catch {
-        throw new HttpError(
-            `${displayName} returned invalid JSON`,
-            502,
-            undefined,
-            url,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `${displayName} returned invalid JSON`,
+            requestUrl: new URL(url),
+        });
     }
     const image = result.images?.[0];
-    if (!image) throw new HttpError(`${displayName} returned no image`, 502);
+    if (!image)
+        throw UpstreamError.fromProvider(502, {
+            message: `${displayName} returned no image`,
+        });
 
     const buffer = base64ToBuffer(image);
     logOps(`Generated ${actualModel}:`, {
@@ -149,9 +161,24 @@ async function generatePrunaImage(
     };
 }
 
+/** Exact FLUX.1 Schnell fallback served by DeepInfra. */
+export async function callFluxSchnellDeepInfraAPI(
+    prompt: string,
+    safeParams: ImageParams,
+): Promise<ImageGenerationResult> {
+    const input: FluxSchnellInput = {
+        prompt,
+        width: safeParams.width,
+        height: safeParams.height,
+        num_images: 1,
+    };
+    if (safeParams.seed !== undefined) input.seed = safeParams.seed;
+    return generateDeepInfraImage("flux-deepinfra", input);
+}
+
 /**
  * Run a Pruna video prediction on Replicate.
- * Replicate failures are remapped to HttpError so the
+ * Replicate failures are remapped to UpstreamError so the
  * caller surfaces the right code (429/400/422/502) instead of a blanket 500.
  */
 async function runPrunaPrediction<TInput>(
@@ -169,7 +196,9 @@ async function runPrunaPrediction<TInput>(
             predict_time: result.predictTimeSeconds,
         });
         if (typeof result.output !== "string" || result.output.length === 0) {
-            throw new HttpError(`${displayName} returned no output`, 500);
+            throw UpstreamError.fromProvider(500, {
+                message: `${displayName} returned no output`,
+            });
         }
         return {
             output: result.output,
@@ -177,7 +206,7 @@ async function runPrunaPrediction<TInput>(
         };
     } catch (err) {
         logError(`${displayName} prediction failed:`, err);
-        throw toReplicateHttpError(err, `${displayName} generation failed`);
+        throw toReplicateUpstreamError(err, `${displayName} generation failed`);
     }
 }
 
@@ -216,7 +245,7 @@ export async function callPrunaImageAPI(
 
     logOps("p-image input:", { ...input, prompt: prompt.slice(0, 80) });
 
-    return generatePrunaImage("p-image", input);
+    return generateDeepInfraImage("p-image", input);
 }
 
 // =============================================================================
@@ -233,16 +262,15 @@ export async function callPrunaImageEditAPI(
     // provided") and we'd report as a 500.
     const images = safeParams.image ?? [];
     if (images.length === 0) {
-        throw new HttpError(
-            "p-image-edit requires at least one input image. Provide one via the image parameter.",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "p-image-edit requires at least one input image. Provide one via the image parameter.",
+        });
     }
     if (images.length > MAX_EDIT_IMAGES) {
-        throw new HttpError(
-            `p-image-edit supports at most ${MAX_EDIT_IMAGES} input images (received ${images.length}).`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `p-image-edit supports at most ${MAX_EDIT_IMAGES} input images (received ${images.length}).`,
+        });
     }
 
     const input: PImageEditInput = { prompt, images };
@@ -253,7 +281,7 @@ export async function callPrunaImageEditAPI(
         images: `[${images.length} image references]`,
     });
 
-    return generatePrunaImage("p-image-edit", input);
+    return generateDeepInfraImage("p-image-edit", input);
 }
 
 // =============================================================================

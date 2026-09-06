@@ -3,7 +3,7 @@ import { cached } from "../cache.ts";
 
 export const TINYBIRD_MODEL_STATS_URL =
     "https://api.europe-west2.gcp.tinybird.co/v0/pipes/public_model_stats.json?token=p.eyJ1IjogImFjYTYzZjc5LThjNTYtNDhlNC05NWJjLWEyYmFjMTY0NmJkMyIsICJpZCI6ICI5ZWZmMGM3Ni1kOTZkLTQwYjgtYWQwOC1mNDFlMmRiYjBmYTIiLCAiaG9zdCI6ICJnY3AtZXVyb3BlLXdlc3QyIn0.6VnVkAQ5h_fkcDZVDUoU38dzTxaw0xo3DnmKkhECbA8&limit=5000";
-const CACHE_KEY = "model-stats-v2";
+const CACHE_KEY = "model-stats-v3";
 const CACHE_TTL = 3600; // 1 hour
 
 // Raw Tinybird response format - no transformation needed
@@ -13,6 +13,7 @@ export type TinybirdModelStats = {
         avg_cost_usd: number;
         request_count?: number;
         priced_success_count?: number;
+        user_count?: number;
     }>;
 };
 

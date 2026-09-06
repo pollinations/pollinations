@@ -25,10 +25,6 @@ const STATE_PATH =
 const RESULTS_PATH =
     process.env.MONITOR_RESULTS_PATH ??
     "/home/ubuntu/monitor/probe-results.json";
-// Reasoning tokens count against this limit. Ten tokens left many healthy
-// reasoning models with no final text, so allow enough room for the short
-// marker after their internal reasoning.
-const MAX_TOKENS = 64;
 // Rough estimate for planning only -- actual spend is reconciled from real
 // `usage` in each response, not from these constants.
 const EST_PROMPT_TOKENS = 20;
@@ -162,6 +158,74 @@ function imageBillingSanityFlags(usage) {
     return flags;
 }
 
+function finalCompletionContent(content) {
+    if (typeof content !== "string") return "";
+    const withoutReasoning = content
+        .replace(/<thought>[\s\S]*?<\/thought>/gi, "")
+        .replace(/<think>[\s\S]*?<\/think>/gi, "");
+    // An unclosed reasoning wrapper means the response ended before its final
+    // answer. Do not accept a copy of the marker from inside that reasoning.
+    if (/<(?:thought|think)>/i.test(withoutReasoning)) return "";
+    return withoutReasoning.trim();
+}
+
+function parseChatStream(body) {
+    let content = "";
+    let usage;
+    let done = false;
+    let dataLines = [];
+
+    const fail = (protocolError) => ({ content, usage, protocolError });
+    const flushEvent = () => {
+        if (!dataLines.length) return;
+        const data = dataLines.join("\n");
+        dataLines = [];
+        if (data === "[DONE]") {
+            done = true;
+            return;
+        }
+        let chunk;
+        try {
+            chunk = JSON.parse(data);
+        } catch {
+            throw new Error("stream contained invalid JSON");
+        }
+        if (!Array.isArray(chunk.choices)) {
+            throw new Error("stream event is missing a choices array");
+        }
+        for (const choice of chunk.choices) {
+            if (typeof choice?.delta?.content === "string") {
+                content += choice.delta.content;
+            }
+        }
+        if (chunk.usage) usage = chunk.usage;
+    };
+
+    try {
+        for (const line of body.split(/\r\n|\n|\r/)) {
+            if (!line) {
+                flushEvent();
+                continue;
+            }
+            if (done) return fail("stream contained data after [DONE]");
+            if (dataLines.includes("[DONE]")) {
+                return fail("[DONE] was not terminated by a blank line");
+            }
+            if (line.startsWith(":")) continue;
+            if (line.startsWith("data:")) {
+                dataLines.push(line.slice(5).replace(/^ /, ""));
+            }
+        }
+        if (dataLines.length) {
+            return fail("stream ended with an unterminated SSE event");
+        }
+        if (!done) return fail("stream is missing [DONE]");
+        return { content, usage };
+    } catch (err) {
+        return fail(err.message);
+    }
+}
+
 async function probeText(model) {
     const started = Date.now();
     const marker = `ok-${randomUUID().slice(0, 8)}`;
@@ -182,40 +246,49 @@ async function probeText(model) {
             body: JSON.stringify({
                 model: model.name,
                 messages: [{ role: "user", content: prompt }],
-                max_tokens: MAX_TOKENS,
+                stream: true,
+                stream_options: { include_usage: true },
             }),
             signal: ctrl.signal,
         });
         const body = await res.text();
         let usage;
         let content;
+        let protocolError;
         if (res.ok) {
-            try {
-                const parsed = JSON.parse(body);
-                usage = parsed.usage;
-                content = parsed.choices?.[0]?.message?.content;
-            } catch {
-                // leave usage/content undefined -- reconciliation/checks just skip this request
-            }
+            ({ usage, content, protocolError } = parseChatStream(body));
         }
-        const hasCompletion =
-            typeof content === "string" && content.trim().length > 0;
-        const ok = res.ok && hasCompletion;
+        const finalContent = finalCompletionContent(content);
+        const hasProbeMarker = finalContent.includes(marker);
+        const contentPreview =
+            typeof content === "string" && content.trim()
+                ? JSON.stringify(content.trim().slice(0, 200))
+                : "<empty>";
+        const ok = res.ok && !protocolError && hasProbeMarker;
         const result = {
             model: model.name,
             category: model.category,
             ok,
-            status: res.ok && !hasCompletion ? "INVALID" : res.status,
+            status: protocolError
+                ? "PROTOCOL"
+                : res.ok && !hasProbeMarker
+                  ? "INVALID"
+                  : res.status,
             ms: Date.now() - started,
             usage,
             probeMarker: marker,
+            protocolError,
             detail: res.ok
-                ? hasCompletion
-                    ? undefined
-                    : "successful response did not contain a non-empty completion"
+                ? protocolError
+                    ? protocolError
+                    : hasProbeMarker
+                      ? undefined
+                      : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
                 : body.slice(0, 300),
         };
-        if (res.ok) result.billingFlags = billingSanityFlags(usage, content);
+        if (res.ok && !protocolError) {
+            result.billingFlags = billingSanityFlags(usage, content);
+        }
         return result;
     } catch (err) {
         return {

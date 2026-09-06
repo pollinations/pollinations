@@ -8,14 +8,32 @@ export async function budgetHint(
     bodyText: string,
 ): Promise<string | null> {
     if (status !== 402) return null;
+    let code: string | undefined;
+    try {
+        code = JSON.parse(bodyText)?.error?.code;
+    } catch {
+        // Non-JSON errors still get the general payment guidance below.
+    }
+    if (code === "KEY_BUDGET_EXHAUSTED") {
+        return [
+            "API key budget exhausted. Topping up the wallet does not increase the key budget.",
+            "Manage key budget: https://enter.pollinations.ai/keys",
+            `Server said: ${bodyText}`,
+        ].join("\n");
+    }
     const balance = await gen<{ balance?: number }>("/account/balance", {
         apiKey: requireKey(),
     })
         .then((r) => r.balance)
         .catch(() => null);
     const lines = [
-        "Insufficient pollen balance.",
+        code === "INSUFFICIENT_BALANCE"
+            ? "Insufficient pollen balance."
+            : "Check your pollen balance and API key budget.",
         "Top up: https://enter.pollinations.ai/pollen",
+        ...(code === "INSUFFICIENT_BALANCE"
+            ? []
+            : ["Manage key budget: https://enter.pollinations.ai/keys"]),
         "",
     ];
     if (balance != null) lines.push(`Account balance: ${balance} pollen`);

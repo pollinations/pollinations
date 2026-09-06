@@ -1,4 +1,5 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
+import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
@@ -27,7 +28,9 @@ async function processImageForVeo(
         const errorMessage =
             error instanceof Error ? error.message : String(error);
         logError(`Error processing ${label}:`, errorMessage);
-        throw new HttpError(`Failed to process ${label}: ${errorMessage}`, 400);
+        throw UpstreamError.fromProvider(400, {
+            message: `Failed to process ${label}: ${errorMessage}`,
+        });
     }
 }
 
@@ -44,12 +47,7 @@ export interface VideoGenerationResult {
     durationSeconds: number;
     trackingData: {
         actualModel: string;
-        usage: {
-            completionVideoSeconds?: number; // For Veo, Wan (billed by seconds)
-            completionVideoTokens?: number; // For Seedance (billed by tokens)
-            completionAudioSeconds?: number; // Output audio billed by seconds
-            totalTokenCount?: number;
-        };
+        usage: Usage & { totalTokenCount?: number };
     };
 }
 
@@ -85,10 +83,9 @@ const generateVeoVideo = async (
     const PROJECT_ID = getImageEnv("GOOGLE_PROJECT_ID");
 
     if (!PROJECT_ID) {
-        throw new HttpError(
-            "GOOGLE_PROJECT_ID environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "GOOGLE_PROJECT_ID environment variable is required",
+        });
     }
 
     logOps("Calling Veo API with prompt:", prompt);
@@ -96,7 +93,9 @@ const generateVeoVideo = async (
     // Get access token
     const accessToken = await googleCloudAuth.getAccessToken();
     if (!accessToken) {
-        throw new HttpError("Failed to get Google Cloud access token", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "Failed to get Google Cloud access token",
+        });
     }
 
     // Determine video parameters - pass through to Veo API, let it validate
@@ -202,12 +201,10 @@ const generateVeoVideo = async (
     logOps("Generate response:", JSON.stringify(generateData, null, 2));
 
     if (!generateData.name) {
-        throw new HttpError(
-            "Veo API did not return operation name",
-            500,
-            undefined,
-            generateEndpoint,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "Veo API did not return operation name",
+            requestUrl: new URL(generateEndpoint),
+        });
     }
 
     // Step 2: Poll for completion using fetchPredictOperation
@@ -302,12 +299,10 @@ async function pollVeoOperation(
                 const isClientError =
                     errorCode === 400 || errorCode === 3 || errorCode === 9;
 
-                throw new HttpError(
-                    `Video generation failed: ${pollData.error.message}`,
-                    isClientError ? 400 : 500,
-                    undefined,
-                    pollUrl,
-                );
+                throw UpstreamError.fromProvider(isClientError ? 400 : 500, {
+                    message: `Video generation failed: ${pollData.error.message}`,
+                    requestUrl: new URL(pollUrl),
+                });
             }
 
             // Check for videos
@@ -333,21 +328,18 @@ async function pollVeoOperation(
                 if (video.gcsUri) {
                     // If we get a GCS URI instead of base64, throw error
                     // (This shouldn't happen with the current API but just in case)
-                    throw new HttpError(
-                        "Video returned as GCS URI which is not supported",
-                        500,
-                        undefined,
-                        pollUrl,
-                    );
+                    throw UpstreamError.fromProvider(500, {
+                        message:
+                            "Video returned as GCS URI which is not supported",
+                        requestUrl: new URL(pollUrl),
+                    });
                 }
             }
 
-            throw new HttpError(
-                "No video data in response",
-                500,
-                undefined,
-                pollUrl,
-            );
+            throw UpstreamError.fromProvider(500, {
+                message: "No video data in response",
+                requestUrl: new URL(pollUrl),
+            });
         }
 
         // Not done yet, wait and try again
@@ -355,10 +347,8 @@ async function pollVeoOperation(
         delayMs = Math.min(delayMs * 1.2, 30000); // Exponential backoff, cap at 30s
     }
 
-    throw new HttpError(
-        "Video generation timed out after 3 minutes",
-        504,
-        undefined,
-        pollUrl,
-    );
+    throw UpstreamError.fromProvider(504, {
+        message: "Video generation timed out after 3 minutes",
+        requestUrl: new URL(pollUrl),
+    });
 }

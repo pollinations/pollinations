@@ -14,6 +14,7 @@ describe("modelBody", () => {
                     imagePricing: "request",
                     inputModalities: "text,image",
                     fallbacks: "owner/backup, owner/secondary",
+                    requiredSafety: "sexual,violence",
                     completionImagePrice: "0.01",
                 },
                 true,
@@ -27,6 +28,7 @@ describe("modelBody", () => {
             imagePricing: "request",
             inputModalities: ["text", "image"],
             fallbacks: ["owner/backup", "owner/secondary"],
+            requiredSafetyFeatures: ["sexual", "violence"],
             completionImagePrice: 0.01,
         });
     });
@@ -40,6 +42,57 @@ describe("modelBody", () => {
         });
         expect(modelBody({ paidOnly: false }, false)).toEqual({
             paidOnly: false,
+        });
+    });
+
+    it.each([
+        "responses",
+        "chat_completions",
+    ])("registers one exact %s text endpoint without a base URL", (api) => {
+        const url = "https://example.com/custom-endpoint?version=1";
+        expect(
+            modelBody(
+                {
+                    name: "text-provider",
+                    title: "Text Provider",
+                    api,
+                    url,
+                    bearerToken: "upstream-token",
+                },
+                true,
+            ),
+        ).toEqual({
+            name: "text-provider",
+            title: "Text Provider",
+            api,
+            url,
+            bearerToken: "upstream-token",
+        });
+    });
+
+    it("changes the selected API and URL together", () => {
+        expect(
+            modelBody(
+                { api: "responses", url: "https://example.com/v1/responses" },
+                false,
+            ),
+        ).toEqual({
+            api: "responses",
+            url: "https://example.com/v1/responses",
+        });
+    });
+
+    it("maps required safety features and clears them with none", () => {
+        expect(
+            modelBody(
+                { requiredSafety: "privacy, sexual,violence,shield" },
+                false,
+            ),
+        ).toEqual({
+            requiredSafetyFeatures: ["privacy", "sexual", "violence", "shield"],
+        });
+        expect(modelBody({ requiredSafety: "none" }, false)).toEqual({
+            requiredSafetyFeatures: [],
         });
     });
 
@@ -74,5 +127,59 @@ describe("modelBody", () => {
                 true,
             ),
         ).toMatchObject({ modality: "transcription" });
+    });
+
+    it("supports speech model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "tts-provider",
+                    title: "TTS Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "speech",
+                    completionAudioPrice: "0.00003",
+                },
+                true,
+            ),
+        ).toMatchObject({ modality: "speech", completionAudioPrice: 0.00003 });
+    });
+
+    it("supports per-second video model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "video-provider",
+                    title: "Video Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "video",
+                    completionVideoPrice: "0.08",
+                },
+                true,
+            ),
+        ).toMatchObject({
+            modality: "video",
+            completionVideoPrice: 0.08,
+        });
+    });
+
+    it("supports embedding model registration", () => {
+        expect(
+            modelBody(
+                {
+                    name: "embedding-provider",
+                    title: "Embedding Provider",
+                    baseUrl: "https://example.com/v1",
+                    bearerToken: "upstream-token",
+                    modality: "embedding",
+                    promptTextPrice: "0.000001",
+                },
+                true,
+            ),
+        ).toMatchObject({
+            modality: "embedding",
+            promptTextPrice: 0.000001,
+        });
     });
 });

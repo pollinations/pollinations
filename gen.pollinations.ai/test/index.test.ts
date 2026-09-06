@@ -330,7 +330,7 @@ describe("gen worker routing", () => {
         expect(models.every((m) => m.category === "video")).toBe(true);
     });
 
-    it("lists DreamShaper with the sana alias and flat per-image pricing", async () => {
+    it("lists DreamShaper with its aliases and flat per-image pricing", async () => {
         const response = await fetchWorker("/image/models", envWithEnter());
 
         expect(response.status).toBe(200);
@@ -343,7 +343,7 @@ describe("gen worker routing", () => {
             models.find((model) => model.name === "dreamshaper"),
         ).toMatchObject({
             name: "dreamshaper",
-            aliases: ["sana"],
+            aliases: ["sana", "lykon/dreamshaper-8-lcm"],
             pricing: {
                 completionImageTokens: "0.0001",
                 currency: "pollen",
@@ -366,7 +366,12 @@ describe("gen worker routing", () => {
             models.find((model) => model.name === "recraft-v4.1-vector"),
         ).toMatchObject({
             name: "recraft-v4.1-vector",
-            aliases: ["recraft-vector", "recraft-svg", "recraft-v4.1-svg"],
+            aliases: [
+                "recraft-vector",
+                "recraft-svg",
+                "recraft-v4.1-svg",
+                "recraft/recraft-v4.1-vector",
+            ],
             input_modalities: ["text", "image"],
             output_modalities: ["image"],
             pricing: {
@@ -1539,7 +1544,11 @@ it("lists Lyria with its aliases and text-to-audio modalities", async () => {
         output_modalities?: string[];
     }[];
     const model = models.find((candidate) => candidate.name === "lyria-3-clip");
-    expect(model?.aliases).toEqual(["lyria", "lyria-3"]);
+    expect(model?.aliases).toEqual([
+        "lyria",
+        "lyria-3",
+        "google/lyria-3-clip-preview",
+    ]);
     expect(model?.input_modalities).toEqual(["text"]);
     expect(model?.output_modalities).toEqual(["audio"]);
 });

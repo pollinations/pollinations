@@ -1,7 +1,8 @@
 # Flux Schnell on Vast.ai
 
-The production Flux pool runs FLUX.1 Schnell with Nunchaku FP4 on two Vast
-workers: an RTX 5090 and a 24 GB RTX PRO 4000 Blackwell. Vast instances are
+The production Flux route runs FLUX.1 Schnell with Nunchaku FP4 on one Vast
+worker using a 24 GB RTX PRO 4000 Blackwell. Retryable capacity or network
+failures spill to the hidden DeepInfra fallback. Vast instances are
 containers without systemd, so
 [`setup-vast.sh`](./setup-vast.sh) installs the pinned runtime and supervises
 the model server and Cloudflare Tunnel in `screen` restart loops.
@@ -57,9 +58,9 @@ automatically use a local DNS-over-HTTPS resolver.
 ## Verify before traffic cutover
 
 A healthy `/docs` response and registry heartbeat are control-plane checks;
-they do not prove that `gen.pollinations.ai` can reach the tunnel. Flux is
-Vast-only, so a broken or unregistered worker reduces production capacity
-directly.
+they do not prove that `gen.pollinations.ai` can reach the tunnel. A broken or
+unregistered worker moves traffic to DeepInfra and therefore changes cost,
+latency, and failure behavior.
 
 Before promotion, expose the worker through a dedicated test-only endpoint and
 compare that external path with localhost. Never use the production hostname
@@ -99,7 +100,8 @@ environment variables in `setup-vast.sh`.
 
 `QUEUE_LIMIT=3` is the intended admission limit, but inference currently runs
 synchronously on the FastAPI event loop. Under concurrent load it therefore
-does not reliably shed excess requests quickly. The two-worker Vast pool is the
-current capacity guard, and there is no Replicate or other external fallback.
-Monitor worker attribution and 503s together: a paid worker that is healthy but
-missing from `/register` leaves the other worker overloaded.
+does not reliably shed excess requests quickly. Retryable failures spill to the
+hidden `flux-deepinfra` route; there is no Replicate fallback. Monitor Vast
+attribution, DeepInfra share and cost, final 5xx, and latency together. The
+fallback is inexpensive burst protection, but it is not a latency-equivalent
+replacement for a healthy GPU.

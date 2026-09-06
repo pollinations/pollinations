@@ -1,24 +1,43 @@
 import {
-    COMMUNITY_ENDPOINT_TIMEOUT_MS,
-    type CommunityEndpointImagePricing,
+    communityAudioSpeechUrl,
     communityAudioTranscriptionsUrl,
-    communityChatCompletionsUrl,
-    communityEndpointErrorDetail,
+    communityEmbeddingsUrl,
     communityImageEditsUrl,
     communityImageGenerationsUrl,
     communityOpenAIBaseUrl,
+} from "@shared/community-endpoint-urls.ts";
+import {
+    COMMUNITY_ENDPOINT_TIMEOUT_MS,
+    type CommunityEndpointApi,
+    type CommunityEndpointImagePricing,
+    communityEndpointErrorDetail,
     communityTranscriptionSeconds,
-    decodeCommunityBase64,
-    firstCommunityImageBytes,
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
+import {
+    decodeCommunityBase64,
+    firstCommunityImageBytes,
+    firstCommunityVideoBytes,
+    MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+} from "@shared/community-media.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { ModelInputModality, Usage } from "@shared/registry/registry.ts";
 import {
+    getOpenAIEmbeddingUsage,
     getOpenAIImageUsage,
     openaiImageUsageToUsage,
     openaiUsageToUsage,
+    responsesUsageToUsage,
 } from "@shared/registry/usage-headers.ts";
+import { readResponseBytes, readResponseText } from "@shared/response-bytes.ts";
+import {
+    CompletionUsageSchema,
+    CreateResponseResponseSchema,
+    ResponseTerminalEventSchema,
+} from "@shared/schemas/openai.ts";
+import { detectVideoMimeType } from "@shared/video-mime.ts";
+import { createParser } from "eventsource-parser";
+import { z } from "zod";
 import { SAMPLE_AUDIO_BASE64 } from "./sample-audio.ts";
 
 type EndpointAuth = {
@@ -26,7 +45,7 @@ type EndpointAuth = {
     bearerToken: string;
 };
 
-type EndpointTestInput = EndpointAuth & { model: string };
+type ModelEndpointTestInput = EndpointAuth & { model: string };
 
 export type CommunityEndpointUsage = Record<string, unknown>;
 
@@ -46,10 +65,16 @@ function authorizationHeaders(bearerToken: string): HeadersInit {
 }
 
 function communityModelsUrl(baseUrl: string): string {
-    return `${communityOpenAIBaseUrl(baseUrl)}/models`;
+    const url = new URL(communityOpenAIBaseUrl(baseUrl));
+    url.pathname = `${url.pathname.replace(/\/+$/, "")}/models`;
+    return url.toString();
 }
 
-async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
+async function fetchText(
+    url: string,
+    init: RequestInit,
+    streaming = false,
+): Promise<string> {
     let response: Response;
     try {
         // The base URL is validated against https + the private-host blocklist
@@ -64,11 +89,33 @@ async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
         throw new Error("Endpoint request timed out or could not connect");
     }
 
-    const body = await response.json().catch(() => null);
+    const text = await readResponseText(
+        response,
+        MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+        () => new Error("Endpoint response is too large"),
+    );
     if (!response.ok) {
-        throw new Error(endpointErrorMessage(response.status, body));
+        throw new Error(endpointErrorMessage(response.status, parseJson(text)));
     }
-    return body;
+    if (
+        streaming &&
+        !response.headers.get("content-type")?.includes("text/event-stream")
+    ) {
+        throw new Error("Endpoint did not return a text/event-stream response");
+    }
+    return text;
+}
+
+async function fetchJson(url: string, init: RequestInit): Promise<unknown> {
+    return parseJson(await fetchText(url, init));
+}
+
+function parseJson(text: string): unknown {
+    try {
+        return JSON.parse(text);
+    } catch {
+        return null;
+    }
 }
 
 function endpointErrorMessage(status: number, body: unknown): string {
@@ -112,58 +159,132 @@ export async function listCommunityEndpointModels({
 }
 
 export async function testCommunityEndpoint({
-    baseUrl,
+    url,
+    api,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
-    const body = await fetchJson(communityChatCompletionsUrl(baseUrl), {
+}: {
+    url: string;
+    api: CommunityEndpointApi;
+    bearerToken: string;
+    model: string;
+}): Promise<CommunityEndpointTestResult> {
+    const request = {
+        model,
+        ...(api === "responses"
+            ? { input: "Reply with OK.", store: false }
+            : { messages: [{ role: "user", content: "Reply with OK." }] }),
+    };
+    const init = {
         method: "POST",
         headers: {
             ...authorizationHeaders(bearerToken),
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-            model,
-            messages: [{ role: "user", content: "Reply with OK." }],
-            stream: false,
-        }),
-    });
-
-    if (
-        !body ||
-        typeof body !== "object" ||
-        !("choices" in body) ||
-        !Array.isArray(body.choices)
-    ) {
-        throw new Error("Endpoint did not return OpenAI chat choices");
-    }
-    if (
-        !("usage" in body) ||
-        !body.usage ||
-        typeof body.usage !== "object" ||
-        !("prompt_tokens" in body.usage) ||
-        !("completion_tokens" in body.usage) ||
-        !("total_tokens" in body.usage) ||
-        typeof body.usage.prompt_tokens !== "number" ||
-        typeof body.usage.completion_tokens !== "number" ||
-        typeof body.usage.total_tokens !== "number"
-    ) {
-        throw new Error("Endpoint did not return OpenAI token usage");
-    }
-    const usage = body.usage as CommunityEndpointUsage;
-    return {
-        usage,
-        billableUsage: openaiUsageToUsage(
-            usage as Parameters<typeof openaiUsageToUsage>[0],
-        ),
     };
+    const body = await fetchJson(url, {
+        ...init,
+        body: JSON.stringify({ ...request, stream: false }),
+    });
+    let result: CommunityEndpointTestResult;
+    if (api === "responses") {
+        const parsed = CreateResponseResponseSchema.safeParse(body);
+        if (
+            !parsed.success ||
+            !["completed", "incomplete"].includes(parsed.data.status) ||
+            !parsed.data.usage
+        ) {
+            throw new Error(
+                "Endpoint did not return a successful Response with valid token usage",
+            );
+        }
+        result = {
+            usage: parsed.data.usage,
+            billableUsage: responsesUsageToUsage(parsed.data.usage),
+        };
+    } else {
+        const parsed = z
+            .object({
+                choices: z.array(z.unknown()).min(1),
+                usage: CompletionUsageSchema,
+            })
+            .safeParse(body);
+        if (!parsed.success) {
+            throw new Error(
+                "Endpoint did not return OpenAI chat choices with valid token usage",
+            );
+        }
+        result = {
+            usage: parsed.data.usage,
+            billableUsage: openaiUsageToUsage(parsed.data.usage),
+        };
+    }
+
+    const stream = await fetchText(
+        url,
+        {
+            ...init,
+            body: JSON.stringify({
+                ...request,
+                stream: true,
+                ...(api === "chat_completions"
+                    ? { stream_options: { include_usage: true } }
+                    : {}),
+            }),
+        },
+        true,
+    );
+    let hasUsage = false;
+    const parser = createParser({
+        onEvent(event) {
+            if (event.data === "[DONE]") return;
+            const data = parseJson(event.data);
+            if (!data || typeof data !== "object")
+                throw new Error("Endpoint returned malformed streaming data");
+            const type = ("type" in data ? data.type : null) ?? event.event;
+            if (
+                ("error" in data && data.error != null) ||
+                type === "error" ||
+                type === "response.failed"
+            ) {
+                throw new Error("Endpoint returned a streaming error");
+            }
+            if (api === "responses") {
+                if (
+                    !["response.completed", "response.incomplete"].includes(
+                        String(type),
+                    )
+                )
+                    return;
+                const terminal = ResponseTerminalEventSchema.safeParse({
+                    ...data,
+                    type,
+                });
+                if (!terminal.success || !terminal.data.response.usage)
+                    throw new Error(
+                        "Endpoint omitted valid terminal streaming usage",
+                    );
+                hasUsage = true;
+            } else if ("usage" in data && data.usage != null) {
+                if (!CompletionUsageSchema.safeParse(data.usage).success)
+                    throw new Error(
+                        "Endpoint omitted valid terminal streaming usage",
+                    );
+                hasUsage = true;
+            }
+        },
+    });
+    parser.feed(`${stream}\n\n`);
+    if (!hasUsage)
+        throw new Error("Endpoint omitted valid terminal streaming usage");
+    return result;
 }
 
 export async function testCommunityImageEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const body = await fetchJson(communityImageGenerationsUrl(baseUrl), {
         method: "POST",
         headers: {
@@ -213,6 +334,33 @@ export async function testCommunityImageEndpoint({
     };
 }
 
+// Video registration uses the same synchronous contract as request-time
+// generation: the exact configured URL must return completed playable media.
+export async function testCommunityVideoEndpoint({
+    baseUrl,
+    bearerToken,
+}: EndpointAuth): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(baseUrl, {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            prompt: "A green sprout gently moving in the breeze.",
+            duration: 5,
+        }),
+    });
+    const video = await firstCommunityVideoBytes(body, baseUrl);
+    if (!video || !detectVideoMimeType(video)) {
+        throw new Error("Endpoint did not return a supported video");
+    }
+    return {
+        usage: { duration: 5 },
+        billableUsage: { completionVideoSeconds: 5 },
+    };
+}
+
 // Transcription endpoints are billed against prompt audio seconds, mirroring
 // the first-party whisper/scribe models. The probe uploads a real audio file
 // and validates the OpenAI transcription response shape.
@@ -220,7 +368,7 @@ export async function testCommunityTranscriptionEndpoint({
     baseUrl,
     bearerToken,
     model,
-}: EndpointTestInput): Promise<CommunityEndpointTestResult> {
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
     const sampleBytes = decodeCommunityBase64(SAMPLE_AUDIO_BASE64);
     if (!sampleBytes) {
         throw new Error("Failed to decode sample audio");
@@ -286,8 +434,135 @@ export async function testCommunityTranscriptionEndpoint({
     };
 }
 
+// Speech (TTS) endpoints bill the caller's input by character against the
+// same completion-audio fields the first-party TTS models use, so the probe
+// meters the request text it sent rather than anything in the response. What
+// the probe must prove is only that the endpoint answers a standard
+// OpenAI-shaped TTS request with real binary audio.
+export async function testCommunitySpeechEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const input = "Pollinations speech endpoint test.";
+    const response = await fetchCommunityAudio(
+        communityAudioSpeechUrl(baseUrl),
+        {
+            method: "POST",
+            headers: {
+                ...authorizationHeaders(bearerToken),
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                model,
+                input,
+                voice: "alloy",
+                response_format: "mp3",
+            }),
+        },
+    );
+
+    if (!response.ok) {
+        // Error bodies are JSON on OpenAI-compatible endpoints; surface the
+        // upstream message so a wrong voice or format is diagnosable.
+        const text = new TextDecoder().decode(
+            await readResponseBytes(
+                response.clone(),
+                MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+                () => new Error("Endpoint response is too large"),
+            ),
+        );
+        throw new Error(endpointErrorMessage(response.status, parseJson(text)));
+    }
+
+    const bytes = await readResponseBytes(
+        response,
+        MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
+        () => new Error("Endpoint response is too large"),
+    );
+    const contentType =
+        response.headers.get("content-type")?.split(";")[0]?.trim() ?? "";
+    if (!contentType.startsWith("audio/") || bytes.byteLength === 0) {
+        throw new Error(
+            "Endpoint did not return binary audio (expected an audio/* response body)",
+        );
+    }
+    // No upstream usage object to relay: the gateway meters the request text,
+    // so the probe reports the same shape the request path will store.
+    return {
+        usage: { completionAudioTokens: input.length },
+        billableUsage: { completionAudioTokens: input.length },
+    };
+}
+
+async function fetchCommunityAudio(
+    url: string,
+    init: RequestInit,
+): Promise<Response> {
+    try {
+        // Same redirect posture as fetchJson: the base URL is validated
+        // before we fetch, so following redirects would let the probe bounce
+        // to an unvalidated destination.
+        return await fetch(url, {
+            ...init,
+            redirect: "manual",
+            signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
+        });
+    } catch {
+        throw new Error("Endpoint request timed out or could not connect");
+    }
+}
+
+export async function testCommunityEmbeddingEndpoint({
+    baseUrl,
+    bearerToken,
+    model,
+}: ModelEndpointTestInput): Promise<CommunityEndpointTestResult> {
+    const body = await fetchJson(communityEmbeddingsUrl(baseUrl), {
+        method: "POST",
+        headers: {
+            ...authorizationHeaders(bearerToken),
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            model,
+            input: "A simple green sprout.",
+            encoding_format: "float",
+        }),
+    });
+
+    if (
+        !body ||
+        typeof body !== "object" ||
+        !("data" in body) ||
+        !Array.isArray(body.data) ||
+        body.data.length !== 1 ||
+        !body.data[0] ||
+        typeof body.data[0] !== "object" ||
+        !("embedding" in body.data[0]) ||
+        !Array.isArray(body.data[0].embedding) ||
+        body.data[0].embedding.length === 0 ||
+        !body.data[0].embedding.every(
+            (value: unknown) =>
+                typeof value === "number" && Number.isFinite(value),
+        )
+    ) {
+        throw new Error("Endpoint did not return OpenAI embedding data");
+    }
+
+    const usage = getOpenAIEmbeddingUsage(body);
+    if (!usage || usage.prompt_tokens <= 0) {
+        throw new Error("Endpoint did not return billable OpenAI token usage");
+    }
+
+    return {
+        usage,
+        billableUsage: { promptTextTokens: usage.prompt_tokens },
+    };
+}
+
 async function testCommunityImageEdits(
-    { baseUrl, bearerToken, model }: EndpointTestInput,
+    { baseUrl, bearerToken, model }: ModelEndpointTestInput,
     imageBytes: Uint8Array,
     imageMimeType: string,
 ): Promise<boolean> {

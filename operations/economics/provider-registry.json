@@ -1,0 +1,895 @@
+{
+  "version": 14,
+  "providers": [
+    {
+      "id": "airforce",
+      "label": "Airforce",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "alibaba",
+      "label": "Alibaba",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "alibaba",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "5314153712077332",
+          "label": "Myceli.AI OÜ",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://billing-cost.console.alibabacloud.com/fortune/billing-account",
+          "accountId": "5314153712077332"
+        }
+      ]
+    },
+    {
+      "id": "anthropic",
+      "label": "Anthropic",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "anthropic",
+      "monthlyReview": true,
+      "balanceTracking": false,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://platform.claude.com/settings/billing"
+        }
+      ]
+    },
+    {
+      "id": "assemblyai",
+      "label": "AssemblyAI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "assemblyai",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://www.assemblyai.com/dashboard/settings/billing"
+        }
+      ]
+    },
+    {
+      "id": "aws",
+      "label": "AWS",
+      "meteringBasis": "mixed",
+      "aliases": [
+        "aws-bedrock",
+        "bedrock"
+      ],
+      "connector": "aws",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://us-east-1.console.aws.amazon.com/costmanagement/home#/credits"
+        },
+        {
+          "workspace": "myceli.ai",
+          "url": "https://glass.automat-it.com/myceliai-aws/dashboard"
+        },
+        {
+          "workspace": "myceli.ai",
+          "url": "https://umbrellacost.io/cost-usage/cost-usage-explorer"
+        }
+      ]
+    },
+    {
+      "id": "azure",
+      "label": "Azure",
+      "meteringBasis": "mixed",
+      "aliases": [
+        "azure-2"
+      ],
+      "connector": "azure",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "cli",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://portal.azure.com/#view/Microsoft_Azure_Billing/ModernBillingMenuBlade/~/BillingAccounts"
+        }
+      ]
+    },
+    {
+      "id": "bpai",
+      "label": "BPAI",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "bytedance",
+      "label": "BytePlus / ByteDance",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "bytedance",
+      "monthlyReview": false,
+      "accounts": [
+        {
+          "id": "3000852661",
+          "label": "Myceli.AI OÜ",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-05"
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.byteplus.com/finance/overview",
+          "accountId": "3000852661"
+        }
+      ]
+    },
+    {
+      "id": "cloudflare",
+      "label": "Cloudflare",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": "cloudflare",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "pollinations",
+          "label": "Pollinations.ai (legacy)",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-06"
+        },
+        {
+          "id": "myceli",
+          "label": "Myceli.AI OÜ",
+          "activeFrom": "2026-02",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://dash.cloudflare.com/b6ec751c0862027ba269faf7029b2501/billing/credits",
+          "accountId": "myceli"
+        },
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://dash.cloudflare.com/efdcb0933eaac64f27c0b295039b28f2/billing/invoices",
+          "accountId": "pollinations"
+        }
+      ]
+    },
+    {
+      "id": "community",
+      "label": "Community models",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": "community",
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": "internal"
+    },
+    {
+      "id": "daytona",
+      "label": "Daytona",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": "daytona",
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": "api"
+    },
+    {
+      "id": "deepinfra",
+      "label": "DeepInfra",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "deepinfra",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://deepinfra.com/dash/billing"
+        }
+      ]
+    },
+    {
+      "id": "digitalocean",
+      "label": "DigitalOcean",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": "digitalocean",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://cloud.digitalocean.com/organizations/4a4e317f-17c7-4fdb-9c79-907331a02d2b/billing"
+        }
+      ]
+    },
+    {
+      "id": "e2b",
+      "label": "E2B",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": "e2b",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+          "label": "Elliot's Project",
+          "activeFrom": "2026-08",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.e2b.dev/project/elliots-project/billing",
+          "accountId": "da33283c-f2bf-414e-87e3-ab8e20cffc46"
+        }
+      ]
+    },
+    {
+      "id": "elevenlabs",
+      "label": "ElevenLabs",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "elevenlabs",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://elevenlabs.io/app/subscription/creative"
+        }
+      ]
+    },
+    {
+      "id": "exa",
+      "label": "Exa",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "exa",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "elliot@myceli.ai",
+          "label": "Myceli.AI",
+          "activeFrom": "2026-08",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://dashboard.exa.ai/billing",
+          "accountId": "elliot@myceli.ai"
+        }
+      ]
+    },
+    {
+      "id": "fal",
+      "label": "fal.ai",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "fal",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://fal.ai/dashboard/usage-billing"
+        }
+      ]
+    },
+    {
+      "id": "fireworks",
+      "label": "Fireworks",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "fireworks",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "pollinations",
+          "label": "Pollinations.AI",
+          "activeFrom": "2026-03",
+          "activeTo": null
+        },
+        {
+          "id": "et-fy",
+          "label": "Pollinations",
+          "activeFrom": "2026-07",
+          "activeTo": null
+        },
+        {
+          "id": "neoglyph",
+          "label": "Neoglyph",
+          "activeFrom": "2026-05",
+          "activeTo": null
+        },
+        {
+          "id": "myceli",
+          "label": "Myceli",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        },
+        {
+          "id": "pixelmarket",
+          "label": "Pixelmarket",
+          "activeFrom": "2026-05",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "cli",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://app.fireworks.ai/account/billing",
+          "accountId": "myceli"
+        },
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://app.fireworks.ai/account/billing",
+          "accountId": "pollinations"
+        },
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://app.fireworks.ai/account/billing",
+          "accountId": "et-fy"
+        },
+        {
+          "workspace": "neoglyph.ai",
+          "url": "https://app.fireworks.ai/account/billing",
+          "accountId": "neoglyph"
+        },
+        {
+          "workspace": "pixelmarket.ai",
+          "url": "https://app.fireworks.ai/account/billing",
+          "accountId": "pixelmarket"
+        }
+      ]
+    },
+    {
+      "id": "google",
+      "label": "Google Cloud",
+      "meteringBasis": "mixed",
+      "aliases": [],
+      "connector": "google",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "cli",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/credits/all"
+        }
+      ]
+    },
+    {
+      "id": "github",
+      "label": "GitHub",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": "github",
+      "monthlyReview": true,
+      "balanceTracking": false,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://github.com/enterprises/myceli-ai/billing"
+        }
+      ]
+    },
+    {
+      "id": "inception",
+      "label": "Inception",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "inception",
+      "monthlyReview": true,
+      "balanceTracking": false,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://platform.inceptionlabs.ai/dashboard/logs"
+        }
+      ]
+    },
+    {
+      "id": "inferenceport",
+      "label": "InferencePort",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "inferenceport",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.inferenceport.ai"
+        }
+      ]
+    },
+    {
+      "id": "io.net",
+      "label": "io.net",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": "io-net",
+      "monthlyReview": false,
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://cloud.io.net/cloud/billing"
+        }
+      ]
+    },
+    {
+      "id": "lambda",
+      "label": "Lambda Cloud",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": "lambda",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://cloud.lambda.ai/workspace/808f00c5d33c401192efc3b376d22b2f/usage"
+        }
+      ]
+    },
+    {
+      "id": "modal",
+      "label": "Modal",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": "modal",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli-ai",
+          "label": "myceli-ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        },
+        {
+          "id": "myceli-ai2",
+          "label": "myceli-ai2",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        },
+        {
+          "id": "elliot-4",
+          "label": "elliot-4",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "cli",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://modal.com/settings/myceli-ai/usage",
+          "accountId": "myceli-ai"
+        },
+        {
+          "workspace": "myceli.ai",
+          "url": "https://modal.com/settings/myceli-ai2/usage",
+          "accountId": "myceli-ai2"
+        },
+        {
+          "workspace": "myceli.ai",
+          "url": "https://modal.com/settings/elliot-4/usage",
+          "accountId": "elliot-4"
+        }
+      ]
+    },
+    {
+      "id": "mistral",
+      "label": "Mistral AI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "mistral",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://admin.mistral.ai/organization/billing"
+        }
+      ]
+    },
+    {
+      "id": "nebius",
+      "label": "Nebius",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "openai",
+      "label": "OpenAI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "openai",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://platform.openai.com/settings/organization/billing/credit-grants"
+        }
+      ]
+    },
+    {
+      "id": "openrouter",
+      "label": "OpenRouter",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "openrouter",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "activeFrom": "2026-05",
+          "activeTo": null
+        },
+        {
+          "id": "pollinations",
+          "label": "PollinationsAI",
+          "activeFrom": "2026-07",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://openrouter.ai/settings/credits",
+          "accountId": "myceli"
+        },
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://openrouter.ai/settings/credits",
+          "accountId": "pollinations"
+        }
+      ]
+    },
+    {
+      "id": "ovhcloud",
+      "label": "OVHcloud",
+      "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": "ovhcloud",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://manager.eu.ovhcloud.com/#/dedicated/billing/credits"
+        }
+      ]
+    },
+    {
+      "id": "perplexity",
+      "label": "Perplexity",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "perplexity",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.perplexity.ai/project/81749045/billing"
+        }
+      ]
+    },
+    {
+      "id": "pointsflyer",
+      "label": "PointsFlyer",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "pruna",
+      "label": "Pruna AI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "pruna",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://dashboard.pruna.ai/billing"
+        }
+      ]
+    },
+    {
+      "id": "replicate",
+      "label": "Replicate",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "replicate",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://replicate.com/account/billing"
+        }
+      ]
+    },
+    {
+      "id": "regolo",
+      "label": "Regolo.ai",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "regolo",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "thomash@pollinations.ai",
+          "label": "Pollinations.ai",
+          "activeFrom": "2026-08",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://dashboard.regolo.ai/subscriptions",
+          "accountId": "thomash@pollinations.ai"
+        }
+      ]
+    },
+    {
+      "id": "retell",
+      "label": "Retell AI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "retell",
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": "dashboard"
+    },
+    {
+      "id": "runpod",
+      "label": "RunPod",
+      "meteringBasis": "mixed",
+      "aliases": [],
+      "connector": "runpod",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.runpod.io/user/billing"
+        }
+      ]
+    },
+    {
+      "id": "scaleway",
+      "label": "Scaleway",
+      "meteringBasis": "mixed",
+      "aliases": [],
+      "connector": "scaleway",
+      "monthlyReview": false,
+      "accounts": [
+        {
+          "id": "fad8c43c-762a-4cde-9043-641d6ff37586",
+          "label": "Pollinations.AI",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        },
+        {
+          "id": "b399fe9d-4976-4162-a471-9920aaeda163",
+          "label": "Pollinations GmbH",
+          "activeFrom": "2026-08",
+          "activeTo": "2026-08"
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://console.scaleway.com/billing/optimization",
+          "accountId": "fad8c43c-762a-4cde-9043-641d6ff37586"
+        },
+        {
+          "workspace": "pollinations.ai",
+          "url": "https://console.scaleway.com/billing/optimization",
+          "accountId": "b399fe9d-4976-4162-a471-9920aaeda163"
+        }
+      ]
+    },
+    {
+      "id": "self-hosted",
+      "label": "Self-hosted",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "self-issued",
+      "label": "Self-issued",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "seraphyn",
+      "label": "Seraphyn",
+      "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "stability",
+      "label": "Stability AI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "stability",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "dashboard",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://platform.stability.ai/account/credits"
+        }
+      ]
+    },
+    {
+      "id": "tinybird",
+      "label": "Tinybird",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": "tinybird",
+      "monthlyReview": true,
+      "balanceTracking": false,
+      "collectionMethod": "cli",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://app.tinybird.co/"
+        }
+      ]
+    },
+    {
+      "id": "vast.ai",
+      "label": "Vast.ai",
+      "meteringBasis": "capacity",
+      "aliases": [
+        "vast",
+        "vastai"
+      ],
+      "connector": "vast-ai",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "cli",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://cloud.vast.ai/billing/"
+        }
+      ]
+    },
+    {
+      "id": "vercel",
+      "label": "Vercel AI Gateway",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "vercel",
+      "monthlyReview": true,
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://vercel.com/pollinations/~/ai-gateway"
+        }
+      ]
+    },
+    {
+      "id": "xai",
+      "label": "xAI",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "xai",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2",
+          "label": "Myceli.AI OÜ — tuesday-cuticle-eggnog",
+          "activeFrom": "2026-03",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.x.ai/team/ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2/settings/billing",
+          "accountId": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2"
+        }
+      ]
+    }
+  ]
+}

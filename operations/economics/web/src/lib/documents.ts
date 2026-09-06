@@ -5,6 +5,14 @@ export type DriveDocumentLink = {
 };
 
 const GOOGLE_FILE_ID = /^[A-Za-z0-9_-]+$/;
+const GOOGLE_DOCUMENT_URL =
+    /https:\/\/(?:drive|docs)\.google\.com\/[^\s<>"']+/giu;
+
+function documentUrls(evidence: string) {
+    return (evidence.match(GOOGLE_DOCUMENT_URL) ?? []).map((candidate) =>
+        candidate.replace(/[),.;\]}]+$/u, ""),
+    );
+}
 
 function previewUrl(
     origin: string,
@@ -20,63 +28,83 @@ function previewUrl(
 }
 
 export function driveDocumentLink(evidence: string): DriveDocumentLink | null {
-    const href = evidence.trim();
-    if (!href) return null;
+    for (const href of documentUrls(evidence)) {
+        const url = new URL(href);
 
-    let url: URL;
-    try {
-        url = new URL(href);
-    } catch {
-        return null;
-    }
+        if (url.hostname === "drive.google.com") {
+            if (url.pathname.includes("/folders/")) {
+                return { href, label: "Open folder" };
+            }
 
-    if (url.protocol !== "https:") return null;
-
-    if (url.hostname === "drive.google.com") {
-        if (url.pathname.includes("/folders/")) {
-            return { href, label: "Open folder" };
+            const pathFileId = url.pathname.match(/^\/file\/d\/([^/]+)/)?.[1];
+            const queryFileId =
+                url.pathname === "/open" ? url.searchParams.get("id") : null;
+            const fileId = pathFileId ?? queryFileId;
+            if (fileId) {
+                return {
+                    href,
+                    label: "Open document",
+                    previewHref: previewUrl(
+                        url.origin,
+                        "file",
+                        fileId,
+                        url.searchParams.get("resourcekey"),
+                    ),
+                };
+            }
+            continue;
         }
 
-        const pathFileId = url.pathname.match(/^\/file\/d\/([^/]+)/)?.[1];
-        const queryFileId =
-            url.pathname === "/open" ? url.searchParams.get("id") : null;
-        const fileId = pathFileId ?? queryFileId;
-        if (fileId) {
-            return {
-                href,
-                label: "Open document",
-                previewHref: previewUrl(
-                    url.origin,
-                    "file",
-                    fileId,
-                    url.searchParams.get("resourcekey"),
-                ),
-            };
-        }
-        return null;
-    }
+        if (url.hostname === "docs.google.com") {
+            const workspaceDocument = url.pathname.match(
+                /^\/(document|spreadsheets|presentation)\/d\/([^/]+)/,
+            );
+            if (workspaceDocument) {
+                return {
+                    href,
+                    label: "Open document",
+                    previewHref: previewUrl(
+                        url.origin,
+                        workspaceDocument[1],
+                        workspaceDocument[2],
+                        url.searchParams.get("resourcekey"),
+                    ),
+                };
+            }
 
-    if (url.hostname === "docs.google.com") {
-        const workspaceDocument = url.pathname.match(
-            /^\/(document|spreadsheets|presentation)\/d\/([^/]+)/,
-        );
-        if (workspaceDocument) {
-            return {
-                href,
-                label: "Open document",
-                previewHref: previewUrl(
-                    url.origin,
-                    workspaceDocument[1],
-                    workspaceDocument[2],
-                    url.searchParams.get("resourcekey"),
-                ),
-            };
-        }
-
-        if (url.pathname.startsWith("/forms/")) {
-            return { href, label: "Open document" };
+            if (url.pathname.startsWith("/forms/")) {
+                return { href, label: "Open document" };
+            }
         }
     }
 
     return null;
+}
+
+export function hasArchivedEvidence(evidence: string): boolean {
+    return driveDocumentLink(evidence) != null;
+}
+
+const OPEN_EVIDENCE_WORDING =
+    /\b(?:missing|unresolved|awaiting|unavailable)\b|\bself-purchase checkout test\b/iu;
+
+export function hasReconciledTransactionEvidence({
+    description,
+    evidence,
+}: {
+    description: string;
+    evidence: string;
+}): boolean {
+    if (!hasArchivedEvidence(evidence)) return false;
+    return !OPEN_EVIDENCE_WORDING.test(`${description} ${evidence}`);
+}
+
+export function isAcknowledgedLostTransactionEvidence({
+    description,
+}: {
+    description: string;
+}): boolean {
+    return /\b(?:invoice|receipt) lost and unavailable\b|\b(?:supplier|vendor) invoice unavailable\b|\bcannot supply the historical receipt\b|\bexact supplier receipt unresolved\b/iu.test(
+        description,
+    );
 }

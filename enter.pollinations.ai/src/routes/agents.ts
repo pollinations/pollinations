@@ -16,13 +16,13 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
-    agentRuntimeBaseUrl,
     BuiltinMcpServerIdSchema,
     PromptAgentInputSchema,
     parsePromptAgentConfig,
     serializePromptAgentConfig,
 } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
+import { RequiredSafetyFeaturesSchema } from "./community-endpoints/schemas.ts";
 
 const ListingFieldsSchema = z.object({
     name: z
@@ -44,20 +44,23 @@ const ListingFieldsSchema = z.object({
 
 // Agent writes are one operation: prompt configuration and catalog identity
 // live in the same community_endpoint row and cannot get out of sync.
-const AgentWriteSchema = PromptAgentInputSchema.extend(
-    ListingFieldsSchema.shape,
-).strict();
+const AgentWriteSchema = PromptAgentInputSchema.extend({
+    ...ListingFieldsSchema.shape,
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
+}).strict();
 const CreateAgentSchema = AgentWriteSchema.extend({
     description: ListingFieldsSchema.shape.description.optional().default(""),
     visibility: ListingFieldsSchema.shape.visibility
         .optional()
         .default("private"),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional().default([]),
 }).strict();
 const UpdateAgentSchema = PromptAgentInputSchema.extend({
     name: ListingFieldsSchema.shape.name.optional(),
     title: ListingFieldsSchema.shape.title.optional(),
     description: ListingFieldsSchema.shape.description.optional(),
     visibility: ListingFieldsSchema.shape.visibility.optional(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema.optional(),
 }).strict();
 const AgentResponseSchema = z.object({
     id: z.string(),
@@ -65,10 +68,9 @@ const AgentResponseSchema = z.object({
     title: z.string(),
     description: z.string().nullable(),
     visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
-    baseUrl: z.string().url(),
-    upstreamModel: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
+    requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
     mcpServers: z.array(BuiltinMcpServerIdSchema),
     createdAt: z.string(),
     updatedAt: z.string(),
@@ -81,18 +83,17 @@ const AgentDeleteResponseSchema = z.object({ id: z.string() });
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.communityEndpoint.$inferSelect;
 
-function toResponse(row: AgentRow, baseUrl: string) {
+function toResponse(row: AgentRow) {
     const config = parsePromptAgentConfig(row.payload);
     if (!config) throw new Error(`Agent ${row.id} has invalid configuration`);
     return {
         id: row.id,
         name: row.name,
-        title: row.title ?? row.name,
+        title: row.title,
         description: row.description,
         visibility: row.visibility,
-        baseUrl,
-        upstreamModel: row.upstreamModel,
         ...config,
+        requiredSafetyFeatures: row.requiredSafetyFeatures,
         createdAt: row.createdAt,
         updatedAt: row.updatedAt,
     };
@@ -184,9 +185,7 @@ export const agentsRoutes = new Hono<Env>()
                 orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
             });
             return c.json({
-                data: rows.map((row) =>
-                    toResponse(row, agentRuntimeBaseUrl(c.env)),
-                ),
+                data: rows.map(toResponse),
             });
         },
     )
@@ -218,7 +217,6 @@ export const agentsRoutes = new Hono<Env>()
             return c.json(
                 toResponse(
                     await requireOwnedAgent(db, c.req.param("id"), user.id),
-                    agentRuntimeBaseUrl(c.env),
                 ),
             );
         },
@@ -268,13 +266,14 @@ export const agentsRoutes = new Hono<Env>()
                     type: "prompt_agent",
                     baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
                     upstreamModel: id,
+                    requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: serializePromptAgentConfig(input),
                     visibility: input.visibility,
                     createdAt: new Date(),
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
+            return c.json(toResponse(row));
         },
     )
     .patch(
@@ -320,6 +319,9 @@ export const agentsRoutes = new Hono<Env>()
                             ? stored.description
                             : input.description || null,
                     visibility,
+                    requiredSafetyFeatures:
+                        input.requiredSafetyFeatures ??
+                        stored.requiredSafetyFeatures,
                     payload: serializePromptAgentConfig(input),
                     updatedAt: new Date(),
                 })
@@ -331,7 +333,7 @@ export const agentsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
+            return c.json(toResponse(row));
         },
     )
     .delete(

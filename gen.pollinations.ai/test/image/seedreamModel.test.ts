@@ -1,12 +1,15 @@
 import { env } from "cloudflare:test";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../../src/image/utils/imageDownload", () => ({
-    downloadUserImage: async () => ({
-        buffer: Buffer.from("test", "utf8"),
-        mimeType: "image/jpeg",
-    }),
-}));
+vi.mock("../../src/image/utils/imageDownload", () => {
+    const buffer = Buffer.from("test", "utf8");
+    const mimeType = "image/jpeg";
+    return {
+        downloadUserImage: async () => ({ buffer, mimeType }),
+        toDataUri: async () =>
+            `data:${mimeType};base64,${buffer.toString("base64")}`,
+    };
+});
 
 import { syncImageEnvironment } from "../../src/image/handler.ts";
 import { callSeedream5API } from "../../src/image/models/seedream5ReplicateModel.ts";

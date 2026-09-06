@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * ByteDance Seedream 4.0, 5.0 Lite, and 5.0 Pro image generation via Replicate.
  *
@@ -14,7 +15,6 @@
  * mode (only seedream 4.0 does).
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ImageParams } from "../params.ts";
@@ -23,7 +23,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedream-legacy:ops");
@@ -167,18 +167,16 @@ function resolveAspectRatio(
     }
     if (requested === "adaptive") return "match_input_image";
     if (requested === "9:21") {
-        throw new HttpError(
-            `aspectRatio "9:21" is not supported by ${displayName}. Supported: ${SEEDREAM_ASPECT_RATIOS.join(", ")}.`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `aspectRatio "9:21" is not supported by ${displayName}. Supported: ${SEEDREAM_ASPECT_RATIOS.join(", ")}.`,
+        });
     }
     if ((SEEDREAM_ASPECT_RATIOS as readonly string[]).includes(requested)) {
         return requested as SeedreamAspectRatio;
     }
-    throw new HttpError(
-        `aspectRatio "${requested}" is not supported by ${displayName}. Supported: ${SEEDREAM_ASPECT_RATIOS.join(", ")}.`,
-        400,
-    );
+    throw UpstreamError.fromProvider(400, {
+        message: `aspectRatio "${requested}" is not supported by ${displayName}. Supported: ${SEEDREAM_ASPECT_RATIOS.join(", ")}.`,
+    });
 }
 
 function buildPresetInput(
@@ -219,10 +217,9 @@ function buildCustomInput(
         height < SEEDREAM4_CUSTOM_MIN ||
         height > SEEDREAM4_CUSTOM_MAX
     ) {
-        throw new HttpError(
-            `${variant.displayName} custom dimensions must be between ${SEEDREAM4_CUSTOM_MIN}-${SEEDREAM4_CUSTOM_MAX}px on each side (received ${width}×${height}).`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${variant.displayName} custom dimensions must be between ${SEEDREAM4_CUSTOM_MIN}-${SEEDREAM4_CUSTOM_MAX}px on each side (received ${width}×${height}).`,
+        });
     }
     return {
         prompt,
@@ -244,10 +241,9 @@ async function callSeedreamReplicateAPI(
 
     const images = safeParams.image ?? [];
     if (images.length > variant.maxReferenceImages) {
-        throw new HttpError(
-            `${variant.displayName} supports at most ${variant.maxReferenceImages} reference images (received ${images.length}).`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${variant.displayName} supports at most ${variant.maxReferenceImages} reference images (received ${images.length}).`,
+        });
     }
 
     const imageInput =
@@ -290,14 +286,16 @@ async function callSeedreamReplicateAPI(
         });
     } catch (err) {
         logError(`${variant.displayName} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${variant.displayName} generation failed`,
         );
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(`${variant.displayName} returned no images`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${variant.displayName} returned no images`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrls[0], {

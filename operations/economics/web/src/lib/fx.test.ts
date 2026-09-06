@@ -1,19 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { eurUsdRate, fxEstimatedMonths, toUsd } from "./fx";
-
-describe("eurUsdRate", () => {
-    it("returns the table rate for a known month", () => {
-        expect(eurUsdRate("2026-06")).toBeCloseTo(1.1518, 4);
-    });
-
-    it("converts future months at the latest known rate", () => {
-        expect(eurUsdRate("2031-01")).toBeCloseTo(1.1411, 4);
-    });
-
-    it("throws on a past month missing from the table", () => {
-        expect(() => eurUsdRate("2024-11")).toThrow(/2024-11/);
-    });
-});
+import { fxEstimatedMonths, toUsd } from "./fx";
 
 describe("toUsd", () => {
     it("converts EUR at the month rate, accepting full dates", () => {
@@ -35,6 +21,7 @@ describe("toUsd", () => {
 
     it("treats a blank currency as USD (rows without that leg carry 0)", () => {
         expect(toUsd(0, "", "2026-06")).toBe(0);
+        expect(() => toUsd(1, "", "2026-06")).toThrow(/Missing currency/);
     });
 
     it("throws on an unknown currency instead of guessing", () => {
@@ -45,6 +32,7 @@ describe("toUsd", () => {
 describe("fxEstimatedMonths", () => {
     const eurTxn = (date: string) => ({
         entry_id: `wise-${date}`,
+        kind: "transaction" as const,
         source: "wise",
         date,
         vendor: "google",

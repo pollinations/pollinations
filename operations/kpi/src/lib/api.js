@@ -9,7 +9,7 @@ async function getRows(path) {
 export const registrations = () => getRows("/api/kpi/registrations");
 export const activations = () => getRows("/api/kpi/activations");
 export const revenue = (weeks) =>
-    getRows("/api/kpi/revenue").then((rows) => rows?.slice(-weeks) ?? null);
+    getRows(`/api/kpi/revenue?weeks_back=${weeks}`);
 export const appSubmissions = () => getRows("/api/kpi/app-submissions");
 
 export const weekly = (pipe, weeks) =>

@@ -4,6 +4,10 @@ import { callVeoAPI } from "../../src/image/models/veoVideoModel.ts";
 import type { ImageParams } from "../../src/image/params.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 
+const FIRST_FRAME_URL = "https://image.example.com/first.png";
+const LAST_FRAME_URL = "https://image.example.com/last.png";
+const PNG_BYTES = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+
 const baseParams: ImageParams = {
     model: "veo",
     width: 1280,
@@ -24,6 +28,11 @@ function mockVeoFetch(requests: Array<Record<string, unknown>>) {
         .spyOn(globalThis, "fetch")
         .mockImplementation(async (url, init) => {
             const href = typeof url === "string" ? url : url.toString();
+            if (href === FIRST_FRAME_URL || href === LAST_FRAME_URL) {
+                return new Response(PNG_BYTES, {
+                    headers: { "Content-Type": "image/png" },
+                });
+            }
             if (href.endsWith(":predictLongRunning")) {
                 requests.push(
                     JSON.parse(init?.body as string) as Record<string, unknown>,
@@ -110,6 +119,34 @@ describe("veoVideoModel resolution selection", () => {
                 completionVideoSeconds: 4,
                 completionAudioSeconds: 4,
             },
+        });
+    });
+
+    it("maps the first and second images to Veo start and end frames", async () => {
+        setGoogleEnv();
+        const requests: Array<Record<string, unknown>> = [];
+        mockVeoFetch(requests);
+
+        await callVeoAPI("move between these frames", {
+            ...baseParams,
+            image: [FIRST_FRAME_URL, LAST_FRAME_URL],
+        });
+
+        expect(requests[0]).toMatchObject({
+            instances: [
+                {
+                    image: {
+                        bytesBase64Encoded:
+                            Buffer.from(PNG_BYTES).toString("base64"),
+                        mimeType: "image/png",
+                    },
+                    lastFrame: {
+                        bytesBase64Encoded:
+                            Buffer.from(PNG_BYTES).toString("base64"),
+                        mimeType: "image/png",
+                    },
+                },
+            ],
         });
     });
 });

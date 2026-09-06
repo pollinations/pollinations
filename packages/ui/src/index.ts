@@ -12,6 +12,8 @@ export {
 export {
     EditableCombobox,
     type EditableComboboxProps,
+    EditableComboboxToken,
+    type EditableComboboxTokenProps,
 } from "./compositions/EditableCombobox.tsx";
 export {
     ExternalLinkButton,
@@ -53,6 +55,10 @@ export {
     periodBucketKeyToDate,
 } from "./lib/period.ts";
 export { useScrollLock } from "./lib/use-scroll-lock.ts";
+export {
+    AccountMenu,
+    type AccountMenuProps,
+} from "./modules/account-menu/AccountMenu.tsx";
 export { Button, type ButtonProps } from "./primitives/Button.tsx";
 export {
     ButtonGroup,
@@ -70,13 +76,19 @@ export {
     type DialogProps,
     DialogTitle,
 } from "./primitives/Dialog.tsx";
+export { Drawer, type DrawerProps } from "./primitives/Drawer.tsx";
 export { Dropdown, type DropdownProps } from "./primitives/Dropdown.tsx";
 export {
     DropdownItem,
     type DropdownItemProps,
 } from "./primitives/DropdownItem.tsx";
 export { Field } from "./primitives/Field.tsx";
-export { IconButton } from "./primitives/IconButton.tsx";
+export {
+    IconButton,
+    type IconButtonIntent,
+    type IconButtonProps,
+    type IconButtonVariant,
+} from "./primitives/IconButton.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";
 export * from "./primitives/icons/index.tsx";
@@ -106,6 +118,10 @@ export {
     TableRow,
     type TableRowProps,
 } from "./primitives/Table.tsx";
+export {
+    TableDisclosureButton,
+    type TableDisclosureButtonProps,
+} from "./primitives/TableDisclosureButton.tsx";
 export { Textarea, type TextareaProps } from "./primitives/Textarea.tsx";
 export { Tooltip } from "./primitives/Tooltip.tsx";
 export {

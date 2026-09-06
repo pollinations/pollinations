@@ -3,6 +3,7 @@ import { imageUrlToBase64Transform } from "../../../src/text/transforms/imageUrl
 
 const transform = imageUrlToBase64Transform;
 const bedrockOptions = { modelConfig: { provider: "bedrock" } };
+const vertexOptions = { modelConfig: { provider: "vertex-ai" } };
 
 /** PNG signature — enough for the media type to be read off the bytes. */
 const PNG_BYTES = new Uint8Array([
@@ -26,6 +27,16 @@ function imageMessage(urls: string[]) {
 }
 
 describe("imageUrlToBase64Transform", () => {
+    it("leaves remote image URLs unchanged for Vertex", async () => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        const input = imageMessage(["https://example.com/image.png"]);
+
+        const result = await transform(input, vertexOptions);
+
+        expect(result.messages).toBe(input);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("rejects malformed image URLs before they reach the provider", async () => {
         const fetchSpy = vi.spyOn(globalThis, "fetch");
 

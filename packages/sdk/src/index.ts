@@ -95,6 +95,8 @@ export type {
     ChatChoice,
     ChatOptions,
     ChatResponse,
+    ChatRouting,
+    ChatRoutingCapability,
     ChatStreamChunk,
     CompletionUsage,
     CreatedKey,
@@ -128,6 +130,8 @@ export type {
     // Models
     ModelCategory,
     ModelInfo,
+    ModelInputModality,
+    ModelOutputModality,
     // Config
     PollinationsConfig,
     // Errors
@@ -151,6 +155,7 @@ export type {
     UsageRecord,
     UsageResponse,
     UserInfo,
+    VideoCapability,
     VideoContentPart,
     VideoGenerateOptions,
     // Video
@@ -158,5 +163,5 @@ export type {
     VideoResponse,
 } from "./types.js";
 
-// Export the error class
-export { PollinationsError } from "./types.js";
+// Export runtime constants and the error class
+export { CHAT_ROUTING_CAPABILITIES, PollinationsError } from "./types.js";

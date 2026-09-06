@@ -1,8 +1,16 @@
-import { and, eq, isNotNull, isNull, or } from "drizzle-orm";
+import { and, eq, isNotNull, isNull } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { communityModelId } from "../community-endpoints.ts";
+import {
+    communityModelId,
+    effectiveCommunityEndpointVisibility,
+} from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
-import { getModels, resolveModelName } from "./registry.ts";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    isVisibleModelDefinition,
+    resolveModelName,
+} from "./registry.ts";
 
 export function canonicalizeModelPermissionIds(
     modelIds: readonly string[],
@@ -28,12 +36,20 @@ export async function getVisibleModelIdsForUser(
     dbBinding: D1Database,
     userId: string,
 ): Promise<Set<string>> {
-    const modelIds = new Set<string>(getModels());
+    const modelIds = new Set<string>(
+        getModels().filter((model) =>
+            isVisibleModelDefinition(getRegistryModelDefinition(model)),
+        ),
+    );
     const db = drizzle(dbBinding, { schema });
     const communityModels = await db
         .select({
             ownerGithubUsername: schema.user.githubUsername,
+            ownerUserId: schema.communityEndpoint.ownerUserId,
             name: schema.communityEndpoint.name,
+            visibility: schema.communityEndpoint.visibility,
+            pendingVisibility: schema.communityEndpoint.pendingVisibility,
+            pendingAt: schema.communityEndpoint.pendingAt,
         })
         .from(schema.communityEndpoint)
         .innerJoin(
@@ -44,14 +60,20 @@ export async function getVisibleModelIdsForUser(
             and(
                 isNull(schema.communityEndpoint.hiddenAt),
                 isNotNull(schema.user.githubUsername),
-                or(
-                    eq(schema.communityEndpoint.visibility, "public"),
-                    eq(schema.communityEndpoint.ownerUserId, userId),
-                ),
             ),
         );
 
     for (const model of communityModels) {
+        if (
+            model.ownerUserId !== userId &&
+            effectiveCommunityEndpointVisibility(
+                model.visibility,
+                model.pendingVisibility,
+                model.pendingAt,
+            ) !== "public"
+        ) {
+            continue;
+        }
         if (model.ownerGithubUsername) {
             modelIds.add(
                 communityModelId(model.ownerGithubUsername, model.name),

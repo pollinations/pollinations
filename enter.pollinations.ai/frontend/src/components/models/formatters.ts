@@ -30,7 +30,7 @@ const displayPriceNumber = new Intl.NumberFormat("en", {
     maximumFractionDigits: 4,
 });
 const smallDisplayPriceNumber = new Intl.NumberFormat("en", {
-    maximumFractionDigits: 6,
+    maximumFractionDigits: 8,
 });
 
 export const formatDisplayPrice = (

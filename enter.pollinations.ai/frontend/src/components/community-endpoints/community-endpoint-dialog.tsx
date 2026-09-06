@@ -19,10 +19,10 @@ import type { ModelInputModality } from "@shared/registry/registry.ts";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { OpenWebUiLink } from "../models/open-webui-link.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import {
-    BASE_TEXT_PRICE_KEYS,
-    BASE_TRANSCRIPTION_PRICE_KEYS,
+    basePriceKeysForModality,
     formWithVisiblePrices,
     hasValidVisibleFormPrices,
     PriceGroups,
@@ -30,6 +30,7 @@ import {
     savedEndpointPriceKeys,
     visiblePriceFieldKeys,
 } from "./price-table.tsx";
+import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
 import {
     type ActionState,
     type CommunityEndpointTestResponse,
@@ -42,6 +43,7 @@ import {
     idleAction,
     isValidPerUserRpm,
     nextFormState,
+    openWebUiTestableModelId,
     providerModelHelper,
     readError,
     toEndpointPayload,
@@ -73,6 +75,10 @@ export function CommunityEndpointDialog({
 }: CommunityEndpointDialogProps) {
     const isEdit = !!endpoint;
     const isEndpointAgent = endpoint?.type === "endpoint_agent";
+    // Only in edit mode: a model being created has no id to open yet.
+    const testableModelId = endpoint
+        ? openWebUiTestableModelId(endpoint)
+        : null;
     const [form, setForm] = useState<EndpointFormState>(emptyForm);
     const [modelOptions, setModelOptions] = useState<string[]>([]);
     const [modelListState, setModelListState] =
@@ -127,6 +133,8 @@ export function CommunityEndpointDialog({
 
     const hasToken = form.bearerToken.trim().length > 0;
     const tokenForRequest = { bearerToken: form.bearerToken.trim() };
+    const canFetchModels =
+        form.modality !== "text" || form.api === "chat_completions";
 
     function updateForm(key: keyof EndpointFormState, value: string): void {
         setForm((current) => nextFormState(current, key, value));
@@ -134,12 +142,18 @@ export function CommunityEndpointDialog({
             key === "modality" ||
             key === "name" ||
             key === "upstreamModel" ||
-            key === "baseUrl" ||
+            key === "url" ||
+            key === "api" ||
             key === "bearerToken"
         ) {
             setTestState(idleAction);
         }
-        if (key === "modality" || key === "baseUrl" || key === "bearerToken") {
+        if (
+            key === "modality" ||
+            key === "url" ||
+            key === "api" ||
+            key === "bearerToken"
+        ) {
             setModelOptions([]);
             setModelListState(idleAction);
             setProviderModelMenuOpen(false);
@@ -151,7 +165,7 @@ export function CommunityEndpointDialog({
         try {
             const response = await apiClient.account["my-models"].models.$post({
                 json: {
-                    baseUrl: form.baseUrl.trim(),
+                    baseUrl: form.url,
                     ...tokenForRequest,
                 },
             });
@@ -180,12 +194,26 @@ export function CommunityEndpointDialog({
         setTestState({ status: "loading", message: "Testing endpoint…" });
         try {
             const response = await apiClient.account["my-models"].test.$post({
-                json: {
-                    baseUrl: form.baseUrl.trim(),
-                    bearerToken: form.bearerToken.trim(),
-                    modality: form.modality,
-                    model: form.upstreamModel.trim() || form.name.trim(),
-                },
+                json:
+                    form.modality === "text"
+                        ? {
+                              modality: "text",
+                              api: form.api,
+                              url: form.url,
+                              bearerToken: form.bearerToken.trim(),
+                              model:
+                                  form.upstreamModel.trim() || form.name.trim(),
+                          }
+                        : {
+                              modality: form.modality,
+                              baseUrl: form.url,
+                              bearerToken: form.bearerToken.trim(),
+                              ...(form.modality !== "video" && {
+                                  model:
+                                      form.upstreamModel.trim() ||
+                                      form.name.trim(),
+                              }),
+                          },
             });
             if (!response.ok) throw new Error(await readError(response));
             const body =
@@ -207,9 +235,13 @@ export function CommunityEndpointDialog({
                 throw new Error(
                     form.modality === "image"
                         ? "Endpoint responded, but did not return image data"
-                        : form.modality === "transcription"
-                          ? "Endpoint responded, but did not return transcription text or usage"
-                          : "Endpoint responded, but did not return billable usage",
+                        : form.modality === "video"
+                          ? "Endpoint responded, but did not return playable video"
+                          : form.modality === "transcription"
+                            ? "Endpoint responded, but did not return transcription text or usage"
+                            : form.modality === "speech"
+                              ? "Endpoint responded, but did not return binary audio"
+                              : "Endpoint responded, but did not return billable usage",
                 );
             }
             setForm((current) => ({
@@ -278,12 +310,7 @@ export function CommunityEndpointDialog({
         : [];
     // Reveal the modality's base price plus whatever the test observed or the
     // model already had saved. Blank and zero prices mean free.
-    const basePriceKeys =
-        form.modality === "image"
-            ? (["completionImagePrice"] as const)
-            : form.modality === "transcription"
-              ? BASE_TRANSCRIPTION_PRICE_KEYS
-              : BASE_TEXT_PRICE_KEYS;
+    const basePriceKeys = basePriceKeysForModality(form.modality);
     const visiblePriceKeys = new Set(
         isShared
             ? visiblePriceFieldKeys(savedPriceKeys, returnedFields, [
@@ -296,14 +323,18 @@ export function CommunityEndpointDialog({
         visiblePriceKeys,
     );
     const hasValidPerUserRpm = isValidPerUserRpm(form.perUserRpm);
+    const cancelsPendingChange =
+        Boolean(endpoint?.pending) && form.visibility === "private";
     // First-time publishing of an external endpoint re-observes its billed
-    // buckets, so it needs a successful test. A model already saved as public
-    // has server-validated pricing, so re-editing it (e.g. a price or
-    // description tweak) does not force another test. Private models defer
-    // pricing entirely. External endpoints always need a token to be callable
-    // at all.
-    const alreadyPublic = isEdit && endpoint?.visibility === "public";
-    const needsTest = isShared && !alreadyPublic;
+    // buckets, so it needs a successful test. A model already public or queued
+    // for publication has server-validated pricing, so re-editing it does not
+    // force another test. Private models defer pricing entirely. External
+    // endpoints always need a token to be callable at all.
+    const isPublicOrPending =
+        isEdit &&
+        (endpoint?.visibility === "public" ||
+            endpoint?.pending?.visibility === "public");
+    const needsTest = isShared && !isPublicOrPending;
     const testRequirementMet =
         testState.status === "success" && returnedFields.length > 0;
     const saveRequirementMet =
@@ -350,7 +381,7 @@ export function CommunityEndpointDialog({
         !isSubmitting &&
         form.name.trim() !== "" &&
         form.title.trim() !== "" &&
-        form.baseUrl.trim() !== "" &&
+        form.url.trim() !== "" &&
         hasValidVisiblePrices &&
         hasValidPerUserRpm &&
         saveRequirementMet;
@@ -396,6 +427,27 @@ export function CommunityEndpointDialog({
                 <ScrollArea className="min-h-0 flex-1 space-y-4 overscroll-contain px-6 pb-2">
                     {error && <Alert intent="danger">{error}</Alert>}
 
+                    {endpoint?.pending && (
+                        <Alert intent="info" title="Changes queued">
+                            This form shows the queued values. They take effect{" "}
+                            {new Date(
+                                endpoint.pending.effectiveAt,
+                            ).toLocaleString()}
+                            .
+                        </Alert>
+                    )}
+
+                    {cancelsPendingChange && (
+                        <Alert
+                            intent="danger"
+                            title="Queued changes will be cancelled"
+                        >
+                            Saving this model as Private removes its queued
+                            changes. Publishing it again starts a new 3-hour
+                            wait.
+                        </Alert>
+                    )}
+
                     {!isEndpointAgent && (
                         <FieldStack
                             label="Modality"
@@ -408,7 +460,14 @@ export function CommunityEndpointDialog({
                         >
                             <ButtonGroup aria-label="Modality">
                                 {(
-                                    ["text", "image", "transcription"] as const
+                                    [
+                                        "text",
+                                        "image",
+                                        "video",
+                                        "transcription",
+                                        "speech",
+                                        "embedding",
+                                    ] as const
                                 ).map((modality) => (
                                     <TabButton
                                         key={modality}
@@ -460,28 +519,72 @@ export function CommunityEndpointDialog({
                         </Alert>
                     )}
 
+                    {form.modality === "text" && (
+                        <FieldStack
+                            label="Upstream API"
+                            helper="Responses endpoints also work through Pollinations Chat Completions."
+                        >
+                            <ButtonGroup>
+                                {(
+                                    [
+                                        [
+                                            "chat_completions",
+                                            "Chat Completions",
+                                        ],
+                                        ["responses", "Responses"],
+                                    ] as const
+                                ).map(([api, label]) => (
+                                    <TabButton
+                                        key={api}
+                                        active={form.api === api}
+                                        onClick={() => updateForm("api", api)}
+                                        size="sm"
+                                    >
+                                        {label}
+                                    </TabButton>
+                                ))}
+                            </ButtonGroup>
+                        </FieldStack>
+                    )}
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FieldStack
-                            label="Endpoint URL"
-                            helper="OpenAI-compatible /v1 base URL, or full chat/image/edit/transcription URL."
+                            label={
+                                form.modality === "video"
+                                    ? "Video endpoint URL"
+                                    : "Endpoint URL"
+                            }
+                            helper={
+                                form.modality === "text"
+                                    ? "The exact URL called for the selected API."
+                                    : form.modality === "video"
+                                      ? "The exact URL Pollinations calls to generate a video."
+                                      : "OpenAI-compatible /v1 base URL, or full image/edit/transcription/speech URL."
+                            }
                             alignLabelRow
                         >
                             <Input
                                 name="community-endpoint-url"
                                 type="url"
                                 inputMode="url"
-                                value={form.baseUrl}
-                                placeholder="https://api.example.com/v1"
+                                value={form.url}
+                                placeholder={
+                                    form.modality === "text"
+                                        ? `https://api.example.com/v1/${form.api === "responses" ? "responses" : "chat/completions"}`
+                                        : form.modality === "video"
+                                          ? "https://api.example.com/generate-video"
+                                          : "https://api.example.com/v1"
+                                }
                                 autoComplete="off"
                                 autoCapitalize="none"
                                 spellCheck={false}
                                 required
                                 onChange={(e) =>
-                                    updateForm("baseUrl", e.target.value)
+                                    updateForm("url", e.target.value)
                                 }
                             />
                         </FieldStack>
-                        {isEndpointAgent ? (
+                        {isEndpointAgent && (
                             <FieldStack
                                 label="Agent model ID"
                                 helper="Model ID sent to the endpoint with each request."
@@ -502,31 +605,41 @@ export function CommunityEndpointDialog({
                                     }
                                 />
                             </FieldStack>
-                        ) : (
+                        )}
+                        {!isEndpointAgent && form.modality !== "video" && (
                             <FieldStack
                                 label="Provider model ID"
-                                helper={providerModelHelper(
-                                    modelOptions,
-                                    modelListState,
-                                )}
+                                helper={
+                                    canFetchModels
+                                        ? providerModelHelper(
+                                              modelOptions,
+                                              modelListState,
+                                          )
+                                        : "Model ID sent to the Responses endpoint. Model discovery is not required."
+                                }
                                 alignLabelRow
                                 action={
-                                    <Button
-                                        type="button"
-                                        size="sm"
-                                        intent="info"
-                                        className="shrink-0 text-sm"
-                                        disabled={
-                                            !hasToken ||
-                                            form.baseUrl.trim() === "" ||
-                                            modelListState.status === "loading"
-                                        }
-                                        onClick={() => void handleFetchModels()}
-                                    >
-                                        {modelListState.status === "loading"
-                                            ? "Fetching…"
-                                            : "Fetch models"}
-                                    </Button>
+                                    canFetchModels && (
+                                        <Button
+                                            type="button"
+                                            size="sm"
+                                            intent="info"
+                                            className="shrink-0 text-sm"
+                                            disabled={
+                                                !hasToken ||
+                                                form.url.trim() === "" ||
+                                                modelListState.status ===
+                                                    "loading"
+                                            }
+                                            onClick={() =>
+                                                void handleFetchModels()
+                                            }
+                                        >
+                                            {modelListState.status === "loading"
+                                                ? "Fetching…"
+                                                : "Fetch models"}
+                                        </Button>
+                                    )
                                 }
                             >
                                 <EditableCombobox
@@ -538,7 +651,11 @@ export function CommunityEndpointDialog({
                                             ? "gpt-image-2"
                                             : form.modality === "transcription"
                                               ? "whisper-1"
-                                              : "gpt-4o-mini"
+                                              : form.modality === "speech"
+                                                ? "kokoro"
+                                                : form.modality === "embedding"
+                                                  ? "text-embedding-3-small"
+                                                  : "gpt-4o-mini"
                                     }
                                     align="end"
                                     open={providerModelMenuOpen}
@@ -596,7 +713,7 @@ export function CommunityEndpointDialog({
                                 onClick={() => void handleTest()}
                                 disabled={
                                     !hasToken ||
-                                    form.baseUrl.trim() === "" ||
+                                    form.url.trim() === "" ||
                                     testState.status === "loading"
                                 }
                             >
@@ -673,6 +790,18 @@ export function CommunityEndpointDialog({
                                 </TabButton>
                             </ButtonGroup>
                         </FieldStack>
+                    )}
+                    {!isEndpointAgent && (
+                        <SafetyFeatureSelector
+                            value={form.requiredSafetyFeatures}
+                            disabled={isSubmitting}
+                            onChange={(requiredSafetyFeatures) =>
+                                setForm((current) => ({
+                                    ...current,
+                                    requiredSafetyFeatures,
+                                }))
+                            }
+                        />
                     )}
                     {isShared && (
                         <FieldStack
@@ -760,7 +889,15 @@ export function CommunityEndpointDialog({
                     )}
                 </ScrollArea>
 
-                <div className="flex shrink-0 justify-end gap-2 p-6 pt-4">
+                <div className="flex shrink-0 items-center justify-end gap-2 p-6 pt-4">
+                    {testableModelId && (
+                        <div className="mr-auto">
+                            <OpenWebUiLink
+                                modelId={testableModelId}
+                                variant="text"
+                            />
+                        </div>
+                    )}
                     <Button
                         type="button"
                         intent="danger"

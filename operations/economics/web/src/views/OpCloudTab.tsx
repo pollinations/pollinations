@@ -1,11 +1,12 @@
 import {
     TableBody,
     TableCell,
+    TableDisclosureButton,
     TableHead,
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -15,71 +16,85 @@ import {
     useSortableRows,
     withUniqueRowKeys,
 } from "../components/DataTable";
+import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
-import { fmtNumber, fmtUtcDateTime, utcDateTimeTitle } from "../lib/format";
-import { isPreWindowGrantBurnRow } from "../lib/insights";
+import type { DriveDocumentLink } from "../lib/documents";
+import { fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
     matchesValue,
     type ValueFilter,
+    WINDOW_START,
 } from "../lib/months";
 import type { Data, OpCloudRow } from "../types";
 
-function opCloudKey(row: OpCloudRow) {
-    return [
-        row.start,
-        row.source,
-        row.vendor,
-        row.type,
-        row.resource_id,
-        row.resource_name,
-        row.resource_sku,
-        row.resource_count,
-        row.model,
-        row.credit,
-        row.paid,
-        row.currency,
-    ].join("|");
+function resourceLabel(row: OpCloudRow): string {
+    return (
+        row.model ||
+        row.resource_name ||
+        row.resource_id ||
+        row.resource_sku ||
+        "–"
+    );
+}
+
+function costTypeLabel(type: string): string {
+    const normalized = type.trim().toLowerCase();
+    if (normalized === "inference") return "Inference";
+    if (normalized === "gpu") return "GPU";
+    if (normalized === "infra") return "Infrastructure";
+    if (normalized === "balance") return "Balance";
+    return normalized || "Unclassified";
+}
+
+function DetailItem({ label, value }: { label: string; value: unknown }) {
+    const text = String(value ?? "").trim() || "–";
+    return (
+        <div className="min-w-0">
+            <dt className="text-xs font-medium uppercase tracking-wide text-theme-text-soft">
+                {label}
+            </dt>
+            <dd className="break-all font-mono text-sm text-theme-text-strong">
+                {text}
+            </dd>
+        </div>
+    );
 }
 
 export function OpCloudTab({
     data,
     month = "",
-    type = [],
     vendor = "all",
 }: {
     data: Data;
     month?: MonthFilterValue;
-    type?: ValueFilter;
     vendor?: ValueFilter;
 }) {
-    const baseRows = useMemo(() => {
-        return (data.opCloud ?? []).filter(
-            (row) =>
-                !isPreWindowGrantBurnRow(row) &&
-                matchesMonth(row.start, month) &&
-                matchesValue(row.vendor, vendor) &&
-                matchesValue(row.type, type),
-        );
-    }, [data.opCloud, month, vendor, type]);
+    const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+    const [previewDocument, setPreviewDocument] =
+        useState<DriveDocumentLink | null>(null);
+    const baseRows = useMemo(
+        () =>
+            (data.opCloud ?? []).filter(
+                (row) =>
+                    row.start.slice(0, 7) >= WINDOW_START &&
+                    matchesMonth(row.start, month) &&
+                    matchesValue(row.vendor, vendor),
+            ),
+        [data.opCloud, month, vendor],
+    );
     const sortColumns = useMemo<SortColumn<OpCloudRow>[]>(
         () => [
-            { key: "source", value: (row) => row.source },
             { key: "start", value: (row) => row.start },
-            { key: "end", value: (row) => row.end },
             { key: "vendor", value: (row) => row.vendor },
-            { key: "type", value: (row) => row.type },
-            { key: "model", value: (row) => row.model },
-            { key: "credit", value: (row) => row.credit },
+            { key: "type", value: (row) => costTypeLabel(row.type) },
+            { key: "resource", value: resourceLabel },
             { key: "paid", value: (row) => row.paid },
+            { key: "credit", value: (row) => row.credit },
             { key: "currency", value: (row) => row.currency },
+            { key: "source", value: (row) => row.source },
             { key: "evidence", value: (row) => row.evidence },
-            { key: "recorded_at", value: (row) => row.recorded_at },
-            { key: "resource_sku", value: (row) => row.resource_sku },
-            { key: "resource_count", value: (row) => row.resource_count },
-            { key: "resource_id", value: (row) => row.resource_id },
-            { key: "resource_name", value: (row) => row.resource_name },
         ],
         [],
     );
@@ -88,88 +103,64 @@ export function OpCloudTab({
         direction: "desc",
     });
 
+    const toggle = (entryId: string) => {
+        setExpanded((current) => {
+            const next = new Set(current);
+            if (next.has(entryId)) next.delete(entryId);
+            else next.add(entryId);
+            return next;
+        });
+    };
+
     return (
         <TableScroller>
             <DataTable>
                 <TableHead>
                     <TableRow>
-                        <TableHeaderCell colSpan={2} align="center">
-                            Period
+                        <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
+                            Vendor
+                        </TableHeaderCell>
+                        <TableHeaderCell rowSpan={2} {...headerProps("type")}>
+                            Type
+                        </TableHeaderCell>
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("resource")}
+                        >
+                            Model / resource
                         </TableHeaderCell>
                         <TableHeaderCell
                             colSpan={3}
                             align="center"
                             className={GROUP_BORDER}
                         >
-                            Cloud
+                            Vendor funding
                         </TableHeaderCell>
                         <TableHeaderCell
-                            colSpan={3}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
-                            Amount
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={3}
+                            colSpan={2}
                             align="center"
                             className={GROUP_BORDER}
                         >
                             Evidence
                         </TableHeaderCell>
-                        <TableHeaderCell
-                            colSpan={4}
-                            align="center"
-                            className={GROUP_BORDER}
-                        >
-                            Resource
-                        </TableHeaderCell>
+                        <TableHeaderCell rowSpan={2}>Details</TableHeaderCell>
                     </TableRow>
                     <TableRow>
-                        <TableHeaderCell {...headerProps("start")}>
-                            Start
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("end")}>
-                            End
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            className={GROUP_BORDER}
-                            {...headerProps("vendor")}
-                        >
-                            Vendor
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("type")}>
-                            Type
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("model")}>
-                            Model
-                        </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             className={GROUP_BORDER}
-                            {...headerProps("credit")}
+                            {...headerProps("paid")}
                         >
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Signed credit ledger amount from OP Cloud. Negative values are credit-funded burn; positive values are credit awards.",
-                                    tables: "op_cloud_api",
-                                    sources: "API/CLI/BQ/HC",
-                                }}
-                            >
-                                Credit
+                            <HeaderHint hint="Usage rows: negative is cash-funded cost and positive is a refund. Balance rows: current cash prepaid.">
+                                Paid
                             </HeaderHint>
                         </TableHeaderCell>
-                        <TableHeaderCell align="right" {...headerProps("paid")}>
-                            <HeaderHint
-                                hint={{
-                                    meaning:
-                                        "Signed cash ledger amount from OP Cloud. Negative values are paid burn.",
-                                    tables: "op_cloud_api",
-                                    sources: "API/CLI/BQ/HC",
-                                }}
-                            >
-                                Paid
+                        <TableHeaderCell
+                            align="right"
+                            {...headerProps("credit")}
+                        >
+                            <HeaderHint hint="Usage rows: negative is credit-funded cost and positive is a grant. Balance rows: current free credit.">
+                                Credit
                             </HeaderHint>
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
@@ -182,77 +173,117 @@ export function OpCloudTab({
                             Source
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("evidence")}>
-                            Evidence
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("recorded_at")}>
-                            Recorded
-                        </TableHeaderCell>
-                        <TableHeaderCell
-                            className={GROUP_BORDER}
-                            {...headerProps("resource_sku")}
-                        >
-                            SKU
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("resource_count")}>
-                            Count
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("resource_id")}>
-                            ID
-                        </TableHeaderCell>
-                        <TableHeaderCell {...headerProps("resource_name")}>
-                            Name
+                            Document
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
                 <TableBody>
-                    {withUniqueRowKeys(rows, opCloudKey).map(({ key, row }) => (
-                        <TableRow key={key}>
-                            <TableCell
-                                className="whitespace-nowrap"
-                                title={utcDateTimeTitle(row.start)}
-                            >
-                                {fmtUtcDateTime(row.start)}
-                            </TableCell>
-                            <TableCell
-                                className="whitespace-nowrap"
-                                title={utcDateTimeTitle(row.end)}
-                            >
-                                {fmtUtcDateTime(row.end)}
-                            </TableCell>
-                            <TableCell className={GROUP_BORDER}>
-                                {row.vendor}
-                            </TableCell>
-                            <TableCell>{row.type}</TableCell>
-                            <TableCell>{row.model}</TableCell>
-                            <TableCell align="right" className={GROUP_BORDER}>
-                                {fmtNumber(row.credit)}
-                            </TableCell>
-                            <TableCell align="right">
-                                {fmtNumber(row.paid)}
-                            </TableCell>
-                            <TableCell>{row.currency}</TableCell>
-                            <TableCell className={GROUP_BORDER}>
-                                <SourceCell sources={[row.source]} />
-                            </TableCell>
-                            <TableCell>{row.evidence}</TableCell>
-                            <TableCell
-                                className="whitespace-nowrap"
-                                title={utcDateTimeTitle(row.recorded_at)}
-                            >
-                                {fmtUtcDateTime(row.recorded_at)}
-                            </TableCell>
-                            <TableCell className={GROUP_BORDER}>
-                                {row.resource_sku}
-                            </TableCell>
-                            <TableCell align="right">
-                                {fmtNumber(row.resource_count)}
-                            </TableCell>
-                            <TableCell>{row.resource_id}</TableCell>
-                            <TableCell>{row.resource_name}</TableCell>
-                        </TableRow>
-                    ))}
+                    {withUniqueRowKeys(rows, (row) => row.entry_id).map(
+                        ({ key, row }) => {
+                            const isExpanded = expanded.has(key);
+                            return (
+                                <Fragment key={key}>
+                                    <TableRow>
+                                        <TableCell>{row.vendor}</TableCell>
+                                        <TableCell>
+                                            {costTypeLabel(row.type)}
+                                        </TableCell>
+                                        <TableCell>
+                                            {resourceLabel(row)}
+                                        </TableCell>
+                                        <TableCell
+                                            align="right"
+                                            className={GROUP_BORDER}
+                                        >
+                                            {fmtNumber(row.paid)}
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            {fmtNumber(row.credit)}
+                                        </TableCell>
+                                        <TableCell>{row.currency}</TableCell>
+                                        <TableCell className={GROUP_BORDER}>
+                                            <SourceCell
+                                                sources={[row.source]}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <EvidenceAction
+                                                evidence={row.evidence}
+                                                onPreview={setPreviewDocument}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <TableDisclosureButton
+                                                expanded={isExpanded}
+                                                onClick={() => toggle(key)}
+                                            >
+                                                Details
+                                            </TableDisclosureButton>
+                                        </TableCell>
+                                    </TableRow>
+                                    {isExpanded ? (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={9}
+                                                className="bg-theme-bg-active/40"
+                                            >
+                                                <dl className="grid gap-4 p-2 sm:grid-cols-2 lg:grid-cols-4">
+                                                    <DetailItem
+                                                        label="Period"
+                                                        value={`${fmtUtcDateTime(row.start)} – ${fmtUtcDateTime(row.end)}`}
+                                                    />
+                                                    <DetailItem
+                                                        label="Recorded"
+                                                        value={fmtUtcDateTime(
+                                                            row.recorded_at,
+                                                        )}
+                                                    />
+                                                    <DetailItem
+                                                        label="Account"
+                                                        value={row.account_name}
+                                                    />
+                                                    <DetailItem
+                                                        label="Account ID"
+                                                        value={row.account_id}
+                                                    />
+                                                    <DetailItem
+                                                        label="Resource name"
+                                                        value={
+                                                            row.resource_name
+                                                        }
+                                                    />
+                                                    <DetailItem
+                                                        label="Resource ID"
+                                                        value={row.resource_id}
+                                                    />
+                                                    <DetailItem
+                                                        label="SKU"
+                                                        value={row.resource_sku}
+                                                    />
+                                                    <DetailItem
+                                                        label="Count"
+                                                        value={
+                                                            row.resource_count
+                                                        }
+                                                    />
+                                                    <DetailItem
+                                                        label="Entry ID"
+                                                        value={row.entry_id}
+                                                    />
+                                                </dl>
+                                            </TableCell>
+                                        </TableRow>
+                                    ) : null}
+                                </Fragment>
+                            );
+                        },
+                    )}
                 </TableBody>
             </DataTable>
+            <EvidencePreview
+                documentLink={previewDocument}
+                onClose={() => setPreviewDocument(null)}
+            />
         </TableScroller>
     );
 }

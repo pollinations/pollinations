@@ -42,14 +42,15 @@ from common import (
     GITHUB_API_BASE,
     GISTS_BRANCH,
     IMAGE_SIZE,
+    NEWS_REL_DIR,
     OWNER,
     REPO,
 )
 
 # ── Constants ────────────────────────────────────────────────────────
 
-DAILY_REL_DIR = "operations/social/news/daily"
-HIGHLIGHTS_PATH = "operations/social/news/highlights.md"
+DAILY_REL_DIR = f"{NEWS_REL_DIR}/daily"
+HIGHLIGHTS_PATH = f"{NEWS_REL_DIR}/highlights.md"
 
 
 # ── Highlights ────────────────────────────────────────────────────────

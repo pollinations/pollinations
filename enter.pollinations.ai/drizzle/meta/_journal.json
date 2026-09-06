@@ -393,6 +393,48 @@
       "when": 1787648526176,
       "tag": "0055_rare_doctor_spectrum",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "6",
+      "when": 1788172800000,
+      "tag": "0056_canonicalize_gpt_realtime_2_permission",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "6",
+      "when": 1788182587055,
+      "tag": "0057_require-community-titles",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "6",
+      "when": 1788203007557,
+      "tag": "0058_rekey_issue_rewards",
+      "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "6",
+      "when": 1788290821008,
+      "tag": "0059_shared-community-safety",
+      "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "6",
+      "when": 1788523521324,
+      "tag": "0060_better_auth_1_6",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1788566400000,
+      "tag": "0061_single_text_endpoint",
+      "breakpoints": true
     }
   ]
 }

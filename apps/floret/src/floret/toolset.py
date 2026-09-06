@@ -30,6 +30,22 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
     {
         "type": "function",
         "function": {
+            "name": "generate_text",
+            "description": "Delegate a text task to any Pollinations text model, including models that do not support tools.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {"type": "string"},
+                    "model": {"type": "string"},
+                    "system": {"type": "string"},
+                },
+                "required": ["prompt", "model"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
             "name": "generate_image",
             "description": (
                 "Generate one or more images from a text prompt (text-to-image). "
@@ -128,8 +144,41 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                     "text": {"type": "string", "description": "Exact words to speak."},
                     "voice": {"type": "string"},
                     "model": {"type": "string", "default": "openai-audio"},
+                    "duration": {"type": "number"},
+                    "seed": {"type": "integer"},
                 },
                 "required": ["text"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "change_voice",
+            "description": "Transform an audio clip to a target voice.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "audio_url": {"type": "string"},
+                    "voice": {"type": "string"},
+                    "model": {"type": "string", "default": "eleven-voice-changer"},
+                },
+                "required": ["audio_url", "voice"],
+            },
+        },
+    },
+    {
+        "type": "function",
+        "function": {
+            "name": "isolate_voice",
+            "description": "Remove background sound from an audio or video clip.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "audio_url": {"type": "string"},
+                    "model": {"type": "string", "default": "eleven-voice-isolator"},
+                },
+                "required": ["audio_url"],
             },
         },
     },
@@ -142,7 +191,7 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "type": "object",
                 "properties": {
                     "audio_url": {"type": "string"},
-                    "model": {"type": "string", "default": "gemini"},
+                    "model": {"type": "string", "default": "whisper"},
                 },
                 "required": ["audio_url"],
             },
@@ -240,7 +289,14 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
                 "properties": {
                     "kind": {
                         "type": "string",
-                        "enum": ["text", "image", "video", "audio", "transcript"],
+                        "enum": [
+                            "text",
+                            "image",
+                            "video",
+                            "audio",
+                            "audio_transform",
+                            "transcript",
+                        ],
                     }
                 },
             },
@@ -264,11 +320,15 @@ async def dispatch(
         call_args["model"] = selected_model
 
     try:
+        if name == "generate_text":
+            return ToolResult(brain=await gen.generate_text(**call_args))
+
         if name == "generate_image":
             urls = await gen.generate_image(**call_args)
-            arts = [{"type": "image", "url": u} for u in urls]
+            hosted_urls = [await media.upload_media(url) for url in urls]
+            arts = [{"type": "image", "url": url} for url in hosted_urls]
             return ToolResult(
-                brain="Generated images:\n" + "\n".join(urls), artifacts=arts
+                brain="Generated images:\n" + "\n".join(hosted_urls), artifacts=arts
             )
 
         if name == "edit_image":
@@ -287,7 +347,7 @@ async def dispatch(
             if (
                 selected_model
                 and call_args.get("end_image")
-                and selected_model not in gen.END_FRAME_MODELS
+                and not gen.supports_end_frame(selected_model)
             ):
                 return ToolResult(
                     brain=(
@@ -296,13 +356,25 @@ async def dispatch(
                     )
                 )
             url = await gen.generate_video(**call_args)
+            url = await media.upload_media(url)
             return ToolResult(
                 brain=f"Generated video: {url}",
                 artifacts=[{"type": "video", "url": url}],
             )
 
         if name == "text_to_speech":
-            res = await gen.text_to_speech(**call_args)
+            model = call_args.get("model", "openai-audio")
+            res = (
+                await gen.text_to_speech(
+                    **{
+                        key: value
+                        for key, value in call_args.items()
+                        if key not in {"duration", "seed"}
+                    }
+                )
+                if model in {"openai-audio", "openai-audio-large"}
+                else await gen.generate_audio(**call_args)
+            )
             art = {
                 "type": "audio",
                 "data_uri": res["data_uri"],
@@ -314,6 +386,26 @@ async def dispatch(
             return ToolResult(
                 brain=f"Audio generated (spoken verbatim): {res['transcript']!r}",
                 artifacts=[art],
+            )
+
+        if name in {"change_voice", "isolate_voice"}:
+            endpoint = "voice-changer" if name == "change_voice" else "voice-isolator"
+            call_args.setdefault(
+                "model",
+                "eleven-voice-changer"
+                if name == "change_voice"
+                else "eleven-voice-isolator",
+            )
+            res = await gen.transform_audio(endpoint=endpoint, **call_args)
+            art = {
+                "type": "audio",
+                "data_uri": res["data_uri"],
+                "b64": res["b64"],
+                "format": res["format"],
+                "transcript": res["transcript"],
+            }
+            return ToolResult(
+                brain=f"Audio {res['transcript']} complete.", artifacts=[art]
             )
 
         if name == "transcribe":

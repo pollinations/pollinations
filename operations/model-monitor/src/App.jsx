@@ -10,6 +10,7 @@ import {
     GitHubIcon,
     Heading,
     IconButton,
+    StarIcon,
     Surface,
     TabButton,
     Table,
@@ -18,6 +19,7 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
+    Text,
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { useCallback, useEffect, useState } from "react";
@@ -45,24 +47,6 @@ function saveFavorites(list) {
 
 function modelKey(model) {
     return `${model.type}-${model.name}`;
-}
-
-function StarIcon({ filled }) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill={filled ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            role="img"
-            aria-label={filled ? "Favorited" : "Not favorited"}
-        >
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-    );
 }
 
 const WINDOW_OPTIONS = [
@@ -157,13 +141,19 @@ function formatPercent(count, total, showZero = false) {
     return `${pct.toFixed(1)}%`;
 }
 
+const DEGRADED_5XX_PERCENT = 5;
+const OFF_5XX_PERCENT = 20;
+
 function get2xxColor(ok2xx, total) {
     if (!total || total <= 0) return "text-theme-text-muted";
     if (ok2xx === 0) return "text-intent-danger-text font-semibold";
     const pct = (ok2xx / total) * 100;
-    if (pct > 95) return "text-intent-success-text font-semibold";
-    if (pct > 80) return "text-intent-success-text";
-    if (pct > 50) return "text-theme-text-muted";
+    if (pct > 100 - DEGRADED_5XX_PERCENT) {
+        return "text-intent-success-text font-semibold";
+    }
+    if (pct > 100 - OFF_5XX_PERCENT) {
+        return "text-intent-warning-text font-semibold";
+    }
     return "text-intent-danger-text font-semibold";
 }
 
@@ -184,8 +174,8 @@ function computeHealthStatus(stats) {
     const modelRequests = success + total5xx;
     if (modelRequests === 0) return "on";
     const pct5xx = (total5xx / modelRequests) * 100;
-    if (pct5xx >= 50) return "off";
-    if (pct5xx >= 10) return "degraded";
+    if (pct5xx >= OFF_5XX_PERCENT) return "off";
+    if (pct5xx >= DEGRADED_5XX_PERCENT) return "degraded";
     return "on";
 }
 
@@ -631,38 +621,38 @@ function App() {
     };
 
     return (
-        <div className="min-h-dvh min-w-fit bg-app-bg text-theme-text-base">
+        <div className="min-h-dvh bg-app-bg text-theme-text-base">
             <AppHeader
                 navLabel="Model Monitor links"
                 autoHide
-                innerClassName="polli:max-w-6xl polli:flex-row polli:items-center polli:justify-between"
+                innerClassName="polli:max-w-6xl"
             >
                 {EXTERNAL_LINKS.map((link) => (
                     <HeaderLink key={link.href} {...link} />
                 ))}
                 <ColorModeToggle />
             </AppHeader>
-            <main className="mx-auto flex w-full min-w-fit max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <section className="flex flex-row items-end justify-between gap-3">
+            <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div className="flex min-w-0 flex-col gap-1">
                         <Heading
                             as="h1"
                             size="title"
-                            className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
+                            className="polli:m-0 sm:text-5xl"
                         >
                             Model Monitor
                         </Heading>
-                        <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
+                        <Text className="m-0 max-w-3xl">
                             Real-time health monitoring for Pollinations AI
                             models.
-                        </p>
+                        </Text>
                     </div>
                     <div className="flex flex-col items-start gap-2 sm:items-end">
                         <WindowTabs
                             value={aggregationWindow}
                             onChange={setAggregationWindow}
                         />
-                        <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                        <Text size="xs" tone="soft" className="m-0">
                             Data as of:{" "}
                             {lastUpdated?.toLocaleTimeString("en-GB", {
                                 timeZone: "UTC",
@@ -671,7 +661,7 @@ function App() {
                                 second: "2-digit",
                             }) || "-"}{" "}
                             UTC
-                        </p>
+                        </Text>
                     </div>
                 </section>
 
@@ -703,12 +693,11 @@ function App() {
 
                 {favorites.length > 0 && (
                     <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
+                        <TabButton
+                            active={favoritesOnly}
+                            variant="ghost"
                             size="sm"
-                            intent={favoritesOnly ? "info" : undefined}
-                            aria-pressed={favoritesOnly}
-                            aria-label={`Show favorites only (${favorites.length})`}
+                            ariaLabel={`Show favorites only (${favorites.length})`}
                             onClick={() => setFavoritesOnly((prev) => !prev)}
                         >
                             <span className="inline-flex items-center gap-1">
@@ -718,15 +707,20 @@ function App() {
                                     {favorites.length}
                                 </span>
                             </span>
-                        </Button>
+                        </TabButton>
                     </div>
                 )}
 
-                <Surface variant="card" className="p-0">
-                    <Table>
+                <Surface
+                    variant="card"
+                    className="max-w-full overflow-x-auto p-0"
+                >
+                    <Table className="min-w-[64rem]">
                         <TableHead>
                             <tr>
-                                <TableHeaderCell className="w-8" />
+                                <TableHeaderCell className="w-8">
+                                    <span className="sr-only">Favorite</span>
+                                </TableHeaderCell>
                                 <SortableTh
                                     label="Type"
                                     sortKey="type"
@@ -852,6 +846,9 @@ function App() {
                                     const showCanonicalId =
                                         model.title ||
                                         model.name !== modelLabel;
+                                    const isFavorite = favorites.includes(
+                                        modelKey(model),
+                                    );
 
                                     return (
                                         <TableRow
@@ -860,12 +857,17 @@ function App() {
                                         >
                                             <TableCell className="w-8">
                                                 <IconButton
+                                                    variant="ghost"
+                                                    pressed={isFavorite}
                                                     title={
-                                                        favorites.includes(
-                                                            modelKey(model),
-                                                        )
+                                                        isFavorite
                                                             ? "Remove from favorites"
                                                             : "Add to favorites"
+                                                    }
+                                                    className={
+                                                        isFavorite
+                                                            ? "polli:text-theme-text-soft polli:hover:text-theme-text-soft"
+                                                            : undefined
                                                     }
                                                     onClick={() =>
                                                         toggleFavorite(
@@ -874,9 +876,8 @@ function App() {
                                                     }
                                                 >
                                                     <StarIcon
-                                                        filled={favorites.includes(
-                                                            modelKey(model),
-                                                        )}
+                                                        filled={isFavorite}
+                                                        className="h-4 w-4"
                                                     />
                                                 </IconButton>
                                             </TableCell>

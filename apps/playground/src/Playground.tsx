@@ -154,11 +154,6 @@ function isTextToAudioModel(model: ModelInfo | undefined): boolean {
     );
 }
 
-function referenceImageLimit(model: ModelInfo | undefined): number {
-    if (!model?.input_modalities?.includes("image")) return 0;
-    return model.max_reference_images ?? 0;
-}
-
 function pluralizeImages(count: number): string {
     return count === 1 ? "1 image" : `${count} images`;
 }
@@ -369,16 +364,16 @@ export function Playground({
         };
     }, [result]);
 
-    const maxReferenceImages = referenceImageLimit(currentModel);
-    const supportsReferenceImages = maxReferenceImages > 0;
+    const supportsReferenceImages =
+        currentModel?.input_modalities?.includes("image") ?? false;
+    const maxReferenceImages = currentModel?.max_reference_images;
     const isVideoReferenceMode =
         currentModel?.category === "video" && supportsReferenceImages;
     const isReferenceImageListMode =
         supportsReferenceImages && !isVideoReferenceMode;
     const supportsLastFrame =
         isVideoReferenceMode &&
-        (currentModel?.video_capabilities?.includes("end_frame") ?? false) &&
-        maxReferenceImages >= 2;
+        (currentModel?.video_capabilities?.includes("end_frame") ?? false);
     const firstFrameFiles = referenceImages[0] ? [referenceImages[0]] : [];
     const lastFrameFiles = referenceImages[1] ? [referenceImages[1]] : [];
     const isAudioTranscription = isAudioTranscriptionModel(currentModel);
@@ -390,10 +385,16 @@ export function Playground({
 
     useEffect(() => {
         setReferenceImages((current) => {
-            if (current.length <= maxReferenceImages) return current;
+            if (!supportsReferenceImages) return [];
+            if (
+                maxReferenceImages === undefined ||
+                current.length <= maxReferenceImages
+            ) {
+                return current;
+            }
             return current.slice(0, maxReferenceImages);
         });
-    }, [maxReferenceImages]);
+    }, [maxReferenceImages, supportsReferenceImages]);
 
     function selectCategory(category: ModelCategory) {
         setActiveCategory(category);
@@ -653,28 +654,39 @@ export function Playground({
                         {isReferenceImageListMode && (
                             <FieldStack
                                 label={
-                                    <>
-                                        Reference images (up to{" "}
-                                        {pluralizeImages(maxReferenceImages)})
-                                    </>
+                                    maxReferenceImages === undefined
+                                        ? "Reference images"
+                                        : `Reference images (up to ${pluralizeImages(maxReferenceImages)})`
                                 }
                             >
                                 <FileUpload
                                     value={referenceImages}
                                     onChange={setReferenceImages}
-                                    maxFiles={maxReferenceImages}
+                                    maxFiles={
+                                        maxReferenceImages ??
+                                        Number.POSITIVE_INFINITY
+                                    }
                                     maxSizeBytes={5 * 1024 * 1024}
                                     label={
-                                        <>
-                                            Drag up to{" "}
-                                            {pluralizeImages(
-                                                maxReferenceImages,
-                                            )}{" "}
-                                            here or{" "}
-                                            <span className="polli:underline">
-                                                browse
-                                            </span>
-                                        </>
+                                        maxReferenceImages === undefined ? (
+                                            <>
+                                                Drag images here or{" "}
+                                                <span className="polli:underline">
+                                                    browse
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                Drag up to{" "}
+                                                {pluralizeImages(
+                                                    maxReferenceImages,
+                                                )}{" "}
+                                                here or{" "}
+                                                <span className="polli:underline">
+                                                    browse
+                                                </span>
+                                            </>
+                                        )
                                     }
                                     onReject={(rejected) => {
                                         const reason = rejected[0]?.reason;
@@ -682,7 +694,10 @@ export function Playground({
                                             setError(
                                                 "Images must be under 5 MB each.",
                                             );
-                                        } else if (reason === "count") {
+                                        } else if (
+                                            reason === "count" &&
+                                            maxReferenceImages !== undefined
+                                        ) {
                                             setError(
                                                 `Use up to ${pluralizeImages(
                                                     maxReferenceImages,

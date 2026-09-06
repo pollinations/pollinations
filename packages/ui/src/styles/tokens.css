@@ -145,6 +145,12 @@
     --polli-color-free-text:        var(--polli-color-info-text);
     --polli-color-alpha-bg-light:   oklch(0.93 0.06 300);
     --polli-color-alpha-text:       oklch(0.42 0.18 300);
+
+    /* OUTCOMES — signed analytical results. Positive deliberately uses the
+       existing blue info family so green remains the Quest wallet identity;
+       negative reuses danger red. No additional palette roots. */
+    --polli-color-outcome-positive-text: var(--polli-color-info-text);
+    --polli-color-outcome-negative-text: var(--polli-color-danger-text);
 }
 
 /* Modality colors — a FIXED per-modality palette, DECOUPLED from the app
@@ -345,6 +351,9 @@
     --color-intent-free-text:        var(--polli-color-free-text);
     --color-intent-alpha-bg-light:   var(--polli-color-alpha-bg-light);
     --color-intent-alpha-text:       var(--polli-color-alpha-text);
+
+    --color-outcome-positive-text: var(--polli-color-outcome-positive-text);
+    --color-outcome-negative-text: var(--polli-color-outcome-negative-text);
 
     --color-switch-thumb:            var(--polli-color-switch-thumb);
     --color-switch-track-off:        var(--polli-color-switch-track-off);

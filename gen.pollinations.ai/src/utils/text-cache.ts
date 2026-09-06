@@ -10,15 +10,45 @@ import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import {
     parseSafeFeatures,
     SAFETY_HEADER_NAME,
+    type SafetyFeature,
 } from "@shared/schemas/safety.ts";
 import stableStringify from "fast-json-stable-stringify";
 import type { Context } from "hono";
 
 // Parameters to exclude from cache key (auth + cache control)
 const EXCLUDED_PARAMS = ["key", "no-cache"];
-const CACHED_HEADER_NAMES = new Set(["x-fallback-target", "x-model-used"]);
+const CACHED_HEADER_NAMES = new Set([
+    "x-fallback-target",
+    "x-model-used",
+    "x-pollinations-response-format",
+    "x-tts-voice",
+]);
 const CACHED_HEADER_PREFIXES = ["x-usage-", "x-moderation-", "x-safety-"];
 const SAFETY_CACHE_VERSION = "bedrock-input-v1";
+
+function isStreamingErrorResponse(
+    response: Response,
+    body: Uint8Array,
+): boolean {
+    if (!response.headers.get("content-type")?.includes("text/event-stream")) {
+        return false;
+    }
+
+    const text = new TextDecoder().decode(body);
+    if (/(?:^|\r?\n)event:\s*error(?:\r?\n|$)/m.test(text)) return true;
+
+    return text.split(/\r?\n/).some((line) => {
+        if (!line.startsWith("data:")) return false;
+        try {
+            const event = JSON.parse(line.slice("data:".length).trim());
+            return Boolean(
+                event && typeof event === "object" && "error" in event,
+            );
+        } catch {
+            return false;
+        }
+    });
+}
 
 function hasActiveSafety(value: unknown): boolean {
     return (
@@ -37,6 +67,7 @@ export async function generateCacheKey(
     request: Request,
     bodyText?: string,
     partition?: string,
+    requiredSafetyFeatures: readonly SafetyFeature[] = [],
 ): Promise<string> {
     const url = new URL(request.url);
 
@@ -89,6 +120,12 @@ export async function generateCacheKey(
     if (safeHeader !== null && !hasQuerySafe && !hasBodySafe) {
         parts.push(`${SAFETY_HEADER_NAME}:${safeHeader}`);
         usesSafety ||= hasActiveSafety(safeHeader);
+    }
+    if (requiredSafetyFeatures.length > 0) {
+        parts.push(
+            `required-safety:${[...new Set(requiredSafetyFeatures)].sort().join(",")}`,
+        );
+        usesSafety = true;
     }
     if (usesSafety) {
         parts.push(SAFETY_CACHE_VERSION);
@@ -204,9 +241,12 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
     cacheKey: string,
     response: Response,
 ): {
-    stream: TransformStream<Uint8Array, Uint8Array>;
+    stream: ReadableStream<Uint8Array>;
     write: Promise<void>;
 } {
+    if (!response.body) {
+        throw new Error("Cannot cache a response without a body");
+    }
     const log = c.get("log");
     let chunks: Uint8Array[] = [];
     let totalSize = 0;
@@ -217,7 +257,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
         rejectWrite = reject;
     });
 
-    const stream = new TransformStream({
+    const stream = new TransformStream<Uint8Array, Uint8Array>({
         transform(chunk, controller) {
             // Save a copy of the chunk for caching later
             chunks.push(chunk.slice());
@@ -245,6 +285,11 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
                         offset += chunk.byteLength;
                     }
 
+                    if (isStreamingErrorResponse(response, completeResponse)) {
+                        resolveWrite();
+                        return;
+                    }
+
                     await c.env.TEXT_BUCKET.put(cacheKey, completeResponse, {
                         customMetadata: prepareMetadata(response),
                     });
@@ -261,6 +306,7 @@ export function createCaptureStream<TEnv extends TextCacheEnv>(
             })();
         },
     });
+    void response.body.pipeTo(stream.writable).catch(rejectWrite);
 
-    return { stream, write };
+    return { stream: stream.readable, write };
 }

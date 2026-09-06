@@ -93,58 +93,110 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
     owned = (item.get("owned_by") or "").lower()
     caps = item.get("capabilities", {}) or {}
     modalities: list[str] = []
-    if any(
-        k in owned
-        for k in ["audio", "tts", "eleven", "qwen-tts", "eleven-multilingual"]
-    ) or any(k in mid for k in ["tts", "elevenlabs", "elevenflash", "qwen-tts"]):
+    category = item.get("category")
+    declared_inputs = item.get("input_modalities") or []
+    declared_outputs = item.get("output_modalities") or []
+    declared_endpoints = item.get("supported_endpoints") or []
+    if category == "text" and "text" in declared_outputs:
+        modalities.append("text")
+    if category == "image" and "image" in declared_outputs:
+        modalities.append("image")
+    if category == "video" and "video" in declared_outputs:
+        modalities.append("video")
+    if (
+        category in {"text", "audio"}
+        and "text" in declared_inputs
+        and "audio" in declared_outputs
+        and (
+            "/v1/audio/speech" in declared_endpoints
+            or "/v1/chat/completions" in declared_endpoints
+        )
+    ):
         modalities.append("audio")
-    if any(
-        k in owned
-        for k in [
-            "transcribe",
-            "scrib",
-            "whisper",
-            "universal-2",
-            "universal-3.5-pro",
-            "universal-3-pro",
-        ]
-    ) or any(
-        k in mid
-        for k in [
-            "whisper",
-            "scribe",
-            "universal-2",
-            "universal-3.5-pro",
-            "universal-3-pro",
-        ]
+    if (
+        category in {"text", "audio"}
+        and "audio" in declared_inputs
+        and "text" in declared_outputs
+        and "/v1/audio/transcriptions" in declared_endpoints
     ):
         modalities.append("transcript")
-    if any(k in owned for k in ["image", "pollen"]) or any(
-        k in mid
-        for k in [
-            "flux",
-            "seedream",
-            "ideogram",
-            "gptimage",
-            "nanobanana",
-            "qwen-image",
-            "grok-imagine",
-            "p-image",
-            "nova-canvas",
-            "zimage",
-            "wan-image",
-            "klein",
-        ]
+    if category == "audio" and any(
+        endpoint in declared_endpoints
+        for endpoint in {"/v1/audio/voice-changer", "/v1/audio/voice-isolator"}
+    ):
+        modalities.append("audio_transform")
+    if not category and (
+        any(
+            k in owned
+            for k in ["audio", "tts", "eleven", "qwen-tts", "eleven-multilingual"]
+        )
+        or any(k in mid for k in ["tts", "elevenlabs", "elevenflash", "qwen-tts"])
+    ):
+        modalities.append("audio")
+    if not category and (
+        any(
+            k in owned
+            for k in [
+                "transcribe",
+                "scrib",
+                "whisper",
+                "universal-2",
+                "universal-3.5-pro",
+                "universal-3-pro",
+            ]
+        )
+        or any(
+            k in mid
+            for k in [
+                "whisper",
+                "scribe",
+                "universal-2",
+                "universal-3.5-pro",
+                "universal-3-pro",
+            ]
+        )
+    ):
+        modalities.append("transcript")
+    if not category and (
+        any(k in owned for k in ["image", "pollen"])
+        or any(
+            k in mid
+            for k in [
+                "flux",
+                "seedream",
+                "ideogram",
+                "gptimage",
+                "nanobanana",
+                "qwen-image",
+                "grok-imagine",
+                "p-image",
+                "nova-canvas",
+                "zimage",
+                "wan-image",
+                "klein",
+            ]
+        )
     ):
         modalities.append("image")
-    if any(k in owned for k in ["video"]) or any(
-        k in mid
-        for k in ["wan", "veo", "seedance", "grok-video", "ltx", "p-video", "nova-reel"]
+    if not category and (
+        any(k in owned for k in ["video"])
+        or any(
+            k in mid
+            for k in [
+                "wan",
+                "veo",
+                "seedance",
+                "grok-video",
+                "ltx",
+                "p-video",
+                "nova-reel",
+            ]
+        )
     ):
         modalities.append("video")
-    if "embed" in owned or "embedding" in mid:
+    if not category and ("embed" in owned or "embedding" in mid):
         modalities.append("embedding")
-    if (
+    if not category and (
         not modalities
         or any(
             k in owned
@@ -188,7 +240,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         )
     ):
         pass
-    if not modalities:
+    if not modalities and not category:
         modalities.append("text")
 
     # Normalize endpoint metadata from live API
@@ -273,6 +325,12 @@ async def refresh_registry() -> dict[str, Any]:
     raw = await _fetch_models("/v1/models")
     if not isinstance(raw, dict):
         raise ValueError("Model endpoint /v1/models returned a non-object response")
+    rich = _adapt_rich_catalog(await _fetch_models("/models"))
+    raw["data"] = [
+        {**item, **rich.get(item.get("id", ""), {})}
+        for item in raw.get("data", [])
+        if isinstance(item, dict)
+    ]
     _registry_cache = _normalize(raw)
     return _registry_cache
 

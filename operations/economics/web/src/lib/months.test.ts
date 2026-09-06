@@ -6,21 +6,29 @@ import {
     latestClosedMonth,
     matchesMonth,
     monthLabel,
+    monthName,
     yearsOf,
 } from "./months";
 
 const data: Data = {
-    opTransactions: FIXTURES.op_transactions_api,
-    opCloud: FIXTURES.op_cloud_api,
-    opPollen: FIXTURES.op_pollen_api,
+    opTransactions: FIXTURES.economics_bank_ledger_api,
+    opCloud: FIXTURES.economics_compute_ledger_api,
+    opPollen: FIXTURES.economics_pollen_usage_api,
 } as Data;
 
 describe("collectMonths", () => {
     it("unions months across OP month-grained tables, sorted", () => {
         const months = collectMonths(data);
-        expect(months).toEqual([...months].sort());
-        expect(new Set(months).size).toBe(months.length);
-        expect(months).toContain("2026-05");
+        expect(months).toEqual([
+            "2026-01",
+            "2026-02",
+            "2026-03",
+            "2026-04",
+            "2026-05",
+            "2026-06",
+            "2026-07",
+            "2026-08",
+        ]);
     });
 
     it("skips empty and non-month values (undated invoices)", () => {
@@ -59,16 +67,27 @@ describe("latestClosedMonth", () => {
         expect(
             latestClosedMonth(
                 ["2026-06", "2026-07", "2026-08"],
-                new Date(2026, 7, 3),
+                new Date("2026-08-03T00:00:00Z"),
             ),
         ).toBe("2026-07");
     });
 
+    it("uses UTC at a local calendar-month boundary", () => {
+        expect(
+            latestClosedMonth(
+                ["2026-06", "2026-07", "2026-08"],
+                new Date("2026-08-01T00:30:00+02:00"),
+            ),
+        ).toBe("2026-06");
+    });
+
     it("uses the latest available month when no closed month exists", () => {
-        expect(latestClosedMonth(["2026-08"], new Date(2026, 7, 3))).toBe(
-            "2026-08",
-        );
-        expect(latestClosedMonth([], new Date(2026, 7, 3))).toBeNull();
+        expect(
+            latestClosedMonth(["2026-08"], new Date("2026-08-03T00:00:00Z")),
+        ).toBe("2026-08");
+        expect(
+            latestClosedMonth([], new Date("2026-08-03T00:00:00Z")),
+        ).toBeNull();
     });
 });
 
@@ -82,6 +101,17 @@ describe("monthLabel", () => {
     it("falls back to the raw value when not a month", () => {
         expect(monthLabel("2026")).toBe("2026");
         expect(monthLabel("")).toBe("");
+    });
+});
+
+describe("monthName", () => {
+    it("renders the month without repeating the selected year", () => {
+        expect(monthName("2026-06")).toBe("June");
+        expect(monthName("2027-01")).toBe("January");
+    });
+
+    it("falls back to the raw value when not a month", () => {
+        expect(monthName("2026")).toBe("2026");
     });
 });
 

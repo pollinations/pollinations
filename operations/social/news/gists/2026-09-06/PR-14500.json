@@ -1,0 +1,35 @@
+{
+  "pr_number": 14500,
+  "title": "fix: validate text streams before splitting for billing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14500",
+  "merged_at": "2026-09-06T03:39:44Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes the #14494 gap by validating before the existing client/billing stream split.\n- Simplifies Chat validation: retain the latest non-null usage and validate at DONE, allowing provisional early counts. Removes 11 runtime lines; no new abstractions.\n- Keeps explicit-error detection, failed-stream no-charge behavior, and Responses terminal validation.\n- Covers successful final-usage wallet charges, invalid-final-usage no-charge behavior, provider costs, null usage, and SSE framing. 213 focused tests passed with an isolated snapshot server; a default-setup rerun hit an existing non-stream Perplexity timeout. Type-checking and Biome pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Count the nectar twice",
+    "blurb": "The billing stream now checks its pollen before splitting into client and wallet paths. A malformed final usage report no longer gets to buzz past the gate.",
+    "summary": "Text streaming now validates final usage data before the client/billing stream split, retaining the latest non-null provisional count until DONE and charging wallets only for valid successful streams.",
+    "impact": "Users get reliable final-usage wallet charges while streams with invalid final usage, explicit errors, or failed completions remain uncharged; Responses streams keep their terminal validation too.",
+    "keywords": [
+      "text-api",
+      "streaming",
+      "billing",
+      "usage",
+      "wallet",
+      "validation",
+      "sse"
+    ],
+    "visual_concept": "Depict a cozy stream-splitting garden irrigation gate: incoming glowing API droplets pass through a careful usage-check meter before flowing into two channels, one toward a friendly client terminal and one toward a pollen wallet jar. Polli, wearing tiny accountant glasses and holding a clipboard, inspects the final droplet while a code-plant grows beside the validated channel; malformed droplets are gently redirected into a harmless compost tray.",
+    "image_prompt": "A cozy pixel art garden shed where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny accountant glasses and checks glowing usage droplets at a stream-splitting valve; valid droplets flow to a retro terminal and a pollen wallet jar, while a code-plant blooms nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle text in pixel font: \"VALIDATE THEN FLOW\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14500.jpg",
+    "prompt": "A cozy pixel art garden shed where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny accountant glasses and checks glowing usage droplets at a stream-splitting valve; valid droplets flow to a retro terminal and a pollen wallet jar, while a code-plant blooms nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle text in pixel font: \"VALIDATE THEN FLOW\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-06T03:40:44.986821+00:00"
+}

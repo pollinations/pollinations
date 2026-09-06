@@ -1,0 +1,34 @@
+{
+  "pr_number": 14511,
+  "title": "fix: accept provisional usage in managed-agent streams",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14511",
+  "merged_at": "2026-09-06T19:40:27Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes managed agents rejecting an otherwise successful stream when the provider sends partial token counts before complete final usage.\n- Moves the existing usage check to the end of each streamed model step; no new helpers, retries, pricing rules, or secret changes.\n- Keeps missing or invalid final usage as a failure, including valid early counts followed by invalid final counts.\n- Reproduced the failure before fixing it. Full Gen: 1,808 passed / 6 skipped with an isolated snapshot server and a 15-second local timeout; typechecking and Biome pass. Default-timeout focused run hit the existing Perplexity fixture timeout. Addresses #14500 and #14360.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Streams may finish buzzing",
+    "blurb": "Managed-agent streams now tolerate the provider reporting token counts in pieces before delivering the final tally. Polli waits for the whole receipt before judging the honey.",
+    "summary": "Managed-agent streaming now validates usage at the end of each model step, accepting provisional provider token counts while still rejecting missing or invalid final usage.",
+    "impact": "Streams that were otherwise successful will no longer fail just because a provider sends partial usage data before its final token count.",
+    "keywords": [
+      "managed agents",
+      "streaming",
+      "usage",
+      "token counts",
+      "runtime",
+      "bug fix"
+    ],
+    "visual_concept": "Depict Polli as a careful stream-side operator watching token-count droplets flow from a retro terminal into a measuring jar: early droplets are marked as provisional, while the final full jar gets a cheerful checkmark. Add a small code-plant and flowers to make the technical validation feel like patiently letting a bloom finish opening.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny accountant glasses, carefully watching glowing token-count droplets flow from a retro terminal into a measuring jar; small early droplets say 'PARTIAL' and the final full jar has a pixel checkmark. Lime green (#ecf874) glows prominently among code-plants, flowers, and warm cream-and-lavender pastels; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14511.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny accountant glasses, carefully watching glowing token-count droplets flow from a retro terminal into a measuring jar; small early droplets say 'PARTIAL' and the final full jar has a pixel checkmark. Lime green (#ecf874) glows prominently among code-plants, flowers, and warm cream-and-lavender pastels; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-06T19:41:31.941786+00:00"
+}

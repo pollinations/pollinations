@@ -73,6 +73,15 @@ Seedance 2.0 pricing witness:
   change that tier.
 - Re-check the public Replicate model page before changing the registry price.
 
+## Verified — 2026-09-06
+
+- Completed months: the invoice page
+  `https://replicate.com/orgs/myceli-ai/invoices/<invoice-id>` (linked from
+  `/account/billing`, one per month, UTC month bounds) lists every model with
+  its cost in the Models table. Book one row per model with the Replicate slug
+  as the label; the table total equals the month's invoice total. Use
+  `Download JSON` only when quantities per SKU are needed.
+
 Known traps:
 
 - Replicate has no public invoice export API and no per-model spend API. Monthly cash evidence must come from invoices, receipts, Wise/card records, or the billing UI.

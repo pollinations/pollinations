@@ -61,6 +61,14 @@ Collection steps:
 - No public usage or billing API exists; the console routes are limited to
   `usage-analytics`, `invoices` (credit purchases) and a Stripe portal session.
 
+- Closed months in the current billing group produce a monthly invoice in the
+  `RC9JSEWU-` series (period runs from the last day of the previous month);
+  its lines carry model, SKU (requests by search context size, input, output,
+  citation and reasoning tokens) and amount. Book one row per line with the
+  model as the label and the SKU as `resource_sku` (`api_requests high`,
+  `api_requests low`, `input_tokens`, `output_tokens`, …) so the same labels
+  serve the console analytics rows.
+
 Known traps:
 
 - The Sonar key does not provide a supported account billing, balance, or

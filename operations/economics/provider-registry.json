@@ -1,5 +1,5 @@
 {
-  "version": 18,
+  "version": 19,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -1187,7 +1187,7 @@
     {
       "id": "exa",
       "label": "Exa",
-      "category": "compute",
+      "category": "infrastructure",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "exa",

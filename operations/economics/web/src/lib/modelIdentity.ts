@@ -52,9 +52,20 @@ export function resolveLedgerLabel(
     label: string,
     qualifiers: LabelQualifiers = {},
 ): LabelResolution {
-    const name = label.trim();
-    if (!name) return { kind: "blank" };
     const table = resolveProvider(canonicalProvider(vendor))?.modelLabels ?? {};
+    let name = label.trim();
+    if (!name) {
+        // A line with no model label (a fee, a service line) joins only when
+        // its SKU or line item is itself a reviewed label; it is never an id.
+        const fallback = [qualifiers.sku, qualifiers.name]
+            .map((qualifier) => qualifier?.trim())
+            .find(
+                (qualifier): qualifier is string =>
+                    Boolean(qualifier) && Object.hasOwn(table, qualifier),
+            );
+        if (!fallback) return { kind: "blank" };
+        name = fallback;
+    }
     const keys = [qualifiers.sku, qualifiers.name]
         .map((qualifier) => qualifier?.trim())
         .filter((qualifier): qualifier is string => Boolean(qualifier))

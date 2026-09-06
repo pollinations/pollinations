@@ -111,3 +111,25 @@ describe("resolveLedgerLabel", () => {
         });
     });
 });
+
+describe("resolveLedgerLabel with a blank model label", () => {
+    it("resolves a blank label through its SKU when the table lists the SKU", () => {
+        expect(
+            resolveLedgerLabel("google", "", {
+                sku: "LLM Grounding with Google Search tool - Predictions",
+                name: "grounding-google-search",
+                month: "2026-06",
+            }),
+        ).toEqual({ kind: "model", model: "gemini-search" });
+    });
+
+    it("stays blank when neither the SKU nor the line item is a reviewed label", () => {
+        expect(
+            resolveLedgerLabel("aws", "", {
+                sku: "Amazon Bedrock",
+                name: "Amazon Bedrock",
+                month: "2026-06",
+            }),
+        ).toEqual({ kind: "blank" });
+    });
+});

@@ -419,24 +419,129 @@
           }
         ],
         "5.5 LongCo inp Gl 1M Tokens": [
-          "openai-large",
-          "midijourney-large"
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
         ],
         "5.5 LongCo opt Gl 1M Tokens": [
-          "openai-large",
-          "midijourney-large"
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
         ],
         "5.5 ShortCo cd inp Gl 1M Tokens": [
-          "openai-large",
-          "midijourney-large"
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
         ],
         "5.5 ShortCo inp Gl 1M Tokens": [
-          "openai-large",
-          "midijourney-large"
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
         ],
         "5.5 ShortCo opt Gl 1M Tokens": [
-          "openai-large",
-          "midijourney-large"
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
         ],
         "5.6 luna LongCo Cd Inp Std Gl 1M Tokens": "gpt-5.6-luna",
         "5.6 luna LongCo Inp Std Gl 1M Tokens": "gpt-5.6-luna",
@@ -528,12 +633,54 @@
         "Grok 4.1 Inp Glbl Tokens": "grok",
         "Grok 4.1 Outp Glbl Tokens": "grok",
         "Grok 4.2 Inp glbl Tokens": [
-          "grok",
-          "grok-4-20-reasoning"
+          {
+            "until": "2026-05",
+            "model": [
+              "grok",
+              "grok-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "grok",
+              "grok-large",
+              "grok-4-20-reasoning"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "grok",
+              "grok-4-20-reasoning"
+            ]
+          }
         ],
         "Grok 4.2 Outp glbl Tokens": [
-          "grok",
-          "grok-4-20-reasoning"
+          {
+            "until": "2026-05",
+            "model": [
+              "grok",
+              "grok-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "grok",
+              "grok-large",
+              "grok-4-20-reasoning"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "grok",
+              "grok-4-20-reasoning"
+            ]
+          }
         ],
         "Grok4 Fast Inp glbl Tokens": "grok",
         "Grok4 Fast Outp glbl Tokens": "grok",
@@ -1003,9 +1150,60 @@
         "GLM 5.3": "glm-5.3",
         "GLM 5.3 Flash": "z-ai/glm-5.3-flash",
         "Inkling": "thinkingmachines/inkling",
-        "Kimi K2.5": "kimi",
-        "Kimi K2.6": "kimi",
-        "Kimi K2.7 Code": "kimi-code",
+        "Kimi K2.5": [
+          {
+            "until": "2026-05",
+            "model": "kimi"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "kimi",
+              "kimi-k2.5"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "kimi-k2.5"
+          }
+        ],
+        "Kimi K2.6": [
+          {
+            "until": "2026-05",
+            "model": "kimi-k2.6"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "kimi-k2.6",
+              "kimi"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "kimi"
+          }
+        ],
+        "Kimi K2.7 Code": [
+          {
+            "until": "2026-05",
+            "model": "kimi-k2.7-code"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "kimi-k2.7-code",
+              "kimi-code"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "kimi-code"
+          }
+        ],
         "Kimi K3": "kimi-k3",
         "MiniMax M2.5": "minimax",
         "MiniMax M2.7": [
@@ -1015,10 +1213,35 @@
           },
           {
             "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "minimax",
+              "minimax-m2.7"
+            ]
+          },
+          {
+            "from": "2026-07",
             "model": "minimax-m2.7"
           }
         ],
-        "MiniMax M3": "minimax",
+        "MiniMax M3": [
+          {
+            "until": "2026-05",
+            "model": "minimax-m3"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "minimax-m3",
+              "minimax"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "minimax"
+          }
+        ],
         "MiniMax M3 1M": "minimax",
         "Muse Glimmer 30B": "muse-glimmer",
         "Nemotron Lightning 3.5": "nemotron-3.5-lightning",
@@ -1467,8 +1690,42 @@
         "MiMo-V2.5": "mimo-v2.5",
         "MiMo-V2.5-Pro": "mimo-v2.5-pro",
         "minimax/minimax-m3-20260531": "minimax-m3",
-        "Mistral Small 3.2 24B": "mistral-small-3.2",
-        "Mistral Small 4": "mistral",
+        "Mistral Small 3.2 24B": [
+          {
+            "until": "2026-05",
+            "model": "mistral"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "mistral",
+              "mistral-small-3.2"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "mistral-small-3.2"
+          }
+        ],
+        "Mistral Small 4": [
+          {
+            "until": "2026-05",
+            "model": "mistral-4"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "mistral-4",
+              "mistral"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "mistral"
+          }
+        ],
         "mistralai/mistral-small-2603": "mistral",
         "mistralai/mistral-small-3.2-24b-instruct": "mistral-small-3.2",
         "mistralai/mistral-small-3.2-24b-instruct-2506": [

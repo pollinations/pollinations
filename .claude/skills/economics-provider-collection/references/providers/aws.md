@@ -81,14 +81,17 @@ Collection steps:
 For the detailed provider ledger, use `groupBy=service`. Preserve the AWS
 account ID in `resource_id`, classify `Amazon Bedrock` and services ending in
 `[Amazon Bedrock Edition]` as inference, and normalize the named edition to the
-canonical model slug. Other services are infrastructure.
+canonical model slug. Bedrock Guardrails usage types and all other services are
+infrastructure.
 
 ## Verified — 2026-09-05
 
 - Umbrella `groupBy=usagetype` splits the `Amazon Bedrock` service line into
   Nova usage types (`USE1-NovaReel-*`, `USE1-NovaMicro-*`, `USE1-Nova2.0Lite-*`,
-  `USE1-NovaCanvas-*`) and Bedrock Guardrails (`USE1-Guardrail-*`, no Pollen
-  model). Umbrella figures are identical under unblended, net unblended and
+  `USE1-NovaCanvas-*`) and Bedrock Guardrails (`USE1-Guardrail-*`). Guardrails
+  is the safety layer that checks opted-in prompts for every provider, not a
+  model: book it as `type: infra` (`resource_name: Bedrock Guardrails`), never
+  as inference. Umbrella figures are identical under unblended, net unblended and
   amortized cost. Console Cost Explorer captures taken before the month is
   finalized differ from Umbrella; Umbrella is the ledger source for Bedrock
   usage from August 2026.

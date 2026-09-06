@@ -85,6 +85,14 @@ Collection steps:
    across meter rows so the detailed ledger still ties exactly to the invoice.
 9. Use this skill for saved raw evidence.
 
+## Verified — 2026-09-06
+
+- The `Standard Text Records` meter under service category `Foundry Tools` is
+  Azure AI Content Safety (`/contentsafety/text:analyze`, called by gen on image
+  prompts). It is the safety layer, not a model: book it as `type: infra`
+  (`resource_name: Azure AI Content Safety`), never as inference. Meta models
+  bill as their own `Llama … Tokens` meters.
+
 Known traps:
 
 - Invoice periods should cover a full calendar month; skip one-day purchase receipts unless the user explicitly asks to ingest them.

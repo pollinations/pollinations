@@ -92,6 +92,11 @@ name or an undocumented ratio.
 
 ## Evidence and ledgers
 
+- Amounts live in the ledger, never in a connector guide. This repository is
+  public: a guide records how to reach a number (route, URL, command, which
+  column, which convention), and the ledger row carries the number itself with
+  its evidence link. Do not paste balances, grants, invoice totals, spend, or
+  invoice numbers with amounts into `references/`.
 - Upload each new invoice/export to the accounting Google Drive immediately
   after download; verify it there before continuing to the next provider.
   Layout, file naming, month folder IDs, and the coverage check are in

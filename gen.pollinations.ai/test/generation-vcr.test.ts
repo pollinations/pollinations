@@ -138,11 +138,21 @@ function createGenerationMocks() {
                     : { type: "response.completed" }),
                 response,
             };
+            const invalidUsageChunk =
+                body.input === "vcr invalid usage after valid usage"
+                    ? `event: response.completed\ndata: ${JSON.stringify({
+                          type: "response.completed",
+                          response: {
+                              ...response,
+                              usage: { input_tokens: 12 },
+                          },
+                      })}\n\n`
+                    : "";
             return new Response(
                 `event: response.output_text.delta\ndata: ${JSON.stringify({
                     type: "response.output_text.delta",
                     delta: "direct response",
-                })}\n\nevent: response.completed\ndata: ${JSON.stringify(terminalEvent)}\n\n`,
+                })}\n\nevent: response.completed\ndata: ${JSON.stringify(terminalEvent)}\n\n${invalidUsageChunk}`,
                 { headers: { "content-type": "text/event-stream" } },
             );
         }
@@ -151,9 +161,11 @@ function createGenerationMocks() {
     const gptImageState: {
         azureStatus: number;
         openAIRequests: Record<string, unknown>[];
+        imageHostRequests: number;
     } = {
         azureStatus: 429,
         openAIRequests: [],
+        imageHostRequests: 0,
     };
     return createFetchMock({
         tinybird: createMockTinybird(),
@@ -215,6 +227,14 @@ function createGenerationMocks() {
         gptImage: {
             state: gptImageState,
             handlerMap: {
+                "gpt-reference.test": async () => {
+                    gptImageState.imageHostRequests++;
+                    return gptImageState.imageHostRequests === 1
+                        ? new Response("over capacity", { status: 429 })
+                        : new Response(Buffer.from(png1x1Base64, "base64"), {
+                              headers: { "content-type": "image/png" },
+                          });
+                },
                 "content-safety.test": async () =>
                     Response.json({ categoriesAnalysis: [] }),
                 "gptimagemain1-resource.cognitiveservices.azure.com":
@@ -233,7 +253,14 @@ function createGenerationMocks() {
                         ),
                 "api.openai.com": async (request) => {
                     gptImageState.openAIRequests.push(
-                        (await request.json()) as Record<string, unknown>,
+                        request.headers
+                            .get("content-type")
+                            ?.includes("multipart/form-data")
+                            ? Object.fromEntries(await request.formData())
+                            : ((await request.json()) as Record<
+                                  string,
+                                  unknown
+                              >),
                     );
                     return Response.json({
                         data: [{ b64_json: png1x1Base64 }],
@@ -251,6 +278,7 @@ function createGenerationMocks() {
             reset: () => {
                 gptImageState.azureStatus = 429;
                 gptImageState.openAIRequests = [];
+                gptImageState.imageHostRequests = 0;
             },
         },
         replicate: {
@@ -414,8 +442,25 @@ async function fakePortkeyResponse(request: Request) {
         const usageChunk = prompt.includes("vcr missing chat stream usage")
             ? ""
             : `data: ${JSON.stringify(usageEvent)}\n\n`;
+        const invalidUsageChunk = prompt.includes(
+            "vcr invalid usage after valid usage",
+        )
+            ? `data: ${JSON.stringify({ ...usageEvent, usage: { prompt_tokens: 7 } })}\n\n`
+            : "";
+        const earlyUsageChunk = prompt.includes("vcr early usage")
+            ? `data: ${JSON.stringify({
+                  ...streamEvent,
+                  usage: prompt.includes("partial")
+                      ? { prompt_tokens: 7 }
+                      : {
+                            prompt_tokens: 7,
+                            completion_tokens: 0,
+                            total_tokens: 7,
+                        },
+              })}\n\n`
+            : "";
         return new Response(
-            `data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}data: [DONE]\n\n`,
+            `${earlyUsageChunk}data: ${JSON.stringify(streamEvent)}\n\n${usageChunk}${invalidUsageChunk}data: [DONE]\n\n`,
             {
                 headers: {
                     "content-type": "text/event-stream; charset=utf-8",
@@ -760,12 +805,117 @@ test("chat streaming without usage fails closed and remains unbilled", async ({
     expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 200,
+        responseStatus: 502,
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "usage_missing",
     });
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
+        status: 502,
+        upstream_status: 200,
+        error_code: "usage_missing",
+        upstream_body: expect.any(String),
+    });
     expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test.for([
+    "/v1/chat/completions",
+    "/v1/responses",
+])("%s does not bill valid usage followed by a stream validation error", async (path, {
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "portkeyDirect", "responsesDirect");
+    const caller = await createTestApiKey({
+        name: "invalid-usage-after-valid-usage",
+        user: { packBalance: 100 },
+    });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const prompt = "vcr invalid usage after valid usage";
+    const { response, wait } = await fetchWorker(path, {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            stream: true,
+            ...(path === "/v1/responses"
+                ? { model: "qwen-large", input: prompt }
+                : {
+                      model: "openai-fast",
+                      messages: [{ role: "user", content: prompt }],
+                  }),
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain('"total_tokens":');
+    expect(stream).toContain('"code":"usage_missing"');
+    expect(stream).not.toContain("[DONE]");
+    await wait();
+
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        responseStatus: 502,
+        isBilledUsage: false,
+        totalPrice: 0,
+        errorResponseCode: "usage_missing",
+    });
+    expect(mocks.tinybird.state.events[0].totalCost).toBeGreaterThan(0);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.errorEvents[0]).toMatchObject({
+        status: 502,
+        upstream_status: 200,
+        error_code: "usage_missing",
+    });
+    expect(await getUserBalance(db, caller.userId)).toEqual(balanceBefore);
+});
+
+test.for([
+    "partial",
+    "valid",
+])("chat bills final usage after %s early usage", async (kind, { mocks }) => {
+    await mocks.enable("tinybird", "portkeyDirect");
+    const caller = await createTestApiKey({ user: { packBalance: 100 } });
+    const db = drizzle(env.DB);
+    const balanceBefore = await getUserBalance(db, caller.userId);
+    const { response, wait } = await fetchWorker("/v1/chat/completions", {
+        method: "POST",
+        headers: {
+            "content-type": "application/json",
+            authorization: `Bearer ${caller.key}`,
+        },
+        body: JSON.stringify({
+            model: "openai-fast",
+            stream: true,
+            messages: [{ role: "user", content: `vcr early usage ${kind}` }],
+        }),
+    });
+
+    expect(response.status).toBe(200);
+    const stream = await response.text();
+    expect(stream).toContain("[DONE]");
+    expect(stream).not.toContain("usage_missing");
+    await wait();
+    expect(mocks.tinybird.state.events).toHaveLength(1);
+    const event = mocks.tinybird.state.events[0];
+    expect(event).toMatchObject({
+        responseStatus: 200,
+        isBilledUsage: true,
+        tokenCountPromptText: 7,
+        tokenCountCompletionText: 3,
+    });
+    expect(event.totalPrice).toBeGreaterThan(0);
+    expect(mocks.tinybird.state.errorEvents).toHaveLength(0);
+    const balanceAfter = await getUserBalance(db, caller.userId);
+    expect(balanceBefore.packBalance - balanceAfter.packBalance).toBeCloseTo(
+        event.totalPrice,
+        12,
+    );
 });
 
 test("Chat uses a native Responses target and preserves billing usage", async ({
@@ -924,7 +1074,7 @@ test("Chat-over-Responses stream without usage fails closed and remains unbilled
     expect(mocks.responsesDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 200,
+        responseStatus: 502,
         modelRequested: "gpt-5.6-luna",
         modelUsed: "gpt-5.6-luna",
         isBilledUsage: false,
@@ -1202,7 +1352,7 @@ test("Responses streaming without usage fails closed and remains unbilled", asyn
     expect(mocks.responsesDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        responseStatus: 200,
+        responseStatus: 502,
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "usage_missing",
@@ -2180,6 +2330,40 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
     });
 });
 
+test("gpt-image-2 tries its fallback when the reference image host is over capacity", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "gptImage");
+    const { key } = await createTestApiKey({
+        allowedModels: ["gpt-image-2"],
+        user: { tierBalance: 100 },
+    });
+    const { response, wait } = await fetchWorker(
+        "/image/image-host-capacity?model=gpt-image-2&quality=low&width=1024&height=1024&image=https%3A%2F%2Fgpt-reference.test%2Finput.png&seed=9350",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("gpt-image-2-openai");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.gptImage.state.imageHostRequests).toBe(2);
+    expect(mocks.gptImage.state.openAIRequests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        // Failed-attempt telemetry maps the image host's 429 to a gateway failure.
+        responseStatus: 502,
+        isFinal: false,
+        isBilledUsage: false,
+    });
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        responseStatus: 200,
+        fallbackUsed: true,
+        isFinal: true,
+        isBilledUsage: true,
+    });
+});
+
 test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
     mocks,
 }) => {
@@ -2290,7 +2474,21 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Invalid image request: height must be at least 256",
+            message: "Image backend rejected request with status 422",
+            details: {
+                upstreamStatus: 422,
+                upstreamBody: JSON.stringify({
+                    detail: [
+                        {
+                            type: "greater_than_equal",
+                            loc: ["body", "height"],
+                            msg: "Input should be greater than or equal to 256",
+                            input: 220,
+                            ctx: { ge: 256 },
+                        },
+                    ],
+                }),
+            },
         },
     });
     await wait();
@@ -2314,7 +2512,11 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Invalid image request: prompt is too long",
+            message: "Image backend rejected request with status 422",
+            details: {
+                upstreamStatus: 422,
+                upstreamBody: JSON.stringify({ detail: "prompt is too long" }),
+            },
         },
     });
     await waitDetail();
@@ -2339,7 +2541,13 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Image provider error: missing provider key",
+            message: "Image backend rejected request with status 400",
+            details: {
+                upstreamStatus: 400,
+                upstreamBody: JSON.stringify({
+                    message: "missing provider key",
+                }),
+            },
         },
     });
     await waitProvider400();
@@ -2351,8 +2559,7 @@ test("image backend validation errors return client-facing 400", async ({
         responseStatus: 400,
     });
 
-    // Upstream 400 with empty body must still surface a useful message via
-    // HttpError.message, not collapse to a generic "Image provider error".
+    // An empty upstream body still carries the backend status in the message.
     const { response: emptyBody400Response, wait: waitEmptyBody400 } =
         await fetchWorker(
             "/image/empty%20body%20400?model=zimage&width=280&height=280&seed=42",
@@ -2366,8 +2573,7 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message:
-                "Image provider error: Image backend rejected request with status 400",
+            message: "Image backend rejected request with status 400",
         },
     });
     await waitEmptyBody400();

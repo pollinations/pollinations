@@ -15,7 +15,7 @@ const transaction = (
     currency: "USD",
     description: "AWS",
     evidence:
-        "https://drive.google.com/file/d/wise-statement/view?usp=drivesdk",
+        "evidence_type=supplier_document https://drive.google.com/file/d/supplier-invoice/view?usp=drivesdk",
     recorded_at: "2026-08-01 00:00:00",
     ...over,
 });

@@ -128,7 +128,8 @@ const opTransactions: OpTransactionRow[] = [
         amount: -150,
         currency: "EUR",
         description: "Example Alibaba Cloud charge",
-        evidence: "https://drive.google.com/file/d/example-invoice/view",
+        evidence:
+            "evidence_type=supplier_document https://drive.google.com/file/d/example-invoice/view",
         recorded_at: "2026-07-09 00:00:00.000",
     },
     {

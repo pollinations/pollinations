@@ -7,6 +7,42 @@ import {
 } from "./documents";
 
 describe("driveDocumentLink", () => {
+    it("does not certify an unqualified file link as a supplier document", () => {
+        const evidence =
+            "https://drive.google.com/file/d/shared-statement/view";
+        expect(hasArchivedEvidence(evidence)).toBe(true);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence: `evidence_type=unknown ${evidence}`,
+            }),
+        ).toBe(false);
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence: `evidence_requirement=payment ${evidence}`,
+            }),
+        ).toBe(false);
+    });
+    it("finds the exact document even when the folder is linked first", () => {
+        const evidence =
+            "evidence_type=supplier_document https://drive.google.com/drive/folders/folder https://drive.google.com/file/d/invoice/view";
+        expect(driveDocumentLink(evidence)?.href).toBe(
+            "https://drive.google.com/file/d/invoice/view",
+        );
+        expect(
+            hasReconciledTransactionEvidence({
+                description: "Supplier payment",
+                evidence,
+            }),
+        ).toBe(true);
+    });
     it("distinguishes supplier evidence from payment-only statements", () => {
         const statement =
             "evidence_type=payment_statement https://drive.google.com/file/d/statement/view";

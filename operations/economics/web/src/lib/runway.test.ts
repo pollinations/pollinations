@@ -1228,6 +1228,32 @@ describe("ledger-based P&L categories", () => {
         expect(result.currentCashUsd).toBe(9_000);
     });
 
+    it("does not warn when a bank payment is still held as cash prepaid on the vendor balance", () => {
+        const topUp = transaction({
+            entry_id: "stability-topup",
+            date: "2026-06-10",
+            vendor: "stability",
+            category: "compute",
+            amount: -30,
+            description: "Stability AI credits",
+        });
+        const held = buildRunway([opening(1_000), topUp], NOW, [
+            balance("stability", 30, 8.95),
+        ]);
+        const spent = buildRunway([opening(1_000), topUp], NOW, [
+            balance("stability", 5, 8.95),
+        ]);
+
+        expect(held.flags.some((flag) => /stability/.test(flag))).toBe(false);
+        expect(held.rows.some((row) => row.vendor === "stability")).toBe(false);
+        expect(held.currentCashUsd).toBe(970);
+        expect(
+            spent.flags.some(
+                (flag) => /stability/.test(flag) && /ledger/.test(flag),
+            ),
+        ).toBe(true);
+    });
+
     it("warns instead of falling back to bank cash when a ledger category vendor has no invoices", () => {
         const result = buildRunway(
             [

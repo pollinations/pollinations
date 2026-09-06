@@ -1040,10 +1040,29 @@ export function buildRunway(
         identities.set(key, { category, vendor });
         observedMonths.add(month);
     }
+    // A bank payment still held as cash prepaid on the vendor's latest balance
+    // snapshot has nothing to expense yet: the money moved into a prepaid
+    // balance, not into usage, and "vendor invoice timing" carries it in cash.
+    const latestPrepaidByVendor = new Map<
+        string,
+        { start: string; usd: number }
+    >();
+    for (const row of cloudRows) {
+        if (!isOpCloudBalanceRow(row)) continue;
+        const vendor = normalizedVendor(row.vendor);
+        const current = latestPrepaidByVendor.get(vendor);
+        if (current && current.start >= row.start) continue;
+        latestPrepaidByVendor.set(vendor, {
+            start: row.start,
+            usd: toUsd(row.paid, row.currency, row.start),
+        });
+    }
     // No fallback to cash: a paid vendor without ledger rows stays visible as
     // a warning line with no amount.
     const ledgerIssues = new Map<string, string>();
     for (const [vendor, payments] of ledgerVendorPayments) {
+        const prepaid = latestPrepaidByVendor.get(vendor);
+        if (prepaid && prepaid.usd >= -payments.usd - 0.5) continue;
         const coveredMonths = ledgerMonthsByVendor.get(vendor);
         if (coveredMonths) {
             // A payment usually settles the previous month (postpaid) or the

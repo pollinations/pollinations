@@ -193,7 +193,7 @@ export function MonthlyLedgerAuditPanel({
                             {...headerProps("cloudRows")}
                             align="right"
                         >
-                            Compute &amp; Infra
+                            Vendor ledger
                         </TableHeaderCell>
                         <TableHeaderCell
                             {...headerProps("pollenRows")}

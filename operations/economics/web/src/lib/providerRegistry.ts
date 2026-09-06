@@ -189,6 +189,23 @@ export function transactionCategory(
     return isCategory(supplied) ? supplied : "uncategorized";
 }
 
+// The P&L category of a vendor ledger row: the ledger type decides compute
+// and infrastructure; every other type (subscriptions, services) takes the
+// registry category of the vendor, so a GitHub invoice is Development and a
+// Google Workspace invoice is Operations without a per-row category.
+export function ledgerCategory(
+    row: Pick<OpCloudRow, "type" | "vendor">,
+): CategoryValue {
+    const type = normalizeProviderName(row.type);
+    if (type === "inference" || type === "gpu") return "compute";
+    if (type === "infra") return "infrastructure";
+    if (type === "balance") return "uncategorized";
+    const category = resolveProvider(row.vendor)?.category;
+    return category && category !== "uncategorized"
+        ? category
+        : "uncategorized";
+}
+
 // The Runway line a vendor's cash is shown under.
 export function runwayLineItem(category: string, vendor: string): string {
     const provider = resolveProvider(vendor);

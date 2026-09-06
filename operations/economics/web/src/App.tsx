@@ -195,7 +195,7 @@ const TABS = [
     {
         id: "op-cloud",
         source: "opCloud",
-        label: "Compute & Infra",
+        label: "Vendor ledger",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
         pipe: "economics_compute_ledger_api",
         note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
@@ -641,14 +641,18 @@ function viewInfoContent(activeView: ActiveView) {
                 </InfoLine>
                 <InfoLine>
                     Revenue separates Pollen and Ko-fi sales, refunds, and
-                    reversals. Processing fees are an Operations expense; other
-                    expense categories remain cash-based. Expand a category to
-                    see its vendor detail.
+                    reversals. Processing fees are an Operations expense.
+                    Compute and Infrastructure come from the vendor ledger by
+                    service month, paid or credit-funded (◐); every other
+                    expense category is bank cash. Expand a category to see its
+                    vendor detail.
                 </InfoLine>
                 <InfoLine>
-                    Compute &amp; Infra usage can inform the forecast, but
-                    running cash remains cash-based; missing assumptions stay
-                    visible as flags.
+                    Bank payments to ledger vendors stay in cash only; the
+                    "vendor invoice timing" and "credit-funded usage" lines
+                    carry the difference. A paid vendor without ledger rows is a
+                    warning, never a cash fallback. Forecast columns and running
+                    cash remain cash-based.
                 </InfoLine>
             </span>
         );

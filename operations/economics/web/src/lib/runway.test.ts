@@ -5,7 +5,7 @@ import type {
     PrivateForecastRule,
     StripeSalesRow,
 } from "../types";
-import { buildRunway } from "./runway";
+import { buildRunway, pnlSource } from "./runway";
 
 const NOW = new Date("2026-08-25T12:00:00.000Z");
 
@@ -1156,5 +1156,188 @@ describe("buildRunway", () => {
         expect(result.flags).toContain(
             "1 bank row uses unsupported currency (GBP); cash balance and runway are unavailable.",
         );
+    });
+});
+
+describe("ledger-based P&L categories", () => {
+    it("builds Compute and Infrastructure actuals from the vendor ledger, not from bank payments", () => {
+        const result = buildRunway(
+            [
+                opening(10_000),
+                transaction({
+                    entry_id: "aws-payment",
+                    date: "2026-08-15",
+                    vendor: "aws",
+                    category: "cloud",
+                    amount: -1_000,
+                    description: "AUTOMAT-IT",
+                }),
+            ],
+            NOW,
+            [
+                cloud({
+                    entry_id: "aws-july-inference",
+                    vendor: "aws",
+                    type: "inference",
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -700,
+                }),
+                cloud({
+                    entry_id: "aws-july-guardrails",
+                    vendor: "aws",
+                    type: "infra",
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: 0,
+                    credit: -300,
+                }),
+            ],
+        );
+        const compute = result.rows.find(
+            (row) => row.category === "compute" && row.vendor === "aws",
+        );
+        const infrastructure = result.rows.find(
+            (row) => row.category === "infrastructure" && row.vendor === "aws",
+        );
+        const timing = result.rows.find(
+            (row) => row.vendor === "vendor invoice timing",
+        );
+        const credits = result.rows.find(
+            (row) => row.vendor === "credit-funded usage",
+        );
+        const august = result.columns.find(
+            (column) => column.id === "2026-08:current",
+        );
+
+        expect(compute?.values["2026-07:actual"]).toBe(-700);
+        expect(compute?.values["2026-08:current"]).toBe(0);
+        expect(infrastructure?.values["2026-07:actual"]).toBe(-300);
+        expect(infrastructure?.creditFundedValues?.["2026-07:actual"]).toBe(
+            -300,
+        );
+        expect(timing?.category).toBe("balance_sheet");
+        expect(timing?.values["2026-07:actual"]).toBe(700);
+        expect(timing?.values["2026-08:current"]).toBe(-1_000);
+        expect(credits?.values["2026-07:actual"]).toBe(300);
+        expect(august?.netUsd).toBe(-1_000);
+        expect(result.currentCashUsd).toBe(9_000);
+    });
+
+    it("warns instead of falling back to bank cash when a ledger category vendor has no invoices", () => {
+        const result = buildRunway(
+            [
+                opening(1_000),
+                transaction({
+                    entry_id: "retell-card",
+                    date: "2026-07-03",
+                    vendor: "retell",
+                    category: "saas",
+                    amount: -50,
+                    description: "Retell AI",
+                }),
+                transaction({
+                    entry_id: "notion-card",
+                    date: "2026-07-03",
+                    vendor: "notion",
+                    category: "saas",
+                    amount: -20,
+                    description: "Notion",
+                }),
+            ],
+            NOW,
+            [],
+        );
+        const retell = result.rows.find(
+            (row) => row.category === "compute" && row.vendor === "retell",
+        );
+        const notion = result.rows.find(
+            (row) => row.category === "operations" && row.vendor === "notion",
+        );
+
+        expect(retell?.values["2026-07:actual"] ?? 0).toBe(0);
+        expect(retell?.forecastIssue).toContain("vendor ledger");
+        expect(
+            result.flags.some(
+                (flag) => /retell/.test(flag) && /ledger/.test(flag),
+            ),
+        ).toBe(true);
+        expect(notion?.values["2026-07:actual"]).toBe(-20);
+        expect(result.currentCashUsd).toBe(930);
+    });
+
+    it("warns about paid months the vendor ledger does not cover", () => {
+        const result = buildRunway(
+            [
+                opening(5_000),
+                ...["2026-05-19", "2026-06-19", "2026-07-19"].map((date) =>
+                    transaction({
+                        entry_id: `tinybird-${date}`,
+                        date,
+                        vendor: "tinybird",
+                        category: "cloud",
+                        amount: -40,
+                        description: "Tinybird",
+                    }),
+                ),
+            ],
+            NOW,
+            [
+                cloud({
+                    entry_id: "tinybird-july",
+                    vendor: "tinybird",
+                    type: "infra",
+                    start: "2026-07-01 00:00:00",
+                    end: "2026-08-01 00:00:00",
+                    paid: -40,
+                    model: "",
+                    resource_name: "Build plan",
+                }),
+            ],
+        );
+        const tinybird = result.rows.find(
+            (row) =>
+                row.category === "infrastructure" && row.vendor === "tinybird",
+        );
+
+        expect(tinybird?.values["2026-07:actual"]).toBe(-40);
+        expect(tinybird?.values["2026-05:actual"]).toBe(0);
+        expect(
+            result.flags.some(
+                (flag) =>
+                    /tinybird/.test(flag) &&
+                    /2026-05/.test(flag) &&
+                    /ledger/.test(flag),
+            ),
+        ).toBe(true);
+        // June is paid and the ledger covers July: a postpaid bill, no warning.
+        expect(
+            result.flags.some(
+                (flag) => /tinybird/.test(flag) && /2026-06/.test(flag),
+            ),
+        ).toBe(false);
+    });
+
+    it("classifies subscription invoices in the ledger through the vendor registry", () => {
+        const result = buildRunway([opening(1_000)], NOW, [
+            cloud({
+                entry_id: "github-july",
+                vendor: "github",
+                type: "subscription",
+                start: "2026-07-01 00:00:00",
+                end: "2026-08-01 00:00:00",
+                paid: -40,
+                model: "",
+                resource_name: "GitHub Enterprise Cloud",
+            }),
+        ]);
+        const github = result.rows.find(
+            (row) => row.category === "development" && row.vendor === "github",
+        );
+        // Development is still bank-based, so a ledger row is not a P&L line yet.
+        expect(github).toBeUndefined();
+        expect(pnlSource("development")).toBe("bank");
+        expect(pnlSource("compute")).toBe("ledger");
+        expect(pnlSource("infrastructure")).toBe("ledger");
     });
 });

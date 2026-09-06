@@ -18,7 +18,7 @@ import {
     TableScroller,
 } from "../components/DataTable";
 import { StatCards, type StatTone } from "../components/StatCards";
-import { categoryLabel } from "../lib/categories";
+import { categoryLabel, pnlSource } from "../lib/categories";
 import type { ForecastPaymentTiming } from "../lib/forecastTerms";
 import { fmtPeriod } from "../lib/format";
 import { monthName } from "../lib/months";
@@ -191,6 +191,20 @@ function ForecastValue({
         >
             <span className="underline decoration-dotted decoration-theme-border underline-offset-2">
                 {fmtRunwayTableValue(value)}
+            </span>
+        </Tooltip>
+    );
+}
+
+function CreditFundedMark({ value }: { value: number | undefined }) {
+    if (value == null || Math.abs(value) < 0.005) return null;
+    return (
+        <Tooltip
+            triggerAs="span"
+            content={`${fmtRunwayTableValue(value)} of this was paid from provider credits, not cash`}
+        >
+            <span className="ml-1 cursor-help text-theme-text-soft text-xs">
+                ◐
             </span>
         </Tooltip>
     );
@@ -517,6 +531,21 @@ function RunwayCategoryRows({
                     >
                         {categoryLabel(group.category)}
                     </TableDisclosureButton>
+                    {group.category !== "revenue" &&
+                        group.category !== "balance_sheet" && (
+                            <ForecastBadge
+                                label={
+                                    pnlSource(group.category) === "ledger"
+                                        ? "vendor ledger"
+                                        : "bank"
+                                }
+                                hint={
+                                    pnlSource(group.category) === "ledger"
+                                        ? "Actual columns come from the vendor ledger by service month: invoices and usage, paid or credit-funded. Bank payments to these vendors stay in cash only."
+                                        : "Actual columns are bank movements categorized by the vendor registry."
+                                }
+                            />
+                        )}
                 </TableCell>
                 {columns.map((column, index) => (
                     <TableCell
@@ -562,6 +591,9 @@ function RunwayCategoryRows({
                                             ? row.forecastIssue
                                             : undefined
                                     }
+                                />
+                                <CreditFundedMark
+                                    value={row.creditFundedValues?.[column.id]}
                                 />
                             </TableCell>
                         ))}

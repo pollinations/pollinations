@@ -12,6 +12,7 @@ import {
     canonicalProvider,
     canonicalProviderAccountId,
     collectProviderObservations,
+    ledgerCategory,
     meterDriftExplanation,
     missingProviderMappings,
     normalizeProviderName,
@@ -127,6 +128,31 @@ describe("provider registry", () => {
             "operations",
         );
         expect(resolveProvider("deel")?.category).toBe("payroll");
+    });
+
+    it("classifies ledger rows by type first and by registry vendor for everything else", () => {
+        expect(ledgerCategory({ vendor: "aws", type: "inference" })).toBe(
+            "compute",
+        );
+        expect(ledgerCategory({ vendor: "aws", type: "gpu" })).toBe("compute");
+        expect(ledgerCategory({ vendor: "tinybird", type: "infra" })).toBe(
+            "infrastructure",
+        );
+        expect(ledgerCategory({ vendor: "github", type: "subscription" })).toBe(
+            "development",
+        );
+        expect(
+            ledgerCategory({
+                vendor: "google-workspace",
+                type: "subscription",
+            }),
+        ).toBe("operations");
+        expect(ledgerCategory({ vendor: "aws", type: "balance" })).toBe(
+            "uncategorized",
+        );
+        expect(
+            ledgerCategory({ vendor: "never-seen", type: "subscription" }),
+        ).toBe("uncategorized");
     });
 
     it("classifies every provider by how its bill should reconcile to Pollen", () => {

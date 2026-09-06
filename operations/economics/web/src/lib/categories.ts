@@ -58,6 +58,18 @@ export function isCategory(category: string): category is Category {
     return KNOWN_CATEGORIES.has(category);
 }
 
+// Which ledger feeds a category's P&L actuals. Ledger categories take their
+// expense from the vendor ledger by service month (invoices and usage, paid
+// or credit-funded); bank categories take it from bank movements. A ledger
+// category never falls back to cash: a vendor without ledger rows is flagged.
+export type PnlSource = "ledger" | "bank";
+
+export function pnlSource(category: string): PnlSource {
+    return category === "compute" || category === "infrastructure"
+        ? "ledger"
+        : "bank";
+}
+
 export function isComputeOrInfrastructureCategory(category: string): boolean {
     return category === "compute" || category === "infrastructure";
 }

@@ -47,6 +47,16 @@ checked balances, and the reviewed calculation rules in
 `web/src/lib/forecastTerms.ts`. It has no separate Tinybird forecast or runway
 ledger.
 
+Each P&L category has one declared source (`pnlSource` in
+`web/src/lib/categories.ts`). Compute and Infrastructure are ledger-based:
+their actual columns come from the vendor ledger by service month, paid and
+credit-funded usage both count as expense, and the bank payments that settle
+those invoices stay in cash only (the balance-sheet lines "vendor invoice
+timing" and "credit-funded usage" carry the difference). A ledger category
+never falls back to cash: a vendor with bank payments and no ledger rows is
+shown as a warning line without an amount. Every other category is
+bank-based. Forecast columns remain cash projections.
+
 Corrections in the bank and compute ledgers are append-only: publishers reuse
 the stable `entry_id` with a newer `recorded_at`. Compute tombstones use the
 explicit `source=tombstone` marker and remain preserved in the raw ledger while

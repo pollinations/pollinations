@@ -8,7 +8,11 @@ import {
     cloudCategory,
     EXPENSE_CATEGORY_ORDER,
     forecastCategory,
+    pnlSource,
 } from "./categories";
+
+export { pnlSource } from "./categories";
+
 import {
     isOpCloudBalanceRow,
     opCloudCreditBurnUsd,
@@ -30,6 +34,7 @@ import {
 } from "./providerBalances";
 import {
     canonicalProviderAccountId,
+    ledgerCategory,
     resolveProvider,
     resolveProviderAccount,
     runwayLineItem,
@@ -95,6 +100,8 @@ export type RunwayMatrixRow = {
     forecastMethod: ForecastMethod | "mixed" | null;
     forecastPaymentTiming: ForecastPaymentTiming | null;
     values: Record<string, number>;
+    // Part of a ledger-based value that was paid from provider credits.
+    creditFundedValues?: Record<string, number>;
     assumptions: Record<string, RunwayAssumption[]>;
 };
 
@@ -947,6 +954,16 @@ export function buildRunway(
         );
     }
 
+    // Ledger categories: bank payments settle invoices that the vendor ledger
+    // already expensed, so they stay in cash and out of the P&L lines.
+    const ledgerVendorPaymentsByMonth = new Map<string, number>();
+    const ledgerVendorPayments = new Map<
+        string,
+        { category: string; usd: number; months: Set<string> }
+    >();
+    const ledgerPaidUsageByMonth = new Map<string, number>();
+    const ledgerCreditUsageByMonth = new Map<string, number>();
+    const creditFundedByMonth = new Map<string, Map<string, number>>();
     for (const row of bankRows) {
         const month = row.date.slice(0, 7);
         if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
@@ -959,7 +976,17 @@ export function buildRunway(
             cashActualByMonth.get(month) ?? new Map<string, number>();
         addAmount(cashMonthValues, key, amountUsd);
         cashActualByMonth.set(month, cashMonthValues);
-        if (!(category === "revenue" && vendor === "stripe")) {
+        if (pnlSource(category) === "ledger") {
+            addAmount(ledgerVendorPaymentsByMonth, month, amountUsd);
+            const payments = ledgerVendorPayments.get(vendor) ?? {
+                category,
+                usd: 0,
+                months: new Set<string>(),
+            };
+            payments.usd += amountUsd;
+            payments.months.add(month);
+            ledgerVendorPayments.set(vendor, payments);
+        } else if (!(category === "revenue" && vendor === "stripe")) {
             const monthValues =
                 actualByMonth.get(month) ?? new Map<string, number>();
             addAmount(monthValues, key, amountUsd);
@@ -971,6 +998,82 @@ export function buildRunway(
         addAmount(planMatchValues, planMatchKey(vendor, amountUsd), amountUsd);
         actualPlanMatchByMonth.set(month, planMatchValues);
         observedMonths.add(month);
+    }
+
+    // Ledger categories take their actuals from the vendor ledger by service
+    // month: paid usage and credit-funded usage are both expenses.
+    const ledgerVendorsWithRows = new Set<string>();
+    const ledgerMonthsByVendor = new Map<string, Set<string>>();
+    for (const row of cloudRows) {
+        if (isOpCloudBalanceRow(row)) continue;
+        const category = ledgerCategory(row);
+        if (pnlSource(category) !== "ledger" || category === "uncategorized") {
+            continue;
+        }
+        const month = row.start.slice(0, 7);
+        if (!MONTH_RE.test(month) || month < WINDOW_START) continue;
+        if (month > currentMonth) continue;
+        const vendor = normalizedVendor(row.vendor);
+        ledgerVendorsWithRows.add(vendor);
+        const paidUsd = opCloudPaidBurnUsd(row);
+        const creditUsd = opCloudCreditBurnUsd(row);
+        if (Math.abs(paidUsd) <= 0.005 && Math.abs(creditUsd) <= 0.005) {
+            continue;
+        }
+        const vendorMonths =
+            ledgerMonthsByVendor.get(vendor) ?? new Set<string>();
+        vendorMonths.add(month);
+        ledgerMonthsByVendor.set(vendor, vendorMonths);
+        const key = matrixKey(category, vendor);
+        const monthValues =
+            actualByMonth.get(month) ?? new Map<string, number>();
+        addAmount(monthValues, key, -(paidUsd + creditUsd));
+        actualByMonth.set(month, monthValues);
+        const creditValues =
+            creditFundedByMonth.get(month) ?? new Map<string, number>();
+        addAmount(creditValues, key, -creditUsd);
+        creditFundedByMonth.set(month, creditValues);
+        addAmount(ledgerPaidUsageByMonth, month, paidUsd);
+        addAmount(ledgerCreditUsageByMonth, month, creditUsd);
+        identities.set(key, { category, vendor });
+        observedMonths.add(month);
+    }
+    // No fallback to cash: a paid vendor without ledger rows stays visible as
+    // a warning line with no amount.
+    const ledgerIssues = new Map<string, string>();
+    for (const [vendor, payments] of ledgerVendorPayments) {
+        const coveredMonths = ledgerMonthsByVendor.get(vendor);
+        if (coveredMonths) {
+            // A payment usually settles the previous month (postpaid) or the
+            // next one (prepaid); a paid month with no ledger rows around it
+            // is a collection gap, never a cash fallback.
+            const uncovered = [...payments.months]
+                .filter(
+                    (month) =>
+                        !coveredMonths.has(month) &&
+                        !coveredMonths.has(monthShift(month, -1)) &&
+                        !coveredMonths.has(monthShift(month, 1)),
+                )
+                .sort();
+            if (uncovered.length > 0) {
+                flags.push(
+                    `Bank paid ${vendor} (${payments.category}) in ${uncovered.join(", ")}, but the vendor ledger has no invoice or usage rows near those months; the P&L shows nothing for them instead of falling back to cash.`,
+                );
+            }
+            continue;
+        }
+        const months = [...payments.months].sort().join(", ");
+        identities.set(matrixKey(payments.category, vendor), {
+            category: payments.category,
+            vendor,
+        });
+        ledgerIssues.set(
+            vendor,
+            `No invoices in the vendor ledger; bank paid ${Math.round(-payments.usd)} USD in ${months}`,
+        );
+        flags.push(
+            `Bank paid ${vendor} (${payments.category}) ${Math.round(-payments.usd)} USD in ${months}, but the vendor ledger has no invoice or usage rows for it; the P&L shows nothing for ${vendor} instead of falling back to cash.`,
+        );
     }
 
     if (stripeSalesUsable) {
@@ -1225,8 +1328,19 @@ export function buildRunway(
                 identity.vendor,
                 identity.category,
             );
+            const creditFundedValues: Record<string, number> = {};
+            for (const column of columnSpecs) {
+                if (column.kind === "forecast") continue;
+                const credit = creditFundedByMonth.get(column.month)?.get(key);
+                if (credit != null && Math.abs(credit) > 0.005) {
+                    creditFundedValues[column.id] = credit;
+                }
+            }
             return {
                 ...identity,
+                ...(Object.keys(creditFundedValues).length > 0
+                    ? { creditFundedValues }
+                    : {}),
                 forecastMethod:
                     methods.size === 1
                         ? [...methods][0]
@@ -1397,6 +1511,53 @@ export function buildRunway(
             assumptions: {},
         });
     }
+    // Ledger categories expense invoices by service month; the bank pays them
+    // later. Keep both differences visible so the P&L still explains cash.
+    const invoiceTimingValues = Object.fromEntries(
+        columnSpecs.map((column) => [
+            column.id,
+            column.kind === "forecast"
+                ? 0
+                : (ledgerVendorPaymentsByMonth.get(column.month) ?? 0) +
+                  (ledgerPaidUsageByMonth.get(column.month) ?? 0),
+        ]),
+    );
+    if (
+        Object.values(invoiceTimingValues).some(
+            (value) => Math.abs(value) > 0.005,
+        )
+    ) {
+        rows.push({
+            category: "balance_sheet",
+            vendor: "vendor invoice timing",
+            forecastMethod: "one_off",
+            forecastPaymentTiming: null,
+            values: invoiceTimingValues,
+            assumptions: {},
+        });
+    }
+    const creditFundedUsageValues = Object.fromEntries(
+        columnSpecs.map((column) => [
+            column.id,
+            column.kind === "forecast"
+                ? 0
+                : (ledgerCreditUsageByMonth.get(column.month) ?? 0),
+        ]),
+    );
+    if (
+        Object.values(creditFundedUsageValues).some(
+            (value) => Math.abs(value) > 0.005,
+        )
+    ) {
+        rows.push({
+            category: "balance_sheet",
+            vendor: "credit-funded usage",
+            forecastMethod: "one_off",
+            forecastPaymentTiming: null,
+            values: creditFundedUsageValues,
+            assumptions: {},
+        });
+    }
     rows.sort(
         (a, b) =>
             categoryRank(a.category) - categoryRank(b.category) ||
@@ -1406,6 +1567,7 @@ export function buildRunway(
     const unmodeledRows = rows.filter((row) => row.forecastMethod == null);
     for (const row of rows) {
         row.forecastIssue =
+            ledgerIssues.get(row.vendor) ??
             balanceAware.issues.get(row.vendor) ??
             (!stripeForecastUsable && STRIPE_LINES.includes(row.vendor)
                 ? "Stripe month coverage is incomplete"

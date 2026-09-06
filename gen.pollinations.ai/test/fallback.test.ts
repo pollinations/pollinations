@@ -27,7 +27,7 @@ function registryEntry(
 ): GenerationModelEntry {
     const definition: ModelDefinition = {
         aliases: [],
-        provider: "openrouter",
+        provider: "test",
         fallbacks,
         brand: "Test",
         category: "text",

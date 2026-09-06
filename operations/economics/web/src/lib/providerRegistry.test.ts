@@ -111,7 +111,7 @@ describe("provider registry", () => {
         expect(resolveProvider(" BedRock ")?.id).toBe("aws");
         expect(canonicalProvider("aws-bedrock")).toBe("aws");
         expect(canonicalProvider("azure-2")).toBe("azure");
-        expect(canonicalProvider("vastai")).toBe("vast");
+        expect(canonicalProvider("vastai")).toBe("vast.ai");
         expect(canonicalProvider("New-Provider")).toBe("new-provider");
         expect(resolveProvider("new-provider")).toBeUndefined();
     });
@@ -183,7 +183,7 @@ describe("provider registry", () => {
                 PRIVATE_CONFIG_FIXTURE,
             ),
         ).toMatchObject({
-            provider: "vast",
+            provider: "vast.ai",
             reason: "provider_attribution_transition",
         });
         expect(

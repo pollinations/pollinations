@@ -38,7 +38,7 @@ export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
         pollenWitnessExplanations: [
             {
                 month: "2026-02",
-                provider: "vast",
+                provider: "vast.ai",
                 reason: "provider_attribution_transition",
                 explanation: "Example reviewed transition.",
                 evidence: [

@@ -5,6 +5,10 @@ import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
 import { closestRatioLogSpace } from "../utils/aspectRatio.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
+import {
+    resolveGrokAspectRatio,
+    resolveGrokDuration,
+} from "./openRouterVideoModel.ts";
 import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"] as const;
@@ -146,15 +150,14 @@ type FalVideoConfig = {
 };
 
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
-    "grok-video-pro-fal": {
+    "grok-video-pro": {
         textEndpoint: "xai/grok-imagine-video/text-to-video",
         imageEndpoint: "xai/grok-imagine-video/image-to-video",
-        duration: (params) =>
-            Math.min(15, Math.max(1, Math.floor(params.duration ?? 5))),
+        duration: (params) => resolveGrokDuration(params.duration),
         input: (params, duration) => ({
             duration,
             resolution: "720p",
-            aspect_ratio: aspectRatio(params),
+            aspect_ratio: resolveGrokAspectRatio(params),
         }),
     },
     "grok-imagine-video-1.5-fal": {

@@ -179,6 +179,26 @@ describe("static provider fallbacks", () => {
         });
     });
 
+    it("uses Fal first for Grok Video Pro without changing prices or access", () => {
+        const primary = IMAGE_SERVICES["grok-video-pro"];
+        const fallback = IMAGE_SERVICES["grok-video-pro-openrouter"];
+        expect(primary).toMatchObject({
+            provider: "fal",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: ["grok-imagine-video", "x-ai/grok-imagine-video"],
+            fallbacks: ["grok-video-pro-openrouter"],
+            cost: { promptImageTokens: 0.002, completionVideoSeconds: 0.07 },
+        });
+        expect(fallback.provider).toBe("openrouter");
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(IMAGE_SERVICES).not.toHaveProperty("grok-video-pro-fal");
+        expect(IMAGE_SERVICES["grok-imagine-video-1.5"]).toMatchObject({
+            provider: "openrouter",
+            fallbacks: ["grok-imagine-video-1.5-fal"],
+        });
+    });
+
     it("registers exact text routes as fallback-only inherited models", () => {
         for (const [parent, routes] of Object.entries(
             fallbackRoutes(TEXT_FALLBACKS),

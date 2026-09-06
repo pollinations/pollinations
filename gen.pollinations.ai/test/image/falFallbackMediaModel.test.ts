@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createAndReturnVideo } from "../../src/image/createAndReturnVideos.ts";
 import { syncImageEnv } from "../../src/image/env.ts";
 import {
     callFalFallbackImage,
@@ -67,6 +68,67 @@ afterEach(() => {
 });
 
 describe("Fal fallback media models", () => {
+    it.each([
+        [undefined, "16:9", false, 1024, 1024, 5, "16:9"],
+        [0, "9:16", true, 1080, 720, 5, "3:2"],
+        [99, "9:16", false, 1024, 1024, 15, "9:16"],
+        [-1, undefined, true, 1024, 1024, 1, "1:1"],
+    ] as const)("routes Grok duration %s through Fal with unchanged parameters", async (duration, aspectRatio, dimensionsExplicit, width, height, expectedDuration, expectedRatio) => {
+        const requests = mockFal({ video: { url: MEDIA_URL } });
+        const resultPromise = createAndReturnVideo(
+            "move",
+            {
+                ...baseParams,
+                model: "grok-video-pro",
+                duration,
+                aspectRatio,
+                dimensionsExplicit,
+                width,
+                height,
+                image: ["https://example.com/start.png"],
+            },
+            "grok-test",
+        );
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
+        expect(requests[0]).toEqual({
+            url: "https://queue.fal.run/xai/grok-imagine-video/image-to-video",
+            body: {
+                prompt: "move",
+                duration: expectedDuration,
+                resolution: "720p",
+                aspect_ratio: expectedRatio,
+                image_url: "https://example.com/start.png",
+                seed: 42,
+            },
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "grok-video-pro",
+            usage: {
+                promptImageTokens: 1,
+                completionVideoSeconds: expectedDuration,
+            },
+        });
+    });
+
+    it.each([
+        0.5, 4.5, 15.5,
+    ])("rejects fractional Grok duration %s before Fal submission", async (duration) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            createAndReturnVideo(
+                "move",
+                {
+                    ...baseParams,
+                    model: "grok-video-pro",
+                    duration,
+                },
+                "grok-test",
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it("sends Seedream 5 through the exact Fal endpoint", async () => {
         const requests = mockFal({
             images: [{ url: MEDIA_URL, content_type: "image/jpeg" }],
@@ -92,7 +154,7 @@ describe("Fal fallback media models", () => {
 
     it.each([
         [
-            "grok-video-pro-fal",
+            "grok-video-pro",
             "xai/grok-imagine-video/text-to-video",
             { duration: 1, resolution: "720p", aspect_ratio: "1:1" },
         ],

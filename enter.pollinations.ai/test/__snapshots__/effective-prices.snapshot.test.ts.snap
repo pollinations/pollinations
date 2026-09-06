@@ -1191,7 +1191,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.002,
     },
   },
-  "grok-video-pro-fal": {
+  "grok-video-pro-openrouter": {
     "cost": {
       "completionVideoSeconds": 0.07,
       "promptImageTokens": 0.002,

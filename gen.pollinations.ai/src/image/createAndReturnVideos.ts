@@ -24,6 +24,7 @@ import { callSeedanceProAPI } from "./models/seedanceReplicateVideoModel.ts";
 import { callSeedanceV2API } from "./models/seedanceV2VideoModel.ts";
 import {
     callVeoAPI,
+    callVeoReplicateAPI,
     type VideoGenerationResult,
 } from "./models/veoVideoModel.ts";
 import { callWan3FalAPI } from "./models/wan3FalVideoModel.ts";
@@ -73,6 +74,9 @@ export async function createAndReturnVideo(
             break;
         case "veo":
             result = await callVeoAPI(prompt, safeParams);
+            break;
+        case "veo-replicate":
+            result = await callVeoReplicateAPI(prompt, safeParams);
             break;
         case "seedance-pro":
             result = await callSeedanceProAPI(prompt, safeParams);

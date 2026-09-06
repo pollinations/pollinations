@@ -1,5 +1,5 @@
 {
-  "version": 26,
+  "version": 27,
   "retiredModels": [
     "kimi-k2-thinking",
     "chickytutor",
@@ -1610,6 +1610,7 @@
         "kimi-k2-thinking": "kimi-k2-thinking",
         "gemini-mm-embedding": "gemini-2",
         "gemini-omni-flash": "google/gemini-omni-1.1-flash",
+        "Grounding with Google Search on Gemini 3": "gemini-search",
         "LLM Grounding with Google Search tool - Predictions": "gemini-search",
         "veo-3-fast": [
           "veo",

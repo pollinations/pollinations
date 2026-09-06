@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { McpCallSchema, safeMcpModelOutput, safeMcpOutput } from "./mcp.ts";
+import { McpCallSchema, mcpCallError, safeMcpOutput } from "./mcp.ts";
 import type { AgentPart } from "./runtime.ts";
 
 const MessageSchema = z.object({
@@ -138,19 +138,15 @@ export function collectOutput(
                 throw new Error("Agent tool result has no matching call");
             }
             if (part.type === "tool-error") {
-                item.error =
-                    part.error instanceof Error
-                        ? part.error.message
-                        : String(part.error);
+                item.error = mcpCallError(part.error);
             } else {
                 const result = safeMcpOutput(part.output);
                 item.output = JSON.stringify(result);
                 if (result.isError) {
-                    const output = safeMcpModelOutput({ output: result });
-                    item.error =
-                        output.type === "text"
-                            ? output.value
-                            : output.value.map((part) => part.text).join("\n");
+                    item.error = {
+                        type: "mcp_tool_execution_error",
+                        content: result,
+                    };
                 }
             }
             item.status = item.error === null ? "completed" : "failed";

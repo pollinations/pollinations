@@ -24,7 +24,7 @@ GITHUB_TOOLS = [
 Actions:
 - get: Get issue (issue_number, include_comments)
 - get_history: Get edit history - title changes and body edits (issue_number, edit_index=N for full diff of specific edit)
-- search: General issue search with filters (keywords, state, labels)
+- search: Search issues (keywords or native GitHub query; state, labels)
 - search_user: User's issues by discord username (discord_username, state)
 - find_similar: Find potential DUPLICATES before creating new issue (keywords, limit)
 - list_labels / list_milestones: List available
@@ -85,9 +85,22 @@ Actions:
                         "type": "integer",
                         "description": "Issue number (for get, close, comment, edit, label, assign, etc.)",
                     },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Returned next_cursor for native-query search, labels, or milestones; keep the same filters.",
+                    },
+                    "edit_index": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "For get_history: fetched edit index, zero is most recent.",
+                    },
                     "keywords": {
                         "type": "string",
                         "description": "Search terms (for search, find_similar)",
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "For search: native GitHub qualifiers, e.g. is:closed label:bug. Repository-scoped; no implicit open filter.",
                     },
                     "state": {
                         "type": "string",
@@ -277,6 +290,16 @@ Read-only — mutations are blocked.""",
                         "type": "string",
                         "description": "Plain English fallback — describe what data you need",
                     },
+                    "author": {
+                        "type": "string",
+                        "description": "GitHub author login for issue/PR retrieval in request mode; use this field rather than only mentioning an author in request text.",
+                    },
+                    "page": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10,
+                        "description": "REST page number (default 1); limit sets the page size.",
+                    },
                     "include_body": {
                         "type": "boolean",
                         "description": "Include full body text in results (for request mode)",
@@ -299,7 +322,7 @@ Read-only — mutations are blocked.""",
 Actions:
 - get: Get PR details (pr_number)
 - get_history: Get edit history - title changes and body edits (pr_number, edit_index=N for full diff of specific edit)
-- list: List PRs (state, limit, base)
+- list: List PRs (state, limit, base, author or native GitHub query)
 - get_files/get_diff/get_checks/get_commits: PR details (pr_number)
 - get_threads/get_review_comments: Review discussions (pr_number)
 - get_file_at_ref: Get file content at branch/commit (file_path, ref)
@@ -360,6 +383,23 @@ Actions:
                     "pr_number": {
                         "type": "integer",
                         "description": "PR number (for most actions)",
+                    },
+                    "author": {
+                        "type": "string",
+                        "description": "GitHub author login filter for list.",
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "For list: native GitHub qualifiers, e.g. is:merged author:login review:approved. Repository-scoped; no implicit open filter.",
+                    },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Returned next_cursor for native-query list; keep the same query and filters.",
+                    },
+                    "edit_index": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Get the full diff for a fetched history entry (0 is most recent).",
                     },
                     "state": {
                         "type": "string",

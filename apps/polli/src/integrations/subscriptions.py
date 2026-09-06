@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -14,55 +15,97 @@ from ..utils.json import loads as _json_loads
 logger = logging.getLogger(__name__)
 
 # Database path
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "subscriptions.db"
+DB_PATH = config.paths.data_dir / "subscriptions.db"
+_PRIVATE_MODE = 0o700
+_DATABASE_MODE = 0o600
+
+
+def _set_private_mode(path: Path, mode: int) -> None:
+    """Apply private POSIX permissions without traversing child paths."""
+    if os.name != "posix":
+        return
+    path.chmod(mode)
+
+
+def _protect_database_files(db_path: Path) -> None:
+    """Protect the database and SQLite sidecars when they exist."""
+    for path in (db_path, Path(f"{db_path}-wal"), Path(f"{db_path}-shm"), Path(f"{db_path}-journal")):
+        if path.exists():
+            _set_private_mode(path, _DATABASE_MODE)
 
 
 class SubscriptionManager:
     """Manages issue subscriptions with async SQLite storage."""
 
-    def __init__(self):
-        self._db_path = DB_PATH
+    def __init__(self, db_path: Path | None = None):
+        self._db_path = db_path or DB_PATH
         self._db: aiosqlite.Connection | None = None
         self._initialized = False
 
-    async def initialize(self):
+    async def initialize(self) -> None:
         """Initialize database connection and create tables."""
         if self._initialized:
             return
 
-        self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            self._db_path.parent.mkdir(parents=True, exist_ok=True)
+            _set_private_mode(self._db_path.parent, _PRIVATE_MODE)
 
-        self._db = await aiosqlite.connect(self._db_path)
+            self._db = await aiosqlite.connect(self._db_path)
+            db = self._db
+            _protect_database_files(self._db_path)
 
-        # Enable WAL mode for faster concurrent reads/writes
-        await self._db.execute("PRAGMA journal_mode=WAL")
-        await self._db.execute("PRAGMA synchronous=NORMAL")
-        await self._db.execute("PRAGMA cache_size=10000")
+            # Enable WAL mode for faster concurrent reads/writes.
+            await db.execute("PRAGMA journal_mode=WAL")
+            _protect_database_files(self._db_path)
+            await db.execute("PRAGMA synchronous=NORMAL")
+            await db.execute("PRAGMA cache_size=10000")
+            await db.execute("PRAGMA secure_delete=ON")
 
-        await self._db.execute("""
-            CREATE TABLE IF NOT EXISTS subscriptions (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                issue_number INTEGER NOT NULL,
-                channel_id INTEGER NOT NULL,
-                guild_id INTEGER,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                last_notified_at TEXT,
-                last_state TEXT,
-                last_comment_count INTEGER DEFAULT 0,
-                last_labels TEXT,
-                UNIQUE(user_id, issue_number)
-            )
-        """)
-        await self._db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_issue_number ON subscriptions(issue_number)
-        """)
-        await self._db.execute("""
-            CREATE INDEX IF NOT EXISTS idx_user_id ON subscriptions(user_id)
-        """)
-        await self._db.commit()
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS subscriptions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    issue_number INTEGER NOT NULL,
+                    channel_id INTEGER NOT NULL,
+                    guild_id INTEGER,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    last_notified_at TEXT,
+                    last_state TEXT,
+                    last_comment_count INTEGER DEFAULT 0,
+                    last_labels TEXT,
+                    UNIQUE(user_id, issue_number)
+                )
+            """)
+            await db.execute("""
+                CREATE INDEX IF NOT EXISTS idx_issue_number ON subscriptions(issue_number)
+            """)
+            await db.execute("""
+                CREATE INDEX IF NOT EXISTS idx_user_id ON subscriptions(user_id)
+            """)
+            await db.commit()
+            _protect_database_files(self._db_path)
+        except BaseException:
+            if self._db is not None:
+                await self._db.close()
+                self._db = None
+            raise
+
         self._initialized = True
         logger.info("SubscriptionManager initialized with async SQLite")
+
+    async def _ensure_initialized(self) -> aiosqlite.Connection:
+        """Ensure database is initialized and return its connection."""
+        if not self._initialized:
+            await self.initialize()
+        if self._db is None:
+            raise RuntimeError("Subscription database connection is unavailable")
+        return self._db
+
+    async def _commit(self, db: aiosqlite.Connection) -> None:
+        """Commit changes and protect any SQLite sidecars that were created."""
+        await db.commit()
+        _protect_database_files(self._db_path)
 
     async def close(self):
         """Close database connection."""
@@ -70,11 +113,6 @@ class SubscriptionManager:
             await self._db.close()
             self._db = None
             self._initialized = False
-
-    async def _ensure_initialized(self):
-        """Ensure database is initialized."""
-        if not self._initialized:
-            await self.initialize()
 
     async def subscribe(
         self,
@@ -89,13 +127,13 @@ class SubscriptionManager:
 
         Returns True if new subscription, False if already subscribed.
         """
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
             state = initial_state.get("state", "open") if initial_state else "open"
             comment_count = initial_state.get("comments_count", 0) if initial_state else 0
             labels = _json_dumps(initial_state.get("labels", [])) if initial_state else "[]"
 
-            await self._db.execute(
+            await db.execute(
                 """
                 INSERT OR REPLACE INTO subscriptions
                 (user_id, issue_number, channel_id, guild_id, last_state, last_comment_count, last_labels)
@@ -103,10 +141,10 @@ class SubscriptionManager:
             """,
                 (user_id, issue_number, channel_id, guild_id, state, comment_count, labels),
             )
-            await self._db.commit()
+            await self._commit(db)
             return True
-        except Exception as e:
-            logger.error(f"Failed to subscribe: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to subscribe")
             return False
 
     async def unsubscribe(self, user_id: int, issue_number: int) -> bool:
@@ -115,18 +153,18 @@ class SubscriptionManager:
 
         Returns True if was subscribed, False if wasn't.
         """
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            cursor = await self._db.execute(
+            cursor = await db.execute(
                 """
                 DELETE FROM subscriptions WHERE user_id = ? AND issue_number = ?
             """,
                 (user_id, issue_number),
             )
-            await self._db.commit()
+            await self._commit(db)
             return cursor.rowcount > 0
-        except Exception as e:
-            logger.error(f"Failed to unsubscribe: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to unsubscribe")
             return False
 
     async def unsubscribe_all(self, user_id: int) -> int:
@@ -135,26 +173,26 @@ class SubscriptionManager:
 
         Returns number of subscriptions removed.
         """
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            cursor = await self._db.execute(
+            cursor = await db.execute(
                 """
                 DELETE FROM subscriptions WHERE user_id = ?
             """,
                 (user_id,),
             )
-            await self._db.commit()
+            await self._commit(db)
             return cursor.rowcount
-        except Exception as e:
-            logger.error(f"Failed to unsubscribe all: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to unsubscribe all")
             return 0
 
     async def get_user_subscriptions(self, user_id: int) -> list[dict]:
         """Get all subscriptions for a user."""
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            self._db.row_factory = aiosqlite.Row
-            cursor = await self._db.execute(
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute(
                 """
                 SELECT issue_number, channel_id, guild_id, created_at, last_state
                 FROM subscriptions WHERE user_id = ?
@@ -164,29 +202,29 @@ class SubscriptionManager:
             )
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
-        except Exception as e:
-            logger.error(f"Failed to get subscriptions: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to get subscriptions")
             return []
 
     async def get_all_subscribed_issues(self) -> list[int]:
         """Get all unique issue numbers with active subscriptions."""
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            cursor = await self._db.execute("""
+            cursor = await db.execute("""
                 SELECT DISTINCT issue_number FROM subscriptions
             """)
             rows = await cursor.fetchall()
             return [row[0] for row in rows]
-        except Exception as e:
-            logger.error(f"Failed to get subscribed issues: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to get subscribed issues")
             return []
 
     async def get_subscriptions_for_issue(self, issue_number: int) -> list[dict]:
         """Get all subscriptions for a specific issue."""
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            self._db.row_factory = aiosqlite.Row
-            cursor = await self._db.execute(
+            db.row_factory = aiosqlite.Row
+            cursor = await db.execute(
                 """
                 SELECT user_id, channel_id, guild_id, last_state, last_comment_count, last_labels
                 FROM subscriptions WHERE issue_number = ?
@@ -195,15 +233,15 @@ class SubscriptionManager:
             )
             rows = await cursor.fetchall()
             return [dict(row) for row in rows]
-        except Exception as e:
-            logger.error(f"Failed to get issue subscriptions: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to get issue subscriptions")
             return []
 
     async def update_issue_state(self, issue_number: int, state: str, comment_count: int, labels: list[str]):
         """Update the tracked state for all subscriptions of an issue."""
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            await self._db.execute(
+            await db.execute(
                 """
                 UPDATE subscriptions
                 SET last_state = ?, last_comment_count = ?, last_labels = ?, last_notified_at = ?
@@ -211,26 +249,26 @@ class SubscriptionManager:
             """,
                 (state, comment_count, _json_dumps(labels), datetime.utcnow().isoformat(), issue_number),
             )
-            await self._db.commit()
-        except Exception as e:
-            logger.error(f"Failed to update issue state: {e}")
+            await self._commit(db)
+        except aiosqlite.Error:
+            logger.error("Failed to update issue state")
 
     async def get_subscription_count(self) -> int:
         """Get total number of active subscriptions."""
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            cursor = await self._db.execute("SELECT COUNT(*) FROM subscriptions")
+            cursor = await db.execute("SELECT COUNT(*) FROM subscriptions")
             row = await cursor.fetchone()
             return row[0]
-        except Exception as e:
-            logger.error(f"Failed to get subscription count: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to get subscription count")
             return 0
 
     async def is_subscribed(self, user_id: int, issue_number: int) -> bool:
         """Check if a user is subscribed to an issue."""
-        await self._ensure_initialized()
+        db = await self._ensure_initialized()
         try:
-            cursor = await self._db.execute(
+            cursor = await db.execute(
                 """
                 SELECT 1 FROM subscriptions WHERE user_id = ? AND issue_number = ?
             """,
@@ -238,8 +276,8 @@ class SubscriptionManager:
             )
             row = await cursor.fetchone()
             return row is not None
-        except Exception as e:
-            logger.error(f"Failed to check subscription: {e}")
+        except aiosqlite.Error:
+            logger.error("Failed to check subscription")
             return False
 
 

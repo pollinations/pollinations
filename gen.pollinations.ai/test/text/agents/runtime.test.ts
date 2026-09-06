@@ -259,6 +259,11 @@ describe("prompt-agent runtime", () => {
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
         // Usage from both model rounds is summed into the total.
         expect(json.usage.input_tokens).toBe(14);
+        expect(
+            mcpRequests
+                .filter((request) => request.method === "DELETE")
+                .map((request) => request.headers.get("Mcp-Session-Id")),
+        ).toEqual(["session-1"]);
         const mcpPosts = mcpRequests.filter(
             (request) => request.method === "POST",
         );

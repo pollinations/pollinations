@@ -92,7 +92,7 @@ async function loadMcpTools(
     fetcher: typeof fetch,
 ): Promise<{
     tools: Record<string, McpTool>;
-    close: () => Promise<void>;
+    client: McpClient;
 }> {
     const client = await createMCPClient({
         clientName: `pollinations-prompt-agent-${serverId}`,
@@ -129,7 +129,7 @@ async function loadMcpTools(
         throw error;
     }
 
-    return { tools, close: () => client.close() };
+    return { tools, client };
 }
 
 async function createAgent(
@@ -154,7 +154,7 @@ async function createAgent(
         result.status === "fulfilled" ? [result.value] : [],
     );
     const close = async () => {
-        await Promise.all(loadedServers.map((server) => server.close()));
+        await Promise.all(loadedServers.map((server) => server.client.close()));
     };
     const failure = serverResults.find(
         (result) => result.status === "rejected",

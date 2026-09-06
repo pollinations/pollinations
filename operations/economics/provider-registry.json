@@ -1,5 +1,5 @@
 {
-  "version": 24,
+  "version": 25,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -301,8 +301,12 @@
         "USE1-Nova2.0Lite-output-tokens": "nova",
         "USE1-NovaCanvas-T2I-1024-Standard": "nova-canvas",
         "USE1-NovaCanvas-T2I-2048-Standard": "nova-canvas",
-        "USE1-NovaLite-input-tokens": "nova-fast",
-        "USE1-NovaLite-output-tokens": "nova-fast",
+        "USE1-NovaLite-input-tokens": null,
+        "USE1-NovaLite-output-tokens": null,
+        "USE1-Llama3-1-8B-input-tokens": null,
+        "USE1-Llama3-1-8B-output-tokens": null,
+        "USE1-NovaMicro-cache-read-input-token-count": "nova-fast",
+        "USE1-NovaMicro-cache-write-input-token-count": "nova-fast",
         "USE1-NovaMicro-input-tokens": "nova-fast",
         "USE1-NovaMicro-output-tokens": "nova-fast",
         "USE1-NovaReel-T2V-Medfps-HDRes": "nova-reel"

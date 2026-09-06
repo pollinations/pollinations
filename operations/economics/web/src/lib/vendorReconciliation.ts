@@ -1,3 +1,4 @@
+import type { MeteringBasis } from "../providerConfig";
 import type { Data, OpTransactionRow } from "../types";
 import {
     cloudCategory,
@@ -13,7 +14,6 @@ import { toUsd } from "./fx";
 import { monthShift, WINDOW_START } from "./months";
 import { isPrepaidVendor } from "./providerFunding";
 import {
-    type MeteringBasis,
     meterDriftExplanation,
     type ProviderReconciliationExplanation,
     pollenWitnessExplanation,

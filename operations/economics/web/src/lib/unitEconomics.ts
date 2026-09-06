@@ -1,10 +1,11 @@
+import type { MeteringBasis } from "../providerConfig";
 import type {
     ModelAllocationRow,
     ModelAllocationStatus,
     ModelReconcileRow,
     ModelReconcileStatus,
 } from "./modelReconcile";
-import { type MeteringBasis, providerMeteringBasis } from "./providerRegistry";
+import { providerMeteringBasis } from "./providerRegistry";
 import {
     CALIB_DRIFT_ABS_ALARM_USD,
     hasCalibDrift,

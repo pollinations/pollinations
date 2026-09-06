@@ -1,3 +1,7 @@
+import type {
+    ProviderAccessTarget,
+    ProviderCollectionMethod,
+} from "../providerConfig";
 import type { Data, OpCloudRow, OpTransactionRow } from "../types";
 import {
     isBankMovement,
@@ -16,8 +20,6 @@ import { isPrepaidVendor } from "./providerFunding";
 import {
     activeProviderAccounts,
     PROVIDER_REGISTRY,
-    type ProviderAccessTarget,
-    type ProviderCollectionMethod,
     resolveProvider,
 } from "./providerRegistry";
 

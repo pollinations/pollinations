@@ -1,9 +1,10 @@
+import { PROVIDER_IDENTITIES } from "../../../../../shared/providers";
 import {
-    isProviderId,
-    PROVIDER_IDENTITIES,
-    type ProviderId,
-} from "../../../../../shared/providers";
-import registryJson from "../../../provider-registry.json";
+    ECONOMICS_PROVIDERS,
+    type EconomicsProviderConfig,
+    type MeteringBasis,
+    type ProviderAccountDefinition,
+} from "../providerConfig";
 import type {
     Data,
     EconomicsPrivateConfig,
@@ -20,70 +21,21 @@ import {
 } from "./categories";
 import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
 
-export type ProviderDefinition = {
-    id: ProviderId;
+export type ProviderDefinition = EconomicsProviderConfig & {
     label: string;
-    meteringBasis: MeteringBasis;
     aliases: string[];
-    connector: string | null;
-    monthlyReview: boolean;
-    balanceTracking: boolean;
-    collectionMethod: ProviderCollectionMethod | null;
-    access?: ProviderAccessTarget[];
-    accounts?: ProviderAccountDefinition[];
-};
-
-export type ProviderCollectionMethod = "api" | "cli" | "dashboard" | "internal";
-
-export type ProviderAccessTarget = {
-    workspace: string;
-    url: string;
-    accountId?: string;
-};
-
-export type MeteringBasis =
-    | "direct"
-    | "capacity"
-    | "mixed"
-    | "internal"
-    | "not_applicable"
-    | "unmapped";
-
-export type ProviderAccountDefinition = {
-    id: string;
-    label: string;
-    activeFrom: string;
-    activeTo: string | null;
-};
-
-type ProviderOperationsDefinition = Omit<
-    ProviderDefinition,
-    "aliases" | "id" | "label"
-> & { id: string };
-
-type ProviderRegistryFile = {
-    version: number;
-    providers: ProviderOperationsDefinition[];
 };
 
 export type ProviderReconciliationExplanation =
     | PollenWitnessExplanation
     | MeterDriftExplanation;
 
-export const PROVIDER_REGISTRY: ProviderDefinition[] = (
-    registryJson as ProviderRegistryFile
-).providers.map((provider) => {
-    if (!isProviderId(provider.id)) {
-        throw new Error(`Unknown provider ID in Economics: ${provider.id}`);
-    }
-    const identity = PROVIDER_IDENTITIES[provider.id];
-    return {
+export const PROVIDER_REGISTRY: ProviderDefinition[] = ECONOMICS_PROVIDERS.map(
+    (provider) => ({
         ...provider,
-        id: provider.id,
-        label: identity.label,
-        aliases: [...identity.aliases],
-    };
-});
+        ...PROVIDER_IDENTITIES[provider.id],
+    }),
+);
 const providerByAlias = new Map<string, ProviderDefinition>();
 for (const provider of PROVIDER_REGISTRY) {
     providerByAlias.set(provider.id, provider);

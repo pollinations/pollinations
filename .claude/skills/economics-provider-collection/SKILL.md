@@ -10,11 +10,11 @@ accounts, prepare a monthly close, or reconcile provider cost with Pollen.
 
 ## Source of truth
 
-Read `operations/economics/provider-registry.json` first.
+Read `operations/economics/web/src/providerConfig.ts` and `shared/providers.ts` first.
 
-- The registry owns canonical vendor IDs, aliases, account lifecycles,
-  active monthly-review status, balance-tracking decisions, access URLs, and
-  workspace domains.
+- `shared/providers.ts` owns provider IDs, display names, and historical aliases.
+- Economics configuration owns account lifecycles, active monthly-review
+  status, balance-tracking decisions, access URLs, and workspace domains.
 - Active vendors have `monthlyReview: true`. Refresh only those during a normal
   monthly run.
 - Inactive vendors remain visible for history. Inspect them only when the user
@@ -22,8 +22,8 @@ Read `operations/economics/provider-registry.json` first.
 - Never infer aliases, accounts, models, or funding from similar names.
 
 Then read only the requested vendor guide in
-`references/providers/<connector>.md`. The registry's `connector` field gives
-the filename. Dots in vendor IDs use dashes when the registry says so.
+`references/providers/<connector>.md`. The Economics configuration's `connector`
+field gives the filename; do not infer it from the provider ID.
 
 ## Collection order
 

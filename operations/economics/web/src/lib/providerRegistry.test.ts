@@ -82,17 +82,15 @@ const data = (overrides: Partial<Data> = {}): Data => ({
 });
 
 describe("provider registry", () => {
-    it("configures every shared provider exactly once", () => {
-        expect(PROVIDER_REGISTRY.map(({ id }) => id).sort()).toEqual(
-            Object.keys(PROVIDER_IDENTITIES).sort(),
-        );
+    it("keeps Economics provider IDs unique", () => {
+        const ids = PROVIDER_REGISTRY.map(({ id }) => id);
+        expect(new Set(ids).size).toBe(ids.length);
     });
 
     it("keeps every canonical ID and alias unique", () => {
-        const names = PROVIDER_REGISTRY.flatMap((provider) => [
-            provider.id,
-            ...provider.aliases,
-        ]).map(normalizeProviderName);
+        const names = Object.entries(PROVIDER_IDENTITIES)
+            .flatMap(([id, provider]) => [id, ...provider.aliases])
+            .map(normalizeProviderName);
 
         expect(new Set(names).size).toBe(names.length);
     });

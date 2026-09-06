@@ -997,7 +997,7 @@ const TEXT_BASE_SERVICES = {
         addedDate: new Date("2026-07-18").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
-        // Provisional Azure sheet pending an exact public or account meter.
+        // Microsoft Foundry Global Standard rates, published August 26, 2026.
         // The direct route reports image tokens separately from text tokens.
         cost: {
             promptTextTokens: perMillion(2),

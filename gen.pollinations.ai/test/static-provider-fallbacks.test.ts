@@ -231,6 +231,12 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps provider-specific fallback costs", () => {
+        expect(TEXT_SERVICES["grok-4.6"].fallbacks).toEqual([
+            "grok-4.6-azure-sweden",
+        ]);
+        expect(TEXT_SERVICES["grok-4.6-azure-sweden"].cost).toEqual(
+            TEXT_SERVICES["grok-4.6"].cost,
+        );
         expect(TEXT_SERVICES["deepseek-deepinfra"].cost).toMatchObject({
             promptTextTokens: 0.08 / 1_000_000,
             completionTextTokens: 0.18 / 1_000_000,
@@ -318,6 +324,18 @@ describe("static provider fallbacks", () => {
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
+        expect(
+            findModelByName("grok-4.6-azure-sweden")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            model: "grok-4.6",
+            directAuthHeader: "api-key",
+            directEndpoint:
+                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+            responsesEndpoint:
+                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+            responsesAuthHeader: "api-key",
+        });
         expect(findModelByName("deepseek-deepinfra")?.config()).toMatchObject({
             "custom-host": "https://api.deepinfra.com/v1/openai",
             model: "deepseek-ai/DeepSeek-V4-Flash-0731",

@@ -1,12 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { OpPollenRow } from "../types";
-import {
-    canonicalPollenRows,
-    canonicalVendor,
-    loadAll,
-    validatePipeRows,
-} from "./tb";
+import { canonicalPollenRows, loadAll, validatePipeRows } from "./tb";
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -107,27 +102,6 @@ describe("loadAll", () => {
         await expect(loadAll()).rejects.toThrow(
             "economics_private_config_api: expected one row, received 0",
         );
-    });
-});
-
-describe("canonicalVendor", () => {
-    it("normalizes the Vast Pollen alias", () => {
-        expect(canonicalVendor("vast")).toBe("vast");
-        expect(canonicalVendor("vast.ai")).toBe("vast");
-    });
-
-    it("joins Bedrock usage to AWS billing", () => {
-        expect(canonicalVendor("bedrock")).toBe("aws");
-        expect(canonicalVendor("aws-bedrock")).toBe("aws");
-    });
-
-    it("joins account-specific aliases to their provider", () => {
-        expect(canonicalVendor("azure-2")).toBe("azure");
-        expect(canonicalVendor("vastai")).toBe("vast");
-    });
-
-    it("leaves canonical vendors unchanged", () => {
-        expect(canonicalVendor("openai")).toBe("openai");
     });
 });
 

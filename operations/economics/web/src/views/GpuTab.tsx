@@ -39,7 +39,7 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
-import { canonicalVendor } from "../lib/tb";
+import { canonicalProvider } from "../lib/providerRegistry";
 import { signedToneOrSoft } from "../lib/tone";
 import type { Data, OpCloudRow } from "../types";
 
@@ -189,7 +189,7 @@ export function gpuResourceRows(
     const groups = new Map<string, ResourceAcc>();
 
     for (const row of data.opCloud ?? []) {
-        const vendor = canonicalVendor(row.vendor);
+        const vendor = canonicalProvider(row.vendor);
         if (row.type !== "gpu" || vendor === "community") continue;
         const month = opCloudMonth(row);
         if (month < WINDOW_START || !matchesMonth(month, monthFilter)) {
@@ -469,7 +469,7 @@ export function gpuWorkloadRows(
 
     const modeIndex = computeModeIndex(data);
     for (const pollen of data.opPollen ?? []) {
-        const vendor = canonicalVendor(pollen.vendor);
+        const vendor = canonicalProvider(pollen.vendor);
         if (
             vendor === "community" ||
             pollen.month < WINDOW_START ||

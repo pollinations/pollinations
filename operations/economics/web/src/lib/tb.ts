@@ -165,10 +165,6 @@ function parsePrivateConfig(
     return config as EconomicsPrivateConfig;
 }
 
-export function canonicalVendor(vendor: string): string {
-    return canonicalProvider(vendor);
-}
-
 const POLLEN_VALUE_FIELDS = [
     "cost_paid",
     "cost_quests",
@@ -194,7 +190,7 @@ export function canonicalPollenRows(
     for (const sourceRow of rows) {
         const row = {
             ...sourceRow,
-            vendor: canonicalVendor(sourceRow.vendor),
+            vendor: canonicalProvider(sourceRow.vendor),
         };
         if (POLLEN_VALUE_FIELDS.every((field) => Number(row[field]) === 0)) {
             continue;
@@ -240,7 +236,7 @@ export async function loadAll(): Promise<Data> {
 
     const canonicalize = <T extends { vendor: string }>(row: T): T => ({
         ...row,
-        vendor: canonicalVendor(row.vendor),
+        vendor: canonicalProvider(row.vendor),
     });
 
     const providerObservations = collectProviderObservations({

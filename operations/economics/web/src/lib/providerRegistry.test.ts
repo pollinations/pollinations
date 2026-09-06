@@ -79,6 +79,27 @@ const data = (overrides: Partial<Data> = {}): Data => ({
     ...overrides,
 });
 
+describe("canonicalProvider", () => {
+    it("normalizes the Vast Pollen alias", () => {
+        expect(canonicalProvider("vast")).toBe("vast");
+        expect(canonicalProvider("vast.ai")).toBe("vast");
+    });
+
+    it("joins Bedrock usage to AWS billing", () => {
+        expect(canonicalProvider("bedrock")).toBe("aws");
+        expect(canonicalProvider("aws-bedrock")).toBe("aws");
+    });
+
+    it("joins account-specific aliases to their provider", () => {
+        expect(canonicalProvider("azure-2")).toBe("azure");
+        expect(canonicalProvider("vastai")).toBe("vast");
+    });
+
+    it("leaves canonical vendors unchanged", () => {
+        expect(canonicalProvider("openai")).toBe("openai");
+    });
+});
+
 describe("provider registry", () => {
     it("keeps Economics provider IDs unique", () => {
         const ids = PROVIDER_REGISTRY.map(({ id }) => id);

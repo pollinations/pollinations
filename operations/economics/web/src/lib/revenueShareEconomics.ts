@@ -1,13 +1,12 @@
 import type { Data, RevenueShareSourceRow } from "../types";
 import { toUsd } from "./fx";
 import { type MonthFilterValue, matchesMonth, WINDOW_START } from "./months";
+import {
+    parseRevenueShareSources as parseSources,
+    type RevenueShareSource,
+} from "./pipeContracts";
 
-export type RevenueShareSource = {
-    type: "app" | "model";
-    id: string;
-    name: string;
-    models: string[];
-};
+export type { RevenueShareSource } from "./pipeContracts";
 
 export type RevenueShareRow = {
     month: string;
@@ -61,47 +60,6 @@ export type CreatorSettlementRow = {
     method: string;
     evidence: string;
 };
-
-function parseSources(value: string): RevenueShareSource[] {
-    const parsed: unknown = JSON.parse(value);
-    if (!Array.isArray(parsed)) {
-        throw new Error("Revenue Share sources must be an array");
-    }
-
-    const sources = new Map<string, RevenueShareSource>();
-    parsed.forEach((source, index) => {
-        if (
-            !Array.isArray(source) ||
-            source.length !== 4 ||
-            (source[0] !== "app" && source[0] !== "model") ||
-            source.slice(1).some((field) => typeof field !== "string")
-        ) {
-            throw new Error(`Revenue Share source ${index} is invalid`);
-        }
-        const key = `${source[0]}|${source[1]}`;
-        const existing: RevenueShareSource = sources.get(key) ?? {
-            type: source[0],
-            id: source[1] as string,
-            name: source[2] as string,
-            models: [],
-        };
-        const model = source[3] as string;
-        if (model && !existing.models.includes(model)) {
-            existing.models.push(model);
-        }
-        sources.set(key, existing);
-    });
-
-    return [...sources.values()]
-        .map((source) => ({
-            ...source,
-            models: [...source.models].sort(),
-        }))
-        .sort(
-            (a, b) =>
-                a.type.localeCompare(b.type) || a.name.localeCompare(b.name),
-        );
-}
 
 function toRevenueShareRow(source: RevenueShareSourceRow): RevenueShareRow {
     const sources = parseSources(source.sources_json);

@@ -1,7 +1,6 @@
 import { FIXTURES } from "../fixtures";
 import type {
     Data,
-    EconomicsPrivateConfig,
     EconomicsPrivateConfigRow,
     OpCloudRow,
     OpPollenRow,
@@ -10,11 +9,14 @@ import type {
     StripeSalesRow,
     UserBalanceSummaryRow,
 } from "../types";
+import { parsePrivateConfig, validatePipeRows } from "./pipeContracts";
 import {
     canonicalProvider,
     collectProviderObservations,
     pollenVendorOverride,
 } from "./providerRegistry";
+
+export { validatePipeRows } from "./pipeContracts";
 
 export const fixturesMode = (): boolean =>
     typeof window !== "undefined" &&
@@ -29,150 +31,6 @@ export class TbError extends Error {
         this.pipe = pipe;
         this.status = status;
     }
-}
-
-type PipeContract = {
-    strings: readonly string[];
-    numbers: readonly string[];
-    enums?: Readonly<Record<string, readonly string[]>>;
-};
-
-const PIPE_CONTRACTS: Record<string, PipeContract> = {
-    economics_bank_ledger_api: {
-        strings: [
-            "entry_id",
-            "kind",
-            "source",
-            "date",
-            "vendor",
-            "category",
-            "currency",
-            "description",
-            "evidence",
-            "recorded_at",
-        ],
-        numbers: ["amount"],
-        enums: { kind: ["transaction", "opening_balance"] },
-    },
-    economics_compute_ledger_api: {
-        strings: [
-            "entry_id",
-            "source",
-            "vendor",
-            "type",
-            "start",
-            "end",
-            "currency",
-            "resource_id",
-            "resource_name",
-            "resource_sku",
-            "model",
-            "evidence",
-            "recorded_at",
-        ],
-        numbers: ["credit", "paid", "resource_count"],
-    },
-    economics_pollen_usage_api: {
-        strings: ["month", "vendor", "model", "currency"],
-        numbers: [
-            "cost_paid",
-            "cost_quests",
-            "price_paid",
-            "price_quests",
-            "byop_paid",
-            "byop_quests",
-            "model_paid",
-            "model_quests",
-            "requests_paid",
-            "requests_quests",
-        ],
-    },
-    economics_private_config_api: {
-        strings: ["config", "recorded_at"],
-        numbers: [],
-    },
-    economics_revenue_share_api: {
-        strings: [
-            "row_type",
-            "month",
-            "recipient_id",
-            "github_username",
-            "recipient_name",
-            "sources_json",
-        ],
-        numbers: [
-            "paid_usage",
-            "paid_creator_earnings",
-            "paid_pollinations_profit",
-            "quest_usage",
-            "quest_creator_earnings",
-            "paid_requests",
-            "quest_requests",
-        ],
-        enums: {
-            row_type: ["summary", "creator", "source"],
-        },
-    },
-    economics_stripe_sales_api: {
-        strings: ["month", "currency", "revenue_stream"],
-        numbers: [
-            "gross_sales",
-            "refunds",
-            "reversals",
-            "net_sales",
-            "stripe_fees",
-            "net_after_fees",
-            "payments",
-            "refund_count",
-        ],
-        enums: { revenue_stream: ["pollen", "kofi"] },
-    },
-    economics_user_balances_api: {
-        strings: ["synced_at"],
-        numbers: [
-            "users",
-            "paid_users",
-            "quest_users",
-            "paid_balance",
-            "quest_balance",
-        ],
-    },
-};
-
-export function validatePipeRows<T>(pipe: string, rows: unknown[]): T[] {
-    const contract = PIPE_CONTRACTS[pipe];
-    if (!contract) throw new Error(`Unknown pipe contract: ${pipe}`);
-
-    rows.forEach((value, index) => {
-        if (
-            value == null ||
-            typeof value !== "object" ||
-            Array.isArray(value)
-        ) {
-            throw new Error(`${pipe}[${index}]: row must be an object`);
-        }
-        const row = value as Record<string, unknown>;
-        for (const field of contract.strings) {
-            if (typeof row[field] !== "string") {
-                throw new Error(`${pipe}[${index}].${field}: expected string`);
-            }
-        }
-        for (const field of contract.numbers) {
-            if (
-                typeof row[field] !== "number" ||
-                !Number.isFinite(row[field])
-            ) {
-                throw new Error(`${pipe}[${index}].${field}: expected number`);
-            }
-        }
-        for (const [field, allowed] of Object.entries(contract.enums ?? {})) {
-            if (!allowed.includes(String(row[field]))) {
-                throw new Error(`${pipe}[${index}].${field}: unexpected value`);
-            }
-        }
-    });
-
-    return rows as T[];
 }
 
 async function fetchPipe<T>(pipe: string, signal?: AbortSignal): Promise<T[]> {
@@ -192,29 +50,6 @@ async function fetchPipe<T>(pipe: string, signal?: AbortSignal): Promise<T[]> {
         throw new Error(`${pipe}: response has no data array`);
     }
     return validatePipeRows<T>(pipe, body.data);
-}
-
-function parsePrivateConfig(
-    row: EconomicsPrivateConfigRow,
-): EconomicsPrivateConfig {
-    const value: unknown = JSON.parse(row.config);
-    if (value == null || typeof value !== "object" || Array.isArray(value)) {
-        throw new Error("economics_private_config_api.config: expected object");
-    }
-    const config = value as Partial<EconomicsPrivateConfig>;
-    if (
-        config.forecastRules == null ||
-        typeof config.forecastRules !== "object" ||
-        Array.isArray(config.forecastRules) ||
-        config.reconciliation == null ||
-        typeof config.reconciliation !== "object" ||
-        !Array.isArray(config.reconciliation.providerCheckExplanations) ||
-        !Array.isArray(config.reconciliation.meterDriftExplanations) ||
-        !Array.isArray(config.reconciliation.pollenWitnessExplanations)
-    ) {
-        throw new Error("economics_private_config_api.config: invalid shape");
-    }
-    return config as EconomicsPrivateConfig;
 }
 
 export function canonicalVendor(vendor: string): string {
@@ -336,19 +171,6 @@ export async function loadAll(
               )
             : undefined,
     ]);
-    if (
-        userBalances &&
-        (userBalances.length !== 1 || userBalances[0].users === 0)
-    ) {
-        throw new Error(
-            `economics_user_balances_api: expected one populated D1 snapshot row, received ${userBalances.length}`,
-        );
-    }
-    if (privateConfigRows && privateConfigRows.length !== 1) {
-        throw new Error(
-            `economics_private_config_api: expected one row, received ${privateConfigRows.length}`,
-        );
-    }
     const privateConfig = privateConfigRows
         ? parsePrivateConfig(privateConfigRows[0])
         : undefined;

@@ -59,9 +59,10 @@ the SPA shell or any static asset, so private forecast assumptions and
 reconciliation explanations cannot be downloaded before login. Localhost keeps
 direct asset access for development and fixture mode. The public workers.dev
 origin is disabled; only the two configured custom domains serve the app.
-Production deployment stops before changing the Worker unless all required
-pipes already respond from the production Tinybird workspace. Deploy and verify
-Tinybird schema changes before promoting a Worker that reads them.
+Production deployment is CI-only. Its existing readiness check uses the same
+row and serialization validators as the dashboard and requires populated
+datasets, including private configuration and the D1 snapshot. Deploy and verify
+Tinybird contracts and data before promoting a Worker that reads them.
 
 Runway reconstructs cash from one statement-backed opening-balance row in
 `economics_bank_ledger` plus later bank movements. Closed months are actuals. The

@@ -52,6 +52,31 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("preserves the complete raw provider error envelope", async () => {
+        const directRequest = request();
+        const body = JSON.stringify(
+            {
+                error: { message: "Rate limited" },
+                token: "test-only",
+                trace: "x".repeat(20000),
+            },
+            null,
+            2,
+        );
+        const fetcher = vi.fn(async () => new Response(body, { status: 429 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                authorizedTarget(directRequest),
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+    });
+
     it.each([
         ["store", { store: true }],
         ["previous_response_id", { previous_response_id: "resp_previous" }],

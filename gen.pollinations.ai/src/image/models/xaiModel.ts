@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -32,10 +32,9 @@ export async function callXaiImageAPI(
 ): Promise<ImageGenerationResult> {
     const apiKey = getImageEnv("XAI_API_KEY");
     if (!apiKey) {
-        throw new HttpError(
-            "XAI_API_KEY environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "XAI_API_KEY environment variable is required",
+        });
     }
 
     const referenceImage = safeParams.image?.[0];
@@ -81,12 +80,10 @@ export async function callXaiImageAPI(
     const result = data.data?.[0];
 
     if (!result?.url) {
-        throw new HttpError(
-            "xAI returned no image URL",
-            500,
-            undefined,
-            endpoint,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "xAI returned no image URL",
+            requestUrl: new URL(endpoint),
+        });
     }
 
     logOps("Downloading result from URL:", result.url);

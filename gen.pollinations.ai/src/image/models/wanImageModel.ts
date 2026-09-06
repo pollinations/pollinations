@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Alibaba Wan 2.7 Image generation via Replicate.
  *
@@ -11,7 +12,6 @@
  * at the 2K tier (4K for pro text-to-image, where the upstream allows it).
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ImageParams } from "../params.ts";
@@ -20,7 +20,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:wan-image:ops");
@@ -131,11 +131,13 @@ export async function callWanImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        throw toReplicateHttpError(err, `${modelLabel} generation failed`);
+        throw toReplicateUpstreamError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(`${modelLabel} returned no images`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${modelLabel} returned no images`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrls[0], {
@@ -148,12 +150,10 @@ export async function callWanImageAPI(
         // Body-read failures (connection drop mid-download of a 4K output)
         // otherwise surface as bare TypeErrors with no upstream context.
         const message = err instanceof Error ? err.message : String(err);
-        throw new HttpError(
-            `Failed to download ${modelLabel} output image: ${message}`,
-            502,
-            undefined,
-            outputUrls[0],
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `Failed to download ${modelLabel} output image: ${message}`,
+            requestUrl: new URL(outputUrls[0]),
+        });
     }
     logOps(
         `${modelLabel} image downloaded:`,

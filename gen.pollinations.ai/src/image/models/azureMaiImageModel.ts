@@ -1,5 +1,4 @@
 import { collectUpstreamHeaders, UpstreamError } from "@shared/error.ts";
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type {
     AuthResult,
@@ -43,25 +42,22 @@ type AzureMaiResponse = {
 
 function validateMaiDimensions(width: number, height: number): void {
     if (width < AZURE_MAI_MIN_SIDE || height < AZURE_MAI_MIN_SIDE) {
-        throw new HttpError(
-            `${AZURE_MAI_TITLE} requires width and height of at least ${AZURE_MAI_MIN_SIDE}px`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${AZURE_MAI_TITLE} requires width and height of at least ${AZURE_MAI_MIN_SIDE}px`,
+        });
     }
     if (
         width % AZURE_MAI_DIMENSION_STEP !== 0 ||
         height % AZURE_MAI_DIMENSION_STEP !== 0
     ) {
-        throw new HttpError(
-            `${AZURE_MAI_TITLE} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${AZURE_MAI_TITLE} requires width and height to be multiples of ${AZURE_MAI_DIMENSION_STEP}px`,
+        });
     }
     if (width * height > AZURE_MAI_MAX_PIXELS) {
-        throw new HttpError(
-            `${AZURE_MAI_TITLE} supports at most 1,048,576 pixels (width × height)`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${AZURE_MAI_TITLE} supports at most 1,048,576 pixels (width × height)`,
+        });
     }
 }
 
@@ -79,10 +75,9 @@ async function editFormData(
     const { buffer, mimeType } = await downloadUserImage(safeParams.image[0]);
     const imageSafetyResult = await analyzeImageSafety(buffer);
     if (!imageSafetyResult.safe) {
-        const error = new HttpError(
-            `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
-            400,
-        );
+        const error = UpstreamError.fromProvider(400, {
+            message: `Input image contains unsafe content: ${imageSafetyResult.formattedViolations}`,
+        });
         await logGptImageError(
             prompt,
             safeParams,
@@ -111,16 +106,14 @@ export async function callAzureMaiImage(
     userInfo: AuthResult,
 ): Promise<ImageGenerationResult> {
     if (safeParams.transparent) {
-        throw new HttpError(
-            `Transparent backgrounds are not supported by ${safeParams.model}.`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Transparent backgrounds are not supported by ${safeParams.model}.`,
+        });
     }
     if (safeParams.image.length > 1) {
-        throw new HttpError(
-            `${AZURE_MAI_TITLE} supports at most 1 reference image`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${AZURE_MAI_TITLE} supports at most 1 reference image`,
+        });
     }
     const isEdit = safeParams.image.length === 1;
     if (!isEdit) {

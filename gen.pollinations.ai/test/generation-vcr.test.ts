@@ -161,9 +161,11 @@ function createGenerationMocks() {
     const gptImageState: {
         azureStatus: number;
         openAIRequests: Record<string, unknown>[];
+        imageHostRequests: number;
     } = {
         azureStatus: 429,
         openAIRequests: [],
+        imageHostRequests: 0,
     };
     return createFetchMock({
         tinybird: createMockTinybird(),
@@ -225,6 +227,14 @@ function createGenerationMocks() {
         gptImage: {
             state: gptImageState,
             handlerMap: {
+                "gpt-reference.test": async () => {
+                    gptImageState.imageHostRequests++;
+                    return gptImageState.imageHostRequests === 1
+                        ? new Response("over capacity", { status: 429 })
+                        : new Response(Buffer.from(png1x1Base64, "base64"), {
+                              headers: { "content-type": "image/png" },
+                          });
+                },
                 "content-safety.test": async () =>
                     Response.json({ categoriesAnalysis: [] }),
                 "gptimagemain1-resource.cognitiveservices.azure.com":
@@ -243,7 +253,14 @@ function createGenerationMocks() {
                         ),
                 "api.openai.com": async (request) => {
                     gptImageState.openAIRequests.push(
-                        (await request.json()) as Record<string, unknown>,
+                        request.headers
+                            .get("content-type")
+                            ?.includes("multipart/form-data")
+                            ? Object.fromEntries(await request.formData())
+                            : ((await request.json()) as Record<
+                                  string,
+                                  unknown
+                              >),
                     );
                     return Response.json({
                         data: [{ b64_json: png1x1Base64 }],
@@ -261,6 +278,7 @@ function createGenerationMocks() {
             reset: () => {
                 gptImageState.azureStatus = 429;
                 gptImageState.openAIRequests = [];
+                gptImageState.imageHostRequests = 0;
             },
         },
         replicate: {
@@ -2312,6 +2330,40 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
     });
 });
 
+test("gpt-image-2 tries its fallback when the reference image host is over capacity", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "gptImage");
+    const { key } = await createTestApiKey({
+        allowedModels: ["gpt-image-2"],
+        user: { tierBalance: 100 },
+    });
+    const { response, wait } = await fetchWorker(
+        "/image/image-host-capacity?model=gpt-image-2&quality=low&width=1024&height=1024&image=https%3A%2F%2Fgpt-reference.test%2Finput.png&seed=9350",
+        { headers: { authorization: `Bearer ${key}` } },
+    );
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-model-used")).toBe("gpt-image-2-openai");
+    expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
+    await response.arrayBuffer();
+    await wait();
+    expect(mocks.gptImage.state.imageHostRequests).toBe(2);
+    expect(mocks.gptImage.state.openAIRequests).toHaveLength(1);
+    expect(mocks.tinybird.state.events).toHaveLength(2);
+    expect(mocks.tinybird.state.events[0]).toMatchObject({
+        // Failed-attempt telemetry maps the image host's 429 to a gateway failure.
+        responseStatus: 502,
+        isFinal: false,
+        isBilledUsage: false,
+    });
+    expect(mocks.tinybird.state.events[1]).toMatchObject({
+        responseStatus: 200,
+        fallbackUsed: true,
+        isFinal: true,
+        isBilledUsage: true,
+    });
+});
+
 test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
     mocks,
 }) => {
@@ -2422,7 +2474,21 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Invalid image request: height must be at least 256",
+            message: "Image backend rejected request with status 422",
+            details: {
+                upstreamStatus: 422,
+                upstreamBody: JSON.stringify({
+                    detail: [
+                        {
+                            type: "greater_than_equal",
+                            loc: ["body", "height"],
+                            msg: "Input should be greater than or equal to 256",
+                            input: 220,
+                            ctx: { ge: 256 },
+                        },
+                    ],
+                }),
+            },
         },
     });
     await wait();
@@ -2446,7 +2512,11 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Invalid image request: prompt is too long",
+            message: "Image backend rejected request with status 422",
+            details: {
+                upstreamStatus: 422,
+                upstreamBody: JSON.stringify({ detail: "prompt is too long" }),
+            },
         },
     });
     await waitDetail();
@@ -2471,7 +2541,13 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message: "Image provider error: missing provider key",
+            message: "Image backend rejected request with status 400",
+            details: {
+                upstreamStatus: 400,
+                upstreamBody: JSON.stringify({
+                    message: "missing provider key",
+                }),
+            },
         },
     });
     await waitProvider400();
@@ -2483,8 +2559,7 @@ test("image backend validation errors return client-facing 400", async ({
         responseStatus: 400,
     });
 
-    // Upstream 400 with empty body must still surface a useful message via
-    // HttpError.message, not collapse to a generic "Image provider error".
+    // An empty upstream body still carries the backend status in the message.
     const { response: emptyBody400Response, wait: waitEmptyBody400 } =
         await fetchWorker(
             "/image/empty%20body%20400?model=zimage&width=280&height=280&seed=42",
@@ -2498,8 +2573,7 @@ test("image backend validation errors return client-facing 400", async ({
         success: false,
         error: {
             code: "BAD_REQUEST",
-            message:
-                "Image provider error: Image backend rejected request with status 400",
+            message: "Image backend rejected request with status 400",
         },
     });
     await waitEmptyBody400();

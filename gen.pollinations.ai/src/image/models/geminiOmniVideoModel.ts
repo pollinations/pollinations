@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import googleCloudAuth from "@/text/auth/googleCloudAuth.ts";
 import { getImageEnv } from "../env.ts";
@@ -63,16 +63,15 @@ export async function callGeminiOmniAPI(
 ): Promise<VideoGenerationResult> {
     const duration = safeParams.duration ?? 5;
     if (!Number.isInteger(duration) || duration < 3 || duration > 10) {
-        throw new HttpError(
-            "Gemini Omni 1.1 Flash supports whole-second durations from 3 to 10.",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "Gemini Omni 1.1 Flash supports whole-second durations from 3 to 10.",
+        });
     }
     if (safeParams.fps !== undefined && safeParams.fps !== 24) {
-        throw new HttpError(
-            "Gemini Omni 1.1 Flash outputs video at 24 FPS.",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: "Gemini Omni 1.1 Flash outputs video at 24 FPS.",
+        });
     }
 
     const requestedResolution = safeParams.resolution ?? "720p";
@@ -81,10 +80,9 @@ export async function callGeminiOmniAPI(
             requestedResolution as (typeof RESOLUTIONS)[number],
         )
     ) {
-        throw new HttpError(
-            `Gemini Omni 1.1 Flash does not support ${requestedResolution} resolution.`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Gemini Omni 1.1 Flash does not support ${requestedResolution} resolution.`,
+        });
     }
     const resolution = requestedResolution as (typeof RESOLUTIONS)[number];
     const aspectRatio =
@@ -97,14 +95,15 @@ export async function callGeminiOmniAPI(
 
     const projectId = getImageEnv("GOOGLE_PROJECT_ID");
     if (!projectId) {
-        throw new HttpError(
-            "GOOGLE_PROJECT_ID environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "GOOGLE_PROJECT_ID environment variable is required",
+        });
     }
     const accessToken = await googleCloudAuth.getAccessToken();
     if (!accessToken) {
-        throw new HttpError("Failed to get Google Cloud access token", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "Failed to get Google Cloud access token",
+        });
     }
 
     const input = [
@@ -148,12 +147,10 @@ export async function callGeminiOmniAPI(
     if (data.status !== "completed" || !video?.data) {
         const detail =
             data.error?.message ?? `status: ${data.status ?? "unknown"}`;
-        throw new HttpError(
-            `Gemini Omni API returned no completed video (${detail})`,
-            502,
-            undefined,
-            endpoint,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `Gemini Omni API returned no completed video (${detail})`,
+            requestUrl: new URL(endpoint),
+        });
     }
 
     const inputUsage = data.usage?.input_tokens_by_modality;
@@ -164,12 +161,10 @@ export async function callGeminiOmniAPI(
     const completionVideoTokens = tokensFor(outputUsage, "video");
     const completionReasoningTokens = data.usage?.total_thought_tokens;
     if (!completionVideoTokens) {
-        throw new HttpError(
-            "Gemini Omni API returned no billable video usage",
-            502,
-            undefined,
-            endpoint,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "Gemini Omni API returned no billable video usage",
+            requestUrl: new URL(endpoint),
+        });
     }
     const usage = {
         ...(promptTextTokens ? { promptTextTokens } : {}),

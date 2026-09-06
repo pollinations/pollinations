@@ -22,6 +22,7 @@ export class FalError extends Error {
     constructor(
         message: string,
         readonly status?: number,
+        readonly responseBody?: string,
     ) {
         super(message);
         this.name = "FalError";
@@ -133,8 +134,9 @@ async function falFetch<T>(
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
         throw new FalError(
-            `fal.ai ${args.method} ${args.url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
+            `fal.ai ${args.method} ${args.url} failed (HTTP ${response.status}): ${text}`,
             classifyFalHttpStatus(response.status),
+            text,
         );
     }
     return (await response.json()) as T;

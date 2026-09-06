@@ -5,8 +5,8 @@ Canonical vendor: `stability`
 ## Verified — 2026-08-21
 
 - Status: active provider for the direct `stable-audio-3-large` route.
-- Economics has invoice/payment evidence for the initial USD 30 purchase but no
-  dedicated billing API credential or complete monthly usage export yet.
+- No dedicated billing API credential or complete monthly usage export has
+  been verified; use the dashboard and archived purchase evidence.
 - Until a provider export is available, use the Stability billing dashboard and
   the internal Pollen meter together; never infer provider burn only from the
   prepaid balance.
@@ -31,5 +31,5 @@ Collection steps:
 Known traps:
 
 - `stable-audio-3-medium` is billed by canonical provider `fal`, not Stability.
-- The USD 30 transaction on 2026-06-23 proves a purchase, not June usage.
+- A credit purchase proves funding, not usage in the purchase month.
 - A current credit balance alone cannot reconstruct historical monthly burn.

@@ -16,9 +16,8 @@ Canonical accounts:
 - Dashboard logins are account-specific: `elliot@pollinations.ai` for the
   legacy Pollinations account and `elliot@myceli.ai` for Myceli. The account
   title shown by Cloudflare is not the login-email source of truth.
-- The legacy Pollinations account has no credits page. Its invoices page is
-  the authoritative dashboard source and currently shows a USD 1,073.17
-  payable invoice; this is a liability, not prepaid cash or remaining credit.
+- The legacy Pollinations account has no credits page. Use its invoices page
+  for billing obligations; an unpaid invoice is not prepaid cash or credit.
 - The Billable usage view exposes completed billing periods and product-level
   costs before the consolidated invoice appears. The Aug 2026 period was
   2026-07-22 through 2026-08-21; Cloudflare says the invoice can follow within

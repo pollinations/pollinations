@@ -8,7 +8,6 @@ Canonical vendor: `alibaba`
 - Login: `elliot@myceli.ai` in the Myceli browser workspace.
 - Managed account: Myceli.AI OÜ (`5314153712077332`).
 - Billing account: `10451809460254` (alias of the managed account).
-- Balance: `0.00 USD`.
 - The current month remains partial and must not be used as a closed-month
   forecast baseline.
 

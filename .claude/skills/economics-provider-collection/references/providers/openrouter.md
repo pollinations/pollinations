@@ -74,8 +74,7 @@ Known traps:
   an explicit gap.
 - Do not reproduce the retired mutable month-open usage cache. Prefer bounded
   activity evidence or an explicit user-reviewed estimate.
-- OpenRouter usage has been grant/credit-funded locally; do not force a cash transaction match unless separate payment evidence exists.
-- Myceli's first $3,000 grant was exhausted in August 2026. Apply the remaining
-  grant to August usage before assigning the residual to purchased credit.
-- PollinationsAI received a separate $3,000 startup grant on 2026-07-20; do not
-  combine the two organizations' grant balances.
+- Determine funding from the account's grant and purchased-credit history;
+  do not force a cash match without payment evidence.
+- Apply eligible remaining grants before purchased credit. Never combine the
+  two organizations' balances.

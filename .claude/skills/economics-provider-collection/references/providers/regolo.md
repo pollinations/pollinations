@@ -11,7 +11,6 @@ Canonical vendor: `regolo`
 - Collection method: dashboard
 - Billing currency: EUR
 - The Partner Program is a free, unlimited trial with no charge.
-- The dashboard showed 13 days remaining and €0.00 usage at verification time.
 
 Collection steps:
 
@@ -28,4 +27,3 @@ Known traps:
 
 - The trial has no numeric wallet balance. Do not invent a monetary credit.
 - Dashboard usage costs are informational and are not billed during the trial.
-- At verification time, the current period showed €0.00 and no model usage.

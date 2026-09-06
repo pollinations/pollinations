@@ -96,6 +96,5 @@ Known traps:
   adjustments reduce cash due but do not reduce model usage cost.
 - An adjustment labeled `One-time credit purchase applied` is purchased prepaid
   balance. Keep that usage in `paid`; it is not a promotional provider credit.
-- The billing overview can lag the open invoice briefly. On 2026-08-20 it
-  displayed $968.89 while the downloaded draft moments later contained
-  $969.1874. Use the downloaded JSON total.
+- The billing overview can lag the open invoice; use the downloaded JSON total
+  and retain its draft/final status and observation time.

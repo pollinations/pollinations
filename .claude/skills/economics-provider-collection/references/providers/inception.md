@@ -9,17 +9,8 @@ Canonical vendor: `inception`
 - Pollinations used Inception directly from 2026-06-23 through 2026-07-27.
   Mercury traffic moved to OpenRouter during 2026-07-27; direct usage is zero
   from 2026-07-28 onward.
-- The authenticated account is on `Pay As You Go`, billed monthly. The dashboard
-  showed an estimated amount due of $0.35 on 2026-08-21, due 2026-08-23. This is
-  cash-billed usage, not provider credit.
-- Provider-dashboard usage totals are 314,557 tokens for June and 1,190,866
-  tokens for July. The dashboard total of 1,505,423 tokens reconciles exactly to
-  the captured daily series.
-- OP Pollen provider costs are $0.084219125 for June and $0.26393845 for July.
-  Their $0.348157575 total reconciles to the dashboard's rounded $0.35 amount
-  due.
-- Wise contains only a cancelled $0 card check from 2026-06-23. No Inception
-  payment had settled when the dashboard evidence was captured.
+- The account uses monthly `Pay As You Go` billing. Keep estimated amounts due,
+  completed usage, and settled payments separate in the ledger.
 
 Official references:
 

@@ -35,9 +35,9 @@ Collection steps:
    The invoice subtotal is the authoritative provider total and its SKU lines
    are the strongest model/request/token detail.
 5. Use this skill to extract or reconcile it.
-6. For model attribution, query `economics_pollen_usage_api` and retain paid + quest request
-   counts and provider-cost estimates by month/model. For closed months, use
-   those rows as proportions only when the provider invoice total is stronger.
+6. For model attribution, retain Paid/Quest usage from
+   `economics_pollen_usage_api` separately. Join exact provider lines through
+   the reviewed registry; never distribute an invoice total by Pollen ratios.
 
 ## Verified — 2026-09-05
 
@@ -77,9 +77,8 @@ Known traps:
   account.
 - Current balance is a snapshot, not historical usage.
 - Do not maintain a local balance cache or forecast from the partial month.
-- A credit purchase invoice is not model usage. On 2026-08-19, the dashboard
-  showed a $62 paid invoice for the user's $50-plus-tax tier purchase; keep it
-  in cash evidence and do not add it to `economics_compute_ledger` usage.
+- A credit purchase invoice is cash evidence, not model usage; do not add the
+  purchase to `economics_compute_ledger` usage.
 - Perplexity per-request search fees were absent from the retained Pollen meter
   until commit `0aa5fb55ef6030493fd4884f209d17fb58737b04` shipped on
   2026-07-03. January–June provider/Pollen drift is therefore historical
@@ -92,8 +91,7 @@ Known traps:
   series from January through 2026-03-26. Reconcile full-year usage from both
   invoice series; do not compare the current-group YTD card with January–July
   invoices as though they had the same scope.
-- As of 2026-08-21, the dashboard showed $1,564.41 remaining, tier 1, and auto
-  reload disabled. Keep future balance checks timestamped because usage is live.
+- Timestamp each balance check and record auto-reload settings in its evidence.
 
 Official reference:
 

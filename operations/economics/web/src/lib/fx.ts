@@ -26,8 +26,8 @@ const FX_EUR_USD: Record<string, number> = {
     "2026-08": 1.1593,
 };
 
-// Monthly average CAD→USD. Only two CAD facts exist (the 2025 VLAS MIKROPULO
-// payments and their conversion out); append here if CAD ever reappears.
+// Monthly average CAD→USD for historical CAD-denominated ledger facts.
+// Append a reviewed rate when another month is needed.
 const FX_CAD_USD: Record<string, number> = {
     "2025-05": 0.7208,
     "2025-06": 0.731,

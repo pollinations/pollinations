@@ -113,9 +113,8 @@ Known traps:
 - A credit can be available but unusable for compute. In particular, do not
   count `Enhanced Support` or similar support-only credits in the Balances
   page. Preserve them in evidence notes only.
-- The Myceli billing account's USD 75,000 Scale Y1 and USD 25,000 Ecosystem
-  Partner compute-related lots are fully used. The remaining USD 12,000
-  Enhanced Support credit is excluded from the compute balance.
+- Check each grant lot's scope and remaining amount separately; support-only
+  lots must not fund a compute forecast.
 - A pure billing export is usage/cost truth, not cash transaction truth.
 - BigQuery queries can be broad; always bound by period.
 - Avoid writing service-account JSON to repo paths. If a temp key file is needed, use a temp directory and delete it after collection.

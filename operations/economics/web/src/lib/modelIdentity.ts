@@ -58,10 +58,10 @@ export function resolveLedgerLabel(
         // A line with no model label (a fee, a service line) joins only when
         // its SKU or line item is itself a reviewed label; it is never an id.
         const fallback = [qualifiers.sku, qualifiers.name]
-            .map((qualifier) => qualifier?.trim())
+            .map((qualifier) => qualifier?.trim() ?? "")
             .find(
-                (qualifier): qualifier is string =>
-                    Boolean(qualifier) && Object.hasOwn(table, qualifier),
+                (qualifier) =>
+                    qualifier !== "" && Object.hasOwn(table, qualifier),
             );
         if (!fallback) return { kind: "blank" };
         name = fallback;

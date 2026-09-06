@@ -749,16 +749,17 @@ function viewInfoContent(activeView: ActiveView) {
                     Revenue separates Pollen and Ko-fi sales, refunds, and
                     reversals. Processing fees are an Operations expense.
                     Compute and Infrastructure come from the vendor ledger by
-                    service month, paid or credit-funded (◐); every other
-                    expense category is bank cash. Expand a category to see its
-                    vendor detail.
+                    service month; every other expense category is bank cash.
+                    Usage paid with provider credits shows in gray parentheses
+                    beside the cash figure and never enters the sums. Expand a
+                    category to see its vendor detail.
                 </InfoLine>
                 <InfoLine>
                     Bank payments to ledger vendors stay in cash only; the
-                    "vendor invoice timing" and "credit-funded usage" lines
-                    carry the difference. A paid vendor without ledger rows is a
-                    warning, never a cash fallback. Forecast columns and running
-                    cash remain cash-based.
+                    "vendor invoice timing" line carries the difference. A paid
+                    vendor without ledger rows is a warning, never a cash
+                    fallback. Forecast columns and running cash remain
+                    cash-based.
                 </InfoLine>
             </span>
         );

@@ -1206,20 +1206,24 @@ describe("ledger-based P&L categories", () => {
         const credits = result.rows.find(
             (row) => row.vendor === "credit-funded usage",
         );
+        const july = result.columns.find(
+            (column) => column.id === "2026-07:actual",
+        );
         const august = result.columns.find(
             (column) => column.id === "2026-08:current",
         );
 
         expect(compute?.values["2026-07:actual"]).toBe(-700);
         expect(compute?.values["2026-08:current"]).toBe(0);
-        expect(infrastructure?.values["2026-07:actual"]).toBe(-300);
-        expect(infrastructure?.creditFundedValues?.["2026-07:actual"]).toBe(
-            -300,
-        );
+        // Credit-funded usage stays beside the cash figure, never inside it.
+        expect(infrastructure?.values["2026-07:actual"]).toBe(0);
+        expect(infrastructure?.creditValues?.["2026-07:actual"]).toBe(-300);
+        expect(july?.totalExpensesUsd).toBe(-700);
+        expect(july?.totalCreditUsd).toBe(-300);
         expect(timing?.category).toBe("balance_sheet");
         expect(timing?.values["2026-07:actual"]).toBe(700);
         expect(timing?.values["2026-08:current"]).toBe(-1_000);
-        expect(credits?.values["2026-07:actual"]).toBe(300);
+        expect(credits).toBeUndefined();
         expect(august?.netUsd).toBe(-1_000);
         expect(result.currentCashUsd).toBe(9_000);
     });
@@ -1334,8 +1338,8 @@ describe("ledger-based P&L categories", () => {
             (row) => row.category === "compute" && row.vendor === "ovhcloud",
         );
 
-        expect(ovh?.values["2026-07:actual"]).toBe(-500);
-        expect(ovh?.creditFundedValues?.["2026-07:actual"]).toBe(-500);
+        expect(ovh?.values["2026-07:actual"]).toBe(0);
+        expect(ovh?.creditValues?.["2026-07:actual"]).toBe(-500);
         expect(ovh?.forecastIssue).toContain("credit");
         expect(
             result.flags.some(

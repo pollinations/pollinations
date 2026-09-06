@@ -100,8 +100,9 @@ export type RunwayMatrixRow = {
     forecastMethod: ForecastMethod | "mixed" | null;
     forecastPaymentTiming: ForecastPaymentTiming | null;
     values: Record<string, number>;
-    // Part of a ledger-based value that was paid from provider credits.
-    creditFundedValues?: Record<string, number>;
+    // Usage paid from provider credits, kept beside `values` and never counted
+    // as cash: it is not part of `values` or of any column total.
+    creditValues?: Record<string, number>;
     assumptions: Record<string, RunwayAssumption[]>;
 };
 
@@ -111,6 +112,8 @@ export type RunwayColumn = {
     month: string;
     kind: "actual" | "current" | "forecast";
     totalExpensesUsd: number;
+    // Credit-funded usage of the expense lines, shown beside the cash total.
+    totalCreditUsd: number;
     operatingResultUsd: number;
     netUsd: number;
     runningCashUsd: number | null;
@@ -962,7 +965,6 @@ export function buildRunway(
         { category: string; usd: number; months: Set<string> }
     >();
     const ledgerPaidUsageByMonth = new Map<string, number>();
-    const ledgerCreditUsageByMonth = new Map<string, number>();
     const creditFundedByMonth = new Map<string, Map<string, number>>();
     for (const row of bankRows) {
         const month = row.date.slice(0, 7);
@@ -1001,7 +1003,8 @@ export function buildRunway(
     }
 
     // Ledger categories take their actuals from the vendor ledger by service
-    // month: paid usage and credit-funded usage are both expenses.
+    // month: paid usage is the expense; credit-funded usage is kept beside it
+    // in `creditValues` and never reaches cash.
     const ledgerVendorsWithRows = new Set<string>();
     const ledgerMonthsByVendor = new Map<string, Set<string>>();
     for (const row of cloudRows) {
@@ -1027,14 +1030,13 @@ export function buildRunway(
         const key = matrixKey(category, vendor);
         const monthValues =
             actualByMonth.get(month) ?? new Map<string, number>();
-        addAmount(monthValues, key, -(paidUsd + creditUsd));
+        addAmount(monthValues, key, 0 - paidUsd);
         actualByMonth.set(month, monthValues);
         const creditValues =
             creditFundedByMonth.get(month) ?? new Map<string, number>();
-        addAmount(creditValues, key, -creditUsd);
+        addAmount(creditValues, key, 0 - creditUsd);
         creditFundedByMonth.set(month, creditValues);
         addAmount(ledgerPaidUsageByMonth, month, paidUsd);
-        addAmount(ledgerCreditUsageByMonth, month, creditUsd);
         identities.set(key, { category, vendor });
         observedMonths.add(month);
     }
@@ -1328,18 +1330,18 @@ export function buildRunway(
                 identity.vendor,
                 identity.category,
             );
-            const creditFundedValues: Record<string, number> = {};
+            const creditValues: Record<string, number> = {};
             for (const column of columnSpecs) {
                 if (column.kind === "forecast") continue;
                 const credit = creditFundedByMonth.get(column.month)?.get(key);
                 if (credit != null && Math.abs(credit) > 0.005) {
-                    creditFundedValues[column.id] = credit;
+                    creditValues[column.id] = credit;
                 }
             }
             return {
                 ...identity,
-                ...(Object.keys(creditFundedValues).length > 0
-                    ? { creditFundedValues }
+                ...(Object.keys(creditValues).length > 0
+                    ? { creditValues }
                     : {}),
                 forecastMethod:
                     methods.size === 1
@@ -1536,28 +1538,6 @@ export function buildRunway(
             assumptions: {},
         });
     }
-    const creditFundedUsageValues = Object.fromEntries(
-        columnSpecs.map((column) => [
-            column.id,
-            column.kind === "forecast"
-                ? 0
-                : (ledgerCreditUsageByMonth.get(column.month) ?? 0),
-        ]),
-    );
-    if (
-        Object.values(creditFundedUsageValues).some(
-            (value) => Math.abs(value) > 0.005,
-        )
-    ) {
-        rows.push({
-            category: "balance_sheet",
-            vendor: "credit-funded usage",
-            forecastMethod: "one_off",
-            forecastPaymentTiming: null,
-            values: creditFundedUsageValues,
-            assumptions: {},
-        });
-    }
     rows.sort(
         (a, b) =>
             categoryRank(a.category) - categoryRank(b.category) ||
@@ -1577,10 +1557,7 @@ export function buildRunway(
                 let paid = 0;
                 let credit = 0;
                 for (const month of observedMonths) {
-                    paid += Math.abs(
-                        (actualByMonth.get(month)?.get(key) ?? 0) -
-                            (creditFundedByMonth.get(month)?.get(key) ?? 0),
-                    );
+                    paid += Math.abs(actualByMonth.get(month)?.get(key) ?? 0);
                     credit += Math.abs(
                         creditFundedByMonth.get(month)?.get(key) ?? 0,
                     );
@@ -1641,6 +1618,16 @@ export function buildRunway(
                     row.category !== "balance_sheet",
             )
             .reduce((sum, row) => sum + (row.values[column.id] ?? 0), 0);
+        const totalCreditUsd = rows
+            .filter(
+                (row) =>
+                    row.category !== "revenue" &&
+                    row.category !== "balance_sheet",
+            )
+            .reduce(
+                (sum, row) => sum + (row.creditValues?.[column.id] ?? 0),
+                0,
+            );
         const netUsd =
             column.kind === "forecast"
                 ? rows.reduce(
@@ -1673,6 +1660,7 @@ export function buildRunway(
                 column.kind !== "forecast" ||
                 (forecastUsable && unmodeledRows.length === 0),
             totalExpensesUsd,
+            totalCreditUsd,
             operatingResultUsd: rows
                 .filter((row) => row.category !== "balance_sheet")
                 .reduce((sum, row) => sum + (row.values[column.id] ?? 0), 0),

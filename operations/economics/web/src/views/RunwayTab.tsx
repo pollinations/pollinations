@@ -161,18 +161,23 @@ function ForecastValue({
     );
 }
 
-function CreditFundedMark({ value }: { value: number | undefined }) {
-    if (value == null || Math.abs(value) < 0.005) return null;
+function hasAmount(value: number | null | undefined): value is number {
+    return value != null && Math.abs(value) >= 0.005;
+}
+
+// Usage paid with provider credits sits beside the cash figure in gray
+// parentheses; a month funded only by credits shows just that figure.
+function CreditAmount({ value }: { value: number | null | undefined }) {
+    if (!hasAmount(value)) return null;
     return (
-        <Tooltip
-            triggerAs="span"
-            content={`${fmtRunwayTableValue(value)} of this was paid from provider credits, not cash`}
-        >
-            <span className="ml-1 cursor-help text-theme-text-soft text-xs">
-                ◐
-            </span>
-        </Tooltip>
+        <span className="ml-1 text-theme-text-muted">
+            ({fmtRunwayTableValue(value)})
+        </span>
     );
+}
+
+function showCash(cash: number | null, credit: number | null | undefined) {
+    return hasAmount(cash) || !hasAmount(credit);
 }
 
 function monthColumnClass(column: RunwayColumn, first: boolean) {
@@ -198,6 +203,7 @@ type RunwayGroup = {
     category: string;
     rows: RunwayMatrixRow[];
     values: Record<string, number | null>;
+    creditValues: Record<string, number>;
 };
 
 function groupRows(
@@ -210,9 +216,13 @@ function groupRows(
             category: row.category,
             rows: [],
             values: Object.fromEntries(columns.map((column) => [column.id, 0])),
+            creditValues: Object.fromEntries(
+                columns.map((column) => [column.id, 0]),
+            ),
         };
         group.rows.push(row);
         for (const column of columns) {
+            group.creditValues[column.id] += row.creditValues?.[column.id] ?? 0;
             const previous = group.values[column.id];
             group.values[column.id] =
                 previous == null ||
@@ -229,10 +239,12 @@ function SummaryRow({
     label,
     columns,
     value,
+    credit,
 }: {
     label: string;
     columns: RunwayColumn[];
     value: (column: RunwayColumn) => number | null;
+    credit?: (column: RunwayColumn) => number | null;
 }) {
     return (
         <TableRow className="font-semibold">
@@ -252,7 +264,10 @@ function SummaryRow({
                         runwayValueClass(value(column)),
                     )}
                 >
-                    {fmtRunwayTableValue(value(column))}
+                    {showCash(value(column), credit?.(column))
+                        ? fmtRunwayTableValue(value(column))
+                        : null}
+                    <CreditAmount value={credit?.(column)} />
                 </TableCell>
             ))}
         </TableRow>
@@ -437,6 +452,7 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                                     ? null
                                     : column.totalExpensesUsd
                             }
+                            credit={(column) => column.totalCreditUsd}
                         />
                         <SummaryRow
                             label="Cash change"
@@ -462,6 +478,10 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     </TableBody>
                 </DataTable>
             </TableScroller>
+            <p className="text-sm text-theme-text-soft">
+                Gray figures in parentheses are usage paid with provider
+                credits. They are not cash and do not enter Cash change.
+            </p>
         </div>
     );
 }
@@ -516,7 +536,13 @@ function RunwayCategoryRows({
                             runwayValueClass(group.values[column.id]),
                         )}
                     >
-                        {fmtRunwayTableValue(group.values[column.id])}
+                        {showCash(
+                            group.values[column.id],
+                            group.creditValues[column.id],
+                        )
+                            ? fmtRunwayTableValue(group.values[column.id])
+                            : null}
+                        <CreditAmount value={group.creditValues[column.id]} />
                     </TableCell>
                 ))}
             </TableRow>
@@ -539,17 +565,22 @@ function RunwayCategoryRows({
                                     runwayValueClass(row.values[column.id]),
                                 )}
                             >
-                                <ForecastValue
-                                    assumptions={row.assumptions[column.id]}
-                                    value={row.values[column.id]}
-                                    issue={
-                                        column.kind === "forecast"
-                                            ? row.forecastIssue
-                                            : undefined
-                                    }
-                                />
-                                <CreditFundedMark
-                                    value={row.creditFundedValues?.[column.id]}
+                                {showCash(
+                                    row.values[column.id],
+                                    row.creditValues?.[column.id],
+                                ) && (
+                                    <ForecastValue
+                                        assumptions={row.assumptions[column.id]}
+                                        value={row.values[column.id]}
+                                        issue={
+                                            column.kind === "forecast"
+                                                ? row.forecastIssue
+                                                : undefined
+                                        }
+                                    />
+                                )}
+                                <CreditAmount
+                                    value={row.creditValues?.[column.id]}
                                 />
                             </TableCell>
                         ))}

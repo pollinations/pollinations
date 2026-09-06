@@ -1,0 +1,34 @@
+{
+  "pr_number": 14480,
+  "title": "feat(mcp): add device-flow login",
+  "author": "rekty",
+  "url": "https://github.com/pollinations/pollinations/pull/14480",
+  "merged_at": "2026-09-06T22:04:43Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n\n- Adds `startDeviceLogin`, `pollDeviceLogin`, and `whoAmI` to the local stdio MCP\n- Keeps the device code and resulting API key inside the MCP process\n- Uses the existing form-encoded OAuth device flow with one poll per tool call\n- Leaves the hosted stateless MCP unchanged\n- Adds focused state-transition and stdio tool-list coverage\n\nCloses #11222\n\n## Verification\n\n- `npm test` in `packages/mcp`\n- `node --test worker.test.js` in `apps/mcp`\n- Biome check on changed JavaScript files",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive gets a login button",
+    "blurb": "The local MCP can now do the civilized thing and sign in through a device code. Your API key stays tucked safely inside the MCP process, where keys prefer to live.",
+    "summary": "Added startDeviceLogin, pollDeviceLogin, and whoAmI tools to the local stdio MCP, using the existing form-encoded OAuth device flow while keeping device codes and resulting API keys inside the MCP process.",
+    "impact": "Developers can connect local MCP clients to their Pollinations account through a device-login flow and check the active identity without manually passing API keys around; the hosted stateless MCP remains unchanged.",
+    "keywords": [
+      "mcp",
+      "oauth",
+      "device-flow",
+      "authentication",
+      "stdio",
+      "api-keys"
+    ],
+    "visual_concept": "Depict the local MCP as a cozy retro terminal receiving a small device-code login card, with Polli helping the monitor robot complete the connection. A tiny locked seed jar beside the terminal represents the API key remaining safely inside the local MCP process, while code-plants and flowers make the login flow feel like a healthy new garden path.",
+    "image_prompt": "Cozy pixel art scene in a warm little hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while helping a chunky CRT-monitor robot enter a device code at a retro terminal; a small locked jar labeled \"API KEY\" sits safely beside blooming code-plants and lime green (#ecf874) flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text reading \"DEVICE LOGIN\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14480.jpg",
+    "prompt": "Cozy pixel art scene in a warm little hackerspace: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses while helping a chunky CRT-monitor robot enter a device code at a retro terminal; a small locked jar labeled \"API KEY\" sits safely beside blooming code-plants and lime green (#ecf874) flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text reading \"DEVICE LOGIN\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-06T22:05:39.295500+00:00"
+}

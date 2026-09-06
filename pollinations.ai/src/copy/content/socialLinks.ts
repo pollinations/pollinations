@@ -60,6 +60,13 @@ export const LINKS = {
     enterApiDocs: "https://gen.pollinations.ai/docs",
     enterQuestsFaq: "https://enter.pollinations.ai/news#how-do-quests-work",
     enterModels: "https://enter.pollinations.ai/models",
+    enterQuests: "https://enter.pollinations.ai/quests",
+    enterAgents:
+        "https://enter.pollinations.ai/models?scope=community&category=agent",
+    enterMcp: "https://enter.pollinations.ai/models?category=mcp",
+    mediaDocs: "https://gen.pollinations.ai/docs#tag/media-storage",
+    publishModelDocs: "https://gen.pollinations.ai/docs#tag/publish-a-model",
+    publishAgentDocs: "https://gen.pollinations.ai/docs#tag/publish-an-agent",
     apidocsRaw:
         "https://raw.githubusercontent.com/pollinations/pollinations/production/APIDOCS.md",
     discordPollenBeta:

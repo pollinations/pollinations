@@ -1,113 +1,160 @@
-// HelloPage content configuration
-
+// Homepage content. Links stay outside translated strings.
 export const HELLO_PAGE = {
     pageTitle: "hello",
     pageDescription:
-        "Build AI apps that pay for themselves. One API for text, image, audio, video. Users bring their own credits, you optionally take a share.",
-    // Section 1 — Hero
-    heroTitle: "Build an AI app.",
-    heroBodyPrefix: "⚡ Build with one API for text, image, audio, and video.",
-    heroBodyBold: "We handle the models and infrastructure.",
-    heroBodySuffix: " Users spend across apps. Earn rewards. 🌱",
-    heroStat1: "10K",
-    heroStat1Label: "weekly active devs",
-    heroStat2: "1.5M",
-    heroStat2Label: "daily requests",
-    heroStat3: "500+",
-    heroStat3Label: "live apps",
-    startBuildingButton: "Register",
-    joinDiscordButton: "Join the Discord",
-
-    readTheDocsButton: "Read the Docs",
-
-    // Section — Toolbox
-    whatYouGetTitle: "Dev kit",
-    whatYouGetItems: [
+        "Build AI apps with one API, user wallets, and developer earnings.",
+    heroEyebrow: "Open infrastructure for AI apps",
+    heroTitle: "Every model, one wallet.",
+    heroBody:
+        "One API for text, image, audio and video. Earn Pollen through Quests, use it across models, and earn more when people use what you build.",
+    startBuildingButton: "Start for free",
+    readTheDocsButton: "Read the docs",
+    firstCallEyebrow: "Start free",
+    firstCallTitle: "Make your first API call",
+    questsTitle: "Earn Pollen with Quests",
+    questsBody:
+        "Complete a Quest—a small contribution to the project—and spend the Pollen on any model with your own secret key.",
+    questsButton: "Browse Quests",
+    keysButton: "Create a secret key",
+    buildEyebrow: "Build",
+    buildTitle: "Tools for AI apps",
+    buildBody:
+        "Connect models, users and tools without managing the infrastructure.",
+    buildFeatures: [
         {
-            emoji: "👛",
-            title: "Wallets & earnings",
-            lead: "Users bring their own Pollen. You take a share.",
-            desc: "- Users **sign in** and spend from their **own wallet** 👛\n- Set **spending caps**, **revoke access** any time\n- Turn on earnings on your **App Key** to receive a **share** when users spend in your app 💰",
-            linkText: "Add Pollen to your app",
-            linkUrl: "byopDocs",
+            title: "One API for every model",
+            description:
+                "Generate text, images, video and audio through one OpenAI-compatible API.",
+            link: "enterModels",
+            linkText: "Browse models",
+            icon: "models",
         },
         {
-            emoji: "🪩",
-            title: "All the models",
-            lead: "Text, image, video, audio — one API.",
-            desc: "- **Text, image, video, audio**\n- **Vision, search, embeddings**\n- Streaming, tools, structured output\n- **OpenAI-compatible** endpoints",
-            linkText: "Browse the model list",
-            linkUrl: "enterModels",
+            title: "Ready-made agents",
+            description:
+                "Use agents that combine instructions, models and tools in one call.",
+            link: "enterAgents",
+            linkText: "Explore agents",
+            icon: "agents",
         },
         {
-            emoji: "⌨️",
-            title: "CLI for humans & agents",
-            lead: "Generate from the terminal.",
-            desc: '- `polli gen image "cat in space"` — **text, image, audio, video** in one CLI 🎛️\n- **Agent-friendly**: `--json` output, stdin context, clear exit codes\n- Point Claude Code, Cursor, or Codex at the **shipped SKILL.md**',
-            linkText: "Install polli CLI",
-            linkUrl: "polliCli",
+            title: "Connect user wallets",
+            description:
+                "Let users sign in and spend their own Pollen, with spending caps and access they can revoke.",
+            link: "byopDocs",
+            linkText: "Connect wallets",
+            icon: "wallet",
         },
         {
-            emoji: "🌱",
-            title: "Pollen Quests",
-            lead: "Build before users show up.",
-            desc: "- Earn **Pollen** by completing **Quests** 🎯\n- Free Pollen for prototypes & testing\n- More Quests, more ways to earn 📈",
-            linkText: "How Quests work",
-            linkUrl: "enterQuestsFaq",
+            title: "Media hosting",
+            description: "Upload media, get a URL, and use it in model calls.",
+            link: "mediaDocs",
+            linkText: "Upload media",
+            icon: "media",
         },
         {
-            emoji: "🎯",
-            title: "Media inputs",
-            lead: "Files become generation context.",
-            desc: "- Upload **any media**, get a URL back\n- Use images, audio, documents in **model calls**",
+            title: "Pollinations CLI",
+            description:
+                "Generate from the terminal and manage your models, agents and access.",
+            link: "polliCli",
+            linkText: "Install the CLI",
+            icon: "cli",
         },
         {
-            emoji: "💎",
-            title: "Open Source",
-            lead: "Fork it, inspect it, build with us.",
-            desc: "- **Open and transparent** stack\n- Shaped by the **developer community**",
-            linkText: "Fork on GitHub",
-            linkUrl: "githubFork",
+            title: "MCP connectors",
+            description:
+                "Give agents tools for search, media processing and more.",
+            link: "enterMcp",
+            linkText: "Browse connectors",
+            icon: "tools",
         },
     ],
-    whatYouGetFooter: "Need the details?",
-    whatYouGetFooterLink: "read the API docs",
-    whatYouGetFooterUrl: "enterApiDocs",
-
-    // Section 8 — Last Updates
-    openTitle: "Latest",
-    recentUpdatesMoreText: "More",
-    recentUpdatesMoreUrl: "highlightsSource",
-    // Section 9 — Next
-    roadmapTitle: "Next",
+    publishEyebrow: "Publish and earn",
+    publishTitle: "Share what you build",
+    publishBody:
+        "Publish apps, models and agents for people to discover and use.",
+    publishFeatures: [
+        {
+            title: "Publish an app",
+            description:
+                "Get listed in the app catalog and earn when people use your app.",
+            link: "githubSubmitApp",
+            linkText: "Submit an app",
+            icon: "app",
+        },
+        {
+            title: "Publish a model",
+            description:
+                "Connect your model endpoint, set a price, and earn from usage.",
+            link: "publishModelDocs",
+            linkText: "Publish a model",
+            icon: "models",
+        },
+        {
+            title: "Publish an agent",
+            description:
+                "Combine a prompt, model and tools into an agent others can call.",
+            link: "publishAgentDocs",
+            linkText: "Publish an agent",
+            icon: "agents",
+        },
+    ],
+    moneyEyebrow: "How the money moves",
+    moneyTitle: "Users pay for usage. Builders earn.",
+    moneyBody:
+        "Every generation uses the caller’s Pollen, bought or earned through Quests. App developers don’t have to pay for their users’ requests.",
+    moneySteps: [
+        {
+            title: "Users bring their Pollen",
+            description:
+                "They buy Pollen or earn it through Quests, then use it across apps, models and agents.",
+        },
+        {
+            title: "Each generation pays for itself",
+            description:
+                "Usage is paid from the caller’s balance. Users control their spending caps and access.",
+        },
+        {
+            title: "Builders earn from usage",
+            description:
+                "Eligible requests reward the app, model and agent publishers behind them.",
+        },
+    ],
+    moneyDocs: "How wallet earnings work",
+    appsEyebrow: "Live now",
+    appsTitle: "Apps from the community",
+    browseAppsLink: "See all apps",
+    appsLoading: "Loading apps…",
+    appsUnavailable: "Visit the app catalog to explore community apps.",
+    openTitle: "Latest updates",
+    recentUpdatesMoreText: "More updates",
+    roadmapEyebrow: "On the way",
+    roadmapTitle: "What we’re building",
     roadmapItems: [
         {
-            title: "Pollinations Login",
-            description:
-                "Drop-in sign-in for your users. Token handling included.",
+            title: "Agent micropayments",
+            description: "Let agents pay for tools and services as they work.",
         },
         {
-            title: "App Hosting",
-            description:
-                "Push your app to our infra. No deploy setup, no separate bill.",
+            title: "Permanent media hosting",
+            description: "Keep generated files available long term.",
         },
         {
-            title: "App Discovery",
-            description: "Where users find your app.",
+            title: "Developer cashouts",
+            description: "Withdraw what you earn from apps, models and agents.",
         },
         {
-            title: "Ads SDK",
-            description: "Optional ad slots. Earnings go to your wallet.",
+            title: "App hosting",
+            description: "Publish your app without managing another host.",
+        },
+        {
+            title: "Flexible markups",
+            description: "More control over how you price what you publish.",
         },
     ],
-    comingFooterEmoji: "",
-    comingFooterLine1: "",
-    comingFooterLine2: "",
-
-    // Section 9 — CTA
     ctaTitle: "Start building",
     ctaBody:
-        "One API. Free Pollen from Quests to start, and earnings when your app gets used.",
-    browseAppsLink: "Browse Apps",
-    communityLink: "Community",
+        "One API. Free Pollen from Quests to start, earnings when your app gets used.",
+    getKeyButton: "Get an API key",
+    joinDiscordButton: "Join Discord",
 };

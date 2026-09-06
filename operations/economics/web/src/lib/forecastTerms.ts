@@ -105,12 +105,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "fixed",
         paymentTiming: "direct",
     },
-    // Exa runs on a promotional credit balance; cash only after it is used up.
-    "exa|compute": {
-        method: "last",
-        paymentTiming: "prepaid",
-        automaticUsage: true,
-    },
     "fal|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -200,6 +194,9 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "io.net|compute": { method: "one_off", paymentTiming: "prepaid" },
     "lambda|compute": { method: "one_off", paymentTiming: "direct" },
     "retell|compute": { method: "one_off", paymentTiming: "direct" },
+    // Exa: cents of usage on a $1,020 promotional credit whose expiry is not
+    // verified; project it only once the expiry is checked.
+    "exa|compute": { method: "one_off", paymentTiming: "prepaid" },
     // Scaleway stopped after February 2026: no invoices, no vouchers left.
     "scaleway|compute": { method: "one_off", paymentTiming: "postpaid" },
     "scaleway|infrastructure": {

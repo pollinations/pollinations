@@ -246,6 +246,9 @@ function modelFundingAllocation(
         providerUsageUsd > ACTIVE_USD
             ? Math.min(1, Math.max(0, funding.creditUsd / providerUsageUsd))
             : 0;
+    // Cash a model burned with no metered Pollen usage (a test, a fallback)
+    // belongs to neither funding side but still reduces net cash.
+    const unattributedCashUsd = funding.cashUsd - paidCashUsd - questCashUsd;
 
     return {
         model: model.model,
@@ -267,7 +270,10 @@ function modelFundingAllocation(
         paidContributionUsd: model.retainedPaidUsd - paidCashUsd,
         questCashSubsidyUsd: questCashUsd,
         netCashContributionUsd:
-            model.retainedPaidUsd - paidCashUsd - questCashUsd,
+            model.retainedPaidUsd -
+            paidCashUsd -
+            questCashUsd -
+            unattributedCashUsd,
     };
 }
 
@@ -427,10 +433,25 @@ function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
     }
     // A ledger line with no cash and no credit (for example a corrected fact
     // re-appended at zero) records no usage and is not a residual.
+    // A provider line that names a Pollen model the meter did not see this
+    // month on this vendor is still that model's cost: a normal row with
+    // zero Pollen usage, not a residual.
     for (const [model, funding] of entry.providerModels) {
         if (grouped.has(model)) continue;
         if (!entry.pollenModels.has(model) && hasFunding(funding)) {
-            models.push(residualRow(model, "provider only", funding));
+            models.push(
+                modelFundingAllocation(
+                    {
+                        model,
+                        paidPollenUsd: 0,
+                        questPollenUsd: 0,
+                        retainedPaidUsd: 0,
+                        paidMeterUsd: 0,
+                        questMeterUsd: 0,
+                    },
+                    funding,
+                ),
+            );
         }
     }
     for (const [label, funding] of entry.providerOnlyLabels) {

@@ -606,7 +606,7 @@ describe("modelReconcileRows", () => {
         ]);
     });
 
-    it("shows a mapped model with no Pollen usage as provider only", () => {
+    it("keeps a mapped model with no Pollen usage as a normal model row", () => {
         const [row] = modelReconcileRows(
             data({
                 opCloud: [
@@ -633,14 +633,21 @@ describe("modelReconcileRows", () => {
 
         expect(row.models.find((m) => m.model === "flux-2-flex")).toMatchObject(
             {
-                status: "provider only",
+                status: "allocated",
                 providerCashUsd: 5,
-                pollenMeterUsd: null,
+                pollenMeterUsd: 0,
+                paidPollenUsd: 0,
+                questPollenUsd: 0,
+                netCashContributionUsd: -5,
             },
         );
         expect(
             row.models.reduce((sum, m) => sum + (m.providerUsageUsd ?? 0), 0),
         ).toBe(25);
+        expect(row.buckets).toMatchObject({
+            allocatedUsd: 25,
+            providerOnlyUsd: 0,
+        });
     });
 
     it("shows a reviewed label with no Pollen model as provider only", () => {

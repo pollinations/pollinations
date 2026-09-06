@@ -114,7 +114,11 @@ function allocationChip(row: UnitEconomicsRow) {
               : "warning";
     return (
         <Chip intent={intent} size="sm">
-            {status === "missing provider" ? "missing vendor" : status}
+            {status === "missing provider"
+                ? "missing vendor"
+                : status === "provider only"
+                  ? "no Pollen model"
+                  : status}
         </Chip>
     );
 }
@@ -145,7 +149,7 @@ function ResidualBucketChips({
             intent: "warning",
         },
         {
-            label: "provider only",
+            label: "no Pollen model",
             usd: buckets.providerOnlyUsd,
             intent: "neutral",
         },

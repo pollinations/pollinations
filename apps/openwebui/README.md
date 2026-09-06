@@ -81,7 +81,8 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
 `envVars` on the Container class are applied when the container *starts*, and a
 `wrangler deploy` does not restart a running instance (nor does a shorter
 `sleepAfter`). To force a fresh container, delete the container application and
-deploy again — state is in Postgres, so nothing is lost:
+deploy again. Users, chats and configuration remain in Postgres; uploaded
+files on the ephemeral disk are lost, so check for files before restarting:
 
 ```bash
 npx wrangler containers list                     # find the app id

@@ -1885,6 +1885,16 @@
           "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
+        },
+        {
+          "id": "hncvbp",
+          "label": "Perplexity legacy billing account",
+          "aliases": [
+            "HNCVBP"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-03"
         }
       ],
       "balanceTracking": true,

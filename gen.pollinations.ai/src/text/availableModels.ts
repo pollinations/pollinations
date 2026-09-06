@@ -49,7 +49,8 @@ const grokTransform: TransformFn = (messages, options) =>
         ? { messages, options }
         : stripReasoning(messages, options);
 
-const qwenMaxTransform: TransformFn = (messages, options) => {
+// Alibaba rejects forced tool selection while thinking is enabled.
+const qwenForcedToolTransform: TransformFn = (messages, options) => {
     const toolChoice = options.tool_choice;
     const forcesTool =
         toolChoice === "required" ||
@@ -60,6 +61,12 @@ const qwenMaxTransform: TransformFn = (messages, options) => {
             ? { ...options, reasoning_effort: "none" }
             : options,
     };
+};
+
+const qwenReasoningToggle = createReasoningEffortTransform("toggle");
+const qwenFlashTransform: TransformFn = async (messages, options) => {
+    const toggled = await qwenReasoningToggle(messages, options);
+    return qwenForcedToolTransform(toggled.messages, toggled.options);
 };
 
 const models: ModelDefinition[] = [
@@ -100,6 +107,11 @@ const models: ModelDefinition[] = [
     {
         name: "gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-astra",
+        config: portkeyConfig["gpt-6-astra"],
         useResponsesApi: true,
     },
     {
@@ -171,8 +183,7 @@ const models: ModelDefinition[] = [
     {
         name: "qwen/qwen3.8-max-0902",
         config: portkeyConfig["qwen3.8-max-0902"],
-        // Alibaba rejects forced tool selection while thinking is enabled.
-        transform: qwenMaxTransform,
+        transform: qwenForcedToolTransform,
     },
     {
         name: "qwen3.7-flash",
@@ -183,6 +194,16 @@ const models: ModelDefinition[] = [
         name: "qwen3.7-flash-alibaba",
         config: portkeyConfig["qwen3.7-flash-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
+    },
+    {
+        name: "qwen/qwen3.8-flash",
+        config: portkeyConfig["qwen/qwen3.8-flash"],
+        transform: qwenFlashTransform,
+    },
+    {
+        name: "qwen3.8-flash-alibaba",
+        config: portkeyConfig["qwen3.8-flash-alibaba"],
+        transform: qwenFlashTransform,
     },
     {
         name: "qwen-vision",

@@ -354,6 +354,49 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-6-astra": {
+        aliases: [],
+        provider: "azure",
+        brand: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-04").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(10.0),
+            promptCachedTokens: perMillion(1.0),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50.0),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(20.0),
+                    promptCachedTokens: perMillion(2.0),
+                    promptCacheWriteTokens: perMillion(25.0),
+                    completionTextTokens: perMillion(75.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Astra",
+        description:
+            "Frontier reasoning for complex agentic, coding, and multimodal work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "mercury": {
         aliases: [
             "mercury-2",
@@ -2269,6 +2312,37 @@ const TEXT_BASE_SERVICES = {
         title: "Qwen3.8 Max 0902",
         description:
             "Pinned September checkpoint with stronger coding and long-horizon agent performance",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen/qwen3.8-flash": {
+        aliases: [],
+        provider: "openrouter",
+        brand: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
+        // price with a single 0-1M context tier (2026-09-05). OpenRouter
+        // publishes one prompt rate and no separate image/video rates.
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.016),
+            promptCacheWriteTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.15),
+            promptVideoTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.47),
+        },
+        title: "Qwen3.8 Flash",
+        description:
+            "Low-cost multimodal reasoning with 1M context and 131K output for agents and coding",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,

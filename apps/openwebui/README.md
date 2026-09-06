@@ -28,7 +28,9 @@ Deploys then need no Docker, locally or in CI.
 
 ## State
 
-Container disk is wiped on every sleep. All state lives in Postgres (Neon):
+Container disk is wiped on every sleep. All state lives in Postgres (one
+instance on the `monitoring-agents` box, databases `openwebui` and
+`openwebui_staging`):
 `DATABASE_URL` holds users, chats, config, and the pgvector store. Uploaded
 files are still on local disk and do not survive a restart; switch to R2 via
 `STORAGE_PROVIDER=s3` when that matters.
@@ -42,7 +44,7 @@ cost is a ~90 MB model download onto the ephemeral disk after a restart.
 Secrets (per environment in `secrets/secrets.vars.json`):
 
 - `WEBUI_SECRET_KEY`: session signing key. Changing it logs everyone out.
-- `DATABASE_URL`: Neon connection string (staging uses a Neon branch).
+- `DATABASE_URL`: Postgres connection string (staging uses its own database).
 
 ## Config vars are seeded once, not on every boot
 
@@ -86,6 +88,19 @@ per-user consent key as the model connection, so a generation started from a
 tool call is billed to the signed-in user. Two fields are easy to miss:
 `config.enable` must be true, and `config.access_grants` must carry an explicit
 public read grant — an empty grant list means admin-only, not everyone.
+
+That MCP server is opt-in per chat. Open WebUI's *builtin* tools are not: it
+appends their specs to every request coming from its UI unless the model sets
+`meta.capabilities.builtin_tools` false (`utils/middleware.py`). Models fetched
+from a connection have no row in the `model` table, so the only lever is the
+global default, `DEFAULT_MODEL_METADATA` / `models.default_metadata`, which
+`utils/models.py` applies to them wholesale. We set it to
+`{"capabilities": {"builtin_tools": false}}` — without it, managed agents and
+community models that reject a `tools` field 400 on every UI chat.
+
+`models.base_models_cache` is false and `Config.get_many` reads the row per
+request, so changing that config row takes effect immediately, for existing
+chats and users too. No container restart, no per-chat migration.
 
 ## Update the image
 

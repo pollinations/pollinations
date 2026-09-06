@@ -146,7 +146,7 @@ function contentPolicyReason(data: AzureFluxResponse): string | undefined {
     ]);
 }
 
-async function ensureAzureFluxOk(
+export async function ensureAzureImageOk(
     response: Response,
     endpoint: string,
 ): Promise<void> {
@@ -174,7 +174,7 @@ async function ensureAzureFluxOk(
 }
 
 async function ensureAzureFluxKontextOk(response: Response): Promise<void> {
-    await ensureAzureFluxOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
+    await ensureAzureImageOk(response, AZURE_FLUX_KONTEXT_ENDPOINT);
 }
 
 function greatestCommonDivisor(a: number, b: number): number {
@@ -437,7 +437,7 @@ export async function callAzureFlux2(
         },
         body: JSON.stringify(requestBody),
     });
-    await ensureAzureFluxOk(response, endpoint);
+    await ensureAzureImageOk(response, endpoint);
 
     const data = (await response.json()) as AzureFluxResponse;
     const encodedImage = data.data?.[0]?.b64_json;

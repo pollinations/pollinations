@@ -9,6 +9,7 @@ import {
     callAzureFlux2,
     callAzureFluxKontext,
 } from "./models/azureFluxKontextModel.js";
+import { callAzureMaiImage } from "./models/azureMaiImageModel.ts";
 import { callFalFallbackImage } from "./models/falFallbackMediaModel.ts";
 import { callFluxKleinAPI } from "./models/fluxKleinModel.ts";
 import {
@@ -813,6 +814,16 @@ const generateImage = async (
                 return await callAzureFlux2(prompt, safeParams, userInfo);
             } catch (error) {
                 logError("Azure FLUX.2 generation failed:", error.message);
+                await logGptImageError(prompt, safeParams, userInfo, error);
+                throw error;
+            }
+        }
+
+        case "microsoft/mai-image-2.5-flash": {
+            try {
+                return await callAzureMaiImage(prompt, safeParams, userInfo);
+            } catch (error) {
+                logError("Azure MAI image generation failed:", error.message);
                 await logGptImageError(prompt, safeParams, userInfo, error);
                 throw error;
             }

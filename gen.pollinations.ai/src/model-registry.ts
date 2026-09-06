@@ -144,7 +144,7 @@ function communityEntryToGenerationEntry(
     );
     if (
         entry.communityEndpoint.modality === "text" &&
-        entry.communityEndpoint.responsesUrl
+        entry.communityEndpoint.api === "responses"
     ) {
         supportedEndpoints.push("/v1/responses");
     }

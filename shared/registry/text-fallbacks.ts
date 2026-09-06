@@ -148,6 +148,20 @@ export const TEXT_FALLBACKS = {
             ),
         },
     },
+    "qwen/qwen3.8-flash": {
+        "qwen3.8-flash-alibaba": {
+            provider: "alibaba",
+            addedDate: new Date("2026-09-05").getTime(),
+            // This bypasses OpenRouter but deliberately keeps Alibaba as the
+            // inference provider, so it covers gateway/transport failures, not
+            // an Alibaba-wide outage or rate limit.
+            // Direct Alibaba Singapore charges the same $0.15/M input, $0.016/M
+            // implicit and explicit cache reads, $0.20/M cache creation, and
+            // $0.47/M output as the OpenRouter quote, with no context tiers,
+            // so the inherited cost block is exact and there is no fallback
+            // loss.
+        },
+    },
     kimi: {
         "kimi-deepinfra": {
             provider: "deepinfra",

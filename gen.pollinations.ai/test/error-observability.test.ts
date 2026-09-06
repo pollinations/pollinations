@@ -2,7 +2,12 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { handleError, UpstreamError } from "@shared/error.ts";
+import {
+    getErrorCodesForStatus,
+    handleError,
+    UpstreamError,
+} from "@shared/error.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -53,6 +58,33 @@ function createTextTestApp() {
 }
 
 describe("error observability", () => {
+    it.each([
+        "KEY_BUDGET_EXHAUSTED",
+        "INSUFFICIENT_BALANCE",
+    ] as const)("preserves the payment reason %s in the 402 envelope", async (code) => {
+        const app = new Hono<Env>();
+        app.use("*", logger);
+        app.get("/", () => {
+            throw new PaymentRequiredError(code, "Actionable payment guidance");
+        });
+        app.onError(handleError);
+        const response = await app.fetch(
+            new Request("https://gen.test/"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "error",
+                LOG_FORMAT: "text",
+            } as unknown as CloudflareBindings,
+            createExecutionContext(),
+        );
+        expect(response.status).toBe(402);
+        expect(await response.json()).toMatchObject({
+            status: 402,
+            error: { code, message: "Actionable payment guidance" },
+        });
+        expect(getErrorCodesForStatus(402)).toContain(code);
+    });
+
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(

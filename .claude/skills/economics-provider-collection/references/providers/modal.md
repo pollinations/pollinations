@@ -48,7 +48,9 @@ Collection steps:
 
 2. Sum cost by calendar month, `object_id`, app/deployment `description`, and
    `environment`.
-3. Preserve app names in `cost_details` or resource fields because they map to model/deployment attribution.
+3. Preserve the workspace in `account_id`, `object_id` in `resource_id`,
+   and the app/deployment description in `resource_name`. Keep all raw
+   dimensions in the export; never infer a model from the app name alone.
 4. Save dashboard screenshots or invoices separately if the CLI output is zero but the dashboard shows usage.
 5. Use this skill for saved raw evidence.
 
@@ -60,6 +62,8 @@ Known traps:
   no rows; do not interpret it as missing data.
 - Modal container/fleet snapshots are not billing totals; use billing report for cost.
 - Keep tokens in environment variables, not command output or saved evidence.
+- Verify the exact workspace and billing cycle on each balance screenshot;
+  an August cycle viewed in September does not prove September's balance.
 - The billing report is gross provider usage. Apply known grants as a funding
   waterfall separately; only the amount beyond verified available credit is
   paid/provider-payable.

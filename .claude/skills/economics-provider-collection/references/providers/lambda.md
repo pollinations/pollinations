@@ -14,9 +14,8 @@ Canonical vendor: `lambda`
 - Weekly invoices arrive by email from `Lambda <no-reply@lambdal.com>` with
   the subject "Here is your invoice" and one PDF attachment named
   `invoice-lambda_<MMYYYY><seq>.pdf`. Collect them with
-  `gog gmail search 'from:(lambda) invoice after:YYYY/MM/DD before:YYYY/MM/DD' --json`,
-  then `gog gmail get <id> --json` and
-  `gog gmail attachment <messageId> <attachmentId> --json`.
+  `gog --account elliot@myceli.ai gmail search 'from:(lambda) invoice after:YYYY/MM/DD before:YYYY/MM/DD' --json`,
+  then use the same account for `gmail get` and `gmail attachment`.
 - Each PDF states `Billing Period` (Monday to Monday), `Sub Total`,
   `Promotional Credits`, and `Amount Due (USD)`. The usage month is the
   calendar month of the dashboard rows, never the invoice week.
@@ -24,14 +23,11 @@ Canonical vendor: `lambda`
   grant and its expiry, Credit activity per invoice, Payment History with a
   `View` link per invoice). Record the grant, its grant date and its expiry as
   a balance row.
-- Reconciliation done 2026-09-06: the weekly invoices from Mar 30 to Aug 3 sum
-  to the promotional credit applied plus the small card remainder, and agree
-  with the ledger's calendar-month rows. Per-month differences are the
-  weekly-versus-monthly grain, not missing usage. The amounts live on the
-  ledger rows.
-- Archive: all 18 invoices are in the accounting Drive under
-  `2026/<MM Month>/Invoices` as `YYYY-MM-DD__Lambda__invoice-lambda-<id>.pdf`
-  (invoice date).
+- Reconcile weekly invoice subtotals to applied credits and card payments;
+  reconcile calendar-month usage separately. Explain differences from cycle
+  boundaries with the actual service dates, never a remembered prior result.
+- Archive invoices as `YYYY-MM-DD__Lambda__invoice-lambda-<id>.pdf` under the
+  invoice month's `Invoices` folder and link relevant Compute/Bank rows.
 
 Primary evidence sources:
 
@@ -92,13 +88,11 @@ Known traps:
 
 Expected Economics use:
 
-- `cost_category`: `gpu`
-- `op_cloud_type`: `gpu`
-- `op_transaction_category`: `cloud` for an invoice/payment, otherwise `null`
-- `should_match_op_transaction`: true for invoice/payment evidence, false for
-  a pure instance snapshot
-- `should_match_op_cloud`: true only when the evidence supports a bounded cost
-  period; otherwise keep the snapshot as review evidence
+- Compute `type: gpu`: one bounded usage row per instance/resource with
+  source-backed signed `paid`/`credit`, coverage and exact evidence.
+- A pure instance snapshot is review evidence, not historical ledger cost.
+- Bank: only the actual bank movement, linked to the invoice's cash remainder.
+  Do not book gross usage as a payment when promotional credits funded it.
 
 Official reference:
 

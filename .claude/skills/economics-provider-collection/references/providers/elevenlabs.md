@@ -45,7 +45,7 @@ Collection steps:
      }'
    ```
 
-   Save raw JSON to `data/inbox/elevenlabs-<period>-usage-by-product.json`.
+   Save raw JSON to `<collection-dir>/evidence/elevenlabs-<period>-usage-by-product.json`.
 
 2. Verify the response includes `columns` with `timestamp`, `product_type`,
    `model`, and `total_cost`.

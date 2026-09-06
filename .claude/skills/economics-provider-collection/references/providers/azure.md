@@ -37,7 +37,7 @@ Primary evidence sources:
 
 Collection steps:
 
-1. For invoices, place PDFs/receipts in `data/inbox/`.
+1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
 2. For the current balance, record one dated `type: balance` OP Cloud snapshot
    from the latest USD balance in the Azure credit-transactions table. Do not
    convert the displayed EUR estimate back to USD.
@@ -75,10 +75,10 @@ Collection steps:
    curl -fsS \
      -H "Authorization: Bearer $TOKEN" \
      "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$AZURE_BILLING_ACCOUNT/billingProfiles/$AZURE_BILLING_PROFILE/invoices?api-version=2024-04-01&periodStartDate=<MM-DD-YYYY>&periodEndDate=<MM-DD-YYYY>" \
-     > "data/inbox/azure-<YYYY-MM>-billing-invoices.json"
+     > "<collection-dir>/evidence/azure-<YYYY-MM>-billing-invoices.json"
    ```
 
-7. Save raw API JSON to `data/inbox/azure-<period>-billing-invoices.json`.
+7. Save raw API JSON to `<collection-dir>/evidence/azure-<period>-billing-invoices.json`.
 8. For provider detail, query the subscription Cost Management endpoint with
    monthly granularity and group by `ServiceName` and `Meter`. Preserve the raw
    values; for closed months, allocate the final invoice total and funding split
@@ -116,4 +116,4 @@ Known traps:
   after that unbilled row. For a closed-month reconciliation, use the finalized
   invoice row instead.
 - Currency is usually EUR in the local billing profile.
-- Dry-run mode: do not write the API dump. Verify command shape, env presence, period bounds, and intended `source_file` path only. Set `source_file` to the intended `data/inbox` path and mention dry-run paths in `reconciliation_notes`.
+- Dry-run mode: do not write the API dump. Verify command shape, env presence, period bounds, and intended `source_file` path only. Set `source_file` to the intended `<collection-dir>/evidence` path and mention dry-run paths in `reconciliation_notes`.

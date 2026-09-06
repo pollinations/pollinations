@@ -19,14 +19,14 @@ Required credential: `VAST_API_KEY`.
 
 Collection steps:
 
-1. For invoice evidence, place the PDF or receipt in `data/inbox/`.
+1. For invoice evidence, place the PDF or receipt in `<collection-dir>/evidence/`.
 2. For usage evidence, prefer the CLI raw export:
 
    ```bash
    vastai --api-key "$VAST_API_KEY" show invoices --raw -s <period-start> -e <period-end>
    ```
 
-   Save stdout to `data/inbox/vast-ai-<period>.json`.
+   Save stdout to `<collection-dir>/evidence/vast-ai-<period>.json`.
 
    Preserve one reviewed row per billed instance and charge kind. When replacing
    legacy instance rows, compare against a current effective
@@ -35,7 +35,7 @@ Collection steps:
    Verified instance-to-workload mappings come from
    `vast-ai-workloads.json`; update that registry when the GPU fleet changes.
 
-3. If using dashboard screenshots, save them under `data/inbox/`.
+3. If using dashboard screenshots, save them under `<collection-dir>/evidence/`.
 4. Use this skill for saved raw evidence.
 
 Known traps:

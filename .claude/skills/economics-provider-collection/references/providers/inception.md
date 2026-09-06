@@ -25,7 +25,7 @@ Collection steps:
 3. Check 2026-07-28 onward separately and record zero or any unexpected usage.
 4. Record whether usage was free-tier, prepaid, or cash-billed; never infer the
    funding source from OP Pollen.
-5. Preserve evidence in `data/inbox/inception/` and Google Drive.
+5. Preserve evidence in `<collection-dir>/evidence/inception/` and Google Drive.
 6. Reconcile only the direct period against `inception/mercury` OP Pollen rows.
    Reconcile later Mercury traffic under OpenRouter.
 

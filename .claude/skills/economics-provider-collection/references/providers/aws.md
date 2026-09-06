@@ -17,7 +17,7 @@ Cost Management home → Credits. Do not confuse the payer with linked accounts.
 
 Collection steps:
 
-1. For invoices, place PDFs/receipts in `data/inbox/`.
+1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
 2. Current balance: one `type: balance` row per nonzero grant, identical checked
    `start`, payer `account_id`, grant ID as `resource_id`, and
    `resource_sku: current-balance-lot`. Use estimated remaining amounts and each
@@ -75,7 +75,7 @@ Collection steps:
      -H "accept: application/json"
    ```
 
-9. Save raw API JSON to `data/inbox/aws-umbrella-<period>-cost-and-usage.json`.
+9. Save raw API JSON to `<collection-dir>/evidence/aws-umbrella-<period>-cost-and-usage.json`.
 10. Use this skill for saved raw evidence.
 
 For the detailed provider ledger, use `groupBy=service` and `source: api` for

@@ -56,7 +56,7 @@ Primary evidence sources:
 
 Collection steps:
 
-1. For invoices, place PDFs in `data/inbox/`.
+1. For invoices, place PDFs in `<collection-dir>/evidence/`.
 2. For billing history API evidence, query per account token. Required env vars for the known local accounts:
    - `CLOUDFLARE_POLLINATIONS_BILLING_TOKEN`
    - `CLOUDFLARE_MYCELI_API_TOKEN`
@@ -73,10 +73,10 @@ Collection steps:
      -H "Authorization: Bearer $token_value"
    ```
 
-   Save raw JSON to `data/inbox/cloudflare-<account>-<period>-billing-history.json`.
+   Save raw JSON to `<collection-dir>/evidence/cloudflare-<account>-<period>-billing-history.json`.
 
 3. The billing history endpoint is not period-scoped. Save the raw response, then filter locally to the requested provider period. If the target period is absent from the first page, stop and ask before paginating broadly.
-4. For startup credit consumption, use dashboard screenshots/exports from the relevant account billing credits page and save to `data/inbox/`.
+4. For startup credit consumption, use dashboard screenshots/exports from the relevant account billing credits page and save to `<collection-dir>/evidence/`.
 5. For a completed billing period whose invoice is not yet available, archive
    the Billable usage view and record its exact total as dashboard evidence.
    Replace or confirm it with the consolidated invoice when issued.

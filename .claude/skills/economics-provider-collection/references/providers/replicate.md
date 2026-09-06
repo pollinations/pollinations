@@ -28,7 +28,7 @@ Required credential:
 
 Collection steps:
 
-1. For invoices, receipts, or billing screenshots, place the original evidence in `data/inbox/`.
+1. For invoices, receipts, or billing screenshots, place the original evidence in `<collection-dir>/evidence/`.
 2. Validate the token before API collection:
 
    ```bash
@@ -45,7 +45,7 @@ Collection steps:
      -H "Authorization: Bearer $REPLICATE_API_TOKEN"
    ```
 
-   Save raw JSON to `data/inbox/replicate-<period>-predictions.json`. Follow `next` pagination only as far as needed for the requested period.
+   Save raw JSON to `<collection-dir>/evidence/replicate-<period>-predictions.json`. Follow `next` pagination only as far as needed for the requested period.
 
 4. For model schema evidence, fetch each relevant model:
 
@@ -54,7 +54,7 @@ Collection steps:
      -H "Authorization: Bearer $REPLICATE_API_TOKEN"
    ```
 
-   Save raw JSON to `data/inbox/replicate-<model>-schema-<date>.json` when model input/output fields are part of the investigation.
+   Save raw JSON to `<collection-dir>/evidence/replicate-<model>-schema-<date>.json` when model input/output fields are part of the investigation.
 
 5. For model pricing, save model page screenshots or short HTML/text evidence from the public model page. Do not infer pricing from `metrics.predict_time`.
 6. For invoice reconciliation, compare Replicate cash/invoice evidence with Tinybird metered Replicate model costs. Treat any remainder as a Replicate-wide reconciliation item until the missing source is identified.

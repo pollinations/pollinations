@@ -47,7 +47,7 @@ Collection steps:
    ```
 
    Follow `NextToken` if present. Save every raw page to
-   `data/inbox/alibaba/alibaba-<period>-instance-bill-items-page-<n>.json`.
+   `<collection-dir>/evidence/alibaba/alibaba-<period>-instance-bill-items-page-<n>.json`.
 
 2. Sum `Data.Items.Item[].PretaxAmount` for net paid cost.
 3. Keep billing-item rows rather than collapsing them to one provider total.

@@ -5,8 +5,8 @@ Canonical vendor: `anthropic`
 ## Verified — 2026-08-21
 
 - Status: API authentication and bounded cost-report collection work.
-- The committed collector retrieves seven-day windows without exposing the
-  encrypted admin key. Group by `description`; the Cost API then returns parsed
+- Retrieve seven-day windows with the existing admin key. Group by
+  `description`; the Cost API then returns parsed
   provider model and token-cost dimensions.
 - A zero here is a scoped API result, not proof that every Anthropic account
   or Claude subscription had zero cost; cross-check the console and Wise.
@@ -38,7 +38,7 @@ Collection steps:
      -H "anthropic-version: 2023-06-01"
    ```
 
-   Save raw JSON chunks to `data/inbox/anthropic-<period>-cost-report-<chunk>.json`.
+   Save raw JSON chunks to `<collection-dir>/evidence/anthropic-<period>-cost-report-<chunk>.json`.
 
    To explain a cost mismatch by API key, provider model, service tier, and
    context band, query the matching usage report:

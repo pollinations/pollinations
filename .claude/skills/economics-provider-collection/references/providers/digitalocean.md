@@ -32,7 +32,7 @@ Collection steps:
    ```
 
 3. Use invoices or Billing Insights when a closed-month or resource breakdown
-   is required. Save raw evidence to `data/inbox/`.
+   is required. Save raw evidence to `<collection-dir>/evidence/`.
 4. Use this skill to extract or reconcile it.
 
 Known traps:

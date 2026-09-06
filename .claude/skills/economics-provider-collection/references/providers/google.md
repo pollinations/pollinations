@@ -12,7 +12,8 @@ Canonical vendor: `google`
 - Balance scope: include only credits usable for compute, infrastructure, or
   model usage. Exclude support-only and other operational-benefit credits.
 - Current-month rows are snapshots. Refresh the bounded BigQuery export before
-  using them for Runway; `recorded_at` must identify the data-through date.
+  using them for Runway; `start`/`end` identify actual coverage, while
+  `recorded_at` is the ingestion timestamp.
 
 Primary evidence sources:
 
@@ -23,7 +24,7 @@ Primary evidence sources:
 
 Collection steps:
 
-1. For invoices, place PDFs/receipts in `data/inbox/`.
+1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
 2. For billing export evidence, use the service-account JSON from `GCP_BILLING_SA_JSON`.
 3. Do not print the service-account JSON.
 4. Activate a temporary service-account session and run a bounded BigQuery query for the requested period.
@@ -61,7 +62,7 @@ Collection steps:
 
    After the dry run succeeds, run the same query without `--dry_run` and save stdout.
 
-7. Save raw query output to `data/inbox/google-<period>-billing-export.json`.
+7. Save raw query output to `<collection-dir>/evidence/google-<period>-billing-export.json`.
 8. Use this skill for saved raw evidence.
 9. For the current OP Cloud balance, review Billing → Credits → Issued Credits
    and record one dated `type: balance` row containing only remaining credits

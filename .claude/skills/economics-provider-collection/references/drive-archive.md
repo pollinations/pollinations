@@ -38,14 +38,16 @@ with the Drive connector (`create_file` with the folder MIME type), then an
 
 ## Commands
 
-- Upload: `gog drive upload <file> --parent <folderId> --json --results-only`
+- Account: `gog --account elliot@myceli.ai`; the generic Drive connection may
+  be a different account. Verify the accounting parent before any write.
+- Upload: `gog --account elliot@myceli.ai drive upload <file> --parent <folderId> --json --results-only`
   (the local file name becomes the Drive title, so rename before uploading).
 - List a folder: Drive connector `search_files` with
   `parentId = '<folderId>' and mimeType = 'application/pdf'`
   (`pageSize` 200). `gog drive search` works for name searches;
   `gog drive ls --query` does not filter by folder.
 - Record every upload as one JSON line in the collection's
-  `evidence/drive-uploads.jsonl`, then link the Drive URL from the ledger
+  `<collection-dir>/evidence/drive-uploads.jsonl`, then link the exact Drive URL from the ledger
   row's `evidence` field.
 
 ## Coverage check
@@ -53,8 +55,6 @@ with the Drive connector (`create_file` with the folder MIME type), then an
 Before booking a month, list the month folder and compare it with the
 vendor's own invoice list (provider CLI/API, billing page, or the Gmail
 invoice emails). Download what is missing, rename, upload, and only then
-parse and reconcile. The 2026-09-06 sweep closed 51 gaps (Fireworks Orb
-invoices for all four accounts, OVHcloud April/May/June/September, Lambda
-April/May/July/August weeks, Azure August/September, Google December 2025 and
-August 2026, Replicate, ElevenLabs, Tinybird, fal, OpenRouter, Automat-it
-July, xAI September).
+parse and reconcile. Uploaded is not reconciled: verify supplier, account,
+invoice number, service period, amount/currency and funding before linking.
+Retain genuine missing/lost-document exceptions.

@@ -30,7 +30,7 @@ Collection steps:
 2. Prefer `usage.cost.total_cost` from saved Sonar responses when available;
    otherwise use the Economics meter and show its source.
 3. Ask the operator for dashboard evidence when balance, auto-top-up, or grant
-   status matters. Save evidence to `data/inbox/`.
+   status matters. Save evidence to `<collection-dir>/evidence/`.
 4. For a closed month, open **Invoice history** and download the original PDF.
    The invoice subtotal is the authoritative provider total and its SKU lines
    are the strongest model/request/token detail.
@@ -54,7 +54,7 @@ Collection steps:
   buckets); `start`/`end` parameters are ignored. Meters: `api_requests`
   (per model and `search_context_size`), `input_tokens`, `output_tokens`.
   Sum the daily `meter_event_summaries` for the UTC calendar month and save
-  the raw JSON to `data/inbox/perplexity/` and Drive.
+  the raw JSON to `<collection-dir>/evidence/perplexity/` and Drive.
 - Days that have already left the trailing-month window cannot be recovered
   at daily grain; a weekly bucket that straddles a month boundary cannot be
   split. Record what is exact and flag the rest; do not fill it from Pollen.

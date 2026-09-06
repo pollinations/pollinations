@@ -59,7 +59,7 @@ Collection steps:
 3. Use Cost Analysis for a calendar-month range, group by Configuration Name,
    and record explicit zero months. The international Model Ark API does not
    expose a supported billing or credit-balance endpoint.
-4. Save evidence to `data/inbox/`, present the source and timestamp, and use
+4. Save evidence to `<collection-dir>/evidence/`, present the source and timestamp, and use
    this skill to extract or reconcile it.
 
 Known traps:

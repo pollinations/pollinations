@@ -41,7 +41,7 @@ Collection steps:
      --json
    ```
 
-   Save raw JSON to `data/inbox/modal-<period>-billing-report.json`.
+   Save raw JSON to `<collection-dir>/evidence/modal-<period>-billing-report.json`.
 
    Daily reports cannot span more than 31 days, so collect longer history as
    consecutive monthly calls and preserve every raw response.

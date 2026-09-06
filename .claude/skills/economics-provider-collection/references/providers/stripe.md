@@ -34,7 +34,7 @@ Collection steps:
 
 1. Bound the requested period with Unix timestamps. Do not fetch all history.
 2. List payouts and save the raw response to
-   `data/inbox/stripe-<period>-payouts.json`.
+   `<collection-dir>/evidence/stripe-<period>-payouts.json`.
 3. When the question is what a specific automatic payout contains, query its
    balance transactions by payout ID and save the raw response separately.
    Follow `has_more` and `starting_after` until every page is saved, then require

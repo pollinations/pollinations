@@ -63,7 +63,7 @@ curl -sS "https://cloud.lambda.ai/api/v1/instances" \
 Collection steps:
 
 1. Save the raw instance response to
-   `data/inbox/lambda-instances-<timestamp>.json`.
+   `<collection-dir>/evidence/lambda-instances-<timestamp>.json`.
 2. Keep only instances whose returned status means they are actively running
    when calculating the instantaneous burn rate.
 3. Join each instance to a price witnessed at the same collection time. Record

@@ -33,7 +33,7 @@ Collection steps:
      --data '{"estimate_type":"unit_price","endpoints":{"<model-id>":{"unit_quantity":1}}}'
    ```
 
-3. Save dashboard/invoice/price evidence to `data/inbox/` and use
+3. Save dashboard/invoice/price evidence to `<collection-dir>/evidence/` and use
    this skill to extract or reconcile it.
 
 ## Verified — 2026-09-06

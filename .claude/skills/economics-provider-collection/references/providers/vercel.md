@@ -33,7 +33,7 @@ Collection steps:
    prepaid credit remains.
 4. Reconcile the official report against OP Pollen and keep any meter difference
    visible rather than replacing the provider total with the internal estimate.
-5. Save the raw response in `data/inbox/vercel/` and Google Drive.
+5. Save the raw response in `<collection-dir>/evidence/vercel/` and Google Drive.
 
 Official reference:
 

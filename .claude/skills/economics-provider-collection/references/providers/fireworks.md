@@ -60,7 +60,7 @@ Collection steps:
      -o json
    ```
 
-   Save raw JSON to `data/inbox/fireworks-<account>-<period>-usage.json`.
+   Save raw JSON to `<collection-dir>/evidence/fireworks-<account>-<period>-usage.json`.
 
    Try provider-native model detail before falling back to the dashboard:
 
@@ -83,7 +83,7 @@ Collection steps:
    firectl billing list-invoices --api-key "$FIREWORKS_API_KEY_NEO_GLYPH"
    ```
 
-   Save raw text/JSON evidence to `data/inbox/fireworks-<account>-invoices-<date>.txt`.
+   Save raw text/JSON evidence to `<collection-dir>/evidence/fireworks-<account>-invoices-<date>.txt`.
 
 3. Query the Neoglyph balance with `firectl account get`. Do not refresh the
    four inactive accounts during normal monthly collection.

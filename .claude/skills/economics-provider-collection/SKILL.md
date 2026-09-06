@@ -92,6 +92,11 @@ name or an undocumented ratio.
 
 ## Evidence and ledgers
 
+- `<collection-dir>` means a private, task-specific directory outside Git.
+  Keep temporary originals under `evidence/`; do not recreate `ingest/data`.
+  Retain source files in Drive and a resumable upload manifest before removing
+  scratch. A screenshot must show the loaded value, account and selected period;
+  a loading screen or another account's page is not evidence.
 - Amounts live in the ledger, never in a connector guide. This repository is
   public: a guide records how to reach a number (route, URL, command, which
   column, which convention), and the ledger row carries the number itself with

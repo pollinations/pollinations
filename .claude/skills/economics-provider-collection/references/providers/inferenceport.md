@@ -24,7 +24,7 @@ Collection steps:
      'curl -sS https://api.inferenceport.ai/v1/credits/ledger -H "Authorization: Bearer $INFERENCEPORT_API_KEY"'
    ```
 
-2. Preserve the generated JSON in `data/inbox/inferenceport/` and the monthly
+2. Preserve the generated JSON in `<collection-dir>/evidence/inferenceport/` and the monthly
    accounting evidence folder in Google Drive.
 3. Record the API `collected_at` timestamp as the balance check time. Do not
    backdate the balance to month-end.
@@ -38,7 +38,7 @@ Manual fallback:
 
 1. Open <https://console.inferenceport.ai> and sign in.
 2. Save the visible wallet balance and check time as a screenshot.
-3. Preserve the screenshot in `data/inbox/inferenceport/` and Google Drive.
+3. Preserve the screenshot in `<collection-dir>/evidence/inferenceport/` and Google Drive.
 
 Known traps:
 

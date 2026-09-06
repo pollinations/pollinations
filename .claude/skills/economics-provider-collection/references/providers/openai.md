@@ -17,7 +17,7 @@ Primary evidence sources:
 
 Collection steps:
 
-1. For invoices, place PDFs/receipts in `data/inbox/`.
+1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
 2. For API usage, use an admin key with organization read access. Query a bounded period only:
 
    ```bash
@@ -26,7 +26,7 @@ Collection steps:
      -H "Content-Type: application/json"
    ```
 
-   Save raw JSON to `data/inbox/openai-<period>-costs.json`.
+   Save raw JSON to `<collection-dir>/evidence/openai-<period>-costs.json`.
 
 3. Use UTC Unix seconds. `start_time` is inclusive; `end_time` is exclusive. For a calendar month, use the first day of the month through the first day of the next month.
 4. If the response has `has_more: true`, repeat with `page=<next_page>` and append all buckets before extraction.
@@ -34,7 +34,7 @@ Collection steps:
    OpenAI line items contain the model plus billed SKU (for example input,
    output, cached input, audio, image, or embedding). Preserve the full line
    item in `resource_sku` and extract its model prefix into `model`.
-6. For dashboard evidence, save screenshots or exports to `data/inbox/`.
+6. For dashboard evidence, save screenshots or exports to `<collection-dir>/evidence/`.
 7. Use this skill for saved raw evidence.
 
 Known traps:
@@ -45,4 +45,3 @@ Known traps:
 - Convert API currency values such as `usd` to schema/reporting currency `USD`.
 - If using `group_by`, put project/model/line-item breakdowns in `cost_details`.
 - Credits/grants can pay usage before cash transactions appear.
-- Historical local note: a grant starting 2025-12-04 expires 2026-08-01; credit burn may not map to cash transactions.

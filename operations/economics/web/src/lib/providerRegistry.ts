@@ -26,6 +26,8 @@ export type CashRule = {
     equals?: string[];
     inflow?: boolean;
     category: Category;
+    // The matched movement changes cash but never appears as a table line.
+    cashOnly?: boolean;
 };
 
 export type ProviderDefinition = {
@@ -190,6 +192,21 @@ export function transactionCategory(
         if (provider.category !== "uncategorized") return provider.category;
     }
     return isCategory(supplied) ? supplied : "uncategorized";
+}
+
+// A bank movement that changes cash without a P&L or adjustment line: the
+// vendor is cash-only, or the cash rule that classifies the movement is.
+export function cashOnlyTransaction(
+    row: Pick<OpTransactionRow, "amount" | "description" | "vendor">,
+): boolean {
+    const provider = resolveProvider(row.vendor);
+    if (!provider) return false;
+    if (provider.cashOnly) return true;
+    const description = normalizeProviderName(row.description);
+    const rule = (provider.cashRules ?? []).find((candidate) =>
+        cashRuleMatches(candidate, description, Number(row.amount)),
+    );
+    return rule?.cashOnly === true;
 }
 
 // The P&L category of a vendor ledger row: the ledger type decides compute

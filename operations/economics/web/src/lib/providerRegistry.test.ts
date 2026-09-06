@@ -11,6 +11,7 @@ import {
     activeProviderAccounts,
     canonicalProvider,
     canonicalProviderAccountId,
+    cashOnlyTransaction,
     collectProviderObservations,
     ledgerCategory,
     meterDriftExplanation,
@@ -128,6 +129,34 @@ describe("provider registry", () => {
             "operations",
         );
         expect(resolveProvider("deel")?.category).toBe("payroll");
+    });
+
+    it("marks cash-only movements by vendor or by cash rule", () => {
+        const movement = (
+            vendor: string,
+            description: string,
+            amount: number,
+        ) => ({ vendor, description, amount });
+        expect(
+            cashOnlyTransaction(
+                movement("github", "GitHub Sponsors payout", 2),
+            ),
+        ).toBe(true);
+        expect(
+            cashOnlyTransaction(movement("github", "GitHub Enterprise", -200)),
+        ).toBe(false);
+        expect(cashOnlyTransaction(movement("wise", "Wise cashback", 3))).toBe(
+            true,
+        );
+        expect(cashOnlyTransaction(movement("wise", "Wise fee", -3))).toBe(
+            false,
+        );
+        expect(
+            cashOnlyTransaction(movement("thomas-haferlach", "Refund", -100)),
+        ).toBe(true);
+        expect(cashOnlyTransaction(movement("google", "Google", -50))).toBe(
+            false,
+        );
     });
 
     it("classifies ledger rows by type first and by registry vendor for everything else", () => {

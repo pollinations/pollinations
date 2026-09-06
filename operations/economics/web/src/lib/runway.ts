@@ -34,6 +34,7 @@ import {
 } from "./providerBalances";
 import {
     canonicalProviderAccountId,
+    cashOnlyTransaction,
     ledgerCategory,
     resolveProvider,
     resolveProviderAccount,
@@ -979,10 +980,11 @@ export function buildRunway(
             ledgerVendorPayments.set(vendor, payments);
         } else if (
             !(category === "revenue" && vendor === "stripe") &&
-            !resolveProvider(vendor)?.cashOnly
+            !cashOnlyTransaction(row)
         ) {
-            // Cash-only vendors (registry `cashOnly`) move cash without a P&L
-            // or adjustment line, like Stripe payouts.
+            // Cash-only movements (registry `cashOnly` on the vendor or on
+            // its cash rule) change cash without a table line, like Stripe
+            // payouts.
             const monthValues =
                 actualByMonth.get(month) ?? new Map<string, number>();
             addAmount(monthValues, key, amountUsd);

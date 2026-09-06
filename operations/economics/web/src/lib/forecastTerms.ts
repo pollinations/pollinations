@@ -30,11 +30,9 @@ export type AutomaticForecastRule = ForecastLineRule & {
 // New lines remain visibly unmodeled until they are added here.
 const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     // Revenue
-    "github|revenue": { method: "one_off", paymentTiming: "direct" },
     "polar|revenue": { method: "one_off", paymentTiming: "direct" },
     "stripe sales|revenue": { method: "last", paymentTiming: "direct" },
     "stripe refunds|revenue": { method: "last", paymentTiming: "direct" },
-    "wise|revenue": { method: "one_off", paymentTiming: "direct" },
 
     // Cash adjustments
     "deel|balance_sheet": {

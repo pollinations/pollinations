@@ -1,5 +1,5 @@
 {
-  "version": 21,
+  "version": 23,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -1523,7 +1523,8 @@
           "match": [
             "sponsor"
           ],
-          "category": "revenue"
+          "category": "revenue",
+          "cashOnly": true
         }
       ],
       "meteringBasis": "not_applicable",
@@ -2976,7 +2977,8 @@
             "cashback"
           ],
           "inflow": true,
-          "category": "revenue"
+          "category": "revenue",
+          "cashOnly": true
         }
       ],
       "meteringBasis": "not_applicable",

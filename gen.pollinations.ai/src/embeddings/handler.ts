@@ -36,6 +36,7 @@ const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
     "openai-3-small": "text-embedding-3-small",
     "openai-3-large": "text-embedding-3-large",
     "cohere-embed-v4": "embed-v-4-0",
+    "cohere-embed-v4-azure-sweden": "embed-v-4-0",
     "qwen3-embedding-8b": "accounts/fireworks/models/qwen3-embedding-8b",
 };
 
@@ -58,6 +59,10 @@ const EMBEDDING_DIMENSIONS: Record<
     "openai-3-small": { max: 1536 },
     "openai-3-large": { max: 3072 },
     "cohere-embed-v4": { max: 1536, allowed: [256, 512, 1024, 1536] },
+    "cohere-embed-v4-azure-sweden": {
+        max: 1536,
+        allowed: [256, 512, 1024, 1536],
+    },
     "qwen3-embedding-8b": { max: 4096 },
 };
 
@@ -110,6 +115,7 @@ async function generateCohereAzureEmbeddings(
     if (imageInput) {
         const result = await callCohereAzureImageEmbed(
             env,
+            responseModel,
             request.model,
             [imageInput],
             request.dimensions,
@@ -131,6 +137,7 @@ async function generateCohereAzureEmbeddings(
 
     const result = await callCohereAzureEmbed(
         env,
+        responseModel,
         request.model,
         textInputs,
         request.dimensions,

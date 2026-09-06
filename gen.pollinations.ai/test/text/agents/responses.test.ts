@@ -1,8 +1,9 @@
+import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
-} from "../src/services/prompt-agent-responses.ts";
+} from "../../../src/text/agents/responses.ts";
 
 const RUNTIME = {
     config: {
@@ -12,6 +13,8 @@ const RUNTIME = {
     },
     apiKey: "ag_test",
     genBaseUrl: "https://gen.test",
+    fetcher: (input: RequestInfo | URL, init?: RequestInit) =>
+        globalThis.fetch(input, init),
 };
 
 function request(input: Record<string, unknown>) {
@@ -101,10 +104,10 @@ describe("managed agent Responses runtime", () => {
 
         const response = await handlePromptAgentResponsesRequest(
             request({
+                reasoning: { effort: "low", summary: null },
                 instructions: "Answer in one sentence.",
                 max_output_tokens: 123,
                 temperature: 0.4,
-                reasoning: { effort: "low" },
                 prompt_cache_key: "stable-prefix",
                 prompt_cache_options: { mode: "explicit" },
                 metadata: { trace: "test" },
@@ -320,6 +323,14 @@ describe("managed agent Responses runtime", () => {
             new AbortController().signal,
             RUNTIME,
         );
+        const sdkResponse = response.clone();
+        const sdk = new OpenAI({
+            apiKey: "test",
+            fetch: async () => sdkResponse,
+        });
+        const aggregated = sdk.responses
+            .stream({ model: "test-agent", input: "hello", store: false })
+            .finalResponse();
         const body = await response.text();
         const events = streamEvents(body);
 
@@ -348,6 +359,9 @@ describe("managed agent Responses runtime", () => {
                 },
             },
         });
+        expect(await aggregated).toMatchObject(
+            events.at(-1)?.response as object,
+        );
     });
 
     it.each([
@@ -398,7 +412,9 @@ describe("managed agent Responses runtime", () => {
         const events = streamEvents(await response.text());
         expect(events.at(-2)).toMatchObject({
             type: "error",
-            error: { code: "agent_error" },
+            code: "agent_error",
+            message: expect.any(String),
+            param: null,
         });
         expect(events.at(-1)).toMatchObject({
             type: "response.failed",
@@ -472,7 +488,9 @@ describe("managed agent Responses runtime", () => {
         const events = streamEvents(await response.text());
         expect(events.at(-2)).toMatchObject({
             type: "error",
-            error: { code: "agent_error" },
+            code: "agent_error",
+            message: expect.any(String),
+            param: null,
         });
         expect(events.at(-1)).toMatchObject({
             type: "response.failed",
@@ -483,7 +501,117 @@ describe("managed agent Responses runtime", () => {
         ).toBe(false);
     });
 
-    it("rejects state and caller-supplied tools", async () => {
+    it.each([
+        "completed",
+        "failed",
+    ] as const)("replays %s MCP calls as history without executing them", async (status) => {
+        const history = {
+            type: "mcp_call",
+            id: "prior-call",
+            server_label: "exa",
+            name: "search",
+            arguments: '{"query":"old question"}',
+            status,
+            output:
+                status === "completed"
+                    ? JSON.stringify({
+                          content: [{ type: "text", text: "Saved answer" }],
+                      })
+                    : null,
+            error: status === "failed" ? "Saved failure" : null,
+        };
+        const fetchMock = vi.fn(
+            async (input: RequestInfo | URL, init?: RequestInit) => {
+                const upstream = new Request(input, init);
+                expect(upstream.url).toBe(
+                    "https://gen.test/v1/chat/completions",
+                );
+                const body = (await upstream.json()) as Record<string, unknown>;
+                expect(body.messages).toEqual(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            role: "assistant",
+                            tool_calls: [
+                                {
+                                    id: "prior-call",
+                                    type: "function",
+                                    function: {
+                                        name: "mcp__exa__search",
+                                        arguments: history.arguments,
+                                    },
+                                },
+                            ],
+                        }),
+                        {
+                            role: "tool",
+                            tool_call_id: "prior-call",
+                            content:
+                                history.error ??
+                                JSON.stringify([
+                                    { type: "text", text: "Saved answer" },
+                                ]),
+                        },
+                        expect.objectContaining({
+                            role: "user",
+                            content: "What happened?",
+                        }),
+                    ]),
+                );
+                return Response.json({
+                    choices: [
+                        {
+                            message: {
+                                role: "assistant",
+                                content: "I remember",
+                            },
+                            finish_reason: "stop",
+                        },
+                    ],
+                    usage: {
+                        prompt_tokens: 4,
+                        completion_tokens: 2,
+                        total_tokens: 6,
+                    },
+                });
+            },
+        );
+        vi.stubGlobal("fetch", fetchMock);
+        const response = await handlePromptAgentResponsesRequest(
+            request({
+                input: [history, { role: "user", content: "What happened?" }],
+            }),
+            new AbortController().signal,
+            RUNTIME,
+        );
+        expect(response.status).toBe(200);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(await response.json()).toMatchObject({
+            output: [{ type: "message", content: [{ text: "I remember" }] }],
+            usage: { tool_call_counts: {} },
+        });
+        for (const input of [
+            [history, history],
+            [{ ...history, status: "in_progress" }],
+            [{ ...history, arguments: "invalid JSON" }],
+        ]) {
+            const invalid = await handlePromptAgentResponsesRequest(
+                request({ input }),
+                new AbortController().signal,
+                RUNTIME,
+            );
+            expect(invalid.status).toBe(400);
+        }
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects state and unsupported parameters", async () => {
+        const fetchMock = vi.fn(async () =>
+            Response.json(
+                { error: { message: "Test upstream unavailable" } },
+                { status: 502 },
+            ),
+        );
+        vi.stubGlobal("fetch", fetchMock);
         expect(
             PromptAgentResponsesRequestSchema.safeParse({
                 model: crypto.randomUUID(),
@@ -492,31 +620,46 @@ describe("managed agent Responses runtime", () => {
             }).success,
         ).toBe(false);
 
-        const response = await handlePromptAgentResponsesRequest(
+        // Caller tools are ignored, not rejected: Open WebUI attaches builtin
+        // tool specs to every chat sent from its UI, which used to 400 every
+        // managed-agent call.
+        const withTools = await handlePromptAgentResponsesRequest(
             request({
                 tools: [{ type: "function", name: "external", parameters: {} }],
             }),
             new AbortController().signal,
             RUNTIME,
         );
-        expect(response.status).toBe(400);
-        await expect(response.json()).resolves.toMatchObject({
-            error: { code: "unsupported_parameter", param: "tools" },
-        });
+        expect(withTools.status).toBe(502);
+        expect(fetchMock).toHaveBeenCalledTimes(1);
 
         for (const [field, value] of [
             ["max_tool_calls", { max_tool_calls: 2 }],
-            ["reasoning", { reasoning: { effort: "low", summary: "auto" } }],
+            [
+                "reasoning.summary",
+                { reasoning: { effort: "low", summary: "auto" } },
+            ],
+            [
+                "reasoning.summary",
+                { reasoning: { effort: "low", summary: "concise" } },
+            ],
+            [
+                "reasoning.summary",
+                { reasoning: { effort: "low", summary: "detailed" } },
+            ],
         ] as const) {
-            const unsupported = await handlePromptAgentResponsesRequest(
-                request(value),
-                new AbortController().signal,
-                RUNTIME,
-            );
-            expect(unsupported.status).toBe(400);
-            await expect(unsupported.json()).resolves.toMatchObject({
-                error: { code: "unsupported_parameter", param: field },
-            });
+            for (const stream of [false, true]) {
+                const unsupported = await handlePromptAgentResponsesRequest(
+                    request({ ...value, stream }),
+                    new AbortController().signal,
+                    RUNTIME,
+                );
+                expect(unsupported.status).toBe(400);
+                await expect(unsupported.json()).resolves.toMatchObject({
+                    error: { code: "unsupported_parameter", param: field },
+                });
+            }
         }
+        expect(fetchMock).toHaveBeenCalledTimes(1);
     });
 });

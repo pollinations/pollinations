@@ -26,6 +26,7 @@ export const COMMUNITY_ENDPOINT_MODALITIES = [
     "image",
     "video",
     "transcription",
+    "speech",
     "embedding",
 ] as const;
 // How a community image endpoint is billed. "request" charges the fixed
@@ -72,6 +73,12 @@ const BEARER_PREFIX = /^Bearer(?:\s+|$)/i;
 
 export type CommunityEndpointModality =
     (typeof COMMUNITY_ENDPOINT_MODALITIES)[number];
+
+export const CommunityEndpointApiSchema = z.enum([
+    "chat_completions",
+    "responses",
+]);
+export type CommunityEndpointApi = z.infer<typeof CommunityEndpointApiSchema>;
 
 export const MAX_COMMUNITY_CONTEXT_LENGTH = 10_000_000;
 
@@ -239,6 +246,24 @@ const COMMUNITY_VIDEO_PRICE_FIELD = {
     rawUsagePaths: ["duration"],
 } as const;
 
+// Community speech (TTS) endpoints bill the caller's input text by character,
+// mirroring first-party TTS: the gateway stores the request's character count
+// in completionAudioTokens and charges the per-1M completionAudioPrice. The
+// upstream returns binary audio with no usage object, so there is nothing to
+// read from the upstream response — the probe reports the metered characters
+// itself under the same completionAudioTokens key.
+const COMMUNITY_SPEECH_PRICE_FIELD = {
+    key: "completionAudioPrice",
+    usageType: "completionAudioTokens",
+    label: "Generated audio",
+    priceUnit: "million",
+    rawUsagePaths: ["completionAudioTokens"],
+} as const;
+
+const COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS = [
+    COMMUNITY_SPEECH_PRICE_FIELD,
+] as const;
+
 export const COMMUNITY_ENDPOINT_PRICE_FIELDS = [
     ...COMMUNITY_TEXT_PRICE_FIELDS,
     COMMUNITY_IMAGE_PRICE_FIELD,
@@ -274,7 +299,8 @@ export type CommunityEndpointPriceField =
     | (typeof COMMUNITY_ENDPOINT_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_IMAGE_TOKEN_PRICE_FIELDS)[number]
     | (typeof COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS)[number]
-    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number];
+    | (typeof COMMUNITY_EMBEDDING_ENDPOINT_PRICE_FIELDS)[number]
+    | (typeof COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS)[number];
 
 type CommunityModalitySpec = {
     category: Category;
@@ -332,6 +358,14 @@ export const COMMUNITY_MODALITY_SPEC = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
         restrictDefinitionEndpoints: true,
         priceFields: COMMUNITY_TRANSCRIPTION_ENDPOINT_PRICE_FIELDS,
+    },
+    speech: {
+        category: "audio",
+        inputModalities: ["text"],
+        outputModalities: ["audio"],
+        supportedEndpoints: ["/v1/audio/speech"],
+        restrictDefinitionEndpoints: true,
+        priceFields: COMMUNITY_SPEECH_ENDPOINT_PRICE_FIELDS,
     },
     embedding: {
         category: "embedding",
@@ -453,6 +487,7 @@ export function normalizeCommunityEndpointModality(
     value: string | null | undefined,
 ): CommunityEndpointModality {
     if (value === "transcription") return "transcription";
+    if (value === "speech") return "speech";
     if (value === "video") return "video";
     if (value === "image") return "image";
     if (value === "embedding") return "embedding";
@@ -507,11 +542,10 @@ export const LISTING_TYPES = [
     "endpoint_agent",
 ] as const;
 
-// Prompt agents all share one deployment-specific worker. Store this safe,
-// environment-neutral URL in the common target column, then replace it with
-// AGENT_RUNTIME_BASE_URL when a row crosses the API/runtime boundary. The
-// reserved .invalid host guarantees a missed replacement cannot call another
-// environment by accident.
+// Prompt agents execute inside Gen and have no upstream URL. The common target
+// column remains required for every listing, so store this safe sentinel and
+// replace it with Gen's public API URL only when presenting the row to callers.
+// The reserved .invalid host guarantees it can never become a real target.
 export const PROMPT_AGENT_BASE_URL_PLACEHOLDER =
     "https://agent-runtime.invalid/api/agent-runtime/v1";
 
@@ -535,7 +569,8 @@ const StoredCommunityEndpointPricesSchema = z.object(
 export const ProxyListingPayloadSchema = z
     .object({
         bearerTokenCiphertext: z.string().min(1),
-        responsesUrl: z.string().url().nullable().default(null),
+        // Media listings have no text API and do not need a data migration.
+        api: CommunityEndpointApiSchema.nullable().default(null),
         // Owner-set: callers may only spend Paid Pollen on this model. Rows
         // from before paid-only support are public-spend by default.
         paidOnly: z.boolean().default(false),
@@ -549,6 +584,14 @@ export const ProxyListingPayloadSchema = z
         advertised: CommunityEndpointAdvertisedSchema.optional(),
         prices: StoredCommunityEndpointPricesSchema,
     })
+    .refine(
+        (payload) => (payload.modality === "text") === (payload.api !== null),
+        {
+            path: ["api"],
+            message:
+                "Text models require an API; other modalities do not accept one",
+        },
+    )
     .transform(({ advertised: storedAdvertised, ...payload }) => {
         const advertised = normalizeCommunityEndpointAdvertised(
             storedAdvertised,
@@ -567,8 +610,8 @@ export const ProxyListingPayloadSchema = z
 export type ProxyListingPayload = z.infer<typeof ProxyListingPayloadSchema>;
 
 /**
- * An agent Enter runs itself. Its row id is also the model sent to the shared
- * runtime, which loads this configuration from the same row.
+ * A managed prompt agent Gen runs locally. Its row id is also the model used
+ * to load this configuration from the same row.
  */
 export const BuiltinMcpServerIdSchema = z.enum(MCP_SERVER_IDS);
 export const PromptAgentConfigSchema = z.object({
@@ -594,7 +637,7 @@ export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 export const EndpointAgentListingPayloadSchema = z
     .object({
         perUserRpm: z.number().finite().positive().nullable().default(null),
-        responsesUrl: z.string().url().nullable().default(null),
+        api: CommunityEndpointApiSchema,
     })
     .strict();
 
@@ -727,7 +770,7 @@ type CommunityEndpointRuntimeBase = {
     // All variants resolve these when the row is read, so routing never has
     // to know which kind it is holding.
     baseUrl: string;
-    responsesUrl?: string | null;
+    api: CommunityEndpointApi | null;
     upstreamModel: string;
     visibility: CommunityEndpointVisibility;
     requiredSafetyFeatures?: SafetyFeature[];
@@ -749,7 +792,7 @@ export type ProxyCommunityEndpointRuntime = CommunityEndpointRuntimeBase & {
     advertised?: CommunityEndpointAdvertised;
 };
 
-/** An agent Enter runs on its own runtime, named by its listing id. */
+/** An agent Gen runs locally, named by its listing id. */
 export type PromptAgentCommunityEndpointRuntime =
     CommunityEndpointRuntimeBase & {
         type: "prompt_agent";

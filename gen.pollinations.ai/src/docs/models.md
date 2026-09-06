@@ -35,8 +35,9 @@ structured fields.
 Use `supported_endpoints` to discover which public API routes accept each
 model. `/v1/responses` identifies built-in models with a configured native
 Responses route, community text models and endpoint agents whose owner supplied
-an exact Responses URL, and managed prompt agents. Models with that capability
-also remain callable through `/v1/chat/completions` via the shared adapter.
+the Responses API and one exact URL, and managed prompt agents. These community
+models and agents also accept `/v1/chat/completions` through the shared adapter.
+Built-in models may use separate upstream routes for Chat and Responses.
 
 ## Community Models
 

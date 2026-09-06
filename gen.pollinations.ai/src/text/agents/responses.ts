@@ -5,8 +5,10 @@ import {
     type ResponseUsage,
     ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
-import { APICallError, type ModelMessage } from "ai";
+import { APICallError, type ModelMessage, type ToolResultPart } from "ai";
 import { z } from "zod";
+import { McpCallSchema, safeMcpModelOutput } from "./mcp.ts";
+import { type AgentOutputItem, collectOutput } from "./output.ts";
 import {
     type AgentOutput,
     buildUsage,
@@ -14,7 +16,7 @@ import {
     type PromptAgentRuntime,
     runPromptAgent,
     streamPromptAgent,
-} from "./prompt-agent-runtime.ts";
+} from "./runtime.ts";
 
 export const PromptAgentResponsesRequestSchema =
     CreateResponseRequestSchema.extend({ model: z.string().uuid() });
@@ -174,8 +176,74 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
         return messages;
     }
 
+    const toolCallIds = new Set<string>();
     for (const raw of request.input) {
         const item = objectValue(raw, "input");
+        if (item.type === "mcp_call") {
+            const parsed = McpCallSchema.safeParse(item);
+            if (
+                !parsed.success ||
+                !["completed", "failed"].includes(parsed.data.status) ||
+                (parsed.data.output === null && parsed.data.error === null) ||
+                toolCallIds.has(parsed.data.id)
+            ) {
+                invalidRequest(
+                    "MCP history must contain unique completed or failed calls with results",
+                    "input",
+                );
+            }
+            const call = parsed.data;
+            toolCallIds.add(call.id);
+            let input: JsonObject;
+            try {
+                input = objectValue(
+                    JSON.parse(call.arguments),
+                    "input.arguments",
+                );
+            } catch {
+                invalidRequest(
+                    "MCP history arguments must be a JSON object",
+                    "input.arguments",
+                );
+            }
+            const toolName = `mcp__${call.server_label}__${call.name}`;
+            let output: ToolResultPart["output"] = {
+                type:
+                    call.error !== null || call.status === "failed"
+                        ? "error-text"
+                        : "text",
+                value: call.error ?? call.output ?? "",
+            };
+            if (call.error === null && call.output !== null) {
+                try {
+                    const saved = JSON.parse(call.output);
+                    if (Array.isArray(saved?.content)) {
+                        // Restore the same model-visible result used in the original step.
+                        output = safeMcpModelOutput({ output: saved });
+                    }
+                } catch {
+                    // External MCP calls may return plain text.
+                }
+            }
+            messages.push({
+                role: "assistant",
+                content: [
+                    { type: "tool-call", toolCallId: call.id, toolName, input },
+                ],
+            });
+            messages.push({
+                role: "tool",
+                content: [
+                    {
+                        type: "tool-result",
+                        toolCallId: call.id,
+                        toolName,
+                        output,
+                    },
+                ],
+            });
+            continue;
+        }
         if (item.type && item.type !== "message") {
             invalidRequest(
                 `Unsupported Responses input item: ${String(item.type)}`,
@@ -227,11 +295,19 @@ function requestSettings(
     }
     if (
         request.reasoning &&
-        Object.keys(request.reasoning).some((key) => key !== "effort")
+        Object.keys(request.reasoning).some(
+            (key) => key !== "effort" && key !== "summary",
+        )
     ) {
         invalidRequest(
             "Only reasoning effort is supported by managed agents",
             "reasoning",
+        );
+    }
+    if (request.reasoning?.summary != null) {
+        invalidRequest(
+            "Reasoning summaries are not supported by managed agents",
+            "reasoning.summary",
         );
     }
     const reasoningEffort = request.reasoning?.effort;
@@ -243,12 +319,9 @@ function requestSettings(
     ) {
         invalidRequest("Invalid reasoning effort", "reasoning.effort");
     }
-    if (request.tools?.length) {
-        invalidRequest(
-            "Caller-provided tools are not supported by managed agents",
-            "tools",
-        );
-    }
+    // Caller tools are ignored, not rejected: an agent runs its own tools, and
+    // clients attach theirs unprompted. Open WebUI injects builtin tool specs
+    // into every chat sent from its UI, so rejecting made agents unusable there.
     if (request.tool_choice !== undefined) {
         invalidRequest(
             "Caller-provided tool choice is not supported by managed agents",
@@ -359,10 +432,7 @@ function responseConfiguration(request: CreateResponseRequest) {
                   typeof request.reasoning.effort === "string"
                       ? request.reasoning.effort
                       : null,
-              summary:
-                  typeof request.reasoning.summary === "string"
-                      ? request.reasoning.summary
-                      : null,
+              summary: null,
           }
         : null;
     return {
@@ -395,7 +465,7 @@ function responseObject(
     output: AgentOutput,
     id: string,
     createdAt: number,
-    messageId: string,
+    items: AgentOutputItem[],
 ) {
     const incomplete =
         output.finishReason === "length" ||
@@ -404,7 +474,7 @@ function responseObject(
         id,
         object: "response" as const,
         created_at: createdAt,
-        completed_at: Math.floor(Date.now() / 1000),
+        completed_at: incomplete ? null : Math.floor(Date.now() / 1000),
         status: incomplete ? ("incomplete" as const) : ("completed" as const),
         incomplete_details: incomplete
             ? {
@@ -415,22 +485,7 @@ function responseObject(
               }
             : null,
         model: request.model,
-        output: [
-            {
-                id: messageId,
-                type: "message" as const,
-                status: incomplete ? "incomplete" : "completed",
-                role: "assistant" as const,
-                content: [
-                    {
-                        type: "output_text" as const,
-                        text: output.content,
-                        annotations: [],
-                        logprobs: [],
-                    },
-                ],
-            },
-        ],
+        output: items,
         error: null,
         usage: responseUsage(output),
         ...responseConfiguration(request),
@@ -471,7 +526,6 @@ function streamResponse(
 ): Response {
     const encoder = new TextEncoder();
     const responseId = `resp_${crypto.randomUUID()}`;
-    const messageId = `msg_${crypto.randomUUID()}`;
     const createdAt = Math.floor(Date.now() / 1000);
     let sequenceNumber = 0;
     const stream = new ReadableStream<Uint8Array>({
@@ -500,43 +554,14 @@ function streamResponse(
                 usage: null,
                 ...responseConfiguration(request),
             };
-            const initialItem = {
-                id: messageId,
-                type: "message",
-                status: "in_progress",
-                role: "assistant",
-                content: [],
-            };
-            const initialPart = {
-                type: "output_text",
-                text: "",
-                annotations: [],
-                logprobs: [],
-            };
+            const collected = collectOutput(send);
             try {
                 send("response.created", { response: initialResponse });
-                send("response.output_item.added", {
-                    output_index: 0,
-                    item: initialItem,
-                });
-                send("response.content_part.added", {
-                    item_id: messageId,
-                    output_index: 0,
-                    content_index: 0,
-                    part: initialPart,
-                });
                 const output = await streamPromptAgent(
                     runtime,
                     messages,
                     signal,
-                    (delta) =>
-                        send("response.output_text.delta", {
-                            item_id: messageId,
-                            output_index: 0,
-                            content_index: 0,
-                            delta,
-                            logprobs: [],
-                        }),
+                    collected.onPart,
                     settings,
                 );
                 const response = responseObject(
@@ -544,27 +569,8 @@ function streamResponse(
                     output,
                     responseId,
                     createdAt,
-                    messageId,
+                    collected.finish(output.finishReason),
                 );
-                const item = response.output[0];
-                const part = item.content[0];
-                send("response.output_text.done", {
-                    item_id: messageId,
-                    output_index: 0,
-                    content_index: 0,
-                    text: output.content,
-                    logprobs: [],
-                });
-                send("response.content_part.done", {
-                    item_id: messageId,
-                    output_index: 0,
-                    content_index: 0,
-                    part,
-                });
-                send("response.output_item.done", {
-                    output_index: 0,
-                    item,
-                });
                 send(
                     response.status === "incomplete"
                         ? "response.incomplete"
@@ -574,28 +580,14 @@ function streamResponse(
             } catch (error) {
                 const message =
                     error instanceof Error ? error.message : String(error);
-                const responseError = {
-                    type: "server_error",
-                    code: "agent_error",
-                    message,
-                    param: null,
-                };
-                send("error", {
-                    error: responseError,
-                });
+                const responseError = { code: "agent_error", message };
+                send("error", { ...responseError, param: null });
                 send("response.failed", {
                     response: {
-                        id: responseId,
-                        object: "response",
-                        created_at: createdAt,
-                        completed_at: Math.floor(Date.now() / 1000),
+                        ...initialResponse,
                         status: "failed",
-                        incomplete_details: null,
-                        model: request.model,
-                        output: [],
+                        output: collected.items,
                         error: responseError,
-                        usage: null,
-                        ...responseConfiguration(request),
                     },
                 });
             } finally {
@@ -624,10 +616,12 @@ export async function handlePromptAgentResponsesRequest(
         if (request.stream) {
             return streamResponse(request, runtime, messages, settings, signal);
         }
+        const collected = collectOutput();
         const output = await runPromptAgent(
             runtime,
             messages,
             signal,
+            collected.onPart,
             settings,
         );
         return Response.json(
@@ -636,7 +630,7 @@ export async function handlePromptAgentResponsesRequest(
                 output,
                 `resp_${crypto.randomUUID()}`,
                 Math.floor(Date.now() / 1000),
-                `msg_${crypto.randomUUID()}`,
+                collected.finish(output.finishReason),
             ),
         );
     } catch (error) {

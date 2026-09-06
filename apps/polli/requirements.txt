@@ -52,6 +52,7 @@ orjson>=3.10.0
 packaging==26.0
 pillow==12.1.0
 pilmoji>=2.0.0
+playwright==1.61.0
 propcache==0.4.1
 protobuf==6.33.5
 pycparser==3.0

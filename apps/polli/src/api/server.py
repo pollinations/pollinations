@@ -427,9 +427,24 @@ async def _responses_stream(client, args: dict[str, Any], auth: str) -> AsyncIte
     yield _sse("[DONE]")
 
 
-def create_api_app(pollinations_client, config):
+def create_api_app(pollinations_client, config, discord_bot=None):
     app = FastAPI(title="Polli API", description="OpenAI-compatible API for Polli")
     app.state.start_time = time.time()
+    app.state.discord_bot = discord_bot
+
+    def add_discord_context(args: dict[str, Any]) -> dict[str, Any]:
+        if discord_bot is None:
+            return args
+        guild = discord_bot.get_guild(config.discord.guild_id)
+        return {
+            **args,
+            "tool_context": {
+                **args["tool_context"],
+                "discord_bot": discord_bot,
+                "discord_guild": guild,
+            },
+        }
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(config.api.cors_origins),
@@ -455,7 +470,7 @@ def create_api_app(pollinations_client, config):
         auth = _authorization(request)
         if not auth:
             return _error("Authorization header required", 401, "invalid_api_key")
-        args = _request_args(body)
+        args = add_discord_context(_request_args(body))
         if body.stream:
             include_usage = bool((body.stream_options or {}).get("include_usage"))
             return StreamingResponse(
@@ -481,7 +496,7 @@ def create_api_app(pollinations_client, config):
         if not auth:
             return _error("Authorization header required", 401, "invalid_api_key")
         chat = _responses_chat_request(body)
-        args = _request_args(chat)
+        args = add_discord_context(_request_args(chat))
         if body.stream:
             return StreamingResponse(
                 _responses_stream(pollinations_client, args, auth),

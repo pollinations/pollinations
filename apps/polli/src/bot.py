@@ -613,6 +613,9 @@ class PolliBot(commands.Bot):
             from .search.code_search import close as close_embeddings
 
             await close_embeddings()
+        from .integrations.web_scraper import close_web_scraper
+
+        await close_web_scraper()
         await super().close()
 
     @tasks.loop(minutes=1)
@@ -915,6 +918,19 @@ async def handle_dm_message(message: discord.Message):
     text = message.content.strip().lower()
     user_id = message.author.id
 
+    if text in {"privacy", "privacy policy", "delete data", "delete my data"}:
+        await message.reply(
+            "**Privacy and data requests**\n"
+            "Privacy policy: https://pollinations.ai/privacy\n"
+            "For deletion or correction of your data, email hello@pollinations.ai "
+            "with your Discord user ID and the relevant message or issue links. "
+            "Do not send passwords or API keys.\n"
+            "To remove all issue-notification subscriptions now, DM `unsubscribe all`. "
+            "That command removes subscriptions only; it does not erase Discord messages, "
+            "GitHub content, operational logs or provider-held data."
+        )
+        return
+
     async with message.channel.typing():
         # Subscribe command
         subscribe_match = re.search(r"subscribe\s+(?:to\s+)?#?(\d+)", text)
@@ -955,7 +971,8 @@ async def handle_dm_message(message: discord.Message):
             "• `subscribe #123` - Subscribe to issue updates\n"
             "• `unsubscribe #123` - Unsubscribe from an issue\n"
             "• `unsubscribe all` - Unsubscribe from all issues\n"
-            "• `list subscriptions` - See your subscriptions\n\n"
+            "• `list subscriptions` - See your subscriptions\n"
+            "• `privacy` - Privacy policy and deletion/correction contact\n\n"
             "For other requests, please @mention me in a server channel!"
         )
         await message.reply(help_text)
@@ -1212,7 +1229,45 @@ async def handle_thread_message(
         )
 
 
+_active_conversations: set[int] = set()
+
+
 async def process_message(
+    channel: discord.Thread | discord.TextChannel,
+    user: discord.User | discord.Member,
+    text: str,
+    image_urls: list[str],
+    session: ConversationSession,
+    thread_history: list[dict] | None = None,
+    reply_to: discord.Message | None = None,
+    source_message: discord.Message | None = None,
+    video_urls: list[str] | None = None,
+    file_urls: list[str] | None = None,
+):
+    if channel.id in _active_conversations:
+        await channel.send(
+            "I'm still working on the previous request here. Please wait for that reply before retrying."
+        )
+        return
+    _active_conversations.add(channel.id)
+    try:
+        await _process_message(
+            channel,
+            user,
+            text,
+            image_urls,
+            session,
+            thread_history,
+            reply_to,
+            source_message,
+            video_urls,
+            file_urls,
+        )
+    finally:
+        _active_conversations.discard(channel.id)
+
+
+async def _process_message(
     channel: discord.Thread | discord.TextChannel,
     user: discord.User | discord.Member,
     text: str,
@@ -1355,6 +1410,8 @@ async def process_message(
                 tools=None,  # No tools, just respond
             )
             response_text = retry_result.get("content", "") if retry_result else ""
+            if not response_text and not image_files:
+                response_text = "I couldn't generate a response for this request. Please try again shortly."
 
         if response_text or image_files:
             await send_long_message(

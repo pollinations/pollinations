@@ -56,5 +56,12 @@ npm test
 The hosted Cloudflare Worker lives in [`apps/mcp/`](../../apps/mcp/) and is
 routed through Gen.
 
+## Previous stdio server
+
+The discontinued local stdio server is preserved in
+[`@pollinations/mcp@2.5.0`](https://www.npmjs.com/package/@pollinations/mcp/v/2.5.0)
+and in the
+[`packages/mcp` source at its final commit](https://github.com/pollinations/pollinations/tree/f7809a98877e2e34455b0799952ab5267e37e58d/packages/mcp).
+
 Issues: [GitHub](https://github.com/pollinations/pollinations/issues) · License:
 MIT

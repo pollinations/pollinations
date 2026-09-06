@@ -1,6 +1,6 @@
 {
     "name": "pollinations-mcp-core",
-    "version": "2.5.0",
+    "version": "2.5.1",
     "private": true,
     "description": "Internal tool handlers for the hosted Pollinations MCP server",
     "type": "module",

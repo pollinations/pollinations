@@ -1,5 +1,5 @@
 {
-  "version": 19,
+  "version": 20,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -2825,6 +2825,7 @@
       "id": "thomas-haferlach",
       "label": "Thomas Haferlach",
       "category": "balance_sheet",
+      "cashOnly": true,
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,

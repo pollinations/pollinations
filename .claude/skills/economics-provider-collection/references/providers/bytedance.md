@@ -10,6 +10,16 @@ Canonical vendor: `bytedance`
 - Use this guide for historical `bytedance` facts and old BytePlus evidence.
   Use `replicate.md` for current Seedance/Seedream provider collection.
 
+## Verified — 2026-09-06
+
+- The Jan–May 2026 usage invoices (BPSGEPS20261620603578 $5,812.84,
+  BPSGEPS20261819791241 $2,333.05, BPSGEPS20261050804996 $1,036.80,
+  BP-3000852661-20260511-27766 $550.51, BPSGEPS20261581405093 $227.71) were
+  never paid: BytePlus offered them as credit (Elliot, 2026-09-06). The ledger
+  rows for those months are credit-funded (`credit` column, `paid` 0). Only the
+  December 2025 usage invoice ($720.33, issued 2026-01-05) was paid from Wise
+  on 2026-01-21.
+
 Primary evidence sources:
 
 - Historical usage: Tinybird `economics_pollen_usage` rows where `vendor = 'bytedance'`.

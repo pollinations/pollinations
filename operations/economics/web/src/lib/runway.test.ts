@@ -1216,9 +1216,8 @@ describe("ledger-based P&L categories", () => {
         expect(infrastructure?.creditValues?.["2026-07:actual"]).toBe(-300);
         expect(july?.totalExpensesUsd).toBe(-700);
         expect(july?.totalCreditUsd).toBe(-300);
-        expect(timing?.category).toBe("balance_sheet");
-        expect(timing?.values["2026-07:actual"]).toBe(700);
-        expect(timing?.values["2026-08:current"]).toBe(-1_000);
+        // No bridge line: Cash change stays the bank movement (see netUsd).
+        expect(timing).toBeUndefined();
         expect(credits).toBeUndefined();
         expect(august?.netUsd).toBe(-1_000);
         expect(result.currentCashUsd).toBe(9_000);
@@ -1248,6 +1247,30 @@ describe("ledger-based P&L categories", () => {
                 (flag) => /stability/.test(flag) && /ledger/.test(flag),
             ),
         ).toBe(true);
+    });
+
+    it("keeps cash-only vendor movements in cash without a table line", () => {
+        const result = buildRunway(
+            [
+                opening(1_000),
+                transaction({
+                    entry_id: "thomas-2025-scaleway",
+                    date: "2026-07-09",
+                    vendor: "thomas-haferlach",
+                    category: "balance_sheet",
+                    amount: -100,
+                    description: "Reimbursement for 2025 Scaleway invoices",
+                }),
+            ],
+            NOW,
+            [],
+        );
+
+        expect(
+            result.rows.some((row) => row.vendor === "thomas-haferlach"),
+        ).toBe(false);
+        expect(result.currentCashUsd).toBe(900);
+        expect(result.flags.some((flag) => /thomas/.test(flag))).toBe(false);
     });
 
     it("warns instead of falling back to bank cash when a ledger category vendor has no invoices", () => {

@@ -38,6 +38,9 @@ export type ProviderDefinition = {
     cashRules?: CashRule[];
     // Runway line the vendor is folded into (office merchants, admin purposes).
     runwayLine?: string;
+    // Bank movements of this vendor change cash but never appear as a P&L or
+    // adjustment line (a reimbursement of pre-window costs, for example).
+    cashOnly?: boolean;
     meteringBasis: MeteringBasis;
     aliases: string[];
     connector: string | null;

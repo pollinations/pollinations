@@ -58,10 +58,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "one_off",
         paymentTiming: "direct",
     },
-    "thomas-haferlach|balance_sheet": {
-        method: "one_off",
-        paymentTiming: "direct",
-    },
 
     // Metered compute and infrastructure that should project from OP Cloud.
     "alibaba|compute": {

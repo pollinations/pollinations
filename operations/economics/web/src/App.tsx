@@ -755,11 +755,12 @@ function viewInfoContent(activeView: ActiveView) {
                     enters the sums. Expand a category to see its vendor detail.
                 </InfoLine>
                 <InfoLine>
-                    Bank payments to ledger vendors stay in cash only; the
-                    "vendor invoice timing" line carries the difference. A paid
-                    vendor without ledger rows is a warning, never a cash
-                    fallback. Forecast columns and running cash remain
-                    cash-based.
+                    Cash change and Cash balance are the bank. The lines above
+                    are by service month and are not reconciled to them here:
+                    unpaid bills, prepaid balances and the Stripe float stay out
+                    of the table. A paid vendor without ledger rows is a
+                    warning, never a cash fallback. Forecast columns and running
+                    cash remain cash-based.
                 </InfoLine>
             </span>
         );

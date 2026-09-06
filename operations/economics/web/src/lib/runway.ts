@@ -951,12 +951,10 @@ export function buildRunway(
 
     // Ledger categories: bank payments settle invoices that the vendor ledger
     // already expensed, so they stay in cash and out of the P&L lines.
-    const ledgerVendorPaymentsByMonth = new Map<string, number>();
     const ledgerVendorPayments = new Map<
         string,
         { category: string; usd: number; months: Set<string> }
     >();
-    const ledgerPaidUsageByMonth = new Map<string, number>();
     const creditFundedByMonth = new Map<string, Map<string, number>>();
     for (const row of bankRows) {
         const month = row.date.slice(0, 7);
@@ -971,7 +969,6 @@ export function buildRunway(
         addAmount(cashMonthValues, key, amountUsd);
         cashActualByMonth.set(month, cashMonthValues);
         if (pnlSource(category) === "ledger") {
-            addAmount(ledgerVendorPaymentsByMonth, month, amountUsd);
             const payments = ledgerVendorPayments.get(vendor) ?? {
                 category,
                 usd: 0,
@@ -980,7 +977,12 @@ export function buildRunway(
             payments.usd += amountUsd;
             payments.months.add(month);
             ledgerVendorPayments.set(vendor, payments);
-        } else if (!(category === "revenue" && vendor === "stripe")) {
+        } else if (
+            !(category === "revenue" && vendor === "stripe") &&
+            !resolveProvider(vendor)?.cashOnly
+        ) {
+            // Cash-only vendors (registry `cashOnly`) move cash without a P&L
+            // or adjustment line, like Stripe payouts.
             const monthValues =
                 actualByMonth.get(month) ?? new Map<string, number>();
             addAmount(monthValues, key, amountUsd);
@@ -1028,13 +1030,12 @@ export function buildRunway(
             creditFundedByMonth.get(month) ?? new Map<string, number>();
         addAmount(creditValues, key, 0 - creditUsd);
         creditFundedByMonth.set(month, creditValues);
-        addAmount(ledgerPaidUsageByMonth, month, paidUsd);
         identities.set(key, { category, vendor });
         observedMonths.add(month);
     }
     // A bank payment still held as cash prepaid on the vendor's latest balance
     // snapshot has nothing to expense yet: the money moved into a prepaid
-    // balance, not into usage, and "vendor invoice timing" carries it in cash.
+    // balance, not into usage; the payment stays a plain cash movement.
     const latestPrepaidByVendor = new Map<
         string,
         { start: string; usd: number }
@@ -1487,31 +1488,6 @@ export function buildRunway(
                     fxRevaluationValues[column.id] ?? 0,
                 ]),
             ),
-            assumptions: {},
-        });
-    }
-    // Ledger categories expense invoices by service month; the bank pays them
-    // later. Keep both differences visible so the P&L still explains cash.
-    const invoiceTimingValues = Object.fromEntries(
-        columnSpecs.map((column) => [
-            column.id,
-            column.kind === "forecast"
-                ? 0
-                : (ledgerVendorPaymentsByMonth.get(column.month) ?? 0) +
-                  (ledgerPaidUsageByMonth.get(column.month) ?? 0),
-        ]),
-    );
-    if (
-        Object.values(invoiceTimingValues).some(
-            (value) => Math.abs(value) > 0.005,
-        )
-    ) {
-        rows.push({
-            category: "balance_sheet",
-            vendor: "vendor invoice timing",
-            forecastMethod: "one_off",
-            forecastPaymentTiming: null,
-            values: invoiceTimingValues,
             assumptions: {},
         });
     }

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14502,
+  "title": "refactor: unify provider errors and preserve full diagnostics",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14502",
+  "merged_at": "2026-09-06T17:23:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces legacy `HttpError` callers with `UpstreamError` and removes redundant image/3D conversions.\n- Returns complete, unredacted provider error bodies, including raw text/HTML and HTTP-200 error envelopes; keeps gateway status mappings and image validation at 400.\n- Preserves upstream failures when error-body reads or output-URL parsing fail; shares moderation error-field extraction without classifying echoed prompts.\n- Retains capacity/429 fallback, including reference-image hosts; adds an end-to-end test proving fallback success and one billed event. Credential-header and request-input telemetry protections remain.\n- Updated from main. All CI checks pass, including full Gen/Enter suites, lint/build and CodeQL; both local typechecks pass. Local tests: 213 focused tests at normal timeout; full Gen 1,805 passed / 6 skipped with a 15-second timeout.\n\nFixes #13551\nReplaces #13647.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The error garden speaks",
+    "blurb": "Provider failures now arrive with their useful parts still attached, even when an upstream service decides an HTTP 200 is the perfect place for an error. The fallback paths also keep finding another flower when one server is full.",
+    "summary": "Unified Gen provider failures under UpstreamError so image, video, 3D, embeddings, and text requests preserve complete provider error bodies—including raw HTML/text and HTTP-200 error envelopes—while retaining 429/capacity fallback behavior.",
+    "impact": "Developers get fuller upstream diagnostics when generations fail, while capacity fallback—including reference-image hosts—can still complete a request through another provider with one billed event.",
+    "keywords": [
+      "error handling",
+      "UpstreamError",
+      "provider diagnostics",
+      "fallback",
+      "image generation",
+      "API reliability"
+    ],
+    "visual_concept": "A cozy garden repair scene: Polli acts as a careful mechanic and gardener, collecting complete error-message scrolls from several little generation machines instead of losing them in a broken pipe. A CRT monitor robot happily reads the full diagnostics while a vine-like fallback path routes around a busy, flower-covered server to a healthy one; use intact sealed envelopes to suggest protected credentials.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny mechanic goggles and carefully carries a full diagnostic scroll between flower-covered retro generation servers; a chunky CRT-monitor robot reads the scroll while a lime green (#ecf874) vine path routes around a busy server to a blooming fallback server, with subtle pixel text \"FULL SIGNAL\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14502.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears tiny mechanic goggles and carefully carries a full diagnostic scroll between flower-covered retro generation servers; a chunky CRT-monitor robot reads the scroll while a lime green (#ecf874) vine path routes around a busy server to a blooming fallback server, with subtle pixel text \"FULL SIGNAL\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-06T17:24:38.674141+00:00"
+}

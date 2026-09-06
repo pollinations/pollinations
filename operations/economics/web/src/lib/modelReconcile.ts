@@ -824,8 +824,10 @@ export function modelReconcileSummary(
             continue;
         }
 
-        summary.missingSideProviderMonths += 1;
+        // A source gap is Pollen usage with no provider data to check it
+        // against. Provider cost with no Pollen usage is ordinary cost.
         if (row.status === "pollen only") {
+            summary.missingSideProviderMonths += 1;
             summary.pollenOnlyMeterUsd += row.pollenMeterUsd ?? 0;
         } else {
             summary.providerOnlyUsageUsd += row.providerUsageUsd ?? 0;

@@ -856,6 +856,32 @@ describe("modelReconcileRows", () => {
         expect(rows[0].meterGapUsd).toBe(0);
     });
 
+    it("counts a source gap only when Pollen usage has no provider data", () => {
+        const rows = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({ model: "claude", paid: -50 }),
+                    // Provider cost with no Pollen usage is a normal cost, not a gap.
+                    cloud({
+                        vendor: "mistral",
+                        model: "mistral-ocr",
+                        paid: -9,
+                    }),
+                ],
+                opPollen: [
+                    pollen({ cost_paid: 40, price_paid: 60 }),
+                    pollen({ vendor: "openai", cost_paid: 10 }),
+                ],
+            }),
+        );
+        const summary = modelReconcileSummary(rows);
+
+        expect(summary.providerMonths).toBe(3);
+        expect(summary.missingSideProviderMonths).toBe(1);
+        expect(summary.pollenOnlyMeterUsd).toBe(10);
+        expect(summary.providerOnlyUsageUsd).toBe(9);
+    });
+
     it("filters after preserving month-provider grain and summarizes holes", () => {
         const rows = modelReconcileRows(
             data({

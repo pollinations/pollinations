@@ -21,15 +21,14 @@ Canonical vendor: `lambda`
   `Promotional Credits`, and `Amount Due (USD)`. The usage month is the
   calendar month of the dashboard rows, never the invoice week.
 - Billing page: `https://cloud.lambda.ai/billing` (Credits table with the
-  grant, Credit activity per invoice, Payment History with a `View` link per
-  invoice). Grant `451fc717`: $7,500 granted 2026-03-30, expired 2026-08-15
-  with $0.00 remaining.
-- Reconciliation done 2026-09-06: the 18 weekly invoices from
-  `lambda_04202614208` (Mar 30 – Apr 6) to `lambda_08202613480`
-  (Jul 27 – Aug 3) sum to $7,509.56 = $7,500.00 promotional credit + $9.56
-  card. The staging ledger's calendar-month rows (Mar – Aug 2026) sum to
-  $7,508.48 (credit burn $7,495.04 + paid $13.44). Per-month differences are
-  the weekly-versus-monthly grain, not missing usage.
+  grant and its expiry, Credit activity per invoice, Payment History with a
+  `View` link per invoice). Record the grant, its grant date and its expiry as
+  a balance row.
+- Reconciliation done 2026-09-06: the weekly invoices from Mar 30 to Aug 3 sum
+  to the promotional credit applied plus the small card remainder, and agree
+  with the ledger's calendar-month rows. Per-month differences are the
+  weekly-versus-monthly grain, not missing usage. The amounts live on the
+  ledger rows.
 - Archive: all 18 invoices are in the accounting Drive under
   `2026/<MM Month>/Invoices` as `YYYY-MM-DD__Lambda__invoice-lambda-<id>.pdf`
   (invoice date).

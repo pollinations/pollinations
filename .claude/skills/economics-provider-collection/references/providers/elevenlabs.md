@@ -7,8 +7,9 @@ Canonical vendor: `elevenlabs`
 - Status: workspace analytics API works with the stored key.
 - Login: `elliot@myceli.ai` in the Myceli browser workspace.
 - Workspace: `My Workspace` (`myceli`).
-- Plan: Scale, `$299/month`, renews September 13.
-- Remaining quota: `2,844,141` of `4,284,566` usage credits.
+- The plan page states the plan name, its monthly price, the renewal date and
+  the remaining share of the subscription usage credits. Record all four on the
+  balance row; the credits are non-transferable and expire at renewal.
 - The response is column-oriented (`columns` plus array-valued `rows`); it
   does not return a `total_cost` property on each row object.
 

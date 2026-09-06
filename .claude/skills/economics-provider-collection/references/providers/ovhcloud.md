@@ -69,9 +69,8 @@ Collection endpoints:
 - OVH issues one bill per Public Cloud project on the 1st (two per month
   since March 2026), each covering the previous month. Voucher-funded bills
   print `Invoice total ex. VAT €0.00`; the real usage is the `SUB-TOTAL` line
-  before `Use of your Voucher`. The staging ledger's EUR month totals equal
-  those subtotals exactly (Jan 2,342.75; Mar 766.81; Apr 1,059.81;
-  May 1,021.61; Aug 84.84).
+  before `Use of your Voucher`. The ledger's EUR month totals equal those
+  subtotals exactly.
 - Archive: every 2026 bill (`IE1971296` … `IE2153030`) is in the accounting
   Drive under `2026/<MM Month>/Invoices` as
   `YYYY-MM-DD__OVHcloud__IE<id>.pdf` (invoice date).

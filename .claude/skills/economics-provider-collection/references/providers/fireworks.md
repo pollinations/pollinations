@@ -130,7 +130,7 @@ Collection steps:
   `YYYY-MM-DD__Fireworks__<invoice number>__<Account>.pdf` — Myceli
   `ETIXZH-00001` … `00008` (Feb – Sep 2026), Pollinations `EOQNTM-00001` …
   `00010`, Neoglyph `XJKRPG-00001` … `00004`, Pixelmarket `ZDLLPK-00001` …
-  `00004`. Neoglyph and Pixelmarket invoices are all $0.00 usage.
+  `00004`.
 - `firectl billing get-usage --api-key "$KEY" -a <id> --start-time YYYY-MM-DD
   --end-time YYYY-MM-DD --usage-type serverless --group-by model_name` accepts
   dates only (no ISO time) and, for these accounts, prints the account-cost

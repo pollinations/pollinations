@@ -739,7 +739,8 @@ function viewInfoContent(activeView: ActiveView) {
                 <strong>Runway</strong>
                 <InfoLine>
                     Cash change and balance come from the Wise-backed Bank
-                    ledger. Stripe payouts affect cash, never P&amp;L revenue.
+                    ledger. Revenue is what entered Stripe in the month; Wise
+                    payouts are cash only and are not reconciled against it.
                 </InfoLine>
                 <InfoLine>
                     The current month keeps bank movements and the authored

@@ -922,6 +922,8 @@ export function buildRunway(
             Math.abs(row.net_sales - row.stripe_fees - row.net_after_fees) >
                 0.01,
     );
+    // Wise payouts only signal that Stripe activity exists; they never enter
+    // revenue and are not reconciled against the month's sales.
     const bankStripeRevenueRows = bankRows.filter(
         (row) =>
             normalizedVendor(row.vendor) === "stripe" &&
@@ -1495,40 +1497,6 @@ export function buildRunway(
                     fxRevaluationValues[column.id] ?? 0,
                 ]),
             ),
-            assumptions: {},
-        });
-    }
-    // Sales and fees are activity facts; Wise payouts are transfers of the
-    // processor balance. Keep their difference visible, never as revenue.
-    const settlementValues = Object.fromEntries(
-        columnSpecs.map((column) => {
-            if (column.kind === "forecast") return [column.id, 0];
-            const payouts = bankStripeRevenueRows
-                .filter((row) => row.date.slice(0, 7) === column.month)
-                .reduce(
-                    (sum, row) =>
-                        sum + toUsd(row.amount, row.currency, row.date),
-                    0,
-                );
-            const activity = actualByMonth.get(column.month);
-            const netSales =
-                (activity?.get(matrixKey("revenue", "pollen sales")) ?? 0) +
-                (activity?.get(matrixKey("revenue", "ko-fi")) ?? 0) +
-                (activity?.get(matrixKey("revenue", "stripe refunds")) ?? 0) +
-                (activity?.get(matrixKey("revenue", "stripe reversals")) ?? 0) +
-                (activity?.get(matrixKey("operations", "stripe fees")) ?? 0);
-            return [column.id, payouts - netSales];
-        }),
-    );
-    if (
-        Object.values(settlementValues).some((value) => Math.abs(value) > 0.005)
-    ) {
-        rows.push({
-            category: "balance_sheet",
-            vendor: "processor settlement timing",
-            forecastMethod: "one_off",
-            forecastPaymentTiming: null,
-            values: settlementValues,
             assumptions: {},
         });
     }

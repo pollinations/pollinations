@@ -110,9 +110,6 @@ function ForecastBadge({
 }
 
 function ForecastVendor({ row }: { row: RunwayMatrixRow }) {
-    if (row.vendor === "processor settlement timing") {
-        return <span>Stripe settlement timing</span>;
-    }
     const methodLabel = forecastMethodLabel(row.forecastMethod);
     const timingLabel = paymentTimingLabel(row.forecastPaymentTiming);
     return (

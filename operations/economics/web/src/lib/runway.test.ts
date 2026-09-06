@@ -297,14 +297,13 @@ describe("buildRunway", () => {
         );
         if (!july) throw new Error("July column missing");
         expect(july.operatingResultUsd).toBe(95);
+        // Revenue is what entered Stripe in the month; the Wise payout is
+        // cash only, so no settlement line bridges the two.
         expect(
-            result.rows.find(
+            result.rows.some(
                 (row) => row.vendor === "processor settlement timing",
-            )?.values[july.id],
-        ).toBe(-15);
-        expect(
-            result.rows.reduce((sum, row) => sum + row.values[july.id], 0),
-        ).toBe(july.netUsd);
+            ),
+        ).toBe(false);
         expect(july.netUsd).toBe(80);
         expect(result.currentCashUsd).toBe(1080);
         expect(
@@ -404,7 +403,6 @@ describe("buildRunway", () => {
         expect(value("stripe refunds")).toBe(-20);
         expect(value("stripe reversals")).toBe(-10);
         expect(value("stripe fees")).toBe(-7);
-        expect(value("processor settlement timing")).toBe(-23);
         expect(value("pollen sales", "2026-09:forecast")).toBe(120);
         expect(value("ko-fi", "2026-09:forecast")).toBe(20);
         expect(value("stripe reversals", "2026-09:forecast")).toBe(0);

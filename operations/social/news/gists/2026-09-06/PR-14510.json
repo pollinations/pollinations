@@ -1,0 +1,34 @@
+{
+  "pr_number": 14510,
+  "title": "fix: isolate Open WebUI staging and enable Responses",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14510",
+  "merged_at": "2026-09-06T21:10:51Z",
+  "labels": [],
+  "pr_body_excerpt": "- Route staging generation/OAuth to staging Gen/Enter; preserve production Chat configuration. Enable stateless Responses for openai/gemini and remove the staging production-MCP connection.\n- Back up/update persisted staging settings without losing users/chats; document setup and restart caveats. Worker dry-runs, Biome, CI and staging login passed.\n- Basic streaming/replay: 10 Responses requests with valid usage; 0.02068722 Pollen exactly reconciled. Short prompts did not prove prompt caching.\n- Tool tests: ordinary Responses function calls render and replay correctly. Managed MCP Responses emits valid structured items and direct replay works, but Open WebUI 0.11.3 hides mcp_call cards and drops them on follow-up. The same managed agent works through Chat. Rendering/history code is unchanged on upstream main; this PR does not fix those upstream gaps.\n- Tool-test billing: 13 unique final events, zero-priced agent wrappers, 0.01498943 Pollen exactly reconciled including two Exa searches. Temporary controls/agent removed and config restored; three test chats retained. Production untouched.",
+  "gist": {
+    "category": "community",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Staging gets its own garden",
+    "blurb": "Open WebUI staging now talks to its own Gen and Enter services, leaving production Chat to keep doing its quiet little thing. Responses, streaming, replay, and tool calls have all had a proper wander through the greenhouse.",
+    "summary": "Open WebUI staging now routes generation and OAuth to staging Gen/Enter while preserving production Chat configuration, with stateless Responses enabled for OpenAI and Gemini and persisted settings safely updated in place.",
+    "impact": "Staging contributors can test Responses streaming, replay, usage reconciliation, and ordinary function calls against isolated services without altering production users or chats.",
+    "keywords": [
+      "open-webui",
+      "staging",
+      "responses-api",
+      "oauth",
+      "streaming",
+      "mcp"
+    ],
+    "visual_concept": "Depict an Open WebUI staging greenhouse separated from a calm production garden by a clearly labeled path: Polli tends the staging side while a retro terminal routes glowing Response packets to a small CRT robot. Use two cozy garden gates to symbolize isolated Gen and Enter connections, with code-plants, streaming dots, and a few neatly archived chat scrolls representing preserved settings and histories.",
+    "image_prompt": "A cozy pixel art garden-shed hackerspace with the cute pixel art bee mascot—yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings—wearing a tiny gardener scarf as she opens a lime green (#ecf874) gate marked “STAGING” toward a CRT robot receiving glowing Response packets, while a separate peaceful “PROD” garden remains untouched; code-plants and preserved chat scrolls grow nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14510.jpg",
+    "prompt": "A cozy pixel art garden-shed hackerspace with the cute pixel art bee mascot—yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings—wearing a tiny gardener scarf as she opens a lime green (#ecf874) gate marked “STAGING” toward a CRT robot receiving glowing Response packets, while a separate peaceful “PROD” garden remains untouched; code-plants and preserved chat scrolls grow nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, emotionally warm."
+  },
+  "generated_at": "2026-09-06T21:12:53.086059+00:00"
+}

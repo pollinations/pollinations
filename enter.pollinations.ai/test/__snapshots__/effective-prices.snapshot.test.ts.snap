@@ -811,6 +811,28 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
+  "gpt-6-astra-azure-datazone": {
+    "cost": {
+      "completionTextTokens": 0.000055,
+      "promptCacheWriteTokens": 0.00001375,
+      "promptCachedTokens": 0.0000011,
+      "promptTextTokens": 0.000011,
+    },
+    "costVariants": {
+      "long_context": {
+        "completionTextTokens": 0.0000825,
+        "promptCacheWriteTokens": 0.0000275,
+        "promptCachedTokens": 0.0000022,
+        "promptTextTokens": 0.000022,
+      },
+    },
+    "price": {
+      "completionTextTokens": 0.00004125,
+      "promptCacheWriteTokens": 0.0000103125,
+      "promptCachedTokens": 0.000000825,
+      "promptTextTokens": 0.00000825,
+    },
+  },
   "gpt-image-2": {
     "cost": {
       "completionImageTokens": 0.00003,

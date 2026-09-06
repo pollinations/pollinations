@@ -12,8 +12,10 @@ Canonical accounts:
 
 ## Verified — 2026-09-04
 
-- Status: only the Neoglyph key authenticates through `firectl`. Use the
-  authenticated dashboards for the four inactive historical accounts.
+- Status (superseded 2026-09-06): every stored key authenticates through
+  `firectl` once `-a <Fireworks account ID>` is passed; the earlier
+  `PermissionDenied` came from the missing account ID, not the keys. See
+  "Verified — 2026-09-06" below.
 - `elliot@pollinations.ai` contains both `pollinations` and `et-fy`.
 - Stable Fireworks account IDs do not match the two visible organization names:
   `pollinations` is displayed as `Pollinations.AI`, while `et-fy` is displayed
@@ -89,6 +91,46 @@ Collection steps:
 5. Attribute invoices by usage month: postpaid invoices dated on the 1st usually cover the previous month.
 6. Keep prepaid credit top-ups separate from usage cost.
 7. Use this skill for saved raw evidence.
+
+## Verified — 2026-09-06
+
+- Fireworks account IDs (pass with `-a`; `firectl account list --api-key`
+  prints the ID the key can reach):
+
+  | Registry id | Fireworks account ID | Display name | Key (sops `operations/economics/ingest/secrets/env.json`) |
+  |---|---|---|---|
+  | `myceli` | `elliot-l6mb8f24ewds` | Myceli AI | `FIREWORKS_API_KEY_MYCELI` |
+  | `pollinations` | `pollinations` | Pollinations.AI | `FIREWORKS_API_KEY` |
+  | `neoglyph` | `elliot-neoglyph` | NGLPH OÜ | `FIREWORKS_API_KEY_NEO_GLYPH` |
+  | `pixelmarket` | `thomas-nqdgpxxgxvk8` | Pixelmarket.AI | `FIREWORKS_API_KEY_PIXELMARKET` |
+
+  `et-fy` has no stored key. Without `-a`, `firectl` reads `~/.fireworks/auth.ini`
+  and returns `PermissionDenied` for every other account.
+- Complete monthly model detail = the Orb postpaid invoice, even for
+  prepaid-credit accounts: `firectl billing list-invoices --api-key "$KEY" -a <id>`
+  lists one `POSTPAID_BILLING` invoice per month (amount `0.00 USD` when
+  "Pre-purchase applied" settled it from prepaid credits) with an
+  `invoices.withorb.com/view?token=…` URL. The invoice dated the 1st covers the
+  previous month (`ETIXZH-00004`, dated 2026-05-01, = Myceli April; `ETIXZH-00003`
+  = March). Lines are grouped by section ("LLM input tokens (cached)",
+  "LLM input tokens (uncached)", "LLM output tokens", embeddings) × model
+  display name with quantity × rate; the section subtotals sum to
+  `billing get-usage` USAGE TOTAL to the cent.
+- The Orb page is a JavaScript app: `curl` returns a 1.5 KB shell. Read it in
+  the signed-in browser (page text), or use the page's Download invoice PDF.
+- `firectl billing get-usage --api-key "$KEY" -a <id> --start-time YYYY-MM-DD
+  --end-time YYYY-MM-DD --usage-type serverless --group-by model_name` accepts
+  dates only (no ISO time) and, for these accounts, prints the account-cost
+  totals with an empty Usage table. Use it to confirm the month total, not for
+  model detail.
+- Dashboard analytics (`POST /api/analytic/usage-costs`, page
+  `/account/usage?type=serverless&category=cost`) refuses ranges older than
+  100 days: `start_time cannot be more than 100 days in the past`. Closed
+  months older than that exist only on the Orb invoices.
+- Dashboard routes moved: `/dashboard/*` and `/settings` now render
+  "Not Found" while the account chip still shows the signed-in account; use
+  `/account/usage`, `/account/billing`, `/settings/account` (shows the
+  Account ID).
 
 ## Verified — 2026-09-05
 

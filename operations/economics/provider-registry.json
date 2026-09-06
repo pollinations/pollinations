@@ -1102,21 +1102,30 @@
           "label": "Neoglyph",
           "loginEmail": "elliot@neoglyph.ai",
           "activeFrom": "2026-05",
-          "activeTo": null
+          "activeTo": null,
+          "aliases": [
+            "elliot-neoglyph"
+          ]
         },
         {
           "id": "myceli",
           "label": "Myceli",
           "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
-          "activeTo": "2026-08"
+          "activeTo": "2026-08",
+          "aliases": [
+            "elliot-l6mb8f24ewds"
+          ]
         },
         {
           "id": "pixelmarket",
           "label": "Pixelmarket",
           "loginEmail": "elli@pixelmarket.ai",
           "activeFrom": "2026-05",
-          "activeTo": "2026-08"
+          "activeTo": "2026-08",
+          "aliases": [
+            "thomas-nqdgpxxgxvk8"
+          ]
         }
       ],
       "balanceTracking": true,
@@ -1162,6 +1171,7 @@
         "DeepSeek V4 Pro 0813": "deepseek-pro",
         "flux-1-dev-fp8": null,
         "flux-1-schnell-fp8": "flux",
+        "GLM 5": "glm",
         "GLM 5.1": "glm",
         "GLM 5.2": "glm",
         "GLM 5.3": "glm-5.3",
@@ -1222,6 +1232,7 @@
           }
         ],
         "Kimi K3": "kimi-k3",
+        "MiniMax M2": "minimax",
         "MiniMax M2.5": "minimax",
         "MiniMax M2.7": [
           {

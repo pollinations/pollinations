@@ -19,7 +19,6 @@ const serviceTools = [
     ...model3dTools,
     ...discoveryTools,
     ...accountTools,
-    ...deviceLoginTools,
 ];
 
 export { createMcpHandler };
@@ -80,7 +79,7 @@ export function buildServer({
     );
 
     const tools = includeAuthTools
-        ? [...serviceTools, ...authTools]
+        ? [...serviceTools, ...authTools, ...deviceLoginTools]
         : serviceTools;
 
     for (const tool of tools) {

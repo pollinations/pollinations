@@ -1,0 +1,34 @@
+{
+  "pr_number": 14524,
+  "title": "refactor(mcp): remove stdio server",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14524",
+  "merged_at": "2026-09-06T23:42:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Removes the local stdio entrypoint, mutable authentication tools, and device-login flow\n- Keeps packages/mcp as a private internal core for the hosted stateless Streamable HTTP Worker\n- Removes npm publishing, catalog, and npx documentation surfaces\n- Preserves current and 2025 stateless HTTP protocol support for managed-agent clients\n- Links the archived npm release and final stdio source snapshot\n\n## Verification\n\n- npm test in packages/mcp\n- npm test and npm run check in apps/mcp\n- node operations/app-management/app.js validate",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The hive goes stateless",
+    "blurb": "The local MCP server has been carefully packed into the archive, leaving a smaller hosted HTTP worker behind. Managed agents keep their stateless protocol path; the old device-login luggage is no longer in the hallway.",
+    "summary": "Removed the packages/mcp local stdio entrypoint, mutable authentication and device-login tools, npm publishing, and npx/catalog documentation while retaining the hosted stateless Streamable HTTP Worker and both current and 2025 stateless HTTP protocol support.",
+    "impact": "Managed-agent clients continue using the hosted stateless HTTP MCP service, while the archived npm release and final stdio source snapshot preserve a reference for the retired local-server path.",
+    "keywords": [
+      "mcp",
+      "streamable-http",
+      "stateless",
+      "managed-agents",
+      "stdio",
+      "authentication"
+    ],
+    "visual_concept": "A cozy garden shed server room represents the hosted MCP worker: Polli prunes an old stdio cable and device-login key from a thriving HTTP code-plant, while a small CRT robot happily tends the remaining stateless connections. The visual should make the retained HTTP path feel clean, stable, and warmly maintained rather than dramatic.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-server shed: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny gardener tool belt, she gently prunes an old cable labeled \"STDIO\" beside a flourishing lime green (#ecf874) code-plant labeled \"HTTP\", while a cute CRT-monitor robot waters it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, pixel flowers and vines, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-06/PR-14524.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-server shed: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; wearing a tiny gardener tool belt, she gently prunes an old cable labeled \"STDIO\" beside a flourishing lime green (#ecf874) code-plant labeled \"HTTP\", while a cute CRT-monitor robot waters it. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, pixel flowers and vines, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-06T23:43:43.459200+00:00"
+}

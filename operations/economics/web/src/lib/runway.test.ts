@@ -307,7 +307,7 @@ describe("buildRunway", () => {
         expect(july.netUsd).toBe(80);
         expect(result.currentCashUsd).toBe(1080);
         expect(
-            result.assumptions.find((row) => row.vendor === "pollen sales")
+            result.assumptions.find((row) => row.vendor === "stripe sales")
                 ?.evidence,
         ).toContain("Stripe activity");
     });
@@ -340,31 +340,30 @@ describe("buildRunway", () => {
         );
         const stripeSalesRow = result.rows.find(
             (row) =>
-                row.vendor === "pollen sales" && row.category === "revenue",
+                row.vendor === "stripe sales" && row.category === "revenue",
         );
         const stripeRefundsRow = result.rows.find(
             (row) =>
                 row.vendor === "stripe refunds" && row.category === "revenue",
         );
         const stripeFees = result.rows.find(
-            (row) =>
-                row.vendor === "stripe fees" && row.category === "operations",
+            (row) => row.vendor === "stripe fees",
         );
         const july = result.columns.find(
             (column) => column.id === "2026-07:actual",
         );
 
-        expect(stripeSalesRow?.values["2026-07:actual"]).toBe(120);
-        expect(stripeSalesRow?.values["2026-09:forecast"]).toBe(120);
+        expect(stripeSalesRow?.values["2026-07:actual"]).toBe(115);
+        expect(stripeSalesRow?.values["2026-09:forecast"]).toBe(115);
         expect(stripeRefundsRow?.values["2026-07:actual"]).toBe(-20);
         expect(stripeRefundsRow?.values["2026-09:forecast"]).toBe(-20);
-        expect(stripeFees?.values["2026-07:actual"]).toBe(-5);
-        expect(stripeFees?.values["2026-09:forecast"]).toBe(-5);
+        // Fees live inside the net sales figure, never as an expense line.
+        expect(stripeFees).toBeUndefined();
         expect(july?.netUsd).toBe(80);
         expect(result.currentCashUsd).toBe(1_080);
     });
 
-    it("separates Pollen and Ko-fi sales, refunds and exceptional reversals without changing cash", () => {
+    it("nets Pollen and Ko-fi sales after fees on one line and refunds with reversals on another", () => {
         const result = buildRunway(
             [
                 opening(1000),
@@ -398,14 +397,13 @@ describe("buildRunway", () => {
         );
         const value = (vendor: string, column = "2026-07:actual") =>
             result.rows.find((row) => row.vendor === vendor)?.values[column];
-        expect(value("pollen sales")).toBe(120);
-        expect(value("ko-fi")).toBe(20);
-        expect(value("stripe refunds")).toBe(-20);
-        expect(value("stripe reversals")).toBe(-10);
-        expect(value("stripe fees")).toBe(-7);
-        expect(value("pollen sales", "2026-09:forecast")).toBe(120);
-        expect(value("ko-fi", "2026-09:forecast")).toBe(20);
-        expect(value("stripe reversals", "2026-09:forecast")).toBe(0);
+        // Pollen and Ko-fi net of fees on one line; refunds and reversals on
+        // the other. Both project at the last reviewed month.
+        expect(value("stripe sales")).toBe(133);
+        expect(value("stripe refunds")).toBe(-30);
+        expect(value("stripe fees")).toBeUndefined();
+        expect(value("stripe sales", "2026-09:forecast")).toBe(133);
+        expect(value("stripe refunds", "2026-09:forecast")).toBe(-30);
         expect(
             result.columns.find((column) => column.id === "2026-07:actual")
                 ?.operatingResultUsd,
@@ -459,12 +457,12 @@ describe("buildRunway", () => {
         );
 
         expect(
-            result.rows.find((row) => row.vendor === "pollen sales")?.values[
+            result.rows.find((row) => row.vendor === "stripe sales")?.values[
                 "2026-06:actual"
             ],
-        ).toBe(120);
+        ).toBe(115);
         expect(
-            result.assumptions.some((row) => row.vendor === "pollen sales"),
+            result.assumptions.some((row) => row.vendor === "stripe sales"),
         ).toBe(false);
         expect(result.flags).toContain(
             "Stripe collection is not verified complete for 2026-07; its forecast is unavailable. Recorded sales and Wise cash remain visible.",
@@ -488,17 +486,17 @@ describe("buildRunway", () => {
             ],
         );
         expect(
-            result.rows.find((row) => row.vendor === "pollen sales")?.values[
+            result.rows.find((row) => row.vendor === "stripe sales")?.values[
                 "2026-08:actual"
             ],
-        ).toBe(1000);
+        ).toBe(995);
         expect(
-            result.rows.find((row) => row.vendor === "pollen sales")?.values[
+            result.rows.find((row) => row.vendor === "stripe sales")?.values[
                 "2026-09:actual"
             ],
-        ).toBe(120);
+        ).toBe(115);
         expect(
-            result.assumptions.some((row) => row.vendor === "pollen sales"),
+            result.assumptions.some((row) => row.vendor === "stripe sales"),
         ).toBe(false);
         expect(
             result.flags.some((flag) =>

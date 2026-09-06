@@ -747,13 +747,12 @@ function viewInfoContent(activeView: ActiveView) {
                     full-month plan in separate columns.
                 </InfoLine>
                 <InfoLine>
-                    Revenue separates Pollen and Ko-fi sales, refunds, and
-                    reversals. Processing fees are an Operations expense.
-                    Compute and Infrastructure come from the vendor ledger by
-                    service month; every other expense category is bank cash.
-                    Usage paid with provider credits shows in gray parentheses
-                    beside the cash figure and never enters the sums. Expand a
-                    category to see its vendor detail.
+                    Revenue is Stripe sales net of Stripe fees, with refunds and
+                    reversals on one line. Compute and Infrastructure come from
+                    the vendor ledger by service month; every other expense
+                    category is bank cash. Usage paid with provider credits
+                    shows in gray parentheses beside the cash figure and never
+                    enters the sums. Expand a category to see its vendor detail.
                 </InfoLine>
                 <InfoLine>
                     Bank payments to ledger vendors stay in cash only; the

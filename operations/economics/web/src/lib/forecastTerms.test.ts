@@ -4,11 +4,8 @@ import { PROVIDER_REGISTRY, resolveProvider } from "./providerRegistry";
 
 // Runway lines that are activity facts or reviewed adjustments, not vendors.
 const SYNTHETIC_LINES = new Set([
-    "pollen sales",
-    "ko-fi",
-    "stripe fees",
+    "stripe sales",
     "stripe refunds",
-    "stripe reversals",
     "fx revaluation",
     "pre-window movements",
 ]);

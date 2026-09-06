@@ -32,10 +32,8 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     // Revenue
     "github|revenue": { method: "one_off", paymentTiming: "direct" },
     "polar|revenue": { method: "one_off", paymentTiming: "direct" },
-    "pollen sales|revenue": { method: "last", paymentTiming: "direct" },
-    "ko-fi|revenue": { method: "last", paymentTiming: "direct" },
+    "stripe sales|revenue": { method: "last", paymentTiming: "direct" },
     "stripe refunds|revenue": { method: "last", paymentTiming: "direct" },
-    "stripe reversals|revenue": { method: "one_off", paymentTiming: "direct" },
     "wise|revenue": { method: "one_off", paymentTiming: "direct" },
 
     // Cash adjustments
@@ -240,7 +238,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "notion|operations": { method: "one_off", paymentTiming: "direct" },
     "protonvpn|operations": { method: "last", paymentTiming: "direct" },
     "slack|operations": { method: "last", paymentTiming: "direct" },
-    "stripe fees|operations": { method: "last", paymentTiming: "direct" },
     "tele2|operations": { method: "fixed", paymentTiming: "direct" },
     "telecom|operations": { method: "fixed", paymentTiming: "direct" },
 

@@ -48,24 +48,14 @@ const FORECAST_METHODS = new Set<ForecastMethod>([
     "last",
     "one_off",
 ]);
-const STRIPE_LINES = [
-    "pollen sales",
-    "ko-fi",
-    "stripe refunds",
-    "stripe reversals",
-    "stripe fees",
-];
+const STRIPE_LINES = ["stripe sales", "stripe refunds"];
 
+// Revenue is what entered Stripe in the month, net of Stripe's own fees, for
+// every stream (Pollen and Ko-fi). Refunds and reversals are one line.
 function stripeActivityLines(row: StripeSalesRow): [string, string, number][] {
     return [
-        [
-            row.revenue_stream === "pollen" ? "pollen sales" : "ko-fi",
-            "revenue",
-            row.gross_sales,
-        ],
-        ["stripe refunds", "revenue", -row.refunds],
-        ["stripe reversals", "revenue", -row.reversals],
-        ["stripe fees", "operations", -row.stripe_fees],
+        ["stripe sales", "revenue", row.gross_sales - row.stripe_fees],
+        ["stripe refunds", "revenue", -(row.refunds + row.reversals)],
     ];
 }
 const RUNWAY_CATEGORY_ORDER = [
@@ -1183,7 +1173,7 @@ export function buildRunway(
         const planMatchValues =
             forecastPlanMatchByMonth.get(month) ?? new Map<string, number>();
         const cashMatchVendor =
-            category === "revenue" && ["pollen sales", "ko-fi"].includes(vendor)
+            category === "revenue" && vendor === "stripe sales"
                 ? "stripe"
                 : vendor;
         addAmount(

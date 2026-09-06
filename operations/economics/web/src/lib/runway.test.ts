@@ -1318,6 +1318,39 @@ describe("ledger-based P&L categories", () => {
         ).toBe(false);
     });
 
+    it("does not demand a cash forecast rule for usage that never touches cash", () => {
+        const result = buildRunway([opening(5_000)], NOW, [
+            cloud({
+                entry_id: "ovh-july-voucher",
+                vendor: "ovhcloud",
+                type: "inference",
+                start: "2026-07-01 00:00:00",
+                end: "2026-08-01 00:00:00",
+                paid: 0,
+                credit: -500,
+            }),
+        ]);
+        const ovh = result.rows.find(
+            (row) => row.category === "compute" && row.vendor === "ovhcloud",
+        );
+
+        expect(ovh?.values["2026-07:actual"]).toBe(-500);
+        expect(ovh?.creditFundedValues?.["2026-07:actual"]).toBe(-500);
+        expect(ovh?.forecastIssue).toContain("credit");
+        expect(
+            result.flags.some(
+                (flag) =>
+                    /Calculation mode missing/.test(flag) &&
+                    /ovhcloud/.test(flag),
+            ),
+        ).toBe(false);
+        expect(
+            result.columns
+                .filter((column) => column.kind === "forecast")
+                .every((column) => column.forecastComplete !== false),
+        ).toBe(true);
+    });
+
     it("classifies subscription invoices in the ledger through the vendor registry", () => {
         const result = buildRunway([opening(1_000)], NOW, [
             cloud({

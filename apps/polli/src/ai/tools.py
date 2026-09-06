@@ -810,7 +810,7 @@ EXAMPLES:
 - "messages mentioning @user" → mentions="<@123>" (NOT user_id — that means author)
 - "who pinged everyone" → mention_everyone=true
 
-Security: Results filtered to channels the user can access.""",
+Security: Results are filtered to channels the caller can read, including message history. HTTP callers use public scope only; private threads are never exposed. Explicit unavailable channel names fail instead of widening to the guild. Message-search pagination uses offset; an empty indexed result does not prove that a message does not exist.""",
         "parameters": {
             "type": "object",
             "properties": {

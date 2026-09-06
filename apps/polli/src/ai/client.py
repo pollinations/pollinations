@@ -219,6 +219,27 @@ class PollinationsClient:
 
         # Build Discord messages
         messages = [{"role": "system", "content": system_content}]
+        if mode == "discord":
+            location_context = tool_context or {}
+            source_channel_id = location_context.get("source_channel_id")
+            parent_channel_id = location_context.get("parent_channel_id")
+            channel_id = location_context.get("channel_id")
+            thread_id = location_context.get("thread_id")
+            if all(
+                value is None or (type(value) is int and value > 0)
+                for value in (source_channel_id, parent_channel_id, channel_id, thread_id)
+            ):
+                location_lines = ["## DISCORD LOCATION (trusted system metadata)"]
+                if source_channel_id is not None:
+                    location_lines.append(f"Original source channel ID: {source_channel_id}")
+                if parent_channel_id is not None:
+                    location_lines.append(f"Parent channel ID: {parent_channel_id}")
+                if channel_id is not None:
+                    location_lines.append(f"Current response channel ID: {channel_id}")
+                if thread_id is not None:
+                    location_lines.append(f"Current thread ID: {thread_id}")
+                if len(location_lines) > 1:
+                    messages.append({"role": "system", "content": "\n".join(location_lines)})
         if thread_history:
             # Separate system messages from conversation messages
             system_msgs = [m for m in thread_history if m.get("role") == "system"]

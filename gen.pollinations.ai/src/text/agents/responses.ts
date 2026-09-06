@@ -7,7 +7,7 @@ import {
 } from "@shared/schemas/openai.ts";
 import { APICallError, type ModelMessage, type ToolResultPart } from "ai";
 import { z } from "zod";
-import { McpCallSchema, safeMcpModelOutput } from "./mcp.ts";
+import { McpCallSchema, mcpErrorText, safeMcpModelOutput } from "./mcp.ts";
 import { type AgentOutputItem, collectOutput } from "./output.ts";
 import {
     type AgentOutput,
@@ -212,7 +212,10 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
                     call.error !== null || call.status === "failed"
                         ? "error-text"
                         : "text",
-                value: call.error ?? call.output ?? "",
+                value:
+                    call.error === null
+                        ? (call.output ?? "")
+                        : mcpErrorText(call.error),
             };
             if (call.error === null && call.output !== null) {
                 try {

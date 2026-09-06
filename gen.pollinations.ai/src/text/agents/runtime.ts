@@ -92,38 +92,30 @@ async function loadMcpTools(
     fetcher: typeof fetch,
 ): Promise<{
     tools: Record<string, McpTool>;
-    close: () => Promise<void>;
+    client: McpClient;
 }> {
-    let client: McpClient | undefined;
+    const client = await createMCPClient({
+        clientName: `pollinations-prompt-agent-${serverId}`,
+        initializationOptions: {
+            signal,
+            timeout: MCP_INITIALIZATION_TIMEOUT_MS,
+        },
+        transport: {
+            type: "http",
+            url,
+            headers: { Authorization: `Bearer ${apiKey}` },
+            // The MCP client asks for redirect "error", which workerd does
+            // not support. Use a valid fetch mode for the hosted endpoint.
+            fetch: async (input, init) =>
+                fetcher(input, {
+                    ...init,
+                    redirect: "follow",
+                }),
+        },
+    });
     const tools: Record<string, McpTool> = {};
-    let closed = false;
-
-    const close = async () => {
-        if (closed) return;
-        closed = true;
-        await client?.close();
-    };
 
     try {
-        client = await createMCPClient({
-            clientName: `pollinations-prompt-agent-${serverId}`,
-            initializationOptions: {
-                signal,
-                timeout: MCP_INITIALIZATION_TIMEOUT_MS,
-            },
-            transport: {
-                type: "http",
-                url,
-                headers: { Authorization: `Bearer ${apiKey}` },
-                // The MCP client asks for redirect "error", which workerd does
-                // not support. Use a valid fetch mode for the hosted endpoint.
-                fetch: async (input, init) =>
-                    fetcher(input, {
-                        ...init,
-                        redirect: "follow",
-                    }),
-            },
-        });
         for (const [name, definition] of Object.entries(await client.tools())) {
             tools[`mcp__${serverId}__${name}`] = definition;
         }
@@ -133,15 +125,11 @@ async function loadMcpTools(
             tools: Object.keys(tools).length,
         });
     } catch (error) {
-        // Tool availability is recoverable; the base model can still answer.
-        log.error("MCP_SERVER_FAILED: name={name} url={url} error={error}", {
-            name: serverId,
-            url,
-            error: error instanceof Error ? error.message : String(error),
-        });
+        await client.close();
+        throw error;
     }
 
-    return { tools, close };
+    return { tools, client };
 }
 
 async function createAgent(
@@ -150,7 +138,8 @@ async function createAgent(
     settings: PromptAgentGenerationSettings = {},
 ) {
     const genBaseUrl = runtime.genBaseUrl.replace(/\/$/, "");
-    const loadedServers = await Promise.all(
+    // Wait for every loader so a late-opening session is also closed on failure.
+    const serverResults = await Promise.allSettled(
         runtime.config.mcpServers.map((serverId) =>
             loadMcpTools(
                 serverId,
@@ -161,13 +150,23 @@ async function createAgent(
             ),
         ),
     );
+    const loadedServers = serverResults.flatMap((result) =>
+        result.status === "fulfilled" ? [result.value] : [],
+    );
+    const close = async () => {
+        await Promise.all(loadedServers.map((server) => server.client.close()));
+    };
+    const failure = serverResults.find(
+        (result) => result.status === "rejected",
+    );
+    if (failure) {
+        await close();
+        throw failure.reason;
+    }
     const tools: Record<string, McpTool> = {};
     for (const server of loadedServers) {
         Object.assign(tools, server.tools);
     }
-    const close = async () => {
-        await Promise.all(loadedServers.map((server) => server.close()));
-    };
     const toolCallCounts: ToolCallCounts = {};
     let toolCalls = 0;
     for (const [name, tool] of Object.entries(tools)) {
@@ -200,7 +199,7 @@ async function createAgent(
                 };
             },
             createStreamExtractor() {
-                let usage: CompletionUsage | undefined;
+                let usage: unknown;
                 return {
                     processChunk(chunk) {
                         if (
@@ -209,12 +208,18 @@ async function createAgent(
                             "usage" in chunk &&
                             chunk.usage != null
                         ) {
-                            usage = completionUsage(chunk.usage);
+                            // Providers may send provisional counts before final usage.
+                            usage = chunk.usage;
                         }
                     },
                     buildMetadata() {
                         return {
-                            pollinations: { completionUsage: usage ?? null },
+                            pollinations: {
+                                completionUsage:
+                                    usage == null
+                                        ? null
+                                        : completionUsage(usage),
+                            },
                         };
                     },
                 };

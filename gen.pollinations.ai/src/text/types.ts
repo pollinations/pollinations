@@ -84,7 +84,14 @@ export interface ChatCompletion {
     choices?: CompletionChoice[];
     usage?: Record<string, unknown>;
     citations?: string[];
-    error?: string | { message?: string; status?: number; details?: unknown };
+    error?:
+        | string
+        | {
+              message?: string;
+              status?: number;
+              code?: number;
+              details?: unknown;
+          };
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;

@@ -64,9 +64,8 @@ describe("community endpoint configuration policy", () => {
             name: "external-agent",
             title: "External agent",
             description: "Runs on its owner's server",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
-            responsesUrl:
-                "https://agent.example.com/custom/responses?version=1",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
             requiredSafetyFeatures: ["sexual"],
         });
 
@@ -77,9 +76,8 @@ describe("community endpoint configuration policy", () => {
             title: "External agent",
             description: "Runs on its owner's server",
             visibility: "private",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
-            responsesUrl:
-                "https://agent.example.com/custom/responses?version=1",
+            api: "responses",
+            url: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
             requiredSafetyFeatures: ["sexual"],
             perUserRpm: null,
@@ -95,7 +93,7 @@ describe("community endpoint configuration policy", () => {
         });
         expect(stored).toMatchObject({
             type: "endpoint_agent",
-            baseUrl: "https://agent.example.com/v1/?ignored=yes",
+            baseUrl: "https://agent.example.com/custom/responses?version=1",
             upstreamModel: "external-agent",
             requiredSafetyFeatures: ["sexual"],
             visibility: "private",
@@ -104,8 +102,7 @@ describe("community endpoint configuration policy", () => {
             parseListingPayload("endpoint_agent", stored?.payload ?? null),
         ).toEqual({
             perUserRpm: null,
-            responsesUrl:
-                "https://agent.example.com/custom/responses?version=1",
+            api: "responses",
         });
 
         const updated = await postModel(
@@ -114,7 +111,7 @@ describe("community endpoint configuration policy", () => {
             { requiredSafetyFeatures: ["violence"] },
         );
         expect(updated.requiredSafetyFeatures).toEqual(["violence"]);
-        expect(updated.responsesUrl).toBe(
+        expect(updated.url).toBe(
             "https://agent.example.com/custom/responses?version=1",
         );
     });
@@ -134,7 +131,8 @@ describe("community endpoint configuration policy", () => {
         const input = {
             name: "external-agent",
             title: "External agent",
-            baseUrl: "https://agent.example.com/v1",
+            api: "chat_completions",
+            url: "https://agent.example.com/v1/chat/completions",
         };
 
         const proxyField = await request({
@@ -254,7 +252,8 @@ describe("community endpoint configuration policy", () => {
             name: "cheaper-fallback",
             title: "Cheaper fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000001,
         });
@@ -263,7 +262,8 @@ describe("community endpoint configuration policy", () => {
             name: "expensive-fallback",
             title: "Expensive fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000003,
         });
@@ -274,7 +274,8 @@ describe("community endpoint configuration policy", () => {
             name: "primary-with-fallback",
             title: "Primary with fallback",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             promptTextPrice: 0.000002,
             fallbacks: [cheaperModelId],
@@ -315,7 +316,8 @@ describe("community endpoint configuration policy", () => {
             name: "text-policy",
             title: "Text policy",
             visibility: "public",
-            baseUrl: "https://text.example.com/v1",
+            api: "chat_completions",
+            url: "https://text.example.com/v1/chat/completions",
             bearerToken: "test-provider-token",
             modality: "text",
             perUserRpm: 3,

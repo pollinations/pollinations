@@ -2,6 +2,7 @@ import { UpstreamError } from "@shared/error.ts";
 import { CompletionUsageSchema } from "@shared/schemas/openai.ts";
 import { createParser } from "eventsource-parser";
 import type { ChatCompletion } from "../types.js";
+import { validatedSSEStream } from "../validatedSSEStream.js";
 
 export function requireChatCompletionUsage(completion: ChatCompletion): void {
     if (CompletionUsageSchema.safeParse(completion.usage).success) return;
@@ -19,20 +20,23 @@ export class ChatUsageError extends Error {
 
 export function createChatStreamUsageValidator() {
     const decoder = new TextDecoder();
-    let usageSeen = false;
+    let lastUsage: unknown;
     let doneSeen = false;
     let errorSeen = false;
-    let validationError: ChatUsageError | undefined;
 
     const parser = createParser({
         onEvent(message) {
+            if (doneSeen) return;
             if (message.data.trim() === "[DONE]") {
-                doneSeen = true;
-                if (!usageSeen && !errorSeen) {
-                    validationError = new ChatUsageError(
-                        "Chat Completions provider omitted terminal usage",
+                if (
+                    !errorSeen &&
+                    !CompletionUsageSchema.safeParse(lastUsage).success
+                ) {
+                    throw new ChatUsageError(
+                        "Chat Completions provider returned invalid or omitted terminal usage",
                     );
                 }
+                doneSeen = true;
                 return;
             }
 
@@ -42,33 +46,20 @@ export function createChatStreamUsageValidator() {
             } catch {
                 return;
             }
-            if (!event || typeof event !== "object" || !("usage" in event)) {
-                const error =
-                    event && typeof event === "object"
-                        ? (event as { error?: unknown }).error
-                        : undefined;
-                if (error && typeof error === "object") {
-                    errorSeen = true;
-                }
-                return;
-            }
-
-            const usage = (event as { usage?: unknown }).usage;
-            if (usage === null || usage === undefined) return;
-            if (CompletionUsageSchema.safeParse(usage).success) {
-                usageSeen = true;
-            } else {
-                validationError = new ChatUsageError(
-                    "Chat Completions provider returned invalid terminal usage",
-                );
-            }
+            if (!event || typeof event !== "object") return;
+            const { usage, error } = event as {
+                usage?: unknown;
+                error?: unknown;
+            };
+            if (error && typeof error === "object") errorSeen = true;
+            // Providers may send provisional counts; only the last update is final.
+            if (usage !== null && usage !== undefined) lastUsage = usage;
         },
     });
 
     return {
         feed(chunk: Uint8Array) {
             parser.feed(decoder.decode(chunk, { stream: true }));
-            if (validationError) throw validationError;
         },
         finish() {
             // Some compatible providers close after one newline instead of an
@@ -76,8 +67,7 @@ export function createChatStreamUsageValidator() {
             // the client still receives the exact upstream bytes.
             parser.feed(`${decoder.decode()}\n\n`);
             parser.reset({ consume: true });
-            if (validationError) throw validationError;
-            if (!errorSeen && (!doneSeen || !usageSeen)) {
+            if (!errorSeen && !doneSeen) {
                 throw new ChatUsageError(
                     "Chat Completions provider ended without terminal usage",
                 );
@@ -101,28 +91,12 @@ function chatUsageErrorEvent(error: ChatUsageError): Uint8Array<ArrayBuffer> {
 export function requireChatStreamUsage(
     body: ReadableStream<Uint8Array<ArrayBuffer>>,
 ): ReadableStream<Uint8Array<ArrayBuffer>> {
-    const validator = createChatStreamUsageValidator();
-
-    return body.pipeThrough(
-        new TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>({
-            transform(chunk, controller) {
-                try {
-                    validator.feed(chunk);
-                    controller.enqueue(chunk);
-                } catch (error) {
-                    if (!(error instanceof ChatUsageError)) throw error;
-                    controller.enqueue(chatUsageErrorEvent(error));
-                    controller.terminate();
-                }
-            },
-            flush(controller) {
-                try {
-                    validator.finish();
-                } catch (error) {
-                    if (!(error instanceof ChatUsageError)) throw error;
-                    controller.enqueue(chatUsageErrorEvent(error));
-                }
-            },
-        }),
+    return validatedSSEStream(
+        body,
+        createChatStreamUsageValidator(),
+        (error) => {
+            if (!(error instanceof ChatUsageError)) throw error;
+            return chatUsageErrorEvent(error);
+        },
     );
 }

@@ -1,5 +1,5 @@
 {
-  "version": 20,
+  "version": 21,
   "retiredModels": [
     "chickytutor",
     "claude-legacy",
@@ -2693,6 +2693,7 @@
       "id": "self-issued",
       "label": "Self-issued",
       "category": "balance_sheet",
+      "cashOnly": true,
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,

@@ -74,7 +74,8 @@
         "wan2.6-i2v-flash": "wan",
         "wan2.6-t2v": "wan",
         "wan2.7-image": "wan-image",
-        "wan2.7-image-pro": "wan-image-pro"
+        "wan2.7-image-pro": "wan-image-pro",
+        "wan2.7-t2v": "wan-pro"
       }
     },
     {
@@ -223,7 +224,24 @@
           }
         ],
         "claude-opus-4-7": "claude-opus-4.7",
-        "claude-opus-4-8": "claude-large",
+        "claude-opus-4-8": [
+          {
+            "until": "2026-05",
+            "model": "claude-opus-4.8"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "claude-opus-4.8",
+              "claude-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "claude-large"
+          }
+        ],
         "claude-opus-4.1": null,
         "claude-opus-4.5": "claude-large",
         "claude-opus-4.6": "claude-large",
@@ -865,15 +883,24 @@
         "alibaba/wan-3.0-prime/reference-to-video": "wan-3.0",
         "alibaba/wan-3.0-prime/text-to-video": "wan-3.0",
         "alibaba/wan-3.0/text-to-video": null,
+        "fal-ai/hunyuan-3d/v3.1/pro/text-to-3d": null,
+        "fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d": null,
+        "fal-ai/hunyuan-3d/v3.1/rapid/text-to-3d": null,
         "fal-ai/hyper3d/rodin/v2.5/fast": "hyper3d-rodin",
         "fal-ai/hyper3d/rodin/v2.5/text-to-3d/fast": "hyper3d-rodin",
+        "fal-ai/meshy/v6/image-to-3d": null,
         "fal-ai/recraft/v4.1/text-to-vector": null,
+        "fal-ai/stable-audio-25/text-to-audio": "stable-audio-3-medium",
         "fal-ai/stable-audio-3/medium/audio-to-audio": "stable-audio-3-medium",
         "fal-ai/stable-audio-3/medium/text-to-audio": "stable-audio-3-medium",
+        "fal-ai/trellis-2": "trellis-2",
+        "fal-ai/triposr": null,
         "fal-ai/z-image/turbo": "zimage",
         "krea/v2/large/text-to-image": null,
         "krea/v2/medium/text-to-image": "krea",
-        "minimax/h3/text-to-video": "minimax-h3"
+        "minimax/h3/text-to-video": "minimax-h3",
+        "tripo3d/h3.1/image-to-3d": null,
+        "tripo3d/h3.1/text-to-3d": null
       },
       "collectionMethod": "api",
       "access": [
@@ -969,6 +996,7 @@
         "DeepSeek V4 Flash 0731": "deepseek",
         "DeepSeek V4 Pro": "deepseek-pro",
         "DeepSeek V4 Pro 0813": "deepseek-pro",
+        "flux-1-dev-fp8": null,
         "flux-1-schnell-fp8": "flux",
         "GLM 5.1": "glm",
         "GLM 5.2": "glm",
@@ -1566,6 +1594,7 @@
         ],
         "sonar | api_requests high": "perplexity-high",
         "sonar | api_requests low": "perplexity-fast",
+        "sonar-deep-research": "perplexity-deep",
         "sonar-pro": "perplexity",
         "sonar-reasoning-pro": "perplexity-reasoning"
       }

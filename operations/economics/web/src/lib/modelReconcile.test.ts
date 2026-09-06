@@ -607,6 +607,83 @@ describe("modelReconcileRows", () => {
         ]);
     });
 
+    it("never merges two provider meters through a Pollen id that switched upstream mid-month", () => {
+        // June 2026: claude-large ran on Opus 4.6 until the 17th and on Opus 4.8
+        // after. Each meter stays its own row; the switching id is shown apart.
+        const [row] = modelReconcileRows(
+            data({
+                opCloud: [
+                    cloud({
+                        vendor: "aws",
+                        model: "claude-opus-4-6",
+                        start: "2026-06-01 00:00:00",
+                        end: "2026-07-01 00:00:00",
+                        credit: -1000,
+                    }),
+                    cloud({
+                        entry_id: "cloud-test-2",
+                        vendor: "aws",
+                        model: "claude-opus-4-8",
+                        start: "2026-06-01 00:00:00",
+                        end: "2026-07-01 00:00:00",
+                        credit: -700,
+                    }),
+                ],
+                opPollen: [
+                    pollen({
+                        vendor: "aws",
+                        month: "2026-06",
+                        model: "claude-large",
+                        cost_paid: 900,
+                    }),
+                    pollen({
+                        vendor: "aws",
+                        month: "2026-06",
+                        model: "claude-opus-4.6",
+                        cost_paid: 5,
+                    }),
+                    pollen({
+                        vendor: "aws",
+                        month: "2026-06",
+                        model: "claude-opus-4.8",
+                        cost_paid: 600,
+                    }),
+                ],
+            }),
+        );
+
+        expect(row.models.map((m) => m.model).sort()).toEqual([
+            "claude-large",
+            "claude-large + claude-opus-4.6",
+            "claude-opus-4.8 + claude-large",
+        ]);
+        expect(
+            row.models.find(
+                (m) => m.model === "claude-large + claude-opus-4.6",
+            ),
+        ).toMatchObject({
+            status: "allocated",
+            providerCreditUsd: 1000,
+            pollenMeterUsd: 5,
+        });
+        expect(
+            row.models.find(
+                (m) => m.model === "claude-opus-4.8 + claude-large",
+            ),
+        ).toMatchObject({
+            status: "allocated",
+            providerCreditUsd: 700,
+            pollenMeterUsd: 600,
+        });
+        expect(
+            row.models.find((m) => m.model === "claude-large"),
+        ).toMatchObject({
+            status: "unallocated",
+            pollenMeterUsd: 900,
+            providerUsageUsd: null,
+        });
+    });
+
     it("keeps a mapped model with no Pollen usage as a normal model row", () => {
         const [row] = modelReconcileRows(
             data({

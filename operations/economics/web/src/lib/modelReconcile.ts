@@ -345,46 +345,21 @@ export function residualBuckets(
 }
 
 // Pollen ids the provider bills on one line are the same model on the same
-// provider. They form one accounting row: the members' Pollen usage summed,
-// the shared lines plus each member's own lines attached, never split.
-function groupedClusters(entry: ProviderMonth): string[][] {
-    const parent = new Map<string, string>();
-    const find = (model: string): string => {
-        let root = model;
-        while (parent.get(root) !== undefined && parent.get(root) !== root) {
-            root = parent.get(root) as string;
-        }
-        return root;
-    };
-    const union = (a: string, b: string) => {
-        const ra = find(a);
-        const rb = find(b);
-        if (ra !== rb) parent.set(rb, ra);
-    };
-    const order: string[] = [];
-    for (const group of entry.sharedGroups.values()) {
-        if (!hasFunding(group)) continue;
-        for (const model of group.models) {
-            if (!parent.has(model)) {
-                parent.set(model, model);
-                order.push(model);
-            }
-            union(group.models[0], model);
-        }
-    }
-    const clusters = new Map<string, string[]>();
-    for (const model of order) {
-        getOrInit(clusters, find(model), () => []).push(model);
-    }
-    return [...clusters.values()];
-}
+// provider. They form one accounting row per provider meter: the members'
+// Pollen usage summed, the shared lines plus each member's own lines attached,
+// never split. Two meters are never merged: a Pollen id that appears under
+// two meters in one month (it changed upstream mid-month) is left out of both
+// rows and shown on its own.
+type SharedGroup =
+    ProviderMonth["sharedGroups"] extends Map<string, infer G> ? G : never;
 
 function groupedRow(
     entry: ProviderMonth,
+    group: SharedGroup,
     members: string[],
 ): ModelAllocationRow {
     const merged: PollenModel = {
-        model: members.join(" + "),
+        model: group.models.join(" + "),
         paidPollenUsd: 0,
         questPollenUsd: 0,
         retainedPaidUsd: 0,
@@ -392,15 +367,10 @@ function groupedRow(
         questMeterUsd: 0,
     };
     const funding = emptyFunding();
-    const lines: { label: string; usd: number }[] = [];
-    const memberSet = new Set(members);
-    for (const group of entry.sharedGroups.values()) {
-        if (!hasFunding(group) || !group.models.some((m) => memberSet.has(m))) {
-            continue;
-        }
-        addFunding(funding, group.cashUsd, group.creditUsd);
-        for (const [label, usd] of group.lines) lines.push({ label, usd });
-    }
+    addFunding(funding, group.cashUsd, group.creditUsd);
+    const lines: { label: string; usd: number }[] = [...group.lines].map(
+        ([label, usd]) => ({ label, usd }),
+    );
     for (const member of members) {
         const model = entry.pollenModels.get(member);
         if (model) {
@@ -416,14 +386,30 @@ function groupedRow(
             lines.push({ label: member, usd: own.cashUsd + own.creditUsd });
         }
     }
-    return { ...modelFundingAllocation(merged, funding), members, lines };
+    return {
+        ...modelFundingAllocation(merged, funding),
+        members: group.models,
+        lines,
+    };
 }
 
 function allocationRows(entry: ProviderMonth): ModelAllocationRow[] {
-    const clusters = groupedClusters(entry);
-    const grouped = new Set(clusters.flat());
-    const models: ModelAllocationRow[] = clusters.map((members) =>
-        groupedRow(entry, members),
+    const groups = [...entry.sharedGroups.values()].filter(hasFunding);
+    const memberships = new Map<string, number>();
+    for (const group of groups) {
+        for (const member of group.models) {
+            memberships.set(member, (memberships.get(member) ?? 0) + 1);
+        }
+    }
+    const grouped = new Set(
+        [...memberships].filter(([, n]) => n === 1).map(([m]) => m),
+    );
+    const models: ModelAllocationRow[] = groups.map((group) =>
+        groupedRow(
+            entry,
+            group,
+            group.models.filter((member) => grouped.has(member)),
+        ),
     );
     for (const model of entry.pollenModels.values()) {
         if (grouped.has(model.model)) continue;

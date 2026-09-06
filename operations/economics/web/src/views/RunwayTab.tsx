@@ -475,10 +475,6 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
                     </TableBody>
                 </DataTable>
             </TableScroller>
-            <p className="text-sm text-theme-text-soft">
-                Gray figures in parentheses are usage paid with provider
-                credits. They are not cash and do not enter Cash change.
-            </p>
         </div>
     );
 }

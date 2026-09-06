@@ -191,11 +191,6 @@ function ResidualBucketChips({
                             type="button"
                             key={item.situation}
                             aria-pressed={selected}
-                            title={
-                                selected
-                                    ? "Show all rows"
-                                    : `Show only ${item.label} rows`
-                            }
                             onClick={() =>
                                 onSelect(selected ? "all" : item.situation)
                             }

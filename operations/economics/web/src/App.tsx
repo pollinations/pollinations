@@ -256,10 +256,6 @@ function isLedgerTab(value: ActiveView): value is LedgerTab {
     return TABS.some((item) => item.id === value);
 }
 
-function codesLabel(codes: readonly ProvenanceCode[]) {
-    return codes.length ? `${codes.join(", ")} · ` : "";
-}
-
 const NAV_COLLAPSED_KEY = "economics.nav.collapsed";
 
 function readNavCollapsed() {
@@ -296,9 +292,9 @@ function NavMenuButton({
                 !desktopVisible && "md:hidden",
             )}
             onClick={onOpen}
-            title="Open navigation"
         >
             <MenuIcon className="h-5 w-5" />
+            <span className="sr-only">Open navigation</span>
         </IconButton>
     );
 }
@@ -346,9 +342,6 @@ function EconomicsNav({
                 data-theme="accent"
                 icon={item.icon}
                 active={activeView === item.id}
-                title={
-                    count != null ? `${count} rows\n${item.note}` : item.note
-                }
                 onClick={() => onViewChange(item.id)}
             >
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
@@ -367,7 +360,6 @@ function EconomicsNav({
     };
     const rawItem = (item: (typeof TABS)[number]) => {
         const count = data?.[item.source] != null ? item.rows(data) : null;
-        const title = `${codesLabel(item.codes)}${item.pipe}${count != null ? ` · ${count} rows` : ""}\n${item.note}`;
 
         return (
             <NavItem
@@ -376,7 +368,6 @@ function EconomicsNav({
                 data-theme="accent"
                 icon={item.icon}
                 active={activeView === item.id}
-                title={title}
                 onClick={() => onViewChange(item.id)}
             >
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
@@ -433,9 +424,9 @@ function EconomicsDrawer({
                         size="sm"
                         className="shrink-0 text-theme-text-soft hover:text-theme-text-strong"
                         onClick={onCollapse}
-                        title="Hide navigation"
                     >
                         <ChevronIcon className="h-4 w-4 rotate-90" />
+                        <span className="sr-only">Hide navigation</span>
                     </IconButton>
                 )}
             </div>
@@ -533,9 +524,9 @@ function EconomicsShell({
                         size="md"
                         className="shrink-0 bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
                         onClick={closeDrawer}
-                        title="Close navigation"
                     >
                         <XIcon className="h-5 w-5" />
+                        <span className="sr-only">Close navigation</span>
                     </IconButton>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -601,8 +592,20 @@ function activeViewTitle(activeView: ActiveView) {
     return ALL_INSIGHT_TABS.find((item) => item.id === activeView)?.label ?? "";
 }
 
-function InfoLine({ children }: { children: ReactNode }) {
-    return <span className="block">• {children}</span>;
+function InfoItem({ lead, children }: { lead: string; children: ReactNode }) {
+    return (
+        <span className="block leading-snug">
+            <strong className="font-semibold">{lead}.</strong> {children}
+        </span>
+    );
+}
+
+function ViewInfo({ children }: { children: ReactNode }) {
+    return (
+        <span className="block w-80 max-w-[85vw] space-y-2.5 text-left">
+            {children}
+        </span>
+    );
 }
 
 function viewInfoContent(activeView: ActiveView) {
@@ -610,184 +613,171 @@ function viewInfoContent(activeView: ActiveView) {
         const active = TABS.find((item) => item.id === activeView);
         if (!active) return null;
         return (
-            <span className="block max-w-72">
-                <strong>{active.label}</strong>
-                <InfoLine>{active.note}</InfoLine>
-                <InfoLine>
-                    Source: <strong>{active.pipe}</strong>
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Rows">{active.note}</InfoItem>
+                <InfoItem lead="Source">{active.pipe}</InfoItem>
+            </ViewInfo>
         );
     }
-
     if (activeView === "vendors") {
         return (
-            <span className="block max-w-72">
-                <strong>Vendors</strong>
-                <InfoLine>
+            <ViewInfo>
+                <InfoItem lead="Scope">
                     One vendor-month across managed inference and GPU capacity.
-                    Shared infrastructure is excluded from unit economics.
-                </InfoLine>
-                <InfoLine>
-                    Paid shows retained cash-backed value; Quest stays separate
-                    as free usage. Gross Paid remains in the usage-mix tooltip.
-                </InfoLine>
-                <InfoLine>
-                    Total vendor economics remain valid when a vendor supplies
-                    both modes. The mode split stays unallocated until Pollen
-                    records delivery mode per request.
-                </InfoLine>
-                <InfoLine>
-                    Result and Performance use full vendor cost, including
-                    consumed credits.
-                </InfoLine>
-            </span>
+                    Shared infrastructure is excluded.
+                </InfoItem>
+                <InfoItem lead="Paid and Quest">
+                    Paid is retained cash-backed value; Quest is free usage and
+                    stays separate. Gross Paid is in the usage-mix hover.
+                </InfoItem>
+                <InfoItem lead="Mixed modes">
+                    Vendor totals hold when a vendor serves both modes; the
+                    split stays unallocated until Pollen records delivery mode
+                    per request.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Result and Performance use full vendor cost, consumed
+                    credits included.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "inference") {
         return (
-            <span className="block max-w-72">
-                <strong>Inference</strong>
-                <InfoLine>
-                    Managed-inference vendor-months only; current-month rows
-                    remain partial and mixed inference/GPU months stay
-                    unallocated.
-                </InfoLine>
-                <InfoLine>
-                    Paid shows retained cash-backed value; Quest stays separate
-                    as free usage. Gross Paid remains in the usage-mix tooltip.
-                </InfoLine>
-                <InfoLine>
-                    Vendor-month totals are authoritative. Model costs use exact
-                    matched provider evidence; unmatched costs remain
-                    unallocated.
-                </InfoLine>
-                <InfoLine>
-                    Result is retained Paid minus cash and consumed credits.
-                    Performance divides that result by retained Paid; cost
-                    checks remain at vendor level.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Scope">
+                    Managed-inference vendor-months only. The current month is
+                    partial; mixed inference and GPU months stay unallocated.
+                </InfoItem>
+                <InfoItem lead="Paid and Quest">
+                    Paid is retained cash-backed value; Quest is free usage and
+                    stays separate. Gross Paid is in the usage-mix hover.
+                </InfoItem>
+                <InfoItem lead="Model costs">
+                    Vendor-month totals are authoritative. Models use exact
+                    matched provider evidence; unmatched cost stays unallocated.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Retained Paid minus cash and consumed credits. Performance
+                    divides that by retained Paid; cost checks stay at vendor
+                    level.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "revenue-share") {
         return (
-            <span className="block max-w-72">
-                <strong>Rev share</strong>
-                <InfoLine>
-                    One row per creator combines their BYOP apps and Community
-                    models. Each request is associated with every creator whose
-                    app or model participated.
-                </InfoLine>
-                <InfoLine>
-                    Pollinations profit is Paid usage minus every creator
-                    earning and the external model cost. The summary cards count
-                    each request once even when two creators participated.
-                </InfoLine>
-                <InfoLine>
-                    Quest creator earnings remain non-cashable. Settlements are
-                    shown only after a completed Bank movement is explicitly
-                    classified as a creator payout.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Rows">
+                    One per creator, combining their BYOP apps and Community
+                    models. A request counts for every creator whose app or
+                    model took part.
+                </InfoItem>
+                <InfoItem lead="Profit">
+                    Paid usage minus every creator earning and the external
+                    model cost. The cards count each request once even when two
+                    creators took part.
+                </InfoItem>
+                <InfoItem lead="Quest and settlements">
+                    Quest earnings are not cashable. Settlements appear only
+                    after a Bank movement is classified as a creator payout.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "close") {
         return (
-            <span className="block max-w-72">
-                <strong>Close</strong>
-                <InfoLine>
-                    Vendor rows check archived source coverage, active accounts,
-                    and whether usage was cash- or credit-funded.
-                </InfoLine>
-                <InfoLine>
-                    The month-level result also includes transaction-document,
-                    vendor-mapping, row-integrity, duplicate, and FX checks
-                    shown in the year-wide integrity history below.
-                </InfoLine>
-                <InfoLine>
-                    Invoices and bank entries remain in Bank. e-MTA filing
-                    confirmation is not tracked yet, so Ready means the books
-                    are ready to file—not legally filed.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Vendor rows">
+                    Archived source coverage, active accounts, and whether usage
+                    was cash- or credit-funded.
+                </InfoItem>
+                <InfoItem lead="Month result">
+                    Adds the transaction-document, vendor-mapping,
+                    row-integrity, duplicate and FX checks shown in the
+                    integrity history below.
+                </InfoItem>
+                <InfoItem lead="Ready">
+                    Means the books are ready to file, not legally filed; e-MTA
+                    confirmation is not tracked. Invoices and bank entries stay
+                    in Bank.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "balances") {
         return (
-            <span className="block max-w-72">
-                <strong>Balances</strong>
-                <InfoLine>
+            <ViewInfo>
+                <InfoItem lead="Scope">
                     Current vendor balances; the selected period does not limit
                     this page. Open a vendor for its monthly history.
-                </InfoLine>
-                <InfoLine>
-                    Cash prepaid is payments minus cash-funded usage. Free
-                    credit is recorded grants minus credit-funded usage and
-                    expired capacity.
-                </InfoLine>
-                <InfoLine>
-                    Cash prepaid is a ledger estimate, not a live vendor wallet.
-                    Individual payments and documents stay in Bank.
-                </InfoLine>
-            </span>
+                </InfoItem>
+                <InfoItem lead="Cash prepaid">
+                    Payments minus cash-funded usage: a ledger estimate, not a
+                    live vendor wallet. Payments and documents stay in Bank.
+                </InfoItem>
+                <InfoItem lead="Free credit">
+                    Recorded grants minus credit-funded usage and expired
+                    capacity.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "runway") {
         return (
-            <span className="block max-w-72">
-                <strong>Runway</strong>
-                <InfoLine>
-                    Cash change and balance come from the Wise-backed Bank
-                    ledger. Revenue is what entered Stripe in the month; Wise
-                    payouts are cash only and are not reconciled against it.
-                </InfoLine>
-                <InfoLine>
-                    The current month keeps bank movements and the authored
-                    full-month plan in separate columns.
-                </InfoLine>
-                <InfoLine>
-                    Revenue is Stripe sales net of Stripe fees, with refunds and
-                    reversals on one line. Compute and Infrastructure come from
-                    the vendor ledger by service month; every other expense
-                    category is bank cash. Usage paid with provider credits
-                    shows in gray parentheses beside the cash figure and never
-                    enters the sums. Expand a category to see its vendor detail.
-                </InfoLine>
-                <InfoLine>
-                    Cash change and Cash balance are the bank. The lines above
-                    are by service month and are not reconciled to them here:
-                    unpaid bills, prepaid balances and the Stripe float stay out
-                    of the table. A paid vendor without ledger rows is a
-                    warning, never a cash fallback. Forecast columns and running
-                    cash remain cash-based.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Cash">
+                    Cash change and Cash balance are the Wise bank ledger. The
+                    forecast columns and running cash stay cash-based.
+                </InfoItem>
+                <InfoItem lead="Revenue">
+                    What entered Stripe in the month, net of Stripe fees, with
+                    refunds and reversals on one line. Wise payouts are cash
+                    only and are not reconciled against it.
+                </InfoItem>
+                <InfoItem lead="Expenses">
+                    Compute and Infrastructure come from the vendor ledger by
+                    service month; every other category is bank cash. Expand a
+                    category for its vendors.
+                </InfoItem>
+                <InfoItem lead="Gray figures">
+                    Usage paid with provider credits, shown in parentheses
+                    beside the cash figure. Not cash, never in the sums.
+                </InfoItem>
+                <InfoItem lead="Not reconciled">
+                    Unpaid bills, prepaid balances and the Stripe float stay out
+                    of the table, so the lines do not add up to Cash change. A
+                    paid vendor without ledger rows is a warning, never a cash
+                    fallback.
+                </InfoItem>
+                <InfoItem lead="Current month">
+                    Bank movements to date and the full-month plan sit in
+                    separate columns.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "gpu") {
         return (
-            <span className="block max-w-72">
-                <strong>GPU Economics</strong>
-                <InfoLine>
-                    Cards show the selected month at vendor-pool level: retained
-                    Paid, Quest usage, cash, consumed credits, and full-cost
-                    result.
-                </InfoLine>
-                <InfoLine>
-                    The table has one row per verified workload. Expand one to
-                    see every billed GPU resource and its direct usage and cost.
-                </InfoLine>
-                <InfoLine>
-                    Result is retained Paid minus the full mapped workload cost.
+            <ViewInfo>
+                <InfoItem lead="Cards">
+                    The selected month at vendor-pool level: retained Paid,
+                    Quest usage, cash, consumed credits, full-cost result.
+                </InfoItem>
+                <InfoItem lead="Table">
+                    One row per verified workload. Expand one for every billed
+                    GPU resource with its usage and cost.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Retained Paid minus the full mapped workload cost.
                     Efficiency is that result divided by retained Paid.
-                </InfoLine>
-                <InfoLine>
+                </InfoItem>
+                <InfoItem lead="Limits">
                     Pollen does not identify the serving replica, so efficiency
                     stays at workload level. Unknown short-lived resources and
-                    shared overhead remain visible instead of being guessed.
-                </InfoLine>
-            </span>
+                    shared overhead stay visible instead of being guessed.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     return null;

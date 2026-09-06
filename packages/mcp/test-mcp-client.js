@@ -54,8 +54,11 @@ const EXPECTED_TOOLS = [
     "getKeyInfo",
     "getModelStatus",
     "listModels",
+    "pollDeviceLogin",
     "setApiKey",
+    "startDeviceLogin",
     "transcribeAudio",
+    "whoAmI",
 ];
 
 const createTransport = () =>

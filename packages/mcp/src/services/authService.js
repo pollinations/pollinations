@@ -8,6 +8,8 @@ import {
 } from "../utils/authUtils.js";
 import { createMCPResponse, createTextContent } from "../utils/coreUtils.js";
 
+import { clearPendingDevice } from "./deviceLoginService.js";
+
 async function setApiKey(params) {
     const { key } = params;
 
@@ -79,6 +81,7 @@ async function getKeyInfo() {
 async function clearApiKey() {
     const wasSet = hasApiKey();
     clearStoredKey();
+    clearPendingDevice();
 
     return createMCPResponse([
         createTextContent(

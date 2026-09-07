@@ -91,7 +91,8 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 **CRITICAL — never mutate a secret without the user's separate, explicit, scoped approval.**
 
-- A secret mutation includes creating, replacing, rotating, revoking, regenerating, synchronizing, or deploying a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
+- A secret mutation changes secret material or its lifecycle: creating, replacing, rotating, revoking, or regenerating a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
+- Re-uploading unchanged encrypted values through an existing reviewed deployment workflow is routine deployment, not rotation, and needs no separate secret approval. This exception applies only when the user requested the deployment and the diff changes neither the secret source, mapping, target environment, nor upload command.
 - Before any mutation, stop and state the exact secret name (never its value), environments, reason, expected impact, execution order, verification, and rollback.
 - Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
 - For a first-time secret addition, require: `Yes, you can add <SECRET_NAME> to <ENVIRONMENTS> now.`
@@ -99,7 +100,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
 - Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
-- Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
+- Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values. Do not search credential files, shell history, agent/session archives, or broad home-directory trees to locate tooling or configuration; inspect documented install paths and commands instead.
 - Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
 - Never synchronize production secrets from an unmerged commit or a branch other than `production`.
 - For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14471,
+  "title": "feat(economics): reconcile revenue, forecasts and ledger evidence",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14471",
+  "merged_at": "2026-09-07T11:15:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds the Revenue Share ledger and per-creator totals with D1 usernames; shows non-cashable Paid/Quest Pollen exposure in Runway.\n- Separates Stripe Pollen/Ko-fi sales, refunds and fees from Wise cash. Forecasts use reviewed account balances, usage coverage and credit terms.\n- Reconciles exact metered Pollen identities using reviewed, dated provider/SKU mappings. Raw facts remain separate from interpretation; shared upstreams and missing evidence stay visible without proportional allocation.\n- Tightens Close evidence checks, private-data handling and Tinybird validation. Simplifies collection skills; archives verified evidence/backups on Drive and recoverably removes local data residue. Renames internal Compute identifiers to Vendor.\n- Verification: 419 tests, TypeScript, Biome and build pass; seven live staging contracts and local reader verified. Vendor migration is complete on staging (deployment 136): full history copied losslessly, raw/effective hashes equal, app and guides switched; old tables retained. August invoices remain flagged as non-blocking follow-up through September 20. Production Vendor migration and app rollout require separate approval.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "major",
+    "headline": "The ledger grew roots",
+    "blurb": "The economics garden now keeps a proper Revenue Share ledger, with creator totals, dated model identities, and the evidence trail still attached. Accounting: famously where the tiny details have tiny details.",
+    "summary": "Added Revenue Share and Vendor ledger APIs plus economics dashboard views that reconcile per-creator Pollen totals using D1 usernames, reviewed dated provider/SKU mappings, separate Stripe sales/refunds/fees from Wise cash, and show non-cashable Paid and Quest Pollen exposure in Runway.",
+    "impact": "Internal operators can trace creator balances and metered Pollen to reviewed source evidence, inspect unresolved upstream gaps without invented allocations, and build forecasts from account balances, usage coverage, and credit terms.",
+    "keywords": [
+      "economics",
+      "revenue-share",
+      "ledger",
+      "pollen",
+      "reconciliation",
+      "tinybird",
+      "runway"
+    ],
+    "visual_concept": "A cozy garden-accounting scene: Polli, wearing tiny accountant glasses and carrying a ledger, tends a code-plant whose branches are labeled as creator Pollen totals and dated provider/SKU tags. A helpful CRT Monitor Robot displays a clear reconciled ledger while separate little jars for Stripe, Wise, refunds, and fees sit visibly but neatly apart; flowers and root-like audit trails represent preserved evidence.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and carefully tending a code-plant ledger with dated tags and creator Pollen totals; a chunky CRT-monitor robot holds a glowing reconciled ledger beside separate labeled jars for sales, refunds, fees, and cash. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, pixel flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'EVIDENCE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14471.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings, wearing tiny accountant glasses and carefully tending a code-plant ledger with dated tags and creator Pollen totals; a chunky CRT-monitor robot holds a glowing reconciled ledger beside separate labeled jars for sales, refunds, fees, and cash. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, pixel flowers and vines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: 'EVIDENCE'. Nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-07T11:16:49.865217+00:00"
+}

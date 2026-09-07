@@ -216,6 +216,15 @@ async def validate_routing(value: RoutingInput | None) -> RoutingPreferences:
     for field, model in explicit.items():
         meta = catalog.get(model)
         if meta is None:
+            meta = next(
+                (
+                    entry
+                    for entry in catalog.values()
+                    if model in (entry.get("aliases") or [])
+                ),
+                None,
+            )
+        if meta is None:
             raise RoutingValidationError(field, model, "unknown model")
         reason = _validation_reason(meta, _REQUIREMENTS[field])
         if reason is not None:

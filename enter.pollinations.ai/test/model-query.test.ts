@@ -26,6 +26,32 @@ function model(overrides: Partial<ModelPrice> = {}): ModelPrice {
 const matches = (candidate: ModelPrice, query: string): boolean =>
     matchesModelQuery(candidate, parseModelQuery(query));
 
+it("finds canonical catalog entries through old search terms and saved id filters", () => {
+    const candidate = model({
+        name: "google/gemini-2.5-flash-lite:search",
+        aliases: ["gemini-search"],
+    });
+    expect(matches(candidate, "gemini-search")).toBe(true);
+    expect(matches(candidate, "id:GEMINI-SEARCH")).toBe(true);
+    expect(matches(candidate, "id:google/gemini-2.5-flash-lite:search")).toBe(
+        true,
+    );
+    expect(matches(candidate, "id:gemini-sea")).toBe(false);
+    expect(
+        matches(candidate, "id:google/gemini-2.5-flash-lite:search:openrouter"),
+    ).toBe(false);
+    expect(candidate.name).toBe("google/gemini-2.5-flash-lite:search");
+    expect(getModelQuerySuggestions("id:google/", [candidate])).toEqual([
+        "id:google/gemini-2.5-flash-lite:search ",
+    ]);
+    expect(
+        matches(
+            model({ name: "owner/community-model", community: true }),
+            "id:owner/community-model",
+        ),
+    ).toBe(true);
+});
+
 describe("parseModelQuery", () => {
     it("separates case-insensitive filters from text terms", () => {
         expect(

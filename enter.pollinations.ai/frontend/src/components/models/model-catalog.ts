@@ -192,6 +192,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
 
     return {
         name,
+        aliases: model.aliases,
         type: getCatalogCategory(model),
         community: model.community,
         agent: model.agent,

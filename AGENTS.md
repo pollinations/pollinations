@@ -100,7 +100,7 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 - Approval is valid only for the named secret, environments, and one described operation. Never reuse or broaden it.
 - Do not edit a secret file, change provider/GitHub secret state, or open or push a secret-change PR before receiving that approval.
 - If exposure is suspected, report it immediately and stop. Do not revoke or rotate until the explicit approval is received.
-- Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values. Do not search credential files, shell history, agent/session archives, or broad home-directory trees to locate tooling or configuration; inspect documented install paths and commands instead.
+- Read-only inspection may continue, but never print, echo, log, or otherwise expose secret values.
 - Encrypted secret-file changes must use a dedicated PR. Never bundle them into a model, feature, pricing, or refactor PR.
 - Never synchronize production secrets from an unmerged commit or a branch other than `production`.
 - For rotation, add and verify the replacement first, merge the encrypted update, deploy from `production`, run live tests for every affected service, and only then revoke the previous credential.

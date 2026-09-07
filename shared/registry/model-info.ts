@@ -30,6 +30,40 @@ export const ModelCapabilitySchema = z.enum([
 
 export type ModelCapability = z.infer<typeof ModelCapabilitySchema>;
 
+// Minimal caller-visible health metadata exposed on model listings.
+// Successes are final 2xx responses (fallback rescues included); caller-side
+// 4xx errors are excluded from the success rate. Missing health data means
+// the value is unknown and the field is omitted entirely.
+export const ModelHealthSummarySchema = z
+    .object({
+        success_rate: z
+            .number()
+            .min(0)
+            .max(1)
+            .describe(
+                "Share of caller-visible final requests that succeeded (2xx, including fallback rescues), excluding caller-side 4xx errors.",
+            ),
+        samples: z
+            .number()
+            .int()
+            .nonnegative()
+            .describe("Total final requests observed in the window."),
+        window_minutes: z
+            .number()
+            .int()
+            .positive()
+            .describe("Rolling window the health data covers, in minutes."),
+        observed_at: z
+            .string()
+            .describe("When the health snapshot was fetched (ISO 8601)."),
+    })
+    .meta({
+        description:
+            "Observed caller-visible health over a rolling window. Omitted when no health data is available (unknown). Experimental status is tracked separately and is independent of this value.",
+    });
+
+export type ModelHealthSummary = z.infer<typeof ModelHealthSummarySchema>;
+
 // Pricing uses registry field names directly, filtering out zero/undefined values
 // Fields: promptTextTokens, promptCachedTokens, promptCacheWriteTokens,
 //         promptAudioTokens, promptAudioSeconds, promptImageTokens,
@@ -44,6 +78,7 @@ export const ModelInfoSchema = z.object({
         .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
     community: z.boolean(),
+    health: ModelHealthSummarySchema.optional(),
     agent: z.boolean().optional(),
     base_model: z.string().optional(),
     per_user_rpm: z.number().positive().nullable().optional(),

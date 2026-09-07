@@ -14,6 +14,7 @@ const TINYBIRD_PUBLIC_TOKEN =
 const CACHE_TTL_MS = 60_000;
 const MAX_CACHE_ENTRIES = 32;
 const DEFAULT_MINUTES = 60;
+export const MODEL_HEALTH_DEFAULT_MINUTES = DEFAULT_MINUTES;
 const MAX_MINUTES = 7 * 24 * 60;
 const DATA_TIMESTAMP_HEADER = "X-Model-Status-Timestamp";
 const STALE_HEADER = "X-Model-Status-Stale";
@@ -53,7 +54,8 @@ const ModelHealthResponseSchema = z.object({
         .optional(),
 });
 
-type ModelHealthResponse = z.infer<typeof ModelHealthResponseSchema>;
+export type ModelHealthResponse = z.infer<typeof ModelHealthResponseSchema>;
+export type ModelHealthRow = z.infer<typeof ModelHealthRowSchema>;
 
 type CacheEntry = { data: ModelHealthResponse; timestamp: number };
 
@@ -76,6 +78,61 @@ function parseMinutes(value: string | undefined): number | null {
     const minutes = Number(value);
     if (minutes < 1 || minutes > MAX_MINUTES) return null;
     return minutes;
+}
+
+export type ModelHealthSnapshot = {
+    data: ModelHealthResponse;
+    timestamp: number;
+    stale: boolean;
+};
+
+// Shared fetch+cache behind both /v1/models/status and the health metadata
+// on the model-list endpoints. The module-level cache keeps a 60s TTL and a
+// small LRU set; on upstream failure the last snapshot is served stale, and
+// null is returned only when no snapshot exists at all (callers treat
+// health as unknown).
+export async function getModelHealthSnapshot(
+    minutes: number = DEFAULT_MINUTES,
+): Promise<ModelHealthSnapshot | null> {
+    const now = Date.now();
+    const cached = cache.get(minutes);
+    if (cached && now - cached.timestamp < CACHE_TTL_MS) {
+        log("Returning cached model health response for %d minutes", minutes);
+        setCacheEntry(minutes, cached);
+        return { ...cached, stale: false };
+    }
+
+    try {
+        const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
+        url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
+        url.searchParams.set("minutes", String(minutes));
+        log("Fetching model health from Tinybird: %s", url.toString());
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+            throw new Error(`Tinybird responded with ${response.status}`);
+        }
+
+        const tinybirdData = (await response.json()) as ModelHealthResponse;
+        const entry = { data: tinybirdData, timestamp: Date.now() };
+        setCacheEntry(minutes, entry);
+        return { ...entry, stale: false };
+    } catch (error) {
+        log("Error fetching model health: %O", error);
+        const stale = cache.get(minutes);
+        if (stale) {
+            log("Falling back to stale cache for %d minutes", minutes);
+            setCacheEntry(minutes, stale);
+            return { ...stale, stale: true };
+        }
+        return null;
+    }
+}
+
+// Test-only: drop the module-level health cache so tests can install a new
+// mocked Tinybird response without waiting out the TTL.
+export function clearModelHealthCacheForTests() {
+    cache.clear();
 }
 
 export const modelStatusRoutes = new Hono<Env>().get(
@@ -144,51 +201,17 @@ export const modelStatusRoutes = new Hono<Env>().get(
             );
         }
 
-        const now = Date.now();
-        const cached = cache.get(minutes);
-        if (cached && now - cached.timestamp < CACHE_TTL_MS) {
-            log(
-                "Returning cached model health response for %d minutes",
-                minutes,
-            );
-            setCacheEntry(minutes, cached);
-            c.header(
-                DATA_TIMESTAMP_HEADER,
-                new Date(cached.timestamp).toISOString(),
-            );
-            return c.json(cached.data);
-        }
-
-        try {
-            const url = new URL("/v0/pipes/model_health.json", TINYBIRD_HOST);
-            url.searchParams.set("token", TINYBIRD_PUBLIC_TOKEN);
-            url.searchParams.set("minutes", String(minutes));
-            log("Fetching model health from Tinybird: %s", url.toString());
-
-            const response = await fetch(url.toString());
-            if (!response.ok) {
-                throw new Error(`Tinybird responded with ${response.status}`);
-            }
-
-            const tinybirdData = (await response.json()) as ModelHealthResponse;
-            const timestamp = Date.now();
-            setCacheEntry(minutes, { data: tinybirdData, timestamp });
-            c.header(DATA_TIMESTAMP_HEADER, new Date(timestamp).toISOString());
-            return c.json(tinybirdData);
-        } catch (error) {
-            log("Error fetching model health: %O", error);
-            const stale = cache.get(minutes);
-            if (stale) {
-                log("Falling back to stale cache for %d minutes", minutes);
-                setCacheEntry(minutes, stale);
-                c.header(
-                    DATA_TIMESTAMP_HEADER,
-                    new Date(stale.timestamp).toISOString(),
-                );
-                c.header(STALE_HEADER, "true");
-                return c.json(stale.data);
-            }
+        const snapshot = await getModelHealthSnapshot(minutes);
+        if (!snapshot) {
             return c.json({ error: "Failed to fetch model health data" }, 502);
         }
+        c.header(
+            DATA_TIMESTAMP_HEADER,
+            new Date(snapshot.timestamp).toISOString(),
+        );
+        if (snapshot.stale) {
+            c.header(STALE_HEADER, "true");
+        }
+        return c.json(snapshot.data);
     },
 );

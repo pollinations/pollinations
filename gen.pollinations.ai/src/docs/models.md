@@ -15,17 +15,33 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 
 ### Query Parameters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model discovery endpoints accept optional `source` and `reliable` query
+parameters, plus every listing response carries a minimal `health` block
+(success rate, sample count, window, freshness) when health data is
+available:
 
 | Parameter | Values | Behaviour |
 |-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+| `source` | `official`, `community`, `all` | `official` returns first-party models only, `community` returns community-published models only. Omitted or `all` returns every model |
+| `reliable` | `true`, `1` | Keeps only models with sufficient observed health: success rate >= 0.9 across >= 10 samples in the current health window. Models without health data are treated as unknown and excluded |
+| `reliable` | `false`, `0`, *(omitted)* | Keeps every model |
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+Any other value (e.g. `source=bogus`, `reliable=2`) returns
+**400 Bad Request**. Filtering discovery never changes generation
+permissions: a model hidden from a filtered listing can still be called and
+retrieved by id.
 
-Example: `GET /models?community=false`
+Example: `GET /models?source=official&reliable=true`
+
+Clients that append `/models` to a configured base URL (Open WebUI,
+LibreChat, Cline) cannot carry query parameters in the base URL, so the same
+filters may be sent as the `X-Pollinations-Model-Filter` header in URL query
+format. Explicit query parameters win over header values:
+
+```
+# LibreChat custom endpoint header
+X-Pollinations-Model-Filter: source=official&reliable=true
+```
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -62,6 +78,6 @@ Reasoning effort levels and forced-tool restrictions remain model-specific.
 
 ## Community Models
 
-Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
+Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `source=community` to return only community models or `source=official` to exclude them.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.

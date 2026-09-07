@@ -285,6 +285,15 @@ describe("docs routes", () => {
             schema.paths["/v1/chat/completions"] as Record<string, unknown>
         )?.post as Record<string, unknown> | undefined;
         expect(chatPost?.["x-codeSamples"]).toBeDefined();
+        const responsesPost = (
+            schema.paths["/v1/responses"] as Record<string, unknown>
+        )?.post as Record<string, unknown> | undefined;
+        expect(responsesPost?.["x-codeSamples"]).toEqual([
+            expect.objectContaining({ label: "cURL" }),
+            expect.objectContaining({ label: "Streaming" }),
+            expect.objectContaining({ label: "Python" }),
+            expect.objectContaining({ label: "JavaScript" }),
+        ]);
 
         const realtimeGet = (
             schema.paths["/v1/realtime"] as Record<string, unknown>

@@ -70,6 +70,8 @@ export default defineWorkersConfig(async ({ mode }) => {
                                             {
                                                 id: "ca_test",
                                                 toolkit: "github",
+                                                name: "GitHub",
+                                                logo: "https://logos.composio.test/github",
                                                 alias: null,
                                                 status: "ACTIVE",
                                                 userId,

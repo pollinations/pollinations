@@ -19,13 +19,13 @@ async function resolveAttribution(
 ) {
     const meta = parseMetadata(keyRow.metadata);
     const user = await db.query.user.findFirst({
-        where: eq(schema.user.id, keyRow.userId),
+        where: eq(schema.user.id, keyRow.referenceId),
     });
     const redirectUris = getRedirectUris(meta);
     return {
         found: true as const,
         clientId: keyRow.id,
-        userId: keyRow.userId,
+        userId: keyRow.referenceId,
         userName: user?.name,
         githubUsername: user?.githubUsername || undefined,
         appName: keyRow.name,

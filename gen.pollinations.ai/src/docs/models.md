@@ -32,6 +32,13 @@ Rich model endpoints include `capabilities` for agentic/model traits:
 Modalities, video frame controls, voices, and context length remain separate
 structured fields.
 
+Use `supported_endpoints` to discover which public API routes accept each
+model. `/v1/responses` identifies built-in models with a configured native
+Responses route, community text models and endpoint agents whose owner supplied
+the Responses API and one exact URL, and managed prompt agents. These community
+models and agents also accept `/v1/chat/completions` through the shared adapter.
+Built-in models may use separate upstream routes for Chat and Responses.
+
 ## Community Models
 
 Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.

@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Alibaba Qwen-Image generation via Replicate.
  *
@@ -10,7 +11,6 @@
  * for editing.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ImageParams } from "../params.ts";
@@ -19,7 +19,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:qwen-image:ops");
@@ -122,11 +122,13 @@ export async function callQwenImageAPI(
         });
     } catch (err) {
         logError(`${modelLabel} prediction call failed:`, err);
-        throw toReplicateHttpError(err, `${modelLabel} generation failed`);
+        throw toReplicateUpstreamError(err, `${modelLabel} generation failed`);
     }
 
     if (outputUrls.length === 0) {
-        throw new HttpError(`${modelLabel} returned no images`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${modelLabel} returned no images`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrls[0], {

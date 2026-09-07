@@ -1,7 +1,9 @@
 import googleCloudAuth from "../auth/googleCloudAuth.js";
+import { textEnvironmentValue } from "../environment.js";
 import {
     createAlibabaModelConfig,
     createAzureModelConfig,
+    createAzureResponsesModelConfig,
     createBedrockNativeConfig,
     createDeepInfraModelConfig,
     createFireworksModelConfig,
@@ -67,21 +69,26 @@ function createPinnedOpenRouterGeminiConfig(
 export const portkeyConfig: PortkeyConfigMap = {
     // -- Azure (Myceli Prod — eastus, OpenAI) ---------------------------------
     "gpt-5.4-nano": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-nano/chat/completions?api-version=2024-12-01-preview",
         ),
     "gpt-5-nano-2025-08-07": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5-nano/chat/completions?api-version=2024-12-01-preview",
         ),
     "gpt-5.4": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4/chat/completions?api-version=2024-12-01-preview",
         ),
     "gpt-5.4-mini": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "gpt-5.4-mini-chat": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_API_KEY,
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/gpt-5.4-mini/chat/completions?api-version=2024-12-01-preview",
@@ -89,6 +96,11 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Azure (Myceli Prod — swedencentral, GPT-5.5) -------------------------
     "gpt-5.5": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
+        ),
+    "gpt-5.5-chat": () =>
         createAzureModelConfig(
             process.env.AZURE_MYCELI_PROD_SWEDEN_API_KEY,
             "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/gpt-5.5/chat/completions?api-version=2024-12-01-preview",
@@ -96,19 +108,24 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Azure (Myceli Prod — eastus, GPT-5.6) --------------------------------
     "gpt-5.6-sol": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-sol/chat/completions?api-version=2025-04-01-preview",
         ),
     "gpt-5.6-terra": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-terra/chat/completions?api-version=2025-04-01-preview",
         ),
     "gpt-5.6-luna": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-5.6-luna/chat/completions?api-version=2025-04-01-preview",
+        ),
+    "gpt-6-astra": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra/chat/completions?api-version=2025-04-01-preview",
         ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
@@ -126,18 +143,18 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Azure (Myceli Prod — eastus, xAI Grok) -------------------------------
     "grok-4-20-non-reasoning": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-non-reasoning/chat/completions?api-version=2024-12-01-preview",
         ),
     "grok-4-20-reasoning": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4-20-reasoning/chat/completions?api-version=2024-12-01-preview",
         ),
     "grok-4.3": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.3/chat/completions?api-version=2024-12-01-preview",
         ),
     "grok-4.6": () => ({
@@ -145,14 +162,17 @@ export const portkeyConfig: PortkeyConfigMap = {
         directEndpoint:
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
         directAuthHeader: "api-key",
-        authKey: process.env.AZURE_MYCELI_PROD_API_KEY,
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
         model: "grok-4.6",
+        responsesEndpoint:
+            "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        responsesAuthHeader: "api-key",
     }),
 
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------
     "Cohere-command-a-plus-05-2026": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Cohere-command-a-plus-05-2026/chat/completions?api-version=2024-12-01-preview",
         ),
 
@@ -215,6 +235,15 @@ export const portkeyConfig: PortkeyConfigMap = {
                 },
             },
         }),
+    "qwen3.8-max-0902": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-max-0902",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+            responsesDisableReasoningForForcedTools: true,
+            defaultOptions: { max_tokens: 64000 },
+        }),
     "qwen/qwen3.7-flash": () =>
         createOpenRouterModelConfig({
             model: "qwen/qwen3.7-flash",
@@ -225,6 +254,27 @@ export const portkeyConfig: PortkeyConfigMap = {
                     allow_fallbacks: false,
                 },
             },
+        }),
+    "qwen3.7-flash-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.7-flash",
+            defaultOptions: { max_tokens: 64000 },
+        }),
+    "qwen/qwen3.8-flash": () =>
+        createOpenRouterModelConfig({
+            model: "qwen/qwen3.8-flash",
+            defaultOptions: {
+                max_tokens: 64000,
+                provider: {
+                    only: ["Alibaba"],
+                    allow_fallbacks: false,
+                },
+            },
+        }),
+    "qwen3.8-flash-alibaba": () =>
+        createAlibabaModelConfig({
+            model: "qwen3.8-flash",
+            defaultOptions: { max_tokens: 64000 },
         }),
     "poolside/laguna-s-2.1": () =>
         createOpenRouterModelConfig({
@@ -304,9 +354,9 @@ export const portkeyConfig: PortkeyConfigMap = {
         "anthropic/claude-opus-4.7",
         "google-vertex/global",
     ),
-    "llama-scout-openrouter-deepinfra": createPinnedOpenRouterConfig(
+    "llama-scout-openrouter-vertex": createPinnedOpenRouterConfig(
         "meta-llama/llama-4-scout",
-        "deepinfra/fp8",
+        "google-vertex/us-east5",
     ),
     "grok-openrouter-xai-zdr": createPinnedOpenRouterConfig(
         "x-ai/grok-4.20",
@@ -425,6 +475,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "mistralai/mistral-small-3.2-24b-instruct",
         "deepinfra/fp8",
     ),
+    "mistral-small-3.2-deepinfra": () =>
+        createDeepInfraModelConfig({
+            model: "mistralai/Mistral-Small-3.2-24B-Instruct-2506",
+        }),
     "mistral-small-2603": () =>
         createOpenRouterModelConfig({
             model: "mistralai/mistral-small-2603",
@@ -440,8 +494,8 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Azure (Myceli Prod — eastus, Mistral Large) -------------------------
     "Mistral-Large-3": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Mistral-Large-3/chat/completions?api-version=2024-12-01-preview",
         ),
 
@@ -516,6 +570,10 @@ export const portkeyConfig: PortkeyConfigMap = {
         "gemini-3.7-flash",
         "google-vertex/global",
     ),
+    "google/gemini-3.8-flash": createPinnedOpenRouterGeminiConfig(
+        "gemini-3.8-flash",
+        "google-vertex/global",
+    ),
 
     // -- Google Vertex AI (dedicated Gemini Search services) -----------------
     "vertex/gemini-2.5-flash-lite": createVertexGeminiConfig(
@@ -576,20 +634,20 @@ export const portkeyConfig: PortkeyConfigMap = {
 
     // -- Azure (Myceli Prod — eastus, Meta Llama) ----------------------------
     "Llama-3.3-70B-Instruct": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-3.3-70B-Instruct/chat/completions?api-version=2024-12-01-preview",
         ),
     "Llama-4-Maverick-17B-128E-Instruct-FP8": () =>
-        createAzureModelConfig(
-            process.env.AZURE_MYCELI_PROD_API_KEY,
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.cognitiveservices.azure.com/openai/deployments/Llama-4-Maverick-17B-128E-Instruct-FP8/chat/completions?api-version=2024-12-01-preview",
             { requiresBase64ImageUrls: true },
         ),
     // Llama 4 Scout is Marketplace SaaS pass-through on Azure (not
     // credit-eligible). OpenRouter is the cheapest provider with the same SKU.
     "Llama-4-Scout-17B-16E-Instruct": createPinnedOpenRouterConfig(
-        "meta/llama-4-scout",
+        "meta-llama/llama-4-scout",
         "deepinfra/fp8",
     ),
 
@@ -625,9 +683,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         createOVHcloudOAIConfig({
             model: "gpt-oss-20b",
             "max-tokens": 1500,
+            responsesEndpoint:
+                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
         }),
     "qwen3-coder-30b-a3b-instruct": () =>
-        createOVHcloudModelConfig({ model: "Qwen3-Coder-30B-A3B-Instruct" }),
+        createOVHcloudModelConfig({
+            model: "Qwen3-Coder-30B-A3B-Instruct",
+            responsesEndpoint:
+                "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/responses",
+        }),
     "Qwen3Guard-Gen-8B": () =>
         createOVHcloudOAIConfig({ model: "Qwen3Guard-Gen-8B" }),
 };

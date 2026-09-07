@@ -163,12 +163,12 @@ const CanonicalModelSlugAnnouncement: FC = () => (
             IDs now. Existing IDs will keep working.
         </p>
         <a
-            href="https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md"
+            href="https://enter.pollinations.ai/models"
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 block w-fit text-sm font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
         >
-            View all model ID changes →
+            Browse models and their aliases →
         </a>
     </Surface>
 );

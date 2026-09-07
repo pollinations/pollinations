@@ -125,7 +125,17 @@ export const TableHeaderCell: FC<TableHeaderCellProps> = ({
     }
 
     return (
-        <th {...rest} className={classes}>
+        <th
+            {...rest}
+            aria-sort={
+                active && sortDirection
+                    ? sortDirection === "asc"
+                        ? "ascending"
+                        : "descending"
+                    : "none"
+            }
+            className={classes}
+        >
             <button
                 type="button"
                 onClick={onSort}

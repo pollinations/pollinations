@@ -48,6 +48,27 @@ describe("resolveModelConfig", () => {
         expect(result.options.model).toBe("global.anthropic.claude-opus-5");
     });
 
+    it("routes openai/gpt-6-astra to the direct Azure Responses deployment", () => {
+        const result = resolveModelConfig(messages, {
+            model: "openai/gpt-6-astra",
+        });
+
+        expect(result.options.model).toBe("gpt-6-astra");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "azure-openai",
+            "azure-deployment-id": "gpt-6-astra",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it("does not expose gpt-6-astra as an alias", () => {
+        expect(() =>
+            resolveModelConfig(messages, { model: "gpt-6-astra" }),
+        ).toThrow("Model configuration not found for: gpt-6-astra");
+    });
+
     it("routes Claude Fable 5.1 to its global profile", () => {
         expect(
             resolveModelConfig(messages, {
@@ -196,6 +217,54 @@ describe("resolveModelConfig", () => {
         });
     });
 
+    it("routes Qwen3.8 Max 0902 directly to Alibaba", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-max-0902",
+        });
+
+        expect(result.options.model).toBe("qwen3.8-max-0902");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openai",
+            directEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/chat/completions",
+            responsesEndpoint:
+                "https://dashscope-intl.aliyuncs.com/compatible-mode/v1/responses",
+            responsesApiKeyBinding: "DASHSCOPE_API_KEY",
+        });
+        expect(result.options.provider).toBeUndefined();
+    });
+
+    it.each([
+        ["required", "required"],
+        [
+            "function object",
+            {
+                type: "function",
+                function: { name: "get_weather" },
+            },
+        ],
+    ])("disables Qwen3.8 Max 0902 thinking for %s tool choice", async (_label, toolChoice) => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-max-0902",
+            reasoning_effort: "high",
+            tool_choice: toolChoice,
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("none");
+    });
+
+    it("keeps Qwen3.8 Max 0902 reasoning for automatic tool choice", async () => {
+        const definition = findModelByName("qwen/qwen3.8-max-0902");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-max-0902",
+            reasoning_effort: "high",
+            tool_choice: "auto",
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("high");
+    });
+
     it("routes Qwen3.8 2.4T A95B directly to Fireworks", () => {
         const result = resolveModelConfig(messages, {
             model: "qwen3.8-2.4t-a95b",
@@ -225,6 +294,58 @@ describe("resolveModelConfig", () => {
             only: ["Chutes"],
             allow_fallbacks: false,
         });
+    });
+
+    it("pins Qwen3.8 Flash to Alibaba on OpenRouter without provider fallbacks", () => {
+        const result = resolveModelConfig(messages, {
+            model: "qwen/qwen3.8-flash",
+        });
+
+        expect(result.options.model).toBe("qwen/qwen3.8-flash");
+        expect(result.options.modelConfig).toMatchObject({
+            provider: "openrouter",
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["Alibaba"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it.each([
+        ["required", "required"],
+        [
+            "function object",
+            {
+                type: "function",
+                function: { name: "get_weather" },
+            },
+        ],
+    ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
+        for (const name of [
+            "qwen/qwen3.8-flash",
+            "qwen/qwen3.8-flash:fallback",
+        ]) {
+            const definition = findModelByName(name);
+            const transformed = await definition?.transform?.(messages, {
+                model: name,
+                reasoning_effort: "high",
+                tool_choice: toolChoice,
+            });
+
+            expect(transformed?.options.reasoning_effort).toBe("none");
+        }
+    });
+
+    it("keeps Qwen3.8 Flash reasoning for automatic tool choice", async () => {
+        const definition = findModelByName("qwen/qwen3.8-flash");
+        const transformed = await definition?.transform?.(messages, {
+            model: "qwen/qwen3.8-flash",
+            reasoning_effort: "high",
+            tool_choice: "auto",
+        });
+
+        expect(transformed?.options.reasoning_effort).toBe("high");
     });
 
     it("routes Kimi K3 directly to Fireworks without fallback", () => {
@@ -336,7 +457,7 @@ describe("resolveModelConfig", () => {
         [
             "meta/llama-4-scout:fallback",
             "meta-llama/llama-4-scout",
-            "deepinfra/fp8",
+            "google-vertex/us-east5",
         ],
     ])("pins %s to %s through %s without fallback", (model, route, provider) => {
         const result = resolveModelConfig(messages, { model });

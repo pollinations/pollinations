@@ -162,11 +162,14 @@ Wallet colors and utilities are bundled into the main stylesheet
   `Switch`, `TabButton`, `Table`, `TableBody`, `TableCell`, `TableHead`,
   `TableHeaderCell`, `TableRow`, `Text`, `Textarea`, `Tooltip`.
 - **Design compositions** — `Alert`, `CodeBlock`, `Collapsible`,
-  `CopyButton`, `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`,
-  `LinkCard`, `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`,
-  `PeriodPicker`, `Prose`, `Section`, `StatCard`.
+  `CopyButton`, `EditableCombobox`, `EditableComboboxToken`,
+  `ExternalLinkButton`, `FieldStack`, `FileUpload`, `InfoTip`, `LinkCard`,
+  `Markdown`, `MediaPlaceholder`, `MultiSelect`, `NavItem`, `PeriodPicker`,
+  `Prose`, `Section`, `StatCard`.
   `FieldStack` supports label, helper, action, error, and opt-in aligned label
   rows for compact forms.
+  `EditableCombobox.startContent` renders content inside a wrapping input shell
+  and replaces the standalone chevron trigger.
 - **Helpers** — `cn`, `useScrollLock`, `currentPeriod`,
   `getPeriodBucketKeys`, `periodBucketKeyToDate`.
 

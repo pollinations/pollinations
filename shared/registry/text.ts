@@ -354,6 +354,49 @@ const TEXT_BASE_SERVICES = {
         contextLength: 1050000,
         isSpecialized: false,
     },
+    "openai/gpt-6-astra": {
+        aliases: [],
+        provider: "azure",
+        author: "OpenAI",
+        category: "text",
+        addedDate: new Date("2026-09-04").getTime(),
+        priceMultiplier: 0.75,
+        cost: {
+            promptTextTokens: perMillion(10.0),
+            promptCachedTokens: perMillion(1.0),
+            promptCacheWriteTokens: perMillion(12.5),
+            completionTextTokens: perMillion(50.0),
+        },
+        ...defineCostVariants(
+            {
+                long_context: {
+                    promptTextTokens: perMillion(20.0),
+                    promptCachedTokens: perMillion(2.0),
+                    promptCacheWriteTokens: perMillion(25.0),
+                    completionTextTokens: perMillion(75.0),
+                },
+            },
+            longContextAbove(272_000),
+            {
+                long_context: {
+                    label: "Long context (>272K)",
+                    description:
+                        "More than 272,000 prompt tokens; the higher rates apply to the full request.",
+                },
+            },
+            "≤272K context",
+        ),
+        title: "GPT-6 Astra",
+        description:
+            "Frontier reasoning for complex agentic, coding, and multimodal work",
+        inputModalities: ["text", "image"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1050000,
+        isSpecialized: false,
+    },
     "inception/mercury-2": {
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
         provider: "openrouter",
@@ -403,10 +446,9 @@ const TEXT_BASE_SERVICES = {
     "cohere/command-a-plus": {
         aliases: [
             "cohere-command-a-plus",
+            "command-a-plus-05-2026",
             "cohere-command-a-plus-05-2026",
             "command-a-plus",
-            "command-a-plus-05-2026",
-            "cohere/command-a-plus-05-2026",
         ],
         provider: "azure",
         author: "Cohere",
@@ -454,7 +496,6 @@ const TEXT_BASE_SERVICES = {
             "mistral-small-2503",
             "mistral-small-3.2-24b-instruct-2506",
             "mistral-small-3.2",
-            "mistralai/mistral-small-3.2-24b-instruct",
         ],
         provider: "openrouter",
         author: "Mistral",
@@ -482,7 +523,6 @@ const TEXT_BASE_SERVICES = {
             "mistral-small-4",
             "mistral-small-2603",
             "mistral",
-            "mistralai/mistral-small-2603",
         ],
         provider: "openrouter",
         author: "Mistral",
@@ -602,13 +642,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.7-flash": {
-        aliases: [
-            "gemini-3.7-flash",
-            "gemini-3.6-flash",
-            "gemini-3.5-flash",
-            "gemini",
-            "google/gemini-3.6-flash",
-        ],
+        aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
         provider: "openrouter",
         author: "Google",
         category: "text",
@@ -635,6 +669,41 @@ const TEXT_BASE_SERVICES = {
         title: "Gemini 3.7 Flash",
         description:
             "Sharp, fast reasoning over text, images, audio and video, plus web search",
+        inputModalities: ["text", "image", "audio", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 3600, // Gemini API image-understanding file limit.
+        maxReferenceVideos: 10, // Gemini API video-understanding upload limit.
+        tools: true,
+        search: true,
+        contextLength: 1048576,
+        isSpecialized: false,
+    },
+    "google/gemini-3.8-flash": {
+        aliases: [],
+        provider: "openrouter",
+        author: "Google",
+        category: "text",
+        addedDate: new Date("2026-09-02").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // Standard OpenRouter rates for the pinned google-vertex/global route.
+        // Google's introductory pricing ends 2026-12-31.
+        cost: {
+            promptTextTokens: perMillion(0.75),
+            promptCachedTokens: perMillion(0.075),
+            promptCacheWriteTokens: perMillion(0.75),
+            promptAudioTokens: perMillion(0.75),
+            promptImageTokens: perMillion(0.75),
+            promptVideoTokens: perMillion(0.75),
+            completionTextTokens: perMillion(3.75),
+        },
+        billing: openRouterGeminiBilling({
+            searchCostPerThousandRequests: 14,
+            storageCostPerMillionTokenHours: 0.5,
+        }),
+        title: "Gemini 3.8 Flash",
+        description:
+            "Fast multimodal reasoning for long-horizon coding, autonomous agents and complex workflows",
         inputModalities: ["text", "image", "audio", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 3600, // Gemini API image-understanding file limit.
@@ -725,7 +794,6 @@ const TEXT_BASE_SERVICES = {
             "deepseek-lite",
             "deepseek-flash",
             "deepseek",
-            "deepseek/deepseek-v4-flash-0731",
         ],
         provider: "fireworks",
         author: "DeepSeek",
@@ -828,12 +896,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-pro": {
-        aliases: [
-            "deepseek-v4-pro-0813",
-            "deepseek-v4-pro",
-            "deepseek-pro",
-            "deepseek/deepseek-v4-pro-0813",
-        ],
+        aliases: ["deepseek-v4-pro", "deepseek-pro"],
         provider: "fireworks",
         author: "DeepSeek",
         category: "text",
@@ -914,7 +977,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.6": {
-        aliases: ["grok-4.6", "grok-4.5", "grok-4-5", "x-ai/grok-4.5"],
+        aliases: ["grok-4.5", "grok-4-5", "grok-4.6"],
         provider: "azure",
         author: "xAI",
         category: "text",
@@ -942,7 +1005,6 @@ const TEXT_BASE_SERVICES = {
     },
     "google/gemini-2.5-flash-lite:search": {
         aliases: [
-            "gemini-search",
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",
             "gemini-search-fast",
@@ -951,6 +1013,7 @@ const TEXT_BASE_SERVICES = {
             "gemini-search-large",
             "gemini-3.6-flash-search",
             "gemini-3.5-flash-search",
+            "gemini-search",
         ],
         provider: "google",
         author: "Google",
@@ -1519,7 +1582,6 @@ const TEXT_BASE_SERVICES = {
             "nvidia-nemotron-3-ultra",
             "nemotron-3-ultra-550b-a55b",
             "nemotron",
-            "nvidia/nemotron-3-ultra-550b-a55b",
         ],
         provider: "deepinfra",
         author: "NVIDIA",
@@ -1961,12 +2023,11 @@ const TEXT_BASE_SERVICES = {
     },
     "meta/muse-spark-1.2": {
         aliases: [
-            "muse-spark-1.2",
             "muse-spark-1.1",
             "muse-spark",
             "spark",
             "spark-1.1",
-            "meta/muse-spark-1.1",
+            "muse-spark-1.2",
         ],
         provider: "vercel",
         author: "Meta",
@@ -1989,11 +2050,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-large-3": {
-        aliases: [
-            "mistral-large-3",
-            "mistral-large",
-            "mistralai/mistral-large-2512",
-        ],
+        aliases: ["mistral-large-3", "mistral-large"],
         provider: "azure",
         author: "Mistral",
         category: "text",
@@ -2147,12 +2204,13 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
         priceMultiplier: 1,
         cost: {
-            // OpenRouter Chutes FP8 route rates (2026-08-24).
-            promptTextTokens: perMillion(0.35),
-            promptCachedTokens: perMillion(0.035),
-            promptImageTokens: perMillion(0.35),
-            promptVideoTokens: perMillion(0.35),
-            completionTextTokens: perMillion(2.75),
+            // OpenRouter Chutes FP8 route rates (2026-09-03). OpenRouter
+            // publishes one prompt rate and no separate image/video rates.
+            promptTextTokens: perMillion(0.32),
+            promptCachedTokens: perMillion(0.032),
+            promptImageTokens: perMillion(0.32),
+            promptVideoTokens: perMillion(0.32),
+            completionTextTokens: perMillion(2.5),
         },
         title: "Qwen3.8 27B",
         description:
@@ -2185,6 +2243,67 @@ const TEXT_BASE_SERVICES = {
         title: "Qwen3.8 Max",
         description:
             "Million-token multimodal reasoning for coding and autonomous agents",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen/qwen3.8-max-0902": {
+        aliases: [],
+        provider: "alibaba",
+        author: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-03").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // Alibaba Singapore qwen3.8-max-0902 rates, including implicit cache
+        // hits (2026-09-03).
+        cost: {
+            promptTextTokens: perMillion(2),
+            promptCachedTokens: perMillion(0.25),
+            promptCacheWriteTokens: perMillion(2.5),
+            promptImageTokens: perMillion(2),
+            promptVideoTokens: perMillion(2),
+            completionTextTokens: perMillion(6),
+        },
+        title: "Qwen3.8 Max 0902",
+        description:
+            "Pinned September checkpoint with stronger coding and long-horizon agent performance",
+        inputModalities: ["text", "image", "video"],
+        outputModalities: ["text"],
+        maxReferenceImages: 10,
+        maxReferenceVideos: 10,
+        tools: true,
+        reasoning: true,
+        contextLength: 1000000,
+        isSpecialized: false,
+    },
+    "qwen/qwen3.8-flash": {
+        aliases: [],
+        provider: "openrouter",
+        author: "Qwen",
+        category: "text",
+        addedDate: new Date("2026-09-05").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        // OpenRouter Alibaba route rates, equal to the Alibaba Singapore list
+        // price with a single 0-1M context tier (2026-09-05). OpenRouter
+        // publishes one prompt rate and no separate image/video rates.
+        cost: {
+            promptTextTokens: perMillion(0.15),
+            promptCachedTokens: perMillion(0.016),
+            promptCacheWriteTokens: perMillion(0.2),
+            promptImageTokens: perMillion(0.15),
+            promptVideoTokens: perMillion(0.15),
+            completionTextTokens: perMillion(0.47),
+        },
+        title: "Qwen3.8 Flash",
+        description:
+            "Low-cost multimodal reasoning with 1M context and 131K output for agents and coding",
         inputModalities: ["text", "image", "video"],
         outputModalities: ["text"],
         maxReferenceImages: 10,

@@ -35,7 +35,7 @@ async function insertApiKey(userId: string) {
         name: "device-test",
         start: key.slice(0, 13),
         prefix: "sk",
-        userId,
+        referenceId: userId,
         createdAt: new Date(),
         updatedAt: new Date(),
     };

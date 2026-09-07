@@ -23,6 +23,12 @@ test("retrieves a model by canonical ID", async () => {
         Math.floor(Date.now() / 1000),
     );
     expect(typeof body.owned_by).toBe("string");
+    expect(body).toMatchObject({
+        aliases: expect.any(Array),
+        category: "text",
+        community: false,
+        title: expect.any(String),
+    });
 });
 
 test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {
@@ -72,6 +78,21 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
         unknown
     >;
     expect(retrieved).toEqual(listed);
+});
+
+test("advertises direct Responses support through supported_endpoints", async () => {
+    const supported = await fetchWorker("/v1/models/qwen-large");
+    expect(supported.status).toBe(200);
+    await expect(supported.json()).resolves.toMatchObject({
+        supported_endpoints: expect.arrayContaining(["/v1/responses"]),
+    });
+
+    const unsupported = await fetchWorker("/v1/models/claude");
+    expect(unsupported.status).toBe(200);
+    const unsupportedBody = (await unsupported.json()) as {
+        supported_endpoints?: string[];
+    };
+    expect(unsupportedBody.supported_endpoints).not.toContain("/v1/responses");
 });
 
 test("returns 404 for an unknown model", async () => {

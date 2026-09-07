@@ -54,7 +54,7 @@ async function fetchLeaderboardData() {
     WHERE environment = 'production'
       AND start_time > now() - INTERVAL 24 HOUR
       AND event_type = 'generate.image'
-      AND position(resolved_model_requested, '/') > 0
+      AND model_provider_used = 'community'
       AND is_final
     GROUP BY model
     HAVING requests >= ${MIN_REQUESTS} AND images > 0
@@ -71,7 +71,7 @@ async function fetchLeaderboardData() {
     WHERE environment = 'production'
       AND start_time > now() - INTERVAL 24 HOUR
       AND event_type = 'generate.image'
-      AND position(resolved_model_requested, '/') > 0
+      AND model_provider_used = 'community'
       AND is_final
     FORMAT JSON
   `)

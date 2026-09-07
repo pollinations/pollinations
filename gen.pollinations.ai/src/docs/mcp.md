@@ -9,12 +9,12 @@ Streamable HTTP.
 Get an API key from [enter.pollinations.ai](https://enter.pollinations.ai/keys),
 then choose a server:
 
-| Server | Endpoint | Use it for |
-| --- | --- | --- |
-| Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Pollinations models, media generation, model discovery, and account tools |
-| FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video |
-| Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content |
-| Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive |
+| Server | Endpoint | Use it for | Details |
+| --- | --- | --- | --- |
+| Pollinations | `https://gen.pollinations.ai/mcp/pollinations` | Discover and use models, generate text and media, create embeddings and 3D models, and inspect model status and account balance | [README](https://github.com/pollinations/pollinations/blob/main/packages/mcp/README.md) |
+| FFmpeg | `https://gen.pollinations.ai/mcp/ffmpeg` | Trim, convert, resize, compress, and remix audio and video | [Source](https://github.com/pollinations/pollinations/tree/main/apps/ffmpeg-mcp) |
+| Exa Search | `https://gen.pollinations.ai/mcp/exa` | Search the live web and fetch clean page content | [Source](https://github.com/pollinations/pollinations/tree/main/apps/exa-mcp) |
+| Composio | `https://gen.pollinations.ai/mcp/composio` | Use connected apps such as Gmail, Slack, GitHub, and Drive | [Source](https://github.com/pollinations/pollinations/tree/main/apps/composio-mcp) |
 
 Send the key with every request:
 
@@ -76,7 +76,9 @@ with another endpoint from the table to use FFmpeg or Exa Search.
 ### Pollinations MCP
 
 The Pollinations server exposes the main Pollinations API as agent-friendly
-tools.
+tools. Agents can discover live models, delegate text requests, generate and
+edit media, create embeddings and 3D assets, transcribe audio, and inspect
+model health and account balance.
 
 | Tool | Purpose |
 | --- | --- |

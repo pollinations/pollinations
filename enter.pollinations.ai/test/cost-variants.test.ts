@@ -26,6 +26,21 @@ function bill(
     });
 }
 
+function fallbackBill(
+    model: ModelName,
+    servedBy: ModelName,
+    usage: BillingArgs["usage"],
+    input?: BillingArgs["input"],
+) {
+    return calculateUsageBilling({
+        model,
+        usage,
+        servedBy: getRegistryModelDefinition(servedBy),
+        quotedBy: getRegistryModelDefinition(model),
+        input,
+    });
+}
+
 describe("long-context cost variants", () => {
     it.each([
         ["openai/gpt-5.4", 272_000],
@@ -34,6 +49,7 @@ describe("long-context cost variants", () => {
         ["openai/gpt-5.6-sol", 272_000],
         ["openai/gpt-5.6-terra", 272_000],
         ["openai/gpt-5.6-luna", 272_000],
+        ["openai/gpt-6-astra", 272_000],
     ] satisfies [
         ModelName,
         number,
@@ -172,6 +188,51 @@ describe("long-context cost variants", () => {
         }
     });
 
+    it.each([
+        [32_000, undefined],
+        [32_001, "context_32k"],
+        [256_000, "context_32k"],
+        [256_001, "context_256k"],
+    ] as const)("direct Alibaba uses its strict tier boundary at %s prompt tokens", (promptTextTokens, expectedVariant) => {
+        expect(
+            bill("qwen/qwen3.7-flash:fallback", { promptTextTokens })
+                .costVariant,
+        ).toBe(expectedVariant);
+    });
+
+    it("records direct Alibaba explicit-cache cost without changing the quote", () => {
+        const billing = fallbackBill(
+            "qwen/qwen3.7-flash",
+            "qwen/qwen3.7-flash:fallback",
+            { promptCachedTokens: 10_000 },
+            { hasExplicitCacheHit: true },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.00003, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.00006, 12);
+        expect(billing.servedPrice).toBeCloseTo(0.00003, 12);
+    });
+
+    it("keeps the Llama Scout quote and records the absorbed Vertex loss", () => {
+        const billing = fallbackBill(
+            "meta/llama-4-scout",
+            "meta/llama-4-scout:fallback",
+            {
+                promptTextTokens: 1_000_000,
+                promptImageTokens: 1_000_000,
+                completionTextTokens: 1_000_000,
+            },
+        );
+
+        expect(billing.cost.totalCost).toBeCloseTo(1.2, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.5, 12);
+        expect(billing.servedPrice).toBeCloseTo(1.2, 12);
+        expect(billing.cost.totalCost - billing.price.totalPrice).toBeCloseTo(
+            0.7,
+            12,
+        );
+    });
+
     it("reprices the whole GPT-5.5 request one token above 272K", () => {
         const billing = bill("openai/gpt-5.5", {
             promptTextTokens: 272_001,
@@ -195,6 +256,7 @@ describe("long-context cost variants", () => {
         ["openai/gpt-5.6-sol", 10, 1, 12.5, 45, 1 / 3],
         ["openai/gpt-5.6-terra", 4, 0.4, 5, 18, 0.75],
         ["openai/gpt-5.6-luna", 0.4, 0.04, 0.5, 1.8, 0.75],
+        ["openai/gpt-6-astra", 20, 2, 25, 75, 0.75],
     ] satisfies [
         ModelName,
         number,
@@ -719,6 +781,33 @@ describe("FLUX.2 image billing", () => {
         expect(billing.adjustments).toMatchObject([
             {
                 ruleId: "azure.flux_2_pro.initial_output_megapixel.v1",
+                units: 1,
+                cost: 0.015,
+                price: 0.01125,
+            },
+        ]);
+    });
+
+    it("attributes the Replicate fallback execution fee to Replicate", () => {
+        const billing = calculateUsageBilling({
+            model: "black-forest-labs/flux.2-pro",
+            usage: {
+                promptImageTokens: 2,
+                completionImageTokens: 4,
+            },
+            servedBy: getRegistryModelDefinition(
+                "black-forest-labs/flux.2-pro:fallback",
+            ),
+            quotedBy: getRegistryModelDefinition(
+                "black-forest-labs/flux.2-pro",
+            ),
+        });
+
+        expect(billing.cost.totalCost).toBeCloseTo(0.105, 12);
+        expect(billing.price.totalPrice).toBeCloseTo(0.07875, 12);
+        expect(billing.adjustments).toMatchObject([
+            {
+                ruleId: "replicate.flux_2_pro.run.v1",
                 units: 1,
                 cost: 0.015,
                 price: 0.01125,

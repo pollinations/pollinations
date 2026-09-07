@@ -971,13 +971,12 @@ test("Gemini models use their endpoint's advertised cache-write rate", () => {
     const models = [
         "google/gemini-3-flash-preview",
         "google/gemini-3.7-flash",
+        "google/gemini-3.8-flash",
         "google/gemini-3.7-flash:fallback",
         "google/gemini-3.5-flash-lite",
         "google/gemini-3.5-flash-lite:fallback",
         "google/gemini-2.5-flash-lite",
-        "google/gemini-2.5-flash-lite:fallback",
         "google/gemini-3.1-pro-preview",
-        "google/gemini-3.1-pro-preview:fallback",
         "google/gemini-2.5-flash-lite:search",
     ] as const;
     for (const model of models) {
@@ -996,6 +995,7 @@ test("Gemini routes price separately reported media input tokens", () => {
     for (const model of [
         "google/gemini-3-flash-preview",
         "google/gemini-3.7-flash",
+        "google/gemini-3.8-flash",
         "google/gemini-3.5-flash-lite",
         "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",
@@ -1017,6 +1017,7 @@ test("Google text model providers match their configured routes", () => {
     const openRouterModels = [
         "google/gemini-3-flash-preview",
         "google/gemini-3.7-flash",
+        "google/gemini-3.8-flash",
         "google/gemini-3.5-flash-lite",
         "google/gemini-2.5-flash-lite",
         "google/gemini-3.1-pro-preview",

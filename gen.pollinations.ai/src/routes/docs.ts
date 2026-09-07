@@ -1,11 +1,7 @@
 import { Scalar } from "@scalar/hono-api-reference";
-import { AUDIO_SERVICES, ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
+import { ELEVENLABS_VOICES } from "@shared/registry/audio.ts";
 import { EMBEDDING_SERVICES } from "@shared/registry/embeddings.ts";
-import {
-    getImageModelIds,
-    getVideoModelIds,
-    IMAGE_SERVICES,
-} from "@shared/registry/image.ts";
+import { getImageModelIds, getVideoModelIds } from "@shared/registry/image.ts";
 import { getModel3dModelsInfo } from "@shared/registry/model-info.ts";
 import {
     DEFAULT_REALTIME_MODEL,
@@ -16,7 +12,6 @@ import {
     getVisibleImageModels,
     getVisibleTextModels,
 } from "@shared/registry/registry.ts";
-import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import type { Context } from "hono";
 import { Hono } from "hono";
 import { generateSpecs } from "hono-openapi";
@@ -225,24 +220,6 @@ const ACCOUNT_DOCS = ACCOUNT_MD.trim();
 const PUBLIC_STATS_DOCS = PUBLIC_STATS_MD.trim();
 const SAFETY_DOCS = SAFETY_MD.trim();
 const ERRORS_DOCS = ERRORS_MD.trim();
-const IMAGE_ALIASES = new Set(
-    Object.values(IMAGE_SERVICES).flatMap((service) => service.aliases),
-);
-const TEXT_ALIASES = new Set(
-    Object.values(TEXT_SERVICES).flatMap((service) => service.aliases),
-);
-const AUDIO_ALIASES = new Set(
-    Object.values(AUDIO_SERVICES).flatMap((service) => service.aliases),
-);
-const EMBEDDING_ALIASES = new Set(
-    Object.values(EMBEDDING_SERVICES).flatMap((service) => service.aliases),
-);
-const ALL_ALIASES = new Set([
-    ...IMAGE_ALIASES,
-    ...TEXT_ALIASES,
-    ...AUDIO_ALIASES,
-    ...EMBEDDING_ALIASES,
-]);
 const visibleImageIds = new Set<string>(getVisibleImageModels());
 const imageModelDisplayNames = getImageModelIds()
     .filter((id) => visibleImageIds.has(id))
@@ -259,20 +236,6 @@ const realtimeModelDisplayNames = REALTIME_MODEL_NAMES.join(", ");
 const model3dModelDisplayNames = getModel3dModelsInfo()
     .map((model) => model.name)
     .join(", ");
-function filterAliases(schema: OpenApiSchema): OpenApiSchema {
-    return JSON.parse(
-        JSON.stringify(schema, (key, value) => {
-            if (key === "enum" && Array.isArray(value)) {
-                const filtered = value.filter(
-                    (v) => typeof v !== "string" || !ALL_ALIASES.has(v),
-                );
-                return filtered.length !== value.length ? filtered : value;
-            }
-            return value;
-        }),
-    ) as OpenApiSchema;
-}
-
 // Substitute live registry values into the section markdown.
 const MODEL_VARS: Record<string, string> = {
     TEXT_MODELS: textModelDisplayNames,
@@ -689,10 +652,10 @@ function transformGenerationSchema(schema: OpenApiSchema): OpenApiSchema {
     }
     normalizeOperationTags(paths);
 
-    return filterAliases({
+    return {
         ...schema,
         paths,
-    });
+    };
 }
 
 async function fetchEnterSchema(c: Context<Env>) {
@@ -897,7 +860,7 @@ function mergeSchemas(
     enterSchema?: OpenApiSchema,
     mediaSchema?: OpenApiSchema,
 ): OpenApiSchema {
-    const merged = filterAliases({
+    const merged = {
         ...(enterSchema ?? {}),
         ...generationSchema,
         info: generationSchema.info,
@@ -915,11 +878,11 @@ function mergeSchemas(
             ...asRecord(enterSchema?.paths),
             ...asRecord(generationSchema.paths),
         },
-    });
+    };
 
     if (!mediaSchema) return merged;
 
-    return filterAliases({
+    return {
         ...merged,
         components: mergeComponents(
             asRecord(merged.components),
@@ -929,7 +892,7 @@ function mergeSchemas(
             ...asRecord(merged.paths),
             ...asRecord(mediaSchema.paths),
         },
-    });
+    };
 }
 
 function mergeTags(primary: OpenApiSchema[], secondary: OpenApiSchema[]) {

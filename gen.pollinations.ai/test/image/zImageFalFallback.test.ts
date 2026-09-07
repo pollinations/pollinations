@@ -117,6 +117,9 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     const failureBody =
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
+    expect(response.headers.get("x-model-requested")).toBe(
+        "tongyi-mai/z-image-turbo",
+    );
     expect(response.headers.get("x-model-used")).toBe(
         "tongyi-mai/z-image-turbo:fallback",
     );

@@ -1,4 +1,5 @@
 import { env, SELF } from "cloudflare:test";
+import { apiKeyClient } from "@better-auth/api-key/client";
 import type { Logger } from "@logtape/logtape";
 import { getLogger } from "@logtape/logtape";
 import { user as userTable } from "@shared/db/better-auth.ts";
@@ -9,7 +10,7 @@ import {
 } from "@shared/test/mocks/fetch.ts";
 import { createMockTinybird } from "@shared/test/mocks/tinybird.ts";
 import { createAuthClient } from "better-auth/client";
-import { adminClient, apiKeyClient } from "better-auth/client/plugins";
+import { adminClient } from "better-auth/client/plugins";
 import { drizzle } from "drizzle-orm/d1";
 import { test as base, expect } from "vitest";
 import { createMockDiscord } from "./mocks/discord.ts";

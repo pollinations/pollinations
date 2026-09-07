@@ -8,6 +8,25 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "openai/gpt-image-1-mini": {
+        "openai/gpt-image-1-mini:fallback": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+        },
+    },
+    "openai/gpt-image-1.5": {
+        "openai/gpt-image-1.5:fallback": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+        },
+    },
+    "openai/gpt-image-2": {
+        "openai/gpt-image-2:fallback": {
+            provider: "openai",
+            addedDate: new Date("2026-09-03").getTime(),
+            perUserRpm: null,
+        },
+    },
     "black-forest-labs/flux.1-kontext-pro": {
         "black-forest-labs/flux.1-kontext-pro:fallback": {
             provider: "replicate",
@@ -18,6 +37,23 @@ export const IMAGE_FALLBACKS = {
         "black-forest-labs/flux.2-pro:fallback": {
             provider: "replicate",
             addedDate: new Date("2026-09-01").getTime(),
+            billing: {
+                adjustments: [
+                    {
+                        id: "replicate.flux_2_pro.run.v1",
+                        description: "Replicate FLUX.2 Pro execution fee",
+                        kind: "image",
+                        unit: "generation",
+                        unitCost: 0.015,
+                        publicPricing: {
+                            label: "Execution fee",
+                            quantity: 1,
+                            unit: "generation",
+                        },
+                        countUnits: () => 1,
+                    },
+                ],
+            },
         },
     },
     "qwen/qwen-image-3": {
@@ -90,6 +126,15 @@ export const IMAGE_FALLBACKS = {
         "alibaba/wan-2.6:fallback": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
+        },
+    },
+    "alibaba/wan-2.2-fast": {
+        "alibaba/wan-2.2-fast:fallback": {
+            provider: "fal",
+            addedDate: new Date("2026-09-02").getTime(),
+            // Fal charges $0.05 per fixed 5-second 480p generation. The
+            // inherited $0.01/second sheet bills the caller the same $0.05, so
+            // this fallback has no loss for either text-to-video or image-to-video.
         },
     },
     "bytedance/seedance-1-pro-fast": {

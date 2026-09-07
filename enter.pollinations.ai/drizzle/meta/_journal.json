@@ -425,8 +425,22 @@
     {
       "idx": 60,
       "version": "6",
-      "when": 1788307200000,
-      "tag": "0060_standardize-model-permissions",
+      "when": 1788523521324,
+      "tag": "0060_better_auth_1_6",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "6",
+      "when": 1788566400000,
+      "tag": "0061_single_text_endpoint",
+      "breakpoints": true
+    },
+    {
+      "idx": 62,
+      "version": "6",
+      "when": 1788789600000,
+      "tag": "0062_standardize-model-permissions",
       "breakpoints": true
     }
   ]

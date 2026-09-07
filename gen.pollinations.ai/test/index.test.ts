@@ -2534,7 +2534,9 @@ fixtureTest(
         );
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("gpt-transcribe");
+        expect(response.headers.get("x-model-used")).toBe(
+            "openai/gpt-transcribe",
+        );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("4");
         await expect(response.json()).resolves.toEqual({
             text: "hello from Azure",

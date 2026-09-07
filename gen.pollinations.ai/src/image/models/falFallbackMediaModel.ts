@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { FalError, runFalJob } from "../../model3d/models/falClient.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
@@ -9,6 +9,7 @@ import type { VideoGenerationResult } from "./veoVideoModel.ts";
 
 const RATIOS = ["1:1", "16:9", "9:16", "4:3", "3:4", "3:2", "2:3"] as const;
 const WAN_RATIOS = ["16:9", "9:16", "1:1", "4:3", "3:4"] as const;
+const WAN_TURBO_RATIOS = ["16:9", "9:16", "1:1"] as const;
 const SEEDANCE_RATIOS = ["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"] as const;
 const MEDIA_POLL_MAX_ATTEMPTS = 60;
 
@@ -16,23 +17,31 @@ type FalFile = { url?: string; content_type?: string };
 
 function requireFalKey(): string {
     const key = getImageEnv("FAL_KEY");
-    if (!key) throw new HttpError("FAL_KEY is not configured", 500);
+    if (!key)
+        throw UpstreamError.fromProvider(500, {
+            message: "FAL_KEY is not configured",
+        });
     return key;
 }
 
-function toHttpError(error: unknown, label: string): HttpError {
-    if (error instanceof HttpError) return error;
+function toUpstreamError(error: unknown, label: string): UpstreamError {
+    if (error instanceof UpstreamError) return error;
     if (error instanceof FalError) {
-        return new HttpError(error.message, error.status ?? 502);
+        return UpstreamError.fromProvider(error.status ?? 502, {
+            message: error.message,
+            responseBody: error.responseBody,
+        });
     }
-    return new HttpError(
-        error instanceof Error ? error.message : `${label} failed`,
-        502,
-    );
+    return UpstreamError.fromProvider(502, {
+        message: error instanceof Error ? error.message : `${label} failed`,
+    });
 }
 
 async function download(file: FalFile | undefined, label: string) {
-    if (!file?.url) throw new HttpError(`${label} returned no output`, 502);
+    if (!file?.url)
+        throw UpstreamError.fromProvider(502, {
+            message: `${label} returned no output`,
+        });
     const response = await fetchUpstream(file.url, {
         errorLabel: `Failed to download ${label} output`,
     });
@@ -64,10 +73,9 @@ export async function callFalFallbackImage(
     params: ImageParams,
 ): Promise<ImageGenerationResult> {
     if (params.model !== "bytedance/seedream-5.0-lite:fallback") {
-        throw new HttpError(
-            `Unsupported Fal image fallback: ${params.model}`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported Fal image fallback: ${params.model}`,
+        });
     }
     const editing = params.image.length > 0;
     try {
@@ -112,7 +120,7 @@ export async function callFalFallbackImage(
             },
         };
     } catch (error) {
-        throw toHttpError(error, "Seedream 5 Lite");
+        throw toUpstreamError(error, "Seedream 5 Lite");
     }
 }
 
@@ -172,6 +180,18 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
                 : {}),
         }),
     },
+    "alibaba/wan-2.2-fast:fallback": {
+        textEndpoint: "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
+        imageEndpoint: "fal-ai/wan/v2.2-a14b/image-to-video/turbo",
+        duration: () => 5,
+        input: (params, _duration, hasImage) => ({
+            resolution: "480p",
+            ...(!hasImage
+                ? { aspect_ratio: aspectRatio(params, WAN_TURBO_RATIOS) }
+                : {}),
+            ...(params.image[1] ? { end_image_url: params.image[1] } : {}),
+        }),
+    },
     "bytedance/seedance-1-pro-fast:fallback": {
         textEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
         imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/image-to-video",
@@ -192,10 +212,9 @@ export async function callFalFallbackVideo(
 ): Promise<VideoGenerationResult> {
     const config = VIDEO_CONFIGS[params.model];
     if (!config) {
-        throw new HttpError(
-            `Unsupported Fal video fallback: ${params.model}`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported Fal video fallback: ${params.model}`,
+        });
     }
     const image = params.image[0];
     const duration = config.duration(params);
@@ -226,12 +245,14 @@ export async function callFalFallbackVideo(
             trackingData: {
                 actualModel: params.model,
                 usage: {
-                    ...(image ? { promptImageTokens: 1 } : {}),
+                    ...(image
+                        ? { promptImageTokens: params.image.length }
+                        : {}),
                     completionVideoSeconds: duration,
                 },
             },
         };
     } catch (error) {
-        throw toHttpError(error, params.model);
+        throw toUpstreamError(error, params.model);
     }
 }

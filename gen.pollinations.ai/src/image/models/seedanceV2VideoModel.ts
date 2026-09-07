@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * ByteDance Seedance 2.0 family video generation via Replicate.
  *
@@ -6,7 +7,6 @@
  * Replicate's native multimodal input fields and remains URL-based.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
@@ -16,7 +16,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance2:ops");
@@ -59,10 +59,9 @@ export function resolveSeedanceV2AspectRatio(
     if ((SEEDANCE_V2_ASPECT_RATIOS as readonly string[]).includes(requested)) {
         return requested as SeedanceV2AspectRatio;
     }
-    throw new HttpError(
-        `aspectRatio "${requested}" is not supported by ${modelTitle}. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
-        400,
-    );
+    throw UpstreamError.fromProvider(400, {
+        message: `aspectRatio "${requested}" is not supported by ${modelTitle}. Supported: ${SEEDANCE_V2_ASPECT_RATIOS.join(", ")}.`,
+    });
 }
 
 interface SeedanceV2Input {
@@ -154,7 +153,7 @@ export async function callSeedanceV2API(
         });
     } catch (err) {
         logError(`${definition.title} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${definition.title} generation failed`,
         );

@@ -40,7 +40,10 @@ import {
     apiKeyBudgetReservation,
     generationAccess,
 } from "@/utils/generation-access.ts";
-import { callCommunityTranscriptionEndpoint } from "../audio/communityEndpoint.ts";
+import {
+    callCommunitySpeechEndpoint,
+    callCommunityTranscriptionEndpoint,
+} from "../audio/communityEndpoint.ts";
 import {
     type FallbackCandidate,
     withModelFallbackResponse,
@@ -832,7 +835,7 @@ export async function transcribeWithAzure(opts: {
             message: "Azure transcription service is not configured",
         });
     }
-    assertTranscriptionResponseFormat(responseFormat, "gpt-transcribe", [
+    assertTranscriptionResponseFormat(responseFormat, "openai/gpt-transcribe", [
         "json",
     ]);
 
@@ -881,7 +884,7 @@ export async function transcribeWithAzure(opts: {
         },
         responseFormat,
         usageHeaders: buildUsageHeaders(
-            "gpt-transcribe",
+            "openai/gpt-transcribe",
             createAudioSecondsUsage(transcript.usage.seconds),
         ),
     });
@@ -2547,6 +2550,10 @@ async function dispatchAudioGeneration(
         text: string;
         voice: string;
         responseFormat: string;
+        // Present when this candidate is a community endpoint; speech models
+        // are dispatched through their upstream instead of a first-party
+        // provider below.
+        communityEndpoint?: FallbackCandidate["communityEndpoint"];
         seed?: number;
         duration?: number;
         seconds?: number;
@@ -2595,7 +2602,19 @@ async function dispatchAudioGeneration(
         falKey,
         stabilityApiKey,
         log,
+        communityEndpoint,
     } = opts;
+
+    if (communityEndpoint?.modality === "speech") {
+        return withSafetyHeaders(
+            c,
+            await callCommunitySpeechEndpoint(
+                communityEndpoint,
+                { input: text, voice, responseFormat },
+                c.env.BETTER_AUTH_SECRET,
+            ),
+        );
+    }
 
     if (model === "elevenlabs/music-v2") {
         return withSafetyHeaders(
@@ -2821,6 +2840,7 @@ async function generateAudioFromSpeechRequest(
             text: safeInput,
             voice,
             responseFormat: response_format,
+            communityEndpoint: candidate.communityEndpoint,
             seed,
             duration,
             seconds,

@@ -1,6 +1,7 @@
 // AI generated based on `https://github.com/Portkey-AI/openapi/blob/master/openapi.yaml` and adaped
 
 import { z } from "zod";
+import { MODEL_CATEGORIES } from "../registry/registry.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
@@ -59,6 +60,24 @@ const ChatCompletionToolChoiceOptionSchema = z.union([
     ChatCompletionNamedToolChoiceSchema,
 ]);
 
+const PromptCacheBreakpointSchema = z
+    .object({ mode: z.literal("explicit") })
+    .strict()
+    .optional()
+    .describe(
+        "Marks the end of a static prompt prefix when prompt_cache_options.mode is explicit.",
+    )
+    .meta({ $id: "PromptCacheBreakpoint" });
+
+const PromptCacheOptionsSchema = z
+    .object({
+        mode: z.enum(["implicit", "explicit"]).optional(),
+        ttl: z.literal("30m").optional(),
+    })
+    .strict()
+    .optional()
+    .meta({ $id: "PromptCacheOptions" });
+
 const ChatCompletionRequestMessageContentPartImageSchema = z.object({
     type: z.literal("image_url"),
     image_url: z.object({
@@ -66,6 +85,7 @@ const ChatCompletionRequestMessageContentPartImageSchema = z.object({
         detail: z.enum(["auto", "low", "high"]).optional(),
         mime_type: z.string().optional(), // For explicit MIME type (e.g., "image/jpeg")
     }),
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 // Video URL content type - currently supported by Gemini models only
@@ -93,6 +113,7 @@ const ChatCompletionRequestMessageContentPartTextSchema = z.object({
     type: z.literal("text"),
     text: z.string(),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
@@ -102,6 +123,7 @@ const ChatCompletionRequestMessageContentPartAudioSchema = z.object({
         format: z.enum(["wav", "mp3", "flac", "opus", "pcm16"]),
     }),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 // File content for document/file uploads
@@ -115,6 +137,7 @@ const ChatCompletionRequestMessageContentPartFileSchema = z.object({
         mime_type: z.string().optional(),
     }),
     cache_control: CacheControlSchema,
+    prompt_cache_breakpoint: PromptCacheBreakpointSchema,
 });
 
 const ChatCompletionRequestMessageContentPartSchema = z
@@ -333,6 +356,9 @@ export const CreateChatCompletionRequestSchema = z
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
         parallel_tool_calls: z.boolean().optional().default(true),
         user: z.string().optional(),
+        prompt_cache_key: z.string().optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
+        prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
         function_call: z
             .union([
                 z.enum(["none", "auto"]),
@@ -350,6 +376,174 @@ export const CreateChatCompletionRequestSchema = z
 export type CreateChatCompletionRequest = z.infer<
     typeof CreateChatCompletionRequestSchema
 >;
+
+const StatelessResponseIncludeSchema = z.enum([
+    "web_search_call.action.sources",
+    "code_interpreter_call.outputs",
+    "computer_call_output.output.image_url",
+    "file_search_call.results",
+    "message.input_image.image_url",
+    "message.output_text.logprobs",
+]);
+
+const ResponseFunctionToolSchema = z
+    .object({
+        type: z.literal("function"),
+        name: z.string(),
+        description: z.string().optional(),
+        parameters: FunctionParametersSchema.optional(),
+        strict: z.boolean().nullable().optional(),
+    })
+    .passthrough();
+
+/**
+ * Stateless subset of OpenAI's create Response request.
+ *
+ * Stateful fields accept only their inert SDK defaults so clients may send
+ * `store: false` / nulls without opting Pollinations into response storage.
+ */
+export const CreateResponseRequestSchema = z
+    .object({
+        model: z.string().optional().default(DEFAULT_TEXT_MODEL),
+        input: z.union([z.string(), z.array(z.unknown()).min(1)]),
+        instructions: z.string().nullish(),
+        reasoning: z.record(z.string(), z.any()).nullish(),
+        max_output_tokens: z.number().int().positive().nullish(),
+        max_tool_calls: z.number().int().positive().nullish(),
+        stream: z.boolean().optional().default(false),
+        stream_options: z
+            .object({ include_obfuscation: z.boolean().optional() })
+            .strict()
+            .nullish(),
+        store: z.literal(false).optional().default(false),
+        previous_response_id: z.null().optional(),
+        conversation: z.null().optional(),
+        background: z.literal(false).nullish(),
+        include: z.array(StatelessResponseIncludeSchema).nullish(),
+        context_management: z.array(z.never()).max(0).nullish(),
+        prompt: z.null().optional(),
+        text: z.record(z.string(), z.any()).optional(),
+        tools: z.array(ResponseFunctionToolSchema).optional(),
+        tool_choice: z.any().optional(),
+        parallel_tool_calls: z.boolean().optional(),
+        metadata: z.record(z.string(), z.string()).optional(),
+        user: z.string().optional(),
+        safety_identifier: z.string().max(64).optional(),
+        prompt_cache_key: z.string().optional(),
+        prompt_cache_options: PromptCacheOptionsSchema,
+        prompt_cache_retention: z.enum(["in_memory", "24h"]).optional(),
+        service_tier: z.string().optional(),
+        temperature: z.number().min(0).max(2).nullish(),
+        top_p: z.number().min(0).max(1).nullish(),
+        top_logprobs: z.number().int().min(0).max(20).nullish(),
+        frequency_penalty: z.number().min(-2).max(2).nullish(),
+        presence_penalty: z.number().min(-2).max(2).nullish(),
+        truncation: z.enum(["auto", "disabled"]).nullish(),
+        safe: SafeSchema,
+    })
+    .strict();
+
+export type CreateResponseRequest = z.infer<typeof CreateResponseRequestSchema>;
+
+export const ResponseUsageSchema = z
+    .object({
+        input_tokens: z.number().int().nonnegative(),
+        input_tokens_details: z
+            .object({
+                cached_tokens: z.number().int().nonnegative().nullish(),
+                cache_write_tokens: z.number().int().nonnegative().nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
+                video_tokens: z.number().int().nonnegative().nullish(),
+            })
+            .passthrough()
+            .nullish(),
+        output_tokens: z.number().int().nonnegative(),
+        output_tokens_details: z
+            .object({
+                reasoning_tokens: z.number().int().nonnegative().nullish(),
+                audio_tokens: z.number().int().nonnegative().nullish(),
+                image_tokens: z.number().int().nonnegative().nullish(),
+                accepted_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                rejected_prediction_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+            })
+            .passthrough()
+            .nullish(),
+        total_tokens: z.number().int().nonnegative(),
+    })
+    .passthrough();
+
+export type ResponseUsage = z.infer<typeof ResponseUsageSchema>;
+
+export const CreateResponseResponseSchema = z
+    .object({
+        id: z.string(),
+        object: z.literal("response"),
+        created_at: z.number().int().optional(),
+        model: z.string(),
+        status: z.enum([
+            "completed",
+            "failed",
+            "in_progress",
+            "cancelled",
+            "queued",
+            "incomplete",
+        ]),
+        output: z.array(z.object({ type: z.string() }).passthrough()),
+        usage: ResponseUsageSchema.nullable(),
+    })
+    .passthrough()
+    .superRefine((response, context) => {
+        if (
+            (response.status === "completed" ||
+                response.status === "incomplete") &&
+            response.usage === null
+        ) {
+            context.addIssue({
+                code: "custom",
+                path: ["usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    })
+    .meta({ $id: "CreateResponseResponse" });
+
+export type CreateResponseResponse = z.infer<
+    typeof CreateResponseResponseSchema
+>;
+
+export const ResponseTerminalEventSchema = z
+    .object({
+        type: z.enum([
+            "response.completed",
+            "response.incomplete",
+            "response.failed",
+        ]),
+        response: z
+            .object({
+                model: z.string().optional(),
+                usage: ResponseUsageSchema.nullable(),
+            })
+            .passthrough(),
+    })
+    .passthrough()
+    .superRefine((event, context) => {
+        if (event.type !== "response.failed" && event.response.usage === null) {
+            context.addIssue({
+                code: "custom",
+                path: ["response", "usage"],
+                message: "Successful Responses must include valid usage",
+            });
+        }
+    });
 
 const ChatCompletionMessageContentBlockSchema = z.union([
     ChatCompletionRequestMessageContentPartTextSchema,
@@ -430,7 +624,14 @@ export const CompletionUsageSchema = z
         prompt_tokens_details: z
             .object({
                 audio_tokens: z.number().int().nonnegative().nullish(),
+                cache_write_tokens: z.number().int().nonnegative().nullish(),
                 cached_tokens: z.number().int().nonnegative().nullish(),
+                cache_creation_input_tokens: z
+                    .number()
+                    .int()
+                    .nonnegative()
+                    .nullish(),
+                cache_type: z.string().nullish(),
                 image_tokens: z.number().int().nonnegative().nullish(),
             })
             .nullish(),
@@ -507,7 +708,7 @@ export const CreateChatCompletionResponseSchema = z.object({
     model: z.string().optional(),
     system_fingerprint: z.string().nullish(),
     object: z.literal("chat.completion"),
-    usage: CompletionUsageSchema.optional(),
+    usage: CompletionUsageSchema,
     citations: z.array(z.string()).optional(), // Perplexity citations
 });
 
@@ -520,7 +721,12 @@ export const OpenAIModelSchema = z
         id: z.string(),
         object: z.literal("model"),
         created: z.number(),
-        owned_by: z.string().optional(),
+        owned_by: z.string(),
+        aliases: z.array(z.string()),
+        category: z.enum(MODEL_CATEGORIES),
+        community: z.boolean(),
+        title: z.string(),
+        description: z.string().optional(),
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),

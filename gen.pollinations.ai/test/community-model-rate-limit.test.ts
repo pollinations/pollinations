@@ -9,6 +9,13 @@ import {
 import { describe, expect, it } from "vitest";
 import type { CommunityModelRateLimiter } from "../src/durable-objects/CommunityModelRateLimiter.ts";
 
+// Azure image deployments with a small quota cap each user at the deployment's
+// own request limit instead of the 60 RPM floor.
+const QUOTA_BOUND_MODELS = new Set([
+    "openai/gpt-image-2",
+    "microsoft/mai-image-2.5-flash",
+]);
+
 describe("model rate limiting", () => {
     it("limits the self-hosted image models", () => {
         expect(
@@ -19,12 +26,21 @@ describe("model rate limiting", () => {
             IMAGE_SERVICES["black-forest-labs/flux.2-klein-4b"].perUserRpm,
         ).toBe(60);
         expect(IMAGE_SERVICES["lykon/dreamshaper-8-lcm"].perUserRpm).toBe(300);
+        expect(IMAGE_SERVICES["openai/gpt-image-2"].perUserRpm).toBe(6);
+        expect(
+            IMAGE_SERVICES["openai/gpt-image-2:fallback"].perUserRpm,
+        ).toBeNull();
+        expect(IMAGE_SERVICES["microsoft/mai-image-2.5-flash"].perUserRpm).toBe(
+            12,
+        );
     });
 
-    it("keeps configured catalog model limits at 60 RPM or higher", () => {
+    it("keeps other configured catalog model limits at 60 RPM or higher", () => {
         for (const model of getModels()) {
             const limit = getRegistryModelDefinition(model).perUserRpm;
-            if (limit != null) expect(limit).toBeGreaterThanOrEqual(60);
+            if (limit != null && !QUOTA_BOUND_MODELS.has(model)) {
+                expect(limit).toBeGreaterThanOrEqual(60);
+            }
         }
     });
 

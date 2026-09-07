@@ -193,7 +193,7 @@ describe("qwenImage3Model", () => {
             callQwenImage3API("missing output", baseParams),
         ).rejects.toMatchObject({
             status: 502,
-            upstreamUrl: GENERATE_URL,
+            requestUrl: new URL(GENERATE_URL),
         });
     });
 });

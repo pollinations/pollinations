@@ -8,6 +8,7 @@ import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import { DEFAULT_REALTIME_MODEL } from "@shared/registry/realtime.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import { DEFAULT_TEXT_MODEL } from "@shared/registry/text.ts";
+import { MODEL_REQUESTED_HEADER } from "@shared/registry/usage-headers.ts";
 import type { EventType } from "@shared/schemas/generation-event.ts";
 import type { SafetyFeature } from "@shared/schemas/safety.ts";
 import { createMiddleware } from "hono/factory";
@@ -238,6 +239,7 @@ export function resolveModel(
             );
         }
         c.set("model", resolved);
+        c.header(MODEL_REQUESTED_HEADER, resolved.resolved);
         await next();
     });
 }

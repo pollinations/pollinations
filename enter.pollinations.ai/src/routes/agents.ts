@@ -16,7 +16,6 @@ import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
 import {
-    agentRuntimeBaseUrl,
     BuiltinMcpServerIdSchema,
     PromptAgentInputSchema,
     parsePromptAgentConfig,
@@ -69,8 +68,6 @@ const AgentResponseSchema = z.object({
     title: z.string(),
     description: z.string().nullable(),
     visibility: z.enum(COMMUNITY_ENDPOINT_VISIBILITIES),
-    baseUrl: z.string().url(),
-    upstreamModel: z.string(),
     systemPrompt: z.string(),
     baseModel: z.string(),
     requiredSafetyFeatures: RequiredSafetyFeaturesSchema,
@@ -86,7 +83,7 @@ const AgentDeleteResponseSchema = z.object({ id: z.string() });
 type Db = ReturnType<typeof drizzle<typeof schema>>;
 type AgentRow = typeof schema.communityEndpoint.$inferSelect;
 
-function toResponse(row: AgentRow, baseUrl: string) {
+function toResponse(row: AgentRow) {
     const config = parsePromptAgentConfig(row.payload);
     if (!config) throw new Error(`Agent ${row.id} has invalid configuration`);
     return {
@@ -95,8 +92,6 @@ function toResponse(row: AgentRow, baseUrl: string) {
         title: row.title,
         description: row.description,
         visibility: row.visibility,
-        baseUrl,
-        upstreamModel: row.upstreamModel,
         ...config,
         requiredSafetyFeatures: row.requiredSafetyFeatures,
         createdAt: row.createdAt,
@@ -190,9 +185,7 @@ export const agentsRoutes = new Hono<Env>()
                 orderBy: (endpoint, { desc }) => [desc(endpoint.createdAt)],
             });
             return c.json({
-                data: rows.map((row) =>
-                    toResponse(row, agentRuntimeBaseUrl(c.env)),
-                ),
+                data: rows.map(toResponse),
             });
         },
     )
@@ -224,7 +217,6 @@ export const agentsRoutes = new Hono<Env>()
             return c.json(
                 toResponse(
                     await requireOwnedAgent(db, c.req.param("id"), user.id),
-                    agentRuntimeBaseUrl(c.env),
                 ),
             );
         },
@@ -281,7 +273,7 @@ export const agentsRoutes = new Hono<Env>()
                     updatedAt: new Date(),
                 })
                 .returning();
-            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
+            return c.json(toResponse(row));
         },
     )
     .patch(
@@ -341,7 +333,7 @@ export const agentsRoutes = new Hono<Env>()
                     ),
                 )
                 .returning();
-            return c.json(toResponse(row, agentRuntimeBaseUrl(c.env)));
+            return c.json(toResponse(row));
         },
     )
     .delete(

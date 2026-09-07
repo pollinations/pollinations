@@ -1,99 +1,68 @@
 # Pollinations x OpenClaw
 
-Use **25+ AI models** as your OpenClaw brain through a single API.
+Use **Pollinations AI models** as your OpenClaw brain through a single API.
 
-**Kimi K2.5** as default (256K context, vision, tools, reasoning), with DeepSeek, GLM 5, and Claude Haiku as free alternatives. Premium models (Claude Opus, Gemini 3 Pro) available on paid tier.
+The maintained setup path is the Polli CLI. It adds a `pollinations` provider
+to OpenClaw, mints a dedicated API key, pulls the current compatible model
+catalog live (no manual model list to maintain), and installs the Polli skill
+so your agent can generate images, audio, and video.
 
 ## Setup
 
-**Step 1:** Get your API key (comes with free credits) at [enter.pollinations.ai](https://enter.pollinations.ai/keys)
+**Prerequisite:** install [OpenClaw](https://openclaw.ai/install) and Node.js.
 
-**Step 2:** Run the setup script (requires `jq`):
+**Step 1:** Install the Polli CLI:
+
+```bash
+npm i -g @pollinations/cli
+```
+
+**Step 2:** Connect OpenClaw to Pollinations:
+
+```bash
+polli harness openclaw on
+```
+
+This opens a browser login on first run (or use `--no-browser`), creates a
+dedicated key, initializes OpenClaw when needed, and writes the provider into
+`~/.openclaw/openclaw.json`. Choose a different default model with `--model
+<id>` (any tool-calling text model from `polli models`):
+
+```bash
+polli harness openclaw on --model deepseek
+```
+
+**Step 3:** See that everything is ready:
+
+```bash
+polli harness openclaw status
+```
+
+## Using it in OpenClaw
+
+- **Switch models** anytime in chat with `/model pollinations/<name>`.
+- **Generate media** with the Polli skill (e.g. "generate an image of a
+  lighthouse") once the gateway is running.
+
+## Update / remove
+
+```bash
+polli harness openclaw status   # is OpenClaw ready to use Pollinations?
+polli harness openclaw off      # remove only the Pollinations setup
+```
+
+`off` restores the previous config. If you changed anything since `on`, it
+removes only the Pollinations provider, the dedicated key, a `pollinations/*`
+default model, and the skill — leaving the rest of your OpenClaw configuration
+untouched.
+
+## Legacy one-liner
+
+The old `curl ... | bash -s -- KEY` script still works and forwards to the
+same CLI:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/pollinations/pollinations/main/apps/openclaw/setup-pollinations.sh | bash -s -- YOUR_API_KEY
-```
-
-This works for both fresh installs and existing OpenClaw setups. It:
-- Runs `openclaw onboard` for fresh installs (creates config + workspace)
-- Adds the Pollinations provider with 9 models to `~/.openclaw/openclaw.json`
-- Sets Kimi K2.5 as default with DeepSeek + GLM fallbacks
-
-**Step 3 (fresh install only):** Start the gateway:
-
-```bash
-openclaw gateway start
-```
-
-## Available Models
-
-Switch models anytime in chat with `/model pollinations/<name>`:
-
-| Model | ID | Best for |
-|---|---|---|
-| **Kimi K2.5** (default) | `pollinations/kimi` | Agentic tasks, vision, reasoning (256K context) |
-| **Kimi K2.6** | `pollinations/kimi-k2.6` | Flagship agentic, vision, reasoning (262K context, paid) |
-| **DeepSeek V4 Flash** | `pollinations/deepseek` | Fast reasoning & tool calling (paid) |
-| **DeepSeek V4 Pro** | `pollinations/deepseek-pro` | Advanced reasoning & coding (paid) |
-| **GLM 5.1** | `pollinations/glm` | Coding, reasoning, agentic workflows |
-| **Gemini + Search** | `pollinations/gemini-search` | Web search grounded answers |
-| **Claude Haiku 4.5** | `pollinations/claude-fast` | Fast with good reasoning |
-| **Claude Opus 4.6** | `pollinations/claude-large` | Most intelligent (paid) |
-| **Gemini 3.1 Pro** | `pollinations/gemini-large` | 1M context (paid) |
-
-## Manual Setup
-
-If you prefer not to run the script, edit `~/.openclaw/openclaw.json` directly. Add a `pollinations` provider under `models.providers`:
-
-```json
-{
-  "models": {
-    "providers": {
-      "pollinations": {
-        "baseUrl": "https://gen.pollinations.ai/v1",
-        "apiKey": "YOUR_API_KEY",
-        "api": "openai-completions",
-        "models": [
-          {
-            "id": "kimi",
-            "name": "Kimi K2.5",
-            "reasoning": true,
-            "input": ["text", "image"],
-            "contextWindow": 256000,
-            "maxTokens": 8192
-          },
-          {
-            "id": "kimi-k2.6",
-            "name": "Kimi K2.6",
-            "reasoning": true,
-            "input": ["text", "image"],
-            "contextWindow": 262000,
-            "maxTokens": 8192
-          }
-        ]
-      }
-    }
-  }
-}
-```
-
-Then set the default model:
-
-```bash
-openclaw models set pollinations/kimi
-openclaw models fallbacks add pollinations/deepseek
-openclaw models fallbacks add pollinations/glm
-openclaw gateway restart
-```
-
-See all available models at [gen.pollinations.ai/v1/models](https://gen.pollinations.ai/v1/models).
-
-## Pollinations Skill (Image/Video/Audio)
-
-The [Pollinations skill](https://github.com/pollinations/pollinations/tree/main/apps/openclaw) gives your agent image, video, and audio generation:
-
-```
-/skill install isaacgounton/pollinations
 ```
 
 ## Links

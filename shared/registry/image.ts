@@ -121,6 +121,29 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 10,
     },
+    "microsoft/mai-image-2.5-flash": {
+        aliases: [],
+        provider: "azure",
+        author: "Microsoft",
+        category: "image",
+        addedDate: new Date("2026-09-05").getTime(),
+        paidOnly: false,
+        priceMultiplier: 0.75,
+        perUserRpm: 12, // Whole Azure East US deployment quota; low concurrency expected.
+        // Azure Global Standard meters and invoiced usage, verified 2026-09-05.
+        // Output tokens = pixels / 1024, so a 1024x1024 image is 1,024 tokens.
+        cost: {
+            promptTextTokens: perMillion(1.75),
+            promptImageTokens: perMillion(1.75),
+            completionImageTokens: perMillion(19.5),
+        },
+        title: "MAI Image 2.5 Flash",
+        description:
+            "Quick photorealistic generation and single-reference editing with accurate text rendering",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 1, // Azure MAI edit route takes one input image.
+    },
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
         provider: "openrouter",
@@ -212,11 +235,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 14, // Gemini 3 Pro Image provider limit.
     },
     "bytedance/seedream-5.0-lite": {
-        aliases: [
-            "seedream5",
-            "bytedance/seedream-5-lite",
-            "bytedance-seed/seedream-5-0-lite",
-        ],
+        aliases: ["seedream5"],
         provider: "replicate",
         author: "ByteDance",
         category: "image",
@@ -235,13 +254,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 14, // Pollinations route cap from Replicate schema.
     },
     "bytedance/seedream-5.0-pro": {
-        aliases: [
-            "seedream-5-pro",
-            "seedream-pro-5",
-            "seedream5-pro",
-            "bytedance/seedream-5-pro",
-            "bytedance-seed/seedream-5-0-pro",
-        ],
+        aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
         provider: "replicate",
         author: "ByteDance",
         category: "image",
@@ -258,11 +271,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 10,
     },
     "bytedance/seedream-4.0": {
-        aliases: [
-            "seedream",
-            "bytedance/seedream-4",
-            "bytedance-seed/seedream-4.0",
-        ],
+        aliases: ["seedream"],
         provider: "replicate",
         author: "ByteDance",
         category: "image",
@@ -279,7 +288,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 10, // Pollinations route cap from Replicate schema.
     },
     "bytedance/seedream-4.5": {
-        aliases: ["seedream-pro", "bytedance-seed/seedream-4.5"],
+        aliases: ["seedream-pro"],
         provider: "openrouter",
         author: "ByteDance",
         category: "image",
@@ -399,6 +408,7 @@ const IMAGE_BASE_SERVICES = {
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: false,
         priceMultiplier: 0.75,
+        perUserRpm: 6,
         cost: {
             promptTextTokens: perMillion(5), // per 1M tokens
             promptCachedTokens: perMillion(1.25), // per 1M tokens
@@ -413,7 +423,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
     "black-forest-labs/flux.1-schnell": {
-        aliases: ["flux", "black-forest-labs/FLUX.1-schnell"],
+        aliases: ["flux"],
         provider: "vast",
         author: "Black Forest Labs",
         category: "image",
@@ -429,17 +439,8 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "tongyi-mai/z-image-turbo": {
-        aliases: [
-            "z-image",
-            "z-image-turbo",
-            "zimage",
-            "Tongyi-MAI/Z-Image-Turbo",
-        ],
+        aliases: ["z-image", "z-image-turbo", "zimage"],
         provider: "vast",
-        // Routes live in image-fallbacks.ts. Narrower than the default
-        // status list: only a 503 (no capacity) overflows to Fal, so every
-        // other Vast failure surfaces instead of being served elsewhere.
-        fallbackOnStatusCodes: [503],
         author: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
@@ -714,7 +715,7 @@ const IMAGE_BASE_SERVICES = {
         allowedDurations: [5, 10, 15],
     },
     "alibaba/wan-2.2-fast": {
-        aliases: ["wan2.2", "wan-2.2", "wan-fast", "wan-video/wan-2.2-fast"],
+        aliases: ["wan2.2", "wan-2.2", "wan-fast"],
         provider: "replicate",
         author: "Alibaba",
         category: "video",
@@ -724,6 +725,7 @@ const IMAGE_BASE_SERVICES = {
         // Replicate wan-2.2-fast, locked to 480p. Silent, fixed ~5s clip billed
         // flat ($0.01/s x 5s = $0.05).
         cost: {
+            promptImageTokens: 0,
             completionVideoSeconds: 0.01, // per sec (480p, silent)
         },
         title: "Wan 2.2",
@@ -860,12 +862,7 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "alibaba/wan-2.7-image": {
-        aliases: [
-            "wan2.7-image",
-            "wan-img",
-            "wan-image",
-            "wan-video/wan-2.7-image",
-        ],
+        aliases: ["wan2.7-image", "wan-img", "wan-image"],
         provider: "replicate",
         author: "Alibaba",
         category: "image",
@@ -884,12 +881,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 9, // Pollinations route cap.
     },
     "alibaba/wan-2.7-image-pro": {
-        aliases: [
-            "wan2.7-image-pro",
-            "wan-img-pro",
-            "wan-image-pro",
-            "wan-video/wan-2.7-image-pro",
-        ],
+        aliases: ["wan2.7-image-pro", "wan-img-pro", "wan-image-pro"],
         provider: "replicate",
         author: "Alibaba",
         category: "image",
@@ -1315,6 +1307,45 @@ const IMAGE_BASE_SERVICES = {
         maxDuration: 5,
         defaultDuration: 5,
     },
+    "minimax/minimax-h3-max-turbo": {
+        aliases: [],
+        provider: "fal",
+        author: "MiniMax",
+        category: "video",
+        addedDate: new Date("2026-09-04").getTime(),
+        priceMultiplier: 1,
+        paidOnly: true,
+        // fal launch pricing through 2026-09-07; restore list rates on 2026-09-08.
+        cost: {
+            completionVideoSeconds: 0.00625, // 480p per output second.
+        },
+        ...defineCostVariants(
+            {
+                "768p": { completionVideoSeconds: 0.01 },
+            },
+            matchResolution("768p"),
+            {
+                "768p": {
+                    label: "768p",
+                    description:
+                        "Applies when the requested video resolution is 768p.",
+                },
+            },
+            "480p",
+        ),
+        resolutions: ["480p", "768p"],
+        title: "MiniMax H3 Max Turbo",
+        description:
+            "Fast 5–15 second video with synchronized audio and first/last-frame control at 480p or 768p",
+        inputModalities: ["text", "image"],
+        outputModalities: ["video", "audio"],
+        videoCapabilities: ["start_frame", "end_frame", "audio_output"],
+        maxReferenceImages: 2,
+        minDuration: 5,
+        maxDuration: 15,
+        defaultDuration: 5,
+        allowedDurations: [5, 10, 15],
+    },
     "black-forest-labs/flux.2-klein-4b": {
         aliases: ["flux-klein", "klein"],
         provider: "vast",
@@ -1333,7 +1364,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 10, // Pollinations self-hosted route cap.
     },
     "prunaai/p-image": {
-        aliases: ["pruna-image", "pruna", "p-image", "PrunaAI/p-image"],
+        aliases: ["pruna-image", "pruna", "p-image"],
         provider: "deepinfra",
         author: "Pruna",
         category: "image",
@@ -1349,12 +1380,7 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
     },
     "prunaai/p-image-edit": {
-        aliases: [
-            "pruna-edit",
-            "pruna-image-edit",
-            "p-image-edit",
-            "PrunaAI/p-image-Edit",
-        ],
+        aliases: ["pruna-edit", "pruna-image-edit", "p-image-edit"],
         provider: "deepinfra",
         author: "Pruna",
         category: "image",
@@ -1417,11 +1443,7 @@ const IMAGE_BASE_SERVICES = {
         defaultDuration: 5,
     },
     "amazon/nova-canvas-v1": {
-        aliases: [
-            "amazon-nova-canvas",
-            "nova-canvas",
-            "amazon.nova-canvas-v1:0",
-        ],
+        aliases: ["amazon-nova-canvas", "nova-canvas"],
         provider: "bedrock",
         author: "Amazon",
         category: "image",
@@ -1455,7 +1477,7 @@ const IMAGE_BASE_SERVICES = {
         maxReferenceImages: 1, // Nova Canvas route forwards one input image.
     },
     "amazon/nova-reel-v1": {
-        aliases: ["amazon-nova-reel", "nova-reel", "amazon.nova-reel-v1:1"],
+        aliases: ["amazon-nova-reel", "nova-reel"],
         provider: "bedrock",
         author: "Amazon",
         category: "video",

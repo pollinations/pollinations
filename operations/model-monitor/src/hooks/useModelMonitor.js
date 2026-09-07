@@ -173,7 +173,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         if (endpointStatus.catalog === false) {
             modelMeta = {
                 name: s.model || "(unknown)",
-                community: s.model?.includes("/") || false,
+                community: s.provider === "community",
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,
@@ -196,7 +196,7 @@ export function useModelMonitor(aggregationWindow = "60m") {
         } else {
             modelMeta = {
                 name: s.model || "(unknown)",
-                community: s.model?.includes("/") || false,
+                community: s.provider === "community",
                 type: statsType,
                 endpointType: statsType,
                 provider: s.provider,

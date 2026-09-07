@@ -101,7 +101,7 @@ async function setupPayerAndDev() {
 
     await db.insert(apikeyTable).values({
         id: pkId,
-        userId: devId,
+        referenceId: devId,
         name: "markup-app",
         prefix: "pk",
         key: `hashed-${pkId}`,
@@ -296,6 +296,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "INSUFFICIENT_BALANCE",
             },
         );
     });
@@ -431,6 +432,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "KEY_BUDGET_EXHAUSTED",
             },
         );
     });
@@ -707,6 +709,29 @@ describe("BYOP markup", () => {
                 definition,
             ),
         ).toBe(1.25);
+    });
+
+    it("retains legacy price estimates after a canonical rename", () => {
+        const model = "openai/gpt-5.4-nano";
+        const definition = getRegistryModelDefinition(model);
+        const legacy = { model: "openai", avg_cost_usd: 1.25 };
+        expect(getEstimatedPrice({ data: [legacy] }, model, definition)).toBe(
+            1.25,
+        );
+        expect(
+            getEstimatedPrice(
+                { data: [legacy, { model, avg_cost_usd: 0.75 }] },
+                model,
+                definition,
+            ),
+        ).toBe(0.75);
+        expect(
+            getEstimatedPrice(
+                { data: [{ model: "owner/community-model", avg_cost_usd: 9 }] },
+                model,
+                definition,
+            ),
+        ).toBe(0);
     });
 
     it("does not credit or deduct for unbilled requests", async () => {

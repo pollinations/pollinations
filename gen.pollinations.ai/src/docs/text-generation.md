@@ -1,13 +1,39 @@
 ## Text Generation
 
-Generate text responses using AI models. Fully compatible with the OpenAI Chat Completions API — use any OpenAI SDK by changing the base URL.
+Generate text using OpenAI-compatible Chat Completions and stateless Responses APIs — use an OpenAI SDK by changing the base URL.
 
 | Endpoint | Best for |
 |----------|----------|
 | `POST /v1/chat/completions` | Full OpenAI compatibility — streaming, tools, vision, structured outputs |
+| `POST /v1/responses` | Stateless Responses input/output items, semantic streaming events, and function tools |
 | `GET /text/{prompt}` | Quick prototyping — simple GET, returns plain text |
 
 **Available models:** {{TEXT_MODELS}}
+
+### Responses API
+
+Use `supported_endpoints` from [`GET /v1/models`](/v1/models) or [`GET /text/models`](/text/models) to find models that advertise `/v1/responses`. This includes configured built-in providers, community text models with an exact Responses URL, external endpoint agents with an exact Responses URL, and managed prompt agents.
+
+```bash
+curl https://gen.pollinations.ai/v1/responses \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -d '{
+    "model": "openai",
+    "input": "Explain why the sky is blue in two sentences.",
+    "store": false
+  }'
+```
+
+The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and encrypted content or reusable item references are rejected. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. Missing or malformed usage on a completed or incomplete response fails the request. Failed responses may report null usage. These failed requests are not billed, but completed child model calls and charged MCP operations within an agent run remain billable; the outer agent request adds no charge.
+
+The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
+
+Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
+
+Managed prompt agents use Pollinations' configured Responses runtime and have no publisher-configured endpoint URL. They use their configured MCP tools and ignore caller-supplied function tool definitions. Their Responses output contains assistant messages and `mcp_call` items describing tools already executed by the server. Chat clients receive those results as text and media links, not function calls to execute. For stateless continuation, send previous output items with the next input; completed MCP items are treated as history and are not executed again.
+
+Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
 
 ### Reasoning
 
@@ -68,4 +94,6 @@ On Gemini, Claude, and Nova models, a large static prompt prefix can be cached s
 
 **Claude** — all Claude models cache. The prefix minimum varies by model: 512 tokens on `anthropic/claude-fable-5`, `anthropic/claude-fable-5.1`, and `anthropic/claude-opus-5`, and 1,024 on `anthropic/claude-sonnet-4.6`; other models have higher minimums. Tool definitions are cacheable. `anthropic/claude-fable-5.1` accepts only automatic or disabled tool choice; forcing any or a named tool returns a 400. Cache creates bill at 1.25× the input rate (no storage fee); hits bill at 10% of input, or 2.5% on `anthropic/claude-fable-5.1`. The cache lives ~5 minutes, refreshed on each hit.
 
-**Nova** — `amazon/nova-2-lite-v1` and `amazon/nova-micro-v1` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+**Nova** — `nova` and `nova-fast` cache. The prefix must be at least ~1,000 tokens (up to 20K tokens cacheable). Cache creates are free; hits bill at 25% of input. ~5-minute TTL.
+
+Models that advertise `/v1/responses` also accept OpenAI's cache controls. Set `prompt_cache_options.mode` to `explicit` and place `prompt_cache_breakpoint: { "mode": "explicit" }` on the content block ending each stable prefix (up to four). Chat requests adapted to Responses preserve these markers; the existing `cache_control: { "type": "ephemeral" }` marker is translated to the same explicit breakpoint. Managed prompt agents apply an explicit request without caller markers to their configured static prompt.

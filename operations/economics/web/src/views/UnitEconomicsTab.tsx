@@ -7,7 +7,7 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -22,7 +22,11 @@ import {
     type GaugePalette,
     GaugeSummary,
 } from "../components/EconomicsGauge";
-import { StatCards, type StatItem } from "../components/StatCards";
+import {
+    StatCards,
+    type StatItem,
+    type StatTone,
+} from "../components/StatCards";
 import {
     type ComputeMode,
     computeModeIndex,
@@ -32,8 +36,9 @@ import {
 } from "../lib/computeModes";
 import { fmtMarginPct, fmtUnsignedPct, fmtUsd } from "../lib/format";
 import {
-    type ModelAllocationStatus,
+    assignedSharePct,
     type ModelReconcileRow,
+    type ModelReconcileSummary,
     modelReconcileRows,
     modelReconcileSummary,
     visibleModelReconcileRows,
@@ -41,7 +46,9 @@ import {
 import type { MonthFilterValue } from "../lib/months";
 import { signedToneOrSoft } from "../lib/tone";
 import {
+    matchesSituation,
     providerCostCheck,
+    type Situation,
     type UnitEconomicsGrain,
     type UnitEconomicsRow,
     unitEconomicsRows,
@@ -88,12 +95,118 @@ function MixGauge({
     );
 }
 
-function allocationWarning(status: ModelAllocationStatus | null) {
-    if (status == null || status === "allocated") return null;
+// One chip per situation. A grouped row is one model the provider bills on a
+// single line under several Pollen ids; the hint lists its billing lines.
+function allocationChip(row: UnitEconomicsRow) {
+    const status = row.allocationStatus;
+    if (status == null) return null;
+    if (status === "allocated") {
+        if (!row.members?.length) return null;
+        const lines = (row.lines ?? [])
+            .map((line) => `${line.label}: ${fmtUsd(line.usd)}`)
+            .join("\n");
+        return (
+            <span title={lines || undefined}>
+                <Chip intent="neutral" size="sm">
+                    grouped · {row.members.length} Pollen ids
+                </Chip>
+            </span>
+        );
+    }
+    const intent =
+        status === "missing breakdown"
+            ? "danger"
+            : status === "provider only"
+              ? "neutral"
+              : "warning";
     return (
-        <Chip intent="warning" size="sm">
-            {status === "missing provider" ? "missing vendor" : status}
+        <Chip intent={intent} size="sm">
+            {status === "missing provider"
+                ? "missing vendor"
+                : status === "provider only"
+                  ? "no Pollen model"
+                  : status}
         </Chip>
+    );
+}
+
+// Each chip summarises one situation and, when clicked, filters the table to
+// the rows behind it; clicking the active chip clears the filter.
+function ResidualBucketChips({
+    buckets,
+    groupedUsd,
+    active,
+    onSelect,
+}: {
+    buckets: ModelReconcileSummary["buckets"];
+    groupedUsd: number;
+    active: Situation;
+    onSelect: (situation: Situation) => void;
+}) {
+    const items: {
+        situation: Situation;
+        label: string;
+        usd: number;
+        intent: "success" | "neutral" | "danger" | "warning";
+    }[] = [
+        {
+            situation: "assigned",
+            label: "assigned to models",
+            usd: buckets.allocatedUsd,
+            intent: "success",
+        },
+        {
+            situation: "grouped",
+            label: "grouped",
+            usd: groupedUsd,
+            intent: "neutral",
+        },
+        {
+            situation: "missing breakdown",
+            label: "missing breakdown",
+            usd: buckets.missingBreakdownUsd,
+            intent: "danger",
+        },
+        {
+            situation: "needs mapping",
+            label: "needs mapping",
+            usd: buckets.needsMappingUsd,
+            intent: "warning",
+        },
+        {
+            situation: "no Pollen model",
+            label: "no Pollen model",
+            usd: buckets.providerOnlyUsd,
+            intent: "neutral",
+        },
+    ];
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            {items
+                .filter((item) => item.usd > 0.005)
+                .map((item) => {
+                    const selected = active === item.situation;
+                    return (
+                        <button
+                            type="button"
+                            key={item.situation}
+                            aria-pressed={selected}
+                            onClick={() =>
+                                onSelect(selected ? "all" : item.situation)
+                            }
+                            className={
+                                selected
+                                    ? "rounded-lg ring-2 ring-theme-text-strong"
+                                    : "rounded-lg opacity-90 hover:opacity-100"
+                            }
+                        >
+                            <Chip intent={item.intent} size="sm">
+                                {fmtUsd(item.usd)} {item.label}
+                            </Chip>
+                        </button>
+                    );
+                })}
+        </div>
     );
 }
 
@@ -125,7 +238,7 @@ function VendorCostStatus({ row }: { row: UnitEconomicsRow }) {
               : "text-theme-text-strong";
     const explanation =
         check.kind === "provider-level"
-            ? "Model costs are allocations. Check the vendor row against the vendor statement."
+            ? "Model costs join by exact Pollen id or through reviewed provider labels. Pollen ids billed on one provider line form one grouped row. Unjoined cost stays visible as needs mapping or missing breakdown; check totals on the vendor row."
             : check.kind === "missing-mapping"
               ? "Add this vendor to the canonical registry before interpreting its economics."
               : check.kind === "missing-source"
@@ -316,9 +429,24 @@ function UnitEconomicsTable({
             }).filter(hasEconomicActivity),
         [allVendorMonths, month],
     );
-    const rows = useMemo(
+    const [situation, setSituation] = useState<Situation>("all");
+    const allRows = useMemo(
         () => unitEconomicsRows(vendorMonths, grain),
         [grain, vendorMonths],
+    );
+    const rows = useMemo(
+        () =>
+            grain === "model"
+                ? allRows.filter((row) => matchesSituation(row, situation))
+                : allRows,
+        [allRows, grain, situation],
+    );
+    const groupedUsd = useMemo(
+        () =>
+            allRows
+                .filter((row) => matchesSituation(row, "grouped"))
+                .reduce((sum, row) => sum + (row.providerUsageUsd ?? 0), 0),
+        [allRows],
     );
     const vendorEconomics = useMemo(
         () => unitEconomicsRows(vendorMonths, "provider"),
@@ -389,8 +517,29 @@ function UnitEconomicsTable({
                 "mixed",
     ).length;
 
+    const assignedPct =
+        view === "inference" ? assignedSharePct(summary.buckets) : null;
     const stats = useMemo<StatItem[]>(
         () => [
+            ...(view === "inference"
+                ? [
+                      {
+                          label: "Assigned to models",
+                          value:
+                              assignedPct == null
+                                  ? "Unknown"
+                                  : fmtUnsignedPct(assignedPct),
+                          tone: (assignedPct == null
+                              ? "base"
+                              : assignedPct >= 99
+                                ? "success"
+                                : assignedPct < 95
+                                  ? "warn"
+                                  : "base") as StatTone,
+                          detail: `${fmtUsd(summary.buckets.allocatedUsd)} of ${fmtUsd(summary.providerUsageUsd)} vendor cost · grouped rows included`,
+                      },
+                  ]
+                : []),
             {
                 label: "Retained Paid",
                 value: fmtUsd(summary.retainedPaidUsd),
@@ -465,17 +614,28 @@ function UnitEconomicsTable({
             currentResultUsd,
             fullCostPerformancePct,
             fullCostResultUsd,
+            assignedPct,
             knownCurrentRows.length,
             knownFullCostRows.length,
             summary,
             unknownCurrentVendorMonths,
             unknownFullCostVendorMonths,
+            view,
         ],
     );
 
     return (
         <div className="flex flex-col gap-4">
             <StatCards items={stats} />
+
+            {view === "inference" && (
+                <ResidualBucketChips
+                    buckets={summary.buckets}
+                    groupedUsd={groupedUsd}
+                    active={situation}
+                    onSelect={setSituation}
+                />
+            )}
 
             {(includesPartialMonth ||
                 summary.missingSideProviderMonths > 0 ||
@@ -569,9 +729,7 @@ function UnitEconomicsTable({
                                     className={GROUP_BORDER}
                                     {...headerProps("providerCostCheck")}
                                 >
-                                    <HeaderHint hint="Whether internal logged cost agrees with vendor evidence. Hover a value for logged cost, vendor actual, gap, and basis.">
-                                        Cost check
-                                    </HeaderHint>
+                                    Cost check
                                 </TableHeaderCell>
                             )}
                         </TableRow>
@@ -596,42 +754,32 @@ function UnitEconomicsTable({
                                 align="center"
                                 {...headerProps("pollenMix")}
                             >
-                                <HeaderHint hint="Usage mix — amber is Paid Pollen and green is Quest Pollen, using the shared wallet colors.">
-                                    Usage mix
-                                </HeaderHint>
+                                Usage mix
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("questPollenUsd")}
                             >
-                                <HeaderHint hint="Quest Pollen consumed by customers. Quest is free usage and never fiat revenue.">
-                                    Quest used
-                                </HeaderHint>
+                                Quest used
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 className={GROUP_BORDER}
                                 {...headerProps("providerCashUsd")}
                             >
-                                <HeaderHint hint="Vendor usage paid with real cash. Model rows receive an allocation from the vendor-month total.">
-                                    Cash
-                                </HeaderHint>
+                                Cash
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="center"
                                 {...headerProps("providerFundingMix")}
                             >
-                                <HeaderHint hint="Vendor funding mix — strong neutral is real cash and muted neutral is consumed vendor credit.">
-                                    Funding mix
-                                </HeaderHint>
+                                Funding mix
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("providerCreditUsd")}
                             >
-                                <HeaderHint hint="Vendor usage funded with consumed vendor credits. Model rows receive an allocation from the vendor-month total.">
-                                    Credit
-                                </HeaderHint>
+                                Credit
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -644,9 +792,7 @@ function UnitEconomicsTable({
                                 align="right"
                                 {...headerProps("currentPerformancePct")}
                             >
-                                <HeaderHint hint="Current result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -659,9 +805,7 @@ function UnitEconomicsTable({
                                 align="right"
                                 {...headerProps("fullCostPerformancePct")}
                             >
-                                <HeaderHint hint="Full-cost result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>
@@ -697,9 +841,7 @@ function UnitEconomicsTable({
                                                 : row.model}
                                         </span>
                                         {view === "inference" &&
-                                            allocationWarning(
-                                                row.allocationStatus,
-                                            )}
+                                            allocationChip(row)}
                                     </TableCell>
                                     <TableCell
                                         align="right"

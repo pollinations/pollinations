@@ -1,0 +1,62 @@
+DESCRIPTION >
+    Materializes successful, billed Revenue Share requests from
+    generation_event_v2. App and community-model shares remain on the same row
+    so combined requests can be counted once in platform economics.
+
+NODE economics_revenue_share_events_mv_node
+SQL >
+    SELECT
+        event_id,
+        event_processing_id AS version_id,
+        formatDateTime(toStartOfMonth(start_time), '%Y-%m') AS month,
+        toDateTime64(end_time, 3) AS recorded_at,
+        multiIf(
+            selected_meter_slug IN ('v1:meter:pack', 'v1:meter:crypto'), 'paid',
+            selected_meter_slug = 'v1:meter:tier', 'quest',
+            selected_meter_slug = 'local:combined' AND balances['local:tier'] > 0, 'quest',
+            selected_meter_slug = 'local:combined' AND balances['local:pack'] > 0, 'paid',
+            ''
+        ) AS funding,
+        total_price AS gross_usage,
+        if(model_provider_used = 'community', 0, total_cost) AS external_model_cost,
+        if(
+            api_key_created_for_user_id NOT IN ('', 'undefined')
+            AND total_price > dev_price,
+            api_key_created_for_user_id,
+            ''
+        ) AS app_recipient_id,
+        if(app_recipient_id != '', api_key_client_id, '') AS app_id,
+        if(
+            app_recipient_id != '',
+            coalesce(
+                nullIf(nullIf(api_key_created_for_app, ''), 'undefined'),
+                nullIf(nullIf(api_key_client_id, ''), 'undefined'),
+                'Unknown app'
+            ),
+            ''
+        ) AS app_name,
+        if(app_recipient_id != '', total_price - dev_price, 0) AS app_creator_earnings,
+        if(
+            community_model_reward_user_id NOT IN ('', 'undefined')
+            AND community_model_reward_amount > 0,
+            community_model_reward_user_id,
+            ''
+        ) AS model_recipient_id,
+        if(model_recipient_id != '', resolved_model_requested, '') AS model_id,
+        if(model_recipient_id != '', resolved_model_requested, '') AS model_name,
+        if(model_recipient_id != '', community_model_reward_amount, 0) AS model_creator_earnings,
+        resolved_model_requested AS model
+    FROM generation_event_v2
+    WHERE
+        start_time >= toDateTime('2026-01-01 00:00:00')
+        AND environment = 'production'
+        AND event_id != ''
+        AND is_final
+        AND is_billed_usage
+        AND response_status >= 200
+        AND response_status < 300
+        AND funding IN ('paid', 'quest')
+        AND (app_recipient_id != '' OR model_recipient_id != '')
+
+TYPE MATERIALIZED
+DATASOURCE economics_revenue_share_events

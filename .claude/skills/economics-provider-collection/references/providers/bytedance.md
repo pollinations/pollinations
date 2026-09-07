@@ -10,6 +10,12 @@ Canonical vendor: `bytedance`
 - Use this guide for historical `bytedance` facts and old BytePlus evidence.
   Use `replicate.md` for current Seedance/Seedream provider collection.
 
+## Verified — 2026-09-06
+
+- Review funding per invoice. `paid` includes cash-billed usage even before
+  settlement; `credit` requires evidence of a coupon or waived obligation.
+  Record the decision, amount, and evidence on the ledger row, not here.
+
 Primary evidence sources:
 
 - Historical usage: Tinybird `economics_pollen_usage` rows where `vendor = 'bytedance'`.
@@ -23,29 +29,13 @@ Primary evidence sources:
 - Contract and discount terms: https://drive.google.com/file/d/11ih6rA-gHyVByv4dFlllBKJWj3ie_LNN/view?usp=drivesdk
 - Cash: invoice, receipt, Wise, or `economics_bank_ledger`.
 
-Live validation:
+Validation:
 
-- Jan–May 2026 Cost Analysis totals exactly match the archived invoices:
-  `$5,812.84`, `$2,333.05`, `$1,036.80`, `$550.51`, and `$227.71`.
-- June, July, and August 2026 are verified zero.
-- Jan–May total provider usage is `$9,960.91`.
-- The configuration export resolves the two invoice product families into six
-  billing configurations and five canonical Pollinations models:
-  - `Seedream 4.5` → `seedream-pro`
-  - `seedream-4.0-Piece` → `seedream`
-  - `Seedream 5.0-Lite` → `seedream5`
-  - `Seedance-1.0-pro-fast-infer` → `seedance-pro`
-  - both Seedance Lite I2V/T2V configurations → `seedance`
-- These exact mappings cover every active ByteDance model in `economics_pollen_usage` for
-  each month from January through May. Preserve each raw configuration in
-  `resource_name` and `resource_sku`; use the canonical ID in `model`.
-- The January–May 2026 cost is cash-billed/provider-payable, not credit-funded.
-  The invoices show coupon used `$0` and amount paid `$0` because the bills are
-  uncleared. No matching bank transaction should exist until payment occurs.
-- On 2026-08-21 the ordinary pay-by-credits balance was `$14.79`; there were
-  no active coupons.
-- The only verified coupon was `$5,000`, Seedream-only, valid from 2025-10-15
-  through 2025-12-31. It expired with `$1,733.09` unused. It does not fund 2026.
+- Compare Cost Analysis totals with archived invoices for each month.
+- Preserve configuration labels, SKU, and line items as collected. Model joins
+  belong in the registry's reviewed `modelLabels`, not rewritten ledger facts.
+- Record coupon scope, validity, consumed amount, and unused expiry separately.
+  Expired coupons do not fund later usage.
 
 Collection steps:
 
@@ -69,7 +59,7 @@ Collection steps:
 3. Use Cost Analysis for a calendar-month range, group by Configuration Name,
    and record explicit zero months. The international Model Ark API does not
    expose a supported billing or credit-balance endpoint.
-4. Save evidence to `data/inbox/`, present the source and timestamp, and use
+4. Save evidence to `<collection-dir>/evidence/`, present the source and timestamp, and use
    this skill to extract or reconcile it.
 
 Known traps:
@@ -77,12 +67,12 @@ Known traps:
 - The production key is a runtime credential, not a billing credential. Do not
   make a generation request merely to test billing access.
 - Console credit balance is a current snapshot, not historical burn.
-- The legacy `$10,000` deal-credit row is invalid. Supersede it only alongside
-  the exact cash-billed configuration rows and the verified coupon export.
+- Correct legacy deal-credit assumptions only with exact invoice/configuration
+  rows and verified coupon evidence, through an approved correction batch.
 - Do not infer credit funding from `Amount paid = 0`: an uncleared invoice is a
   payable, not promotional credit.
-- The `$14.79` pay-by-credits balance is an ordinary current balance snapshot;
-  keep it separate from usage funding and historical coupon evidence.
+- Keep the pay-by-credits balance separate from usage funding and historical
+  coupon evidence.
 - Legacy Seedream names must be included when auditing old periods.
 - Tinybird cost and Console cost can differ if the registry price is stale;
   preserve the discrepancy instead of silently choosing one.

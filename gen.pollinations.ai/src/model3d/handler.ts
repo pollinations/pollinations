@@ -98,7 +98,7 @@ export function assertNonEmptyMedia(result: Model3dGenerationResult): void {
     }
 }
 
-function contentDisposition(prompt: string): string {
+function contentDisposition(prompt: string, contentType: string): string {
     const baseFilename = prompt
         .slice(0, 100)
         .replace(/[^a-z0-9\s-]/gi, "")
@@ -106,7 +106,11 @@ function contentDisposition(prompt: string): string {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .toLowerCase();
-    return `inline; filename="${baseFilename || "generated-model"}.glb"`;
+    const filename = baseFilename || "generated-model";
+    if (contentType === "model/ply") {
+        return `inline; filename="${filename}.ply"`;
+    }
+    return `inline; filename="${filename}.glb"`;
 }
 
 export function mediaHeaders(
@@ -118,7 +122,10 @@ export function mediaHeaders(
         "Content-Type": result.contentType,
         "Cache-Control": IMMUTABLE_CACHE_CONTROL,
     });
-    headers.set("Content-Disposition", contentDisposition(prompt));
+    headers.set(
+        "Content-Disposition",
+        contentDisposition(prompt, result.contentType),
+    );
 
     const modelUsed = result.trackingData?.actualModel || safeParams.model;
     const usage = result.trackingData?.usage || { completionImageTokens: 1 };

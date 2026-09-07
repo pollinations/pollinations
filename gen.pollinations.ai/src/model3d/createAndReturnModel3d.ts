@@ -1,4 +1,5 @@
 import type { Usage } from "@shared/registry/registry.ts";
+import { callAssetHarvester } from "./models/assetHarvesterModel.ts";
 import { callRodinFalAPI } from "./models/rodinModel.ts";
 import { callTrellis2Fal } from "./models/trellis2FalModel.ts";
 import { callTrellis2 } from "./models/trellis2Model.ts";
@@ -22,6 +23,8 @@ export async function createAndReturnModel3d(
             return await callTrellis2(safeParams);
         case "trellis-2-fal":
             return await callTrellis2Fal(safeParams);
+        case "nvidia/asset-harvester":
+            return await callAssetHarvester(safeParams);
         case "hyper3d-rodin":
             return await callRodinFalAPI(prompt, safeParams);
         default:

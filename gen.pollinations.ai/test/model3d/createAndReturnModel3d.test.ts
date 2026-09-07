@@ -47,6 +47,7 @@ function baseParams(
 describe("createAndReturnModel3d dispatch", () => {
     it.each([
         ["trellis-2", "api.inferenceport.ai"],
+        ["nvidia/asset-harvester", "api.inferenceport.ai"],
         ["hyper3d-rodin", "queue.fal.run"],
     ])("routes %s to the expected primary provider host", async (model, expectedHost) => {
         const fetchSpy = vi

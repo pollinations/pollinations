@@ -1,0 +1,35 @@
+{
+  "pr_number": 14478,
+  "title": "refactor: reuse the shared account menu",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14478",
+  "merged_at": "2026-09-07T22:44:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reuses the SDK-free AccountMenu composition in Enter and AppUserMenu, removing duplicate markup while preserving Enter authentication and sign-out behavior.\n- Keeps app connection and account data in the SDK-backed AppUserMenu module. Derives /quests and /pollen links from the SDK's Enter URL; all three app callers and the example now use <AppUserMenu />.\n- Uses Connect Pollen, Get free Pollen, Buy Pollen, and Disconnect labels, adds sprout/wallet/link-out icons, and sizes the app dropdown to its contents.\n- Passes all 13 UI tests, UI build, formatting, and React showcase/Playground/Websim typechecks; verifies the connected menu and /pollen destination in the local browser. The commit hook could not find lefthook; these checks ran directly.\n- Addresses the menu portion of #14470. Dashboard authentication changes remain separate in #14255.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "One menu, less pollen",
+    "blurb": "The account menu stopped growing duplicate little branches across the hive. Enter and the apps now share the same tidy composition, with clearer Pollen actions and a dropdown that fits itself.",
+    "summary": "Reused the SDK-free AccountMenu composition across Enter and AppUserMenu, while keeping SDK-backed connection data in AppUserMenu and deriving its /quests and /pollen links from the SDK Enter URL.",
+    "impact": "Users get consistent account menus across Enter, Playground, React showcase, and Websim, including Connect Pollen, Get free Pollen, Buy Pollen, and Disconnect actions with sprout, wallet, and link-out icons.",
+    "keywords": [
+      "account-menu",
+      "ui",
+      "pollen",
+      "quests",
+      "enter",
+      "sdk",
+      "apps"
+    ],
+    "visual_concept": "A cozy shared garden kiosk represents one reusable account-menu component serving several app windows. Polli, wearing a tiny gardener tool belt, tidies one lime-green menu signpost with sprout, wallet, and link-out icons while small connected app screens branch from it; code-plants and flowers reinforce the shared-component/growth metaphor.",
+    "image_prompt": "A cozy pixel art garden hackerspace where Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt while arranging one shared lime green (#ecf874) account-menu signpost for several small retro app monitors; the signpost has chunky sprout, wallet, and link-out icons, surrounded by code-plants and warm flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and pixel-font text: \"ONE MENU\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14478.jpg",
+    "prompt": "A cozy pixel art garden hackerspace where Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener tool belt while arranging one shared lime green (#ecf874) account-menu signpost for several small retro app monitors; the signpost has chunky sprout, wallet, and link-out icons, surrounded by code-plants and warm flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle CRT glow and pixel-font text: \"ONE MENU\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-07T22:45:56.766403+00:00"
+}

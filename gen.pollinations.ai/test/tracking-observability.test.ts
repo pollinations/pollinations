@@ -2711,6 +2711,81 @@ describe("tracking observability", () => {
         expect(after?.tierBalance).toBe(1);
     });
 
+    it("emits the fallback supplier and cost while preserving the customer quote", async () => {
+        await drizzle(env.DB)
+            .update(userTable)
+            .set({ packBalance: 1 })
+            .where(eq(userTable.id, trackingUser.id));
+        const tinybirdRequests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                tinybirdRequests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const consumePollen = vi.fn<(amount: number) => Promise<void>>(
+            async () => {},
+        );
+        const primary = "qwen/qwen3.7-flash";
+        const fallback = "qwen/qwen3.7-flash:alibaba";
+        const ctx = createExecutionContext();
+        const response = await createHeaderApp(
+            {
+                // A stale primary header must not override the settled route.
+                "x-model-used": primary,
+                "x-usage-prompt-text-tokens": "0",
+                "x-usage-completion-text-tokens": "0",
+                "x-usage-prompt-cached-tokens": "1000000",
+                "x-usage-prompt-cache-type": "ephemeral",
+            },
+            trackingUser,
+            200,
+            consumePollen,
+            primary,
+            createStaticEntry(fallback),
+        ).fetch(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({
+                    model: primary,
+                    stream: false,
+                    messages: [{ role: "user", content: "test" }],
+                }),
+            }),
+            {
+                DB: env.DB,
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "debug",
+                LOG_FORMAT: "text",
+                BETTER_AUTH_SECRET: "test_secret",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+
+        expect(response.status).toBe(200);
+        expect(tinybirdRequests).toHaveLength(1);
+        const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
+        expect(event).toMatchObject({
+            modelRequested: primary,
+            resolvedModelRequested: primary,
+            modelUsed: fallback,
+            modelProviderUsed: "alibaba",
+            fallbackUsed: true,
+            isFinal: true,
+            isBilledUsage: true,
+            tokenCountPromptCached: 1_000_000,
+        });
+        expect(event.totalCost).toBeCloseTo(0.02, 12);
+        expect(event.totalPrice).toBeCloseTo(0.04, 12);
+        expect(event.devPrice).toBeCloseTo(0.04, 12);
+        expect(consumePollen).toHaveBeenCalledExactlyOnceWith(0.04);
+    });
+
     it("records fallbackUsed=true for a non-primary target", async () => {
         const event = await captureFallbackEvent({
             "x-fallback-target": "config.targets[1]",

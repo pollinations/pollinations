@@ -3,6 +3,7 @@ import {
     getRegistryModelDefinition,
     resolveModelName,
 } from "@shared/registry/registry.ts";
+import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { describe, expect, it } from "vitest";
 import { availableModels } from "../src/text/availableModels.ts";
 
@@ -27,6 +28,12 @@ const HOST_VENDORS: Record<string, string> = {
 };
 
 describe("text API provider attribution", () => {
+    it("configures every registered text route, including hidden fallbacks, exactly once", () => {
+        expect(availableModels.map((model) => model.name).sort()).toEqual(
+            Object.keys(TEXT_SERVICES).sort(),
+        );
+    });
+
     it.each(
         availableModels.map((model) => [model.name, model] as const),
     )("%s attributes cost to its configured API supplier", (name, model) => {

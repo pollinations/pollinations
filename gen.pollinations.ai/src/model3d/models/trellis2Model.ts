@@ -10,7 +10,7 @@ export const TRELLIS2_INFERENCEPORT_MODEL_ID = "trellis2";
 export async function callTrellis2(
     params: Model3dParams,
 ): Promise<Model3dGenerationResult> {
-    requireImages(params, "trellis-2");
+    requireImages(params, "microsoft/trellis-2");
 
     try {
         const result = await runInferenceport({
@@ -19,7 +19,9 @@ export async function callTrellis2(
             resolution: params.resolution,
         });
         if (!result.glbBase64) {
-            throw new InferenceportError("trellis-2 returned no GLB output");
+            throw new InferenceportError(
+                "microsoft/trellis-2 returned no GLB output",
+            );
         }
         return {
             buffer: base64ToBuffer(result.glbBase64),

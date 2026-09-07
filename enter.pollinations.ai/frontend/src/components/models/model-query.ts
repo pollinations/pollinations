@@ -221,7 +221,7 @@ function getModelPublisher(model: ModelPrice): string | null {
             ? model.name.slice(0, separator).toLowerCase()
             : null;
     }
-    return model.brand?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
+    return model.publisher?.trim().toLowerCase().replace(/\s+/g, "-") ?? null;
 }
 
 function getFilterValues(key: string, models: ModelPrice[]): string[] {
@@ -289,7 +289,13 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
             return getModelPublisher(model) === filter.value;
         }
         case "id":
-            return model.name.toLowerCase() === filter.value;
+            return (
+                model.name.toLowerCase() === filter.value ||
+                (model.aliases?.some(
+                    (alias) => alias.toLowerCase() === filter.value,
+                ) ??
+                    false)
+            );
         case "type":
             return (model.agent ? "agent" : model.type) === filter.value;
         case "capability":
@@ -302,9 +308,10 @@ function matchesFilter(model: ModelPrice, filter: ModelQueryFilter): boolean {
 function getSearchableText(model: ModelPrice): string {
     return [
         model.name,
+        ...(model.aliases ?? []),
         getModelDisplayName(model),
         model.description,
-        model.brand,
+        model.publisher,
         model.baseModel,
         ...(model.inputModalities ?? []),
         ...(model.outputModalities ?? []),

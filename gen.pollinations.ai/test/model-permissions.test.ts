@@ -4,6 +4,7 @@ import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
     getVisibleTextModels,
+    resolveModelName,
 } from "@shared/registry/registry.ts";
 import { filterPermissionsToVisibleModels } from "@shared/registry/visible-model-ids.ts";
 import {
@@ -124,6 +125,106 @@ test("restored auth snapshots normalize aliases once without expanding model or 
     expect(snapshot.apiKey.permissions.models).toEqual([
         "openai",
         "openai/gpt-5.4-nano",
+        "owner/custom",
+    ]);
+});
+
+test("permission readback resolves future names against the current registry", () => {
+    const stored = {
+        models: ["openai-fast", "openai/gpt-5-nano", "owner/custom", "unknown"],
+        account: ["profile"],
+    };
+    const canonical = resolveModelName("openai-fast");
+    expect(
+        filterPermissionsToVisibleModels(
+            stored,
+            new Set([canonical, "owner/custom"]),
+        ),
+    ).toEqual({ models: [canonical, "owner/custom"], account: ["profile"] });
+    expect(stored.models).toEqual([
+        "openai-fast",
+        "openai/gpt-5-nano",
+        "owner/custom",
+        "unknown",
+    ]);
+    expect(
+        filterPermissionsToVisibleModels({ models: [] }, new Set([canonical])),
+    ).toEqual({ models: [] });
+    expect(
+        filterPermissionsToVisibleModels(null, new Set([canonical])),
+    ).toBeNull();
+});
+
+test("future-name stored allowlists filter catalogs without rewriting the database", async () => {
+    const { key, id } = await createTestApiKey({
+        allowedModels: ["flux"],
+        user: { packBalance: 100 },
+    });
+    const permissions = { models: ["black-forest-labs/flux.1-schnell"] };
+    // Simulate the rename migration reaching D1 before old workers are replaced.
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify(permissions) })
+        .where(eq(apikey.id, id));
+    const headers = { Authorization: `Bearer ${key}` };
+    const catalog = await fetchWorker("/image/models", { headers });
+    expect(catalog.status).toBe(200);
+    expect(
+        ((await catalog.json()) as { name: string }[]).map(
+            (model) => model.name,
+        ),
+    ).toEqual([resolveModelName("flux")]);
+    expect(
+        (await fetchWorker("/text/test?model=openai", { headers })).status,
+    ).toBe(403);
+    const stored = await drizzle(env.DB)
+        .select({ permissions: apikey.permissions })
+        .from(apikey)
+        .where(eq(apikey.id, id));
+    expect(JSON.parse(stored[0].permissions ?? "null")).toEqual(permissions);
+});
+
+test("restored auth allows old and future names without expanding account or community scope", async () => {
+    const snapshot = {
+        user: { id: "permission-test", tier: "seed" },
+        apiKey: {
+            id: "test",
+            permissions: {
+                models: ["openai-fast", "openai/gpt-5-nano", "owner/custom"],
+                account: ["profile"],
+            },
+        },
+    };
+    const app = new Hono<AuthEnv>();
+    app.use("*", authFromSnapshot(snapshot));
+    app.get("/:model", (c) => {
+        const requested = c.req.param("model");
+        let resolved = requested;
+        try {
+            resolved = resolveModelName(requested);
+        } catch {
+            /* Community ID. */
+        }
+        c.set("model", { requested, resolved });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+    for (const model of ["openai-fast", "openai/gpt-5-nano", "owner/custom"]) {
+        const response = await app.request(`/${encodeURIComponent(model)}`);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            models: [resolveModelName("openai-fast"), "owner/custom"],
+            account: ["profile"],
+        });
+    }
+    for (const model of ["other/custom", "flux"]) {
+        expect(
+            (await app.request(`/${encodeURIComponent(model)}`)).status,
+        ).toBe(403);
+    }
+    expect(snapshot.apiKey.permissions.models).toEqual([
+        "openai-fast",
+        "openai/gpt-5-nano",
         "owner/custom",
     ]);
 });

@@ -33,7 +33,7 @@ const PIPE_CONTRACTS: Record<string, PipeContract> = {
         numbers: ["amount"],
         enums: { kind: ["transaction", "opening_balance"] },
     },
-    economics_compute_ledger_api: {
+    economics_vendor_ledger_api: {
         strings: [
             "entry_id",
             "source",

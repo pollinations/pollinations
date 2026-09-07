@@ -203,7 +203,7 @@ const TABS = [
         source: "vendorLedger",
         label: "Vendor",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
-        pipe: "economics_compute_ledger_api",
+        pipe: "economics_vendor_ledger_api",
         note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
         icon: DatabaseIcon,
         rows: (data) =>

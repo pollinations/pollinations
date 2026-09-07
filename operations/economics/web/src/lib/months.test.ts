@@ -13,7 +13,7 @@ import {
 
 const data: Data = {
     opTransactions: FIXTURES.economics_bank_ledger_api,
-    vendorLedger: FIXTURES.economics_compute_ledger_api,
+    vendorLedger: FIXTURES.economics_vendor_ledger_api,
     opPollen: FIXTURES.economics_pollen_usage_api,
 } as Data;
 

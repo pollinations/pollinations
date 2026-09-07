@@ -144,7 +144,7 @@ export async function loadAll(
             ? fetchPipe<OpTransactionRow>("economics_bank_ledger_api", signal)
             : undefined,
         wanted.has("vendorLedger")
-            ? fetchPipe<VendorLedgerRow>("economics_compute_ledger_api", signal)
+            ? fetchPipe<VendorLedgerRow>("economics_vendor_ledger_api", signal)
             : undefined,
         wanted.has("opPollen")
             ? fetchPipe<OpPollenRow>("economics_pollen_usage_api", signal)

@@ -6,7 +6,7 @@ The app has three operating views:
 
 - **Insights:** Runway, Close, and Balances.
 - **Unit economics:** Vendors, Inference, GPUs, and Revenue Share.
-- **Ledgers:** Bank, Compute & Infra, Pollen, and Revenue Share.
+- **Ledgers:** Bank, Vendor, Pollen, and Revenue Share.
 
 ## Run
 
@@ -31,7 +31,7 @@ and no network calls.
 ## Data Contract
 
 Reads Economics pipes from `enter.pollinations.ai/observability/endpoints/`:
-`economics_bank_ledger_api`, `economics_compute_ledger_api`,
+`economics_bank_ledger_api`, `economics_vendor_ledger_api`,
 `economics_pollen_usage_api`, `economics_revenue_share_api`, and
 `economics_stripe_sales_api`, plus `economics_user_balances_api`. Revenue Share uses a deduplicated event
 materialization so the economic view and its compact source ledger share one

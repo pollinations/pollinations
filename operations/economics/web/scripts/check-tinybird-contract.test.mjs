@@ -122,7 +122,7 @@ test("reports all failing endpoints without reflecting provider response bodies"
             },
         }),
     ).rejects.toThrow(
-        /economics_bank_ledger_api: request failed; economics_compute_ledger_api: HTTP 404; economics_pollen_usage_api: invalid JSON/,
+        /economics_bank_ledger_api: request failed; economics_vendor_ledger_api: HTTP 404; economics_pollen_usage_api: invalid JSON/,
     );
     expect(requested).toEqual(REQUIRED_PIPES);
 });

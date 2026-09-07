@@ -669,7 +669,7 @@ const privateConfig: EconomicsPrivateConfigRow[] = [
 ];
 export const FIXTURES: Record<string, unknown[]> = {
     economics_bank_ledger_api: opTransactions,
-    economics_compute_ledger_api: vendorLedger,
+    economics_vendor_ledger_api: vendorLedger,
     economics_pollen_usage_api: opPollen,
     economics_revenue_share_api: revenueShare,
     economics_stripe_sales_api: stripeSales,

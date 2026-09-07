@@ -3,7 +3,7 @@ import { FIXTURES } from "./fixtures";
 
 const EXPECTED_PIPES = [
     "economics_bank_ledger_api",
-    "economics_compute_ledger_api",
+    "economics_vendor_ledger_api",
     "economics_pollen_usage_api",
     "economics_private_config_api",
     "economics_revenue_share_api",
@@ -58,7 +58,7 @@ describe("fixtures", () => {
     });
 
     it("keeps every unit-economics view populated in the latest closed demo month", () => {
-        const cloud = FIXTURES.economics_compute_ledger_api as Array<{
+        const cloud = FIXTURES.economics_vendor_ledger_api as Array<{
             start: string;
             type: string;
         }>;

@@ -1,59 +1,83 @@
-"""Structural queries over the local clone via CodeGraph.
-
-Grep answers "where does this string appear"; the graph answers "what calls this, what
-does it call, and what breaks if it changes". The difference matters most for impact
-analysis, which reaches files that never mention the symbol at all — grep cannot find
-those no matter how many times it runs.
-
-The graph is a snapshot built by `codegraph index`, so it needs `sync_graph()` whenever
-the clone moves, or answers silently go stale.
-"""
+"""Structural queries over the local clone via the pinned CodeGraph package."""
 
 from __future__ import annotations
 
 import asyncio
 import json
-import logging
+from pathlib import Path
+from typing import TypeAlias
 
-from ..core.config import config
 from . import local_repo
 from .local_repo import REPO_DIR, RepoError
-
-logger = logging.getLogger(__name__)
 
 COMMAND_TIMEOUT_SECONDS = 60
 MAX_RESULTS = 50
 MAX_IMPACT_DEPTH = 4
+APP_DIR = Path(__file__).resolve().parents[2]
+API_HELPER = Path(__file__).with_name("code_graph_api.js")
+CLI_SHIM = APP_DIR / "node_modules" / "@colbymchenry" / "codegraph" / "npm-shim.js"
+JsonData: TypeAlias = dict | list[dict]
 
 
-async def _run_codegraph(*args: str) -> dict:
-    """Run a codegraph subcommand and parse its JSON output."""
-    if not (REPO_DIR / ".codegraph").is_dir():
-        raise RepoError("No code graph built yet — run sync_graph() first.")
-
+async def _run_process(*args: str, timeout: int = COMMAND_TIMEOUT_SECONDS) -> tuple[str, str]:
     proc = await asyncio.create_subprocess_exec(
-        config.code_search.codegraph_binary,
         *args,
         cwd=str(REPO_DIR),
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
     try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=COMMAND_TIMEOUT_SECONDS)
-    except TimeoutError:
-        proc.kill()
-        raise RepoError(f"codegraph timed out after {COMMAND_TIMEOUT_SECONDS}s") from None
-
-    out = stdout.decode("utf-8", "replace").strip()
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
+    except (TimeoutError, asyncio.CancelledError) as error:
+        if proc.returncode is None:
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
+        await proc.communicate()
+        if isinstance(error, asyncio.CancelledError):
+            raise
+        raise RepoError(f"CodeGraph timed out after {timeout}s") from None
+    stderr_text = stderr.decode("utf-8", "replace").strip()
     if proc.returncode != 0:
-        raise RepoError(f"codegraph failed: {stderr.decode('utf-8', 'replace').strip()[:200]}")
-    if not out:
+        raise RepoError(f"CodeGraph failed: {stderr_text[:200]}")
+    return stdout.decode("utf-8", "replace").strip(), stderr_text
+
+
+async def _run_codegraph(*args: str) -> JsonData:
+    """Backward-compatible name for JSON-producing pinned CLI commands."""
+    return await _run_codegraph_json(*args)
+
+
+async def _run_codegraph_json(*args: str) -> JsonData:
+    """Run the locally pinned CLI and parse a JSON-producing command."""
+    if not (REPO_DIR / ".codegraph").is_dir():
+        raise RepoError("No code graph built yet — run sync_graph() first.")
+    if not CLI_SHIM.is_file():
+        raise RepoError("Pinned CodeGraph dependency is not installed.")
+    stdout, _ = await _run_process("node", str(CLI_SHIM), *args)
+    if not stdout:
         return {}
     try:
-        return json.loads(out)
+        return json.loads(stdout)
     except json.JSONDecodeError:
-        # A symbol that isn't in the graph prints a plain-text notice rather than JSON.
-        raise RepoError(out[:200]) from None
+        raise RepoError(stdout[:200]) from None
+
+
+async def _run_graph_api(action: str, identifier: str, depth: int = 1) -> dict:
+    """Resolve and traverse a node through CodeGraph's public exact-ID API."""
+    if not API_HELPER.is_file():
+        raise RepoError("CodeGraph API helper is unavailable.")
+    stdout, _ = await _run_process("node", str(API_HELPER), action, identifier, str(depth))
+    try:
+        data = json.loads(stdout)
+    except json.JSONDecodeError:
+        raise RepoError("CodeGraph API returned invalid JSON") from None
+    return data if isinstance(data, dict) else {}
+
+
+def _as_dict(data: JsonData) -> dict:
+    return data if isinstance(data, dict) else {}
 
 
 def _format_nodes(nodes: list[dict], limit: int) -> list[dict]:
@@ -74,7 +98,7 @@ def _format_nodes(nodes: list[dict], limit: int) -> list[dict]:
 
 
 async def graph_status() -> dict:
-    data = await _run_codegraph("status", "--json")
+    data = _as_dict(await _run_codegraph("status", "--json"))
     repo = await local_repo.repo_status()
     changes = data.get("pendingChanges") or {}
     pending = sum(int(changes.get(key, 0)) for key in ("added", "modified", "removed"))
@@ -92,10 +116,14 @@ async def graph_status() -> dict:
 
 
 async def symbols(query: str, *, limit: int = 20) -> dict:
+    """Fuzzy symbol discovery; use a returned stable ID for traversal."""
     limit = max(1, min(limit, MAX_RESULTS))
     data = await _run_codegraph("query", query, "--json", "--limit", str(limit))
     status = await graph_status()
-    results = _format_nodes([item.get("node", item) for item in data], limit)
+    items = data if isinstance(data, list) else []
+    nodes = [item.get("node", item) for item in items if isinstance(item, dict)]
+    exact = [node for node in nodes if query in (node.get("id"), node.get("name"), node.get("qualifiedName"))]
+    results = _format_nodes(exact or nodes, limit)
     return {
         "query": query,
         "relation": "symbols",
@@ -106,78 +134,47 @@ async def symbols(query: str, *, limit: int = 20) -> dict:
     }
 
 
-async def callers(symbol: str, *, limit: int = 20) -> dict:
-    """Which functions call `symbol`."""
-    limit = max(1, min(limit, MAX_RESULTS))
-    data = await _run_codegraph("callers", symbol, "--json", "--limit", str(limit))
+async def _relationship(action: str, symbol: str, *, limit: int, depth: int = 1) -> dict:
+    data = await _run_graph_api(action, symbol, depth)
+    target = data.get("target", {})
+    target_id = target.get("id")
+    if not isinstance(target_id, str):
+        raise RepoError("CodeGraph API did not return a stable target ID.")
     status = await graph_status()
-    found = _format_nodes(data.get("callers", []), limit)
+    nodes = data.get("nodes", [])
+    if action == "impact":
+        nodes = [node for node in nodes if node.get("id") != target_id]
+    results = _format_nodes(nodes, limit)
     return {
-        "symbol": symbol,
-        "relation": "callers",
+        "symbol": target.get("qualifiedName") or target_id,
+        "symbol_id": target_id,
+        "relation": action,
         "revision": status["revision"],
         "fresh": status["fresh"],
-        "count": len(found),
-        "results": found,
-        "message": f"{len(found)} caller(s) of {symbol}" if found else f"No callers found for {symbol}",
+        "depth": data.get("depth") if action == "impact" else None,
+        "count": len(results),
+        "results": results,
     }
+
+
+async def callers(symbol: str, *, limit: int = 20) -> dict:
+    return await _relationship("callers", symbol, limit=max(1, min(limit, MAX_RESULTS)))
 
 
 async def callees(symbol: str, *, limit: int = 20) -> dict:
-    """Which functions `symbol` calls."""
-    limit = max(1, min(limit, MAX_RESULTS))
-    data = await _run_codegraph("callees", symbol, "--json", "--limit", str(limit))
-    status = await graph_status()
-    found = _format_nodes(data.get("callees", []), limit)
-    return {
-        "symbol": symbol,
-        "relation": "callees",
-        "revision": status["revision"],
-        "fresh": status["fresh"],
-        "count": len(found),
-        "results": found,
-        "message": f"{symbol} calls {len(found)} symbol(s)" if found else f"No callees found for {symbol}",
-    }
+    return await _relationship("callees", symbol, limit=max(1, min(limit, MAX_RESULTS)))
 
 
 async def impact(symbol: str, *, depth: int = 2) -> dict:
-    """Everything transitively affected by changing `symbol`."""
     depth = max(1, min(depth, MAX_IMPACT_DEPTH))
-    data = await _run_codegraph("impact", symbol, "--json", "--depth", str(depth))
-    status = await graph_status()
-    affected = _format_nodes(data.get("affected", []), MAX_RESULTS)
-    return {
-        "symbol": symbol,
-        "relation": "impact",
-        "revision": status["revision"],
-        "fresh": status["fresh"],
-        "depth": data.get("depth", depth),
-        "count": len(affected),
-        "results": affected,
-        "message": (
-            f"{len(affected)} symbol(s) affected by changing {symbol} (depth {depth}). "
-            "Includes files that never name the symbol directly."
-        ),
-    }
+    return await _relationship("impact", symbol, limit=MAX_RESULTS, depth=depth)
 
 
 async def sync_graph() -> dict:
-    """Bring the graph up to date with the clone. Cheap enough to run on every merge."""
+    """Build or synchronize the graph with the same pinned CLI package."""
+    if not CLI_SHIM.is_file():
+        raise RepoError("Pinned CodeGraph dependency is not installed.")
     graph_exists = (REPO_DIR / ".codegraph").is_dir()
-    args = ("sync", "--quiet") if graph_exists else ("init", ".")
-
-    proc = await asyncio.create_subprocess_exec(
-        config.code_search.codegraph_binary,
-        *args,
-        cwd=str(REPO_DIR),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        _, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
-    except TimeoutError:
-        proc.kill()
-        raise RepoError("codegraph sync timed out") from None
-    if proc.returncode != 0:
-        raise RepoError(f"codegraph {args[0]} failed: {stderr.decode('utf-8', 'replace').strip()[:200]}")
+    args = ("sync", "--quiet") if graph_exists else ("init", ".", "--yes")
+    await _run_process("node", str(CLI_SHIM), *args, timeout=300)
     return {"action": args[0], "ok": True}

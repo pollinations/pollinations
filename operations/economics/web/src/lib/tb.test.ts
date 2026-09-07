@@ -1,7 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { FIXTURES, PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import type { OpPollenRow } from "../types";
-import { canonicalPollenRows, loadAll, validatePipeRows } from "./tb";
+import {
+    canonicalPollenRows,
+    canonicalVendor,
+    loadAll,
+    validatePipeRows,
+} from "./tb";
 
 afterEach(() => {
     vi.unstubAllGlobals();
@@ -30,41 +35,25 @@ describe("Tinybird pipe contracts", () => {
 });
 
 describe("loadAll", () => {
-    it("preserves provider ledger model labels while normalizing vendors", async () => {
-        const rows = ["claude-opus-4.5", "claude-opus-4.6", "nova"].map(
-            (model) => ({
-                ...(FIXTURES.economics_compute_ledger_api[0] as Record<
-                    string,
-                    unknown
-                >),
-                vendor: "bedrock",
-                model,
-            }),
+    it("loads only the sources a view needs and does not invent absent datasets", async () => {
+        const fetch = vi.fn(() =>
+            Promise.resolve(
+                Response.json({ data: FIXTURES.economics_bank_ledger_api }),
+            ),
         );
-        vi.stubGlobal(
-            "fetch",
-            vi.fn((input: RequestInfo | URL) => {
-                const pipe = decodeURIComponent(
-                    String(input).split("/").at(-1) ?? "",
-                );
-                return Promise.resolve(
-                    Response.json({
-                        data:
-                            pipe === "economics_compute_ledger_api"
-                                ? rows
-                                : FIXTURES[pipe],
-                    }),
-                );
-            }),
+        vi.stubGlobal("fetch", fetch);
+        const controller = new AbortController();
+        const result = await loadAll(["opTransactions"], controller.signal);
+        expect(fetch).toHaveBeenCalledExactlyOnceWith(
+            "/api/pipes/economics_bank_ledger_api",
+            { signal: controller.signal },
         );
-
-        const result = await loadAll();
-
-        expect(result.opCloud).toEqual(
-            rows.map((row) => ({ ...row, vendor: "aws" })),
+        expect(result.opTransactions).toHaveLength(
+            FIXTURES.economics_bank_ledger_api.length,
         );
+        expect(result.revenueShare).toBeUndefined();
+        expect(result.privateConfig).toBeUndefined();
     });
-
     it("requires and parses the authenticated private configuration", async () => {
         vi.stubGlobal(
             "fetch",
@@ -79,6 +68,9 @@ describe("loadAll", () => {
         const result = await loadAll();
 
         expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
+        expect(result.userBalances).toEqual(
+            FIXTURES.economics_user_balances_api,
+        );
     });
 
     it("fails closed when the private configuration is absent", async () => {
@@ -102,6 +94,58 @@ describe("loadAll", () => {
         await expect(loadAll()).rejects.toThrow(
             "economics_private_config_api: expected one row, received 0",
         );
+    });
+
+    it("fails closed when the D1 user snapshot is empty", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const pipe = decodeURIComponent(
+                    String(input).split("/").at(-1) ?? "",
+                );
+                return Promise.resolve(
+                    Response.json({
+                        data:
+                            pipe === "economics_user_balances_api"
+                                ? [
+                                      {
+                                          users: 0,
+                                          paid_users: 0,
+                                          quest_users: 0,
+                                          paid_balance: 0,
+                                          quest_balance: 0,
+                                          synced_at: "1970-01-01 00:00:00",
+                                      },
+                                  ]
+                                : FIXTURES[pipe],
+                    }),
+                );
+            }),
+        );
+
+        await expect(loadAll()).rejects.toThrow(
+            "economics_user_balances_api: expected one populated D1 snapshot row",
+        );
+    });
+});
+
+describe("canonicalVendor", () => {
+    it("normalizes the Vast Pollen alias", () => {
+        expect(canonicalVendor("vast")).toBe("vast.ai");
+    });
+
+    it("joins Bedrock usage to AWS billing", () => {
+        expect(canonicalVendor("bedrock")).toBe("aws");
+        expect(canonicalVendor("aws-bedrock")).toBe("aws");
+    });
+
+    it("joins account-specific aliases to their provider", () => {
+        expect(canonicalVendor("azure-2")).toBe("azure");
+        expect(canonicalVendor("vastai")).toBe("vast.ai");
+    });
+
+    it("leaves canonical vendors unchanged", () => {
+        expect(canonicalVendor("openai")).toBe("openai");
     });
 });
 
@@ -127,19 +171,7 @@ describe("canonicalPollenRows", () => {
         ...overrides,
     });
 
-    it("preserves historical model IDs when current routing aliases overlap", () => {
-        const rows = canonicalPollenRows([
-            pollen("bedrock", { model: "claude-opus-4.5" }),
-            pollen("aws", { model: "claude-opus-4.6", requests_paid: 20 }),
-        ]);
-
-        expect(rows).toEqual([
-            pollen("aws", { model: "claude-opus-4.5" }),
-            pollen("aws", { model: "claude-opus-4.6", requests_paid: 20 }),
-        ]);
-    });
-
-    it("aggregates provider aliases for the same recorded model", () => {
+    it("aggregates aliases after canonicalization", () => {
         const [row] = canonicalPollenRows([
             pollen("aws"),
             pollen("bedrock", { cost_paid: 10, requests_paid: 20 }),
@@ -154,21 +186,21 @@ describe("canonicalPollenRows", () => {
         });
     });
 
-    it("keeps metered model aliases separate", () => {
+    it("re-attributes reviewed Pollen rows to the vendor whose bill carried them", () => {
+        // gptimage was tagged azure-2 (Pointflyer) through April 2026 while its
+        // gpt-image-1-mini deployments were billed on our own subscription.
         const rows = canonicalPollenRows([
-            pollen("aws", { model: "nova" }),
-            pollen("aws", {
-                model: "amazon/nova-2-lite-v1",
-                requests_paid: 20,
-            }),
+            pollen("pointsflyer", { month: "2026-02", model: "gptimage" }),
+            pollen("pointsflyer", { month: "2026-02", model: "openai" }),
+            pollen("pointsflyer", { month: "2026-05", model: "gptimage" }),
         ]);
 
-        expect(rows).toEqual([
-            pollen("aws", {
-                model: "amazon/nova-2-lite-v1",
-                requests_paid: 20,
-            }),
-            pollen("aws", { model: "nova" }),
+        expect(
+            rows.map((row) => `${row.month}|${row.vendor}|${row.model}`),
+        ).toEqual([
+            "2026-05|pointsflyer|gptimage",
+            "2026-02|azure|gptimage",
+            "2026-02|pointsflyer|openai",
         ]);
     });
 

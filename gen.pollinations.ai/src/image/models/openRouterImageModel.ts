@@ -60,7 +60,7 @@ type GeminiImageConfig = {
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
-    nanobanana: {
+    "google/gemini-2.5-flash-image": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 3,
@@ -68,7 +68,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "none",
         reasoning: false,
     },
-    "nanobanana-2": {
+    "google/gemini-3.1-flash-image": {
         upstreamModel: "google/gemini-3.1-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -76,7 +76,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: true,
     },
-    "nanobanana-2-openrouter-ai-studio": {
+    "google/gemini-3.1-flash-image:openrouter:ai-studio": {
         upstreamModel: "google/gemini-3.1-flash-image",
         provider: "google-ai-studio",
         maxReferenceImages: 14,
@@ -84,7 +84,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: true,
     },
-    "nanobanana-2-lite": {
+    "google/gemini-3.1-flash-lite-image": {
         upstreamModel: "google/gemini-3.1-flash-lite-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -92,7 +92,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "1K",
         reasoning: true,
     },
-    "nanobanana-pro": {
+    "google/gemini-3-pro-image": {
         upstreamModel: "google/gemini-3-pro-image",
         provider: "google-ai-studio/global",
         maxReferenceImages: 14,
@@ -100,7 +100,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: false,
     },
-    "nanobanana-pro-openrouter-vertex": {
+    "google/gemini-3-pro-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3-pro-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -412,7 +412,7 @@ export async function callOpenRouterSeedreamProAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "seedream-pro",
+            actualModel: "bytedance/seedream-4.5",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -470,7 +470,7 @@ export async function callOpenRouterGrokImagineProAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "grok-imagine-pro",
+            actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
                 ...(referenceImage ? { promptImageTokens: 1 } : {}),
                 completionImageTokens: 1,
@@ -532,7 +532,7 @@ export async function callOpenRouterGrokImagineImage2API(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "grok-imagine-image-2.0",
+            actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
                 ...(inputReferences.length > 0
                     ? { promptImageTokens: inputReferences.length }
@@ -718,7 +718,7 @@ export async function callOpenRouterRecraftVectorAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "recraft-v4.1-vector",
+            actualModel: "recraft/recraft-v4.1-vector",
             // OpenRouter bills this endpoint a fixed $0.08 per output image.
             usage: { completionImageTokens: 1 },
         },

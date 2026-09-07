@@ -1,26 +1,9 @@
-import { createElement } from "react";
-import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
-    BalancesTab,
     depletionTone,
     isActiveBalanceRow,
     needsBalanceAttention,
 } from "./CreditsTab";
-
-describe("BalancesTab", () => {
-    it("keeps provider access links without a collection-method column", () => {
-        const html = renderToStaticMarkup(
-            createElement(BalancesTab, { data: {} }),
-        );
-
-        expect(html).not.toContain("Collection");
-        expect(html).toContain(">Access<");
-        expect(html).toContain(
-            'href="https://platform.claude.com/settings/billing"',
-        );
-    });
-});
 
 describe("isActiveBalanceRow", () => {
     it("uses the provider lifecycle rather than its remaining balance", () => {
@@ -42,7 +25,7 @@ describe("needsBalanceAttention", () => {
             needsBalanceAttention({
                 active: true,
                 balanceTracking: true,
-                balanceStatus: "partial",
+                balanceStatus: "stale",
             }),
         ).toBe(true);
         expect(

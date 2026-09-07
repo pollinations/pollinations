@@ -23,7 +23,7 @@ Collection steps:
    cash/prepaid in `paid`, promotional credit in `credit`, and zero when the
    wallet is exhausted. The dashboard's historical deposits, spend, or usage
    totals are not balances.
-3. Save the raw screenshot, export, invoice, or receipt to `data/inbox/`.
+3. Save the raw screenshot, export, invoice, or receipt to `<collection-dir>/evidence/`.
 4. Use this skill to extract or reconcile the evidence.
 
 Known traps:

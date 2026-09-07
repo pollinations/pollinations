@@ -30,14 +30,44 @@ Collection steps:
 2. Prefer `usage.cost.total_cost` from saved Sonar responses when available;
    otherwise use the Economics meter and show its source.
 3. Ask the operator for dashboard evidence when balance, auto-top-up, or grant
-   status matters. Save evidence to `data/inbox/`.
+   status matters. Save evidence to `<collection-dir>/evidence/`.
 4. For a closed month, open **Invoice history** and download the original PDF.
    The invoice subtotal is the authoritative provider total and its SKU lines
    are the strongest model/request/token detail.
 5. Use this skill to extract or reconcile it.
-6. For model attribution, query `economics_pollen_usage_api` and retain paid + quest request
-   counts and provider-cost estimates by month/model. For closed months, use
-   those rows as proportions only when the provider invoice total is stronger.
+6. For model attribution, retain Paid/Quest usage from
+   `economics_pollen_usage_api` separately. Join exact provider lines through
+   the reviewed registry; never distribute an invoice total by Pollen ratios.
+
+## Verified — 2026-09-05
+
+- The console's own JSON route gives model and SKU detail with daily buckets,
+  but only for the trailing month; export it in the first days of each month.
+  Authenticated browser session (elliot@myceli.ai), read-only:
+
+  ```
+  GET https://console.perplexity.ai/rest/pplx-api/v2/groups/81749045/usage-analytics?time_bucket=day&time_range=past_month&version=2.18&source=default
+  ```
+
+  `time_range` accepts only `past_day`, `past_week`, `past_month`,
+  `year_to_date`; `year_to_date` requires `time_bucket=week` (Thursday-start
+  buckets); `start`/`end` parameters are ignored. Meters: `api_requests`
+  (per model and `search_context_size`), `input_tokens`, `output_tokens`.
+  Sum the daily `meter_event_summaries` for the UTC calendar month and save
+  the raw JSON to `<collection-dir>/evidence/perplexity/` and Drive.
+- Days that have already left the trailing-month window cannot be recovered
+  at daily grain; a weekly bucket that straddles a month boundary cannot be
+  split. Record what is exact and flag the rest; do not fill it from Pollen.
+- No public usage or billing API exists; the console routes are limited to
+  `usage-analytics`, `invoices` (credit purchases) and a Stripe portal session.
+
+- Closed months in the current billing group produce a monthly invoice in the
+  `RC9JSEWU-` series (period runs from the last day of the previous month);
+  its lines carry model, SKU (requests by search context size, input, output,
+  citation and reasoning tokens) and amount. Book one row per line with the
+  model as the label and the SKU as `resource_sku` (`api_requests high`,
+  `api_requests low`, `input_tokens`, `output_tokens`, …) so the same labels
+  serve the console analytics rows.
 
 Known traps:
 
@@ -47,9 +77,8 @@ Known traps:
   account.
 - Current balance is a snapshot, not historical usage.
 - Do not maintain a local balance cache or forecast from the partial month.
-- A credit purchase invoice is not model usage. On 2026-08-19, the dashboard
-  showed a $62 paid invoice for the user's $50-plus-tax tier purchase; keep it
-  in cash evidence and do not add it to `economics_compute_ledger` usage.
+- A credit purchase invoice is cash evidence, not model usage; do not add the
+  purchase to `economics_vendor_ledger` usage.
 - Perplexity per-request search fees were absent from the retained Pollen meter
   until commit `0aa5fb55ef6030493fd4884f209d17fb58737b04` shipped on
   2026-07-03. January–June provider/Pollen drift is therefore historical
@@ -62,8 +91,7 @@ Known traps:
   series from January through 2026-03-26. Reconcile full-year usage from both
   invoice series; do not compare the current-group YTD card with January–July
   invoices as though they had the same scope.
-- As of 2026-08-21, the dashboard showed $1,564.41 remaining, tier 1, and auto
-  reload disabled. Keep future balance checks timestamped because usage is live.
+- Timestamp each balance check and record auto-reload settings in its evidence.
 
 Official reference:
 

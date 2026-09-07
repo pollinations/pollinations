@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import {
     gpuResourceRows,
     gpuResourceSummary,
@@ -10,11 +10,11 @@ import {
 
 const baseData: Data = {
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
 };
 
-function cloud(overrides: Partial<OpCloudRow>): OpCloudRow {
+function cloud(overrides: Partial<VendorLedgerRow>): VendorLedgerRow {
     return {
         entry_id: "cloud-test",
         source: "api",
@@ -62,7 +62,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "vast.ai",
                         entry_id: "gpu",
@@ -117,7 +117,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "vast.ai",
                         entry_id: "gpu",
@@ -161,7 +161,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         entry_id: "runpod-storage",
                         resource_id: "_storage",
@@ -194,7 +194,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "runpod",
                         resource_id: "pod-1",
@@ -221,7 +221,7 @@ describe("gpuResourceRows", () => {
         const rows = gpuResourceRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({ paid: -100 }),
                     cloud({
                         entry_id: "refund",
@@ -260,11 +260,14 @@ describe("gpuResourceRows", () => {
             paid: 5,
         });
 
-        for (const opCloud of [
+        for (const vendorLedger of [
             [usage, adjustment],
             [adjustment, usage],
         ]) {
-            const rows = gpuResourceRows({ ...baseData, opCloud }, "2026-06");
+            const rows = gpuResourceRows(
+                { ...baseData, vendorLedger },
+                "2026-06",
+            );
             expect(rows).toHaveLength(1);
             expect(rows[0]).toMatchObject({
                 kind: "gpu",
@@ -280,7 +283,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "runpod",
                         resource_id: "runpod-zimage",
@@ -344,7 +347,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "lambda",
                         resource_id: "shared-gpu",
@@ -388,7 +391,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "vast.ai",
                         resource_id: "failed-start",
@@ -421,7 +424,7 @@ describe("gpuWorkloadRows", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [cloud({ paid: -50, credit: -100 })],
+                vendorLedger: [cloud({ paid: -50, credit: -100 })],
                 opPollen: [pollen({})],
             },
             "2026-06",
@@ -446,7 +449,7 @@ describe("gpuWorkloadSummary", () => {
         const rows = gpuWorkloadRows(
             {
                 ...baseData,
-                opCloud: [cloud({ paid: -50, credit: -100 })],
+                vendorLedger: [cloud({ paid: -50, credit: -100 })],
                 opPollen: [pollen({})],
             },
             "2026-06",

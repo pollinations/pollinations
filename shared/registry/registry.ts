@@ -150,6 +150,9 @@ export type BillingAdjustment = {
 
 export type ModelDefinition = {
     aliases: string[];
+    /** Supplier attributed to this route's cost, not its publisher or API protocol.
+     * Must resolve in the Economics vendor registry; CI checks all bundled routes.
+     */
     provider: string;
     /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
     perUserRpm?: number | null;
@@ -157,7 +160,8 @@ export type ModelDefinition = {
     fallbacks?: string[];
     /** Input safety features callers cannot disable for this model. */
     requiredSafetyFeatures?: SafetyFeature[];
-    brand: string;
+    /** Human-readable model publisher, e.g. "OpenAI" or "Anthropic". */
+    publisher: string;
     category: Category;
     cost: CostDefinition;
     // Named alternate rate sheets, merged over `cost` when selectCostVariant

@@ -8,6 +8,7 @@ import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ModelSelector } from "../components/play/ModelSelector";
+import { findModelById } from "../components/play/model-selection";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
 import { PageCard } from "../components/ui/page-card";
@@ -22,7 +23,6 @@ function PlayPage() {
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
-        imageModels,
         allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
@@ -54,15 +54,13 @@ function PlayPage() {
         );
     }, [registryModels]);
 
-    const currentModel = allModels.find((m) => m.id === selectedModel);
+    const currentModel = findModelById(allModels, selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;
     const isAudioModel =
         !isVideoModel &&
         (!!currentModel?.hasAudioOutput || currentModel?.type === "audio");
     const isImageModel =
-        !isVideoModel &&
-        !isAudioModel &&
-        imageModels.some((m) => m.id === selectedModel);
+        !isVideoModel && !isAudioModel && currentModel?.type === "image";
     const promptPlaceholder = isVideoModel
         ? pageCopy.videoPlaceholder
         : isAudioModel
@@ -106,7 +104,7 @@ function PlayPage() {
 
                 <ModelSelector
                     models={allModels}
-                    selectedModel={selectedModel}
+                    selectedModel={currentModel?.id ?? selectedModel}
                     onSelectModel={setSelectedModel}
                     allowedImageModelIds={allowedImageModelIds}
                     allowedTextModelIds={allowedTextModelIds}

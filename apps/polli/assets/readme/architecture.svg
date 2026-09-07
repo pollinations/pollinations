@@ -1,0 +1,102 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Polli runtime architecture</title>
+  <desc id="desc">Discord mentions, optional signed GitHub webhooks, and a local HTTP API enter Polli. Polli applies identity and permission filters, builds conversational context, calls Pollinations text generation, and dispatches allowed tools to Discord, GitHub, web, code search, and visual rendering services.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0l10 5-10 5z" class="arrow"/>
+    </marker>
+  </defs>
+  <style>
+    .bg { fill: #f8fafc; }
+    .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; }
+    .core { fill: #eef2ff; stroke: #6366f1; stroke-width: 2.5; }
+    .ink { fill: #172033; }
+    .muted { fill: #526077; }
+    .edge { fill: none; stroke: #64748b; stroke-width: 2.5; marker-end: url(#arrow); }
+    .arrow { fill: #64748b; }
+    .dash { stroke-dasharray: 7 7; }
+    .heading { font: 700 20px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .body { font: 500 15px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .small { font: 500 13px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0f172a; }
+      .panel { fill: #172033; stroke: #475569; }
+      .core { fill: #252852; stroke: #a5b4fc; }
+      .ink { fill: #f1f5f9; }
+      .muted { fill: #bdc7d8; }
+      .edge { stroke: #94a3b8; }
+      .arrow { fill: #94a3b8; }
+    }
+  </style>
+  <rect class="bg" width="1200" height="620" rx="24"/>
+
+  <text class="heading ink" x="70" y="54">Entry points</text>
+  <g transform="translate(70 78)">
+    <rect class="panel" width="250" height="82" rx="14"/>
+    <text class="heading ink" x="22" y="34">Discord</text>
+    <text class="body muted" x="22" y="60">mention, reply, or Assist</text>
+  </g>
+  <g transform="translate(70 190)">
+    <rect class="panel" width="250" height="94" rx="14"/>
+    <text class="heading ink" x="22" y="34">GitHub webhook</text>
+    <text class="body muted" x="22" y="60">signed + repo allowlisted</text>
+    <text class="small muted" x="22" y="80">disabled by default</text>
+  </g>
+  <g transform="translate(70 314)">
+    <rect class="panel" width="250" height="94" rx="14"/>
+    <text class="heading ink" x="22" y="34">HTTP API</text>
+    <text class="body muted" x="22" y="60">chat + responses</text>
+    <text class="small muted" x="22" y="80">short-lived ag_ bearer token</text>
+  </g>
+
+  <path class="edge" d="M320 119H416V170"/>
+  <path class="edge dash" d="M320 237H416V215"/>
+  <path class="edge" d="M320 361H416V260"/>
+
+  <g transform="translate(416 100)">
+    <rect class="core" width="368" height="242" rx="20"/>
+    <text class="heading ink" x="28" y="42">Polli orchestration</text>
+    <rect class="panel" x="28" y="66" width="312" height="46" rx="10"/>
+    <text class="body ink" x="47" y="95">identity + permission filters</text>
+    <rect class="panel" x="28" y="126" width="312" height="46" rx="10"/>
+    <text class="body ink" x="47" y="155">thread / request context</text>
+    <rect class="panel" x="28" y="186" width="312" height="34" rx="10"/>
+    <text class="body ink" x="47" y="209">tool loop + response formatting</text>
+  </g>
+
+  <path class="edge" d="M600 342v77"/>
+  <g transform="translate(416 419)">
+    <rect class="panel" width="368" height="96" rx="16"/>
+    <text class="heading ink" x="28" y="38">Pollinations text API</text>
+    <text class="body muted" x="28" y="66">configured model; optional fallback</text>
+  </g>
+
+  <path class="edge" d="M784 221h80"/>
+  <text class="heading ink" x="864" y="54">Permission-dependent tools</text>
+  <g transform="translate(864 78)">
+    <rect class="panel" width="266" height="82" rx="14"/>
+    <text class="heading ink" x="22" y="34">GitHub</text>
+    <text class="body muted" x="22" y="60">issues, PRs, projects, overview</text>
+  </g>
+  <g transform="translate(864 178)">
+    <rect class="panel" width="266" height="82" rx="14"/>
+    <text class="heading ink" x="22" y="34">Discord search</text>
+    <text class="body muted" x="22" y="60">caller-visible channel scope</text>
+  </g>
+  <g transform="translate(864 278)">
+    <rect class="panel" width="266" height="82" rx="14"/>
+    <text class="heading ink" x="22" y="34">Code intelligence</text>
+    <text class="body muted" x="22" y="60">local clone; optional Vectorize</text>
+  </g>
+  <g transform="translate(864 378)">
+    <rect class="panel" width="266" height="82" rx="14"/>
+    <text class="heading ink" x="22" y="34">Web + visuals</text>
+    <text class="body muted" x="22" y="60">search, scrape, render</text>
+  </g>
+
+  <path class="edge" d="M600 515v47h264"/>
+  <g transform="translate(70 536)">
+    <rect class="panel" width="714" height="50" rx="12"/>
+    <text class="body ink" x="22" y="31">State: short-lived in-memory sessions · persistent issue-subscription SQLite records</text>
+  </g>
+</svg>

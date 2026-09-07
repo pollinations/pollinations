@@ -1,10 +1,6 @@
 import { getAuthHeaders } from "./authUtils.js";
 import { buildUrl } from "./coreUtils.js";
 
-const CACHE_TTL_MS = 5 * 60 * 1000;
-
-const cache = new Map();
-
 const MODEL_PATHS = {
     all: "/models",
     text: "/text/models",
@@ -15,32 +11,21 @@ const MODEL_PATHS = {
     "3d": "/3d/models",
 };
 
-async function fetchCached(url, context) {
-    const isRequestScoped = Boolean(context?.http?.authInfo?.token);
-    const hit = cache.get(url);
-    if (!isRequestScoped && hit && Date.now() - hit.at < CACHE_TTL_MS) {
-        return hit.data;
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+async function fetchModels(url, context) {
     const response = await fetch(url, {
         headers: getAuthHeaders(context),
-        signal: controller.signal,
-    }).finally(() => clearTimeout(timeoutId));
+    });
 
     if (!response.ok) {
         throw new Error(`Failed to fetch model registry: ${response.status}`);
     }
-    const data = await response.json();
-    if (!isRequestScoped) cache.set(url, { data, at: Date.now() });
-    return data;
+    return response.json();
 }
 
 export function getModels(type = "all", context, community) {
     const path = MODEL_PATHS[type];
     if (!path) throw new Error(`Unknown model type: ${type}`);
-    return fetchCached(buildUrl(path, { community }), context);
+    return fetchModels(buildUrl(path, { community }), context);
 }
 
 export const getImageModels = (context) => getModels("image", context);

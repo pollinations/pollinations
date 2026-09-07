@@ -79,7 +79,7 @@ export async function callZImageFalAPI(
         isMature: result.has_nsfw_concepts?.[0] ?? false,
         isChild: false,
         trackingData: {
-            actualModel: "zimage-fal",
+            actualModel: "tongyi-mai/z-image-turbo:fal",
             usage: { completionImageTokens: 1 },
         },
     };

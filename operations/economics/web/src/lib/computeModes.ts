@@ -1,5 +1,5 @@
-import type { Data, OpCloudRow } from "../types";
-import { canonicalProvider } from "./providerRegistry";
+import type { Data, VendorLedgerRow } from "../types";
+import { canonicalVendor } from "./tb";
 
 export type ComputeMode =
     | "managed-inference"
@@ -19,7 +19,7 @@ export type ComputeModeIndex = {
 };
 
 function providerMonthKey(month: string, provider: string): string {
-    return `${month}|${canonicalProvider(provider)}`;
+    return `${month}|${canonicalVendor(provider)}`;
 }
 
 function classifiedMode(types: ReadonlySet<string>): ComputeMode {
@@ -31,23 +31,28 @@ function classifiedMode(types: ReadonlySet<string>): ComputeMode {
     return "unclassified";
 }
 
-function carriesComputeCost(row: OpCloudRow) {
+function carriesComputeCost(row: VendorLedgerRow) {
     return Math.abs(Number(row.paid)) > 0.0001 || Number(row.credit) < -0.0001;
 }
 
 export function computeModeIndex(data: Data): ComputeModeIndex {
     const typesByProviderMonth = new Map<string, Set<string>>();
 
-    for (const row of data.opCloud ?? []) {
+    for (const row of data.vendorLedger ?? []) {
         const type = row.type.trim().toLowerCase();
         if (type !== "inference" && type !== "gpu") continue;
         if (!carriesComputeCost(row)) continue;
         const month = row.start.slice(0, 7);
-        const key = providerMonthKey(month, row.vendor);
-        const monthTypes = typesByProviderMonth.get(key);
+        const provider = canonicalVendor(row.vendor);
+        const monthTypes = typesByProviderMonth.get(
+            providerMonthKey(month, provider),
+        );
         if (monthTypes) monthTypes.add(type);
         else {
-            typesByProviderMonth.set(key, new Set([type]));
+            typesByProviderMonth.set(
+                providerMonthKey(month, provider),
+                new Set([type]),
+            );
         }
     }
 
@@ -75,8 +80,9 @@ export function providerMonthComputeMode(
     month: string,
     provider: string,
 ): ComputeMode {
+    const canonical = canonicalVendor(provider);
     return (
-        index.modeByProviderMonth.get(providerMonthKey(month, provider)) ??
+        index.modeByProviderMonth.get(providerMonthKey(month, canonical)) ??
         "unclassified"
     );
 }
@@ -88,14 +94,14 @@ export function providerMonthComputeMode(
 export function directDeliveryData(data: Data): Data {
     return {
         ...data,
-        opCloud: (data.opCloud ?? []).filter(
+        vendorLedger: (data.vendorLedger ?? []).filter(
             (row) =>
                 (row.type.trim().toLowerCase() === "inference" ||
                     row.type.trim().toLowerCase() === "gpu") &&
-                canonicalProvider(row.vendor) !== "community",
+                canonicalVendor(row.vendor) !== "community",
         ),
         opPollen: (data.opPollen ?? []).filter(
-            (row) => canonicalProvider(row.vendor) !== "community",
+            (row) => canonicalVendor(row.vendor) !== "community",
         ),
     };
 }
@@ -109,14 +115,14 @@ export function managedInferenceData(
 ): Data {
     return {
         ...data,
-        opCloud: (data.opCloud ?? []).filter(
+        vendorLedger: (data.vendorLedger ?? []).filter(
             (row) =>
                 row.type.trim().toLowerCase() === "inference" &&
-                canonicalProvider(row.vendor) !== "community",
+                canonicalVendor(row.vendor) !== "community",
         ),
         opPollen: (data.opPollen ?? []).filter(
             (row) =>
-                canonicalProvider(row.vendor) !== "community" &&
+                canonicalVendor(row.vendor) !== "community" &&
                 providerMonthComputeMode(index, row.month, row.vendor) ===
                     "managed-inference",
         ),

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14555,
+  "title": "feat: allow account-scoped media upload IDs",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14555",
+  "merged_at": "2026-09-07T23:10:05Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds optional `id` to `POST /upload` for multipart and JSON; omitting it preserves random IDs.\n- Scopes custom IDs to the account, uses atomic create-only R2 writes, and returns `409` on duplicates. Gallery entries reserve their IDs until deleted.\n- Serves custom-ID files with `no-store`. Adds no endpoints, database tables, or cache-backend changes.\n- Clarifies create-only retries, non-deletable unlisted files, read-refreshed expiry, partial-failure conflicts, and public URL discoverability in Scalar/OpenAPI and the media guide.\n- Independent adversarial/simplicity reviews completed by Codex and Fable 5.1; no demonstrated blockers after contract clarification. All 39 media tests pass. Biome and Worker bundle check pass; existing catalog/Drizzle typecheck errors remain.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Name your own pixels",
+    "blurb": "Media uploads can now carry an ID you choose, scoped neatly to your account. The hive will guard that name until its gallery entry is gone.",
+    "summary": "POST /upload now accepts an optional account-scoped custom id for multipart and JSON uploads, using atomic create-only R2 writes and returning 409 when an existing file or gallery entry already reserves that id.",
+    "impact": "Developers can create stable, memorable media URLs without coordinating random upload IDs, while duplicate custom IDs are safely rejected and custom-ID responses use no-store caching.",
+    "keywords": [
+      "media",
+      "uploads",
+      "custom-ids",
+      "R2",
+      "API",
+      "OpenAPI"
+    ],
+    "visual_concept": "Depict custom media IDs as hand-written labels being attached to glowing pixel image jars in a cozy garden archive. Polli acts as the careful librarian, placing a unique label on one jar while a small retro terminal displays a friendly 409 duplicate sign beside an already-reserved jar; include vines and code-plants to show account-scoped organization.",
+    "image_prompt": "A cozy pixel-art garden archive where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and carefully labels glowing media jars with unique account tags; a retro terminal beside one already-labeled jar shows small pixel text “409”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14555.jpg",
+    "prompt": "A cozy pixel-art garden archive where the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings wears tiny librarian glasses and carefully labels glowing media jars with unique account tags; a retro terminal beside one already-labeled jar shows small pixel text “409”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-07T23:11:07.858075+00:00"
+}

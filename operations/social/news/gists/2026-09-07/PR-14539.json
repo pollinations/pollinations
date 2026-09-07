@@ -1,0 +1,33 @@
+{
+  "pr_number": 14539,
+  "title": "docs: clarify routine secret re-uploads",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14539",
+  "merged_at": "2026-09-07T11:39:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Treats unchanged secret re-uploads in existing deployment workflows as routine deployment\n- Keeps explicit approval for actual credential lifecycle changes\n- Prevents diagnostic searches from scanning credential stores or agent/session archives",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Secrets, watered carefully",
+    "blurb": "The deployment garden now distinguishes routine secret re-uploads from actual credential changes. Diagnostic tools also know which cupboards to leave closed.",
+    "summary": "Updated AGENTS.md so unchanged secret re-uploads in existing deployment workflows are treated as routine, while credential lifecycle changes still require explicit approval and diagnostic searches skip credential stores and agent/session archives.",
+    "impact": "Contributors get clearer deployment guidance, with routine secret handling unblocked and sensitive credential or session stores kept out of diagnostic scans.",
+    "keywords": [
+      "documentation",
+      "secrets",
+      "deployment",
+      "credentials",
+      "agent-guidance"
+    ],
+    "visual_concept": "Polli wears a tiny gardener hat and carefully waters labeled secret-seed packets already planted in a cozy deployment garden, while a locked credential cabinet and archive boxes sit safely behind a small 'DO NOT SCAN' sign. The scene represents routine handling of unchanged deployment secrets alongside deliberate protection for real credential changes and private archives.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat and gently watering established code-plants labeled 'DEPLOY' from lime green (#ecf874) pots, while a locked dark-purple credential cabinet and archive boxes rest behind a small pixel sign reading 'SKIP SCAN'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the safe little garden."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14539.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush and light blue wings, wearing a tiny gardener hat and gently watering established code-plants labeled 'DEPLOY' from lime green (#ecf874) pots, while a locked dark-purple credential cabinet and archive boxes rest behind a small pixel sign reading 'SKIP SCAN'. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with flowers and vines around the safe little garden."
+  },
+  "generated_at": "2026-09-07T11:41:02.846217+00:00"
+}

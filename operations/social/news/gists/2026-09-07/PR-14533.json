@@ -1,0 +1,34 @@
+{
+  "pr_number": 14533,
+  "title": "fix: redact credentials from request log context",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14533",
+  "merged_at": "2026-09-07T10:18:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Redacts credential query parameters before adding the public URL to shared request-log context.\n- Keeps non-sensitive query parameters and the shared Gen/Enter logger unchanged.\n- Covers local, test, staging, and production logging; 9 focused tests and both service typechecks pass.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The logs learned discretion",
+    "blurb": "Polli put a tiny privacy curtain over sensitive URL details before they reach the shared logbook. The useful bits still make it through; the secrets get to stay secret.",
+    "summary": "Shared request logging now removes credential query parameters from public URLs while preserving non-sensitive parameters across local, test, staging, and production environments.",
+    "impact": "Developers retain useful request context in the Gen and Enter logs with sensitive URL details kept out of shared log entries.",
+    "keywords": [
+      "logging",
+      "privacy",
+      "middleware",
+      "credentials",
+      "gen",
+      "enter"
+    ],
+    "visual_concept": "Depict Polli as a careful librarian or log keeper at a cozy terminal, placing a small privacy curtain over a sealed secret note before filing a request-log scroll; harmless query-symbol flowers remain visible. The scene represents preserving useful diagnostics while protecting sensitive details.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian visor, carefully filing a glowing request-log scroll at a retro terminal while placing a warm cream privacy curtain over a sealed little secret note; safe query-symbol flowers and code-plants remain visible nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'LOG SAFE'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14533.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny librarian visor, carefully filing a glowing request-log scroll at a retro terminal while placing a warm cream privacy curtain over a sealed little secret note; safe query-symbol flowers and code-plants remain visible nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes, subtle pixel-font text: 'LOG SAFE'."
+  },
+  "generated_at": "2026-09-07T10:19:14.086038+00:00"
+}

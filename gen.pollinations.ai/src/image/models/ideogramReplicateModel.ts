@@ -75,17 +75,17 @@ const IDEOGRAM_VARIANTS: Record<
     "ideogram-v4-turbo": {
         replicateModel: "ideogram-ai/ideogram-v4-turbo",
         displayName: "Ideogram 4.0 Turbo",
-        trackingLabel: "ideogram-v4-turbo",
+        trackingLabel: "ideogram-ai/ideogram-v4-turbo",
     },
     "ideogram-v4-balanced": {
         replicateModel: "ideogram-ai/ideogram-v4-balanced",
         displayName: "Ideogram 4.0 Balanced",
-        trackingLabel: "ideogram-v4-balanced",
+        trackingLabel: "ideogram-ai/ideogram-v4-balanced",
     },
     "ideogram-v4-quality": {
         replicateModel: "ideogram-ai/ideogram-v4-quality",
         displayName: "Ideogram 4.0 Quality",
-        trackingLabel: "ideogram-v4-quality",
+        trackingLabel: "ideogram-ai/ideogram-v4-quality",
     },
 };
 

@@ -3,7 +3,7 @@ import { mergeFallbacks } from "./merge-fallbacks";
 import { MODEL3D_FALLBACKS } from "./model3d-fallbacks";
 import type { ModelDefinition } from "./registry";
 
-export const DEFAULT_3D_MODEL = "trellis-2" as const;
+export const DEFAULT_3D_MODEL = "microsoft/trellis-2" as const;
 
 export type Model3dName = keyof typeof MODEL3D_SERVICES;
 
@@ -12,15 +12,15 @@ export type Model3dName = keyof typeof MODEL3D_SERVICES;
 // new UsageType, which would require new fields in
 // shared/schemas/generation-event.ts and a Tinybird schema change.
 const MODEL3D_BASE_SERVICES = {
-    "trellis-2": {
+    "microsoft/trellis-2": {
         aliases: [
             "trellis-2-low",
             "trellis-2-medium",
             "trellis-2-high",
-            "microsoft/trellis-2",
+            "trellis-2",
         ],
         provider: "inferenceport",
-        brand: "Microsoft",
+        publisher: "Microsoft",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
         priceMultiplier: 1,
@@ -72,10 +72,10 @@ const MODEL3D_BASE_SERVICES = {
         outputModalities: ["3d"],
         maxReferenceImages: 1,
     },
-    "hyper3d-rodin": {
-        aliases: ["rodin", "hyper3d/rodin-2.5"],
+    "hyper3d/rodin-2.5": {
+        aliases: ["rodin", "hyper3d-rodin"],
         provider: "fal",
-        brand: "Deemos",
+        publisher: "Hyper3D",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
         priceMultiplier: 1,

@@ -67,10 +67,12 @@ const ChatInput = ({
 
     const activeModelId = getActiveModelId();
     const activeModelsMap = getActiveModelsMap();
-    const modelLabel =
-        activeModelsMap?.[activeModelId]?.name ||
-        activeModelId ||
-        "Select model";
+    const activeModel =
+        activeModelsMap?.[activeModelId] ||
+        Object.values(activeModelsMap).find((model) =>
+            model.aliases?.includes(activeModelId),
+        );
+    const modelLabel = activeModel?.name || activeModelId || "Select model";
 
     // Auto-resize textarea
     useEffect(() => {
@@ -521,7 +523,7 @@ const ChatInput = ({
                                                     <button
                                                         key={k}
                                                         type="button"
-                                                        className={`model-option-compact ${activeModelId === k ? "active" : ""}`}
+                                                        className={`model-option-compact ${(activeModel?.id || activeModelId) === k ? "active" : ""}`}
                                                         onClick={() =>
                                                             handleModelSelect(k)
                                                         }
@@ -529,7 +531,8 @@ const ChatInput = ({
                                                         <span className="model-option-name">
                                                             {m.name || k}
                                                         </span>
-                                                        {activeModelId ===
+                                                        {(activeModel?.id ||
+                                                            activeModelId) ===
                                                             k && (
                                                             <svg
                                                                 className="model-option-check"

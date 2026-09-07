@@ -1004,7 +1004,7 @@ export function communityModelDefinition(
         aliases,
         provider: "community",
         perUserRpm: endpoint.perUserRpm,
-        brand: providerName || "Community",
+        publisher: providerName || "Community",
         brandUrl: providerName && providerUrl ? providerUrl : undefined,
         category: spec.category,
         cost: communityPriceDefinition(endpoint, modality, imagePricing),

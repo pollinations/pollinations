@@ -476,9 +476,9 @@ export function ModulesPage() {
                                                     {modelId(selectedModel)}
                                                 </CatalogValue>
                                             </CatalogTableRow>
-                                            <CatalogTableRow label="Brand">
+                                            <CatalogTableRow label="Publisher">
                                                 <CatalogValue>
-                                                    {selectedModel.brand ??
+                                                    {selectedModel.publisher ??
                                                         "Not listed"}
                                                 </CatalogValue>
                                             </CatalogTableRow>

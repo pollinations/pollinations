@@ -54,6 +54,102 @@ const data = (over: Partial<Data>): Data => ({
 });
 
 describe("modelReconcileRows", () => {
+    it("joins both rollout spellings to reviewed costs without rewriting earlier months", () => {
+        const canonical = "openai/gpt-image-1-mini";
+        const input = data({
+            opPollen: [
+                pollen({
+                    month: "2026-08",
+                    vendor: "azure",
+                    model: "gptimage",
+                    price_paid: 7,
+                    cost_paid: 7,
+                }),
+                pollen({
+                    month: "2026-09",
+                    vendor: "azure",
+                    model: "gptimage",
+                    price_paid: 10,
+                    cost_paid: 10,
+                }),
+                pollen({
+                    month: "2026-09",
+                    vendor: "azure",
+                    model: canonical,
+                    price_paid: 5,
+                    cost_paid: 5,
+                }),
+            ],
+            vendorLedger: [
+                cloud({
+                    vendor: "azure",
+                    model: "gptimage",
+                    paid: -7,
+                    start: "2026-08-01 00:00:00",
+                    end: "2026-09-01 00:00:00",
+                }),
+                cloud({
+                    vendor: "azure",
+                    model: "gptimage",
+                    paid: -15,
+                    start: "2026-09-01 00:00:00",
+                    end: "2026-10-01 00:00:00",
+                }),
+            ],
+        });
+        const original = JSON.stringify(input);
+        const rows = modelReconcileRows(input);
+        const august = rows.find((row) => row.month === "2026-08");
+        const september = rows.find((row) => row.month === "2026-09");
+        if (!august || !september)
+            throw new Error("Missing reconciliation month");
+        expect(august.models.map((row) => row.model)).toEqual(["gptimage"]);
+        expect(september.models.map((row) => row.model)).toEqual([canonical]);
+        expect(september.providerCashUsd).toBe(15);
+        expect(september.paidPollenUsd).toBe(15);
+        expect(september.models[0].status).toBe("allocated");
+        expect(JSON.stringify(input)).toBe(original);
+    });
+
+    it("maps provider labels for canonical-only usage without absorbing unknown aliases", () => {
+        const [row] = modelReconcileRows(
+            data({
+                opPollen: [
+                    pollen({
+                        vendor: "alibaba",
+                        model: "qwen/qwen-image",
+                        cost_paid: 4,
+                        price_paid: 4,
+                    }),
+                    pollen({
+                        vendor: "alibaba",
+                        model: "owner/unmapped",
+                        cost_paid: 2,
+                        price_paid: 2,
+                    }),
+                ],
+                vendorLedger: [
+                    cloud({
+                        vendor: "alibaba",
+                        model: "qwen-image-plus",
+                        paid: -4,
+                    }),
+                ],
+            }),
+        );
+        expect(
+            row.models.find((model) => model.model === "qwen/qwen-image")
+                ?.status,
+        ).toBe("allocated");
+        expect(
+            row.models.find((model) => model.model === "owner/unmapped")
+                ?.status,
+        ).toBe("unallocated");
+        expect(
+            row.models.find((model) => model.model === "owner/unmapped")
+                ?.providerUsageUsd,
+        ).toBeNull();
+    });
     it("splits paid and Quest traffic through cash and credit funding", () => {
         const [row] = modelReconcileRows(
             data({
@@ -307,9 +403,7 @@ describe("modelReconcileRows", () => {
     it("does not join a registry alias that is not a reviewed label", () => {
         const [row] = modelReconcileRows(
             data({
-                vendorLedger: [
-                    cloud({ model: "anthropic/claude-opus-5", paid: -50 }),
-                ],
+                vendorLedger: [cloud({ model: "claude-opus", paid: -50 })],
                 opPollen: [pollen({ model: "claude-large", cost_paid: 45 })],
             }),
         );

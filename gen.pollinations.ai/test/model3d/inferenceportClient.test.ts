@@ -5,6 +5,7 @@ import {
     InferenceportError,
     runInferenceport,
 } from "../../src/model3d/models/inferenceportClient.ts";
+import { toUpstreamError } from "../../src/model3d/modelUtils.ts";
 
 beforeEach(() => {
     syncModel3dEnvironment({
@@ -29,6 +30,26 @@ const jobResponse = (
 ) => Response.json({ job_id: "job_123", status, ...data });
 
 describe("runInferenceport", () => {
+    it("retains the full provider body through the public error adapter", async () => {
+        const body = JSON.stringify({
+            detail: "x".repeat(20000),
+            token: "test-only",
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(body, { status: 429 }),
+        );
+        const error = await runInferenceport({
+            model: "trellis2",
+            imageUrls: ["https://example.com/a.jpg"],
+        }).catch(toUpstreamError);
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+        expect(error).toHaveProperty("message", expect.stringContaining(body));
+    });
+
     it("submits an async job and polls for the GLB", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")

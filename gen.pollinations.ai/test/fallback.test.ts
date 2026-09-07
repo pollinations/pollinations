@@ -1,5 +1,5 @@
 import { communityEndpointPrices } from "@shared/community-endpoints.ts";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMAGE_SERVICES } from "@shared/registry/image.ts";
 import {
     getVisibleImageModels,
@@ -364,10 +364,16 @@ describe("isRetryableFallbackError", () => {
         expect(isRetryableFallbackError(textFailure(503))).toBe(true);
         expect(isRetryableFallbackError(textFailure(524))).toBe(true);
         expect(isRetryableFallbackError(textFailure(599))).toBe(true);
-        expect(isRetryableFallbackError(new HttpError("down", 500))).toBe(true);
-        expect(isRetryableFallbackError(new HttpError("no quota", 402))).toBe(
-            true,
-        );
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(500, { message: "down" }),
+            ),
+        ).toBe(true);
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(402, { message: "no quota" }),
+            ),
+        ).toBe(true);
     });
 
     it("uses the wrapper status for a malformed successful response", () => {
@@ -400,9 +406,11 @@ describe("isRetryableFallbackError", () => {
 
     it("does not fail over on caller errors", () => {
         expect(isRetryableFallbackError(textFailure(400))).toBe(false);
-        expect(isRetryableFallbackError(new HttpError("bad input", 422))).toBe(
-            false,
-        );
+        expect(
+            isRetryableFallbackError(
+                UpstreamError.fromProvider(422, { message: "bad input" }),
+            ),
+        ).toBe(false);
     });
 
     // Verified against staging: a community endpoint whose host is unreachable
@@ -463,8 +471,11 @@ describe("isRetryableFallbackError", () => {
         ).toBe(false);
         expect(
             isRetryableFallbackError(
-                new HttpError("upstream failed", 502, {
-                    body: JSON.stringify({ detail: "flagged as sensitive" }),
+                UpstreamError.fromProvider(502, {
+                    message: "upstream failed",
+                    responseBody: JSON.stringify({
+                        detail: "flagged as sensitive",
+                    }),
                 }),
             ),
         ).toBe(false);
@@ -577,7 +588,9 @@ describe("withModelFallback", () => {
 
     it("supports a route-specific fallback policy", async () => {
         const attempt = vi.fn(async () => "served");
-        attempt.mockRejectedValueOnce(new HttpError("ambiguous timeout", 524));
+        attempt.mockRejectedValueOnce(
+            UpstreamError.fromProvider(524, { message: "ambiguous timeout" }),
+        );
         const shouldFallback = vi.fn(() => false);
 
         await expect(
@@ -604,7 +617,9 @@ describe("withModelFallback", () => {
             fallbackEntries: primary.fallbackEntries,
         });
         const attempt = vi.fn(async () => "served");
-        attempt.mockRejectedValueOnce(new HttpError("gateway timeout", 524));
+        attempt.mockRejectedValueOnce(
+            UpstreamError.fromProvider(524, { message: "gateway timeout" }),
+        );
 
         await expect(withModelFallback(candidates, attempt)).resolves.toEqual({
             result: "served",

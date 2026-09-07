@@ -194,9 +194,8 @@ async def convert_latex_to_png(latex: str) -> tuple[io.BytesIO | str, bool]:
 # TABLE HANDLER
 # =============================================================================
 #
-# Visual spec — calibrated for Discord dark mode at 150 DPI:
-#   FONT_SIZE=20, PADDING=14, HEADER_HEIGHT=56, MIN_CELL_HEIGHT=44
-#   row banding #313338 / #383a40, border #40444b
+# Visual spec — premium editorial table for Discord dark mode:
+#   generous rhythm, accent header, subtle dividers, and 240 DPI output.
 # Inline markdown spans (**bold**, *italic*, `code`) render via per-span
 # drawing — measure each segment's width with its own font, dispatch the
 # correct font weight at draw time, accumulate x-offset.
@@ -205,25 +204,32 @@ URL_REGEX = r"\[([^\]]+)\]\((https?://[^\s\)]+)\)|(https?://[^\s\)]+)"
 COLUMN_MAX_WIDTH = 900
 
 # Style constants
-FONT_SIZE = 20
-HEADER_FONT_SIZE = 22
-PADDING = 14
-HEADER_HEIGHT = 56
-MIN_CELL_HEIGHT = 44
+FONT_SIZE = 21
+HEADER_FONT_SIZE = 20
+PADDING = 20
+HEADER_HEIGHT = 64
+MIN_CELL_HEIGHT = 52
 LINE_HEIGHT_RATIO = 1.35
-OUTPUT_DPI = 150
+OUTPUT_DPI = 240
+TABLE_MARGIN = 24
+ACCENT_HEIGHT = 4
+CORNER_RADIUS = 18
+TITLE_FONT_SIZE = 30
+TITLE_HEIGHT = 64
 
-# Discord dark palette (hex → RGB tuples)
 PALETTE = {
-    "bg": (49, 51, 56),  # #313338  base background
-    "header_bg": (43, 45, 49),  # #2b2d31  header strip
-    "row_bg": (49, 51, 56),  # #313338  row even
-    "row_bg_alt": (56, 58, 64),  # #383a40  row odd (banding)
-    "border": (64, 68, 75),  # #40444b  cell borders
-    "text": (220, 221, 222),  # #dcddde  body text
-    "header_text": (255, 255, 255),  # #ffffff  header text
-    "code_bg": (32, 34, 37),  # #202225  inline-code chip
-    "code_text": (220, 221, 222),  # #dcddde  code text
+    "canvas": (13, 13, 13),
+    "bg": (26, 26, 25),
+    "header_bg": (31, 35, 43),
+    "row_bg": (26, 26, 25),
+    "row_bg_alt": (31, 31, 30),
+    "border": (56, 56, 53),
+    "accent": (57, 135, 229),
+    "text": (235, 235, 232),
+    "muted": (195, 194, 183),
+    "header_text": (255, 255, 255),
+    "code_bg": (39, 39, 37),
+    "code_text": (235, 235, 232),
 }
 
 # Variable-font weight axis values
@@ -444,6 +450,7 @@ async def render_table_image(
     headers: list[str],
     rows: list[list[str]],
     alignments: list[str] | None = None,
+    title: str = "",
 ) -> tuple[io.BytesIO | None, list[str]]:
     """Render a markdown-aware table as a PNG. Returns (buffer, extracted_links)."""
     if not PIL_AVAILABLE:
@@ -468,6 +475,7 @@ async def render_table_image(
 
         body_fonts = _build_fontset(FONT_SIZE)
         header_fonts = _build_fontset(HEADER_FONT_SIZE)
+        title_fonts = _build_fontset(TITLE_FONT_SIZE)
         # Headers default-bold even without explicit `**...**` markup.
         header_fonts["regular"] = header_fonts["bold"]
         header_fonts["italic"] = header_fonts["bold_italic"]
@@ -475,46 +483,69 @@ async def render_table_image(
         line_height = int(FONT_SIZE * LINE_HEIGHT_RATIO)
         col_widths = _calc_col_widths(sanitized_headers, sanitized_rows, header_fonts, body_fonts, PADDING)
 
-        total_width = sum(col_widths) + len(col_widths) + 1
-        total_height = HEADER_HEIGHT + len(sanitized_rows) * MIN_CELL_HEIGHT + len(sanitized_rows) + 1
+        table_width = sum(col_widths) + len(col_widths) - 1
+        table_height = HEADER_HEIGHT + len(sanitized_rows) * MIN_CELL_HEIGHT + len(sanitized_rows)
+        title_height = TITLE_HEIGHT if title.strip() else 0
+        total_width = table_width + TABLE_MARGIN * 2
+        total_height = table_height + TABLE_MARGIN * 2 + ACCENT_HEIGHT + title_height
 
-        img = Image.new("RGB", (total_width, total_height), PALETTE["bg"])
+        img = Image.new("RGB", (total_width, total_height), PALETTE["canvas"])
 
         with Pilmoji(img) as pilmoji:
             draw = ImageDraw.Draw(img)
-
-            # Header row
-            x = 0
-            for header, width in zip(sanitized_headers, col_widths):
-                draw.rectangle(
-                    [x, 0, x + width, HEADER_HEIGHT],
-                    fill=PALETTE["header_bg"],
-                    outline=PALETTE["border"],
+            left = TABLE_MARGIN
+            if title_height:
+                title_fonts["regular"] = title_fonts["bold"]
+                pilmoji.text(
+                    (left, TABLE_MARGIN + TITLE_HEIGHT // 2),
+                    title.strip(),
+                    font=title_fonts["regular"],
+                    fill=PALETTE["header_text"],
+                    anchor="lm",
                 )
+            accent_top = TABLE_MARGIN + title_height
+            top = accent_top + ACCENT_HEIGHT
+            right = left + table_width
+            bottom = top + table_height
+            draw.rounded_rectangle(
+                [left, top, right, bottom],
+                radius=CORNER_RADIUS,
+                fill=PALETTE["bg"],
+                outline=PALETTE["border"],
+                width=1,
+            )
+            draw.rounded_rectangle(
+                [left, accent_top, right, accent_top + ACCENT_HEIGHT * 2],
+                radius=ACCENT_HEIGHT,
+                fill=PALETTE["accent"],
+            )
+            draw.rectangle(
+                [left, top, right, top + HEADER_HEIGHT],
+                fill=PALETTE["header_bg"],
+            )
+
+            x = left
+            for header, width in zip(sanitized_headers, col_widths):
                 segs = _parse_inline(str(header))
                 _draw_segment_run(
                     pilmoji,
                     draw,
                     segs,
                     x + PADDING,
-                    HEADER_HEIGHT // 2,
+                    top + HEADER_HEIGHT // 2,
                     header_fonts,
                     PALETTE["header_text"],
                     int(HEADER_FONT_SIZE * LINE_HEIGHT_RATIO),
                 )
                 x += width + 1
 
-            # Data rows
-            y = HEADER_HEIGHT + 1
+            y = top + HEADER_HEIGHT + 1
             for row_idx, row in enumerate(sanitized_rows):
                 row_bg = PALETTE["row_bg_alt"] if row_idx % 2 else PALETTE["row_bg"]
-                x = 0
+                draw.rectangle([left, y, right, y + MIN_CELL_HEIGHT], fill=row_bg)
+                draw.line([left, y, right, y], fill=PALETTE["border"], width=1)
+                x = left
                 for cell, width in zip(row, col_widths):
-                    draw.rectangle(
-                        [x, y, x + width, y + MIN_CELL_HEIGHT],
-                        fill=row_bg,
-                        outline=PALETTE["border"],
-                    )
                     segs = _parse_inline(str(cell))
                     _draw_segment_run(
                         pilmoji,

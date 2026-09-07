@@ -145,7 +145,7 @@ describe("fetchFromWeightedServer", () => {
             fetchFromWeightedServer("flux", { method: "POST" }),
         ).rejects.toMatchObject({
             status: 503,
-            upstreamUrl: "https://w2/generate",
+            requestUrl: new URL("https://w2/generate"),
         });
         expect(calls).toEqual(["https://w1/generate", "https://w2/generate"]);
         expect(errorLog).toHaveBeenCalledOnce();

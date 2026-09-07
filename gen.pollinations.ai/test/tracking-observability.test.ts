@@ -58,6 +58,7 @@ import {
     type GenerationModelEntry,
     resetGenerationModelRegistryCache,
 } from "../src/model-registry.ts";
+import { requireChatStreamUsage } from "../src/text/chat/usage.ts";
 import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 afterEach(() => {
@@ -705,7 +706,7 @@ describe("tracking observability", () => {
         ).toBe(false);
     });
 
-    it("does not bill a successful text response when upstream usage is missing", async () => {
+    it("records missing text usage as an unbilled 502 and logs its body", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -749,14 +750,21 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
+        expect(tinybirdRequests).toHaveLength(2);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            responseStatus: 200,
+            responseStatus: 502,
             isBilledUsage: false,
             totalCost: 0,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
+        });
+        expect(await tinybirdRequests[1].json()).toMatchObject({
+            status: 502,
+            upstream_status: 200,
+            error_code: "usage_missing",
+            error_class: "UpstreamUsageError",
+            upstream_body: expect.any(String),
         });
         expect(event.modelUsed).toBe("openai");
         expect(consumePollen).toHaveBeenCalledWith(0);
@@ -1080,7 +1088,7 @@ describe("tracking observability", () => {
         });
         expect(consumePollen).toHaveBeenCalledWith(expect.any(Number));
     });
-    it("still bills a flat request fee when token usage is missing", async () => {
+    it("records a flat provider fee but does not bill text with missing usage", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1125,14 +1133,15 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
+        expect(tinybirdRequests).toHaveLength(2);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            responseStatus: 200,
-            isBilledUsage: true,
+            responseStatus: 502,
+            isBilledUsage: false,
             modelUsed: "perplexity-fast",
             totalCost: 0.005,
-            totalPrice: 0.005,
+            totalPrice: 0,
+            errorResponseCode: "usage_missing",
             adjustmentCosts: {
                 "perplexity.sonar_low.search_request.v1": 0.005,
             },
@@ -1140,10 +1149,10 @@ describe("tracking observability", () => {
                 "perplexity.sonar_low.search_request.v1": 1,
             },
         });
-        expect(consumePollen).toHaveBeenCalledWith(0.005);
+        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
-    it("bills the quoted flat fee when a fallback without adjustments served", async () => {
+    it("does not bill the quoted flat fee when a fallback omitted usage", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
             async (input, init) => {
@@ -1194,14 +1203,16 @@ describe("tracking observability", () => {
 
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            isBilledUsage: true,
+            isBilledUsage: false,
+            responseStatus: 502,
+            errorResponseCode: "usage_missing",
             fallbackUsed: true,
             modelUsed: "openai",
             totalCost: 0,
-            totalPrice: 0.005,
+            totalPrice: 0,
             devPrice: 0.005,
         });
-        expect(consumePollen).toHaveBeenCalledWith(0.005);
+        expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
     it("records a served flat cost without marking a zero-price fallback as billed", async () => {
@@ -2260,7 +2271,8 @@ describe("tracking observability", () => {
         "valid",
         "missing",
         "malformed",
-    ])("settles native community Chat streaming with %s usage and no model metadata", async (usageKind) => {
+        "recovered",
+    ])("settles community Chat with %s usage/delivery and no model metadata", async (usageKind) => {
         const caller = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 10 },
         });
@@ -2322,6 +2334,21 @@ describe("tracking observability", () => {
                                       total_tokens: 15,
                                   },
                               };
+                    if (usageKind === "recovered") {
+                        return Response.json({
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "saved result",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            ...terminal,
+                        });
+                    }
                     return new Response(
                         'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
                             `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
@@ -2339,8 +2366,23 @@ describe("tracking observability", () => {
                 return Response.json({ data: [] });
             },
         );
+        const bindings = withInlineGenerationCoordinator(env);
+        const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
+            bindings.GENERATION_COORDINATOR,
+        );
+        const startAndWait = vi.fn(async (job) => {
+            await getByName("recovery-test").startAndWait(job);
+            throw new Error(
+                "RPC connection lost after cache write and settlement",
+            );
+        });
+        if (usageKind === "recovered") {
+            bindings.GENERATION_COORDINATOR = {
+                getByName: () => ({ startAndWait }),
+            } as unknown as CloudflareBindings["GENERATION_COORDINATOR"];
+        }
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const request = (): Parameters<typeof worker.fetch>[0] =>
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -2349,21 +2391,31 @@ describe("tracking observability", () => {
                 },
                 body: JSON.stringify({
                     model,
-                    stream: true,
+                    stream: usageKind !== "recovered",
                     messages: [{ role: "user", content: "stream usage check" }],
                 }),
-            }),
-            withInlineGenerationCoordinator(env),
-            ctx,
-        );
+            });
+        const response = await worker.fetch(request(), bindings, ctx);
         const body = await response.text();
         await waitOnExecutionContext(ctx);
         expect(response.status, body).toBe(200);
+        if (usageKind === "recovered") {
+            expect(
+                await env.TEXT_BUCKET.head(
+                    startAndWait.mock.calls[0][0].cache.key,
+                ),
+            ).not.toBeNull();
+            const rejoinCtx = createExecutionContext();
+            const rejoined = await worker.fetch(request(), bindings, rejoinCtx);
+            expect(rejoined.headers.get("x-cache")).toBe("HIT");
+            expect(await rejoined.text()).toBe(body);
+            await waitOnExecutionContext(rejoinCtx);
+        }
         expect(upstreamCalls).toBe(1);
         const after = await getUserBalance(db, caller.userId);
         const rows = events.filter((event) => event.modelRequested === model);
         expect(rows).toHaveLength(1);
-        if (usageKind === "valid") {
+        if (usageKind === "valid" || usageKind === "recovered") {
             const expectedPrice = calculateUsageBilling({
                 model,
                 usage: { promptTextTokens: 10, completionTextTokens: 5 },
@@ -2382,6 +2434,14 @@ describe("tracking observability", () => {
                 expectedPrice,
                 9,
             );
+            if (usageKind === "recovered") {
+                expect(startAndWait).toHaveBeenCalledTimes(1);
+                expect(response.headers.get("x-cache")).toBe("HIT");
+                expect(body).toContain("saved result");
+                expect(
+                    events.filter((event) => event.kind === "server_error"),
+                ).toHaveLength(0);
+            }
         } else {
             expect(body).toContain('"error"');
             expect(rows[0]).toMatchObject({
@@ -2630,14 +2690,18 @@ describe("tracking observability", () => {
         await waitOnExecutionContext(ctx);
 
         expect(response.status).toBe(200);
-        expect(tinybirdRequests).toHaveLength(1);
+        expect(tinybirdRequests).toHaveLength(2);
         const event = (await tinybirdRequests[0].json()) as TinybirdEvent;
         expect(event).toMatchObject({
-            responseStatus: 200,
+            responseStatus: 502,
             isBilledUsage: false,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
         });
+        const error = (await tinybirdRequests[1].json()) as {
+            upstream_body: string;
+        };
+        expect(JSON.parse(error.upstream_body)).toHaveProperty("streamEvents");
 
         const [after] = await db
             .select({ tierBalance: userTable.tierBalance })
@@ -2740,7 +2804,7 @@ describe("trackResponse modelUsed", () => {
             candidateFixture(),
         );
         expect(tracking).toMatchObject({
-            responseStatus: 200,
+            responseStatus: 502,
             isBilledUsage: false,
             modelUsed: "openai",
             errorTracking: { errorResponseCode: "usage_missing" },
@@ -2756,6 +2820,7 @@ describe("trackResponse modelUsed", () => {
         );
         expect(tracking.cacheHit).toBe(true);
         expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.responseStatus).toBe(200);
         expect(tracking.modelUsed).toBeUndefined();
     });
 
@@ -2839,6 +2904,52 @@ describe("trackResponse modelUsed", () => {
 });
 
 describe("trackResponse missing usage", () => {
+    it("does not bill earlier usage when the stream subsequently fails validation", async () => {
+        const event = {
+            model: "openai",
+            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
+        };
+        // Usage arrived, but the provider disconnected without [DONE].
+        const upstream = new Blob([
+            `data: ${JSON.stringify(event)}\n\n`,
+        ]).stream();
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(requireChatStreamUsage(upstream), {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
+    });
+
+    it.each([
+        { choices: null },
+        { choices: [{ content_filter_results: "unrecognized metadata" }] },
+        { prompt_filter_results: [{}] },
+    ])("does not mistake valid usage for a failure because of unrelated metadata: %j", async (metadata) => {
+        const event = {
+            model: "openai",
+            ...metadata,
+            usage: { prompt_tokens: 2, completion_tokens: 1, total_tokens: 3 },
+        };
+        const tracking = await trackResponse(
+            "generate.text",
+            requestTrackingFixture(true),
+            new Response(`data: ${JSON.stringify(event)}\n\ndata: [DONE]\n\n`, {
+                headers: { "content-type": "text/event-stream" },
+            }),
+            candidateFixture(),
+        );
+        expect(tracking.responseStatus).toBe(200);
+        expect(tracking.isBilledUsage).toBe(true);
+        expect(tracking.errorTracking).toBeUndefined();
+    });
+
     const emptyStream = () =>
         new Response("data: [DONE]\n\n", {
             headers: { "content-type": "text/event-stream" },
@@ -2859,15 +2970,17 @@ describe("trackResponse missing usage", () => {
         expect(tracking.errorTracking?.errorSource).toBeUndefined();
     });
 
-    it("leaves a model with a knowable flat fee unmarked", async () => {
+    it("retains a knowable provider fee without billing incomplete text", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(true, "perplexity-fast"),
             emptyStream(),
             candidateFixture("perplexity-fast"),
         );
-        expect(tracking.isBilledUsage).toBe(true);
-        expect(tracking.errorTracking).toBeUndefined();
+        expect(tracking.isBilledUsage).toBe(false);
+        expect(tracking.responseStatus).toBe(502);
+        expect(tracking.cost?.totalCost).toBeGreaterThan(0);
+        expect(tracking.errorTracking?.errorResponseCode).toBe("usage_missing");
     });
 });
 

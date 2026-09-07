@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { ensureUpstreamOk, UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import {
     fetchFromWeightedServer,
@@ -246,10 +246,9 @@ export const callSelfHostedServer = async (
 
         if (!response.ok) {
             logError("Error from server. input was", body);
-            throw new HttpError(
-                `Server responded with ${response.status}`,
-                response.status,
-            );
+            throw UpstreamError.fromProvider(response.status, {
+                message: `Server responded with ${response.status}`,
+            });
         }
 
         const jsonResponse = await response.json();
@@ -260,7 +259,9 @@ export const callSelfHostedServer = async (
 
         if (!image) {
             logError("image is null");
-            throw new HttpError("Image server returned no image", 502);
+            throw UpstreamError.fromProvider(502, {
+                message: "Image server returned no image",
+            });
         }
 
         logOps("decoding base64 image");
@@ -521,10 +522,10 @@ const callGPTImageWithEndpoint = async (
 
             if (imageUrls.length === 0) {
                 // Handle errors for missing image
-                throw new HttpError(
-                    "Image URL is required for GPT Image edit mode but was not provided",
-                    400,
-                );
+                throw UpstreamError.fromProvider(400, {
+                    message:
+                        "Image URL is required for GPT Image edit mode but was not provided",
+                });
             }
 
             // Process each image in the array
@@ -575,10 +576,10 @@ const callGPTImageWithEndpoint = async (
                     });
                     formData.append("image[]", imageBlob, `image${extension}`);
                 } catch (error) {
-                    // Preserve HttpError status (e.g. 400 from downloadUserImage);
+                    // Preserve UpstreamError status (e.g. 400 from downloadUserImage);
                     // wrap other errors as generic processing failures.
                     logError(`Error processing image ${i + 1}:`, error.message);
-                    if (error instanceof HttpError) throw error;
+                    if (error instanceof UpstreamError) throw error;
                     throw new Error(
                         `Failed to process image: ${error.message}`,
                     );
@@ -586,7 +587,7 @@ const callGPTImageWithEndpoint = async (
             }
         } catch (error) {
             logError("Error processing image for editing:", error);
-            if (error instanceof HttpError) throw error;
+            if (error instanceof UpstreamError) throw error;
             throw new Error(`Failed to process image: ${error.message}`);
         }
 
@@ -630,16 +631,7 @@ const callGPTImageWithEndpoint = async (
         });
     }
 
-    if (!response.ok) {
-        const errorText = await response.text();
-        // Azure 403 means content/quota block, not client auth. Remap to 502 so
-        // callers see it as an upstream failure.
-        const status =
-            config.provider === "azure" && response.status === 403
-                ? 502
-                : response.status;
-        throw new HttpError(errorText, status, undefined, endpoint);
-    }
+    await ensureUpstreamOk(response, endpoint);
 
     const data = (await response.json()) as {
         data?: Array<{ b64_json?: string }>;
@@ -990,10 +982,10 @@ export async function createAndReturnImageCached(
 
         // Safety check
         if (safeParams.safe && isMature) {
-            throw new HttpError(
-                "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
-                400,
-            );
+            throw UpstreamError.fromProvider(400, {
+                message:
+                    "NSFW content detected. This request cannot be fulfilled when safe mode is enabled.",
+            });
         }
 
         // Prepare metadata

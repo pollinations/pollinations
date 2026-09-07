@@ -470,6 +470,7 @@ class PolliBot(commands.Bot):
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
+        intents.members = True
         super().__init__(command_prefix="!", intents=intents)
         self.issue_notifier = None
         self.webhook_server = None
@@ -612,6 +613,9 @@ class PolliBot(commands.Bot):
             from .search.code_search import close as close_embeddings
 
             await close_embeddings()
+        from .integrations.web_scraper import close_web_scraper
+
+        await close_web_scraper()
         await super().close()
 
     @tasks.loop(minutes=1)
@@ -914,6 +918,19 @@ async def handle_dm_message(message: discord.Message):
     text = message.content.strip().lower()
     user_id = message.author.id
 
+    if text in {"privacy", "privacy policy", "delete data", "delete my data"}:
+        await message.reply(
+            "**Privacy and data requests**\n"
+            "Privacy policy: https://pollinations.ai/privacy\n"
+            "For deletion or correction of your data, email hello@pollinations.ai "
+            "with your Discord user ID and the relevant message or issue links. "
+            "Do not send passwords or API keys.\n"
+            "To remove all issue-notification subscriptions now, DM `unsubscribe all`. "
+            "That command removes subscriptions only; it does not erase Discord messages, "
+            "GitHub content, operational logs or provider-held data."
+        )
+        return
+
     async with message.channel.typing():
         # Subscribe command
         subscribe_match = re.search(r"subscribe\s+(?:to\s+)?#?(\d+)", text)
@@ -954,7 +971,8 @@ async def handle_dm_message(message: discord.Message):
             "• `subscribe #123` - Subscribe to issue updates\n"
             "• `unsubscribe #123` - Unsubscribe from an issue\n"
             "• `unsubscribe all` - Unsubscribe from all issues\n"
-            "• `list subscriptions` - See your subscriptions\n\n"
+            "• `list subscriptions` - See your subscriptions\n"
+            "• `privacy` - Privacy policy and deletion/correction contact\n\n"
             "For other requests, please @mention me in a server channel!"
         )
         await message.reply(help_text)
@@ -1211,7 +1229,45 @@ async def handle_thread_message(
         )
 
 
+_active_conversations: set[int] = set()
+
+
 async def process_message(
+    channel: discord.Thread | discord.TextChannel,
+    user: discord.User | discord.Member,
+    text: str,
+    image_urls: list[str],
+    session: ConversationSession,
+    thread_history: list[dict] | None = None,
+    reply_to: discord.Message | None = None,
+    source_message: discord.Message | None = None,
+    video_urls: list[str] | None = None,
+    file_urls: list[str] | None = None,
+):
+    if channel.id in _active_conversations:
+        await channel.send(
+            "I'm still working on the previous request here. Please wait for that reply before retrying."
+        )
+        return
+    _active_conversations.add(channel.id)
+    try:
+        await _process_message(
+            channel,
+            user,
+            text,
+            image_urls,
+            session,
+            thread_history,
+            reply_to,
+            source_message,
+            video_urls,
+            file_urls,
+        )
+    finally:
+        _active_conversations.discard(channel.id)
+
+
+async def _process_message(
     channel: discord.Thread | discord.TextChannel,
     user: discord.User | discord.Member,
     text: str,
@@ -1247,9 +1303,12 @@ async def process_message(
     if isinstance(channel, discord.Thread):
         context_channel_id = channel.id
         context_thread_id: int | None = channel.id
+        parent_channel_id: int | None = channel.parent_id
     else:
         context_channel_id = channel.id
         context_thread_id = None
+        parent_channel_id = None
+    source_channel_id = source_message.channel.id if source_message else session.channel_id
 
     tool_context = {
         "is_admin": user_is_admin,
@@ -1259,6 +1318,8 @@ async def process_message(
         "reporter": session.original_author_name,
         "channel_id": context_channel_id,
         "thread_id": context_thread_id,
+        "source_channel_id": source_channel_id,
+        "parent_channel_id": parent_channel_id,
         "guild_id": (channel.guild.id if channel.guild else None),
         "user_role_ids": ([r.id for r in user.roles] if isinstance(user, discord.Member) else []),
         # For github_issue create - link back to Discord message
@@ -1349,6 +1410,8 @@ async def process_message(
                 tools=None,  # No tools, just respond
             )
             response_text = retry_result.get("content", "") if retry_result else ""
+            if not response_text and not image_files:
+                response_text = "I couldn't generate a response for this request. Please try again shortly."
 
         if response_text or image_files:
             await send_long_message(

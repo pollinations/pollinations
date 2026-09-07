@@ -233,8 +233,10 @@ async function handleDirectResponse(
         let responseBody = result.response.body;
         let trackingResponse: Response | undefined;
         if (request.stream && responseBody) {
-            const [clientBody, trackingBody] = responseBody.tee();
-            responseBody = requireResponsesStreamUsage(clientBody);
+            // Client and billing must see the same validation errors.
+            const [clientBody, trackingBody] =
+                requireResponsesStreamUsage(responseBody).tee();
+            responseBody = clientBody;
             trackingResponse = new Response(trackingBody, { headers });
         }
         const response = new Response(responseBody, { headers });

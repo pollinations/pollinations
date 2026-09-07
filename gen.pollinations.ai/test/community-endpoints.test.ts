@@ -3170,9 +3170,19 @@ fixtureTest.each(
     },
 );
 
-fixtureTest(
-    "runs managed Responses and Chat through Gen and bills each inner model call once",
-    async () => {
+fixtureTest.each(
+    ["responses", "chat/completions"].flatMap((route) =>
+        [false, true].flatMap((stream) =>
+            ["valid", "missing", "malformed"].map((usageKind) => ({
+                route,
+                stream,
+                usageKind,
+            })),
+        ),
+    ),
+)(
+    "bills managed $route stream=$stream with $usageKind final usage and a paid MCP call",
+    async ({ route, stream, usageKind }) => {
         const ownerGithubUsername = `agent-owner-${crypto.randomUUID().slice(0, 8)}`;
         const modelName = `managed-${crypto.randomUUID().slice(0, 8)}`;
         const agentId = crypto.randomUUID();
@@ -3190,9 +3200,9 @@ fixtureTest(
             baseUrl: PROMPT_AGENT_BASE_URL_PLACEHOLDER,
             upstreamModel: agentId,
             agentConfig: {
-                systemPrompt: "Reply tersely.",
+                systemPrompt: "Search once, then reply tersely.",
                 baseModel: "openai-fast",
-                mcpServers: [],
+                mcpServers: ["exa"],
             },
             createdAt: new Date(),
             updatedAt: new Date(),
@@ -3200,8 +3210,8 @@ fixtureTest(
         resetGenerationModelRegistryCache();
 
         const caller = await createTestApiKey({
-            name: "managed-responses-billing",
-            user: { packBalance: 100 },
+            name: "managed-responses-mcp-billing",
+            user: { tierBalance: 0, packBalance: 100 },
         });
         const balanceBefore = await getUserBalance(db, caller.userId);
         const expectedInnerPrice = calculateUsageBilling({
@@ -3209,23 +3219,91 @@ fixtureTest(
             usage: { promptTextTokens: 10, completionTextTokens: 5 },
             servedBy: getRegistryModelDefinition("openai-fast"),
         }).price.totalPrice;
+        const expectedMcpPrice = 0.007;
         const tinybirdEvents: Record<string, unknown>[] = [];
         const testClientIp = "203.0.113.42";
         const runtimeClientIps: string[] = [];
         let runtimeToken = "";
+        let modelCalls = 0;
+        let mcpCalls = 0;
+
+        // The shared Exa fixture supplies paid tools/call receipts. Give its
+        // handshake the tool schema needed by the real managed-agent loop.
+        const mcpBinding = {
+            async fetch(request: Request): Promise<Response> {
+                if (request.method === "GET")
+                    return new Response(null, { status: 405 });
+                if (request.method === "DELETE")
+                    return new Response(null, { status: 200 });
+                const rpc = (await request.clone().json()) as {
+                    id?: number;
+                    method: string;
+                };
+                if (rpc.method === "initialize")
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: rpc.id,
+                        result: {
+                            protocolVersion: "2025-06-18",
+                            capabilities: { tools: {} },
+                            serverInfo: { name: "exa", version: "1.0.0" },
+                        },
+                    });
+                if (rpc.method === "notifications/initialized")
+                    return new Response(null, { status: 202 });
+                if (rpc.method === "tools/list")
+                    return Response.json({
+                        jsonrpc: "2.0",
+                        id: rpc.id,
+                        result: {
+                            tools: [
+                                {
+                                    name: "web_search_exa",
+                                    inputSchema: {
+                                        type: "object",
+                                        properties: {
+                                            query: { type: "string" },
+                                        },
+                                        required: ["query"],
+                                    },
+                                },
+                            ],
+                        },
+                    });
+                expect(rpc.method).toBe("tools/call");
+                mcpCalls++;
+                return env.EXA_MCP.fetch(request);
+            },
+        } as unknown as typeof env.EXA_MCP;
+        const dispatch = async (request: Request): Promise<Response> => {
+            const ctx = createExecutionContext();
+            const response = await worker.fetch(
+                request,
+                withInlineGenerationCoordinator({
+                    ...env,
+                    EXA_MCP: mcpBinding,
+                }),
+                ctx,
+            );
+            const body = response.body ? await response.arrayBuffer() : null;
+            await waitOnExecutionContext(ctx);
+            return new Response(body, response);
+        };
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input, init) => {
                 const request = new Request(input, init);
                 if (isBillingFetch(request)) {
-                    tinybirdEvents.push(
-                        ...parseIngestedEvents(await request.text()),
-                    );
+                    if (new URL(request.url).pathname === "/v0/events") {
+                        tinybirdEvents.push(
+                            ...parseIngestedEvents(await request.text()),
+                        );
+                    }
                     return Response.json({ data: [] });
                 }
                 if (
-                    request.url ===
-                    "https://gen.pollinations.ai/v1/chat/completions"
+                    new URL(request.url).origin ===
+                    "https://gen.pollinations.ai"
                 ) {
                     runtimeClientIps.push(
                         request.headers.get("x-real-ip") ?? "",
@@ -3234,82 +3312,132 @@ fixtureTest(
                         request.headers
                             .get("authorization")
                             ?.replace(/^Bearer\s+/i, "") ?? "";
-                    return fetchGen(request);
+                    return dispatch(request);
                 }
                 if (isChatCompletionsRequest(request)) {
-                    return Response.json({
-                        id: "chatcmpl-managed",
-                        object: "chat.completion",
-                        created: 1,
-                        model: "openai-fast",
-                        choices: [
-                            {
-                                index: 0,
-                                message: {
-                                    role: "assistant",
-                                    content: "managed answer",
+                    modelCalls++;
+                    const upstream = (await request.json()) as {
+                        messages: { role: string; content: string }[];
+                        reasoning_effort?: string;
+                    };
+                    expect(upstream.reasoning_effort).toBe("low");
+                    if (modelCalls === 2) {
+                        expect(
+                            upstream.messages.some(
+                                (message) =>
+                                    message.role === "tool" &&
+                                    message.content.includes("exa proxied"),
+                            ),
+                        ).toBe(true);
+                    }
+                    const message =
+                        modelCalls === 1
+                            ? {
+                                  role: "assistant",
+                                  content: "checking ",
+                                  tool_calls: [
+                                      {
+                                          id: "managed-search",
+                                          type: "function",
+                                          function: {
+                                              name: "mcp__exa__web_search_exa",
+                                              arguments: '{"query":"hello"}',
+                                          },
+                                      },
+                                  ],
+                              }
+                            : { role: "assistant", content: "managed answer" };
+                    const finishReason =
+                        modelCalls === 1 ? "tool_calls" : "stop";
+                    const usage =
+                        modelCalls === 2 && usageKind === "missing"
+                            ? undefined
+                            : {
+                                  prompt_tokens: 10,
+                                  completion_tokens: 5,
+                                  total_tokens: 15,
+                                  ...(modelCalls === 2 &&
+                                  usageKind === "malformed"
+                                      ? {
+                                            prompt_tokens_details: {
+                                                cache_write_tokens: -1,
+                                            },
+                                        }
+                                      : {}),
+                              };
+                    if (!stream)
+                        return Response.json({
+                            id: `chatcmpl-managed-${modelCalls}`,
+                            object: "chat.completion",
+                            created: 1,
+                            model: "openai-fast",
+                            choices: [
+                                {
+                                    index: 0,
+                                    message,
+                                    finish_reason: finishReason,
                                 },
-                                finish_reason: "stop",
+                            ],
+                            ...(usage ? { usage } : {}),
+                        });
+                    return new Response(
+                        `${[
+                            {
+                                id: `chatcmpl-managed-${modelCalls}`,
+                                object: "chat.completion.chunk",
+                                created: 1,
+                                model: "openai-fast",
+                                choices: [
+                                    {
+                                        index: 0,
+                                        delta: {
+                                            ...message,
+                                            ...(message.tool_calls
+                                                ? {
+                                                      tool_calls:
+                                                          message.tool_calls.map(
+                                                              (
+                                                                  call,
+                                                                  index,
+                                                              ) => ({
+                                                                  ...call,
+                                                                  index,
+                                                              }),
+                                                          ),
+                                                  }
+                                                : {}),
+                                        },
+                                        finish_reason: null,
+                                    },
+                                ],
                             },
-                        ],
-                        usage: {
-                            prompt_tokens: 10,
-                            completion_tokens: 5,
-                            total_tokens: 15,
+                            {
+                                model: "openai-fast",
+                                choices: [
+                                    {
+                                        index: 0,
+                                        delta: {},
+                                        finish_reason: finishReason,
+                                    },
+                                ],
+                                ...(usage ? { usage } : {}),
+                            },
+                        ]
+                            .map(
+                                (event) => `data: ${JSON.stringify(event)}\n\n`,
+                            )
+                            .join("")}data: [DONE]\n\n`,
+                        {
+                            headers: { "Content-Type": "text/event-stream" },
                         },
-                    });
+                    );
                 }
                 throw new Error(`Unexpected fetch: ${request.url}`);
             }),
         );
 
-        const response = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/responses", {
-                method: "POST",
-                headers: {
-                    Authorization: `Bearer ${caller.key}`,
-                    "Content-Type": "application/json",
-                    "cf-connecting-ip": testClientIp,
-                },
-                body: JSON.stringify({ model: modelId, input: "hello" }),
-            }),
-        );
-
-        expect(response.status).toBe(200);
-        await expect(response.json()).resolves.toMatchObject({
-            object: "response",
-            model: agentId,
-            output: [
-                {
-                    type: "message",
-                    content: [{ type: "output_text", text: "managed answer" }],
-                },
-            ],
-            usage: { input_tokens: 10, output_tokens: 5, total_tokens: 15 },
-        });
-        expect(runtimeToken).toMatch(/^ag_/);
-        await expect(
-            verifyAgentRunToken(runtimeToken, env.BETTER_AUTH_SECRET),
-        ).resolves.toMatchObject({
-            parentApiKeyId: caller.id,
-            managedAgentId: agentId,
-        });
-        expect(runtimeClientIps).toEqual([testClientIp]);
-        const balanceAfter = await getUserBalance(db, caller.userId);
-        expect(balanceAfter.packBalance).toBeCloseTo(
-            balanceBefore.packBalance - expectedInnerPrice,
-            8,
-        );
-        expect(
-            tinybirdEvents.filter(
-                (event) =>
-                    event.modelRequested === "openai-fast" &&
-                    event.isBilledUsage === true,
-            ),
-        ).toHaveLength(1);
-
-        const chatResponse = await fetchGen(
-            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+        const response = await dispatch(
+            new Request(`https://gen.pollinations.ai/v1/${route}`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${caller.key}`,
@@ -3318,62 +3446,94 @@ fixtureTest(
                 },
                 body: JSON.stringify({
                     model: modelId,
-                    messages: [{ role: "user", content: "different prompt" }],
+                    stream,
+                    ...(route === "responses"
+                        ? { input: "hello", reasoning: { effort: "low" } }
+                        : {
+                              messages: [{ role: "user", content: "hello" }],
+                              reasoning_effort: "low",
+                          }),
                 }),
             }),
         );
-        expect(chatResponse.status).toBe(200);
-        await expect(chatResponse.json()).resolves.toMatchObject({
-            object: "chat.completion",
-            choices: [
-                {
-                    message: {
-                        role: "assistant",
-                        content: "managed answer",
-                    },
-                },
-            ],
-            usage: {
-                prompt_tokens: 10,
-                completion_tokens: 5,
-                total_tokens: 15,
-            },
+        const body = await response.text();
+        expect(modelCalls).toBe(2);
+        expect(mcpCalls).toBe(1);
+        expect(runtimeClientIps.every((ip) => ip === testClientIp)).toBe(true);
+        expect(runtimeToken).toMatch(/^ag_/);
+        const runToken = await verifyAgentRunToken(
+            runtimeToken,
+            env.BETTER_AUTH_SECRET,
+        );
+        expect(runToken).toMatchObject({
+            parentApiKeyId: caller.id,
+            managedAgentId: agentId,
         });
-        expect(runtimeClientIps).toEqual([testClientIp, testClientIp]);
-        const balanceAfterChat = await getUserBalance(db, caller.userId);
-        expect(balanceAfterChat.packBalance).toBeCloseTo(
-            balanceBefore.packBalance - 2 * expectedInnerPrice,
+        if (usageKind === "valid") {
+            expect(response.status, body).toBe(200);
+            expect(body).toContain("managed answer");
+            expect(body).toContain(
+                route === "responses" ? '"mcp_call"' : "Tool Executed",
+            );
+        } else {
+            expect(response.status).toBe(stream ? 200 : 502);
+            expect(body).toContain('"error"');
+            expect(body).not.toContain('"type":"response.completed"');
+        }
+
+        const expectedBilledModelCalls = usageKind === "valid" ? 2 : 1;
+        const balanceAfter = await getUserBalance(db, caller.userId);
+        expect(
+            balanceBefore.packBalance - balanceAfter.packBalance,
+        ).toBeCloseTo(
+            expectedBilledModelCalls * expectedInnerPrice + expectedMcpPrice,
             8,
         );
-        const billedInnerEvents = tinybirdEvents.filter(
+        const billed = tinybirdEvents.filter(
             (event) =>
-                event.modelRequested === "openai-fast" &&
-                event.isBilledUsage === true,
+                event.isBilledUsage === true &&
+                event.modelRequested !== modelId,
         );
-        expect(billedInnerEvents).toHaveLength(2);
-        for (const event of billedInnerEvents) {
+        const modelEvents = billed.filter(
+            (event) => event.modelRequested === "openai-fast",
+        );
+        expect(modelEvents).toHaveLength(expectedBilledModelCalls);
+        for (const event of modelEvents) {
             expect(event).toMatchObject({
                 tokenCountPromptText: 10,
                 tokenCountCompletionText: 5,
                 totalPrice: expectedInnerPrice,
             });
         }
+        const mcpEvents = billed.filter(
+            (event) => event.eventType === "mcp.call",
+        );
+        expect(mcpEvents).toHaveLength(1);
+        expect(mcpEvents[0]).toMatchObject({
+            requestPath: "/mcp/exa",
+            modelRequested: "exa",
+            totalCost: expectedMcpPrice,
+            totalPrice: expectedMcpPrice,
+            adjustmentCosts: { "exa.search.v1": expectedMcpPrice },
+            adjustmentUnits: { "exa.search.v1": 1 },
+        });
         const outerEvents = tinybirdEvents.filter(
             (event) => event.modelRequested === modelId,
         );
-        expect(outerEvents).toHaveLength(2);
-        for (const event of outerEvents) {
-            expect(event).toMatchObject({
-                totalCost: 0,
-                totalPrice: 0,
-                devPrice: 0,
-            });
+        expect(outerEvents).toHaveLength(1);
+        expect(outerEvents[0]).toMatchObject({
+            totalCost: 0,
+            totalPrice: 0,
+            devPrice: 0,
+        });
+        expect(billed).toHaveLength(expectedBilledModelCalls + 1);
+        expect(new Set(billed.map((event) => event.requestId)).size).toBe(
+            billed.length,
+        );
+        for (const event of billed) {
+            expect(event.parentRequestId).toBe(outerEvents[0].requestId);
         }
-        const outerRequestIds = outerEvents.map((event) => event.requestId);
-        expect(new Set(outerRequestIds).size).toBe(2);
-        expect(
-            billedInnerEvents.map((event) => event.parentRequestId).sort(),
-        ).toEqual([...outerRequestIds].sort());
+        expect(runToken?.parentRequestId).toBe(outerEvents[0].requestId);
     },
 );
 

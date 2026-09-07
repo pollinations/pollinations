@@ -20,6 +20,8 @@ Primary evidence sources:
 - Invoice/payment: Alibaba Cloud invoice, billing email, or Wise/card transaction.
 - Dashboard: <https://billing-cost.console.alibabacloud.com/fortune/billing-account>
   for balance and bill cross-checks.
+- Coupons: <https://billing-cost.console.alibabacloud.com/coupons/coupon>.
+  Check remaining balance, status and validity separately from cash balance.
 
 Required local setup:
 
@@ -59,11 +61,16 @@ Collection steps:
    Keep `DeductedByResourcePackage` as metadata unless it demonstrably reduces
    `PretaxAmount`.
 5. For cash reconciliation, pair Alibaba bill overview with Wise/card transactions or invoice PDFs.
-6. Use this skill for saved raw evidence.
+6. Check cash with `aliyun bssopenapi QueryAccountBalance -p pollinations-finops`.
+   Match the CLI identity to the managed account using `aliyun sts GetCallerIdentity -p pollinations-finops`.
+   In the dashboard, wait for the account name, ID and status to load before
+   accepting zero balances. Check the full Coupons list as well; preserve
+   amount, status and validity (UTC+8). Archive both checks together.
 
 Known traps:
 
-- Alibaba PayAsYouGo has no meaningful standing credit pool for this workflow.
+- Account credit/payment thresholds are not promotional coupons. An API error
+  or an unloaded coupon page means unknown, not zero.
 - Use `PretaxAmount` as the net paid amount. Do not use
   `PretaxGrossAmount` as cash cost.
 - The CLI profile is the auth source; do not put access keys in command arguments or saved evidence.

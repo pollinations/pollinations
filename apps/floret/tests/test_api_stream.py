@@ -5,8 +5,10 @@ from __future__ import annotations
 import base64
 import json
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
+from openai import AuthenticationError
 
 from floret import api as api_mod
 from floret.config import _current_api_key
@@ -368,55 +370,107 @@ def test_request_without_credential_is_rejected(monkeypatch: pytest.MonkeyPatch)
     client = TestClient(api_mod.app)
     resp = client.post("/v1/chat/completions", json=_request_body(stream=False))
     assert resp.status_code == 401
-    assert resp.json() == {"detail": "Missing agent run token."}
+    assert resp.json() == {"detail": "Missing API key."}
 
 
-@pytest.mark.parametrize("key", ["sk_caller_key", "pk_caller_key", "invalid"])
-def test_direct_endpoint_rejects_non_agent_credentials(key):
-    """Users authenticate to gen; only its delegated token reaches Floret."""
+@pytest.mark.parametrize("header", ["", "Bearer ", "Basic credentials"])
+def test_malformed_bearer_does_not_fall_back_to_operator(monkeypatch, header):
+    monkeypatch.setattr(api_mod.settings, "allow_operator_key", True)
     response = TestClient(api_mod.app).post(
         "/v1/chat/completions",
         json=_request_body(stream=False),
-        headers={"Authorization": f"Bearer {key}"},
+        headers={"Authorization": header},
     )
 
     assert response.status_code == 401
-    assert response.json() == {"detail": "Floret requires an agent run token."}
+    assert response.json() == {"detail": "Expected a nonempty Bearer token."}
 
 
-def test_agent_run_token_reaches_brain_and_tools(monkeypatch):
-    """The same per-request run token is available to every generation path."""
-    from floret.config import _current_api_key
+@pytest.mark.parametrize("key", ["sk_caller_key", "pk_caller_key", "ag_run", "opaque"])
+@pytest.mark.parametrize("stream", [False, True])
+def test_caller_key_reaches_brain_and_tools(monkeypatch, key, stream):
+    """Every generation path bills the caller, even with operator fallback enabled."""
+    from floret import agent
     from floret.tools import gen
 
-    run_token = "ag_test-delegated-run-token"
+    monkeypatch.setattr(api_mod.settings, "allow_operator_key", True)
+    monkeypatch.setattr(api_mod.settings, "openai_api_key", "sk_operator_fixture")
 
     async def fake_run_agent(messages, **kwargs):
-        assert _current_api_key() == run_token
-        assert gen._key() == run_token
+        assert _current_api_key() == key
+        assert gen._key() == key
+        async with agent._client() as brain, gen._client() as tool:
+            assert brain.auth_headers == {"Authorization": f"Bearer {key}"}
+            assert tool.auth_headers == {"Authorization": f"Bearer {key}"}
         return {"text": "delegated", "artifacts": [], "iterations": 1}
 
+    async def fake_events(messages, **kwargs):
+        yield {"type": "final", **await fake_run_agent(messages, **kwargs)}
+
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
+    monkeypatch.setattr(api_mod, "run_agent_events", fake_events)
 
     client = TestClient(api_mod.app)
     response = client.post(
         "/v1/chat/completions",
-        json=_request_body(stream=False),
-        headers={"Authorization": f"Bearer {run_token}"},
+        json=_request_body(stream=stream),
+        headers={"Authorization": f"bEaReR {key}"},
     )
 
     assert response.status_code == 200
-    assert response.json()["choices"][0]["message"]["content"] == "delegated"
+    assert "delegated" in response.text
+    assert _current_api_key() is None
+
+
+@pytest.mark.parametrize("stream", [False, True])
+def test_invalid_key_is_rejected_by_gen(monkeypatch, stream):
+    monkeypatch.setattr(api_mod.settings, "allow_operator_key", True)
+    monkeypatch.setattr(api_mod.settings, "openai_api_key", "sk_operator_fixture")
+
+    async def rejected(messages, **kwargs):
+        assert _current_api_key() == "invalid"
+        raise AuthenticationError(
+            "Invalid API key",
+            response=httpx.Response(
+                401,
+                request=httpx.Request(
+                    "POST", "https://gen.pollinations.ai/v1/chat/completions"
+                ),
+            ),
+            body={"error": "Invalid API key"},
+        )
+
+    async def rejected_events(messages, **kwargs):
+        yield await rejected(messages, **kwargs)
+
+    monkeypatch.setattr(api_mod, "run_agent", rejected)
+    monkeypatch.setattr(api_mod, "run_agent_events", rejected_events)
+    response = TestClient(api_mod.app).post(
+        "/v1/chat/completions",
+        json=_request_body(stream=stream),
+        headers={"Authorization": "Bearer invalid"},
+    )
+
+    if stream:
+        assert "[error: Invalid API key]" in response.text
+        assert response.text.rstrip().endswith("data: [DONE]")
+    else:
+        assert response.status_code == 401
+        assert response.json() == {"detail": "Invalid API key"}
 
 
 def test_operator_key_fallback_is_opt_in(monkeypatch):
     """With POLLI_ALLOW_OPERATOR_KEY set, local/dev use still works unauthenticated."""
 
     async def fake_run_agent(messages, **kwargs):
+        from floret.config import resolve_api_key
+
+        assert resolve_api_key() == "sk_operator_fixture"
         return {"text": "plain", "artifacts": [], "iterations": 1}
 
     monkeypatch.setattr(api_mod, "run_agent", fake_run_agent)
     monkeypatch.setattr(api_mod.settings, "allow_operator_key", True)
+    monkeypatch.setattr(api_mod.settings, "openai_api_key", "sk_operator_fixture")
 
     client = TestClient(api_mod.app)
     resp = client.post("/v1/chat/completions", json=_request_body(stream=False))

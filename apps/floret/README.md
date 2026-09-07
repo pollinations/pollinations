@@ -50,7 +50,7 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   }'
 ```
 
-Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway calls Floret with a short-lived internal `ag_` token; Floret's direct endpoint rejects user keys.
+Users authenticate to `gen.pollinations.ai` with their normal `pk_` or `sk_` key. The gateway calls Floret with a short-lived internal `ag_` token. Direct calls to Floret also accept `pk_` and `sk_` keys: the supplied bearer is forwarded unchanged to gen for authentication and billing, so brain and tool requests spend the caller's key. Invalid keys return gen's 401 for non-streaming calls; once an SSE stream has opened, errors are reported inside the stream.
 
 - Every field is optional.
 - Omitted/`auto` lets Floret select; an explicitly supplied JSON `null` is invalid.

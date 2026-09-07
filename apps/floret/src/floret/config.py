@@ -53,10 +53,9 @@ settings = Settings()
 def resolve_api_key() -> str:
     """The credential this request may spend.
 
-    Normally the per-request token the gateway passed in — with run tokens that
-    is a short-lived `ag_` credential scoped to the calling user, so the agent
-    never holds anyone's long-lived key. Falls back to the operator's own key
-    only when `POLLI_ALLOW_OPERATOR_KEY` is set.
+    Use the caller's API key or the gateway's short-lived `ag_` run token.
+    Fall back to the operator's own key only when `POLLI_ALLOW_OPERATOR_KEY`
+    is set and the request has no bearer credential.
     """
     key = _current_api_key()
     if key:

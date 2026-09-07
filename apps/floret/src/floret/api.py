@@ -15,6 +15,7 @@ from typing import Any, AsyncIterator
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, StreamingResponse
+from openai import AuthenticationError
 from pydantic import BaseModel
 
 from floret.agent import run_agent, run_agent_events
@@ -272,29 +273,29 @@ async def _sse_events(
     yield "data: [DONE]\n\n"
 
 
-def _agent_run_token(http_request: Request) -> str | None:
-    """Return the gateway-minted run token; reject direct user credentials."""
-    header = http_request.headers.get("Authorization", "")
-    if not header:
+def _request_api_key(http_request: Request) -> str | None:
+    """Pass the caller's bearer credential to gen for authentication and billing."""
+    header = http_request.headers.get("Authorization")
+    if header is None:
         return None
     token = header[7:].strip() if header[:7].lower() == "bearer " else ""
-    if not token.startswith("ag_"):
+    if not token:
         raise HTTPException(
             status_code=401,
-            detail="Floret requires an agent run token.",
+            detail="Expected a nonempty Bearer token.",
         )
     return token
 
 
 @app.post("/v1/chat/completions")
 async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
-    api_key = _agent_run_token(http_request)
+    api_key = _request_api_key(http_request)
     # Fail here rather than part-way through a run: without a credential every
     # downstream generation 401s anyway, after the caller has already waited.
     if not api_key and not settings.allow_operator_key:
         raise HTTPException(
             status_code=401,
-            detail="Missing agent run token.",
+            detail="Missing API key.",
         )
 
     token = _api_key_override.set(api_key or None)
@@ -346,6 +347,8 @@ async def chat_completions(request: ChatRequest, http_request: Request) -> Any:
         }
     except HTTPException:
         raise
+    except AuthenticationError as exc:
+        raise HTTPException(status_code=401, detail=exc.message) from exc
     except Exception as exc:
         logger.exception("chat_completions failed")
         raise HTTPException(status_code=500, detail=str(exc))
@@ -370,7 +373,7 @@ async def chat_completions_get() -> dict[str, Any]:
             "method": "POST",
             "headers": {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer <agent-run-token>",
+                "Authorization": "Bearer <api-key>",
             },
             "body": {
                 "model": "floret",
@@ -404,5 +407,5 @@ async def root() -> dict[str, Any]:
             "models": "GET /v1/models",
             "health": "GET /health",
         },
-        "auth": "Authorization: Bearer <agent-run-token>",
+        "auth": "Authorization: Bearer <api-key>",
     }

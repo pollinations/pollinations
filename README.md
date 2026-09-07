@@ -15,9 +15,9 @@
 </div>
 
 > [!IMPORTANT]
-> **We're standardizing model IDs on September 7**
+> **Model IDs are now standardized**
 >
-> Model IDs will use the publisher and official model name—for example, `flux` → `black-forest-labs/flux.1-schnell`. You can use the new IDs now. Existing IDs will keep working.
+> Model IDs now follow `publisher/model`—for example, `flux` → `black-forest-labs/flux.1-schnell`. The model catalog uses the new IDs. Existing IDs remain supported as aliases in API requests.
 >
 > [Browse models and their aliases →](https://enter.pollinations.ai/models)
 

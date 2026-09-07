@@ -3,11 +3,30 @@ import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
-import { expect } from "vitest";
+import { afterEach, beforeEach, expect, vi } from "vitest";
+import { resetGenerationModelRegistryCache } from "../src/model-registry.ts";
+import { resetModelHealthCache } from "../src/routes/model-status.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+// A model-list request fetches one Tinybird health snapshot; keep it
+// deterministic and network-free the same way provider tests mock upstream
+// APIs (see test/image/ideogramModel.test.ts).
+beforeEach(() => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        new Response(JSON.stringify({ data: [] }), {
+            headers: { "Content-Type": "application/json" },
+        }),
+    );
+});
+
+afterEach(() => {
+    resetGenerationModelRegistryCache();
+    resetModelHealthCache();
+    vi.restoreAllMocks();
+});
 
 test("retrieves a model by canonical ID", async () => {
     const response = await fetchWorker("/v1/models/openai-fast");
@@ -66,6 +85,36 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
         unknown
     >;
     expect(retrieved).toEqual(listed);
+});
+
+test("exposes health metadata consistently on list and retrieve", async () => {
+    const listResponse = await fetchWorker("/v1/models");
+    const list = (await listResponse.json()) as {
+        data: { id: string; health?: Record<string, unknown> }[];
+    };
+    const listed = list.data.find((m) => m.id === "openai-fast");
+    expect(listed?.health).toMatchObject({
+        status: "unknown",
+        success_rate: null,
+        sample_size: 0,
+        stale: false,
+    });
+    expect(typeof listed?.health?.checked_at).toBe("string");
+
+    const retrieveResponse = await fetchWorker("/v1/models/openai-fast");
+    const retrieved = (await retrieveResponse.json()) as {
+        health?: Record<string, unknown>;
+    };
+    expect(retrieved.health).toEqual(listed?.health);
+
+    const catalogResponse = await fetchWorker("/models");
+    const catalog = (await catalogResponse.json()) as {
+        name: string;
+        health?: Record<string, unknown>;
+    }[];
+    expect(catalog.find((m) => m.name === "openai-fast")?.health).toMatchObject(
+        { status: "unknown" },
+    );
 });
 
 test("returns 404 for an unknown model", async () => {

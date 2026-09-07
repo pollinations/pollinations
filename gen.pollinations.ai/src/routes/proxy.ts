@@ -302,6 +302,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         }),
         pricing: entry.info.pricing,
         capabilities: entry.info.capabilities,
+        health: entry.info.health,
         ...(entry.info.tools && { tools: entry.info.tools }),
         ...(entry.info.reasoning && { reasoning: entry.info.reasoning }),
         ...(entry.info.context_length && {

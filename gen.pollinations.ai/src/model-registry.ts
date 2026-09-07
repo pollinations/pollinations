@@ -6,6 +6,12 @@ import { DEFAULT_AUDIO_MODEL } from "@shared/registry/audio.ts";
 import { DEFAULT_EMBEDDING_MODEL } from "@shared/registry/embeddings.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
 import {
+    buildModelHealthIndex,
+    type ModelHealth,
+    type ModelHealthRow,
+    unknownModelHealth,
+} from "@shared/registry/model-health.ts";
+import {
     type ModelInfo,
     modelInfoFromDefinition,
 } from "@shared/registry/model-info.ts";
@@ -29,8 +35,13 @@ import {
     getCommunityModelRegistryEntries,
 } from "./community-models.ts";
 import { linkFallbackEntries } from "./fallback.ts";
+import { getModelHealthSnapshot } from "./routes/model-status.ts";
 
 const REGISTRY_TTL_MS = 60_000;
+// A wider window than the live /v1/models/status default (60m): catalog
+// health should stay populated for lower-traffic community models instead of
+// flipping to "unknown" between bursts of requests.
+const HEALTH_WINDOW_MINUTES = 24 * 60;
 // A static-only registry is cached briefly so the community models come back
 // seconds after D1 recovers, instead of being missing for a full TTL.
 const DEGRADED_REGISTRY_TTL_MS = 5_000;
@@ -224,6 +235,48 @@ function buildRegistry(
     };
 }
 
+// Attaches measured reliability to every entry from one shared Tinybird
+// snapshot (cached by getModelHealthSnapshot), never per model. A model with
+// no matching row -- no traffic, or the snapshot itself unavailable -- gets
+// "unknown" rather than being left off or implied healthy. Returns new entry
+// and info objects so STATIC_ENTRIES is never mutated (see buildRegistry).
+async function attachHealth(
+    entries: GenerationModelEntry[],
+): Promise<GenerationModelEntry[]> {
+    let healthIndex: Map<string, ModelHealth> | null = null;
+    let fallbackHealth = unknownModelHealth(HEALTH_WINDOW_MINUTES, null, true);
+    try {
+        const snapshot = await getModelHealthSnapshot(HEALTH_WINDOW_MINUTES);
+        if (snapshot) {
+            fallbackHealth = unknownModelHealth(
+                HEALTH_WINDOW_MINUTES,
+                snapshot.timestamp,
+                snapshot.stale,
+            );
+            healthIndex = buildModelHealthIndex(
+                snapshot.data.data as ModelHealthRow[],
+                HEALTH_WINDOW_MINUTES,
+                snapshot.timestamp,
+                snapshot.stale,
+            );
+        }
+    } catch (error) {
+        // Health is presentational: a Tinybird outage must never block model
+        // listing, so any failure here just falls back to "unknown".
+        console.error("Model health snapshot unavailable", error);
+    }
+
+    return entries.map((entry) => ({
+        ...entry,
+        info: {
+            ...entry.info,
+            health:
+                healthIndex?.get(`${entry.id}::${entry.eventType}`) ??
+                fallbackHealth,
+        },
+    }));
+}
+
 async function loadGenerationModelRegistry(
     env: CommunityModelEnv,
 ): Promise<{ registry: GenerationModelRegistry; degraded: boolean }> {
@@ -243,8 +296,12 @@ async function loadGenerationModelRegistry(
         degraded = true;
         console.error("Community model registry unavailable", error);
     }
+    const entries = await attachHealth([
+        ...STATIC_ENTRIES,
+        ...communityEntries,
+    ]);
     return {
-        registry: buildRegistry([...STATIC_ENTRIES, ...communityEntries]),
+        registry: buildRegistry(entries),
         degraded,
     };
 }

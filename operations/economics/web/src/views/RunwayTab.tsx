@@ -12,7 +12,12 @@ import {
     TableRow,
     Tooltip,
 } from "@pollinations/ui";
-import { type ComponentType, useMemo, useState } from "react";
+import {
+    type ComponentProps,
+    type ComponentType,
+    useMemo,
+    useState,
+} from "react";
 import {
     DataTable,
     GROUP_BORDER,
@@ -94,7 +99,21 @@ export function paymentTimingLabel(timing: ForecastPaymentTiming | null) {
     return null;
 }
 
-function ForecastBadge({
+const FORECAST_BADGE_INTENT: Record<
+    string,
+    NonNullable<ComponentProps<typeof Chip>["intent"]>
+> = {
+    FIXED: "free",
+    FUNDED: "news",
+    "RUN RATE": "free",
+    "ONE-TIME": "alpha",
+    MIXED: "neutral",
+    DIRECT: "news",
+    PREPAID: "alpha",
+    POSTPAID: "warning",
+};
+
+export function ForecastBadge({
     label,
     icon: Icon,
 }: {
@@ -102,7 +121,7 @@ function ForecastBadge({
     icon?: ComponentType<{ className?: string }>;
 }) {
     return (
-        <Chip intent="neutral" size="sm">
+        <Chip intent={FORECAST_BADGE_INTENT[label] ?? "neutral"} size="sm">
             {Icon ? <Icon className="h-3 w-3" /> : null}
             {label}
         </Chip>

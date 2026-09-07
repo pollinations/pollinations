@@ -5,6 +5,7 @@ import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
 import { automaticForecastRule, forecastLineRule } from "../lib/forecastTerms";
 import type { Data } from "../types";
 import {
+    ForecastBadge,
     fmtRunwayTableValue,
     fmtRunwayUsd,
     forecastMethodLabel,
@@ -66,6 +67,36 @@ describe("RunwayTab labels", () => {
         expect(paymentTimingLabel("prepaid")).toBe("PREPAID");
         expect(paymentTimingLabel("postpaid")).toBe("POSTPAID");
         expect(paymentTimingLabel(null)).toBeNull();
+    });
+
+    it.each([
+        ["FIXED", "free"],
+        ["FUNDED", "news"],
+        ["RUN RATE", "free"],
+        ["ONE-TIME", "alpha"],
+        ["DIRECT", "news"],
+        ["PREPAID", "alpha"],
+        ["POSTPAID", "warning"],
+    ])("colors %s with the shared %s badge palette", (label, intent) => {
+        const html = renderToStaticMarkup(
+            createElement(ForecastBadge, { label }),
+        );
+        expect(html).toContain(`polli:bg-intent-${intent}-bg-light`);
+        expect(html).toContain(`polli:text-intent-${intent}-text`);
+        expect(html).toContain(`>${label}</span>`);
+        expect(html).not.toContain("polli:bg-ink-100/80");
+    });
+
+    it.each([
+        "MIXED",
+        "bank",
+        "vendor",
+    ])("keeps %s metadata neutral", (label) => {
+        const html = renderToStaticMarkup(
+            createElement(ForecastBadge, { label }),
+        );
+        expect(html).toContain("polli:bg-ink-100/80");
+        expect(html).toContain(`>${label}</span>`);
     });
 
     it("uses the same projection rules for labels and calculations", () => {

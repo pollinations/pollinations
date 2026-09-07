@@ -2271,7 +2271,8 @@ describe("tracking observability", () => {
         "valid",
         "missing",
         "malformed",
-    ])("settles native community Chat streaming with %s usage and no model metadata", async (usageKind) => {
+        "recovered",
+    ])("settles community Chat with %s usage/delivery and no model metadata", async (usageKind) => {
         const caller = await createTestApiKey({
             user: { tierBalance: 0, packBalance: 10 },
         });
@@ -2333,6 +2334,21 @@ describe("tracking observability", () => {
                                       total_tokens: 15,
                                   },
                               };
+                    if (usageKind === "recovered") {
+                        return Response.json({
+                            choices: [
+                                {
+                                    index: 0,
+                                    message: {
+                                        role: "assistant",
+                                        content: "saved result",
+                                    },
+                                    finish_reason: "stop",
+                                },
+                            ],
+                            ...terminal,
+                        });
+                    }
                     return new Response(
                         'data: {"choices":[{"index":0,"delta":{"content":"streamed"},"finish_reason":null}]}\n\n' +
                             `data: ${JSON.stringify(terminal)}\n\ndata: [DONE]\n\n`,
@@ -2350,8 +2366,23 @@ describe("tracking observability", () => {
                 return Response.json({ data: [] });
             },
         );
+        const bindings = withInlineGenerationCoordinator(env);
+        const getByName = bindings.GENERATION_COORDINATOR.getByName.bind(
+            bindings.GENERATION_COORDINATOR,
+        );
+        const startAndWait = vi.fn(async (job) => {
+            await getByName("recovery-test").startAndWait(job);
+            throw new Error(
+                "RPC connection lost after cache write and settlement",
+            );
+        });
+        if (usageKind === "recovered") {
+            bindings.GENERATION_COORDINATOR = {
+                getByName: () => ({ startAndWait }),
+            } as unknown as CloudflareBindings["GENERATION_COORDINATOR"];
+        }
         const ctx = createExecutionContext();
-        const response = await worker.fetch(
+        const request = (): Parameters<typeof worker.fetch>[0] =>
             new Request("https://gen.pollinations.ai/v1/chat/completions", {
                 method: "POST",
                 headers: {
@@ -2360,21 +2391,31 @@ describe("tracking observability", () => {
                 },
                 body: JSON.stringify({
                     model,
-                    stream: true,
+                    stream: usageKind !== "recovered",
                     messages: [{ role: "user", content: "stream usage check" }],
                 }),
-            }),
-            withInlineGenerationCoordinator(env),
-            ctx,
-        );
+            });
+        const response = await worker.fetch(request(), bindings, ctx);
         const body = await response.text();
         await waitOnExecutionContext(ctx);
         expect(response.status, body).toBe(200);
+        if (usageKind === "recovered") {
+            expect(
+                await env.TEXT_BUCKET.head(
+                    startAndWait.mock.calls[0][0].cache.key,
+                ),
+            ).not.toBeNull();
+            const rejoinCtx = createExecutionContext();
+            const rejoined = await worker.fetch(request(), bindings, rejoinCtx);
+            expect(rejoined.headers.get("x-cache")).toBe("HIT");
+            expect(await rejoined.text()).toBe(body);
+            await waitOnExecutionContext(rejoinCtx);
+        }
         expect(upstreamCalls).toBe(1);
         const after = await getUserBalance(db, caller.userId);
         const rows = events.filter((event) => event.modelRequested === model);
         expect(rows).toHaveLength(1);
-        if (usageKind === "valid") {
+        if (usageKind === "valid" || usageKind === "recovered") {
             const expectedPrice = calculateUsageBilling({
                 model,
                 usage: { promptTextTokens: 10, completionTextTokens: 5 },
@@ -2393,6 +2434,14 @@ describe("tracking observability", () => {
                 expectedPrice,
                 9,
             );
+            if (usageKind === "recovered") {
+                expect(startAndWait).toHaveBeenCalledTimes(1);
+                expect(response.headers.get("x-cache")).toBe("HIT");
+                expect(body).toContain("saved result");
+                expect(
+                    events.filter((event) => event.kind === "server_error"),
+                ).toHaveLength(0);
+            }
         } else {
             expect(body).toContain('"error"');
             expect(rows[0]).toMatchObject({

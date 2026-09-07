@@ -192,7 +192,8 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
         );
         const stub = c.env.GENERATION_COORDINATOR.getByName(name);
         const job = await createJob(c, cache.adapter, cache.key);
-        let outcome: GenerationOutcome;
+        let outcome: GenerationOutcome | undefined;
+        let coordinationError: HTTPException | undefined;
         try {
             outcome = (await stub.startAndWait(job)) as GenerationOutcome;
         } catch (error) {
@@ -204,21 +205,24 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
             c.get("log").error(
                 "Generation coordination failed before completion: {errorMessage}",
                 {
-                    errorMessage: rpcError.message ?? String(error),
-                    durableObjectReset: rpcError.durableObjectReset,
-                    overloaded: rpcError.overloaded,
-                    retryable: rpcError.retryable,
+                    errorMessage: rpcError?.message ?? String(error),
+                    durableObjectReset: rpcError?.durableObjectReset,
+                    overloaded: rpcError?.overloaded,
+                    retryable: rpcError?.retryable,
                 },
             );
-            throw new HTTPException(503, {
+            coordinationError = new HTTPException(503, {
                 message: "Generation coordination is unavailable",
+                cause: error,
             });
         }
-        if (outcome.status === "failed") {
+        if (outcome?.status === "failed") {
             if (c.var.track) c.var.track.detachedExecutionTracked = true;
             return replayFailedResponse(outcome.error);
         }
 
+        // An RPC failure may happen after the result was saved. Read once;
+        // never restart the coordinator or execute another generation here.
         let response: Response | null;
         try {
             response = await cache.adapter.get(
@@ -230,14 +234,22 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 "Error reading completed generation from cache: {error}",
                 { error },
             );
-            throw new HTTPException(503, {
-                message: "Generation cache is temporarily unavailable",
-            });
+            throw (
+                coordinationError ??
+                new HTTPException(503, {
+                    message: "Generation cache is temporarily unavailable",
+                    cause: error,
+                })
+            );
         }
         if (!response) {
-            throw new HTTPException(503, {
-                message: "Generation completed without a durable cache entry",
-            });
+            throw (
+                coordinationError ??
+                new HTTPException(503, {
+                    message:
+                        "Generation completed without a durable cache entry",
+                })
+            );
         }
         c.header("X-Cache", "HIT");
         response.headers.set("X-Cache", "HIT");

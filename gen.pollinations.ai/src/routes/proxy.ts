@@ -330,6 +330,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         ...(entry.info.per_user_rpm !== undefined && {
             per_user_rpm: entry.info.per_user_rpm,
         }),
+        ...(entry.info.health && { health: entry.info.health }),
     };
 }
 

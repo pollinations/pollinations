@@ -1,0 +1,34 @@
+{
+  "pr_number": 13076,
+  "title": "refactor: standardize canonical model names",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/13076",
+  "merged_at": "2026-09-07T15:15:32Z",
+  "labels": [],
+  "pr_body_excerpt": "- Promotes 158 public model IDs, preserves aliases, and replaces catalog `brand` with `publisher`. `brand_url` stays unchanged. Removes the upcoming-rename Enter banner; API docs retain the migration explanation.\n- Keeps 49 provider-qualified hidden fallback IDs, existing routing, pricing, access, upstreams, and tracking semantics. Primary execution-ID work remains deferred to #14543.\n- Preserves canonical permission writes and migration `0062`; normalizes permission reads. Production remains gated until live compatibility verification, with final cleanup after both workers deploy.\n- Fixes app alias lookups, community-ID collisions, Monitor/Enter consumers, and provider-month Economics identity reconciliation. Removes `MODEL_SLUGS.md`; updates model-management guidelines. No Tinybird or Observability deployment/change.\n- Compatibility #14545 and promotion #14546 are live. Enter/Gen versions and production bindings verified; no migrations were pending. All 158 future IDs appear in production's alias catalog. Nine live checks pass: old/new/community requests, denied models, catalogs, readback, unchanged storage, expiry and budget.\n\nStaging proof: all 159 SQL statements tested on 150,000 synthetic rows. Migration 11.7s; late-writer cleanup 8.7s; repeat wrote zero rows. All expected permissions matched; test table removed; real keys untouched.\n\nValidation: prior full Gen 1,841 passed/6 skipped; Enter 1,113 passed; 73 compatibility tests. Frontend build/Biome pass. Main merge: 15 permission tests and Gen typecheck pass. Live verification complete; gate-variable approval and Thomas sign-off remain before promotion.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Names, tidied in the garden",
+    "blurb": "The model catalog got a very large labeling session: 158 public IDs now have canonical names, while the old aliases still know where home is. Polli put the provider labels in the right drawers and nobody had to lose their favorite shortcut.",
+    "summary": "Standardized 158 public model IDs as canonical catalog names, retained existing aliases and routing behavior, replaced catalog `brand` with `publisher`, and normalized permission reads across Enter and Gen.",
+    "impact": "Developers get a cleaner, consistent model catalog and updated `publisher` metadata while existing model IDs, permissions, pricing, access, upstream routing, and stored keys remain compatible.",
+    "keywords": [
+      "model catalog",
+      "canonical IDs",
+      "aliases",
+      "permissions",
+      "API compatibility",
+      "publisher metadata"
+    ],
+    "visual_concept": "A cozy model-library garden where every plant pot has a clear canonical label, while smaller signposts preserve familiar alias names pointing to the same flowers. Polli, wearing tiny librarian glasses, carefully files model-name seed packets into labeled drawers beside a friendly CRT Monitor Robot displaying a neat catalog; `publisher` appears on a small terminal label.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny librarian glasses, organizing 158 clearly labeled model-seed packets in a warm garden library; old alias signposts lead gently to the same blooming code-plants, while a cheerful CRT monitor robot shows `publisher` on a lime green (#ecf874) terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-13076.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light-blue wings, and tiny librarian glasses, organizing 158 clearly labeled model-seed packets in a warm garden library; old alias signposts lead gently to the same blooming code-plants, while a cheerful CRT monitor robot shows `publisher` on a lime green (#ecf874) terminal. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle scanlines, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-07T15:16:42.235883+00:00"
+}

@@ -14,7 +14,10 @@ import {
     buildDirectResponsesRequestBody,
     validateDirectResponsesRequest,
 } from "@/text/responses/request.ts";
-import { createResponsesStreamUsageValidator } from "@/text/responses/stream.ts";
+import {
+    createResponsesStreamUsageValidator,
+    requireResponsesStreamUsage,
+} from "@/text/responses/stream.ts";
 import {
     getResponsesEventUsage,
     isResponsesFailure,
@@ -49,6 +52,31 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it("preserves the complete raw provider error envelope", async () => {
+        const directRequest = request();
+        const body = JSON.stringify(
+            {
+                error: { message: "Rate limited" },
+                token: "test-only",
+                trace: "x".repeat(20000),
+            },
+            null,
+            2,
+        );
+        const fetcher = vi.fn(async () => new Response(body, { status: 429 }));
+        await expect(
+            callDirectResponses(
+                directRequest,
+                authorizedTarget(directRequest),
+                fetcher,
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+    });
+
     it.each([
         ["store", { store: true }],
         ["previous_response_id", { previous_response_id: "resp_previous" }],
@@ -195,6 +223,7 @@ describe("direct Responses transport", () => {
                     "Bearer openrouter-test-key",
                 );
                 expect(init?.signal).toBeUndefined();
+                expect(init?.redirect).toBe("manual");
                 return Response.json(body);
             },
         );
@@ -304,6 +333,18 @@ describe("direct Responses transport", () => {
 
         expect(() => validator.finish()).not.toThrow();
         expect(isResponsesFailure(error)).toBe(true);
+    });
+
+    it("continues event numbering when missing usage fails a stream", async () => {
+        const source = new Response(
+            'event: response.output_text.delta\ndata: {"type":"response.output_text.delta","delta":"partial","sequence_number":7}\n\n',
+        ).body as ReadableStream<Uint8Array<ArrayBuffer>>;
+        const output = await new Response(
+            requireResponsesStreamUsage(source),
+        ).text();
+        expect(output).toContain('"sequence_number":8');
+        expect(output).toContain('"code":"usage_missing"');
+        expect(output).not.toContain("[DONE]");
     });
 
     it("accepts response.failed with null usage as an unbillable outcome", () => {

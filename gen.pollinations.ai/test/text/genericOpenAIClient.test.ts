@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { isRetryableFallbackError } from "../../src/fallback.ts";
 import { createChatStreamUsageValidator } from "../../src/text/chat/usage.js";
 import { genericOpenAIClient } from "../../src/text/genericOpenAIClient.js";
 
@@ -7,6 +8,104 @@ afterEach(() => {
 });
 
 describe("genericOpenAIClient", () => {
+    it("keeps an embedded quota error retryable when diagnostics echo moderation words", async () => {
+        const responseBody = JSON.stringify({
+            error: {
+                message: "Provider rate limited",
+                code: 429,
+                details: { diagnostic: "quota reached" },
+            },
+            request: { prompt: "Explain the NSFW label" },
+        });
+        const fetcher = vi.fn(async () => new Response(responseBody));
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "test" }],
+            { model: "test-model" },
+            { endpoint: "https://provider.test/chat", fetcher },
+        ).catch((error) => error);
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody,
+        });
+        expect(isRetryableFallbackError(error)).toBe(true);
+    });
+
+    it.each([
+        200, 429,
+    ])("retains the complete raw provider envelope at HTTP %s", async (status) => {
+        const rawBody = JSON.stringify(
+            {
+                error: {
+                    message: "Provider unavailable",
+                    code: 429,
+                    details: { diagnostic: "inner detail" },
+                },
+                providerTrace: {
+                    token: "provider-test-token",
+                    data: "x".repeat(20000),
+                },
+            },
+            null,
+            2,
+        );
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(rawBody, { status }),
+        );
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "test" }],
+                { model: "test-model" },
+                { endpoint: "https://provider.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: rawBody,
+        });
+    });
+
+    it("retains malformed successful response bodies for diagnostics", async () => {
+        const rawBody = "<html>upstream gateway failure</html>";
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(rawBody));
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "test" }],
+                { model: "test-model" },
+                { endpoint: "https://provider.test/chat" },
+            ),
+        ).rejects.toMatchObject({
+            status: 502,
+            upstreamStatus: 200,
+            responseBody: rawBody,
+        });
+    });
+
+    it("reports Portkey's exhausted deadline as 504 without starting a fallback", async () => {
+        const details = {
+            error: {
+                type: "timeout_error",
+                message:
+                    "Request exceeded the timeout sent in the request: 290000ms",
+            },
+        };
+        const fetcher = vi.fn(async () =>
+            Response.json(details, { status: 408 }),
+        );
+        const failure = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat", fetcher },
+        ).catch((error) => error);
+        expect(failure).toMatchObject({
+            status: 504,
+            upstreamStatus: 408,
+            details,
+        });
+        expect(isRetryableFallbackError(failure)).toBe(false);
+        expect(fetcher).toHaveBeenCalledOnce();
+    });
+
     it("uses a configured service-binding fetcher", async () => {
         const fetcher = vi.fn(async () =>
             Response.json({
@@ -124,8 +223,8 @@ describe("genericOpenAIClient", () => {
             {
                 model: "provider-model",
                 modelConfig: { provider: "azure-openai" },
-                modelDef: { name: "openai-fast" },
-                requestedModel: "openai-fast",
+                modelDef: { name: "openai/gpt-5-nano" },
+                requestedModel: "openai/gpt-5-nano",
                 userApiKey: "sk_should_not_leak",
                 portkeyGatewayUrl: "https://portkey.test",
                 additionalHeaders: { Authorization: "Bearer secret" },
@@ -462,12 +561,15 @@ describe("genericOpenAIClient", () => {
         ).rejects.toMatchObject({ status: 400, upstreamStatus: 500 });
     });
 
-    it("maps 429 from an upstream error envelope to 502", async () => {
+    it.each([
+        "status",
+        "code",
+    ])("maps 429 from an upstream error envelope's %s to 502", async (field) => {
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
             Response.json({
                 error: {
                     message: "rate limited",
-                    status: 429,
+                    [field]: 429,
                 },
             }),
         );
@@ -479,6 +581,69 @@ describe("genericOpenAIClient", () => {
                 { endpoint: "https://portkey.test/chat" },
             ),
         ).rejects.toMatchObject({ status: 502, upstreamStatus: 429 });
+    });
+
+    it.each([
+        [200, false],
+        [200, true],
+        [400, false],
+        [403, false],
+        [500, false],
+    ])("returns a non-retryable 4xx for policy rejection (HTTP %s, choice error %s)", async (status, nested) => {
+        const details = {
+            code: 400,
+            message: "Gemini blocked the request: PROHIBITED_CONTENT",
+            metadata: { error_type: "invalid_request" },
+        };
+        const body = nested
+            ? { choices: [{ finish_reason: "error", error: details }] }
+            : { error: details };
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json(body, { status }),
+        );
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        ).catch((error) => error);
+        expect(error).toMatchObject({
+            status: 422,
+            upstreamStatus: status === 200 ? 400 : status,
+            details: status === 200 ? details : body,
+        });
+        expect(isRetryableFallbackError(error)).toBe(false);
+    });
+
+    it.each([
+        401, 402, 403, 429, 503,
+    ])("keeps provider error.code=%s eligible for fallback", async (code) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({
+                error: { code, message: "Provider unavailable" },
+            }),
+        );
+        const error = await genericOpenAIClient(
+            [{ role: "user", content: "hello" }],
+            { model: "provider-model" },
+            { endpoint: "https://portkey.test/chat" },
+        ).catch((error) => error);
+        expect(error).toMatchObject({ upstreamStatus: code });
+        expect(isRetryableFallbackError(error)).toBe(true);
+    });
+
+    it.each([
+        200, 1001,
+    ])("does not use non-error HTTP code %s as the response status", async (code) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+            Response.json({ error: { code, message: "Provider failed" } }),
+        );
+        await expect(
+            genericOpenAIClient(
+                [{ role: "user", content: "hello" }],
+                { model: "provider-model" },
+                { endpoint: "https://portkey.test/chat" },
+            ),
+        ).rejects.toMatchObject({ status: 502 });
     });
 
     it("maps an embedded completion 429 to a retryable upstream error", async () => {
@@ -573,17 +738,18 @@ describe("genericOpenAIClient", () => {
     });
 
     it("normalizes choices without mutating frozen upstream objects", async () => {
-        const response = new Response();
-        Object.defineProperty(response, "json", {
-            value: async () => ({
-                choices: [
-                    Object.freeze({
-                        message: { tool_calls: [{}] },
-                        finish_reason: "stop",
-                    }),
-                ],
-            }),
+        const frozenChoice = Object.freeze({
+            message: { tool_calls: [{}] },
+            finish_reason: "stop",
         });
+        const rawBody = JSON.stringify({ choices: [frozenChoice] });
+        const parse = JSON.parse;
+        vi.spyOn(JSON, "parse").mockImplementation((text, reviver) =>
+            text === rawBody
+                ? { choices: [frozenChoice] }
+                : parse(text, reviver),
+        );
+        const response = new Response(rawBody);
         vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(response);
 
         const completion = await genericOpenAIClient(
@@ -593,6 +759,7 @@ describe("genericOpenAIClient", () => {
         );
 
         expect(completion.choices?.[0]?.finish_reason).toBe("tool_calls");
+        expect(frozenChoice.finish_reason).toBe("stop");
     });
 
     it("preserves and normalizes every upstream choice and extension", async () => {
@@ -777,6 +944,26 @@ describe("Chat Completions stream usage", () => {
         expect(() =>
             validator.feed(encoder.encode("data: [DONE]\n\n")),
         ).toThrow(/omitted terminal usage/);
+    });
+
+    it("keeps early valid usage when later chunks omit it or use null", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"usage":{"prompt_tokens":2,"completion_tokens":1,"total_tokens":3}}\n\ndata: {"choices":[]}\n\ndata: {"usage":null}\n\ndata: [DONE]\n\n',
+            ),
+        );
+        expect(() => validator.finish()).not.toThrow();
+    });
+
+    it("passes through explicit errors even alongside partial usage", () => {
+        const validator = createChatStreamUsageValidator();
+        validator.feed(
+            encoder.encode(
+                'data: {"usage":{"prompt_tokens":2},"error":{"message":"provider failed"}}\n\ndata: [DONE]\n\n',
+            ),
+        );
+        expect(() => validator.finish()).not.toThrow();
     });
 
     it("rejects a stream that ends before terminal usage", () => {

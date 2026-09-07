@@ -1,5 +1,5 @@
 import type { Model3dGenerationResult } from "../createAndReturnModel3d.ts";
-import { downloadMesh, requireImages, toHttpError } from "../modelUtils.ts";
+import { downloadMesh, requireImages, toUpstreamError } from "../modelUtils.ts";
 import type { Model3dParams } from "../params.ts";
 import { extractFalModelMesh, runFalJob } from "./falClient.ts";
 
@@ -12,7 +12,7 @@ const RESOLUTION = {
 export async function callTrellis2Fal(
     params: Model3dParams,
 ): Promise<Model3dGenerationResult> {
-    requireImages(params, "trellis-2");
+    requireImages(params, "microsoft/trellis-2");
 
     try {
         const result = await runFalJob({
@@ -27,11 +27,11 @@ export async function callTrellis2Fal(
             buffer: await downloadMesh(mesh.url),
             contentType: "model/gltf-binary",
             trackingData: {
-                actualModel: "trellis-2-fal",
+                actualModel: "microsoft/trellis-2:fal",
                 usage: { completionImageTokens: 1 },
             },
         };
     } catch (error) {
-        throw toHttpError(error);
+        throw toUpstreamError(error);
     }
 }

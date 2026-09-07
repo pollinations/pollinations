@@ -25,7 +25,7 @@ describe("needsBalanceAttention", () => {
             needsBalanceAttention({
                 active: true,
                 balanceTracking: true,
-                balanceStatus: "partial",
+                balanceStatus: "stale",
             }),
         ).toBe(true);
         expect(

@@ -15,6 +15,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -34,7 +35,6 @@ import {
     testCommunityTranscriptionEndpoint,
     testCommunityVideoEndpoint,
 } from "../services/community-endpoint-openai.ts";
-import { promptAgentApiBaseUrl } from "../services/prompt-agent.ts";
 import { requireAccountPermission } from "./account-permissions.ts";
 import {
     type FallbackPrimary,
@@ -157,9 +157,24 @@ async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
 async function ensureModelNameAvailable(
     db: Db,
     ownerUserId: string,
+    ownerGithubUsername: string,
     name: string,
     currentId?: string,
 ): Promise<void> {
+    const modelId = communityModelId(ownerGithubUsername, name);
+    let bundledModelExists = false;
+    try {
+        resolveModelName(modelId);
+        bundledModelExists = true;
+    } catch {
+        // Unknown IDs remain available within the owner's namespace.
+    }
+    if (bundledModelExists) {
+        throw new HTTPException(400, {
+            message:
+                "Community model ID conflicts with a bundled model or alias",
+        });
+    }
     const existing = await db.query.communityEndpoint.findFirst({
         columns: { id: true },
         where: and(
@@ -272,7 +287,6 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         toCommunityEndpointResponse(
                             endpoint,
                             ownerGithubUsername,
-                            promptAgentApiBaseUrl(c.env),
                         ),
                     ),
                     provider: {
@@ -457,14 +471,17 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
             await enforcePublishingAccess(db, user.id, input.visibility);
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
                 perUserRpm: input.perUserRpm,
-                responsesUrl: input.responsesUrl
-                    ? validateInputEndpointUrl(input.responsesUrl)
-                    : null,
+                api: input.api,
             };
             const [row] = await db
                 .insert(schema.communityEndpoint)
@@ -480,7 +497,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     pendingVisibility: queuesPublication ? "public" : null,
                     pendingAt: queuesPublication ? new Date() : null,
                     type: "endpoint_agent",
-                    baseUrl: validateInputEndpointUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(input.url),
                     upstreamModel: input.upstreamModel ?? input.name,
                     requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
@@ -489,11 +506,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 })
                 .returning();
             return c.json(
-                toCommunityEndpointResponse(
-                    row,
-                    ownerGithubUsername,
-                    promptAgentApiBaseUrl(c.env),
-                ),
+                toCommunityEndpointResponse(row, ownerGithubUsername),
             );
         },
     )
@@ -528,7 +541,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
             const policy = queuesPublication
@@ -539,9 +557,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 normalizeInputBearerToken(input.bearerToken),
                 c.env.BETTER_AUTH_SECRET,
             );
-            const responsesUrl = input.responsesUrl
-                ? validateInputEndpointUrl(input.responsesUrl)
-                : null;
+            const api = input.modality === "text" ? input.api : null;
             const fallbacks = input.fallbacks
                 ? await resolveFallbacks(db, input.fallbacks, {
                       modelId,
@@ -551,7 +567,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 : [];
             const payload: ProxyListingPayload = {
                 bearerTokenCiphertext,
-                responsesUrl,
+                api,
                 ...policy,
                 fallbacks,
             };
@@ -568,14 +584,16 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         ? "private"
                         : input.visibility,
                     type: "proxy",
-                    baseUrl: validateInputEndpointUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(
+                        input.modality === "text" ? input.url : input.baseUrl,
+                    ),
                     upstreamModel: input.upstreamModel ?? input.name,
                     requiredSafetyFeatures: input.requiredSafetyFeatures,
                     payload: JSON.stringify(payload),
                     pendingPayload: queuesPublication
                         ? JSON.stringify({
                               bearerTokenCiphertext,
-                              responsesUrl,
+                              api,
                               ...targetPolicy,
                               fallbacks,
                           } satisfies ProxyListingPayload)
@@ -587,11 +605,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 })
                 .returning();
             return c.json(
-                toCommunityEndpointResponse(
-                    row,
-                    ownerGithubUsername,
-                    promptAgentApiBaseUrl(c.env),
-                ),
+                toCommunityEndpointResponse(row, ownerGithubUsername),
             );
         },
     )
@@ -644,7 +658,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             tags: ["🧩 Community Models"],
             summary: "Test My Model Endpoint",
             description:
-                "Test an upstream model before registering it. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
+                "Test an upstream model before registering it. Text tests call the selected Chat Completions or Responses URL in JSON and streaming modes; both must return valid token usage. Image tests detect the image pricing mode and probe the derived `/images/edits` endpoint; video tests call the exact configured URL and validate completed MP4 data; speech tests send a short sample and accept a valid binary audio response. Limited to one probe every 30 seconds per account. API keys require `account:keys`.",
             responses: {
                 200: {
                     description: "Endpoint test result",
@@ -676,10 +690,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
             try {
                 const endpointInput = {
                     ...input,
-                    baseUrl: validateInputEndpointUrl(input.baseUrl),
+                    baseUrl: validateInputEndpointUrl(
+                        input.modality === "text" ? input.url : input.baseUrl,
+                    ),
                 };
                 let result: CommunityEndpointTestResult;
-                if (input.modality === "video") {
+                if (input.modality === "text") {
+                    result = await testCommunityEndpoint({
+                        api: input.api,
+                        url: endpointInput.baseUrl,
+                        bearerToken: input.bearerToken,
+                        model: input.model,
+                    });
+                } else if (input.modality === "video") {
                     result = await testCommunityVideoEndpoint(endpointInput);
                 } else {
                     if (!input.model) {
@@ -698,11 +721,9 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                 )
                               : input.modality === "speech"
                                 ? await testCommunitySpeechEndpoint(modelInput)
-                                : input.modality === "embedding"
-                                  ? await testCommunityEmbeddingEndpoint(
-                                        modelInput,
-                                    )
-                                  : await testCommunityEndpoint(modelInput);
+                                : await testCommunityEmbeddingEndpoint(
+                                      modelInput,
+                                  );
                 }
                 return c.json({
                     ok: true,
@@ -719,7 +740,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                                   ? "Endpoint responded with audio data"
                                   : input.modality === "embedding"
                                     ? "Endpoint responded with embedding data"
-                                    : "Endpoint responded with usage",
+                                    : "JSON and streaming requests returned valid token usage",
                     ...result,
                 });
             } catch (error) {
@@ -768,6 +789,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             await ensureModelNameAvailable(
                 db,
                 user.id,
+                ownerGithubUsername,
                 input.name ?? endpoint.name,
                 id,
             );
@@ -848,26 +870,19 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         `Invalid endpoint_agent payload for ${endpoint.id}`,
                     );
                 }
-                if (input.baseUrl !== undefined) {
-                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
+                if (input.url !== undefined) {
+                    update.baseUrl = validateInputEndpointUrl(input.url);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
                 }
-                if (
-                    input.perUserRpm !== undefined ||
-                    input.responsesUrl !== undefined
-                ) {
+                if (input.perUserRpm !== undefined || input.api !== undefined) {
                     update.payload = JSON.stringify({
-                        perUserRpm: input.perUserRpm ?? current.perUserRpm,
-                        responsesUrl:
-                            input.responsesUrl === undefined
-                                ? current.responsesUrl
-                                : input.responsesUrl === null
-                                  ? null
-                                  : validateInputEndpointUrl(
-                                        input.responsesUrl,
-                                    ),
+                        perUserRpm:
+                            input.perUserRpm === undefined
+                                ? current.perUserRpm
+                                : input.perUserRpm,
+                        api: input.api ?? current.api,
                     });
                 }
             } else {
@@ -887,10 +902,14 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 }).payload;
                 const queued = parseListingPayload("proxy", pendingPayload);
                 const targetBase = queued ?? stored;
-                if (input.responsesUrl != null && stored.modality !== "text") {
+                if (
+                    (stored.modality === "text" &&
+                        input.baseUrl !== undefined) ||
+                    (stored.modality !== "text" && input.api !== undefined)
+                ) {
                     throw new HTTPException(400, {
                         message:
-                            "responsesUrl is supported only for text models",
+                            "Text endpoints accept api and url; media endpoints accept baseUrl",
                     });
                 }
                 const targetVisibility = pendingVisibility ?? nextVisibility;
@@ -934,14 +953,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                               normalizeInputBearerToken(input.bearerToken),
                               c.env.BETTER_AUTH_SECRET,
                           );
-                const responsesUrl =
-                    input.responsesUrl === undefined
-                        ? stored.responsesUrl
-                        : input.responsesUrl === null
-                          ? null
-                          : validateInputEndpointUrl(input.responsesUrl);
-                if (input.baseUrl !== undefined) {
-                    update.baseUrl = validateInputEndpointUrl(input.baseUrl);
+                const api = input.api ?? stored.api;
+                const url = input.url ?? input.baseUrl;
+                if (url !== undefined) {
+                    update.baseUrl = validateInputEndpointUrl(url);
                 }
                 if (input.upstreamModel !== undefined) {
                     update.upstreamModel = input.upstreamModel;
@@ -949,7 +964,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if (pendingReady || changesProxyPayload(input)) {
                     const payload: ProxyListingPayload = {
                         bearerTokenCiphertext,
-                        responsesUrl,
+                        api,
                         ...policy,
                         fallbacks,
                     };
@@ -961,7 +976,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 if ((delayPricing && pricingChanged) || queuesPublication) {
                     const targetPayload: ProxyListingPayload = {
                         bearerTokenCiphertext,
-                        responsesUrl,
+                        api,
                         ...targetPolicy,
                         fallbacks,
                     };
@@ -969,10 +984,10 @@ export const communityEndpointsRoutes = new Hono<Env>()
                     if (pricingChanged) {
                         pendingAt = new Date();
                     }
-                } else if (queued && input.responsesUrl !== undefined) {
+                } else if (queued && input.api !== undefined) {
                     pendingPayload = JSON.stringify({
                         ...queued,
-                        responsesUrl,
+                        api,
                     } satisfies ProxyListingPayload);
                 }
             }
@@ -990,11 +1005,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 )
                 .returning();
             return c.json(
-                toCommunityEndpointResponse(
-                    row,
-                    ownerGithubUsername,
-                    promptAgentApiBaseUrl(c.env),
-                ),
+                toCommunityEndpointResponse(row, ownerGithubUsername),
             );
         },
     )

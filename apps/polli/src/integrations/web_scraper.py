@@ -1,11 +1,214 @@
 import asyncio
+import json
 import logging
+import multiprocessing
+import os
+import queue
+import threading
+import time
+from html import unescape
 from typing import Any
 
 from ..utils.regex import re
 from ..utils.url import parse_url
 
 logger = logging.getLogger(__name__)
+
+# Crawl4AI owns Chromium and binds its Playwright objects to an event loop. A dedicated
+# thread makes one browser safe for both Discord and Granian's independent ASGI loop.
+_BROWSER_CONCURRENCY = 2
+_BROWSER_QUEUE_SIZE = 2
+_SEMANTIC_CONCURRENCY = 1
+_crawler_pool: "_SharedCrawlerPool | None" = None
+_crawler_pool_lock = threading.Lock()
+_semantic_slots = threading.BoundedSemaphore(_SEMANTIC_CONCURRENCY)
+
+
+class _SharedCrawlerPool:
+    def __init__(self, browser_config: Any):
+        self.browser_config = browser_config
+        self.loop = asyncio.new_event_loop()
+        self.ready = threading.Event()
+        self.tabs = threading.BoundedSemaphore(_BROWSER_CONCURRENCY + _BROWSER_QUEUE_SIZE)
+        self.active_tabs = asyncio.BoundedSemaphore(_BROWSER_CONCURRENCY)
+        self.start_lock: asyncio.Lock | None = None
+        self.closing = False
+        self.tasks: set[asyncio.Task[Any]] = set()
+        self.submission_lock = threading.Lock()
+        self.thread = threading.Thread(target=self._run_loop, daemon=True, name="polli-crawl4ai")
+        self.crawler: Any | None = None
+        self.start_error: BaseException | None = None
+        self.thread.start()
+        self.ready.wait()
+        if self.start_error:
+            raise self.start_error
+
+    def _run_loop(self) -> None:
+        asyncio.set_event_loop(self.loop)
+        self.ready.set()
+        self.loop.run_forever()
+        self.loop.close()
+
+    async def _get_crawler(self) -> Any:
+        if self.start_lock is None:
+            self.start_lock = asyncio.Lock()
+        async with self.start_lock:
+            if self.crawler is None:
+                from crawl4ai import AsyncWebCrawler
+
+                crawler = AsyncWebCrawler(config=self.browser_config)
+                try:
+                    await crawler.start()
+                except BaseException:
+                    await crawler.close()
+                    raise
+                self.crawler = crawler
+        return self.crawler
+
+    async def _run(self, url: str, crawl_config: Any, timeout: int) -> Any:
+        task = asyncio.current_task()
+        if task is not None:
+            self.tasks.add(task)
+        acquired_active_tab = False
+        try:
+            await asyncio.wait_for(self.active_tabs.acquire(), timeout=timeout)
+            acquired_active_tab = True
+            crawler = await asyncio.wait_for(self._get_crawler(), timeout=timeout)
+            return await asyncio.wait_for(crawler.arun(url=url, config=crawl_config), timeout=timeout)
+        finally:
+            if acquired_active_tab:
+                self.active_tabs.release()
+            if task is not None:
+                self.tasks.discard(task)
+            self.tabs.release()
+
+    async def submit(self, url: str, crawl_config: Any, timeout: int) -> Any:
+        with self.submission_lock:
+            if self.closing or not self.tabs.acquire(blocking=False):
+                raise RuntimeError("Browser scraper is busy; try again shortly.")
+            coroutine = self._run(url, crawl_config, timeout)
+            try:
+                future = asyncio.run_coroutine_threadsafe(coroutine, self.loop)
+            except BaseException:
+                coroutine.close()
+                self.tabs.release()
+                raise
+        try:
+            return await asyncio.wrap_future(future)
+        except asyncio.CancelledError:
+            future.cancel()
+            raise
+
+    async def close(self) -> None:
+        with self.submission_lock:
+            self.closing = True
+
+        async def close_crawler() -> None:
+            active = list(self.tasks)
+            for task in active:
+                task.cancel()
+            if active:
+                await asyncio.gather(*active, return_exceptions=True)
+            if self.crawler is not None:
+                await self.crawler.close()
+                self.crawler = None
+
+        future = asyncio.run_coroutine_threadsafe(close_crawler(), self.loop)
+        await asyncio.wrap_future(future)
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        await asyncio.to_thread(self.thread.join)
+
+
+async def close_web_scraper() -> None:
+    """Close the shared Crawl4AI browser during application shutdown."""
+    global _crawler_pool
+    with _crawler_pool_lock:
+        pool, _crawler_pool = _crawler_pool, None
+    if pool is not None:
+        await pool.close()
+
+
+def _get_shared_crawler(browser_config: Any) -> _SharedCrawlerPool:
+    global _crawler_pool
+    with _crawler_pool_lock:
+        if _crawler_pool is None:
+            _crawler_pool = _SharedCrawlerPool(browser_config)
+        elif getattr(_crawler_pool.browser_config, "headless", None) != getattr(browser_config, "headless", None):
+            raise ValueError(
+                "The shared Crawl4AI browser configuration does not support changing headless mode per request."
+            )
+        return _crawler_pool
+
+
+def _semantic_worker(output: Any, url: str, markdown: str, semantic_filter: str | None) -> None:
+    """Run Crawl4AI's synchronous embedding stack outside the service process."""
+    try:
+        for variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+            os.environ[variable] = "1"
+        import torch
+
+        torch.set_num_threads(1)
+        from crawl4ai import CosineStrategy
+        from crawl4ai.chunking_strategy import RegexChunking
+
+        class SingleChunkCosineStrategy(CosineStrategy):
+            def hierarchical_clustering(self, sentences):
+                if len(sentences) == 1:
+                    return [0]
+                return super().hierarchical_clustering(sentences)
+
+        strategy = SingleChunkCosineStrategy(
+            semantic_filter=semantic_filter,
+            word_count_threshold=20,
+            max_dist=0.2,
+            top_k=5,
+            sim_threshold=0.3,
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+        )
+        output.put((True, strategy.run(url, RegexChunking().chunk(markdown))))
+    except BaseException as error:
+        output.put((False, str(error)))
+
+
+async def _semantic_extract(url: str, markdown: str, semantic_filter: str | None, timeout: int) -> str:
+    """Hard-stop an isolated semantic worker rather than blocking Polli's event loop."""
+    if not _semantic_slots.acquire(blocking=False):
+        raise RuntimeError("Semantic extractor is busy; try again shortly.")
+    output: Any | None = None
+    process: Any | None = None
+    started = False
+    try:
+        context = multiprocessing.get_context("spawn")
+        output = context.Queue(maxsize=1)
+        process = context.Process(target=_semantic_worker, args=(output, url, markdown, semantic_filter))
+        process.start()
+        started = True
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            try:
+                success, value = output.get_nowait()
+                if success:
+                    return json.dumps(value, ensure_ascii=False)
+                raise RuntimeError(f"Semantic extraction failed: {value}")
+            except queue.Empty:
+                await asyncio.sleep(0.01)
+        raise TimeoutError
+    finally:
+        if started and process is not None:
+            if process.is_alive():
+                process.terminate()
+            cleanup_deadline = time.monotonic() + 1
+            while process.is_alive() and time.monotonic() < cleanup_deadline:
+                await asyncio.sleep(0.01)
+            if process.is_alive():
+                process.kill()
+                while process.is_alive():
+                    await asyncio.sleep(0.01)
+            process.join()
+        if output is not None:
+            output.close()
+        _semantic_slots.release()
+
 
 _BOT_MARKERS = [
     "cloudflare",
@@ -50,6 +253,21 @@ def _html_to_markdown(html: str) -> str:
         return soup.get_text(separator="\n", strip=True)
 
 
+def _regex_pattern_map(regex_strategy: Any) -> dict[str, Any]:
+    """Map public Crawl4AI 0.9 preset names to its exact IntFlag constants."""
+    return {
+        "email": regex_strategy.Email,
+        "phone": regex_strategy.PhoneIntl,
+        "url": regex_strategy.Url,
+        "date": regex_strategy.DateIso,
+        "currency": regex_strategy.Currency,
+        "ip": regex_strategy.IPv4,
+        "hashtag": regex_strategy.Hashtag,
+        "twitter": regex_strategy.TwitterHandle,
+        "all": regex_strategy.All,
+    }
+
+
 def _needs_browser(
     output_format: str,
     extraction_strategy: str | None,
@@ -91,7 +309,6 @@ async def _try_rnet(url: str, timeout: int) -> str | None:
         client = Client(
             timeout=timeout,
             impersonate=Impersonate.Chrome136,
-            redirect=10,
         )
         resp = await client.get(url)
         status = resp.status
@@ -112,15 +329,17 @@ async def _try_scrapling(url: str, timeout: int) -> str | None:
         from scrapling.fetchers import AsyncFetcher
 
         page = await asyncio.wait_for(
-            AsyncFetcher().get(url, follow_redirects=True),
+            AsyncFetcher.get(url, follow_redirects="safe"),
             timeout=timeout,
         )
         html = page.html_content if hasattr(page, "html_content") else ""
         if not html:
             html = page.body.decode(page.encoding or "utf-8", errors="replace") if hasattr(page, "body") else ""
-        if not html or _is_bot_blocked(html, 200):
+        if not html or _is_bot_blocked(html, page.status):
             return None
-        md = _html_to_markdown(html)
+        md = page.markdown(main_content_only=True)
+        if not md or not md.strip():
+            md = _html_to_markdown(html)
         return md if md and len(md) > 50 else None
     except Exception as e:
         logger.debug(f"scrapling failed for {url}: {e}")
@@ -422,11 +641,17 @@ async def _scrape_with_crawl4ai(
     headless: bool = True,
     session_id: str | None = None,
 ) -> dict:
+    if session_id:
+        return {
+            "success": False,
+            "url": url,
+            "error": "session_id is not supported by the shared browser scraper.",
+        }
     try:
-        from crawl4ai import AsyncWebCrawler, BrowserConfig, CacheMode, CrawlerRunConfig
+        from crawl4ai import BrowserConfig, CacheMode, CrawlerRunConfig
 
         ext_strategy = None
-        if extraction_strategy:
+        if extraction_strategy and extraction_strategy not in {"llm", "cosine"}:
             ext_strategy = _build_extraction_strategy(
                 strategy_type=extraction_strategy,
                 schema=schema,
@@ -444,6 +669,7 @@ async def _scrape_with_crawl4ai(
 
         browser_config = BrowserConfig(
             headless=headless,
+            create_isolated_context=True,
             verbose=False,
         )
 
@@ -458,7 +684,6 @@ async def _scrape_with_crawl4ai(
             wait_for=wait_for,
             screenshot=screenshot,
             pdf=pdf,
-            session_id=session_id,
             simulate_user=simulate_user or magic_mode,
             override_navigator=stealth_mode or magic_mode,
             magic=magic_mode,
@@ -466,9 +691,14 @@ async def _scrape_with_crawl4ai(
             process_iframes=process_iframes,
         )
 
-        async with AsyncWebCrawler(config=browser_config) as crawler:
-            result = await asyncio.wait_for(crawler.arun(url=url, config=crawl_config), timeout=timeout)
-
+        crawler_pool = _get_shared_crawler(browser_config)
+        try:
+            result = await crawler_pool.submit(url, crawl_config, timeout)
+        except RuntimeError as error:
+            if str(error) == "Browser scraper is busy; try again shortly.":
+                return {"success": False, "url": url, "error": str(error)}
+            raise
+        if True:
             if not result.success:
                 return {
                     "success": False,
@@ -503,13 +733,61 @@ async def _scrape_with_crawl4ai(
             if include_raw_html and result.html:
                 response["raw_html"] = result.html
 
-            if result.extracted_content:
-                try:
-                    from ..utils.json import loads as _json_loads
+            if extraction_strategy == "llm":
+                extracted_content = await _pollinations_extract(
+                    rendered,
+                    instruction or "Extract the main content and key information.",
+                    schema,
+                )
+            elif extraction_strategy == "cosine":
+                extracted_content = await _semantic_extract(url, rendered, semantic_filter, timeout)
+            elif extraction_strategy:
+                extracted_content = result.extracted_content
+            else:
+                extracted_content = None
 
-                    response["extracted"] = _json_loads(result.extracted_content)
+            if extraction_strategy:
+                if not extracted_content:
+                    return {
+                        "success": False,
+                        "url": url,
+                        "error": f"{extraction_strategy} extraction returned no result.",
+                    }
+                try:
+                    extracted_value = json.loads(extracted_content)
                 except ValueError:
-                    response["extracted"] = result.extracted_content
+                    if extraction_strategy == "css":
+                        return {
+                            "success": False,
+                            "url": url,
+                            "error": "CSS extraction returned invalid structured data.",
+                        }
+                    extracted_value = extracted_content
+                if isinstance(extracted_value, dict) and extracted_value.get("error"):
+                    return {
+                        "success": False,
+                        "url": url,
+                        "error": f"{extraction_strategy} extraction failed: {extracted_value['error']}",
+                    }
+                if isinstance(extracted_value, list):
+                    extraction_error = next(
+                        (item.get("error") for item in extracted_value if isinstance(item, dict) and item.get("error")),
+                        None,
+                    )
+                    if extraction_error:
+                        return {
+                            "success": False,
+                            "url": url,
+                            "error": f"{extraction_strategy} extraction failed: {extraction_error}",
+                        }
+                if extraction_strategy == "regex" and isinstance(extracted_value, list):
+                    for item in extracted_value:
+                        if isinstance(item, dict) and item.get("label") == "url" and isinstance(item.get("value"), str):
+                            item["value"] = unescape(item["value"])
+                response["extracted"] = extracted_value
+                if extraction_strategy == "css" and extracted_value == []:
+                    response["extraction_empty"] = True
+                    response["markdown"] = ""
 
             if include_links and result.links:
                 internal = result.links.get("internal", [])
@@ -560,6 +838,38 @@ async def _scrape_with_crawl4ai(
         return {"success": False, "url": url, "error": str(e)}
 
 
+async def _pollinations_extract(content: str, instruction: str, schema: dict | None) -> str:
+    """Extract through Pollinations' configured gateway, not a Crawl4AI dummy provider."""
+    from ..ai.client import pollinations_client
+
+    max_content_chars = 24_000
+    bounded_content = content[:max_content_chars]
+    schema_prompt = (
+        f"\nReturn JSON conforming to this schema: {json.dumps(schema, ensure_ascii=False)}"
+        if schema
+        else "\nReturn valid JSON only."
+    )
+    result = await pollinations_client.generate_text(
+        system_prompt=(
+            "You extract requested facts from supplied web content. Do not invent facts. Return only valid JSON."
+        ),
+        user_prompt=(
+            f"Instruction: {instruction}{schema_prompt}\n\n"
+            f"Content (limited to {max_content_chars} characters):\n{bounded_content}"
+        ),
+        temperature=0.0,
+    )
+    if not isinstance(result, str) or not result.strip():
+        raise ValueError("Configured Pollinations extraction returned no output.")
+    try:
+        parsed = json.loads(result)
+    except ValueError as e:
+        raise ValueError("Configured Pollinations extraction returned invalid JSON.") from e
+    if isinstance(parsed, dict) and parsed.get("error"):
+        raise ValueError(f"Configured Pollinations extraction failed: {parsed['error']}")
+    return json.dumps(parsed, ensure_ascii=False)
+
+
 def _build_extraction_strategy(
     strategy_type: str,
     schema: dict | None = None,
@@ -568,23 +878,7 @@ def _build_extraction_strategy(
     regex_patterns: list[str] | None = None,
 ):
     if strategy_type == "llm":
-        from crawl4ai import LLMConfig, LLMExtractionStrategy
-
-        llm_config = LLMConfig(
-            provider="openai/gpt-4o-mini",
-            api_token="dummy",
-        )
-
-        return LLMExtractionStrategy(
-            llm_config=llm_config,
-            instruction=instruction or "Extract the main content and key information.",
-            schema=schema,
-            extraction_type="schema" if schema else "block",
-            apply_chunking=True,
-            chunk_token_threshold=4000,
-            overlap_rate=0.1,
-            input_format="markdown",
-        )
+        raise ValueError("LLM extraction is handled by the configured Pollinations gateway.")
 
     elif strategy_type == "css":
         from crawl4ai import JsonCssExtractionStrategy
@@ -603,9 +897,23 @@ def _build_extraction_strategy(
         return JsonXPathExtractionStrategy(schema=schema, verbose=False)
 
     elif strategy_type == "cosine":
+        try:
+            import torch  # noqa: F401
+        except ImportError as e:
+            raise ImportError(
+                "Semantic extraction requires the Crawl4AI CPU embedding dependencies, including "
+                "a CPU-compatible torch installation."
+            ) from e
         from crawl4ai import CosineStrategy
 
-        return CosineStrategy(
+        class SingleChunkCosineStrategy(CosineStrategy):
+            def hierarchical_clustering(self, sentences):
+                # SciPy linkage requires two observations; one chunk is one cluster.
+                if len(sentences) == 1:
+                    return [0]
+                return super().hierarchical_clustering(sentences)
+
+        return SingleChunkCosineStrategy(
             semantic_filter=semantic_filter,
             word_count_threshold=20,
             max_dist=0.2,
@@ -617,17 +925,7 @@ def _build_extraction_strategy(
     elif strategy_type == "regex":
         from crawl4ai import RegexExtractionStrategy
 
-        pattern_map = {
-            "email": RegexExtractionStrategy.Email,
-            "phone": RegexExtractionStrategy.PhoneIntl,
-            "url": RegexExtractionStrategy.URL,
-            "date": RegexExtractionStrategy.DateISO,
-            "currency": RegexExtractionStrategy.Currency,
-            "ip": RegexExtractionStrategy.IPV4,
-            "hashtag": RegexExtractionStrategy.Hashtag,
-            "twitter": RegexExtractionStrategy.TwitterHandle,
-            "all": RegexExtractionStrategy.All,
-        }
+        pattern_map = _regex_pattern_map(RegexExtractionStrategy)
 
         patterns = regex_patterns or ["email", "url", "phone"]
         combined_pattern = RegexExtractionStrategy.Nothing
@@ -653,11 +951,9 @@ def _build_content_filter(filter_type: str, query: str | None = None):
         return PruningContentFilter(user_query=query, threshold=0.48, threshold_type="fixed")
 
     elif filter_type == "llm":
-        from crawl4ai import LLMConfig, LLMContentFilter
-
-        return LLMContentFilter(
-            llm_config=LLMConfig(provider="openai/gpt-4o-mini", api_token="dummy"),
-            instruction=query or "Extract relevant content",
+        raise ValueError(
+            "LLM content filtering is not configured for Crawl4AI; use a configured Pollinations "
+            "LLM route or configure a real Crawl4AI provider."
         )
 
     else:
@@ -707,12 +1003,49 @@ async def scrape_multiple(
             processed_results.append(result)
             failed += 1
 
+    per_item_limit = 12_000
+    response_limit = 48_000
+    bounded_results: list[dict] = []
+    omitted = 0
+    for item in processed_results:
+        serialized = json.dumps(item, ensure_ascii=False, separators=(",", ":"), default=str)
+        if len(serialized) > per_item_limit:
+            item = {
+                "success": item.get("success", False),
+                "url": str(item.get("url", ""))[:2_000],
+                "url_truncated": len(str(item.get("url", ""))) > 2_000,
+                "output_truncated": True,
+                "output_limit_chars": per_item_limit,
+                "original_output_chars": len(serialized),
+            }
+        candidate = {
+            "success": succeeded > 0,
+            "results": [*bounded_results, item],
+            "succeeded": succeeded,
+            "failed": failed,
+            "total": len(urls),
+            "results_omitted": len(processed_results) - len(bounded_results) - 1,
+            "response_truncated": len(bounded_results) + 1 < len(processed_results),
+            "response_limit_chars": response_limit,
+            "per_item_limit_chars": per_item_limit,
+        }
+        if len(json.dumps(candidate, ensure_ascii=False, separators=(",", ":"), default=str)) > response_limit:
+            omitted = len(processed_results) - len(bounded_results)
+            break
+        bounded_results.append(item)
+    else:
+        omitted = 0
+
     return {
         "success": succeeded > 0,
-        "results": processed_results,
+        "results": bounded_results,
         "succeeded": succeeded,
         "failed": failed,
         "total": len(urls),
+        "results_omitted": omitted,
+        "response_truncated": bool(omitted),
+        "response_limit_chars": response_limit,
+        "per_item_limit_chars": per_item_limit,
     }
 
 
@@ -761,13 +1094,7 @@ async def parse_file_content(
         try:
             from crawl4ai import RegexExtractionStrategy
 
-            pattern_map = {
-                "email": RegexExtractionStrategy.Email,
-                "phone": RegexExtractionStrategy.PhoneIntl,
-                "url": RegexExtractionStrategy.URL,
-                "date": RegexExtractionStrategy.DateISO,
-                "ip": RegexExtractionStrategy.IPV4,
-            }
+            pattern_map = _regex_pattern_map(RegexExtractionStrategy)
 
             combined = RegexExtractionStrategy.Nothing
             for p in extract_patterns:
@@ -778,8 +1105,22 @@ async def parse_file_content(
                 strategy = RegexExtractionStrategy(pattern=combined, input_format="text")
                 extracted = strategy.extract("file", content)
                 response["extracted_patterns"] = extracted
-        except ImportError:
-            pass
+        except ImportError as e:
+            return {
+                "success": False,
+                "file_type": file_type,
+                "length": len(content),
+                "content": content,
+                "error": f"crawl4ai not installed or missing dependency: {e}",
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "file_type": file_type,
+                "length": len(content),
+                "content": content,
+                "error": f"Regex extraction failed: {e}",
+            }
 
     if instruction:
         try:

@@ -28,6 +28,39 @@ describe("community endpoint per-user RPM input", () => {
         expect(isValidPerUserRpm("0")).toBe(false);
     });
 
+    it.each([
+        "responses",
+        "chat_completions",
+    ] as const)("serializes one exact %s text target", (api) => {
+        const payload = toEndpointPayload({
+            ...emptyForm,
+            api,
+            url: " https://example.com/endpoint?version=1 ",
+        });
+        expect(payload).toMatchObject({
+            modality: "text",
+            api,
+            url: "https://example.com/endpoint?version=1",
+        });
+        expect(payload).not.toHaveProperty("baseUrl");
+        expect(payload).not.toHaveProperty("responsesUrl");
+    });
+
+    it("keeps media on the base URL contract without a text API choice", () => {
+        const payload = toEndpointPayload({
+            ...emptyForm,
+            modality: "image",
+            api: "responses",
+            url: "https://example.com/v1",
+        });
+        expect(payload).toMatchObject({
+            modality: "image",
+            baseUrl: "https://example.com/v1",
+        });
+        expect(payload).not.toHaveProperty("api");
+        expect(payload).not.toHaveProperty("url");
+    });
+
     it("serializes the prompt-agent fields", () => {
         expect(
             toAgentPayload({
@@ -59,8 +92,10 @@ describe("community endpoint per-user RPM input", () => {
             perUserRpm: null,
             paidOnly: false,
             fallbacks: [],
-            baseUrl: "https://example.com/v1",
+            api: "responses",
+            url: "https://example.com/v1/responses",
             upstreamModel: "model",
+            requiredSafetyFeatures: [],
             visibility: "private",
             pending: {
                 effectiveAt: "2026-08-28T12:00:00.000Z",
@@ -80,6 +115,8 @@ describe("community endpoint per-user RPM input", () => {
             visibility: "public",
             paidOnly: true,
             promptTextPrice: "2",
+            api: "responses",
+            url: "https://example.com/v1/responses",
         });
         expect(savedEndpointPriceKeys(endpoint)).toContain("promptCachedPrice");
     });

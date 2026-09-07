@@ -34,6 +34,11 @@
   "triggers": { "crons": ["*/5 * * * *"] },
   "vars": {
     "WEBUI_URL": "https://openwebui.pollinations.ai",
+    "GEN_URL": "https://gen.pollinations.ai/v1",
+    "ENTER_URL": "https://enter.pollinations.ai",
+    "MCP_URL": "https://mcp.pollinations.ai/",
+    "API_TYPE": "chat_completions",
+    "MODEL_IDS": [],
     "OAUTH_CLIENT_ID": "pk_NVZ2LTQeblbbw1P8"
   },
   "observability": { "enabled": true },
@@ -59,7 +64,13 @@
       "triggers": { "crons": [] },
       "vars": {
         "WEBUI_URL": "https://openwebui-staging.elliot-b6e.workers.dev",
-        "OAUTH_CLIENT_ID": "pk_NVZ2LTQeblbbw1P8"
+        "GEN_URL": "https://staging.gen.pollinations.ai/v1",
+        "ENTER_URL": "https://staging.enter.pollinations.ai",
+        // No production MCP connection in the staging instance.
+        "MCP_URL": "",
+        "API_TYPE": "responses",
+        "MODEL_IDS": ["openai", "gemini"],
+        "OAUTH_CLIENT_ID": "pk_sF4w5mlijzIgoCeh"
       }
     }
   }

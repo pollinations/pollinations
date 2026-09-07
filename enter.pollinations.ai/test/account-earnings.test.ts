@@ -176,7 +176,7 @@ test("GET /api/account/earnings/transactions returns trimmed feed rows", async (
             cursor_event_id: "event-1",
             timestamp: "2026-04-14 12:10:00",
             entity_name: "BYOP App",
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             meter_source: "tier",
             pollen_earned: 0.1,
         },
@@ -198,7 +198,7 @@ test("GET /api/account/earnings/transactions returns trimmed feed rows", async (
         cursor_event_id: "event-1",
         timestamp: "2026-04-14 12:10:00",
         entity_name: "BYOP App",
-        model: "openai-fast",
+        model: "openai/gpt-5-nano",
         meter_source: "tier",
         pollen_earned: 0.1,
     });

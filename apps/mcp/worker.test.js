@@ -69,7 +69,7 @@ test("serves health and requires bearer auth", async () => {
     assert.equal(oldEndpoint.status, 404);
 });
 
-test("serves modern and legacy clients without sessions", async () => {
+test("serves current and 2025 Streamable HTTP without sessions", async () => {
     const modern = await connectClient({
         versionNegotiation: { mode: "auto" },
     });

@@ -84,7 +84,14 @@ export interface ChatCompletion {
     choices?: CompletionChoice[];
     usage?: Record<string, unknown>;
     citations?: string[];
-    error?: string | { message?: string; status?: number; details?: unknown };
+    error?:
+        | string
+        | {
+              message?: string;
+              status?: number;
+              code?: number;
+              details?: unknown;
+          };
     stream?: boolean;
     responseStream?: ReadableStream | null;
     requestData?: unknown;
@@ -107,6 +114,8 @@ export interface ServiceError extends Error {
      */
     errorCode?: string;
     details?: unknown;
+    /** Original provider response, retained independently of parsed routing details. */
+    responseBody?: string;
     model?: string;
     provider?: string;
     response?: { data?: unknown };

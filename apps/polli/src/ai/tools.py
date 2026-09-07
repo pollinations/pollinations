@@ -24,7 +24,7 @@ GITHUB_TOOLS = [
 Actions:
 - get: Get issue (issue_number, include_comments)
 - get_history: Get edit history - title changes and body edits (issue_number, edit_index=N for full diff of specific edit)
-- search: General issue search with filters (keywords, state, labels)
+- search: Search issues (keywords or native GitHub query; state, labels)
 - search_user: User's issues by discord username (discord_username, state)
 - find_similar: Find potential DUPLICATES before creating new issue (keywords, limit)
 - list_labels / list_milestones: List available
@@ -85,9 +85,22 @@ Actions:
                         "type": "integer",
                         "description": "Issue number (for get, close, comment, edit, label, assign, etc.)",
                     },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Returned next_cursor for native-query search, labels, or milestones; keep the same filters.",
+                    },
+                    "edit_index": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "For get_history: fetched edit index, zero is most recent.",
+                    },
                     "keywords": {
                         "type": "string",
                         "description": "Search terms (for search, find_similar)",
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "For search: native GitHub qualifiers, e.g. is:closed label:bug. Repository-scoped; no implicit open filter.",
                     },
                     "state": {
                         "type": "string",
@@ -277,6 +290,16 @@ Read-only — mutations are blocked.""",
                         "type": "string",
                         "description": "Plain English fallback — describe what data you need",
                     },
+                    "author": {
+                        "type": "string",
+                        "description": "GitHub author login for issue/PR retrieval in request mode; use this field rather than only mentioning an author in request text.",
+                    },
+                    "page": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 10,
+                        "description": "REST page number (default 1); limit sets the page size.",
+                    },
                     "include_body": {
                         "type": "boolean",
                         "description": "Include full body text in results (for request mode)",
@@ -299,7 +322,7 @@ Read-only — mutations are blocked.""",
 Actions:
 - get: Get PR details (pr_number)
 - get_history: Get edit history - title changes and body edits (pr_number, edit_index=N for full diff of specific edit)
-- list: List PRs (state, limit, base)
+- list: List PRs (state, limit, base, author or native GitHub query)
 - get_files/get_diff/get_checks/get_commits: PR details (pr_number)
 - get_threads/get_review_comments: Review discussions (pr_number)
 - get_file_at_ref: Get file content at branch/commit (file_path, ref)
@@ -360,6 +383,23 @@ Actions:
                     "pr_number": {
                         "type": "integer",
                         "description": "PR number (for most actions)",
+                    },
+                    "author": {
+                        "type": "string",
+                        "description": "GitHub author login filter for list.",
+                    },
+                    "query": {
+                        "type": "string",
+                        "description": "For list: native GitHub qualifiers, e.g. is:merged author:login review:approved. Repository-scoped; no implicit open filter.",
+                    },
+                    "cursor": {
+                        "type": "string",
+                        "description": "Returned next_cursor for native-query list; keep the same query and filters.",
+                    },
+                    "edit_index": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Get the full diff for a fetched history entry (0 is most recent).",
                     },
                     "state": {
                         "type": "string",
@@ -810,7 +850,7 @@ EXAMPLES:
 - "messages mentioning @user" → mentions="<@123>" (NOT user_id — that means author)
 - "who pinged everyone" → mention_everyone=true
 
-Security: Results filtered to channels the user can access.""",
+Security: Results are filtered to channels the caller can read, including message history. HTTP callers use public scope only; private threads are never exposed. Explicit unavailable channel names fail instead of widening to the guild. Message-search pagination uses offset; an empty indexed result does not prove that a message does not exist.""",
         "parameters": {
             "type": "object",
             "properties": {
@@ -948,9 +988,11 @@ RENDER_VISUAL_TOOL = {
     "type": "function",
     "function": {
         "name": "render_visual",
-        "description": """Render data as an image attached to your reply, instead of writing a markdown table or describing a chart in text.
+        "description": """Create a premium, editorial-quality visual as a high-resolution image attachment. Treat every visual as a finished deliverable: elegant composition, dramatic but truthful hierarchy, descriptive title, precise labels, generous spacing, restrained accessible color, and no clutter.
 
-Types: table, bar, horizontal_bar (long category names), line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
+Choose the form autonomously by the data's job: bar for magnitude/ranking, horizontal_bar for long labels, line/area for change over time, scatter for relationships, histogram for distributions, heatmap for a matrix, pie/donut only for ≤8 meaningful parts of a whole, table for exact lookup, and diagram for systems/flows. Never use dual axes, rainbow scales, decorative 3D effects, or color alone to carry meaning. Aggregate excess detail without hiding the conclusion. Keep accompanying prose brief.
+
+Types: table, bar, horizontal_bar, line, area, scatter, pie/donut (≤8 slices), heatmap, histogram, diagram.
 `diagram` is Mermaid — flowchart, sequenceDiagram, classDiagram, stateDiagram, erDiagram, journey, gantt, pie, quadrantChart, requirementDiagram, gitGraph, mindmap, timeline, sankey, xychart, block, packet, kanban, architecture, radar, treemap, C4Context.
 
 Discord does not render Mermaid fences. Always use `type: "diagram"` when the user asks for a diagram or flowchart; the tool returns an attached image.

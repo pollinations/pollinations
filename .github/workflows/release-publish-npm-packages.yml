@@ -7,7 +7,6 @@ on:
       - ".github/workflows/release-publish-npm-packages.yml"
       - "packages/sdk/**"
       - "packages/ui/**"
-      - "packages/mcp/**"
       - "packages/polli-cli/**"
 
 jobs:
@@ -18,7 +17,6 @@ jobs:
     outputs:
       sdk: ${{ steps.changes.outputs.sdk }}
       ui: ${{ steps.changes.outputs.ui }}
-      mcp: ${{ steps.changes.outputs.mcp }}
       cli: ${{ steps.changes.outputs.cli }}
     steps:
       - uses: actions/checkout@v4
@@ -36,7 +34,6 @@ jobs:
           fi
           echo "sdk=$(echo "$changed" | grep -q '^packages/sdk/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "ui=$(echo "$changed" | grep -q '^packages/ui/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
-          echo "mcp=$(echo "$changed" | grep -q '^packages/mcp/' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "cli=$(echo "$changed" | grep -Eq '^packages/polli-cli/|^\.github/workflows/release-publish-npm-packages\.yml$' && echo true || echo false)" >> "$GITHUB_OUTPUT"
           echo "Changed files:"
           echo "$changed" | grep '^packages/' || true
@@ -128,44 +125,6 @@ jobs:
           case "$v" in *-*) tag="${v#*-}"; tag="${tag%%.*}";; esac
           echo "Publishing $v under dist-tag: $tag"
           npm publish --access public --tag "$tag"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-  publish-mcp:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.mcp == 'true'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          registry-url: https://registry.npmjs.org/
-
-      - name: Install dependencies
-        working-directory: packages/mcp
-        run: npm ci --ignore-scripts
-
-      - name: Check if version already published
-        id: check
-        working-directory: packages/mcp
-        run: |
-          name=$(node -p "require('./package.json').name")
-          v=$(node -p "require('./package.json').version")
-          if npm view "$name@$v" version >/dev/null 2>&1; then
-            echo "Version $v already on npm — skipping publish"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "skip=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Publish to NPM
-        if: steps.check.outputs.skip != 'true'
-        working-directory: packages/mcp
-        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 

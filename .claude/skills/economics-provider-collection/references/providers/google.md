@@ -7,12 +7,13 @@ Canonical vendor: `google`
 - Status: service-account OAuth and bounded BigQuery billing export work.
 - Preserve native EUR.
 - Billing account: `0180E5-574541-B8F8FD` (`My Billing Account`).
-- Charged project: `stellar-verve-465920-b7` (`Research`). The `Test`
-  project and non-project scope had no August cost when checked.
+- Billing export project: `stellar-verve-465920-b7` (`Research`). Query all
+  billed projects and the non-project scope; do not assume other scopes are zero.
 - Balance scope: include only credits usable for compute, infrastructure, or
   model usage. Exclude support-only and other operational-benefit credits.
 - Current-month rows are snapshots. Refresh the bounded BigQuery export before
-  using them for Runway; `recorded_at` must identify the data-through date.
+  using them for Runway; `start`/`end` identify actual coverage, while
+  `recorded_at` is the ingestion timestamp.
 
 Primary evidence sources:
 
@@ -23,7 +24,7 @@ Primary evidence sources:
 
 Collection steps:
 
-1. For invoices, place PDFs/receipts in `data/inbox/`.
+1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
 2. For billing export evidence, use the service-account JSON from `GCP_BILLING_SA_JSON`.
 3. Do not print the service-account JSON.
 4. Activate a temporary service-account session and run a bounded BigQuery query for the requested period.
@@ -61,9 +62,9 @@ Collection steps:
 
    After the dry run succeeds, run the same query without `--dry_run` and save stdout.
 
-7. Save raw query output to `data/inbox/google-<period>-billing-export.json`.
+7. Save raw query output to `<collection-dir>/evidence/google-<period>-billing-export.json`.
 8. Use this skill for saved raw evidence.
-9. For the current OP Cloud balance, review Billing → Credits → Issued Credits
+9. For the current Compute ledger balance, review Billing → Credits → Issued Credits
    and record one dated `type: balance` row containing only remaining credits
    whose usage scope covers compute, infrastructure, or model usage.
 
@@ -72,7 +73,7 @@ Suggested bounded query shape:
 ```sql
 SELECT
   FORMAT_DATE('%Y-%m', DATE(usage_start_time)) AS month,
-  ANY_VALUE(currency) AS currency,
+  currency,
   ROUND(SUM(cost), 2) AS gross_amount,
   ROUND(SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS credits_amount,
   ROUND(SUM(cost) + SUM(IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)), 2) AS net_amount,
@@ -81,8 +82,8 @@ SELECT
 FROM `<billing_export_table>`
 WHERE DATE(usage_start_time) >= '<period_start>'
   AND DATE(usage_start_time) < '<period_end_exclusive>'
-GROUP BY month
-ORDER BY month
+GROUP BY month, currency
+ORDER BY month, currency
 ```
 
 Service/SKU query for classification:
@@ -90,7 +91,7 @@ Service/SKU query for classification:
 ```sql
 SELECT
   FORMAT_DATE('%Y-%m', DATE(usage_start_time)) AS month,
-  ANY_VALUE(currency) AS currency,
+  currency,
   service.description AS service,
   sku.description AS sku,
   ROUND(SUM(cost), 2) AS gross_amount,
@@ -101,24 +102,27 @@ SELECT
 FROM `<billing_export_table>`
 WHERE DATE(usage_start_time) >= '<period_start>'
   AND DATE(usage_start_time) < '<period_end_exclusive>'
-GROUP BY month, service, sku
-ORDER BY month, service, sku
+GROUP BY month, currency, service, sku
+ORDER BY month, currency, service, sku
 ```
 
 Known traps:
 
 - Cost is kept in native EUR locally.
-- Include `currency` in the raw query output when available. If missing, use `EUR` only when the billing export/account context proves native EUR and explain that in `reconciliation_notes`.
-- Billing export produces gross cost and credit rows. Treat `abs(credits_amount)` as credit/discount usage.
+- Preserve the export currency per group; never aggregate different currencies.
+- Record signed usage: `paid = -net_amount`, `credit = credits_amount`.
+  Preserve adjustment signs; do not turn reversals into usage with `abs()`.
 - A credit can be available but unusable for compute. In particular, do not
   count `Enhanced Support` or similar support-only credits in the Balances
   page. Preserve them in evidence notes only.
-- The Myceli billing account's USD 75,000 Scale Y1 and USD 25,000 Ecosystem
-  Partner compute-related lots are fully used. The remaining USD 12,000
-  Enhanced Support credit is excluded from the compute balance.
+- Check each grant lot's scope and remaining amount separately; support-only
+  lots must not fund a compute forecast.
 - A pure billing export is usage/cost truth, not cash transaction truth.
 - BigQuery queries can be broad; always bound by period.
 - Avoid writing service-account JSON to repo paths. If a temp key file is needed, use a temp directory and delete it after collection.
-- For the main entry, use `amount = net_amount` when the source is a monthly aggregate. Put gross, net, absolute credits, row count, and latest usage in `cost_details`.
-- Prefer the service/SKU query when model/inference vs infra classification matters. If only aggregate data is available, use one aggregate infra/unknown entry and explain the missing service split.
-- Pure BigQuery exports use `op_transaction_category: null`, `should_match_op_transaction: false`, and `should_match_op_cloud: true`.
+- Use the service/SKU query for Compute rows (`source: export`), preserving
+  the raw SKU and service in `resource_sku`/`resource_name`. Use the monthly
+  total only as a reconciliation check, not a second ledger entry.
+- If only an aggregate is available, preserve it with the missing split
+  stated in evidence; do not label unknown cost as infrastructure.
+- Billing exports never create Bank rows; only actual bank movements do.

@@ -33,7 +33,7 @@ export function App() {
     return (
         <PolliProvider appKey="pk_your_publishable_key" permissions={["profile"]}>
             <Surface>
-                <AppUserMenu dashboardHref="https://enter.pollinations.ai" />
+                <AppUserMenu />
             </Surface>
         </PolliProvider>
     );

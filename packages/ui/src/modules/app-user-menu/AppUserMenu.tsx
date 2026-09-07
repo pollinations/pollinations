@@ -5,7 +5,12 @@ import {
 } from "@pollinations/sdk/react";
 import { AccountMenu } from "../../compositions/AccountMenu.tsx";
 import { DropdownItem } from "../../primitives/DropdownItem.tsx";
-import { LockIcon, SignOutIcon } from "../../primitives/icons/index.tsx";
+import {
+    ExternalLinkIcon,
+    LockIcon,
+    SignOutIcon,
+    WalletIcon,
+} from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
 import { Balance } from "../wallet/sdk.ts";
 
@@ -17,24 +22,20 @@ export type AppUserMenuLabels = {
 };
 
 export type AppUserMenuProps = {
-    dashboardHref: string;
     labels?: Partial<AppUserMenuLabels>;
 };
 
 const defaultLabels: AppUserMenuLabels = {
-    authorize: "Connect",
+    authorize: "Connect Pollen",
     appUserMenu: "App user menu",
-    topUpAccount: "Top up account",
-    logout: "Log out from this app",
+    topUpAccount: "Top up Pollen",
+    logout: "Disconnect Pollen",
 };
 
 /** Delegated API access. Logging out forgets this app's key; it does not revoke it. */
-export function AppUserMenu({
-    dashboardHref,
-    labels: labelOverrides,
-}: AppUserMenuProps) {
+export function AppUserMenu({ labels: labelOverrides }: AppUserMenuProps) {
     const labels = { ...defaultLabels, ...labelOverrides };
-    const { logout } = useAuthActions();
+    const { logout, enterUrl } = useAuthActions();
     const { isLoggedIn } = useAuthState();
     const profile = useAccountProfile({ enabled: isLoggedIn });
 
@@ -58,7 +59,7 @@ export function AppUserMenu({
                     avatarUrl={profile.data?.image}
                     menuLabel={labels.appUserMenu}
                     className="polli:max-w-64"
-                    menuClassName="polli:w-64"
+                    menuClassName="polli:w-max polli:min-w-0"
                     secondaryContent={
                         <Balance className="polli:bg-transparent polli:px-0 polli:py-0 polli:text-xs polli:text-theme-text-base" />
                     }
@@ -67,12 +68,20 @@ export function AppUserMenu({
                         <>
                             <DropdownItem
                                 as="a"
-                                href={dashboardHref}
+                                href={new URL("/pollen", enterUrl).href}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 onClick={close}
                             >
+                                <WalletIcon
+                                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
                                 {labels.topUpAccount}
+                                <ExternalLinkIcon
+                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
                             </DropdownItem>
                             <DropdownItem
                                 onClick={() => {

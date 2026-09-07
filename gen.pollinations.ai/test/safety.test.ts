@@ -613,6 +613,7 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
             id: "community-endpoint-id",
             ownerUserId: "owner-id",
             modelId: "owner/community-model",
+            api: "chat_completions",
             name: "community-model",
             title: "Community Model",
             description: null,
@@ -620,7 +621,7 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
             imagePricing: "request",
             inputModalities: ["text"],
             requiredSafetyFeatures: [],
-            baseUrl: "https://community.example.test/v1",
+            baseUrl: "https://community.example.test/v1/chat/completions",
             upstreamModel: "upstream-model",
             visibility: "public",
             paidOnly: false,
@@ -658,6 +659,13 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
                     },
                 });
             },
+        );
+        vi.stubGlobal(
+            "fetch",
+            (input: RequestInfo | URL, init?: RequestInit) =>
+                new Request(input, init).url === endpoint.baseUrl
+                    ? upstreamFetch(input, init)
+                    : fetchMock(input, init),
         );
         const app = new Hono<Env>()
             .use("*", async (c, next) => {
@@ -699,8 +707,6 @@ describe("applySafetyToInput", { timeout: 30000 }, () => {
             {
                 ...configuredEnv,
                 BETTER_AUTH_SECRET: secret,
-                PORTKEY_GATEWAY_URL: "https://portkey.test",
-                PORTKEY: { fetch: upstreamFetch },
             } as unknown as CloudflareBindings,
         );
 

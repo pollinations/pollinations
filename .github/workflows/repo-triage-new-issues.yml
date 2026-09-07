@@ -151,7 +151,7 @@ jobs:
                     'Authorization': `Bearer ${process.env.POLLINATIONS_TOKEN}`,
                   },
                   body: JSON.stringify({
-                    model: 'polly',
+                    model: 'pollinations-router/polli',
                     seed: SEEDS[attempt],
                     messages: [
                       { role: 'system', content: systemPrompt },

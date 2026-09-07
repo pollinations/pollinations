@@ -21,6 +21,7 @@ export class InferenceportError extends Error {
     constructor(
         message: string,
         readonly status?: number,
+        readonly responseBody?: string,
     ) {
         super(message);
         this.name = "InferenceportError";
@@ -166,8 +167,9 @@ async function inferenceportFetch<T>(
     if (!response.ok) {
         const text = await response.text().catch(() => "<no body>");
         throw new InferenceportError(
-            `InferencePort ${method} ${url} failed (HTTP ${response.status}): ${text.slice(0, 300)}`,
+            `InferencePort ${method} ${url} failed (HTTP ${response.status}): ${text}`,
             classifyInferenceportHttpStatus(response.status),
+            text,
         );
     }
     return (await response.json()) as T;

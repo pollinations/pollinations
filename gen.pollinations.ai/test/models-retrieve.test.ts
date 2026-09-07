@@ -21,6 +21,12 @@ test("retrieves a model by canonical ID", async () => {
         Math.floor(Date.now() / 1000),
     );
     expect(typeof body.owned_by).toBe("string");
+    expect(body).toMatchObject({
+        aliases: expect.any(Array),
+        category: "text",
+        community: false,
+        title: expect.any(String),
+    });
 });
 
 test("retrieves a publisher-qualified canonical ID", async ({ paidApiKey }) => {

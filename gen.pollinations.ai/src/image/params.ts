@@ -210,6 +210,40 @@ export const ImageParamsSchema = z
                 });
             }
         }
+        if (data.model === "minimax/minimax-h3-max-turbo") {
+            if (
+                data.duration !== undefined &&
+                ![5, 10, 15].includes(data.duration)
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["duration"],
+                    message:
+                        "minimax/minimax-h3-max-turbo supports 5, 10, or 15 seconds.",
+                });
+            }
+            if (
+                data.aspectRatio !== undefined &&
+                !["21:9", "16:9", "4:3", "1:1", "3:4", "9:16"].includes(
+                    data.aspectRatio,
+                )
+            ) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["aspectRatio"],
+                    message:
+                        "minimax/minimax-h3-max-turbo supports 21:9, 16:9, 4:3, 1:1, 3:4, or 9:16.",
+                });
+            }
+            if (data.fps !== undefined && data.fps !== 24) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: ["fps"],
+                    message:
+                        "minimax/minimax-h3-max-turbo outputs video at 24 FPS.",
+                });
+            }
+        }
         if (data.model === "google/gemini-omni-1.1-flash") {
             if (
                 data.aspectRatio !== undefined &&

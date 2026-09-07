@@ -87,7 +87,8 @@ export type DisplayCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 export const getModelCapabilities = (
     model: ModelPrice,
@@ -99,6 +100,7 @@ export const getModelCapabilities = (
     if (hasReasoning(model)) keys.push("reasoning");
     if (hasSearch(model)) keys.push("web_search");
     if (hasCodeExecution(model)) keys.push("code_execution");
+    if (hasPollinationsTools(model)) keys.push("pollinations_models");
 
     return keys;
 };
@@ -111,6 +113,7 @@ export const getModelCapabilityLabel = (model: ModelPrice): string => {
     if (hasReasoning(model)) labels.push("Reasoning");
     if (hasSearch(model)) labels.push("Web search");
     if (hasCodeExecution(model)) labels.push("Code execution");
+    if (hasPollinationsTools(model)) labels.push("Pollinations models");
 
     return labels.join(", ");
 };

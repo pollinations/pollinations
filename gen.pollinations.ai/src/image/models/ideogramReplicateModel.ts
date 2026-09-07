@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Ideogram 4.0 (turbo / balanced / quality) image generation via Replicate.
  *
@@ -15,14 +16,13 @@
  * closest preset by log-space ratio distance.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:ideogram:ops");
@@ -161,14 +161,16 @@ async function callIdeogramReplicateAPI(
         });
     } catch (err) {
         logError(`${variant.displayName} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${variant.displayName} generation failed`,
         );
     }
 
     if (!outputUrl) {
-        throw new HttpError(`${variant.displayName} returned no image`, 500);
+        throw UpstreamError.fromProvider(500, {
+            message: `${variant.displayName} returned no image`,
+        });
     }
 
     const imageResponse = await fetchUpstream(outputUrl, {

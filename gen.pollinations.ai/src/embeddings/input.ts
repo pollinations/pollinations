@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import { HttpError } from "@shared/http-error.ts";
 import { HTTPException } from "hono/http-exception";
 import { downloadImageAsBase64 } from "@/image/utils/imageDownload.ts";
 import { UserImageError } from "@/userImage.ts";
@@ -104,7 +103,7 @@ async function imageUrlToInlineData(url: string): Promise<GeminiPart> {
                 upstreamStatus: error.upstreamStatus,
             });
         }
-        if (error instanceof HttpError) badRequest(error.message);
+        if (error instanceof UpstreamError) badRequest(error.message);
         throw error;
     }
 }

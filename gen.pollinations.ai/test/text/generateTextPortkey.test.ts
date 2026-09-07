@@ -6,6 +6,10 @@ const azureModelConfig = {
     "azure-api-key": "test-key",
     "azure-resource-name": "myceli-prod-eastus",
     "azure-deployment-id": "gpt-5.6-luna",
+    authKey: "test-key",
+    responsesEndpoint:
+        "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+    responsesAuthHeader: "api-key",
 };
 
 afterEach(() => {
@@ -248,35 +252,31 @@ describe("generateTextPortkey", () => {
         expect(fetcher).toHaveBeenCalledOnce();
     });
 
-    it("preserves seeded GPT-5.6 requests on Chat Completions", async () => {
-        const fetcher = vi.fn(
-            async (_input: RequestInfo | URL, init?: RequestInit) => {
-                expect(JSON.parse(String(init?.body))).toMatchObject({
+    it("rejects seed for a Responses-backed model", async () => {
+        const portkeyFetcher = vi.fn();
+        const responsesFetcher = vi.spyOn(globalThis, "fetch");
+
+        let error: unknown;
+        try {
+            await generateTextPortkey(
+                [{ role: "user", content: "hello" }],
+                {
                     model: "gpt-5.6-luna",
                     seed: 42,
-                });
-                return Response.json({
-                    choices: [
-                        {
-                            message: { role: "assistant", content: "ok" },
-                        },
-                    ],
-                });
-            },
-        );
+                    modelConfig: azureModelConfig,
+                },
+                portkeyFetcher,
+            );
+        } catch (thrown) {
+            error = thrown;
+        }
+        expect(error).toMatchObject({
+            status: 400,
+            errorCode: "unsupported_parameter",
+        });
 
-        await generateTextPortkey(
-            [{ role: "user", content: "hello" }],
-            {
-                model: "gpt-5.6-luna",
-                seed: 42,
-                modelConfig: azureModelConfig,
-                portkeyGatewayUrl: "https://portkey.test",
-            },
-            fetcher,
-        );
-
-        expect(fetcher).toHaveBeenCalledOnce();
+        expect(portkeyFetcher).not.toHaveBeenCalled();
+        expect(responsesFetcher).not.toHaveBeenCalled();
     });
 
     it("routes an unseeded GPT-5.6 request through Azure Responses", async () => {
@@ -292,6 +292,8 @@ describe("generateTextPortkey", () => {
                 });
                 return Response.json({
                     id: "resp_1",
+                    object: "response",
+                    model: "gpt-5.6-luna",
                     status: "completed",
                     output: [
                         {
@@ -299,6 +301,11 @@ describe("generateTextPortkey", () => {
                             content: [{ type: "output_text", text: "ok" }],
                         },
                     ],
+                    usage: {
+                        input_tokens: 1,
+                        output_tokens: 1,
+                        total_tokens: 2,
+                    },
                 });
             });
 
@@ -314,50 +321,5 @@ describe("generateTextPortkey", () => {
         expect(fetchSpy).toHaveBeenCalledOnce();
         expect(portkeyFetcher).not.toHaveBeenCalled();
         expect(completion.choices?.[0]?.message?.content).toBe("ok");
-    });
-
-    it("uses Responses for seeded requests that require tools and reasoning", async () => {
-        const portkeyFetcher = vi.fn();
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockImplementationOnce(async (_input, init) => {
-                const body = JSON.parse(String(init?.body));
-                expect(body).toMatchObject({
-                    model: "gpt-5.6-luna",
-                    parallel_tool_calls: false,
-                    reasoning: { effort: "max" },
-                    tools: [{ type: "function", name: "weather" }],
-                });
-                expect(body).not.toHaveProperty("seed");
-                return Response.json({
-                    id: "resp_2",
-                    status: "completed",
-                    output: [],
-                });
-            });
-
-        await generateTextPortkey(
-            [{ role: "user", content: "weather" }],
-            {
-                model: "gpt-5.6-luna",
-                modelConfig: azureModelConfig,
-                seed: 42,
-                parallel_tool_calls: false,
-                reasoning_effort: "max",
-                tools: [
-                    {
-                        type: "function",
-                        function: {
-                            name: "weather",
-                            parameters: { type: "object" },
-                        },
-                    },
-                ],
-            },
-            portkeyFetcher,
-        );
-
-        expect(fetchSpy).toHaveBeenCalledOnce();
-        expect(portkeyFetcher).not.toHaveBeenCalled();
     });
 });

@@ -1,6 +1,7 @@
 import {
     COMMUNITY_ENDPOINT_PRICE_FIELDS,
     type CommunityEndpointAdvertised,
+    type CommunityEndpointApi,
     type CommunityEndpointCapability,
     type CommunityEndpointImagePricing,
     type CommunityEndpointModality,
@@ -30,8 +31,6 @@ export type ManagedAgent = {
     title: string;
     description: string | null;
     visibility: CommunityEndpointVisibility;
-    baseUrl: string;
-    upstreamModel: string;
     systemPrompt: string;
     baseModel: string;
     requiredSafetyFeatures: SafetyFeature[];
@@ -68,8 +67,6 @@ type CommunityEndpointBase = {
     // Always populated by the API, which falls back for un-backfilled rows.
     title: string;
     description: string | null;
-    baseUrl: string;
-    upstreamModel: string;
     requiredSafetyFeatures: SafetyFeature[];
     // private → owner-only, shown only to the owner, no owner-set price;
     // public → globally listed + billed to callers.
@@ -83,14 +80,20 @@ type CommunityEndpointBase = {
 export type ProxyCommunityEndpoint = CommunityEndpointBase &
     CommunityEndpointPrices & {
         type: "proxy";
-        modality: CommunityEndpointModality;
         imagePricing: CommunityEndpointImagePricing;
         inputModalities: ModelInputModality[];
         advertised: CommunityEndpointAdvertised;
         perUserRpm: number | null;
         paidOnly: boolean;
         fallbacks: string[];
-    };
+        upstreamModel: string;
+    } & (
+        | { modality: "text"; api: CommunityEndpointApi; url: string }
+        | {
+              modality: Exclude<CommunityEndpointModality, "text">;
+              baseUrl: string;
+          }
+    );
 
 export type PromptAgentCommunityEndpoint = CommunityEndpointBase & {
     type: "prompt_agent";
@@ -98,6 +101,9 @@ export type PromptAgentCommunityEndpoint = CommunityEndpointBase & {
 
 export type EndpointAgentCommunityEndpoint = CommunityEndpointBase & {
     type: "endpoint_agent";
+    api: CommunityEndpointApi;
+    url: string;
+    upstreamModel: string;
     perUserRpm: number | null;
 };
 
@@ -109,6 +115,19 @@ export type CommunityEndpoint =
 export type EditableEndpoint =
     | ProxyCommunityEndpoint
     | EndpointAgentCommunityEndpoint;
+
+/**
+ * The model id to offer as an Open WebUI test link, or null when Open WebUI
+ * cannot chat with it: a hidden model is not served, and image, video,
+ * transcription and embedding models never reach its chat picker.
+ */
+export function openWebUiTestableModelId(
+    endpoint: CommunityEndpoint,
+): string | null {
+    if (endpoint.hidden) return null;
+    if (endpoint.type === "proxy" && endpoint.modality !== "text") return null;
+    return endpoint.modelId;
+}
 
 export type FallbackModelOption = {
     modelId: string;
@@ -126,6 +145,7 @@ export function publicCommunityFallbackOptions(
         type: string;
         community?: boolean;
         agent?: boolean;
+        outputModalities?: string[];
     }[],
 ): FallbackModelOption[] {
     return models
@@ -147,7 +167,11 @@ export function publicCommunityFallbackOptions(
                     : model.type === "video"
                       ? "video"
                       : model.type === "audio"
-                        ? "transcription"
+                        ? // Catalog type collapses both audio modalities: TTS
+                          // models output audio, speech-to-text outputs text.
+                          model.outputModalities?.includes("audio")
+                            ? "speech"
+                            : "transcription"
                         : model.type === "embedding"
                           ? "embedding"
                           : "text",
@@ -172,7 +196,8 @@ export type EndpointFormState = ModelListingFormState & {
     modality: CommunityEndpointModality;
     // Detected by the endpoint test for image models; "request" until tested.
     imagePricing: CommunityEndpointImagePricing;
-    baseUrl: string;
+    api: CommunityEndpointApi;
+    url: string;
     upstreamModel: string;
     bearerToken: string;
     // Callers may only spend Paid Pollen. Useful for pay-as-you-go upstreams.
@@ -193,14 +218,19 @@ type ModelListingPayload = {
 };
 
 export type EndpointPayload = ModelListingPayload & {
-    modality: CommunityEndpointModality;
     imagePricing: CommunityEndpointImagePricing;
-    baseUrl: string;
     upstreamModel: string;
     paidOnly: boolean;
     requiredSafetyFeatures: SafetyFeature[];
     fallbacks: string[];
-} & CommunityEndpointPrices;
+} & CommunityEndpointPrices &
+    (
+        | { modality: "text"; api: CommunityEndpointApi; url: string }
+        | {
+              modality: Exclude<CommunityEndpointModality, "text">;
+              baseUrl: string;
+          }
+    );
 
 export type AgentListingDetailsPayload = {
     name: string;
@@ -246,7 +276,8 @@ export const emptyForm: EndpointFormState = {
     ...emptyListingForm,
     modality: "text",
     imagePricing: "request",
-    baseUrl: "",
+    api: "chat_completions",
+    url: "",
     upstreamModel: "",
     bearerToken: "",
     paidOnly: false,
@@ -342,7 +373,8 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
             description: endpoint.description ?? "",
             visibility,
             perUserRpm: endpoint.perUserRpm?.toString() ?? "",
-            baseUrl: endpoint.baseUrl,
+            api: endpoint.api,
+            url: endpoint.url,
             upstreamModel: endpoint.upstreamModel,
             requiredSafetyFeatures: endpoint.requiredSafetyFeatures,
         };
@@ -365,7 +397,8 @@ export function endpointToForm(endpoint: EditableEndpoint): EndpointFormState {
         description: endpoint.description ?? "",
         visibility,
         perUserRpm: endpoint.perUserRpm?.toString() ?? "",
-        baseUrl: endpoint.baseUrl,
+        api: endpoint.modality === "text" ? endpoint.api : "chat_completions",
+        url: endpoint.modality === "text" ? endpoint.url : endpoint.baseUrl,
         upstreamModel: endpoint.upstreamModel,
         bearerToken: "",
         paidOnly: pending?.paidOnly ?? endpoint.paidOnly,
@@ -510,7 +543,9 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
     const imagePricing = modality === "image" ? form.imagePricing : "request";
     return {
         ...listingFieldsToPayload(form),
-        modality,
+        ...(modality === "text"
+            ? { modality, api: form.api, url: form.url.trim() }
+            : { modality, baseUrl: form.url.trim() }),
         imagePricing,
         advertised: normalizeCommunityEndpointAdvertised(
             {
@@ -521,7 +556,6 @@ export function toEndpointPayload(form: EndpointFormState): EndpointPayload {
             },
             modality,
         ),
-        baseUrl: form.baseUrl,
         upstreamModel: form.upstreamModel.trim() || form.name.trim(),
         paidOnly: form.visibility === "public" ? form.paidOnly : false,
         requiredSafetyFeatures: form.requiredSafetyFeatures,

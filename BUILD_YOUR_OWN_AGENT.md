@@ -68,6 +68,21 @@ curl https://gen.pollinations.ai/v1/chat/completions \
   }'
 ```
 
+Managed agents also expose the stateless Responses API:
+
+```bash
+curl https://gen.pollinations.ai/v1/responses \
+  -H "Authorization: Bearer $POLLINATIONS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "your-github-username/research-assistant",
+    "input": "Summarize this topic.",
+    "store": false
+  }'
+```
+
+Responses requests run the same configured prompt and MCP tools as Chat Completions. They do not store response state, and caller-supplied tools are not added to a managed agent. Streaming emits Responses API events, a terminal response event containing usage, and one `data: [DONE]` marker.
+
 The agent listing itself has no owner-set price. The caller still pays for the selected base model and MCP usage at the rates shown in the catalog. The catalog presents the base model's pricing and capabilities, plus the capabilities enabled by the agent's tools.
 
 ## Manage the lifecycle

@@ -1,15 +1,18 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * Video generation handler for Pollinations
  * Separate from image logic - no logo processing, no JPEG conversion, no EXIF metadata
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import { getVideoModelIds, IMAGE_SERVICES } from "@shared/registry/image.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
 import debug from "debug";
 import { callFalFallbackVideo } from "./models/falFallbackMediaModel.ts";
 import { callGeminiOmniAPI } from "./models/geminiOmniVideoModel.ts";
-import { callMinimaxH3API } from "./models/minimaxH3Model.ts";
+import {
+    callMinimaxH3API,
+    callMinimaxH3MaxTurboAPI,
+} from "./models/minimaxH3Model.ts";
 import { callNovaReelAPI } from "./models/novaReelModel.ts";
 import {
     callHappyHorseAPI,
@@ -50,10 +53,9 @@ export function validateVideoFrameCount(safeParams: ImageParams): void {
               ? "one start-frame image (image[0])"
               : `${maxFrames} frame images (image[0] as the start frame and image[1] as the end frame)`;
 
-    throw new HttpError(
-        `${definition.title} supports ${supportedFrames}; received ${frameCount}.`,
-        400,
-    );
+    throw UpstreamError.fromProvider(400, {
+        message: `${definition.title} supports ${supportedFrames}; received ${frameCount}.`,
+    });
 }
 
 export async function createAndReturnVideo(
@@ -117,6 +119,9 @@ export async function createAndReturnVideo(
             break;
         case "minimax-h3":
             result = await callMinimaxH3API(prompt, safeParams);
+            break;
+        case "minimax/minimax-h3-max-turbo":
+            result = await callMinimaxH3MaxTurboAPI(prompt, safeParams);
             break;
         default:
             throw new Error(

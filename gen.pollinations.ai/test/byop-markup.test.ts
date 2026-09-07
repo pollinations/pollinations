@@ -98,7 +98,7 @@ async function setupPayerAndDev() {
 
     await db.insert(apikeyTable).values({
         id: pkId,
-        userId: devId,
+        referenceId: devId,
         name: "markup-app",
         prefix: "pk",
         key: `hashed-${pkId}`,
@@ -293,6 +293,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "INSUFFICIENT_BALANCE",
             },
         );
     });
@@ -428,6 +429,7 @@ describe("BYOP markup", () => {
         await expect(checkBalance(vars, fakeStatsEnv(1))).rejects.toMatchObject(
             {
                 status: 402,
+                errorCode: "KEY_BUDGET_EXHAUSTED",
             },
         );
     });

@@ -1,3 +1,4 @@
+import { UpstreamError } from "@shared/error.ts";
 /**
  * ByteDance Seedance Pro-Fast video generation via Replicate.
  *
@@ -11,7 +12,6 @@
  * and the registry cost variant.
  */
 
-import { HttpError } from "@shared/http-error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import type { ImageParams } from "../params.ts";
@@ -20,7 +20,7 @@ import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { toDataUri } from "../utils/imageDownload.ts";
 import {
     runReplicatePrediction,
-    toReplicateHttpError,
+    toReplicateUpstreamError,
 } from "../utils/replicateClient.ts";
 
 const logOps = debug("pollinations:seedance:ops");
@@ -47,10 +47,9 @@ function resolveSeedanceAspectRatio(
         if ((SEEDANCE_ASPECT_RATIOS as readonly string[]).includes(requested)) {
             return requested as SeedanceAspectRatio;
         }
-        throw new HttpError(
-            `aspectRatio "${requested}" is not supported by Seedance. Supported: ${SEEDANCE_ASPECT_RATIOS.join(", ")}.`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `aspectRatio "${requested}" is not supported by Seedance. Supported: ${SEEDANCE_ASPECT_RATIOS.join(", ")}.`,
+        });
     }
     if (safeParams.width && safeParams.height) {
         // Derive a supported ratio from width/height (documented schema
@@ -152,7 +151,7 @@ async function generateSeedanceVideo(
         });
     } catch (err) {
         logError(`${config.displayName} prediction call failed:`, err);
-        throw toReplicateHttpError(
+        throw toReplicateUpstreamError(
             err,
             `${config.displayName} generation failed`,
         );

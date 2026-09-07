@@ -226,10 +226,10 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
             if (coordinate) {
-                return new Response(
-                    "Generation cache is temporarily unavailable",
-                    { status: 503 },
-                );
+                throw new HTTPException(503, {
+                    message: "Generation cache is temporarily unavailable",
+                    cause: error,
+                });
             }
         }
 
@@ -263,8 +263,9 @@ export function createGenerationExecutionCache(
             if (cached) return cached;
         } catch (error) {
             log.error("Error retrieving cached response: {error}", { error });
-            return new Response("Generation cache is temporarily unavailable", {
-                status: 503,
+            throw new HTTPException(503, {
+                message: "Generation cache is temporarily unavailable",
+                cause: error,
             });
         }
 

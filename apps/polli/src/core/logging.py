@@ -38,9 +38,9 @@ class CleanFormatter(logging.Formatter):
         module = module[:10].ljust(10)
         message = record.getMessage()
         if record.exc_info:
-            if not record.exc_text:
-                record.exc_text = self.formatException(record.exc_info)
-            message = f"{message}\n{record.exc_text}"
+            exception_class = record.exc_info[0]
+            exception_type = exception_class.__name__ if exception_class else "UnknownException"
+            message = f"{message} (exception={exception_type})"
         return f"{time_str} | {level} | {module} | {message}"
 
 

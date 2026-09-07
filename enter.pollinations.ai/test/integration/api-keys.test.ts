@@ -346,6 +346,17 @@ describe("API Key Management", () => {
             expect(created.metadata.clientId).toBeUndefined();
             expect(created.metadata.createdForUserId).toBeUndefined();
             expect(created.metadata.createdForApp).toBeUndefined();
+
+            const db = drizzle(env.DB, { schema });
+            await expect
+                .poll(async () => {
+                    const reward = await db.query.rewards.findFirst({
+                        where: (rewards, { eq }) =>
+                            eq(rewards.questId, "first_api_key"),
+                    });
+                    return Boolean(reward?.claimedAt);
+                })
+                .toBe(true);
         });
 
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
@@ -958,8 +969,9 @@ describe("API Key Management", () => {
             const key = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
-            expect(key?.userId).toBeTruthy();
-            const ownerUserId = key?.userId as string;
+            expect(key?.configId).toBe("default");
+            expect(key?.referenceId).toBeTruthy();
+            const ownerUserId = key?.referenceId as string;
 
             await db
                 .update(schema.user)

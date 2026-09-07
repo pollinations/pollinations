@@ -1,3 +1,9 @@
+FROM node:22-slim AS node
+
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
+
 FROM python:3.11-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -42,11 +48,14 @@ ENV LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2
 
 WORKDIR /app
 
+COPY --from=node /usr/local /usr/local
+COPY --from=node /app/node_modules ./node_modules
+ENV PATH=/usr/local/bin:$PATH
+
 COPY requirements.txt .
 
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r requirements.txt && \
-    pip install playwright
+    pip install -r requirements.txt
 
 RUN playwright install chromium
 RUN playwright install-deps

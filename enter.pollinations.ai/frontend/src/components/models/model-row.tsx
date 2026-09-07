@@ -36,6 +36,7 @@ import {
     ModelStatusChips,
     PerUserRateLimit,
 } from "./model-status-chips.tsx";
+import { isOpenWebUiChattable, OpenWebUiLink } from "./open-webui-link.tsx";
 import {
     ModelPricingControls,
     ModelPricingLedger,
@@ -239,7 +240,11 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
     const showNew = isNewModel(model);
     const showPaidOnly = isPaidOnly(model);
     const showAlpha = isAlpha(model);
+    // One launcher per row: anything you can chat with opens in Open WebUI,
+    // everything else keeps the Play playground.
+    const openWebUiSupported = isOpenWebUiChattable(model);
     const playSupported =
+        !openWebUiSupported &&
         model.type !== "3d" &&
         model.type !== "embedding" &&
         model.type !== "realtime";
@@ -333,6 +338,9 @@ export const ModelRow: FC<ModelRowProps> = ({ model }) => {
                                     <RocketIcon className="h-4 w-4" />
                                 </a>
                             </Tooltip>
+                        )}
+                        {openWebUiSupported && (
+                            <OpenWebUiLink modelId={model.name} />
                         )}
                     </div>
                     <ModelId name={model.name} />

@@ -948,6 +948,10 @@ const CURATED_BODIES: Record<string, Json> = {
         model: "openai",
         messages: [{ role: "user", content: "Hello!" }],
     },
+    postV1Responses: {
+        model: "openai",
+        input: "Hello!",
+    },
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
         model: "flux",
@@ -1008,6 +1012,9 @@ const CURATED_BODIES: Record<string, Json> = {
         systemPrompt: "You are a concise assistant.",
         baseModel: "openai",
         mcpServers: ["pollinations"],
+    },
+    postAccountIntegrations: {
+        toolkit: "github",
     },
     post3dByPrompt: {
         model: "hyper3d-rodin",

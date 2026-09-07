@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -59,14 +59,16 @@ async function readJson<T>(
     try {
         return (await response.json()) as T;
     } catch {
-        throw new HttpError(invalidMessage, 502);
+        throw UpstreamError.fromProvider(502, { message: invalidMessage });
     }
 }
 
 function remainingTime(deadline: number): number {
     const remaining = deadline - Date.now();
     if (remaining <= 0) {
-        throw new HttpError("Krea generation timed out", 504);
+        throw UpstreamError.fromProvider(504, {
+            message: "Krea generation timed out",
+        });
     }
     return remaining;
 }
@@ -92,12 +94,16 @@ export async function callKreaImageAPI(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     if (safeParams.image.length > 0) {
-        throw new HttpError("Krea does not accept image input", 400);
+        throw UpstreamError.fromProvider(400, {
+            message: "Krea does not accept image input",
+        });
     }
 
     const apiKey = getImageEnv("FAL_KEY");
     if (!apiKey) {
-        throw new HttpError("Krea is not configured", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "Krea is not configured",
+        });
     }
 
     const deadline = Date.now() + KREA_TIMEOUT_MS;
@@ -121,7 +127,9 @@ export async function callKreaImageAPI(
         "Krea returned an invalid submission",
     );
     if (!submission.status_url || !submission.response_url) {
-        throw new HttpError("Krea returned an invalid submission", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Krea returned an invalid submission",
+        });
     }
 
     while (true) {
@@ -136,10 +144,14 @@ export async function callKreaImageAPI(
         );
         if (status.status === "COMPLETED") break;
         if (status.status === "FAILED") {
-            throw new HttpError(status.error || "Krea generation failed", 502);
+            throw UpstreamError.fromProvider(502, {
+                message: status.error || "Krea generation failed",
+            });
         }
         if (status.status !== "IN_QUEUE" && status.status !== "IN_PROGRESS") {
-            throw new HttpError("Krea returned an invalid status", 502);
+            throw UpstreamError.fromProvider(502, {
+                message: "Krea returned an invalid status",
+            });
         }
         await sleep(Math.min(KREA_POLL_INTERVAL_MS, remainingTime(deadline)));
     }
@@ -156,7 +168,9 @@ export async function callKreaImageAPI(
 
     const image = result.images?.[0];
     if (!image?.url) {
-        throw new HttpError("Krea returned no image", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "Krea returned no image",
+        });
     }
 
     const imageResponse = await fetchUpstream(image.url, {

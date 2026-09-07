@@ -1,290 +1,235 @@
 <p align="center">
-  <img src="https://image.pollinations.ai/prompt/A%20cute%20parrot%20mascot%20named%20Polli%20with%20GitHub%20and%20Discord%20logos%2C%20digital%20art%2C%20friendly%2C%20colorful?width=200&height=200&nologo=true" alt="Polli" width="150" height="150">
-</p>
-
-<h1 align="center">🦜 Polli</h1>
-
-<p align="center">
-  <strong>Bidirectional GitHub ↔ Discord Assistant</strong>
+  <img src="../../packages/ui/src/brand/polli/polli.png" alt="Polli pixel-art bee mascot wearing headphones" width="152">
 </p>
 
 <p align="center">
-  <a href="#features">Features</a> •
-  <a href="#how-it-works">How It Works</a> •
-  <a href="#setup">Setup</a> •
-  <a href="#tools">Tools</a> •
-  <a href="#architecture">Architecture</a>
+  <img src="assets/readme/hero.svg" alt="Polli connects Discord, GitHub, and an OpenAI-compatible API to permission-aware engineering tools" width="100%">
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/python-3.10+-blue?style=flat-square&logo=python&logoColor=white" alt="Python">
-  <img src="https://img.shields.io/badge/discord.py-2.0+-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord.py">
-  <img src="https://img.shields.io/badge/GitHub%20API-GraphQL%20%2B%20REST-181717?style=flat-square&logo=github&logoColor=white" alt="GitHub API">
-  <img src="https://img.shields.io/badge/AI-Pollinations-green?style=flat-square" alt="Pollinations AI">
+  <a href="#what-polli-does">What Polli does</a> ·
+  <a href="#interfaces">Interfaces</a> ·
+  <a href="#tools-and-access">Tools and access</a> ·
+  <a href="#local-setup">Local setup</a> ·
+  <a href="#privacy-and-data">Privacy and data</a>
 </p>
 
----
+# Polli
 
-## ✨ Features
+Polli is the Pollinations.ai engineering assistant for Discord and GitHub. It brings repository, issue, pull-request, web, and community context into a tool-calling conversation while applying access rules at each entry point.
 
-### 🔄 Bidirectional Communication
-| Platform    | Trigger                         | Response          |
-| ----------- | ------------------------------- | ----------------- |
-| **Discord** | @mention Polli                  | Replies in thread |
-| **GitHub**  | @mention in issues/PRs/comments | Replies on GitHub |
+The service also exposes a local OpenAI-compatible HTTP interface for authorized agent clients. That interface is distinct from the Discord bot: it accepts only pre-issued, short-lived `ag_` bearer tokens and deliberately exposes a narrower tool set.
 
-### 🎯 Full GitHub Integration
+## What Polli does
 
-<table>
-<tr>
-<td width="50%">
+- Starts a focused Discord thread from an `@Polli` mention, a reply, or the **Apps → Assist** context action.
+- Answers repository questions with exact file reads, text search, an optional semantic index, and optional symbol-graph traversal.
+- Reads and manages GitHub issues, pull requests, and Projects V2 according to the caller's role and the configured repository allowlist.
+- Searches caller-visible Discord context, searches or reads the web, and renders tables, charts, diagrams, code, and mathematical notation for Discord.
+- Tracks opt-in GitHub issue notifications and sends updates by DM when possible.
+- Can respond to authorized GitHub mentions through an optional, signature-verified webhook.
+- Provides `/v1/chat/completions` and `/v1/responses`, including streaming responses and client-defined tool calls.
 
-**📋 Issues**
-- Search, create, comment
-- Close, reopen, edit (admin)
-- Labels, assignees, milestones
-- Sub-issues & linking
-- Subscriptions & notifications
+Polli is an assistant, not an authority: tool results can be incomplete, generated answers can be wrong, and consequential changes still require human judgment.
 
-</td>
-<td width="50%">
+## Interfaces
 
-**🔀 Pull Requests**
-- List, review, approve, merge
-- Inline comments & suggestions
-- Request reviewers
-- AI-powered code review
-- Auto-merge support
+| Interface | Trigger and scope | Notes |
+| --- | --- | --- |
+| Discord | Mention Polli in a server channel, reply to it in a thread, or use **Assist** | Opens or continues a thread; available tools depend on Discord roles and channel visibility. |
+| Direct message | Subscription commands and privacy help | `subscribe #123`, `unsubscribe #123`, `unsubscribe all`, `list subscriptions`, or `privacy`. |
+| GitHub webhook | Mention the configured bot account in an issue or pull-request event | Disabled by default. Requests must have a valid webhook signature, come from an allowlisted repository, and currently come from a configured GitHub admin account. |
+| HTTP API | OpenAI-compatible request to the embedded server | Binds to `127.0.0.1:55288` by default. Requires `Authorization: Bearer ag_…`; persistent `sk_` and `pk_` keys are rejected. |
 
-</td>
-</tr>
-<tr>
-<td>
+### HTTP example
 
-**📊 Projects V2**
-- View project boards
-- Add/remove items
-- Update status & fields
-- Track progress
-
-</td>
-<td>
-
-**🤖 Code Agent**
-- Autonomous coding tasks
-- Create branches & PRs
-- Edit files directly
-- Run tests & fix issues
-
-</td>
-</tr>
-</table>
-
-### 🔍 Smart Search
-- **`code_search`** - Semantic search across codebase (OpenAI embeddings + ChromaDB)
-- **`doc_search`** - Semantic search across documentation (OpenAPI schema, etc.)
-- **`web_search`** - Real-time web search via Pollinations API
-
-### 🧠 AI-Powered
-- Native tool calling (Kimi k2.5 / GLM-5 / Gemini 3 Pro)
-- Parallel tool execution
-- Context-aware responses
-- Multi-language support
-
----
-
-## 🚀 How It Works
-
-### Discord → GitHub
-```
-User: @Polli find 502 errors
-
-   [Thread Created: "Issue: 502 errors"]
-
-Polli: Found 3 open issues:
-       • #156 - 502 errors on Flux model
-       • #142 - Intermittent 502 on image gen
-       • #98 - API returning 502 under load
-
-User: review PR #200
-
-Polli: 🔍 Reviewing PR #200...
-
-       ✅ Overall: LGTM with minor suggestions
-
-       📝 src/api.py:42 - Consider adding error handling
-       📝 src/utils.py:15 - This could be simplified
-```
-
-### GitHub → Discord
-```markdown
-<!-- In a GitHub issue comment -->
-@pollinations-ci can you explain what this error means?
-
-<!-- Polli replies directly on GitHub -->
-This error occurs when... [detailed explanation]
-```
-
----
-
-## 📦 Setup
-
-### Prerequisites
-- Python 3.10+
-- Discord Bot Token
-- GitHub App (recommended) or PAT
-
-### 1️⃣ Clone & Install
+The API is for clients that have already received a short-lived agent token from the surrounding trusted system. Polli does not mint these tokens, and this README intentionally does not describe an issuance flow.
 
 ```bash
-cd apps/polli
-python -m venv venv
-source venv/bin/activate  # or `venv\Scripts\activate` on Windows
-pip install -r requirements.txt
+curl http://127.0.0.1:55288/v1/chat/completions \
+  -H "Authorization: Bearer $POLLI_AGENT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "polli",
+    "messages": [{"role": "user", "content": "Summarize the open image API issues"}]
+  }'
 ```
 
-### 2️⃣ Configure Environment
+`model: "polli"` is an alias for the service's configured default upstream model and may use its configured fallback. A non-empty explicit upstream model name is forwarded as requested and does not use that fallback. `/v1/models` advertises only the stable `polli` alias; an explicit upstream model therefore need not appear in that list.
+
+The embedded API is not a universal pass into Polli. It uses non-admin context, removes mutation and subscription operations, excludes custom GitHub requests and visual rendering, blocks Discord member/role lookup, and restricts Discord results to public HTTP scope.
+
+## Architecture
+
+<p align="center">
+  <img src="assets/readme/architecture.svg" alt="Polli runtime architecture: Discord, signed GitHub webhooks, and the local API enter permission filtering and context assembly before Pollinations inference and permission-dependent tools" width="100%">
+</p>
+
+The Discord bot, embedded API server, and optional webhook server run in one Python process. Conversation sessions are held in memory and refreshed from Discord thread history. Tool handlers then call GitHub, Discord, Pollinations, web, local repository, Vectorize, and rendering services as configured.
+
+## Tools and access
+
+Tool availability is both **configuration-dependent** and **caller-dependent**. The model sees a filtered schema, and handlers receive request-specific identity and role context.
+
+| Capability | Discord member | Discord collaborator | Discord admin | HTTP API |
+| --- | --- | --- | --- | --- |
+| GitHub overview and reads | Available | Available | Available | Read subset |
+| Issue creation and comments | Available | Available | Available | Not available |
+| Close/reopen, labels, assignees | Not available | Available | Available | Not available |
+| Other issue, PR, and Project mutations | Not available | Not available | Available | Not available |
+| Read-only custom GitHub API request | Available | Available | Available | Not available |
+| Code search and repository exploration | When a backend is enabled | When a backend is enabled | When a backend is enabled | When a backend is enabled |
+| Discord search | Caller-visible channels | Caller-visible channels | Caller-visible channels | Public scope; no member/role lookup or private threads |
+| Web search and scraping | Available | Available | Available | Available |
+| Visual rendering | Available | Available | Available | Not available |
+| Issue subscriptions | Available | Available | Available | Not available |
+
+High-impact actions may require confirmation even when the caller has access. GitHub permissions and installation scope can further limit an operation.
+
+### Code intelligence
+
+`code_search` combines whichever backends are configured:
+
+- **Local clone:** exact grep, file reads, file lists, and directory trees.
+- **Cloudflare Vectorize:** semantic search using the configured embedding index and model.
+- **Symbol graph:** symbol discovery, callers, callees, and impact traversal through the locally pinned CodeGraph package when its index is available. Use returned stable symbol IDs for traversal; ambiguous names are rejected.
+
+No ChromaDB or OpenAI embeddings service is used by the current implementation.
+
+## Local setup
+
+### Requirements
+
+- Python **3.11** (the container image and `version.cfg` use 3.11)
+- Git
+- Node.js **22** and npm for the pinned symbol-graph runtime
+- A Discord application with **Message Content** and **Server Members** privileged intents enabled
+- GitHub authentication: a GitHub App installation, or a personal access token
+- A Pollinations API token for the bot's own upstream requests
+- Chromium installed through Playwright for browser-backed scraping
+
+Optional features need their own configuration: a GitHub Project token for Projects V2, a webhook secret for GitHub ingress, and Cloudflare credentials for Vectorize. Graph traversal uses the local npm dependency rather than a global `codegraph` installation.
+
+### Install
+
+```bash
+git clone https://github.com/pollinations/pollinations.git
+cd pollinations/apps/polli
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+npm ci --workspaces=false
+playwright install chromium
+```
+
+On Windows, activate with `.venv\Scripts\activate`.
+
+### Configure
+
+Copy the environment template and keep the resulting file private:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials:
+Required runtime secrets are:
 
-```env
-# Required
-DISCORD_TOKEN=your_discord_bot_token
-GITHUB_APP_ID=your_app_id
-GITHUB_PRIVATE_KEY=./polli.pem  # file path or inline key
-GITHUB_INSTALLATION_ID=your_installation_id
+```dotenv
+DISCORD_TOKEN=...
+POLLINATIONS_TOKEN=...
 
-# Optional
-OPENAI_EMBEDDINGS_API=your_openai_key  # for code/doc embeddings
-POLLINATIONS_TOKEN=your_pollinations_token
+# Choose GitHub App authentication…
+GITHUB_APP_ID=...
+GITHUB_INSTALLATION_ID=...
+GITHUB_PRIVATE_KEY=./polly.pem
+
+# …or a personal access token.
+POLLI_PAT=...
 ```
 
-### 3️⃣ Run
+`GITHUB_PROJECT_PAT`, `GITHUB_WEBHOOK_SECRET`, `CLOUDFLARE_ACCOUNT_ID`, and `VECTORIZE_API_TOKEN` are optional and only enable their corresponding features. Non-secret behavior—repository scope, role IDs, ports, models, limits, and feature switches—lives in [`config.json`](config.json). Never commit `.env`, private keys, or tokens.
+
+The Discord bot's `POLLINATIONS_TOKEN` is a service credential configured by the operator. It is not the same credential contract as the embedded HTTP API's request-scoped `ag_` token.
+
+### Run
 
 ```bash
 python main.py
 ```
 
-### 4️⃣ Media Handlers (Tables, Charts, LaTeX, Code)
+The default configuration starts the Discord bot and local HTTP API, keeps the GitHub webhook disabled, and follows `pollinations/pollinations` on `main` for local code search.
 
-Enabled by default — all deps ship in `requirements.txt`, fonts vendored in `assets/fonts/`:
+### Container
 
-- 📊 **Markdown Tables** → Rendered as PNG images with markdown-aware cells (bold/italic/code spans)
-- 📈 **Charts** → bar, line, pie, scatter, heatmap, histogram, etc. via the `render_visual` tool
-- ∑ **LaTeX Expressions** → Rendered as PNG images (inline `$...$` and display `$$...$$`)
-- 💻 **Code Blocks** → Smart splitting without breaking lines
-
-See [MEDIA_HANDLERS.md](docs/MEDIA_HANDLERS.md) for details.
-
----
-
-## 🛠️ Tools
-
-| Tool              | Description                                               | Access                       |
-| ----------------- | --------------------------------------------------------- | ---------------------------- |
-| `github_overview` | Quick repo summary (issues, labels, milestones, projects) | Everyone                     |
-| `github_issue`    | All issue operations                                      | Read: Everyone, Write: Admin |
-| `github_pr`       | All PR operations                                         | Read: Everyone, Write: Admin |
-| `github_project`  | Project board operations                                  | Read: Everyone, Write: Admin |
-| `github_code`     | Code agent (branches, edits, PRs)                         | Admin only                   |
-| `code_search`     | Semantic code search                                      | Everyone                     |
-| `doc_search`      | Semantic doc search (OpenAPI schema)                      | Everyone                     |
-| `web_search`      | Real-time web search                                      | Everyone                     |
-| `discord_search`  | Search Discord messages, members, channels                | Everyone                     |
-
----
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                         ENTRY POINTS                            │
-├────────────────────────────┬────────────────────────────────────┤
-│     Discord (@mention)     │     GitHub Webhook (port 8002)     │
-│     └─ Thread-based        │     └─ Issues, PRs, Comments       │
-└────────────────────────────┴────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    POLLINATIONS AI ENGINE                       │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
-│  │  Kimi k2.5  │  │    GLM-5    │  │    Gemini 3 Pro         │  │
-│  └─────────────┘  └─────────────┘  └─────────────────────────┘  │
-│                    Native Tool Calling                          │
-└─────────────────────────────────────────────────────────────────┘
-                                    │
-                    ┌───────────────┼───────────────┐
-                    ▼               ▼               ▼
-            ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-            │   GitHub    │ │    Code     │ │  Embeddings │
-            │    APIs     │ │   Agent     │ │  (OpenAI)   │
-            │ GraphQL+REST│ │  Sandbox    │ │  ChromaDB   │
-            └─────────────┘ └─────────────┘ └─────────────┘
+```bash
+docker build -t polli .
+docker run --rm --env-file .env polli
 ```
 
----
+The checked-in [`deploy.json`](deploy.json) identifies the repository's deployment target, but deployment credentials and production procedures are intentionally outside this README.
 
-## 📁 Project Structure
+## Testing
 
-```
-Polli/
-├── 📄 main.py                    # Entry point
-├── 📄 requirements.txt           # Dependencies
-├── 📄 .env.example               # Environment template
-├── 📁 src/
-│   ├── 📄 bot.py                 # Discord bot + webhook server
-│   ├── 📄 config.py              # Configuration
-│   ├── 📄 constants.py           # Tools, prompts, schemas
-│   ├── 📁 context/               # Session management + repo_info.txt
-│   ├── 📁 api/                   # OpenAI-compatible REST API
-│   └── 📁 services/
-│       ├── 📄 github.py          # GitHub REST API
-│       ├── 📄 github_graphql.py  # GitHub GraphQL API
-│       ├── 📄 github_pr.py       # PR operations
-│       ├── 📄 pollinations.py    # AI client
-│       ├── 📄 embeddings.py      # Code embeddings (OpenAI + ChromaDB)
-│       ├── 📄 doc_embeddings.py  # Doc embeddings (crawl + embed)
-│       ├── 📄 discord_search.py  # Discord guild search
-│       ├── 📄 web_scraper.py     # Crawl4AI web scraper
-│       └── 📄 webhook_server.py  # GitHub webhooks
-└── 📄 deploy.json                # Production deployment manifest
+Tests use Python's standard `unittest` runner:
+
+```bash
+python -m unittest discover -s tests -p "test_*.py"
 ```
 
----
+Run one module while iterating:
 
-## ⚡ Performance
+```bash
+python -m unittest tests.test_openai_api
+```
 
-| Optimization            | Benefit                     |
-| ----------------------- | --------------------------- |
-| GraphQL batching        | 40-90% fewer API calls      |
-| Parallel tool execution | Multiple ops simultaneously |
-| Connection pooling      | Reused HTTP connections     |
-| Local embeddings        | Instant code search         |
-| Stateless design        | No database overhead        |
+Some integration paths depend on external credentials, network access, local binaries, or a live Discord guild. A passing isolated module does not certify those external systems.
 
----
+## Configuration map
 
-## 🔐 Permissions
+```text
+apps/polli/
+├── main.py                       process entry point
+├── config.json                   non-secret runtime configuration
+├── .env.example                  secret-variable template
+├── Dockerfile                    Python 3.11 container
+├── src/
+│   ├── ai/                       model client, prompts, schemas, tool filters
+│   ├── api/                      OpenAI-compatible HTTP routes
+│   ├── context/                  in-memory conversation sessions
+│   ├── core/                     configuration, auth context, logging
+│   ├── discord/                  Discord search and media handling
+│   ├── integrations/             GitHub, web, subscriptions, visuals, webhook
+│   └── search/                   local, semantic, and graph code search
+├── polli-core/                   optional native helpers
+└── tests/                        unittest suites
+```
 
-| Role         | Capabilities                                     |
-| ------------ | ------------------------------------------------ |
-| **Everyone** | Search, read issues/PRs, code search, web search |
-| **Admin**    | + Close, edit, label, assign, merge, code agent  |
+## Privacy and data
 
-Admin = Users with configured Discord role(s)
+Polli processes content supplied through Discord, GitHub webhooks, HTTP requests, linked pages, and attachments. Relevant prompts, context, and tool results can be sent to configured external services such as Pollinations, GitHub, Discord, and web-content providers. Do not send passwords, API keys, private keys, or other secrets to the bot.
 
----
+Current storage behavior:
 
-## 🤝 Contributing
+- Conversation sessions are in process memory, capped at 500 sessions, and expire after 300 seconds of inactivity by default. Discord messages and GitHub content remain governed by those platforms and are not deleted when an in-memory session expires.
+- Issue subscriptions persist in `data/subscriptions.db` with Discord user/channel identifiers, issue number, delivery state, and timestamps. They remain until unsubscribed or otherwise removed; no automatic retention deadline is implemented.
+- Code search may keep an operator-managed local repository clone and may query a configured external Vectorize index. The optional graph is derived from that clone.
+- Runtime logs go to standard output. Retention is controlled by the deployment environment; Polli does not define an application-level log retention period.
+- Provider-held request data follows each provider's own terms and retention controls.
 
-This is a private bot for Pollinations.AI. For issues or suggestions, reach out on Discord!
+DM `privacy` or `delete data` for the privacy link and instructions. DM `unsubscribe all` to remove issue subscriptions immediately. That command does **not** erase Discord messages, GitHub content, deployment logs, or provider-held data. For access, correction, deletion, privacy, or general support requests, email [hello@pollinations.ai](mailto:hello@pollinations.ai) with your Discord user ID and relevant message or issue links; never include credentials.
 
----
+See the [Pollinations.ai privacy policy](https://pollinations.ai/privacy).
 
-<p align="center">
-  Made with 💜 for <a href="https://pollinations.ai">Pollinations.AI</a>
-</p>
+## Creator and support
+
+**Creator**
+
+- GitHub: [Itachi-1824](https://github.com/Itachi-1824)
+- Discord: `_dr_misterio_`
+- Email: [Itachi@pollinations.ai](mailto:Itachi@pollinations.ai)
+
+Creator contact is separate from product support and privacy handling. Use [hello@pollinations.ai](mailto:hello@pollinations.ai) for Pollinations.ai support, legal, and privacy requests.
+
+## License and attribution
+
+Polli is part of the Pollinations.ai repository and is provided under the repository's [MIT License](../../LICENSE). Copyright © 2026 pollinations.ai. Pollinations.ai is the product brand; Myceli.AI OÜ remains the registered legal entity and data controller.

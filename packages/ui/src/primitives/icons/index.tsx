@@ -392,6 +392,17 @@ export function XIcon(props: IconProps) {
     );
 }
 
+export function TrashIcon(props: IconProps) {
+    return (
+        <svg aria-hidden="true" viewBox="0 0 24 24" {...strokeProps} {...props}>
+            <path d="M4 7h16" />
+            <path d="M9 7V4h6v3" />
+            <path d="m6 7 1 14h10l1-14" />
+            <path d="M10 11v6M14 11v6" />
+        </svg>
+    );
+}
+
 // --- Model modality / capability / price glyphs (single-ink, replace emoji) ---
 
 export function ChatIcon(props: IconProps) {

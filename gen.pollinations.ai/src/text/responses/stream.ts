@@ -1,4 +1,5 @@
 import { createParser } from "eventsource-parser";
+import { validatedSSEStream } from "../validatedSSEStream.js";
 import {
     getResponsesEventUsage,
     normalizeResponsesTerminalEvent,
@@ -18,6 +19,7 @@ function eventType(value: unknown): string | undefined {
 export function createResponsesStreamUsageValidator() {
     const decoder = new TextDecoder();
     let terminalSeen = false;
+    let sequenceNumber = -1;
     let validationError: ResponsesUsageError | undefined;
 
     const parser = createParser({
@@ -37,7 +39,21 @@ export function createResponsesStreamUsageValidator() {
                 return;
             }
 
+            if (
+                event &&
+                typeof event === "object" &&
+                "sequence_number" in event
+            ) {
+                const value = event.sequence_number;
+                if (typeof value === "number" && Number.isSafeInteger(value)) {
+                    sequenceNumber = Math.max(sequenceNumber, value);
+                }
+            }
             const type = eventType(event) ?? message.event;
+            if (type === "error" || type === "response.failed") {
+                terminalSeen = true;
+                return;
+            }
             if (!type || !RESPONSE_TERMINAL_EVENT_TYPES.has(type)) return;
             terminalSeen = true;
 
@@ -54,6 +70,9 @@ export function createResponsesStreamUsageValidator() {
     });
 
     return {
+        get nextSequenceNumber() {
+            return sequenceNumber + 1;
+        },
         feed(chunk: Uint8Array) {
             parser.feed(decoder.decode(chunk, { stream: true }));
             if (validationError) throw validationError;
@@ -79,6 +98,7 @@ export function createResponsesStreamUsageValidator() {
  */
 function responsesUsageErrorEvent(
     error: ResponsesUsageError,
+    sequenceNumber: number,
 ): Uint8Array<ArrayBuffer> {
     return new TextEncoder().encode(
         `event: error\ndata: ${JSON.stringify({
@@ -86,7 +106,7 @@ function responsesUsageErrorEvent(
             code: "usage_missing",
             message: error.message,
             param: null,
-            sequence_number: 0,
+            sequence_number: sequenceNumber,
         })}\n\n`,
     );
 }
@@ -96,26 +116,8 @@ export function requireResponsesStreamUsage(
 ): ReadableStream<Uint8Array<ArrayBuffer>> {
     const validator = createResponsesStreamUsageValidator();
 
-    return body.pipeThrough(
-        new TransformStream<Uint8Array<ArrayBuffer>, Uint8Array<ArrayBuffer>>({
-            transform(chunk, controller) {
-                try {
-                    validator.feed(chunk);
-                    controller.enqueue(chunk);
-                } catch (error) {
-                    if (!(error instanceof ResponsesUsageError)) throw error;
-                    controller.enqueue(responsesUsageErrorEvent(error));
-                    controller.terminate();
-                }
-            },
-            flush(controller) {
-                try {
-                    validator.finish();
-                } catch (error) {
-                    if (!(error instanceof ResponsesUsageError)) throw error;
-                    controller.enqueue(responsesUsageErrorEvent(error));
-                }
-            },
-        }),
-    );
+    return validatedSSEStream(body, validator, (error) => {
+        if (!(error instanceof ResponsesUsageError)) throw error;
+        return responsesUsageErrorEvent(error, validator.nextSequenceNumber);
+    });
 }

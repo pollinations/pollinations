@@ -43,6 +43,39 @@ describe("CreateChatCompletionRequestSchema", () => {
         });
     });
 
+    it("preserves explicit prompt-cache breakpoints on content parts", () => {
+        const result = CreateChatCompletionRequestSchema.parse({
+            prompt_cache_key: "stable-prefix",
+            prompt_cache_options: { mode: "explicit", ttl: "30m" },
+            prompt_cache_retention: "24h",
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "stable prefix",
+                            prompt_cache_breakpoint: { mode: "explicit" },
+                        },
+                    ],
+                },
+            ],
+        });
+
+        expect(result.messages[0].content).toEqual([
+            {
+                type: "text",
+                text: "stable prefix",
+                prompt_cache_breakpoint: { mode: "explicit" },
+            },
+        ]);
+        expect(result).toMatchObject({
+            prompt_cache_key: "stable-prefix",
+            prompt_cache_options: { mode: "explicit", ttl: "30m" },
+            prompt_cache_retention: "24h",
+        });
+    });
+
     it("keeps empty user content for the provider adapter", () => {
         const result = CreateChatCompletionRequestSchema.parse({
             messages: [{ role: "user", content: "" }],

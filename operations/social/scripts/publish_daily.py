@@ -18,6 +18,7 @@ from datetime import datetime, timezone, timedelta
 from common import (
     deploy_reddit_news_post,
     get_env,
+    NEWS_REL_DIR,
 )
 from buffer_publish import publish_twitter_post, stage_buffer_posts
 
@@ -43,7 +44,7 @@ def main():
 
     owner, repo = repo_full.split("/")
     date_str = get_target_date()
-    daily_dir = os.path.join("social", "news", "daily", date_str)
+    daily_dir = os.path.join(NEWS_REL_DIR, "daily", date_str)
 
     print(f"  Date: {date_str}")
     print(f"  Mode: {publish_mode}")

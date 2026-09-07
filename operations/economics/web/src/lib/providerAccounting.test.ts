@@ -1,9 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    OpPollenRow,
+    OpTransactionRow,
+    VendorLedgerRow,
+} from "../types";
 import {
     allocateGrants,
+    balanceCreditTerms,
+    consumeBalanceLots,
     creditRunway,
+    providerAccountBalanceRows,
     providerBalanceRows,
 } from "./providerBalances";
 import { vendorPlanes } from "./vendorReconciliation";
@@ -23,7 +31,7 @@ const opTxn = (over: Partial<OpTransactionRow>): OpTransactionRow => ({
     ...over,
 });
 
-const opCloud = (over: Partial<OpCloudRow>): OpCloudRow => ({
+const vendorLedger = (over: Partial<VendorLedgerRow>): VendorLedgerRow => ({
     entry_id: "cloud-test",
     source: "api",
     vendor: "aws",
@@ -64,13 +72,118 @@ const opPollen = (over: Partial<OpPollenRow>): OpPollenRow => ({
 
 const emptyData = (over: Partial<Data>): Data => ({
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
     privateConfig: PRIVATE_CONFIG_FIXTURE,
     ...over,
 });
 
 describe("vendorPlanes", () => {
+    it("keeps user-approved expiry assumptions distinct from verified terms", () => {
+        const snapshot = vendorLedger({
+            type: "balance",
+            credit: 100,
+            end: "",
+            resource_sku: "current-balance-expiry-assumed",
+        });
+        expect(balanceCreditTerms(snapshot)).toEqual({
+            known: false,
+            assumed: true,
+            expiry: null,
+        });
+        const account = providerAccountBalanceRows(
+            emptyData({ vendorLedger: [snapshot] }),
+            new Date("2026-05-15T00:00:00Z"),
+        ).find((row) => row.vendor === "aws");
+        expect(account?.creditTermsKnown).toBe(false);
+        expect(account?.expiryAssumed).toBe(true);
+    });
+
+    it("sums only the latest complete lot snapshot without combining prior totals", () => {
+        const common = {
+            type: "balance",
+            account_id: "301235909293",
+            start: "2026-09-05 00:00:00",
+            resource_sku: "current-balance-lot",
+        };
+        const rows = [
+            vendorLedger({
+                type: "balance",
+                credit: 9999,
+                start: "2026-09-01 00:00:00",
+                end: "",
+            }),
+            vendorLedger({
+                ...common,
+                entry_id: "lot-a",
+                resource_id: "a",
+                credit: 20,
+                end: "2026-09-10",
+            }),
+            vendorLedger({
+                ...common,
+                entry_id: "lot-b",
+                resource_id: "b",
+                credit: 100,
+                end: "2026-09-20",
+            }),
+            vendorLedger({
+                ...common,
+                entry_id: "lot-b",
+                resource_id: "b",
+                credit: 110,
+                end: "2026-09-20",
+                recorded_at: "2026-09-06 00:00:00",
+            }),
+        ];
+        const account = providerAccountBalanceRows(
+            emptyData({ vendorLedger: rows }),
+            new Date("2026-09-06T00:00:00Z"),
+        ).find((row) => row.vendor === "aws");
+        expect(account?.creditBalanceUsd).toBe(130);
+        expect(account?.fundingLots).toHaveLength(2);
+        expect(account?.creditTermsKnown).toBe(true);
+        expect(account?.creditExpiry).toBe("2026-09-10");
+        expect(
+            providerBalanceRows(
+                emptyData({ vendorLedger: rows }),
+                new Date("2026-09-06T00:00:00Z"),
+            ).find((row) => row.vendor === "aws")?.creditBalanceUsd,
+        ).toBe(130);
+    });
+
+    it("expires each grant and purchased-credit lot independently", () => {
+        const lots = [
+            { creditUsd: 100, cashUsd: 0, expiry: "2026-09-20" },
+            { creditUsd: 20, cashUsd: 0, expiry: "2026-09-10" },
+            { creditUsd: 0, cashUsd: 50, expiry: "2026-09-30" },
+        ];
+        expect(consumeBalanceLots(lots, 10, "2026-09-10")).toBe(0);
+        expect(lots[1].creditUsd).toBe(10);
+        expect(consumeBalanceLots(lots, 110, "2026-09-11")).toBe(0);
+        expect(lots[1].creditUsd).toBe(10); // expired, never used
+        expect(lots[2].cashUsd).toBe(40);
+        expect(consumeBalanceLots(lots, 60, "2026-09-30")).toBe(20);
+        expect(consumeBalanceLots(lots, 10, "2026-10-01")).toBe(10);
+    });
+    it("does not normalize an invalid expiry or interpret blank as unlimited", () => {
+        expect(
+            balanceCreditTerms(vendorLedger({ credit: 100, end: "2026-02-30" }))
+                .known,
+        ).toBe(false);
+        expect(
+            balanceCreditTerms(vendorLedger({ credit: 100, end: "" })).known,
+        ).toBe(false);
+        expect(
+            balanceCreditTerms(
+                vendorLedger({
+                    credit: 100,
+                    end: "",
+                    resource_sku: "current-balance-no-expiry",
+                }),
+            ).known,
+        ).toBe(true);
+    });
     it("aligns the OP planes on (month, vendor) and converts currencies", () => {
         const data = emptyData({
             opTransactions: [
@@ -89,8 +202,8 @@ describe("vendorPlanes", () => {
                     currency: "USD",
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     end: "2026-07-01 00:00:00",
                     vendor: "google",
@@ -190,8 +303,8 @@ describe("vendorPlanes", () => {
 
     it("excludes pre-window OP Cloud rows from display", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2025-12-01 00:00:00",
                     vendor: "aws",
                     credit: -35000,
@@ -211,8 +324,8 @@ describe("vendorPlanes", () => {
                     amount: -1073,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "cloudflare",
                     type: "infra",
@@ -233,14 +346,14 @@ describe("vendorPlanes", () => {
                     amount: -90,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "runpod",
                     type: "infra",
                     paid: -20,
                 }),
-                opCloud({
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "runpod",
                     type: "gpu",
@@ -267,8 +380,8 @@ describe("vendorPlanes", () => {
 
     it("ignores positive OP Cloud grant awards as spend", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "aws",
                     credit: 1000,
@@ -280,8 +393,8 @@ describe("vendorPlanes", () => {
 
     it("excludes community publisher rewards from provider reconciliation", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     vendor: "community",
                     credit: -1_000,
                 }),
@@ -316,18 +429,18 @@ describe("data quality status", () => {
                     amount: -4044,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "google",
                     paid: -4000,
                 }),
-                opCloud({
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "azure",
                     credit: -3000,
                 }),
-                opCloud({
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "aws",
                     paid: -4698,
@@ -390,8 +503,8 @@ describe("data quality status", () => {
 
     it("flags paid OP Cloud burn without cash", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-05-01 00:00:00",
                     vendor: "replicate",
                     paid: -36.26,
@@ -413,8 +526,8 @@ describe("data quality status", () => {
                     amount: -10,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-02-01 00:00:00",
                     vendor: "vast.ai",
                     paid: -10,
@@ -429,8 +542,8 @@ describe("data quality status", () => {
         );
 
         const historicalException = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-02-01 00:00:00",
                     vendor: "pruna",
                     credit: -2,
@@ -447,8 +560,8 @@ describe("data quality status", () => {
 
     it("never alarms on sub-dollar OP Cloud paid amounts", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-01-01 00:00:00",
                     vendor: "elevenlabs",
                     paid: -0.49,
@@ -471,8 +584,8 @@ describe("data quality status", () => {
                     amount: -500,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "vast.ai",
                     paid: -66,
@@ -503,8 +616,8 @@ describe("data quality status", () => {
                     currency: "USD",
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-09-01 00:00:00",
                     vendor: "mistral",
                     paid: -20,
@@ -528,8 +641,8 @@ describe("data quality status", () => {
 
     it("still alarms when a prepaid balance is overdrawn", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "vast.ai",
                     paid: -200,
@@ -554,13 +667,13 @@ describe("data quality status", () => {
 
     it("treats non-zero values on both sides as complete below the noise threshold", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     vendor: "fal",
                     start: "2026-06-01 00:00:00",
                     credit: -0.93,
                 }),
-                opCloud({
+                vendorLedger({
                     vendor: "deepinfra",
                     start: "2026-06-01 00:00:00",
                     credit: -5.74,
@@ -587,8 +700,8 @@ describe("data quality status", () => {
 
     it("only flags calibration drift when the dollar gap is material", () => {
         const lowDollar = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "fal",
                     credit: -20,
@@ -607,8 +720,8 @@ describe("data quality status", () => {
         expect(lowDollarRow.status).toBe("ok");
 
         const material = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "fal",
                     credit: -250,
@@ -630,8 +743,8 @@ describe("data quality status", () => {
 
     it("keeps source-backed historical direct drift visible but non-actionable", () => {
         const historical = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-03-01 00:00:00",
                     vendor: "anthropic",
                     credit: -250,
@@ -656,8 +769,8 @@ describe("data quality status", () => {
 
     it("treats material capacity mismatch as utilization variance, not price drift", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-06-01 00:00:00",
                     vendor: "lambda",
                     credit: -250,
@@ -702,8 +815,8 @@ describe("data quality status", () => {
                     amount: -100,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     start: "2026-05-01 00:00:00",
                     vendor: "aws",
                     paid: -80,
@@ -725,7 +838,7 @@ type GrantSpec = {
     expires: string;
 };
 
-const grant = (over: Partial<GrantSpec>): OpCloudRow => {
+const grant = (over: Partial<GrantSpec>): VendorLedgerRow => {
     const row = {
         vendor: "lambda",
         label: "",
@@ -735,7 +848,7 @@ const grant = (over: Partial<GrantSpec>): OpCloudRow => {
         expires: "1970-01-01",
         ...over,
     };
-    return opCloud({
+    return vendorLedger({
         source: "manual",
         vendor: row.vendor,
         type: "inference",
@@ -754,12 +867,12 @@ const opCreditBurn = ({
     credit = 0,
     paid = 0,
     ...over
-}: Partial<Omit<OpCloudRow, "credit" | "paid">> & {
+}: Partial<Omit<VendorLedgerRow, "credit" | "paid">> & {
     month?: string;
     credit?: number;
     paid?: number;
-}): OpCloudRow =>
-    opCloud({
+}): VendorLedgerRow =>
+    vendorLedger({
         start: `${month}-01 00:00:00`,
         end: `${month}-28 00:00:00`,
         credit: -credit,
@@ -772,7 +885,7 @@ describe("creditRunway", () => {
 
     it("pools grants per vendor, converts EUR at the start month, and nets naive remaining", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "fireworks", label: "a", granted: 700 }),
                 grant({ vendor: "fireworks", label: "b", granted: 300 }),
                 grant({
@@ -807,7 +920,7 @@ describe("creditRunway", () => {
 
     it("nets a vendor's grant pool against its OP Cloud burn rows", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "lambda", granted: 1000 }),
                 opCreditBurn({
                     month: "2026-06",
@@ -823,7 +936,7 @@ describe("creditRunway", () => {
 
     it("keeps OpenAI grant-funded usage in the main runway table", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "openai",
                     label: "credit grant",
@@ -847,7 +960,7 @@ describe("creditRunway", () => {
 
     it("tracks pre-2026 opening burn on the main runway row", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "google",
                     granted: 100000,
@@ -870,7 +983,7 @@ describe("creditRunway", () => {
 
     it("projects depletion from last full-month base and current-month intensity", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "lambda", granted: 1000 }),
                 opCreditBurn({
                     month: "2026-06",
@@ -900,7 +1013,7 @@ describe("creditRunway", () => {
         // aws shape: Automat-it deducts credits at invoice time (~the 10th of
         // the next month), so June/July read zero until the invoice lands.
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "aws", granted: 10000 }),
                 opCreditBurn({
                     month: "2026-05",
@@ -918,7 +1031,7 @@ describe("creditRunway", () => {
 
     it("falls back to the last complete month when the running month is silent", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "lambda", granted: 1000 }),
                 opCreditBurn({
                     month: "2026-06",
@@ -931,7 +1044,9 @@ describe("creditRunway", () => {
         expect(row.rateBasis).toBe("last");
         expect(row.monthlyRateUsd).toBe(50);
         const dormant = creditRunway(
-            emptyData({ opCloud: [grant({ vendor: "lambda", granted: 10 })] }),
+            emptyData({
+                vendorLedger: [grant({ vendor: "lambda", granted: 10 })],
+            }),
             NOW,
         );
         expect(dormant[0].monthlyRateUsd).toBeNull();
@@ -940,7 +1055,7 @@ describe("creditRunway", () => {
 
     it("lets an upcoming expiry beat a later burn date", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "digitalocean",
                     granted: 1000,
@@ -963,7 +1078,7 @@ describe("creditRunway", () => {
         // the vendor funded — Runs Out must reflect burning through it, not
         // the first expiry.
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "digitalocean",
                     label: "expiring",
@@ -992,7 +1107,7 @@ describe("creditRunway", () => {
 
     it("flags pre-window grants, lapsed remainders, and unallocated burn", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "google",
                     granted: 100,
@@ -1045,7 +1160,7 @@ describe("creditRunway", () => {
         // January burn cannot draw down an April grant — the leftover is
         // surfaced as unallocated instead of understating remaining credit.
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "aws",
                     label: "early",
@@ -1079,7 +1194,7 @@ describe("creditRunway", () => {
         // google shape: the explicit "pre-2026 grant burn" plug predates the
         // grant rows' start metadata but verifiably drew from those pools.
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "google",
                     granted: 100000,
@@ -1102,7 +1217,7 @@ describe("creditRunway", () => {
         // only the synthetic opening plug gets the metadata exemption; a
         // regular 2025 burn row cannot consume a 2026 grant.
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "google",
                     granted: 100000,
@@ -1122,7 +1237,7 @@ describe("creditRunway", () => {
 
     it("reports grant statuses from positive OP Cloud credit rows", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "lambda", label: "live", granted: 100 }),
                 grant({
                     vendor: "runpod",
@@ -1153,7 +1268,7 @@ describe("creditRunway", () => {
 
     it("includes pre-window burn rows in the runway math", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "aws",
                     granted: 100000,
@@ -1178,7 +1293,7 @@ describe("creditRunway", () => {
 
     it("sorts soonest depletion first", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "lambda", granted: 100 }),
                 grant({
                     vendor: "digitalocean",
@@ -1208,7 +1323,7 @@ describe("creditRunway", () => {
 
     it("features a pollen-priced gift pool as finished credits (pointsflyer)", () => {
         const data = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "pointsflyer",
                     label: "gifted compute",
@@ -1262,7 +1377,7 @@ describe("providerBalanceRows", () => {
                     amount: -400,
                 }),
             ],
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "vast.ai",
                     granted: 1000,
@@ -1315,7 +1430,7 @@ describe("providerBalanceRows", () => {
     it("does not invent a prepaid balance for an ordinary billed provider", () => {
         const data = emptyData({
             opTransactions: [opTxn({ vendor: "aws", amount: -500 })],
-            opCloud: [
+            vendorLedger: [
                 grant({ vendor: "aws", granted: 1000 }),
                 opCreditBurn({ vendor: "aws", credit: 100 }),
             ],
@@ -1337,8 +1452,8 @@ describe("providerBalanceRows", () => {
                     amount: -100,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     entry_id: "vast-usage",
                     start: "2026-01-02 00:00:00",
                     vendor: "vast.ai",
@@ -1364,15 +1479,15 @@ describe("providerBalanceRows", () => {
                     amount: -500,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     entry_id: "vast-usage",
                     vendor: "vast.ai",
                     type: "gpu",
                     start: "2026-07-01 00:00:00",
                     paid: -200,
                 }),
-                opCloud({
+                vendorLedger({
                     entry_id: "vast-balance-2026-08-22",
                     source: "dashboard",
                     vendor: "vast.ai",
@@ -1403,8 +1518,8 @@ describe("providerBalanceRows", () => {
         expect(
             creditRunway(
                 emptyData({
-                    opCloud: [
-                        opCloud({
+                    vendorLedger: [
+                        vendorLedger({
                             vendor: "vast.ai",
                             type: "balance",
                             start: "2026-08-22 10:00:00",
@@ -1421,8 +1536,8 @@ describe("providerBalanceRows", () => {
     it("recognizes the external InferencePort wallet snapshot", () => {
         const now = new Date("2026-08-25T12:00:00Z");
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     entry_id: "inferenceport-balance-2026-08-25",
                     vendor: "inferenceport",
                     type: "balance",
@@ -1461,22 +1576,22 @@ describe("providerBalanceRows", () => {
                     amount: -500,
                 }),
             ],
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     entry_id: "vast-before-usage",
                     vendor: "vast.ai",
                     type: "gpu",
                     start: "2026-08-21 00:00:00",
                     paid: -20,
                 }),
-                opCloud({
+                vendorLedger({
                     entry_id: "vast-after-usage",
                     vendor: "vast.ai",
                     type: "gpu",
                     start: "2026-08-23 00:00:00",
                     paid: -50,
                 }),
-                opCloud({
+                vendorLedger({
                     entry_id: "vast-balance",
                     source: "dashboard",
                     vendor: "vast.ai",
@@ -1502,13 +1617,13 @@ describe("providerBalanceRows", () => {
     it("requires every active account before anchoring a multi-account vendor", () => {
         const now = new Date("2026-08-22T12:00:00Z");
         const base = emptyData({
-            opCloud: [
+            vendorLedger: [
                 grant({
                     vendor: "openrouter",
                     granted: 6_000,
                     start_date: "2026-05-01",
                 }),
-                opCloud({
+                vendorLedger({
                     entry_id: "openrouter-myceli-balance",
                     source: "dashboard",
                     vendor: "openrouter",
@@ -1531,8 +1646,8 @@ describe("providerBalanceRows", () => {
             creditDepletionDate: null,
         });
 
-        base.opCloud?.push(
-            opCloud({
+        base.vendorLedger?.push(
+            vendorLedger({
                 entry_id: "openrouter-pollinations-balance",
                 source: "dashboard",
                 vendor: "openrouter",
@@ -1557,15 +1672,15 @@ describe("providerBalanceRows", () => {
         const now = new Date("2026-08-23T12:00:00Z");
         const rows = providerBalanceRows(
             emptyData({
-                opCloud: [
-                    opCloud({
+                vendorLedger: [
+                    vendorLedger({
                         vendor: "openrouter",
                         account_id: "myceli",
                         type: "balance",
                         start: "2026-08-22 10:00:00",
                         credit: 16.17,
                     }),
-                    opCloud({
+                    vendorLedger({
                         vendor: "openrouter",
                         account_id: "pollinations",
                         type: "balance",
@@ -1586,10 +1701,10 @@ describe("providerBalanceRows", () => {
         });
     });
 
-    it("does not call stale balance snapshots checked", () => {
+    it("keeps a balance check valid for its monthly close cycle", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     vendor: "vast.ai",
                     type: "balance",
                     start: "2026-08-01 10:00:00",
@@ -1601,15 +1716,87 @@ describe("providerBalanceRows", () => {
 
         expect(row).toMatchObject({
             balanceAsOf: "2026-08-01",
-            balanceStatus: "stale",
+            balanceStatus: "checked",
             cashBalanceUsd: 500,
         });
     });
 
-    it("lists a provider even when it has no wallet balance to refresh", () => {
+    it("shows one balance row per canonical account and collapses aliases", () => {
+        const now = new Date("2026-09-04T12:00:00Z");
+        const rows = providerAccountBalanceRows(
+            emptyData({
+                vendorLedger: [
+                    vendorLedger({
+                        entry_id: "e2b-uuid",
+                        vendor: "e2b",
+                        account_id: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+                        account_name: "Pollinations",
+                        type: "balance",
+                        start: "2026-08-27 00:00:00",
+                        credit: 25_100,
+                    }),
+                    vendorLedger({
+                        entry_id: "e2b-slug",
+                        vendor: "e2b",
+                        account_id: "elliots-project",
+                        account_name: "Pollinations",
+                        type: "balance",
+                        start: "2026-09-01 00:00:00",
+                        credit: 25_000,
+                    }),
+                ],
+            }),
+            now,
+        ).filter((row) => row.vendor === "e2b");
+
+        expect(rows).toHaveLength(1);
+        expect(rows[0]).toMatchObject({
+            accountId: "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+            accountLabel: "Pollinations",
+            loginEmail: "elliot@myceli.ai",
+            creditBalanceUsd: 25_000,
+            balanceAsOf: "2026-09-01",
+            balanceStatus: "checked",
+        });
+    });
+
+    it("archives closed Fireworks accounts without hiding their balances", () => {
+        const rows = providerAccountBalanceRows(
+            emptyData({
+                vendorLedger: [
+                    vendorLedger({
+                        vendor: "fireworks",
+                        account_id: "et-fy",
+                        account_name: "Pollinations",
+                        type: "balance",
+                        start: "2026-09-04 00:00:00",
+                        credit: 506,
+                    }),
+                ],
+            }),
+            new Date("2026-09-04T12:00:00Z"),
+        ).filter((row) => row.vendor === "fireworks");
+
+        expect(rows).toHaveLength(5);
+        expect(rows.find((row) => row.accountId === "et-fy")).toMatchObject({
+            active: false,
+            balanceStatus: "archived",
+            creditBalanceUsd: 506,
+        });
+        expect(rows.find((row) => row.accountId === "myceli")).toMatchObject({
+            active: false,
+            balanceStatus: "archived",
+        });
+        expect(rows.find((row) => row.accountId === "neoglyph")).toMatchObject({
+            active: true,
+            balanceStatus: "not_checked",
+        });
+    });
+
+    it("lists an inactive provider even when it has no wallet balance to refresh", () => {
         const data = emptyData({
-            opCloud: [
-                opCloud({
+            vendorLedger: [
+                vendorLedger({
                     vendor: "inception",
                     type: "inference",
                     paid: -10,
@@ -1620,7 +1807,7 @@ describe("providerBalanceRows", () => {
         expect(
             rowFor(data, new Date("2026-08-22T12:00:00Z"), "inception"),
         ).toMatchObject({
-            active: true,
+            active: false,
             balanceTracking: false,
             balanceStatus: "not_applicable",
             cashBalanceUsd: null,
@@ -1632,8 +1819,8 @@ describe("providerBalanceRows", () => {
         const now = new Date("2026-08-25T12:00:00Z");
         const row = rowFor(
             emptyData({
-                opCloud: [
-                    opCloud({
+                vendorLedger: [
+                    vendorLedger({
                         vendor: "io.net",
                         type: "balance",
                         start: "2026-07-01 00:00:00",

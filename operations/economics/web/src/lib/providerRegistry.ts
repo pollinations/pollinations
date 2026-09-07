@@ -3,29 +3,69 @@ import type {
     Data,
     EconomicsPrivateConfig,
     MeterDriftExplanation,
-    OpCloudRow,
+    OpTransactionRow,
     PollenWitnessExplanation,
     ProviderCheckExplanation,
     ProviderObservation,
     ProviderObservationSource,
+    VendorLedgerRow,
 } from "../types";
 import {
+    type Category,
+    type CategoryValue,
+    cloudCategory,
+    isCategory,
     isComputeOrInfrastructureCategory,
-    transactionCategory,
 } from "./categories";
 import { collectMonths, type MonthFilterValue, matchesMonth } from "./months";
+
+// Bank movements of one vendor can serve several business purposes. Rules run
+// in order on the lowercase description (any `match` substring, any exact
+// `equals`) or on inflows; the first hit wins, otherwise `category` applies.
+export type CashRule = {
+    match?: string[];
+    equals?: string[];
+    inflow?: boolean;
+    category: Category;
+    // The matched movement changes cash but never appears as a table line.
+    cashOnly?: boolean;
+};
 
 export type ProviderDefinition = {
     id: string;
     label: string;
+    // Business category of the vendor's cash in the P&L. "uncategorized"
+    // marks a vendor seen in the bank ledger that nobody has reviewed yet:
+    // a canonical supplied category is trusted until the review lands.
+    category: CategoryValue;
+    cashRules?: CashRule[];
+    // Runway line the vendor is folded into (office merchants, admin purposes).
+    runwayLine?: string;
+    // Bank movements of this vendor change cash but never appear as a P&L or
+    // adjustment line (a reimbursement of pre-window costs, for example).
+    cashOnly?: boolean;
     meteringBasis: MeteringBasis;
     aliases: string[];
     connector: string | null;
     monthlyReview: boolean;
+    activeFrom?: string;
+    activeTo?: string | null;
     balanceTracking: boolean;
     collectionMethod: ProviderCollectionMethod | null;
     access?: ProviderAccessTarget[];
     accounts?: ProviderAccountDefinition[];
+    // Reviewed provider labels (meter names, invoice slugs, dashboard display
+    // names) keyed to Pollen model ids. A string array means one billed line
+    // served several ids of the same model at the same provider; null means
+    // the label has no Pollen model; an array of dated rules pins the label to
+    // the id it meant in each period.
+    modelLabels?: Record<
+        string,
+        | string
+        | string[]
+        | null
+        | { from?: string; until?: string; model: string | string[] | null }[]
+    >;
 };
 
 export type ProviderCollectionMethod = "api" | "cli" | "dashboard" | "internal";
@@ -34,6 +74,8 @@ export type ProviderAccessTarget = {
     workspace: string;
     url: string;
     accountId?: string;
+    loginEmail?: string;
+    label?: string;
 };
 
 export type MeteringBasis =
@@ -47,12 +89,30 @@ export type MeteringBasis =
 export type ProviderAccountDefinition = {
     id: string;
     label: string;
+    aliases?: string[];
+    loginEmail?: string;
     activeFrom: string;
     activeTo: string | null;
 };
 
+// A reviewed re-attribution of Pollen rows whose provider tag named a vendor
+// that never billed them. Bounded by month; evidence is mandatory.
+export type PollenVendorOverride = {
+    vendor: string;
+    model: string;
+    to: string;
+    from: string;
+    until: string;
+    evidence: string;
+};
+
 type ProviderRegistryFile = {
     version: number;
+    pollenVendorOverrides: PollenVendorOverride[];
+    // Pollen model ids that no longer exist in the shared registry but still
+    // identify historical costs. Removing a model from the product does not
+    // invalidate what it cost.
+    retiredModels: string[];
     providers: ProviderDefinition[];
 };
 
@@ -62,6 +122,26 @@ export type ProviderReconciliationExplanation =
 
 export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
     .providers;
+export const RETIRED_MODELS: readonly string[] = (
+    registryJson as ProviderRegistryFile
+).retiredModels;
+export const POLLEN_VENDOR_OVERRIDES: readonly PollenVendorOverride[] = (
+    registryJson as ProviderRegistryFile
+).pollenVendorOverrides;
+
+export function pollenVendorOverride(
+    month: string,
+    vendor: string,
+    model: string,
+): string | undefined {
+    return POLLEN_VENDOR_OVERRIDES.find(
+        (override) =>
+            override.vendor === vendor &&
+            override.model === model &&
+            override.from <= month &&
+            month <= override.until,
+    )?.to;
+}
 const providerByAlias = new Map<string, ProviderDefinition>();
 for (const provider of PROVIDER_REGISTRY) {
     providerByAlias.set(provider.id, provider);
@@ -74,6 +154,84 @@ export function normalizeProviderName(value: string): string {
 
 export function resolveProvider(value: string): ProviderDefinition | undefined {
     return providerByAlias.get(normalizeProviderName(value));
+}
+
+function cashRuleMatches(
+    rule: CashRule,
+    description: string,
+    amount: number,
+): boolean {
+    return (
+        (rule.match ?? []).some((needle) => description.includes(needle)) ||
+        (rule.equals ?? []).includes(description) ||
+        (rule.inflow === true && amount > 0)
+    );
+}
+
+// The P&L category of a bank movement, decided by the vendor registry.
+export function transactionCategory(
+    row: Pick<
+        OpTransactionRow,
+        "amount" | "category" | "description" | "kind" | "vendor"
+    >,
+): CategoryValue {
+    if (row.kind === "opening_balance") return "balance_sheet";
+
+    const supplied = normalizeProviderName(row.category);
+    if (supplied === "creator_payout") return "revenue_share";
+    // A reviewed deposit/refund or other balance-sheet movement is not a
+    // recurring vendor expense (for example a Deel deposit is not payroll).
+    if (supplied === "balance_sheet") return "balance_sheet";
+
+    const provider = resolveProvider(row.vendor);
+    if (provider) {
+        const description = normalizeProviderName(row.description);
+        const rule = (provider.cashRules ?? []).find((candidate) =>
+            cashRuleMatches(candidate, description, Number(row.amount)),
+        );
+        if (rule) return rule.category;
+        if (provider.category !== "uncategorized") return provider.category;
+    }
+    return isCategory(supplied) ? supplied : "uncategorized";
+}
+
+// A bank movement that changes cash without a P&L or adjustment line: the
+// vendor is cash-only, or the cash rule that classifies the movement is.
+export function cashOnlyTransaction(
+    row: Pick<OpTransactionRow, "amount" | "description" | "vendor">,
+): boolean {
+    const provider = resolveProvider(row.vendor);
+    if (!provider) return false;
+    if (provider.cashOnly) return true;
+    const description = normalizeProviderName(row.description);
+    const rule = (provider.cashRules ?? []).find((candidate) =>
+        cashRuleMatches(candidate, description, Number(row.amount)),
+    );
+    return rule?.cashOnly === true;
+}
+
+// Explicit service types decide the category. Invoice subscriptions and
+// adjustments use the reviewed vendor category; unknown types stay invalid.
+export function ledgerCategory(
+    row: Pick<VendorLedgerRow, "type" | "vendor">,
+): CategoryValue {
+    const type = normalizeProviderName(row.type);
+    const categoryFromType = cloudCategory(row);
+    if (categoryFromType !== "uncategorized") return categoryFromType;
+    if (type !== "subscription" && type !== "adjustment")
+        return "uncategorized";
+    const category = resolveProvider(row.vendor)?.category;
+    return category && category !== "uncategorized"
+        ? category
+        : "uncategorized";
+}
+
+// The Runway line a vendor's cash is shown under.
+export function runwayLineItem(category: string, vendor: string): string {
+    const provider = resolveProvider(vendor);
+    return provider?.runwayLine != null && provider.category === category
+        ? provider.runwayLine
+        : vendor;
 }
 
 export function providerMeteringBasis(value: string): MeteringBasis {
@@ -89,6 +247,45 @@ export function activeProviderAccounts(
         (account) =>
             account.activeFrom <= month &&
             (account.activeTo == null || account.activeTo >= month),
+    );
+}
+
+export function normalizeProviderAccountId(value?: string): string {
+    return normalizeProviderName(value?.trim() || "default");
+}
+
+export function resolveProviderAccount(
+    provider: ProviderDefinition,
+    value?: string,
+): ProviderAccountDefinition | undefined {
+    const normalized = normalizeProviderAccountId(value);
+    return provider.accounts?.find(
+        (account) =>
+            normalizeProviderAccountId(account.id) === normalized ||
+            (account.aliases ?? []).some(
+                (alias) => normalizeProviderAccountId(alias) === normalized,
+            ),
+    );
+}
+
+export function canonicalProviderAccountId(
+    provider: ProviderDefinition | undefined,
+    value?: string,
+): string {
+    const normalized = normalizeProviderAccountId(value);
+    return provider == null
+        ? normalized
+        : (resolveProviderAccount(provider, normalized)?.id ?? normalized);
+}
+
+function providerRequiresReview(
+    provider: ProviderDefinition,
+    month: string,
+): boolean {
+    return (
+        provider.monthlyReview &&
+        (provider.activeFrom == null || provider.activeFrom <= month) &&
+        (provider.activeTo == null || provider.activeTo >= month)
     );
 }
 
@@ -140,7 +337,10 @@ export function pollenWitnessExplanation(
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
-type ObservationInput = Pick<Data, "opCloud" | "opPollen" | "opTransactions">;
+type ObservationInput = Pick<
+    Data,
+    "vendorLedger" | "opPollen" | "opTransactions"
+>;
 
 function nextMonth(month: string): string {
     const [year, number] = month.split("-").map(Number);
@@ -148,7 +348,7 @@ function nextMonth(month: string): string {
     return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function cloudObservationMonths(row: OpCloudRow): string[] {
+function cloudObservationMonths(row: VendorLedgerRow): string[] {
     const startMonth = row.start.slice(0, 7);
     const isVerifiedZeroRange =
         row.resource_sku === "verified-zero" &&
@@ -186,9 +386,15 @@ export function collectProviderObservations(
         vendor,
     }: ProviderObservation) => {
         const normalized = normalizeProviderName(vendor);
-        const normalizedAccountId = accountId
-            ? normalizeProviderName(accountId)
+        const definition = resolveProvider(normalized);
+        const resolvedAccount = definition
+            ? resolveProviderAccount(definition, accountId)
             : undefined;
+        const normalizedAccountId =
+            resolvedAccount?.id ??
+            (accountId?.trim()
+                ? normalizeProviderAccountId(accountId)
+                : undefined);
         if (!normalized || !/^\d{4}-\d{2}$/.test(month)) return;
         const key = `${month}|${normalized}|${source}|${normalizedAccountId ?? ""}`;
         const existing = observations.get(key);
@@ -219,7 +425,7 @@ export function collectProviderObservations(
             dashboardChecked: false,
         });
     }
-    for (const row of data.opCloud ?? []) {
+    for (const row of data.vendorLedger ?? []) {
         if (row.type.trim().toLowerCase() === "balance") continue;
         for (const month of cloudObservationMonths(row)) {
             add({
@@ -323,12 +529,15 @@ export function providerReviewRows(
             observedAliases: [],
             sources: [],
             mapped: definition != null,
-            monthlyReview: definition?.monthlyReview ?? false,
+            monthlyReview: definition
+                ? providerRequiresReview(definition, reviewMonth)
+                : false,
             dashboardChecked: false,
             checkExplanation: null,
-            dashboardStatus: definition?.monthlyReview
-                ? "no activity"
-                : "not required",
+            dashboardStatus:
+                definition && providerRequiresReview(definition, reviewMonth)
+                    ? "no activity"
+                    : "not required",
             expectedAccounts,
             observedAccountIds: [],
             accountStatus: expectedAccounts.length
@@ -344,7 +553,7 @@ export function providerReviewRows(
 
     for (const reviewMonth of months) {
         for (const provider of PROVIDER_REGISTRY) {
-            if (!provider.monthlyReview) continue;
+            if (!providerRequiresReview(provider, reviewMonth)) continue;
             const key = `${reviewMonth}|${provider.id}`;
             rows.set(key, makeRow(reviewMonth, provider.id, provider));
         }
@@ -359,6 +568,7 @@ export function providerReviewRows(
             rows.get(key) ?? makeRow(observation.month, provider, definition);
         row.aliasSet.add(observation.vendor);
         row.sourceSet.add(observation.source);
+        if (definition?.monthlyReview) row.monthlyReview = true;
         row.dashboardChecked ||= observation.dashboardChecked;
         if (observation.source === "cloud") {
             if (observation.accountId) {
@@ -423,8 +633,7 @@ export function providerReviewRows(
                         ? ("reviewed gap" as const)
                         : row.dashboardChecked
                           ? ("recorded" as const)
-                          : row.mapped &&
-                              resolveProvider(row.provider)?.monthlyReview
+                          : row.mapped && row.monthlyReview
                             ? sourceSet.size > 0
                                 ? ("due" as const)
                                 : ("no activity" as const)

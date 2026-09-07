@@ -1,10 +1,43 @@
 {
-  "version": 14,
+  "version": 27,
+  "retiredModels": [
+    "kimi-k2-thinking",
+    "chickytutor",
+    "claude-legacy",
+    "gemini-legacy",
+    "kimi-k2.5",
+    "klein-large",
+    "ltx-2",
+    "mistral-ocr",
+    "universal-3-pro"
+  ],
+  "pollenVendorOverrides": [
+    {
+      "vendor": "pointsflyer",
+      "model": "gptimage",
+      "to": "azure",
+      "from": "2026-01",
+      "until": "2026-04",
+      "evidence": "Reviewed routing and Azure Cost Management exports identify gptimage's gpt-image-1-mini deployments on the Myceli Azure subscription during this interval, despite the recorded azure-2 provider tag. This override applies only to gptimage; retain all other Pointsflyer identities. Source amounts remain in the ledgers and private evidence archive."
+    }
+  ],
   "providers": [
     {
       "id": "airforce",
       "label": "Airforce",
+      "category": "compute",
       "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "alexandre-silveira",
+      "label": "Alexandre Silveira",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -14,6 +47,7 @@
     {
       "id": "alibaba",
       "label": "Alibaba",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "alibaba",
@@ -22,6 +56,11 @@
         {
           "id": "5314153712077332",
           "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default",
+            "10451809460254"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         }
@@ -32,13 +71,55 @@
         {
           "workspace": "myceli.ai",
           "url": "https://billing-cost.console.alibabacloud.com/fortune/billing-account",
-          "accountId": "5314153712077332"
+          "accountId": "5314153712077332",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "qwen-image-edit-plus": "qwen-image",
+        "qwen-image-plus": "qwen-image",
+        "qwen3-coder-next": "qwen-coder-large",
+        "qwen3-tts-flash": "qwen-tts",
+        "qwen3-tts-instruct-flash": "qwen-tts-instruct",
+        "qwen3-vl-235b-a22b-thinking": "qwen-vision-pro",
+        "qwen3-vl-plus": "qwen-vision",
+        "wan2.2-i2v-flash": "wan-fast",
+        "wan2.2-kf2v-flash": "wan-fast",
+        "wan2.2-t2v-plus": "wan-fast",
+        "wan2.6-i2v-flash": "wan",
+        "wan2.6-t2v": "wan",
+        "wan2.7-image": "wan-image",
+        "wan2.7-image-pro": "wan-image-pro",
+        "wan2.7-t2v": "wan-pro"
+      }
+    },
+    {
+      "id": "amazon",
+      "label": "Amazon",
+      "category": "office",
+      "runwayLine": "Furniture & equipment",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "anthropic",
       "label": "Anthropic",
+      "category": "compute",
+      "cashRules": [
+        {
+          "match": [
+            "subscription"
+          ],
+          "equals": [
+            "claude"
+          ],
+          "category": "development"
+        }
+      ],
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "anthropic",
@@ -50,27 +131,65 @@
           "workspace": "myceli.ai",
           "url": "https://platform.claude.com/settings/billing"
         }
-      ]
+      ],
+      "modelLabels": {
+        "claude-haiku-4-5-20251001": [
+          "claude-fast",
+          "midijourney"
+        ],
+        "claude-opus-4-5-20251101": "claude-legacy",
+        "claude-opus-4-6": [
+          "claude-large",
+          "midijourney-large"
+        ],
+        "claude-sonnet-4-6": "claude"
+      }
     },
     {
       "id": "assemblyai",
       "label": "AssemblyAI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "assemblyai",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "elliot@myceli.ai",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
+      "modelLabels": {
+        "Prompting Universal-3.5 Pro": "universal-3.5-pro",
+        "qwen3.5-4b-32k-fast (Input)": null,
+        "qwen3.5-4b-32k-fast (Output)": null,
+        "Realtime Universal-3.5 Pro | EU": null,
+        "Universal-2": "universal-2",
+        "Universal-3 Pro": "universal-3-pro",
+        "Universal-3 Pro Prompting": "universal-3-pro",
+        "Universal-3.5 Pro": "universal-3.5-pro"
+      },
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://www.assemblyai.com/dashboard/settings/billing"
+          "url": "https://www.assemblyai.com/dashboard/settings/billing",
+          "accountId": "elliot@myceli.ai",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
       "id": "aws",
       "label": "AWS",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [
         "aws-bedrock",
@@ -78,45 +197,615 @@
       ],
       "connector": "aws",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "301235909293",
+          "label": "Myceli AI payer",
+          "aliases": [
+            "default",
+            "202731947268",
+            "813596885972"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://us-east-1.console.aws.amazon.com/costmanagement/home#/credits"
+          "url": "https://us-east-1.console.aws.amazon.com/costmanagement/home?region=eu-north-1#/credits",
+          "accountId": "301235909293",
+          "loginEmail": "elliot@myceli.ai",
+          "label": "AWS"
         },
         {
           "workspace": "myceli.ai",
-          "url": "https://glass.automat-it.com/myceliai-aws/dashboard"
+          "url": "https://glass.automat-it.com/myceliai-aws/dashboard",
+          "accountId": "301235909293",
+          "loginEmail": "elliot@myceli.ai",
+          "label": "Glass"
         },
         {
           "workspace": "myceli.ai",
-          "url": "https://umbrellacost.io/cost-usage/cost-usage-explorer"
+          "url": "https://umbrellacost.io/cost-usage/cost-usage-explorer",
+          "accountId": "301235909293",
+          "loginEmail": "elliot@myceli.ai",
+          "label": "Umbrella"
         }
-      ]
+      ],
+      "modelLabels": {
+        "claude-3.5-haiku": "chickytutor",
+        "claude-haiku-4-5": "claude-fast",
+        "claude-haiku-4.5": "claude-fast",
+        "claude-opus-4-5": [
+          {
+            "until": "2026-05",
+            "model": "claude-legacy"
+          }
+        ],
+        "claude-opus-4-6": [
+          {
+            "until": "2026-05",
+            "model": "claude-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "claude-large",
+              "claude-opus-4.6"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "claude-opus-4.6"
+          }
+        ],
+        "claude-opus-4-7": "claude-opus-4.7",
+        "claude-opus-4-8": [
+          {
+            "until": "2026-05",
+            "model": "claude-opus-4.8"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "claude-opus-4.8",
+              "claude-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "claude-large"
+          }
+        ],
+        "claude-opus-4.1": null,
+        "claude-opus-4.5": "claude-large",
+        "claude-opus-4.6": "claude-large",
+        "claude-opus-5": "claude-large",
+        "claude-sonnet-4-6": "claude",
+        "claude-sonnet-4.5": "claude",
+        "claude-sonnet-4.6": "claude",
+        "USE1-Guardrail-ContentPolicyUnitsConsumed": null,
+        "USE1-Guardrail-SensitiveInformationPolicyPaidUnitsConsumed": null,
+        "USE1-Kimi-K2-Thinking-input-tokens": "kimi",
+        "USE1-Kimi-K2-Thinking-output-tokens": "kimi",
+        "USE1-minimax.minimax-m2.5-input-tokens": "minimax",
+        "USE1-minimax.minimax-m2.5-output-tokens": "minimax",
+        "USE1-moonshotai.kimi-k2.5-input-tokens": "kimi",
+        "USE1-moonshotai.kimi-k2.5-output-tokens": "kimi",
+        "USE1-Nova2.0Lite-input-tokens": "nova",
+        "USE1-Nova2.0Lite-output-tokens": "nova",
+        "USE1-NovaCanvas-T2I-1024-Standard": "nova-canvas",
+        "USE1-NovaCanvas-T2I-2048-Standard": "nova-canvas",
+        "USE1-NovaLite-input-tokens": null,
+        "USE1-NovaLite-output-tokens": null,
+        "USE1-Llama3-1-8B-input-tokens": null,
+        "USE1-Llama3-1-8B-output-tokens": null,
+        "USE1-NovaMicro-cache-read-input-token-count": "nova-fast",
+        "USE1-NovaMicro-cache-write-input-token-count": "nova-fast",
+        "USE1-NovaMicro-input-tokens": "nova-fast",
+        "USE1-NovaMicro-output-tokens": "nova-fast",
+        "USE1-NovaReel-T2V-Medfps-HDRes": "nova-reel"
+      }
+    },
+    {
+      "id": "ayushman",
+      "label": "Ayushman",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "azure",
       "label": "Azure",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [
         "azure-2"
       ],
       "connector": "azure",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31",
+          "label": "Thomas Haferlach",
+          "aliases": [
+            "default",
+            "7725a3f5-6483-4079-ba51-a317aa4fc09e"
+          ],
+          "loginEmail": "thomas@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "cli",
       "access": [
         {
-          "workspace": "myceli.ai",
-          "url": "https://portal.azure.com/#view/Microsoft_Azure_Billing/ModernBillingMenuBlade/~/BillingAccounts"
+          "workspace": "thomas@myceli.ai",
+          "url": "https://portal.azure.com/#view/Microsoft_Azure_GTM/Billing.MenuView/~/paymentMethodItem/scopeId/%2Fproviders%2FMicrosoft.Billing%2FbillingAccounts%2Fd6c5b3e7-63ac-515a-8674-de5afbaec90d%3Ad9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31%2FbillingProfiles%2F7E4U-QBXO-BG7-PGB/scope/BillingProfile",
+          "accountId": "d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31",
+          "loginEmail": "thomas@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "4.3 Inp Glbl Tokens": "grok-large",
+        "4.3 Outp Glbl Tokens": "grok-large",
+        "5.4 cd inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 longco cd inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 longco inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 longco opt Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.4 mini cd Inp Gl 1M Tokens": [
+          "gpt-5.4-mini",
+          "midijourney"
+        ],
+        "5.4 mini Inp Gl 1M Tokens": [
+          "gpt-5.4-mini",
+          "midijourney"
+        ],
+        "5.4 mini Opt Gl 1M Tokens": [
+          "gpt-5.4-mini",
+          "midijourney"
+        ],
+        "5.4 nano cd Inp Gl 1M Tokens": "openai",
+        "5.4 nano Inp Gl 1M Tokens": "openai",
+        "5.4 nano Opt Gl 1M Tokens": "openai",
+        "5.4 opt Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": "openai-large"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "openai-large",
+              "gpt-5.4"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "gpt-5.4"
+          }
+        ],
+        "5.5 LongCo inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
+        ],
+        "5.5 LongCo opt Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
+        ],
+        "5.5 ShortCo cd inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
+        ],
+        "5.5 ShortCo inp Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
+        ],
+        "5.5 ShortCo opt Gl 1M Tokens": [
+          {
+            "until": "2026-05",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "gpt-5.5",
+              "midijourney-large",
+              "openai-large"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "openai-large",
+              "midijourney-large"
+            ]
+          }
+        ],
+        "5.6 luna LongCo Cd Inp Std Gl 1M Tokens": "gpt-5.6-luna",
+        "5.6 luna LongCo Inp Std Gl 1M Tokens": "gpt-5.6-luna",
+        "5.6 luna LongCo Opt Std Gl 1M Tokens": "gpt-5.6-luna",
+        "5.6 luna ShortCo Cd Inp Std Gl 1M Tokens": "gpt-5.6-luna",
+        "5.6 luna ShortCo Cd Wr Std Gl 1M Tokens": "gpt-5.6-luna",
+        "5.6 luna ShortCo Inp Std Gl 1M Tokens": "gpt-5.6-luna",
+        "5.6 luna ShortCo Opt Std Gl 1M Tokens": "gpt-5.6-luna",
+        "5.6 sol LongCo Cd Inp Std Gl 1M Tokens": "gpt-5.6-sol",
+        "5.6 sol LongCo Inp Std Gl 1M Tokens": "gpt-5.6-sol",
+        "5.6 sol LongCo Opt Std Gl 1M Tokens": "gpt-5.6-sol",
+        "5.6 sol ShortCo Cd Inp Std Gl 1M Tokens": "gpt-5.6-sol",
+        "5.6 sol ShortCo Cd Wr Std Gl 1M Tokens": "gpt-5.6-sol",
+        "5.6 sol ShortCo Inp Std Gl 1M Tokens": "gpt-5.6-sol",
+        "5.6 sol ShortCo Opt Std Gl 1M Tokens": "gpt-5.6-sol",
+        "5.6 terra LongCo Cd Inp Std Gl 1M Tokens": "gpt-5.6-terra",
+        "5.6 terra LongCo Inp Std Gl 1M Tokens": "gpt-5.6-terra",
+        "5.6 terra LongCo Opt Std Gl 1M Tokens": "gpt-5.6-terra",
+        "5.6 terra ShortCo Cd Inp Std Gl 1M Tokens": "gpt-5.6-terra",
+        "5.6 terra ShortCo Cd Wr Std Gl 1M Tokens": "gpt-5.6-terra",
+        "5.6 terra ShortCo Inp Std Gl 1M Tokens": "gpt-5.6-terra",
+        "5.6 terra ShortCo Opt Std Gl 1M Tokens": "gpt-5.6-terra",
+        "Command A Plus Inp Glbl 1M Tokens": "command-a-plus",
+        "Command A Plus Outp Glbl 1M Tokens": "command-a-plus",
+        "Embed v4 Txt Glbl Tokens": "cohere-embed-v4",
+        "Flex Megapixel": "flux-2-flex",
+        "Flex Ref Megapixel": "flux-2-flex",
+        "Flux 2 Pro Initial MP Megapixel": "flux-2-pro",
+        "Flux 2 Pro MP Megapixel": "flux-2-pro",
+        "Flux 2 Ref MP Megapixel": "flux-2-pro",
+        "FW DeepSeek V3.2 Inp DZ Tokens": "deepseek",
+        "FW DeepSeek V3.2 Outp DZ Tokens": "deepseek",
+        "FW DeepSeekV3.2 Cache Inp DZ Tokens": "deepseek",
+        "GPT 5 Mini cchd Inpt Glbl 1M Tokens": "openai",
+        "GPT 5 Mini Inpt Glbl 1M Tokens": "openai",
+        "GPT 5 Mini outpt Glbl 1M Tokens": "openai",
+        "GPT 5 Nano cchd Inpt Glbl 1M Tokens": "openai-fast",
+        "GPT 5 Nano Inpt Glbl 1M Tokens": "openai-fast",
+        "GPT 5 Nano outpt Glbl 1M Tokens": "openai-fast",
+        "GPT 5.2 cd inp Gl 1M Tokens": [
+          "openai-large",
+          "midijourney"
+        ],
+        "GPT 5.2 inp Gl 1M Tokens": [
+          "openai-large",
+          "midijourney"
+        ],
+        "GPT 5.2 opt Gl 1M Tokens": [
+          "openai-large",
+          "midijourney"
+        ],
+        "gpt aud 0828 Inp glbl Tokens": "openai-audio-large",
+        "gpt aud 0828 Outp glbl Tokens": "openai-audio-large",
+        "gpt aud 0828 txt Inp glbl Tokens": "openai-audio-large",
+        "gpt aud 0828 txt Outp glbl Tokens": "openai-audio-large",
+        "gpt aud 1.5 inp Gl 1M Tokens": "openai-audio-large",
+        "gpt aud 1.5 opt Gl 1M Tokens": "openai-audio-large",
+        "gpt aud 1.5 txt inp Gl 1M Tokens": "openai-audio-large",
+        "gpt aud 1.5 txt opt Gl 1M Tokens": "openai-audio-large",
+        "gpt aud mn in gl 1215 1M Tokens": "openai-audio",
+        "gpt aud mn out gl 1215 1M Tokens": "openai-audio",
+        "gpt aud mn txt in gl 1215 1M Tokens": "openai-audio",
+        "gpt aud mn txt out gl 1215 1M Tokens": "openai-audio",
+        "gpt img 1 mini inp img glbl Tokens": "gptimage",
+        "gpt img 1 mini inp txt glbl Tokens": "gptimage",
+        "gpt img 1 mini out img glbl Tokens": "gptimage",
+        "gpt img 1.5 in img DZ 1M Tokens": "gptimage-large",
+        "gpt img 1.5 in img gl 1M Tokens": "gptimage-large",
+        "gpt img 1.5 in txt DZ 1M Tokens": "gptimage-large",
+        "gpt img 1.5 in txt gl 1M Tokens": "gptimage-large",
+        "gpt img 1.5 out img DZ 1M Tokens": "gptimage-large",
+        "gpt img 1.5 out img gl 1M Tokens": "gptimage-large",
+        "gpt img 1.5 out txt DZ 1M Tokens": "gptimage-large",
+        "gpt img 1.5 out txt gl 1M Tokens": "gptimage-large",
+        "gpt-live-transcribe Gl Unit": "gpt-live-transcribe",
+        "gpt-realtime-2 Audio cd inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Audio inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Audio opt Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Image cd inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Image inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Text cd inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Text inp Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2 Text opt Gl 1M Tokens": "gpt-realtime-2",
+        "gpt-realtime-2.1 Audio cd inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Audio inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Audio opt Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Text cd inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Text inp Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt-realtime-2.1 Text opt Gl 1M Tokens": "gpt-realtime-2.1",
+        "gpt4omini-aud1217 Inp glbl Tokens": "openai-audio",
+        "gpt4omini-aud1217 Outp glbl Tokens": "openai-audio",
+        "gpt4omini-aud1217-txt Inp glbl Tokens": "openai-audio",
+        "gpt4omini-aud1217-txt Outp glbl Tokens": "openai-audio",
+        "Grok 4.1 Inp Glbl Tokens": "grok",
+        "Grok 4.1 Outp Glbl Tokens": "grok",
+        "Grok 4.2 Inp glbl Tokens": [
+          {
+            "until": "2026-05",
+            "model": [
+              "grok",
+              "grok-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "grok",
+              "grok-large",
+              "grok-4-20-reasoning"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "grok",
+              "grok-4-20-reasoning"
+            ]
+          }
+        ],
+        "Grok 4.2 Outp glbl Tokens": [
+          {
+            "until": "2026-05",
+            "model": [
+              "grok",
+              "grok-large"
+            ]
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "grok",
+              "grok-large",
+              "grok-4-20-reasoning"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": [
+              "grok",
+              "grok-4-20-reasoning"
+            ]
+          }
+        ],
+        "Grok4 Fast Inp glbl Tokens": "grok",
+        "Grok4 Fast Outp glbl Tokens": "grok",
+        "Image 2 img inp Gl 1M Tokens": "gpt-image-2",
+        "Image 2 img opt Gl 1M Tokens": "gpt-image-2",
+        "Image 2 txt inp Gl 1M Tokens": "gpt-image-2",
+        "Image 2.5 Flash Image Input glbl Tokens": null,
+        "Image 2.5 Flash Image Output glbl Tokens": null,
+        "Image 2.5 Flash Text Input glbl Tokens": null,
+        "K2.5 Thinking Inp glbl Tokens": "kimi",
+        "K2.5 Thinking Outp glbl Tokens": "kimi",
+        "Kontext Pro glbl Images": "kontext",
+        "Large 3 Inp glbl Tokens": "mistral-large",
+        "Large 3 Outp glbl Tokens": "mistral-large",
+        "Llama 3.3 70B Inp glbl Tokens": "llama",
+        "Llama 3.3 70B Outp glbl Tokens": "llama",
+        "Llama 4 Maverick 17B Inp glbl Tokens": "llama-maverick",
+        "Llama 4 Maverick 17B Outp glbl Tokens": "llama-maverick",
+        "OCR 4 glbl Pages": null,
+        "text-embedding-3-large-glbl Tokens": "openai-3-large",
+        "text-embedding-3-small-glbl Tokens": "openai-3-small",
+        "V3.1 Inp glbl Tokens": "deepseek",
+        "V3.1 Outp glbl Tokens": "deepseek",
+        "V3.2 Inp glbl Tokens": "deepseek",
+        "V3.2 Outp glbl Tokens": "deepseek"
+      }
+    },
+    {
+      "id": "barbara-khamouguinoff",
+      "label": "Barbara Khamouguinoff",
+      "category": "office",
+      "runwayLine": "Cleaning",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "bpai",
       "label": "BPAI",
+      "category": "compute",
       "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "buffer",
+      "label": "Buffer",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -126,6 +815,7 @@
     {
       "id": "bytedance",
       "label": "BytePlus / ByteDance",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "bytedance",
@@ -134,6 +824,7 @@
         {
           "id": "3000852661",
           "label": "Myceli.AI OÜ",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": "2026-05"
         }
@@ -144,13 +835,26 @@
         {
           "workspace": "myceli.ai",
           "url": "https://console.byteplus.com/finance/overview",
-          "accountId": "3000852661"
+          "accountId": "3000852661",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
+      "id": "canva",
+      "label": "Canva",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "cloudflare",
       "label": "Cloudflare",
+      "category": "infrastructure",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": "cloudflare",
@@ -159,12 +863,14 @@
         {
           "id": "pollinations",
           "label": "Pollinations.ai (legacy)",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-01",
           "activeTo": "2026-06"
         },
         {
           "id": "myceli",
           "label": "Myceli.AI OÜ",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-02",
           "activeTo": null
         }
@@ -175,18 +881,32 @@
         {
           "workspace": "myceli.ai",
           "url": "https://dash.cloudflare.com/b6ec751c0862027ba269faf7029b2501/billing/credits",
-          "accountId": "myceli"
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://dash.cloudflare.com/efdcb0933eaac64f27c0b295039b28f2/billing/invoices",
-          "accountId": "pollinations"
+          "accountId": "pollinations",
+          "loginEmail": "elliot@pollinations.ai"
         }
       ]
     },
     {
+      "id": "coinflow",
+      "label": "Coinflow",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "community",
       "label": "Community models",
+      "category": "compute",
       "meteringBasis": "internal",
       "aliases": [],
       "connector": "community",
@@ -195,8 +915,20 @@
       "collectionMethod": "internal"
     },
     {
+      "id": "cursor",
+      "label": "Cursor",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "daytona",
       "label": "Daytona",
+      "category": "infrastructure",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": "daytona",
@@ -205,40 +937,138 @@
       "collectionMethod": "api"
     },
     {
+      "id": "deel",
+      "label": "Deel",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "deepinfra",
       "label": "DeepInfra",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "deepinfra",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "runtime",
+          "label": "ElliotEtag",
+          "aliases": [
+            "gh:36901823"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        },
+        {
+          "id": "team",
+          "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://deepinfra.com/dash/billing"
+          "url": "https://deepinfra.com/dash/billing",
+          "accountId": "team",
+          "loginEmail": "elliot@myceli.ai"
+        },
+        {
+          "workspace": "myceli.ai",
+          "url": "https://deepinfra.com/dash/billing",
+          "accountId": "runtime",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "ByteDance/Seedance-2.0": null,
+        "deepseek-ai/DeepSeek-V4-Flash": "deepseek",
+        "deepseek-ai/DeepSeek-V4-Pro": "deepseek-pro",
+        "google/gemma-4-26B-A4B-it": "gemma",
+        "hexgrad/Kokoro-82M": "kokoro",
+        "nvidia/NVIDIA-Nemotron-3-Ultra-550B-A55B": "nemotron",
+        "PrunaAI/p-image": "p-image",
+        "PrunaAI/p-image-Edit": "p-image-edit",
+        "PrunaAI/p-video": null,
+        "sesame/csm-1b": "csm-1b",
+        "stepfun-ai/Step-3.7-Flash": "step-flash",
+        "Wan-AI/Wan2.6-I2V": null,
+        "Wan-AI/Wan2.6-T2V": null,
+        "zai-org/GLM-5.2": null
+      }
+    },
+    {
+      "id": "denns-biomarkt",
+      "label": "Denns Biomarkt",
+      "category": "office",
+      "runwayLine": "Food & drink",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "digitalocean",
       "label": "DigitalOcean",
+      "category": "infrastructure",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "digitalocean",
       "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "4a4e317f-17c7-4fdb-9c79-907331a02d2b",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.digitalocean.com/organizations/4a4e317f-17c7-4fdb-9c79-907331a02d2b/billing"
+          "url": "https://cloud.digitalocean.com/organizations/4a4e317f-17c7-4fdb-9c79-907331a02d2b/billing",
+          "accountId": "4a4e317f-17c7-4fdb-9c79-907331a02d2b",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
+      "id": "discord",
+      "label": "Discord",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "e2b",
       "label": "E2B",
+      "category": "infrastructure",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "e2b",
@@ -246,7 +1076,11 @@
       "accounts": [
         {
           "id": "da33283c-f2bf-414e-87e3-ab8e20cffc46",
-          "label": "Elliot's Project",
+          "label": "Pollinations",
+          "aliases": [
+            "elliots-project"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-08",
           "activeTo": null
         }
@@ -257,29 +1091,108 @@
         {
           "workspace": "myceli.ai",
           "url": "https://console.e2b.dev/project/elliots-project/billing",
-          "accountId": "da33283c-f2bf-414e-87e3-ab8e20cffc46"
+          "accountId": "da33283c-f2bf-414e-87e3-ab8e20cffc46",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
       "id": "elevenlabs",
       "label": "ElevenLabs",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "elevenlabs",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "My Workspace",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://elevenlabs.io/app/subscription/creative"
+          "url": "https://elevenlabs.io/app/subscription/creative",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "audio_isolation": "eleven-voice-isolator",
+        "eleven_flash_v2_5": "elevenflash",
+        "eleven_multilingual_sts_v2": "eleven-voice-changer",
+        "eleven_multilingual_v2": "eleven-multilingual-v2",
+        "eleven_text_to_sound_v2": "eleven-sfx",
+        "eleven_v3": [
+          "elevenlabs",
+          "eleven-dialogue"
+        ],
+        "music_v1": "elevenmusic",
+        "music_v2": "elevenmusic",
+        "scribe_v2": "scribe",
+        "scribe_v2_realtime": "scribe-realtime",
+        "upload": null
+      }
+    },
+    {
+      "id": "elixpo",
+      "label": "Elixpo",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "elliot-fouchy",
+      "label": "Elliot Fouchy",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "enty",
+      "label": "Enty",
+      "category": "admin",
+      "runwayLine": "Accounting & filings",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "estonia",
+      "label": "Estonian Tax and Customs Board",
+      "category": "admin",
+      "runwayLine": "Taxes",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "exa",
       "label": "Exa",
+      "category": "infrastructure",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "exa",
@@ -288,6 +1201,10 @@
         {
           "id": "elliot@myceli.ai",
           "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-08",
           "activeTo": null
         }
@@ -298,29 +1215,84 @@
         {
           "workspace": "myceli.ai",
           "url": "https://dashboard.exa.ai/billing",
-          "accountId": "elliot@myceli.ai"
+          "accountId": "elliot@myceli.ai",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
       "id": "fal",
       "label": "fal.ai",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "fal",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
+      "modelLabels": {
+        "alibaba/qwen-image-3/edit": "qwen-image-3",
+        "alibaba/qwen-image-3/image-to-image": null,
+        "alibaba/qwen-image-3/text-to-image": "qwen-image-3",
+        "alibaba/wan-3.0-prime/image-to-video": "wan-3.0",
+        "alibaba/wan-3.0-prime/reference-to-video": "wan-3.0",
+        "alibaba/wan-3.0-prime/text-to-video": "wan-3.0",
+        "alibaba/wan-3.0/text-to-video": null,
+        "fal-ai/hunyuan-3d/v3.1/pro/text-to-3d": null,
+        "fal-ai/hunyuan-3d/v3.1/rapid/image-to-3d": null,
+        "fal-ai/hunyuan-3d/v3.1/rapid/text-to-3d": null,
+        "fal-ai/hyper3d/rodin/v2.5/fast": "hyper3d-rodin",
+        "fal-ai/hyper3d/rodin/v2.5/text-to-3d/fast": "hyper3d-rodin",
+        "fal-ai/meshy/v6/image-to-3d": null,
+        "fal-ai/recraft/v4.1/text-to-vector": null,
+        "fal-ai/stable-audio-25/text-to-audio": "stable-audio-3-medium",
+        "fal-ai/stable-audio-3/medium/audio-to-audio": "stable-audio-3-medium",
+        "fal-ai/stable-audio-3/medium/text-to-audio": "stable-audio-3-medium",
+        "fal-ai/trellis-2": "trellis-2",
+        "fal-ai/triposr": null,
+        "fal-ai/z-image/turbo": "zimage",
+        "krea/v2/large/text-to-image": null,
+        "krea/v2/medium/text-to-image": "krea",
+        "minimax/h3/text-to-video": "minimax-h3",
+        "tripo3d/h3.1/image-to-3d": null,
+        "tripo3d/h3.1/text-to-3d": null
+      },
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://fal.ai/dashboard/usage-billing"
+          "url": "https://fal.ai/dashboard/usage-billing",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
+      "id": "figma",
+      "label": "Figma",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "fireworks",
       "label": "Fireworks",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "fireworks",
@@ -329,32 +1301,46 @@
         {
           "id": "pollinations",
           "label": "Pollinations.AI",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-03",
-          "activeTo": null
+          "activeTo": "2026-08"
         },
         {
           "id": "et-fy",
           "label": "Pollinations",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-07",
-          "activeTo": null
+          "activeTo": "2026-08"
         },
         {
           "id": "neoglyph",
           "label": "Neoglyph",
+          "loginEmail": "elliot@neoglyph.ai",
           "activeFrom": "2026-05",
-          "activeTo": null
+          "activeTo": null,
+          "aliases": [
+            "elliot-neoglyph"
+          ]
         },
         {
           "id": "myceli",
           "label": "Myceli",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
-          "activeTo": null
+          "activeTo": "2026-08",
+          "aliases": [
+            "elliot-l6mb8f24ewds"
+          ]
         },
         {
           "id": "pixelmarket",
           "label": "Pixelmarket",
+          "loginEmail": "elli@pixelmarket.ai",
           "activeFrom": "2026-05",
-          "activeTo": null
+          "activeTo": "2026-08",
+          "aliases": [
+            "thomas-nqdgpxxgxvk8"
+          ]
         }
       ],
       "balanceTracking": true,
@@ -363,49 +1349,190 @@
         {
           "workspace": "myceli.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "myceli"
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "pollinations"
+          "accountId": "pollinations",
+          "loginEmail": "elliot@pollinations.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "et-fy"
+          "accountId": "et-fy",
+          "loginEmail": "elliot@pollinations.ai"
         },
         {
           "workspace": "neoglyph.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "neoglyph"
+          "accountId": "neoglyph",
+          "loginEmail": "elliot@neoglyph.ai"
         },
         {
           "workspace": "pixelmarket.ai",
           "url": "https://app.fireworks.ai/account/billing",
-          "accountId": "pixelmarket"
+          "accountId": "pixelmarket",
+          "loginEmail": "elli@pixelmarket.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "16.1B - 80B": "llama",
+        "DeepSeek V3.2": "deepseek",
+        "DeepSeek V4 Flash": "deepseek",
+        "DeepSeek V4 Flash 0731": "deepseek",
+        "DeepSeek V4 Pro": "deepseek-pro",
+        "DeepSeek V4 Pro 0813": "deepseek-pro",
+        "flux-1-dev-fp8": null,
+        "flux-1-schnell-fp8": "flux",
+        "GLM 4.7": "glm",
+        "GLM 5": "glm",
+        "GLM 5.1": "glm",
+        "GLM 5.2": "glm",
+        "GLM 5.3": "glm-5.3",
+        "GLM 5.3 Flash": "z-ai/glm-5.3-flash",
+        "Inkling": "thinkingmachines/inkling",
+        "Kimi K2.5": [
+          {
+            "until": "2026-05",
+            "model": "kimi"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "kimi",
+              "kimi-k2.5"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "kimi-k2.5"
+          }
+        ],
+        "Kimi K2.6": [
+          {
+            "until": "2026-05",
+            "model": "kimi-k2.6"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "kimi-k2.6",
+              "kimi"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "kimi"
+          }
+        ],
+        "Kimi K2.7 Code": [
+          {
+            "until": "2026-05",
+            "model": "kimi-k2.7-code"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "kimi-k2.7-code",
+              "kimi-code"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "kimi-code"
+          }
+        ],
+        "Kimi K3": "kimi-k3",
+        "MiniMax M2": "minimax",
+        "MiniMax M2.5": "minimax",
+        "MiniMax M2.7": [
+          {
+            "until": "2026-05",
+            "model": "minimax"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "minimax",
+              "minimax-m2.7"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "minimax-m2.7"
+          }
+        ],
+        "MiniMax M3": [
+          {
+            "until": "2026-05",
+            "model": "minimax-m3"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "minimax-m3",
+              "minimax"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "minimax"
+          }
+        ],
+        "MiniMax M3 1M": "minimax",
+        "Muse Glimmer 30B": "muse-glimmer",
+        "Nemotron Lightning 3.5": "nemotron-3.5-lightning",
+        "Qwen 3.6 Plus": "qwen-large",
+        "Qwen 3.7 Plus": "qwen-large",
+        "Qwen 3.8 Max": "qwen3.8-2.4t-a95b",
+        "Qwen3 30B": "qwen-vision",
+        "Qwen3 Embedding 8B": "qwen3-embedding-8b",
+        "Qwen3.8-2.4T-A95B": "qwen3.8-2.4t-a95b"
+      }
     },
     {
-      "id": "google",
-      "label": "Google Cloud",
-      "meteringBasis": "mixed",
+      "id": "gaswerksiedlung",
+      "label": "Gaswerksiedlung",
+      "category": "office",
+      "runwayLine": "Rent & utilities",
+      "meteringBasis": "not_applicable",
       "aliases": [],
-      "connector": "google",
-      "monthlyReview": true,
-      "balanceTracking": true,
-      "collectionMethod": "cli",
-      "access": [
-        {
-          "workspace": "myceli.ai",
-          "url": "https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/credits/all"
-        }
-      ]
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "gitbook",
+      "label": "Gitbook",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "github",
       "label": "GitHub",
+      "category": "development",
+      "cashRules": [
+        {
+          "match": [
+            "sponsor"
+          ],
+          "category": "revenue",
+          "cashOnly": true
+        }
+      ],
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": "github",
@@ -420,12 +1547,113 @@
       ]
     },
     {
+      "id": "google",
+      "label": "Google Cloud",
+      "category": "compute",
+      "meteringBasis": "mixed",
+      "aliases": [],
+      "connector": "google",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "0180E5-574541-B8F8FD",
+          "label": "My Billing Account",
+          "aliases": [
+            "default",
+            "stellar-verve-465920-b7"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "cli",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://console.cloud.google.com/billing/0180E5-574541-B8F8FD/credits/all",
+          "accountId": "0180E5-574541-B8F8FD",
+          "loginEmail": "elliot@myceli.ai"
+        }
+      ],
+      "modelLabels": {
+        "claude-opus-4.5": "claude-large",
+        "claude-sonnet-4.5": "claude",
+        "deepseek-v3.2": "deepseek",
+        "gemini-2.5-flash": null,
+        "gemini-2.5-flash-image": "nanobanana",
+        "gemini-2.5-flash-lite": [
+          "gemini-search",
+          "gemini-fast"
+        ],
+        "gemini-2.5-pro": "gemini-legacy",
+        "gemini-3-flash": [
+          "gemini",
+          "gemini-3-flash"
+        ],
+        "gemini-3-pro": "gemini-large",
+        "gemini-3-pro-image": "nanobanana-pro",
+        "gemini-3.1-flash-image": "nanobanana-2",
+        "gemini-3.1-flash-lite": [
+          "gemini-flash-lite-3.1",
+          "gemini-search"
+        ],
+        "gemini-3.1-flash-lite-image": "nanobanana-2-lite",
+        "gemini-3.5-flash": [
+          "gemini",
+          "gemini-search",
+          "gemini-3.5-flash"
+        ],
+        "gemini-3.5-flash-lite": "gemini-search-fast",
+        "gemini-3.6-flash": "gemini-search-large",
+        "kimi-k2-thinking": "kimi-k2-thinking",
+        "gemini-mm-embedding": "gemini-2",
+        "gemini-omni-flash": "google/gemini-omni-1.1-flash",
+        "Grounding with Google Search on Gemini 3": "gemini-search",
+        "LLM Grounding with Google Search tool - Predictions": "gemini-search",
+        "veo-3-fast": [
+          "veo",
+          "veo-1080p"
+        ],
+        "veo-3-fast | Veo 3 Fast 1080p Audio Video Generation": "veo-1080p",
+        "veo-3-fast | Veo 3 Fast 1080p Video Generation": "veo-1080p",
+        "veo-3-fast | Veo 3 Fast 720p Audio Video Generation": "veo",
+        "veo-3-fast | Veo 3 Fast Video 720p Generation": "veo"
+      }
+    },
+    {
+      "id": "google-workspace",
+      "label": "Google Workspace",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "hellweg",
+      "label": "Hellweg",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "inception",
       "label": "Inception",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "inception",
       "monthlyReview": true,
+      "activeFrom": "2026-06",
+      "activeTo": "2026-07",
       "balanceTracking": false,
       "collectionMethod": "dashboard",
       "access": [
@@ -438,54 +1666,220 @@
     {
       "id": "inferenceport",
       "label": "InferencePort",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "inferenceport",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "account",
+          "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default"
+          ],
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://console.inferenceport.ai"
+          "url": "https://console.inferenceport.ai",
+          "accountId": "account"
         }
-      ]
+      ],
+      "modelLabels": {
+        "asset-harvester": null,
+        "lightning-image-turbo": null,
+        "minimax-h3-512p-lora-finetune": null,
+        "trellis2": [
+          "trellis-2",
+          "trellis-2-medium",
+          "trellis-2-low"
+        ]
+      }
+    },
+    {
+      "id": "investment",
+      "label": "Investment",
+      "category": "balance_sheet",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "io.net",
       "label": "io.net",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "io-net",
       "monthlyReview": false,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.io.net/cloud/billing"
+          "url": "https://cloud.io.net/cloud/billing",
+          "accountId": "myceli"
         }
       ]
     },
     {
+      "id": "jasper-schedensack",
+      "label": "Jasper Schedensack",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "joshua-peschke",
+      "label": "Joshua Peschke",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "lambda",
       "label": "Lambda Cloud",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "lambda",
       "monthlyReview": true,
+      "activeFrom": "2026-03",
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "808f00c5d33c401192efc3b376d22b2f",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-03",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.lambda.ai/workspace/808f00c5d33c401192efc3b376d22b2f/usage"
+          "url": "https://cloud.lambda.ai/workspace/808f00c5d33c401192efc3b376d22b2f/usage",
+          "accountId": "808f00c5d33c401192efc3b376d22b2f",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
+      "id": "leik",
+      "label": "Leik",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "llm7.io",
+      "label": "LLM7.io",
+      "category": "revenue_share",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "mentat",
+      "label": "Mentat",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "miles-mobility",
+      "label": "Miles Mobility",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "mistral",
+      "label": "Mistral AI",
+      "category": "compute",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "mistral",
+      "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://admin.mistral.ai/organization/billing",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
+        }
+      ],
+      "modelLabels": {
+        "mistral-ocr": "mistral-ocr"
+      }
+    },
+    {
       "id": "modal",
       "label": "Modal",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "modal",
@@ -494,18 +1888,21 @@
         {
           "id": "myceli-ai",
           "label": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         },
         {
           "id": "myceli-ai2",
           "label": "myceli-ai2",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         },
         {
           "id": "elliot-4",
           "label": "elliot-4",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-01",
           "activeTo": null
         }
@@ -516,40 +1913,90 @@
         {
           "workspace": "myceli.ai",
           "url": "https://modal.com/settings/myceli-ai/usage",
-          "accountId": "myceli-ai"
+          "accountId": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "myceli.ai",
           "url": "https://modal.com/settings/myceli-ai2/usage",
-          "accountId": "myceli-ai2"
+          "accountId": "myceli-ai2",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "myceli.ai",
           "url": "https://modal.com/settings/elliot-4/usage",
-          "accountId": "elliot-4"
+          "accountId": "elliot-4",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "flux-klein": "klein",
+        "flux-klein-9b": "klein-large",
+        "ltx2-comfyui-api-distilled": "ltx-2",
+        "ltx2-video": "ltx-2"
+      }
     },
     {
-      "id": "mistral",
-      "label": "Mistral AI",
-      "meteringBasis": "direct",
+      "id": "namecheap",
+      "label": "Namecheap",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
       "aliases": [],
-      "connector": "mistral",
-      "monthlyReview": true,
-      "balanceTracking": true,
-      "collectionMethod": "api",
-      "access": [
-        {
-          "workspace": "myceli.ai",
-          "url": "https://admin.mistral.ai/organization/billing"
-        }
-      ]
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "naturenergie",
+      "label": "Naturenergie",
+      "category": "office",
+      "runwayLine": "Rent & utilities",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "nebius",
       "label": "Nebius",
+      "category": "compute",
       "meteringBasis": "capacity",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "netlify",
+      "label": "Netlify",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "notion",
+      "label": "Notion",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "noumi",
+      "label": "Noumi",
+      "category": "office",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -559,22 +2006,56 @@
     {
       "id": "openai",
       "label": "OpenAI",
+      "category": "compute",
+      "cashRules": [
+        {
+          "match": [
+            "chatgpt",
+            "chat gpt"
+          ],
+          "category": "development"
+        }
+      ],
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "openai",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli-ai",
+          "label": "Myceli AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://platform.openai.com/settings/organization/billing/credit-grants"
+          "url": "https://platform.openai.com/settings/organization/billing/credit-grants",
+          "accountId": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "gpt-4o-mini-transcribe-2025-12-15": null,
+        "gpt-5.5-2026-04-23": null,
+        "gpt-image-2-2026-04-21": "gpt-image-2",
+        "gpt-realtime-2": "gpt-realtime-2",
+        "gpt-realtime-2.1": "gpt-realtime-2.1",
+        "text-embedding-3-large": "openai-3-large",
+        "text-embedding-3-small": "openai-3-small"
+      }
     },
     {
       "id": "openrouter",
       "label": "OpenRouter",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "openrouter",
@@ -583,12 +2064,14 @@
         {
           "id": "myceli",
           "label": "Myceli.AI",
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-05",
           "activeTo": null
         },
         {
           "id": "pollinations",
           "label": "PollinationsAI",
+          "loginEmail": "elliot@pollinations.ai",
           "activeFrom": "2026-07",
           "activeTo": null
         }
@@ -599,51 +2082,333 @@
         {
           "workspace": "myceli.ai",
           "url": "https://openrouter.ai/settings/credits",
-          "accountId": "myceli"
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         },
         {
           "workspace": "pollinations.ai",
           "url": "https://openrouter.ai/settings/credits",
-          "accountId": "pollinations"
+          "accountId": "pollinations",
+          "loginEmail": "elliot@pollinations.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "alibaba/happyhorse-1.1": "happyhorse-1.1",
+        "bytedance-seed/seedream-4.5": "seedream-pro",
+        "bytedance/seedance-2.0-fast": "seedance-2.0-fast",
+        "bytedance/seedance-2.0-mini": "seedance-2.0-mini",
+        "bytedance/seedance-2.5": "seedance-2.5",
+        "CSM 1B": "csm-1b",
+        "DeepSeek V4 Flash 0423": "deepseek",
+        "Gemini 2.5 Flash Lite": "gemini-fast",
+        "Gemini 3 Flash Preview": "gemini-3-flash",
+        "Gemini 3.1 Flash Lite": "gemini-flash-lite-3.1",
+        "Gemini 3.1 Pro Preview": "gemini-large",
+        "Gemini 3.5 Flash Lite": "gemini-flash-lite-3.5",
+        "Gemini 3.6 Flash": "gemini",
+        "Gemini 3.7 Flash": "gemini",
+        "Gemma 4 26B A4B": "gemma",
+        "Gemma 4 31B": "gemma-4-31b",
+        "GLM 5.2": "glm",
+        "GLM 5.3": "glm-5.3",
+        "GLM 5.3 Flash": "z-ai/glm-5.3-flash",
+        "google/gemini-2.5-flash-image": "nanobanana",
+        "google/gemini-2.5-flash-lite": "gemini-fast",
+        "google/gemini-3-flash-preview": "gemini-3-flash",
+        "google/gemini-3-pro-image": "nanobanana-pro",
+        "google/gemini-3.1-flash-image": "nanobanana-2",
+        "google/gemini-3.1-flash-lite-image": "nanobanana-2-lite",
+        "google/gemini-3.1-pro-preview": "gemini-large",
+        "google/gemini-3.5-flash-lite": "gemini-flash-lite-3.5",
+        "google/gemini-3.6-flash": "gemini",
+        "google/gemma-4-26b-a4b-it": "gemma",
+        "google/gemma-4-26b-a4b-it-20260403": "gemma",
+        "google/gemma-4-31b-it": "gemma-4-31b",
+        "google/veo-3.1-fast": "veo",
+        "GPT-4.1 Mini": null,
+        "GPT-4o-mini": null,
+        "GPT-5.4 Nano": "openai",
+        "gpt-oss-20b": "gpt-oss",
+        "Grok 4.20": "grok",
+        "Grok 4.5": "grok-4.5",
+        "Grok 4.6": "grok-4.6",
+        "Grok Imagine Image 2.0": "grok-imagine-image-2.0",
+        "Grok Imagine Image Quality": "grok-imagine-pro",
+        "Grok Imagine Video": "grok-video-pro",
+        "Grok Imagine Video 1.5": "grok-imagine-video-1.5",
+        "HappyHorse 1.1": "happyhorse-1.1",
+        "inception/mercury-2": "mercury",
+        "Inkling Small": "inkling",
+        "Kimi K3": "kimi-k3",
+        "Laguna S 2.1": "laguna",
+        "Llama 4 Scout": "llama-scout",
+        "LongCat 2.0": "longcat",
+        "meituan/longcat-2.0": "longcat",
+        "Mercury 2": "mercury",
+        "meta-llama/llama-4-scout": "llama-scout",
+        "meta-llama/llama-4-scout-17b-16e-instruct": "llama-scout",
+        "MiMo-V2.5": "mimo-v2.5",
+        "MiMo-V2.5-Pro": "mimo-v2.5-pro",
+        "minimax/minimax-m3-20260531": "minimax-m3",
+        "Mistral Large 3 2512": "mistral-large",
+        "Mistral Small 3.2 24B": [
+          {
+            "until": "2026-05",
+            "model": "mistral"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "mistral",
+              "mistral-small-3.2"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "mistral-small-3.2"
+          }
+        ],
+        "Mistral Small 4": [
+          {
+            "until": "2026-05",
+            "model": "mistral-4"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "mistral-4",
+              "mistral"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "mistral"
+          }
+        ],
+        "mistralai/mistral-small-2603": "mistral",
+        "mistralai/mistral-small-3.2-24b-instruct": "mistral-small-3.2",
+        "mistralai/mistral-small-3.2-24b-instruct-2506": [
+          "mistral",
+          "mistral-small-3.2"
+        ],
+        "moonshotai/kimi-k2.7-code-20260612": "kimi-k2.7-code",
+        "Nano Banana (Gemini 2.5 Flash Image)": "nanobanana",
+        "Nano Banana 2 (Gemini 3.1 Flash Image)": "nanobanana-2",
+        "Nano Banana 2 Lite (Gemini 3.1 Flash Lite Image)": "nanobanana-2-lite",
+        "Nano Banana Pro (Gemini 3 Pro Image)": "nanobanana-pro",
+        "poolside/laguna-s-2.1": "laguna",
+        "qwen/qwen3-coder-next": "qwen-coder-large",
+        "qwen/qwen3-coder-next-2025-02-03": "qwen-coder-large",
+        "qwen/qwen3-vl-235b-a22b-thinking": "qwen-vision-pro",
+        "qwen/qwen3-vl-30b-a3b-instruct": "qwen-vision",
+        "qwen/qwen3.7-flash": "qwen3.7-flash",
+        "qwen/qwen3.7-max": "qwen3.7-max",
+        "qwen/qwen3.7-plus": "qwen-large",
+        "qwen/qwen3.8-27b": "qwen3.8-27b",
+        "qwen/qwen3.8-max": "qwen3.8-max",
+        "Qwen3 Coder Next": "qwen-coder-large",
+        "Qwen3 VL 235B A22B Thinking": "qwen-vision-pro",
+        "Qwen3 VL 30B A3B Instruct": "qwen-vision",
+        "Qwen3 VL 30B A3B Thinking": "qwen-vision",
+        "Qwen3.6 Plus": "qwen-large",
+        "Qwen3.7 Flash": "qwen3.7-flash",
+        "Qwen3.7 Max": "qwen3.7-max",
+        "Qwen3.7 Plus": "qwen-large",
+        "Qwen3.8 27B": "qwen3.8-27b",
+        "Qwen3.8 Max": "qwen3.8-max",
+        "Recraft V4.1 Vector": "recraft-v4.1-vector",
+        "recraft/recraft-v4.1-vector": "recraft-v4.1-vector",
+        "S2.1 Pro": "fish-audio-s2.1-pro",
+        "Seedance 2.0": "seedance-2.0",
+        "Seedance 2.5": "seedance-2.5",
+        "Seedream 4.5": "seedream-pro",
+        "Step 3.5 Flash": "step-3.5-flash",
+        "Step 3.7 Flash": "step-flash",
+        "stepfun/step-3.5-flash": "step-3.5-flash",
+        "stepfun/step-3.7-flash-20260528": "step-flash",
+        "thinkingmachines/inkling-small": "inkling",
+        "Veo 3.1 Fast": "veo",
+        "Wan 2.7": "wan-pro",
+        "Wan 3.0": "wan-3.0",
+        "x-ai/grok-4.5": "grok-4.5",
+        "x-ai/grok-4.6": "grok-4.6",
+        "x-ai/grok-imagine-image-2.0": "grok-imagine-image-2.0",
+        "x-ai/grok-imagine-image-quality": "grok-imagine-pro",
+        "x-ai/grok-imagine-video": "grok-video-pro",
+        "x-ai/grok-imagine-video-1.5": "grok-imagine-video-1.5",
+        "xiaomi/mimo-v2.5": "mimo-v2.5",
+        "xiaomi/mimo-v2.5-pro": "mimo-v2.5-pro",
+        "z-ai/glm-5.2": "glm"
+      }
     },
     {
       "id": "ovhcloud",
       "label": "OVHcloud",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [],
       "connector": "ovhcloud",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "fd415008-ovh",
+          "label": "Myceli.AI OÜ",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
+      "modelLabels": {
+        "gpt-oss-20b": "gpt-oss",
+        "Mistral-Small-3.2-24B-Instruct-2506": [
+          {
+            "until": "2026-05",
+            "model": "mistral"
+          },
+          {
+            "from": "2026-06",
+            "until": "2026-06",
+            "model": [
+              "mistral",
+              "mistral-small-3.2"
+            ]
+          },
+          {
+            "from": "2026-07",
+            "model": "mistral-small-3.2"
+          }
+        ],
+        "Qwen3-Coder-30B-A3B-Instruct": "qwen-coder",
+        "whisper-large-v3": "whisper"
+      },
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://manager.eu.ovhcloud.com/#/dedicated/billing/credits"
+          "url": "https://manager.eu.ovhcloud.com/#/billing/payment/credits",
+          "accountId": "fd415008-ovh",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
+      "id": "paypal",
+      "label": "PayPal",
+      "category": "revenue",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "perplexity",
       "label": "Perplexity",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "perplexity",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "81749045",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        },
+        {
+          "id": "hncvbp",
+          "label": "Perplexity legacy billing account",
+          "aliases": [
+            "HNCVBP"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-03"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://console.perplexity.ai/project/81749045/billing"
+          "url": "https://console.perplexity.ai/project/81749045/billing",
+          "accountId": "81749045",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "sonar": [
+          "perplexity-fast",
+          "perplexity-high"
+        ],
+        "sonar | api_requests high": "perplexity-high",
+        "sonar | api_requests low": "perplexity-fast",
+        "sonar-deep-research": "perplexity-deep",
+        "sonar-pro": "perplexity",
+        "sonar-reasoning-pro": "perplexity-reasoning"
+      }
     },
     {
       "id": "pointsflyer",
-      "label": "PointsFlyer",
+      "label": "Pointflyer",
+      "category": "compute",
       "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null,
+      "modelLabels": {
+        "gpt-4.1-2025-04-14": "midijourney",
+        "gpt-5-mini-2025-08-07": "openai",
+        "gpt-5-nano-2025-08-07": "openai-fast",
+        "gpt-5.4-nano-2026-03-17": "openai"
+      }
+    },
+    {
+      "id": "polar",
+      "label": "Polar",
+      "category": "admin",
+      "cashRules": [
+        {
+          "match": [
+            "hubben",
+            "self-purchase checkout test"
+          ],
+          "inflow": true,
+          "category": "revenue"
+        },
+        {
+          "match": [
+            "myceli-ai"
+          ],
+          "category": "balance_sheet"
+        }
+      ],
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "protonvpn",
+      "label": "Proton VPN",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -653,38 +2418,39 @@
     {
       "id": "pruna",
       "label": "Pruna AI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "pruna",
       "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://dashboard.pruna.ai/billing"
-        }
-      ]
-    },
-    {
-      "id": "replicate",
-      "label": "Replicate",
-      "meteringBasis": "direct",
-      "aliases": [],
-      "connector": "replicate",
-      "monthlyReview": true,
-      "balanceTracking": true,
-      "collectionMethod": "api",
-      "access": [
-        {
-          "workspace": "myceli.ai",
-          "url": "https://replicate.com/account/billing"
+          "url": "https://dashboard.pruna.ai/billing",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
       "id": "regolo",
       "label": "Regolo.ai",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "regolo",
@@ -693,6 +2459,7 @@
         {
           "id": "thomash@pollinations.ai",
           "label": "Pollinations.ai",
+          "loginEmail": "thomash@pollinations.ai",
           "activeFrom": "2026-08",
           "activeTo": null
         }
@@ -701,15 +2468,126 @@
       "collectionMethod": "dashboard",
       "access": [
         {
-          "workspace": "pollinations.ai",
+          "workspace": "myceli.ai",
           "url": "https://dashboard.regolo.ai/subscriptions",
-          "accountId": "thomash@pollinations.ai"
+          "accountId": "thomash@pollinations.ai",
+          "loginEmail": "thomash@pollinations.ai"
         }
       ]
     },
     {
+      "id": "replacement-accountant",
+      "label": "Replacement accountant",
+      "category": "admin",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "replicate",
+      "label": "Replicate",
+      "category": "compute",
+      "meteringBasis": "direct",
+      "aliases": [],
+      "connector": "replicate",
+      "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli-ai",
+          "label": "myceli-ai",
+          "aliases": [
+            "default",
+            "7c3f0021-dbe0-51b7-b809-d9ba5fd9a157"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
+      "balanceTracking": true,
+      "collectionMethod": "api",
+      "access": [
+        {
+          "workspace": "myceli.ai",
+          "url": "https://replicate.com/account/billing",
+          "accountId": "myceli-ai",
+          "loginEmail": "elliot@myceli.ai"
+        }
+      ],
+      "modelLabels": {
+        "black-forest-labs/flux-schnell": "flux",
+        "bytedance/piano-transcription": null,
+        "bytedance/seedance-1-lite": null,
+        "bytedance/seedance-1-pro-fast": "seedance-pro",
+        "bytedance/seedance-2.0": "seedance-2.0",
+        "bytedance/seedance-2.0-fast": "seedance-2.0-fast",
+        "bytedance/seedance-2.0-mini": "seedance-2.0-mini",
+        "bytedance/seedance-2.5": "seedance-2.5",
+        "bytedance/seedream-4": "seedream",
+        "bytedance/seedream-4.5": "seedream-pro",
+        "bytedance/seedream-5-lite": "seedream5",
+        "bytedance/seedream-5-pro": "seedream5-pro",
+        "google/nano-banana-2": "nanobanana-2",
+        "ideogram-ai/ideogram-v4-balanced": "ideogram-v4-balanced",
+        "ideogram-ai/ideogram-v4-quality": "ideogram-v4-quality",
+        "ideogram-ai/ideogram-v4-turbo": "ideogram-v4-turbo",
+        "lightricks/ltx-2-pro": null,
+        "prunaai/p-image": "p-image",
+        "prunaai/p-image-edit": "p-image-edit",
+        "prunaai/p-image-upscale": null,
+        "prunaai/p-video": [
+          "p-video",
+          "p-video-720p",
+          "p-video-1080p"
+        ],
+        "prunaai/p-video | Output video duration (seconds): p-video-1080p-base @ 0.04/second": [
+          "p-video-1080p",
+          "p-video"
+        ],
+        "prunaai/p-video | Output video duration (seconds): p-video-720p-base @ 0.02/second": [
+          "p-video",
+          "p-video-720p"
+        ],
+        "prunaai/p-video | prunaai/p-video — Output video duration (seconds): p-video-1080p-base": [
+          "p-video-1080p",
+          "p-video"
+        ],
+        "prunaai/p-video | prunaai/p-video — Output video duration (seconds): p-video-720p-base": [
+          "p-video",
+          "p-video-720p"
+        ],
+        "qwen/qwen-image": "qwen-image",
+        "qwen/qwen-image-edit-plus": "qwen-image",
+        "stability-ai/sdxl": null,
+        "topazlabs/image-upscale": null,
+        "wan-video/wan-2.2-i2v-fast": "wan-fast",
+        "wan-video/wan-2.2-t2v-fast": "wan-fast",
+        "wan-video/wan-2.6-i2v": "wan",
+        "wan-video/wan-2.6-t2v": "wan",
+        "wan-video/wan-2.7-i2v": [
+          "wan-pro",
+          "wan-pro-1080p"
+        ],
+        "wan-video/wan-2.7-i2v | Output video duration (seconds): wan-27-i2v-1080p @ 0.15/second": [
+          "wan-pro-1080p",
+          "wan-pro"
+        ],
+        "wan-video/wan-2.7-i2v | Output video duration (seconds): wan-27-i2v-720p @ 0.1/second": "wan-pro",
+        "wan-video/wan-2.7-i2v | wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-1080p": "wan-pro-1080p",
+        "wan-video/wan-2.7-i2v | wan-video/wan-2.7-i2v — Output video duration (seconds): wan-27-i2v-720p": "wan-pro",
+        "wan-video/wan-2.7-image": "wan-image",
+        "wan-video/wan-2.7-image-pro": "wan-image-pro",
+        "wan-video/wan-2.7-t2v": "wan-pro",
+        "xai/grok-imagine-video": "grok-video-pro"
+      }
+    },
+    {
       "id": "retell",
       "label": "Retell AI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "retell",
@@ -718,24 +2596,63 @@
       "collectionMethod": "dashboard"
     },
     {
+      "id": "roblox",
+      "label": "Roblox",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "rossmann",
+      "label": "Rossmann",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "runpod",
       "label": "RunPod",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [],
       "connector": "runpod",
       "monthlyReview": true,
+      "activeTo": "2026-08",
+      "accounts": [
+        {
+          "id": "user_3BOlJSA6zZE5N6rOLI5maKMqFRU",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": "2026-08"
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://console.runpod.io/user/billing"
+          "url": "https://console.runpod.io/user/billing",
+          "accountId": "user_3BOlJSA6zZE5N6rOLI5maKMqFRU",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
       "id": "scaleway",
       "label": "Scaleway",
+      "category": "compute",
       "meteringBasis": "mixed",
       "aliases": [],
       "connector": "scaleway",
@@ -767,11 +2684,16 @@
           "url": "https://console.scaleway.com/billing/optimization",
           "accountId": "b399fe9d-4976-4162-a471-9920aaeda163"
         }
-      ]
+      ],
+      "modelLabels": {
+        "mistral-small-3.2-24b": "mistral",
+        "qwen-3-coder-30b-a3b-instruct": "qwen-coder"
+      }
     },
     {
       "id": "self-hosted",
       "label": "Self-hosted",
+      "category": "compute",
       "meteringBasis": "internal",
       "aliases": [],
       "connector": null,
@@ -782,6 +2704,8 @@
     {
       "id": "self-issued",
       "label": "Self-issued",
+      "category": "balance_sheet",
+      "cashOnly": true,
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
@@ -792,7 +2716,42 @@
     {
       "id": "seraphyn",
       "label": "Seraphyn",
+      "category": "compute",
       "meteringBasis": "internal",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "slack",
+      "label": "Slack",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "so-lab-x",
+      "label": "So Lab X",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "space-berlin",
+      "label": "Space Berlin",
+      "category": "office",
+      "runwayLine": "Food & drink",
+      "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": null,
       "monthlyReview": false,
@@ -802,28 +2761,112 @@
     {
       "id": "stability",
       "label": "Stability AI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "stability",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://platform.stability.ai/account/credits"
+          "url": "https://platform.stability.ai/account/credits",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
+      "id": "stripe",
+      "label": "Stripe",
+      "category": "revenue",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "super",
+      "label": "Super",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "tele2",
+      "label": "Tele2",
+      "category": "operations",
+      "runwayLine": "Telecom",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "telnyx",
+      "label": "Telnyx",
+      "category": "uncategorized",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "thomas-haferlach",
+      "label": "Thomas Haferlach",
+      "category": "balance_sheet",
+      "cashOnly": true,
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "thot",
+      "label": "Thot",
+      "category": "payroll",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "tinybird",
       "label": "Tinybird",
+      "category": "infrastructure",
       "meteringBasis": "not_applicable",
       "aliases": [],
       "connector": "tinybird",
       "monthlyReview": true,
       "balanceTracking": false,
-      "collectionMethod": "cli",
+      "collectionMethod": "dashboard",
       "access": [
         {
           "workspace": "myceli.ai",
@@ -832,8 +2875,31 @@
       ]
     },
     {
+      "id": "tools",
+      "label": "Tools",
+      "category": "operations",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "typeless",
+      "label": "Typeless",
+      "category": "development",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
       "id": "vast.ai",
       "label": "Vast.ai",
+      "category": "compute",
       "meteringBasis": "capacity",
       "aliases": [
         "vast",
@@ -841,34 +2907,113 @@
       ],
       "connector": "vast-ai",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "myceli",
+          "label": "Myceli.AI",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "cli",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://cloud.vast.ai/billing/"
+          "url": "https://cloud.vast.ai/billing/",
+          "accountId": "myceli",
+          "loginEmail": "elliot@myceli.ai"
         }
       ]
     },
     {
       "id": "vercel",
       "label": "Vercel AI Gateway",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "vercel",
       "monthlyReview": true,
+      "accounts": [
+        {
+          "id": "pollinations",
+          "label": "Pollinations AI",
+          "aliases": [
+            "default",
+            "pollinations-ai"
+          ],
+          "loginEmail": "elliot@myceli.ai",
+          "activeFrom": "2026-01",
+          "activeTo": null
+        }
+      ],
       "balanceTracking": true,
       "collectionMethod": "api",
       "access": [
         {
           "workspace": "myceli.ai",
-          "url": "https://vercel.com/pollinations/~/ai-gateway"
+          "url": "https://vercel.com/pollinations/~/ai-gateway",
+          "accountId": "pollinations",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "meta/muse-spark-1.1": "muse-spark-1.1",
+        "meta/muse-spark-1.2": "muse-spark-1.2",
+        "meta/muse-spark-1.2-contributor": "muse-spark-1.2"
+      }
+    },
+    {
+      "id": "windsurf",
+      "label": "Windsurf",
+      "category": "development",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "wise",
+      "label": "Wise",
+      "category": "admin",
+      "cashRules": [
+        {
+          "match": [
+            "cashback"
+          ],
+          "inflow": true,
+          "category": "revenue",
+          "cashOnly": true
+        }
+      ],
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "wispr",
+      "label": "Wispr",
+      "category": "development",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     },
     {
       "id": "xai",
       "label": "xAI",
+      "category": "compute",
       "meteringBasis": "direct",
       "aliases": [],
       "connector": "xai",
@@ -877,6 +3022,10 @@
         {
           "id": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2",
           "label": "Myceli.AI OÜ — tuesday-cuticle-eggnog",
+          "aliases": [
+            "default"
+          ],
+          "loginEmail": "elliot@myceli.ai",
           "activeFrom": "2026-03",
           "activeTo": null
         }
@@ -887,9 +3036,40 @@
         {
           "workspace": "myceli.ai",
           "url": "https://console.x.ai/team/ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2/settings/billing",
-          "accountId": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2"
+          "accountId": "ad7ac7e1-17f2-46e0-8dd2-7e99584f63e2",
+          "loginEmail": "elliot@myceli.ai"
         }
-      ]
+      ],
+      "modelLabels": {
+        "grok-imagine-image": "grok-imagine",
+        "grok-imagine-image-pro": "grok-imagine-pro",
+        "grok-imagine-image-quality": "grok-imagine-pro",
+        "grok-imagine-video": "grok-video-pro",
+        "grok-imagine-video-1.5": "grok-imagine-video-1.5"
+      }
+    },
+    {
+      "id": "zara-home",
+      "label": "Zara Home",
+      "category": "office",
+      "runwayLine": "Furniture & equipment",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
+    },
+    {
+      "id": "zola",
+      "label": "Zola",
+      "category": "office",
+      "meteringBasis": "not_applicable",
+      "aliases": [],
+      "connector": null,
+      "monthlyReview": false,
+      "balanceTracking": false,
+      "collectionMethod": null
     }
   ]
 }

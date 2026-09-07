@@ -52,6 +52,10 @@ test("canonical cleanup waits for both successful deployments and requires promo
     assert.deepEqual(filters.canonical_permissions, [
         "enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql",
     ]);
+    assert.ok(
+        filters.gen.includes(filters.canonical_permissions[0]),
+        "migration-only repairs must also deploy Gen so final cleanup can run",
+    );
     const command = job.steps.find(
         (step) => step.name === "Finalize canonical model permissions",
     );

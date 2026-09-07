@@ -86,6 +86,9 @@ jobs:
               - '.github/workflows/deploy-cloudflare-production.yml'
             gen:
               - 'gen.pollinations.ai/**'
+              # A migration-only repair must finish the blocked canonical
+              # rollout, including Gen and the post-deploy permission cleanup.
+              - 'enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql'
               - 'packages/mcp/**'
               - 'shared/**'
               - 'package.json'

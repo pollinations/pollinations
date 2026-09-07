@@ -8,9 +8,7 @@ import economicsRegistry from "../../operations/economics/provider-registry.json
 import migrationSql from "../drizzle/0062_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
-    ...migrationSql.matchAll(
-        /WHEN model\.type = 'text' AND model\.value = '([^']+)'\s+THEN '([^']+)'/g,
-    ),
+    ...migrationSql.matchAll(/\('([^']+)', '([^']+)'\)/g),
 ].map((match) => [match[1], match[2]] as const);
 
 it("pins Economics identity bridges to exactly the reviewed public promotions", () => {
@@ -230,7 +228,7 @@ async function runMigrationForTest(): Promise<void> {
 }
 
 describe("standardize model permissions migration", () => {
-    it("migrates every promoted canonical ID with bounded statements", async () => {
+    it("migrates every promoted canonical ID in one direct update", async () => {
         expect(publishedMappings).toHaveLength(158);
         expect(new Map(modelMappings)).toEqual(
             new Map([...publishedMappings, ...hiddenMappings]),
@@ -250,7 +248,9 @@ describe("standardize model permissions migration", () => {
             ["zimage", "tongyi-mai/z-image-turbo"],
             ["zimage-fal", "tongyi-mai/z-image-turbo"],
         ]);
-        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(159);
+        expect(migrationSql.match(/UPDATE apikey/g)).toHaveLength(1);
+        expect(migrationSql).toContain("WITH renames(old_id, new_id)");
+        expect(migrationSql).not.toContain("AS MATERIALIZED");
         for (const [retiredId, canonicalId] of modelMappings) {
             if (retiredId !== "zimage-fal") {
                 expect(resolveModelName(retiredId)).toBe(canonicalId);
@@ -258,10 +258,8 @@ describe("standardize model permissions migration", () => {
                     getRegistryModelDefinition(canonicalId).aliases,
                 ).toContain(retiredId);
             }
-            expect(migrationSql).toContain(`model.value = '${retiredId}'`);
-            expect(migrationSql).toContain(`THEN '${canonicalId}'`);
             expect(migrationSql).toContain(
-                `instr(permissions, '"${retiredId}"')`,
+                `('${retiredId}', '${canonicalId}')`,
             );
         }
 
@@ -296,6 +294,17 @@ describe("standardize model permissions migration", () => {
         const [firstOld, firstCanonical] = modelMappings[0];
         const edgeRows = new Map<string, string | null>([
             [
+                "all-renames-at-once",
+                JSON.stringify({
+                    models: [
+                        ...modelMappings.map(([oldId]) => oldId),
+                        ...modelMappings.map(([, newId]) => newId),
+                        "owner/community-model",
+                    ],
+                    account: ["profile"],
+                }),
+            ],
+            [
                 "old-and-new",
                 JSON.stringify({
                     models: [
@@ -328,7 +337,7 @@ describe("standardize model permissions migration", () => {
         const affectedBefore = await env.DB.prepare(countRetiredSql).first<{
             count: number;
         }>();
-        expect(affectedBefore?.count).toBe(modelMappings.length + 1);
+        expect(affectedBefore?.count).toBe(modelMappings.length + 2);
 
         await runMigrationForTest();
 
@@ -356,6 +365,13 @@ describe("standardize model permissions migration", () => {
         const edges = Object.fromEntries(
             migratedEdges.results.map((row) => [row.id, row.permissions]),
         );
+        expect(JSON.parse(edges["all-renames-at-once"] as string)).toEqual({
+            models: [
+                ...new Set(modelMappings.map(([, newId]) => newId)),
+                "owner/community-model",
+            ],
+            account: ["profile"],
+        });
         expect(JSON.parse(edges["old-and-new"] as string)).toEqual({
             models: [
                 "unknown-model",

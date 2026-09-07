@@ -61,3 +61,11 @@ Corrections in the bank and compute ledgers are append-only: publishers reuse
 the stable `entry_id` with a newer `recorded_at`. Compute tombstones use the
 explicit `source=tombstone` marker and remain preserved in the raw ledger while
 the effective endpoint hides them.
+
+Vendor ledger rename: `economics_vendor_ledger` and
+`economics_vendor_ledger_api` are the replacement definitions. The existing
+Compute pair remains intact during migration. Keep readers and publishers on
+the old pair until all raw versions (including tombstones) and effective rows
+match in the new pair. Verify backups twice, promote and copy staging only
+with approval, then switch all consumers together. Production is a separate
+approved migration; never delete the old pair as part of the copy.

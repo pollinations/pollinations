@@ -296,12 +296,12 @@ export function RunwayTab({ data, year }: { data: Data; year: string }) {
             buildRunway(
                 data.opTransactions ?? [],
                 new Date(),
-                data.opCloud ?? [],
+                data.vendorLedger ?? [],
                 data.privateConfig?.forecastRules,
                 data.stripeSales ?? [],
             ),
         [
-            data.opCloud,
+            data.vendorLedger,
             data.opTransactions,
             data.privateConfig?.forecastRules,
             data.stripeSales,

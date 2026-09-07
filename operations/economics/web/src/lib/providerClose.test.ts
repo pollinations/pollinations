@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    OpPollenRow,
+    OpTransactionRow,
+    VendorLedgerRow,
+} from "../types";
 import {
     attentionFirst,
     providerClosePeriodStatus,
@@ -8,7 +13,7 @@ import {
     providerCloseSummary,
 } from "./providerClose";
 
-const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
+const cloud = (over: Partial<VendorLedgerRow> = {}): VendorLedgerRow => ({
     entry_id: "cloud-test",
     source: "provider-statement",
     vendor: "azure",
@@ -66,7 +71,7 @@ const transaction = (
 
 const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
     privateConfig: PRIVATE_CONFIG_FIXTURE,
     ...over,
@@ -75,7 +80,7 @@ const data = (over: Partial<Data>): Data => ({
 describe("providerCloseRows", () => {
     it("includes expected active accounts even when no usage was imported", () => {
         const rows = providerCloseRows(
-            data({ opCloud: [cloud({ vendor: "aws" })] }),
+            data({ vendorLedger: [cloud({ vendor: "aws" })] }),
             "2026-07",
         );
         const azure = rows.find((row) => row.vendor === "azure");
@@ -88,7 +93,7 @@ describe("providerCloseRows", () => {
     it("requires calendar coverage for infrastructure and does not accept a mid-month billing cycle", () => {
         const rows = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "cloudflare",
                         account_id: "myceli",
@@ -112,7 +117,7 @@ describe("providerCloseRows", () => {
     it("does not bridge missing days between two usage exports", () => {
         const rows = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ vendor: "aws", end: "2026-06-10 00:00:00" }),
                     cloud({ vendor: "aws", start: "2026-06-20 00:00:00" }),
                 ],
@@ -152,7 +157,7 @@ describe("providerCloseRows", () => {
                             "OpenAI subscription · supplier invoice lost and unavailable",
                     }),
                 ],
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "openai",
                         account_id: "",
@@ -197,7 +202,7 @@ describe("providerCloseRows", () => {
     it("keeps a fully credit-funded provider at zero cash cost", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [cloud({ credit: -100 })],
+                vendorLedger: [cloud({ credit: -100 })],
                 opPollen: [pollen()],
             }),
         );
@@ -211,7 +216,7 @@ describe("providerCloseRows", () => {
     it("records cash-funded usage from the provider source", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [cloud({ vendor: "aws", paid: -100 })],
+                vendorLedger: [cloud({ vendor: "aws", paid: -100 })],
                 opPollen: [pollen({ vendor: "aws" })],
             }),
         );
@@ -226,7 +231,7 @@ describe("providerCloseRows", () => {
             "https://drive.google.com/file/d/provider-statement/view";
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         entry_id: "cloud-model-a",
                         model: "model-a",
@@ -248,7 +253,7 @@ describe("providerCloseRows", () => {
     it("keeps raw ledger references out of the Close document list", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ evidence: '{"usage": 42, "source": "cli"}' }),
                 ],
             }),
@@ -268,7 +273,7 @@ describe("providerCloseRows", () => {
     it("does not treat a local source note as an archived statement", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         paid: -100,
                         evidence: "source data/inbox/provider-close.json",
@@ -286,7 +291,7 @@ describe("providerCloseRows", () => {
     it("does not treat a grant award as a checked zero-cost statement", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         source: "grant",
                         credit: 10_000,
@@ -306,7 +311,7 @@ describe("providerCloseRows", () => {
     it("keeps payment reconciliation outside provider close", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [cloud({ paid: -60, credit: -40 })],
+                vendorLedger: [cloud({ paid: -60, credit: -40 })],
                 opPollen: [pollen()],
             }),
         );
@@ -320,7 +325,7 @@ describe("providerCloseRows", () => {
     it("treats an explicit zero statement as checked and free", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [cloud()],
+                vendorLedger: [cloud()],
                 opPollen: [
                     pollen({
                         cost_paid: 0,
@@ -341,7 +346,7 @@ describe("providerCloseRows", () => {
     it("summarizes only operational close amounts", () => {
         const rows = providerCloseRows(
             data({
-                opCloud: [cloud({ credit: -100 })],
+                vendorLedger: [cloud({ credit: -100 })],
                 opPollen: [pollen(), pollen({ vendor: "openai" })],
             }),
         );
@@ -359,7 +364,7 @@ describe("providerCloseRows", () => {
 
     it("treats a checked zero-activity statement as ready without usage", () => {
         const [row] = providerCloseRows(
-            data({ opCloud: [cloud()] }),
+            data({ vendorLedger: [cloud()] }),
             "2026-08",
         );
 
@@ -370,7 +375,7 @@ describe("providerCloseRows", () => {
     it("closes a provider-only residual when every active account is covered", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: ["myceli-ai", "myceli-ai2", "elliot-4"].map(
+                vendorLedger: ["myceli-ai", "myceli-ai2", "elliot-4"].map(
                     (accountId, index) =>
                         cloud({
                             entry_id: `modal-${index}`,
@@ -391,7 +396,7 @@ describe("providerCloseRows", () => {
     it("resolves a known project alias to its active billing account", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         account_id: "stellar-verve-465920-b7",
                         vendor: "google",
@@ -416,7 +421,7 @@ describe("providerCloseRows", () => {
     it("flags incomplete active-account coverage", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         account_id: "myceli-ai",
                         vendor: "modal",
@@ -464,7 +469,7 @@ describe("providerCloseRows", () => {
     it("accepts a documented historical provider gap", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "pruna",
                         start: "2026-03-01 00:00:00",
@@ -489,7 +494,7 @@ describe("providerCloseRows", () => {
     it("does not use Pollen meter drift as a close status", () => {
         const [row] = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "assemblyai",
                         start: "2026-07-01 00:00:00",
@@ -511,7 +516,10 @@ describe("providerCloseRows", () => {
     });
 
     it("excludes the current month from close readiness", () => {
-        const rows = providerCloseRows(data({ opCloud: [cloud()] }), "2026-06");
+        const rows = providerCloseRows(
+            data({ vendorLedger: [cloud()] }),
+            "2026-06",
+        );
         const summary = providerCloseSummary(rows);
 
         expect(rows[0].partial).toBe(true);
@@ -524,7 +532,7 @@ describe("providerCloseRows", () => {
     it("excludes provider months before the accounting window", () => {
         const rows = providerCloseRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         start: "2025-12-01 00:00:00",
                         end: "2026-01-01 00:00:00",

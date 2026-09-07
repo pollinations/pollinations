@@ -3,12 +3,12 @@ import type {
     Data,
     EconomicsPrivateConfig,
     MeterDriftExplanation,
-    OpCloudRow,
     OpTransactionRow,
     PollenWitnessExplanation,
     ProviderCheckExplanation,
     ProviderObservation,
     ProviderObservationSource,
+    VendorLedgerRow,
 } from "../types";
 import {
     type Category,
@@ -213,7 +213,7 @@ export function cashOnlyTransaction(
 // Explicit service types decide the category. Invoice subscriptions and
 // adjustments use the reviewed vendor category; unknown types stay invalid.
 export function ledgerCategory(
-    row: Pick<OpCloudRow, "type" | "vendor">,
+    row: Pick<VendorLedgerRow, "type" | "vendor">,
 ): CategoryValue {
     const type = normalizeProviderName(row.type);
     const categoryFromType = cloudCategory(row);
@@ -337,7 +337,10 @@ export function pollenWitnessExplanation(
     ).get(`${month}|${canonicalProvider(provider)}`);
 }
 
-type ObservationInput = Pick<Data, "opCloud" | "opPollen" | "opTransactions">;
+type ObservationInput = Pick<
+    Data,
+    "vendorLedger" | "opPollen" | "opTransactions"
+>;
 
 function nextMonth(month: string): string {
     const [year, number] = month.split("-").map(Number);
@@ -345,7 +348,7 @@ function nextMonth(month: string): string {
     return `${next.getUTCFullYear()}-${String(next.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function cloudObservationMonths(row: OpCloudRow): string[] {
+function cloudObservationMonths(row: VendorLedgerRow): string[] {
     const startMonth = row.start.slice(0, 7);
     const isVerifiedZeroRange =
         row.resource_sku === "verified-zero" &&
@@ -422,7 +425,7 @@ export function collectProviderObservations(
             dashboardChecked: false,
         });
     }
-    for (const row of data.opCloud ?? []) {
+    for (const row of data.vendorLedger ?? []) {
         if (row.type.trim().toLowerCase() === "balance") continue;
         for (const month of cloudObservationMonths(row)) {
             add({

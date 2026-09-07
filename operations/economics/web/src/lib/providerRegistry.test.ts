@@ -4,7 +4,12 @@ import {
     getRegistryModelDefinition,
 } from "../../../../../shared/registry/registry";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    OpPollenRow,
+    OpTransactionRow,
+    VendorLedgerRow,
+} from "../types";
 import { CATEGORY_IDS } from "./categories";
 import { isDatedRules } from "./modelIdentity";
 import {
@@ -44,7 +49,7 @@ const transaction = (
     ...overrides,
 });
 
-const cloud = (overrides: Partial<OpCloudRow> = {}): OpCloudRow => ({
+const cloud = (overrides: Partial<VendorLedgerRow> = {}): VendorLedgerRow => ({
     entry_id: "cloud-test",
     source: "api",
     vendor: "aws",
@@ -86,7 +91,7 @@ const pollen = (overrides: Partial<OpPollenRow> = {}): OpPollenRow => ({
 
 const data = (overrides: Partial<Data> = {}): Data => ({
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
     ...overrides,
 });
@@ -532,7 +537,7 @@ describe("provider observations", () => {
                     transaction({ vendor: "aws" }),
                     transaction({ vendor: "figma", category: "saas" }),
                 ],
-                opCloud: [cloud({ vendor: "aws" })],
+                vendorLedger: [cloud({ vendor: "aws" })],
                 opPollen: [pollen({ vendor: "bedrock" })],
             }),
         );
@@ -574,7 +579,7 @@ describe("provider observations", () => {
 
     it("does not count a pure credit award as a monthly provider check", () => {
         const [observation] = collectProviderObservations(
-            data({ opCloud: [cloud({ credit: 3_000, paid: 0 })] }),
+            data({ vendorLedger: [cloud({ credit: 3_000, paid: 0 })] }),
         );
 
         expect(observation.dashboardChecked).toBe(false);
@@ -583,7 +588,7 @@ describe("provider observations", () => {
     it("records a provider observation only in the row's start month", () => {
         const observations = collectProviderObservations(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         start: "2026-01-01 00:00:00",
                         end: "2026-08-21 00:00:00",
@@ -602,7 +607,7 @@ describe("provider observations", () => {
     it("expands an explicit verified-zero account range across its covered months", () => {
         const observations = collectProviderObservations(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         start: "2026-01-01 00:00:00",
                         end: "2026-08-21 00:00:00",
@@ -633,7 +638,7 @@ describe("provider observations", () => {
     it("treats OP Cloud end timestamps as exclusive", () => {
         const observations = collectProviderObservations(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         start: "2026-07-01 00:00:00",
                         end: "2026-08-01 00:00:00",
@@ -648,7 +653,7 @@ describe("provider observations", () => {
     it("keeps provider-check completion separate from Drive archiving", () => {
         const [observation] = collectProviderObservations(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         evidence:
                             "dashboard export saved in data/inbox/provider.json",
@@ -663,7 +668,7 @@ describe("provider observations", () => {
     it("canonicalizes provider account IDs before provider aggregation", () => {
         const observations = collectProviderObservations(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "cloudflare",
                         account_id: "Myceli",
@@ -704,7 +709,7 @@ describe("providerReviewRows", () => {
         const [row] = providerReviewRows(
             data({
                 privateConfig: PRIVATE_CONFIG_FIXTURE,
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "pruna",
                         start: "2026-03-01 00:00:00",
@@ -722,7 +727,7 @@ describe("providerReviewRows", () => {
 
     it("merges aliases and separates activity gaps from quiet accounts", () => {
         const input = data({
-            opCloud: [cloud({ vendor: "aws" })],
+            vendorLedger: [cloud({ vendor: "aws" })],
             opPollen: [
                 pollen({ vendor: "bedrock" }),
                 pollen({ vendor: "inception" }),
@@ -791,7 +796,7 @@ describe("providerReviewRows", () => {
     it("flags incomplete multi-account evidence without treating accounts as aliases", () => {
         const rows = providerReviewRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "cloudflare",
                         account_id: "myceli",

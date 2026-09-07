@@ -72,7 +72,7 @@ export function fxEstimatedMonths(data: Data): string[] {
         if (table[month] == null) months.add(month);
     };
     for (const row of data.opTransactions ?? []) check(row.currency, row.date);
-    for (const row of data.opCloud ?? []) check(row.currency, row.start);
+    for (const row of data.vendorLedger ?? []) check(row.currency, row.start);
     for (const row of data.opPollen ?? []) check(row.currency, row.month);
     for (const row of data.stripeSales ?? []) check(row.currency, row.month);
     return [...months].sort();

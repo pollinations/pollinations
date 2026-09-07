@@ -1,10 +1,5 @@
-import type { Data, OpCloudRow } from "../types";
+import type { Data, VendorLedgerRow } from "../types";
 import { cloudCategory } from "./categories";
-import {
-    opCloudCreditBurnUsd,
-    opCloudMonth,
-    opCloudPaidBurnUsd,
-} from "./computeLedger";
 import { toUsd } from "./fx";
 import { resolveLedgerLabel } from "./modelIdentity";
 import {
@@ -15,6 +10,11 @@ import {
     WINDOW_START,
 } from "./months";
 import { canonicalVendor } from "./tb";
+import {
+    vendorLedgerCreditBurnUsd,
+    vendorLedgerMonth,
+    vendorLedgerPaidBurnUsd,
+} from "./vendorLedger";
 
 const ACTIVE_USD = 0.0001;
 const MONTH_KEY = /^\d{4}-\d{2}$/;
@@ -192,7 +192,7 @@ function providerMonth(
 
 // A positive credit row records a grant award, not usage in that month. It
 // must not make a grant-only provider-month look like a checked zero bill.
-function isProviderUsageWitness(row: OpCloudRow): boolean {
+function isProviderUsageWitness(row: VendorLedgerRow): boolean {
     return (
         cloudCategory(row) === "compute" && !(row.credit > 0 && row.paid === 0)
     );
@@ -516,8 +516,8 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         model.questMeterUsd += toUsd(row.cost_quests, row.currency, row.month);
     }
 
-    for (const row of data.opCloud ?? []) {
-        const month = opCloudMonth(row);
+    for (const row of data.vendorLedger ?? []) {
+        const month = vendorLedgerMonth(row);
         if (
             !MONTH_KEY.test(month) ||
             month < WINDOW_START ||
@@ -527,8 +527,8 @@ export function modelReconcileRows(data: Data): ModelReconcileRow[] {
         }
         const entry = providerMonth(entries, month, row.vendor);
         entry.hasProvider = true;
-        const cashUsd = opCloudPaidBurnUsd(row);
-        const creditUsd = opCloudCreditBurnUsd(row);
+        const cashUsd = vendorLedgerPaidBurnUsd(row);
+        const creditUsd = vendorLedgerCreditBurnUsd(row);
         entry.cashUsd += cashUsd;
         entry.creditUsd += creditUsd;
         // A label that is exactly a Pollen model id metered this month is an

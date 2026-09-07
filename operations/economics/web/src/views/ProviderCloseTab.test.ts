@@ -22,7 +22,7 @@ const data: Data = {
             recorded_at: "2026-01-22 00:00:00",
         },
     ],
-    opCloud: [
+    vendorLedger: [
         {
             entry_id: "azure-january",
             source: "invoice",
@@ -80,14 +80,14 @@ describe("ProviderCloseTab", () => {
     });
 
     it("labels a documented historical gap honestly", () => {
-        const sourceRow = data.opCloud?.[0];
+        const sourceRow = data.vendorLedger?.[0];
         if (!sourceRow) throw new Error("Missing provider test fixture");
         const html = renderToStaticMarkup(
             createElement(ProviderCloseTab, {
                 data: {
                     privateConfig: PRIVATE_CONFIG_FIXTURE,
                     opTransactions: [],
-                    opCloud: [
+                    vendorLedger: [
                         {
                             ...sourceRow,
                             entry_id: "pruna-march",

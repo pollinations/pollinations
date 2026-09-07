@@ -1,12 +1,12 @@
 import type {
     EconomicsPrivateConfig,
     EconomicsPrivateConfigRow,
-    OpCloudRow,
     OpPollenRow,
     OpTransactionRow,
     RevenueShareSourceRow,
     StripeSalesRow,
     UserBalanceSummaryRow,
+    VendorLedgerRow,
 } from "./types";
 
 export const PRIVATE_CONFIG_FIXTURE: EconomicsPrivateConfig = {
@@ -250,7 +250,7 @@ const opTransactions: OpTransactionRow[] = [
         recorded_at: "2026-03-01 00:00:00.000",
     },
 ];
-const opCloud: OpCloudRow[] = [
+const vendorLedger: VendorLedgerRow[] = [
     {
         entry_id: "cloud-example-openai-inference-2026-07",
         source: "dashboard",
@@ -669,7 +669,7 @@ const privateConfig: EconomicsPrivateConfigRow[] = [
 ];
 export const FIXTURES: Record<string, unknown[]> = {
     economics_bank_ledger_api: opTransactions,
-    economics_compute_ledger_api: opCloud,
+    economics_compute_ledger_api: vendorLedger,
     economics_pollen_usage_api: opPollen,
     economics_revenue_share_api: revenueShare,
     economics_stripe_sales_api: stripeSales,

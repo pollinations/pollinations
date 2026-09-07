@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import type {
-    OpCloudRow,
     OpTransactionRow,
     PrivateForecastRule,
     StripeSalesRow,
+    VendorLedgerRow,
 } from "../types";
 import { buildRunway, pnlSource } from "./runway";
 
@@ -78,7 +78,7 @@ const opening = (
         ...overrides,
     });
 
-const cloud = (overrides: Partial<OpCloudRow> = {}): OpCloudRow => ({
+const cloud = (overrides: Partial<VendorLedgerRow> = {}): VendorLedgerRow => ({
     entry_id: "cloud-usage",
     source: "dashboard",
     vendor: "google",
@@ -98,7 +98,7 @@ const cloud = (overrides: Partial<OpCloudRow> = {}): OpCloudRow => ({
     ...overrides,
 });
 
-const balance = (vendor: string, paid: number, credit = 0): OpCloudRow =>
+const balance = (vendor: string, paid: number, credit = 0): VendorLedgerRow =>
     cloud({
         entry_id: `${vendor}-balance`,
         vendor,

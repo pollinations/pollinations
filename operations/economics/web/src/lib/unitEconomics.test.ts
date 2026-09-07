@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import { modelReconcileRows } from "./modelReconcile";
 import {
     matchesSituation,
@@ -10,7 +10,7 @@ import {
     unitPerformancePct,
 } from "./unitEconomics";
 
-const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
+const cloud = (over: Partial<VendorLedgerRow> = {}): VendorLedgerRow => ({
     entry_id: "cloud-test",
     source: "provider",
     vendor: "aws",
@@ -51,7 +51,7 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
 
 const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
     ...over,
 });
@@ -92,7 +92,7 @@ describe("unitEconomicsRows", () => {
     it("shows every model directly and keeps provider rollups additive", () => {
         const providers = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "claude", paid: -80, credit: -20 }),
                     cloud({ vendor: "lambda", paid: -30, credit: -70 }),
                 ],
@@ -177,7 +177,7 @@ describe("unitEconomicsRows", () => {
     it("keeps months separate in both grains", () => {
         const providers = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "claude", paid: -10 }),
                     cloud({
                         start: "2026-08-01 00:00:00",

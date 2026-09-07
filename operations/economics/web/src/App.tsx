@@ -59,7 +59,6 @@ import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
-import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { ProviderCloseTab } from "./views/ProviderCloseTab";
@@ -67,6 +66,7 @@ import { RevenueShareLedgerTab } from "./views/RevenueShareLedgerTab";
 import { RevenueShareTab } from "./views/RevenueShareTab";
 import { RunwayTab } from "./views/RunwayTab";
 import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
+import { VendorLedgerTab } from "./views/VendorLedgerTab";
 
 type InsightTab =
     | "close"
@@ -80,22 +80,22 @@ type ActiveView = InsightTab | LedgerTab;
 
 const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
     "op-transactions": ["opTransactions"],
-    "op-cloud": ["opCloud"],
+    "vendor-ledger": ["vendorLedger"],
     "op-pollen": ["opPollen"],
     "revenue-share-ledger": ["revenueShare"],
     "revenue-share": ["revenueShare", "opTransactions"],
-    balances: ["opCloud", "opTransactions"],
+    balances: ["vendorLedger", "opTransactions"],
     runway: [
         "opTransactions",
-        "opCloud",
+        "vendorLedger",
         "stripeSales",
         "userBalances",
         "privateConfig",
     ],
-    close: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
-    vendors: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
-    inference: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
-    gpu: ["opTransactions", "opCloud", "opPollen", "privateConfig"],
+    close: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    vendors: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    inference: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
 };
 
 function initialView(): ActiveView {
@@ -165,7 +165,7 @@ const LEDGER_INSIGHT_TABS = [
         label: "Balances",
         note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
         icon: DatabaseIcon,
-        source: "opCloud",
+        source: "vendorLedger",
         rows: (data) => providerAccountBalanceRows(data, new Date()).length,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -199,15 +199,15 @@ const TABS = [
             ).length,
     },
     {
-        id: "op-cloud",
-        source: "opCloud",
+        id: "vendor-ledger",
+        source: "vendorLedger",
         label: "Vendor",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
         pipe: "economics_compute_ledger_api",
         note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
         icon: DatabaseIcon,
         rows: (data) =>
-            (data.opCloud ?? []).filter(
+            (data.vendorLedger ?? []).filter(
                 (row) => row.start.slice(0, 7) >= WINDOW_START,
             ).length,
     },
@@ -1170,8 +1170,8 @@ export default function App() {
                         vendor={selectedVendors}
                     />
                 )}
-                {viewData && activeView === "op-cloud" && (
-                    <OpCloudTab
+                {viewData && activeView === "vendor-ledger" && (
+                    <VendorLedgerTab
                         data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}

@@ -1,4 +1,4 @@
-import type { OpCloudRow, OpTransactionRow } from "../types";
+import type { OpTransactionRow, VendorLedgerRow } from "../types";
 
 // The vocabulary only. Which vendor belongs to which category lives in
 // provider-registry.json; see transactionCategory in providerRegistry.ts.
@@ -78,7 +78,9 @@ export function isBankMovement(row: Pick<OpTransactionRow, "kind">): boolean {
     return row.kind === "transaction";
 }
 
-export function cloudCategory(row: Pick<OpCloudRow, "type">): CategoryValue {
+export function cloudCategory(
+    row: Pick<VendorLedgerRow, "type">,
+): CategoryValue {
     const type = normalize(row.type);
     if (type === "gpu" || type === "inference") return "compute";
     if (type === "infra") return "infrastructure";

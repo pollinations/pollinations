@@ -12,7 +12,7 @@ import { resolveProvider, transactionCategory } from "./providerRegistry";
 export type LedgerTab =
     | "op-transactions"
     | "op-pollen"
-    | "op-cloud"
+    | "vendor-ledger"
     | "revenue-share-ledger";
 
 export type FacetOption = {
@@ -101,8 +101,8 @@ export function ledgerFacets(
         };
     }
 
-    if (tab === "op-cloud") {
-        const rows = (data.opCloud ?? []).filter(
+    if (tab === "vendor-ledger") {
+        const rows = (data.vendorLedger ?? []).filter(
             (row) =>
                 row.start.slice(0, 7) >= WINDOW_START &&
                 matchesMonth(row.start, selection.month),

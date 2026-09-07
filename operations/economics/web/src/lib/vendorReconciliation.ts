@@ -1,10 +1,5 @@
 import type { Data, OpTransactionRow } from "../types";
 import { cloudCategory, isBankMovement } from "./categories";
-import {
-    opCloudCreditBurnUsd,
-    opCloudMonth,
-    opCloudPaidBurnUsd,
-} from "./computeLedger";
 import { toUsd } from "./fx";
 import { monthShift, WINDOW_START } from "./months";
 import { isPrepaidVendor } from "./providerFunding";
@@ -16,6 +11,11 @@ import {
     providerMeteringBasis,
     transactionCategory,
 } from "./providerRegistry";
+import {
+    vendorLedgerCreditBurnUsd,
+    vendorLedgerMonth,
+    vendorLedgerPaidBurnUsd,
+} from "./vendorLedger";
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
 
@@ -46,7 +46,7 @@ const PROVIDER_PAID_FLOOR_USD = 1;
 // Slack for prepaid cumulative matching (FX drift, fees, cents).
 const PREPAID_EPS_USD = 50;
 
-type OpCloudWitness = {
+type VendorLedgerWitness = {
     paidUsd: number;
     creditUsd: number;
     cloudUsd: number;
@@ -275,12 +275,12 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
         cumulativeKeys.add(key);
     }
 
-    const cloud = new Map<string, OpCloudWitness>();
-    for (const row of data.opCloud ?? []) {
+    const cloud = new Map<string, VendorLedgerWitness>();
+    for (const row of data.vendorLedger ?? []) {
         // Community rows are publisher rewards, not an external provider bill.
         // Their OP Pollen provider cost is deliberately normalized to zero.
         if (row.vendor === "community") continue;
-        const month = opCloudMonth(row);
+        const month = vendorLedgerMonth(row);
         if (!MONTH_KEY_RE.test(month)) continue;
         const key = `${month}|${row.vendor}`;
         const category = cloudCategory(row);
@@ -289,8 +289,8 @@ export function vendorPlanes(data: Data): VendorPlanes[] {
             continue;
         }
         if (category !== "compute") continue;
-        const paidUsd = opCloudPaidBurnUsd(row);
-        const creditUsd = opCloudCreditBurnUsd(row);
+        const paidUsd = vendorLedgerPaidBurnUsd(row);
+        const creditUsd = vendorLedgerCreditBurnUsd(row);
         const cloudUsd = paidUsd + creditUsd;
         const meterCloudUsd = cloudUsd;
         if (Math.abs(meterCloudUsd) > POLLEN_ACTIVE_USD) {

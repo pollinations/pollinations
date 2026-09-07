@@ -1,8 +1,8 @@
 import type {
-    OpCloudRow,
     OpTransactionRow,
     PrivateForecastRule,
     StripeSalesRow,
+    VendorLedgerRow,
 } from "../types";
 import {
     cloudCategory,
@@ -13,11 +13,6 @@ import {
 
 export { pnlSource } from "./categories";
 
-import {
-    isOpCloudBalanceRow,
-    opCloudCreditBurnUsd,
-    opCloudPaidBurnUsd,
-} from "./computeLedger";
 import {
     automaticForecastRule,
     type ForecastMethod,
@@ -41,6 +36,11 @@ import {
     runwayLineItem,
     transactionCategory,
 } from "./providerRegistry";
+import {
+    isVendorLedgerBalanceRow,
+    vendorLedgerCreditBurnUsd,
+    vendorLedgerPaidBurnUsd,
+} from "./vendorLedger";
 
 const MONTH_RE = /^\d{4}-\d{2}$/;
 const FORECAST_METHODS = new Set<ForecastMethod>([
@@ -364,10 +364,10 @@ function ruleBasedForecasts(
 
 function balanceAwareForecasts(
     transactions: OpTransactionRow[],
-    cloudRows: OpCloudRow[],
+    cloudRows: VendorLedgerRow[],
     now: Date,
 ): BalanceAwareForecast & { issues: Map<string, string> } {
-    const groups = new Map<string, OpCloudRow[]>();
+    const groups = new Map<string, VendorLedgerRow[]>();
     const facts: DerivedForecastFact[] = [];
     const flags: string[] = [];
     const issues = new Map<string, string>();
@@ -387,7 +387,7 @@ function balanceAwareForecasts(
         const provider = resolveProvider(row.vendor);
         const relevant = rows.some(
             (r) =>
-                !isOpCloudBalanceRow(r) &&
+                !isVendorLedgerBalanceRow(r) &&
                 [previousMonth, currentMonth].includes(r.start.slice(0, 7)) &&
                 automaticForecastRule(r.vendor, cloudCategory(r)),
         );
@@ -466,7 +466,7 @@ function balanceAwareForecasts(
 }
 
 function accountBalanceForecasts(
-    cloudRows: OpCloudRow[],
+    cloudRows: VendorLedgerRow[],
     now: Date,
 ): BalanceAwareForecast {
     const currentMonth = now.toISOString().slice(0, 7);
@@ -476,7 +476,7 @@ function accountBalanceForecasts(
     const notices: string[] = [];
 
     const balances = new Map(
-        providerAccountBalanceRows({ opCloud: cloudRows }, now)
+        providerAccountBalanceRows({ vendorLedger: cloudRows }, now)
             .filter((row) => row.active && row.balanceStatus === "checked")
             .map((row) => [row.vendor, row] as const),
     );
@@ -486,7 +486,7 @@ function accountBalanceForecasts(
     const coverageDayByKey = new Map<string, number>();
     const today = now.toISOString().slice(0, 10);
 
-    const usageCoverageDate = (row: OpCloudRow): string | null => {
+    const usageCoverageDate = (row: VendorLedgerRow): string | null => {
         const endDate = row.end.slice(0, 10);
         let coverageDate: string | null = null;
         if (/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
@@ -507,14 +507,14 @@ function accountBalanceForecasts(
     };
 
     for (const row of cloudRows) {
-        if (isOpCloudBalanceRow(row)) continue;
+        if (isVendorLedgerBalanceRow(row)) continue;
         const category = cloudCategory(row);
         const rule = automaticForecastRule(row.vendor, category);
         if (!rule) continue;
         const month = row.start.slice(0, 7);
         if (!MONTH_RE.test(month)) continue;
-        const paidBurn = opCloudPaidBurnUsd(row);
-        const burn = paidBurn + opCloudCreditBurnUsd(row);
+        const paidBurn = vendorLedgerPaidBurnUsd(row);
+        const burn = paidBurn + vendorLedgerCreditBurnUsd(row);
         if (Math.abs(burn) <= 0.005) continue;
         const key = matrixKey(category, row.vendor);
         const months = burnByKeyMonth.get(key) ?? new Map<string, number>();
@@ -838,7 +838,7 @@ function remainingPlanUsd(
 export function buildRunway(
     transactions: OpTransactionRow[],
     now: Date = new Date(),
-    cloudRows: OpCloudRow[] = [],
+    cloudRows: VendorLedgerRow[] = [],
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
     stripeSales: readonly StripeSalesRow[] = [],
 ): RunwayResult {
@@ -1004,7 +1004,7 @@ export function buildRunway(
     const ledgerVendorsWithRows = new Set<string>();
     const ledgerMonthsByVendor = new Map<string, Set<string>>();
     for (const row of cloudRows) {
-        if (isOpCloudBalanceRow(row)) continue;
+        if (isVendorLedgerBalanceRow(row)) continue;
         const category = ledgerCategory(row);
         if (pnlSource(category) !== "ledger" || category === "uncategorized") {
             continue;
@@ -1014,8 +1014,8 @@ export function buildRunway(
         if (month > currentMonth) continue;
         const vendor = normalizedVendor(row.vendor);
         ledgerVendorsWithRows.add(vendor);
-        const paidUsd = opCloudPaidBurnUsd(row);
-        const creditUsd = opCloudCreditBurnUsd(row);
+        const paidUsd = vendorLedgerPaidBurnUsd(row);
+        const creditUsd = vendorLedgerCreditBurnUsd(row);
         if (Math.abs(paidUsd) <= 0.005 && Math.abs(creditUsd) <= 0.005) {
             continue;
         }
@@ -1043,7 +1043,7 @@ export function buildRunway(
         { start: string; usd: number }
     >();
     for (const row of cloudRows) {
-        if (!isOpCloudBalanceRow(row)) continue;
+        if (!isVendorLedgerBalanceRow(row)) continue;
         const vendor = normalizedVendor(row.vendor);
         const current = latestPrepaidByVendor.get(vendor);
         if (current && current.start >= row.start) continue;
@@ -1290,7 +1290,10 @@ export function buildRunway(
     // Keep a usage-only vendor visible when a missing balance/coverage check
     // prevented it from producing forecast facts or bank movements.
     for (const row of cloudRows) {
-        if (isOpCloudBalanceRow(row) || !balanceAware.issues.has(row.vendor))
+        if (
+            isVendorLedgerBalanceRow(row) ||
+            !balanceAware.issues.has(row.vendor)
+        )
             continue;
         const category = cloudCategory(row);
         if (automaticForecastRule(row.vendor, category)) {

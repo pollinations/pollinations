@@ -1,6 +1,5 @@
-import type { Data, OpCloudRow } from "../types";
+import type { Data, VendorLedgerRow } from "../types";
 import { cloudCategory } from "./categories";
-import { opCloudCreditBurnUsd, opCloudPaidBurnUsd } from "./computeLedger";
 import {
     driveDocumentLink,
     hasArchivedEvidence,
@@ -21,6 +20,10 @@ import {
     providerReviewRows,
     resolveProvider,
 } from "./providerRegistry";
+import {
+    vendorLedgerCreditBurnUsd,
+    vendorLedgerPaidBurnUsd,
+} from "./vendorLedger";
 import { type VendorPlanes, vendorPlanes } from "./vendorReconciliation";
 
 const ACTIVE_USD = 0.0001;
@@ -142,10 +145,10 @@ function closeStatus({
 }
 
 function providerEvidenceFor(
-    rows: OpCloudRow[],
+    rows: VendorLedgerRow[],
     month: string,
     vendor: string,
-): OpCloudRow[] {
+): VendorLedgerRow[] {
     return rows.filter(
         (row) =>
             ["compute", "infrastructure"].includes(cloudCategory(row)) &&
@@ -155,7 +158,7 @@ function providerEvidenceFor(
     );
 }
 
-function coversCalendarMonth(rows: OpCloudRow[], month: string): boolean {
+function coversCalendarMonth(rows: VendorLedgerRow[], month: string): boolean {
     const start = Date.parse(`${month}-01T00:00:00Z`);
     const date = new Date(start);
     date.setUTCMonth(date.getUTCMonth() + 1);
@@ -184,7 +187,9 @@ function coversCalendarMonth(rows: OpCloudRow[], month: string): boolean {
     return covered >= end;
 }
 
-function dedupeEvidence(providerRows: OpCloudRow[]): ProviderCloseEvidence[] {
+function dedupeEvidence(
+    providerRows: VendorLedgerRow[],
+): ProviderCloseEvidence[] {
     const seen = new Set<string>();
     const result: ProviderCloseEvidence[] = [];
     const add = (entry: ProviderCloseEvidence) => {
@@ -210,7 +215,7 @@ export function providerCloseRows(
     data: Data,
     currentMonth = new Date().toISOString().slice(0, 7),
 ): ProviderCloseRow[] {
-    const cloudRows = data.opCloud ?? [];
+    const cloudRows = data.vendorLedger ?? [];
     const reviewByKey = new Map(
         providerReviewRows(data).map((row) => [
             `${row.month}|${row.provider}`,
@@ -335,13 +340,13 @@ export function providerCloseRows(
             ) != null;
         const billedUsd = hasProviderEvidence
             ? providerRows.reduce(
-                  (sum, row) => sum + opCloudPaidBurnUsd(row),
+                  (sum, row) => sum + vendorLedgerPaidBurnUsd(row),
                   0,
               )
             : null;
         const creditFreeUsd = hasProviderEvidence
             ? providerRows.reduce(
-                  (sum, row) => sum + opCloudCreditBurnUsd(row),
+                  (sum, row) => sum + vendorLedgerCreditBurnUsd(row),
                   0,
               )
             : null;

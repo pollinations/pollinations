@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import {
     assignedSharePct,
     modelReconcileRows,
@@ -7,7 +7,7 @@ import {
     visibleModelReconcileRows,
 } from "./modelReconcile";
 
-const cloud = (over: Partial<OpCloudRow> = {}): OpCloudRow => ({
+const cloud = (over: Partial<VendorLedgerRow> = {}): VendorLedgerRow => ({
     entry_id: "cloud-test",
     source: "provider",
     vendor: "aws",
@@ -48,7 +48,7 @@ const pollen = (over: Partial<OpPollenRow> = {}): OpPollenRow => ({
 
 const data = (over: Partial<Data>): Data => ({
     opTransactions: [],
-    opCloud: [],
+    vendorLedger: [],
     opPollen: [],
     ...over,
 });
@@ -57,7 +57,7 @@ describe("modelReconcileRows", () => {
     it("splits paid and Quest traffic through cash and credit funding", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "claude", paid: -60, credit: -15 }),
                     cloud({ model: "nova", paid: -20, credit: -5 }),
                 ],
@@ -140,7 +140,7 @@ describe("modelReconcileRows", () => {
     it("uses complete canonical model funding instead of proportional allocation", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         entry_id: "claude-input",
                         model: "claude",
@@ -185,7 +185,7 @@ describe("modelReconcileRows", () => {
     it("preserves exact costs when canonical model coverage is incomplete", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         model: "claude",
                         paid: -100,
@@ -218,7 +218,7 @@ describe("modelReconcileRows", () => {
     it("separates unmapped labels from model-less costs without changing exact matches", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "claude", paid: -40, credit: -10 }),
                     cloud({ model: "Provider Claude Label", paid: -20 }),
                     cloud({ model: "", credit: -30 }),
@@ -262,7 +262,7 @@ describe("modelReconcileRows", () => {
     it("joins provider labels through the registry label table", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "azure",
                         model: "Kontext Pro glbl Images",
@@ -307,7 +307,7 @@ describe("modelReconcileRows", () => {
     it("does not join a registry alias that is not a reviewed label", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "anthropic/claude-opus-5", paid: -50 }),
                 ],
                 opPollen: [pollen({ model: "claude-large", cost_paid: 45 })],
@@ -325,7 +325,7 @@ describe("modelReconcileRows", () => {
     it("keeps a historical Pollen id apart from the model today's registry aliases it to", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "azure",
                         model: "gpt-realtime-2 Audio opt Gl 1M Tokens",
@@ -358,7 +358,7 @@ describe("modelReconcileRows", () => {
     it("joins a retired model id that the registry no longer lists but Pollen still names", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "mistral",
                         model: "mistral-ocr",
@@ -387,7 +387,7 @@ describe("modelReconcileRows", () => {
     it("keeps separately metered Pollen ids apart and splits them by ledger SKU", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "google",
                         model: "veo-3-fast",
@@ -428,7 +428,7 @@ describe("modelReconcileRows", () => {
     it("joins a label that serves several Pollen models as one grouped row", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "elevenlabs",
                         model: "eleven_v3",
@@ -485,7 +485,7 @@ describe("modelReconcileRows", () => {
     it("shows one grouped row per upstream and folds a member's own lines into it", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "azure",
                         model: "5.5 ShortCo opt Gl 1M Tokens",
@@ -561,7 +561,7 @@ describe("modelReconcileRows", () => {
     it("sums the residual buckets across vendor months", () => {
         const rows = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "claude", paid: -40 }),
                     cloud({ model: "", paid: -30 }),
                     cloud({ vendor: "modal", model: "mystery", paid: -5 }),
@@ -581,7 +581,7 @@ describe("modelReconcileRows", () => {
     it("joins a shared label directly when only one of its models was metered that month", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "elevenlabs",
                         model: "eleven_v3",
@@ -612,7 +612,7 @@ describe("modelReconcileRows", () => {
         // after. Each meter stays its own row; the switching id is shown apart.
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "aws",
                         model: "claude-opus-4-6",
@@ -687,7 +687,7 @@ describe("modelReconcileRows", () => {
     it("keeps a mapped model with no Pollen usage as a normal model row", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "azure",
                         model: "Flex Megapixel",
@@ -731,7 +731,7 @@ describe("modelReconcileRows", () => {
     it("shows a reviewed label with no Pollen model as provider only", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "replicate",
                         model: "topazlabs/image-upscale",
@@ -758,7 +758,7 @@ describe("modelReconcileRows", () => {
         // usage; it must not surface as a residual row.
         const [row] = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({
                         vendor: "pointsflyer",
                         model: "gptimage",
@@ -789,7 +789,9 @@ describe("modelReconcileRows", () => {
     it("identifies paid and Quest Pollen spent on credit-funded usage", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [cloud({ model: "claude", paid: -25, credit: -75 })],
+                vendorLedger: [
+                    cloud({ model: "claude", paid: -25, credit: -75 }),
+                ],
                 opPollen: [
                     pollen({
                         cost_paid: 60,
@@ -823,7 +825,7 @@ describe("modelReconcileRows", () => {
     it("allocates each month separately instead of blending periods", () => {
         const rows = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ paid: -100 }),
                     cloud({
                         start: "2026-08-01 00:00:00",
@@ -863,7 +865,7 @@ describe("modelReconcileRows", () => {
 
     it("shows provider usage without Pollen as needing a mapping", () => {
         const [row] = modelReconcileRows(
-            data({ opCloud: [cloud({ vendor: "modal", paid: -42 })] }),
+            data({ vendorLedger: [cloud({ vendor: "modal", paid: -42 })] }),
         );
 
         expect(row.status).toBe("provider only");
@@ -881,7 +883,7 @@ describe("modelReconcileRows", () => {
     it("keeps provider usage unallocated when the Pollen cost weights are zero", () => {
         const [row] = modelReconcileRows(
             data({
-                opCloud: [cloud({ paid: -20, credit: -80 })],
+                vendorLedger: [cloud({ paid: -20, credit: -80 })],
                 opPollen: [
                     pollen({
                         cost_paid: 0,
@@ -919,7 +921,7 @@ describe("modelReconcileRows", () => {
     it("ignores infrastructure and grant awards but preserves paid refunds", () => {
         const rows = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ vendor: "azure", credit: 10_000 }),
                     cloud({ vendor: "cloudflare", type: "infra", paid: -50 }),
                     cloud({ vendor: "aws", paid: -100 }),
@@ -937,7 +939,7 @@ describe("modelReconcileRows", () => {
     it("counts a source gap only when Pollen usage has no provider data", () => {
         const rows = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "claude", paid: -50 }),
                     // Provider cost with no Pollen usage is a normal cost, not a gap.
                     cloud({
@@ -963,7 +965,7 @@ describe("modelReconcileRows", () => {
     it("filters after preserving month-provider grain and summarizes holes", () => {
         const rows = modelReconcileRows(
             data({
-                opCloud: [
+                vendorLedger: [
                     cloud({ model: "claude", paid: -50 }),
                     cloud({ vendor: "modal", paid: -20 }),
                 ],

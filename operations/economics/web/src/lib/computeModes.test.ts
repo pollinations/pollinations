@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { Data, OpCloudRow, OpPollenRow } from "../types";
+import type { Data, OpPollenRow, VendorLedgerRow } from "../types";
 import {
     computeModeIndex,
     directDeliveryData,
@@ -11,7 +11,7 @@ const cloud = (
     vendor: string,
     type: string,
     month = "2026-07",
-): OpCloudRow => ({
+): VendorLedgerRow => ({
     entry_id: `${month}-${vendor}-${type}`,
     source: "dashboard",
     vendor,
@@ -50,7 +50,7 @@ const pollen = (vendor: string, month = "2026-07"): OpPollenRow => ({
 describe("compute modes", () => {
     it("classifies provider-months from their observed cost mechanism", () => {
         const data: Data = {
-            opCloud: [
+            vendorLedger: [
                 cloud("openai", "inference"),
                 cloud("vast.ai", "gpu"),
                 cloud("modal", "inference"),
@@ -72,7 +72,7 @@ describe("compute modes", () => {
 
     it("keeps mixed Pollen unallocated while retaining inference costs", () => {
         const data: Data = {
-            opCloud: [
+            vendorLedger: [
                 cloud("openai", "inference"),
                 cloud("modal", "inference"),
                 cloud("modal", "gpu"),
@@ -81,7 +81,7 @@ describe("compute modes", () => {
         };
         const result = managedInferenceData(data);
 
-        expect(result.opCloud?.map((row) => row.vendor)).toEqual([
+        expect(result.vendorLedger?.map((row) => row.vendor)).toEqual([
             "openai",
             "modal",
         ]);
@@ -110,7 +110,7 @@ describe("compute modes", () => {
         witness.paid = 0;
 
         const data: Data = {
-            opCloud: [inference, witness],
+            vendorLedger: [inference, witness],
             opPollen: [pollen("modal")],
         };
         const index = computeModeIndex(data);
@@ -123,20 +123,22 @@ describe("compute modes", () => {
 
     it("keeps community economics out of managed inference", () => {
         const result = managedInferenceData({
-            opCloud: [
+            vendorLedger: [
                 cloud("openai", "inference"),
                 cloud("community", "inference"),
             ],
             opPollen: [pollen("openai"), pollen("community")],
         });
 
-        expect(result.opCloud?.map((row) => row.vendor)).toEqual(["openai"]);
+        expect(result.vendorLedger?.map((row) => row.vendor)).toEqual([
+            "openai",
+        ]);
         expect(result.opPollen?.map((row) => row.vendor)).toEqual(["openai"]);
     });
 
     it("keeps inference and GPU costs together for vendor economics while excluding infrastructure", () => {
         const result = directDeliveryData({
-            opCloud: [
+            vendorLedger: [
                 cloud("modal", "inference"),
                 cloud("modal", "gpu"),
                 cloud("modal", "infra"),
@@ -145,7 +147,7 @@ describe("compute modes", () => {
             opPollen: [pollen("modal"), pollen("community")],
         });
 
-        expect(result.opCloud?.map((row) => row.type)).toEqual([
+        expect(result.vendorLedger?.map((row) => row.type)).toEqual([
             "inference",
             "gpu",
         ]);

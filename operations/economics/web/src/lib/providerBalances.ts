@@ -1,14 +1,8 @@
-import type { Data, OpCloudRow, OpTransactionRow } from "../types";
+import type { Data, OpTransactionRow, VendorLedgerRow } from "../types";
 import {
     isBankMovement,
     isComputeOrInfrastructureCategory,
 } from "./categories";
-import {
-    isOpCloudBalanceRow,
-    opCloudCreditBurnUsd,
-    opCloudMonth,
-    opCloudPaidBurnUsd,
-} from "./computeLedger";
 import { toUsd } from "./fx";
 import { isDateKey, monthLabel, monthShift, WINDOW_START } from "./months";
 import { isPrepaidVendor } from "./providerFunding";
@@ -24,6 +18,12 @@ import {
     resolveProviderAccount,
     transactionCategory,
 } from "./providerRegistry";
+import {
+    isVendorLedgerBalanceRow,
+    vendorLedgerCreditBurnUsd,
+    vendorLedgerMonth,
+    vendorLedgerPaidBurnUsd,
+} from "./vendorLedger";
 
 const MONTH_KEY_RE = /^\d{4}-\d{2}$/;
 
@@ -79,12 +79,12 @@ const PRE_WINDOW_GRANT_BURN_RESOURCE = "pre-2026 grant burn";
 const AVG_DAYS_PER_MONTH = 30.44;
 const POOL_EPS_USD = 0.5;
 
-function opCloudDate(value: string): string {
+function vendorLedgerDate(value: string): string {
     return value.slice(0, 10);
 }
 
 export function isPreWindowGrantBurnRow(
-    row: Pick<OpCloudRow, "credit" | "resource_name" | "start">,
+    row: Pick<VendorLedgerRow, "credit" | "resource_name" | "start">,
 ): boolean {
     return (
         row.resource_name === PRE_WINDOW_GRANT_BURN_RESOURCE &&
@@ -93,10 +93,10 @@ export function isPreWindowGrantBurnRow(
     );
 }
 
-function opCloudGrantStatuses(data: Data): GrantStatus[] {
+function vendorLedgerGrantStatuses(data: Data): GrantStatus[] {
     const grants: GrantStatus[] = [];
-    for (const row of data.opCloud ?? []) {
-        if (isOpCloudBalanceRow(row)) continue;
+    for (const row of data.vendorLedger ?? []) {
+        if (isVendorLedgerBalanceRow(row)) continue;
         const grantedUsd = Math.max(
             0,
             toUsd(row.credit, row.currency, row.start),
@@ -106,8 +106,8 @@ function opCloudGrantStatuses(data: Data): GrantStatus[] {
             vendor: row.vendor,
             label: row.resource_name,
             grantedUsd,
-            startDate: opCloudDate(row.start),
-            expires: row.end ? opCloudDate(row.end) : null,
+            startDate: vendorLedgerDate(row.start),
+            expires: row.end ? vendorLedgerDate(row.end) : null,
             allocatedUsd: 0,
             lapsedUsd: 0,
             active: true,
@@ -123,7 +123,7 @@ function opCloudGrantStatuses(data: Data): GrantStatus[] {
     return grants;
 }
 
-function opCloudBurnByVendorMonth(data: Data) {
+function vendorLedgerBurnByVendorMonth(data: Data) {
     // plugUsd is the slice of creditUsd from explicit "pre-2026 grant burn"
     // opening-balance rows — the only burn allowed to consume grants whose
     // start metadata postdates it.
@@ -131,11 +131,11 @@ function opCloudBurnByVendorMonth(data: Data) {
         string,
         Map<string, { creditUsd: number; paidUsd: number; plugUsd: number }>
     >();
-    for (const row of data.opCloud ?? []) {
-        const month = opCloudMonth(row);
+    for (const row of data.vendorLedger ?? []) {
+        const month = vendorLedgerMonth(row);
         if (!MONTH_KEY_RE.test(month)) continue;
-        const creditUsd = opCloudCreditBurnUsd(row);
-        const paidUsd = opCloudPaidBurnUsd(row);
+        const creditUsd = vendorLedgerCreditBurnUsd(row);
+        const paidUsd = vendorLedgerPaidBurnUsd(row);
         if (creditUsd <= 0 && paidUsd <= 0) continue;
         const months = getOrInit(
             byVendor,
@@ -174,7 +174,7 @@ export function allocateGrants(
     const today = now.toISOString().slice(0, 10);
 
     const byVendor = new Map<string, GrantStatus[]>();
-    for (const grant of opCloudGrantStatuses(data)) {
+    for (const grant of vendorLedgerGrantStatuses(data)) {
         getOrInit(byVendor, grant.vendor, (): GrantStatus[] => []).push(grant);
     }
     for (const list of byVendor.values()) {
@@ -185,7 +185,7 @@ export function allocateGrants(
         );
     }
 
-    const burnByVendorMonth = opCloudBurnByVendorMonth(data);
+    const burnByVendorMonth = vendorLedgerBurnByVendorMonth(data);
 
     const fillMonth = new Map<GrantStatus, string>();
     const unallocated = new Map<string, number>();
@@ -320,7 +320,7 @@ export function creditRunway(data: Data, now: Date): RunwayRow[] {
         row.grants.push(grant);
     }
 
-    const burnByVendorMonth = opCloudBurnByVendorMonth(data);
+    const burnByVendorMonth = vendorLedgerBurnByVendorMonth(data);
     for (const [vendor, months] of burnByVendorMonth) {
         const entry = byVendor.get(vendor);
         if (!entry) continue;
@@ -582,13 +582,13 @@ export type BalanceFundingLot = {
     expiry: string | null;
 };
 
-type AccountBalanceSnapshot = OpCloudRow & {
+type AccountBalanceSnapshot = VendorLedgerRow & {
     fundingLots: BalanceFundingLot[];
     expiryAssumed: boolean;
     termsKnown: boolean;
 };
 
-export function balanceCreditTerms(row: OpCloudRow): {
+export function balanceCreditTerms(row: VendorLedgerRow): {
     known: boolean;
     expiry: string | null;
     assumed: boolean;
@@ -616,9 +616,12 @@ function latestProviderBalanceRows(
     data: Data,
     today: string,
 ): Map<string, Map<string, AccountBalanceSnapshot>> {
-    const rowsByVendorAccount = new Map<string, Map<string, OpCloudRow[]>>();
-    for (const row of data.opCloud ?? []) {
-        if (!isOpCloudBalanceRow(row)) continue;
+    const rowsByVendorAccount = new Map<
+        string,
+        Map<string, VendorLedgerRow[]>
+    >();
+    for (const row of data.vendorLedger ?? []) {
+        if (!isVendorLedgerBalanceRow(row)) continue;
         const observedOn = row.start.slice(0, 10);
         if (!/^\d{4}-\d{2}-\d{2}$/.test(observedOn) || observedOn > today) {
             continue;
@@ -628,7 +631,7 @@ function latestProviderBalanceRows(
         const accounts = getOrInit(
             rowsByVendorAccount,
             vendor,
-            () => new Map<string, OpCloudRow[]>(),
+            () => new Map<string, VendorLedgerRow[]>(),
         );
         const accountId = canonicalProviderAccountId(
             definition,
@@ -867,17 +870,17 @@ export function providerBalanceRows(
         cashVendors.add(row.vendor);
     }
 
-    for (const row of data.opCloud ?? []) {
-        if (isOpCloudBalanceRow(row)) continue;
-        const month = opCloudMonth(row);
+    for (const row of data.vendorLedger ?? []) {
+        if (isVendorLedgerBalanceRow(row)) continue;
+        const month = vendorLedgerMonth(row);
         if (!MONTH_KEY_RE.test(month) || month > currentMonth) continue;
         if (afterAnchor(row.vendor, row.start.slice(0, 10))) continue;
-        const cashUsedUsd = opCloudPaidBurnUsd(row);
+        const cashUsedUsd = vendorLedgerPaidBurnUsd(row);
         if (isPrepaidVendor(row.vendor) && Math.abs(cashUsedUsd) > 0.005) {
             balanceFlow(cashFlows, row.vendor, month).usedUsd += cashUsedUsd;
             cashVendors.add(row.vendor);
         }
-        const creditUsedUsd = opCloudCreditBurnUsd(row);
+        const creditUsedUsd = vendorLedgerCreditBurnUsd(row);
         if (creditUsedUsd > 0.005) {
             balanceFlow(creditFlows, row.vendor, month).usedUsd +=
                 creditUsedUsd;

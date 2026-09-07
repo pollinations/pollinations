@@ -2,12 +2,12 @@ import { FIXTURES } from "../fixtures";
 import type {
     Data,
     EconomicsPrivateConfigRow,
-    OpCloudRow,
     OpPollenRow,
     OpTransactionRow,
     RevenueShareSourceRow,
     StripeSalesRow,
     UserBalanceSummaryRow,
+    VendorLedgerRow,
 } from "../types";
 import { parsePrivateConfig, validatePipeRows } from "./pipeContracts";
 import {
@@ -116,7 +116,7 @@ export type DataSource = Exclude<keyof Data, "providerObservations">;
 
 export const DATA_SOURCES = [
     "opTransactions",
-    "opCloud",
+    "vendorLedger",
     "opPollen",
     "revenueShare",
     "stripeSales",
@@ -133,7 +133,7 @@ export async function loadAll(
     const wanted = new Set(sources);
     const [
         opTransactions,
-        opCloud,
+        vendorLedger,
         opPollen,
         revenueShare,
         stripeSales,
@@ -143,8 +143,8 @@ export async function loadAll(
         wanted.has("opTransactions")
             ? fetchPipe<OpTransactionRow>("economics_bank_ledger_api", signal)
             : undefined,
-        wanted.has("opCloud")
-            ? fetchPipe<OpCloudRow>("economics_compute_ledger_api", signal)
+        wanted.has("vendorLedger")
+            ? fetchPipe<VendorLedgerRow>("economics_compute_ledger_api", signal)
             : undefined,
         wanted.has("opPollen")
             ? fetchPipe<OpPollenRow>("economics_pollen_usage_api", signal)
@@ -182,13 +182,13 @@ export async function loadAll(
 
     const providerObservations = collectProviderObservations({
         opTransactions,
-        opCloud,
+        vendorLedger,
         opPollen,
     });
 
     return {
         opTransactions: opTransactions?.map(canonicalize),
-        opCloud: opCloud?.map(canonicalize),
+        vendorLedger: vendorLedger?.map(canonicalize),
         opPollen: opPollen ? canonicalPollenRows(opPollen) : undefined,
         revenueShare,
         stripeSales,

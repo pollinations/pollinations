@@ -30,9 +30,9 @@ import {
     resolveProvider,
     resolveProviderAccount,
 } from "../lib/providerRegistry";
-import type { Data, OpCloudRow } from "../types";
+import type { Data, VendorLedgerRow } from "../types";
 
-function resourceLabel(row: OpCloudRow): string {
+function resourceLabel(row: VendorLedgerRow): string {
     return (
         row.model ||
         row.resource_name ||
@@ -42,7 +42,7 @@ function resourceLabel(row: OpCloudRow): string {
     );
 }
 
-function accountLabel(row: OpCloudRow): string {
+function accountLabel(row: VendorLedgerRow): string {
     const provider = resolveProvider(row.vendor);
     return (
         (provider && resolveProviderAccount(provider, row.account_id)?.label) ||
@@ -75,7 +75,7 @@ function DetailItem({ label, value }: { label: string; value: unknown }) {
     );
 }
 
-export function OpCloudTab({
+export function VendorLedgerTab({
     data,
     month = "",
     vendor = "all",
@@ -89,15 +89,15 @@ export function OpCloudTab({
         useState<DriveDocumentLink | null>(null);
     const baseRows = useMemo(
         () =>
-            (data.opCloud ?? []).filter(
+            (data.vendorLedger ?? []).filter(
                 (row) =>
                     row.start.slice(0, 7) >= WINDOW_START &&
                     matchesMonth(row.start, month) &&
                     matchesValue(row.vendor, vendor),
             ),
-        [data.opCloud, month, vendor],
+        [data.vendorLedger, month, vendor],
     );
-    const sortColumns = useMemo<SortColumn<OpCloudRow>[]>(
+    const sortColumns = useMemo<SortColumn<VendorLedgerRow>[]>(
         () => [
             { key: "start", value: (row) => row.start },
             { key: "vendor", value: (row) => row.vendor },

@@ -12,7 +12,7 @@ export type OpTransactionRow = {
     recorded_at: string;
 };
 
-export type OpCloudRow = {
+export type VendorLedgerRow = {
     entry_id: string;
     source: string;
     vendor: string;
@@ -170,7 +170,7 @@ export type EconomicsPrivateConfigRow = {
 
 export type Data = {
     opTransactions?: OpTransactionRow[];
-    opCloud?: OpCloudRow[];
+    vendorLedger?: VendorLedgerRow[];
     opPollen?: OpPollenRow[];
     revenueShare?: RevenueShareSourceRow[];
     stripeSales?: StripeSalesRow[];

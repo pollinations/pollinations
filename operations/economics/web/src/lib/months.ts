@@ -88,7 +88,8 @@ export function collectMonths(data: Data): string[] {
     for (const row of data.opTransactions ?? []) {
         if (isDateKey(row.date)) months.add(row.date.slice(0, 7));
     }
-    for (const row of data.opCloud ?? []) months.add(row.start.slice(0, 7));
+    for (const row of data.vendorLedger ?? [])
+        months.add(row.start.slice(0, 7));
     for (const row of data.opPollen ?? []) months.add(row.month);
     for (const row of data.revenueShare ?? []) months.add(row.month);
     return [...months]

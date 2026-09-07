@@ -1,4 +1,9 @@
-import type { Data, OpCloudRow, OpPollenRow, OpTransactionRow } from "../types";
+import type {
+    Data,
+    OpPollenRow,
+    OpTransactionRow,
+    VendorLedgerRow,
+} from "../types";
 import {
     hasReconciledTransactionEvidence,
     isAcknowledgedLostTransactionEvidence,
@@ -83,7 +88,7 @@ function invalidTransaction(row: OpTransactionRow): boolean {
     );
 }
 
-function invalidCloud(row: OpCloudRow): boolean {
+function invalidCloud(row: VendorLedgerRow): boolean {
     const balance = row.type.trim().toLowerCase() === "balance";
     return (
         !present(row.entry_id) ||
@@ -171,7 +176,7 @@ function transactionDuplicateKey(row: OpTransactionRow): string {
         : "";
 }
 
-function cloudDuplicateKey(row: OpCloudRow): string {
+function cloudDuplicateKey(row: VendorLedgerRow): string {
     return present(row.entry_id)
         ? JSON.stringify([row.source, row.entry_id])
         : "";
@@ -216,7 +221,7 @@ export function monthlyLedgerAuditRows(
             const transactions = bankRows.filter(
                 (row) => row.kind === "transaction",
             );
-            const cloud = (data.opCloud ?? []).filter(
+            const cloud = (data.vendorLedger ?? []).filter(
                 (row) => row.start.slice(0, 7) === month,
             );
             const pollen = (data.opPollen ?? []).filter(
@@ -294,7 +299,7 @@ export function monthlyLedgerAuditRows(
     const invalidDateTransactions = (data.opTransactions ?? []).filter(
         (row) => !isDateKey(String(row.date ?? "")),
     );
-    const invalidDateCloud = (data.opCloud ?? []).filter(
+    const invalidDateCloud = (data.vendorLedger ?? []).filter(
         (row) => !isMonthKey(String(row.start ?? "").slice(0, 7)),
     );
     const invalidDatePollen = (data.opPollen ?? []).filter(

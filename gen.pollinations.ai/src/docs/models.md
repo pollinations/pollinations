@@ -13,19 +13,44 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 | `GET /embeddings/models` | Embedding models with supported modalities |
 | `GET /3d/models` | 3D Generation models with supported modalities |
 
-### Query Parameters
+### Filters and health
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model discovery endpoints accept the same optional filters. Omitting them
+returns the existing complete catalog without a health lookup.
 
-| Parameter | Values | Behaviour |
-|-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+| Query | Values | Behaviour |
+|-------|--------|-----------|
+| `source` | `official`, `community` | Return one source; omit for both |
+| `reliability` | `all`, `reliable` | Add health to every result, or keep only results with status `on` |
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+`community=true|false|1|0` remains available as a legacy source filter.
+Conflicting or invalid filters return **400 Bad Request**. Source, access, and
+reliability filters combine with AND semantics. Reliability never grants or
+removes permission to generate with a model.
 
-Example: `GET /models?community=false`
+Health uses the last 24 hours of completed requests. `success_rate` is
+`2xx / (2xx + 5xx)`, so successful fallback rescues count as successes while
+caller-side 4xx responses are excluded. `sample_size`, `window_minutes`,
+`checked_at`, and `stale` disclose confidence and freshness. Missing or small
+samples are `unknown`; alpha/preview status remains a separate field. Stale or
+unknown models are excluded by `reliability=reliable`.
+
+```bash
+curl 'https://gen.pollinations.ai/v1/models?source=official&reliability=reliable'
+```
+
+OpenAI-compatible clients that append `/models` to their base URL can use the
+equivalent headers instead of query parameters:
+
+```text
+Pollinations-Model-Source: official
+Pollinations-Model-Reliability: reliable
+```
+
+These headers work with Open WebUI and Cline custom OpenAI connections.
+LibreChat administrators can set them in the custom endpoint's `headers` map.
+The client can use any returned model ID for generation without forwarding the
+catalog headers.
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -41,6 +66,6 @@ Built-in models may use separate upstream routes for Chat and Responses.
 
 ## Community Models
 
-Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
+Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `source=community` to return only community models or `source=official` to exclude them.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.

@@ -1,12 +1,58 @@
-import { SELF } from "cloudflare:test";
+import {
+    createExecutionContext,
+    SELF,
+    waitOnExecutionContext,
+} from "cloudflare:test";
 import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
-import { expect } from "vitest";
+import { afterEach, expect, vi } from "vitest";
+import worker from "../src/index.ts";
+import { resetModelHealthCache } from "../src/routes/model-status.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
+}
+
+async function fetchWorkerWithMock(path: string, init: RequestInit = {}) {
+    const context = createExecutionContext();
+    const response = await worker.fetch(
+        new Request(`https://gen.pollinations.ai${path}`, init),
+        { ENVIRONMENT: "test" } as CloudflareBindings,
+        context,
+    );
+    await waitOnExecutionContext(context);
+    return response;
+}
+
+afterEach(() => {
+    resetModelHealthCache();
+    vi.restoreAllMocks();
+});
+
+function healthRow(model: string, status_2xx: number, errors_5xx: number) {
+    return {
+        model,
+        event_type: "generate.text",
+        provider: "test",
+        model_used: model,
+        total_requests: status_2xx + errors_5xx,
+        status_2xx,
+        errors_4xx: 50,
+        errors_5xx,
+        own_calls: status_2xx + errors_5xx,
+        own_calls_ok: status_2xx,
+        primary_5xx: errors_5xx,
+        primary_retried_503s: 0,
+        fallback_rescues: 2,
+        last_error_at: "1970-01-01 00:00:00",
+        latency_p50_ms: null,
+        latency_p95_ms: null,
+        avg_latency_ms: null,
+        last_request_at: "1970-01-01 00:00:00",
+        tokens_per_second: null,
+    };
 }
 
 test("retrieves a model by canonical ID", async () => {
@@ -78,6 +124,117 @@ test("retrieve matches the list entry exactly (shared mapper)", async () => {
         unknown
     >;
     expect(retrieved).toEqual(listed);
+});
+
+test("adds measured health and filters reliable models on demand", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({
+            data: [
+                healthRow("openai/gpt-5-nano", 98, 2),
+                healthRow("anthropic/claude-haiku-4.5", 8, 2),
+            ],
+        }),
+    );
+
+    const unfiltered = await fetchWorkerWithMock("/v1/models");
+    const unfilteredBody = (await unfiltered.json()) as {
+        data: { id: string; health?: unknown }[];
+    };
+    expect(unfilteredBody.data[0]).not.toHaveProperty("health");
+
+    const withHealth = await fetchWorkerWithMock("/v1/models?reliability=all");
+    const withHealthBody = (await withHealth.json()) as {
+        data: {
+            id: string;
+            health: Record<string, unknown>;
+        }[];
+    };
+    expect(
+        withHealthBody.data.find((model) => model.id === "openai/gpt-5-nano")
+            ?.health,
+    ).toMatchObject({
+        status: "on",
+        success_rate: 0.98,
+        sample_size: 100,
+        window_minutes: 1440,
+        stale: false,
+    });
+    expect(
+        withHealthBody.data.find(
+            (model) => model.id === "anthropic/claude-haiku-4.5",
+        )?.health,
+    ).toMatchObject({ status: "off", sample_size: 10 });
+    expect(
+        withHealthBody.data.find(
+            (model) => model.id === "mistralai/mistral-small-4",
+        )?.health,
+    ).toMatchObject({ status: "unknown", sample_size: 0 });
+
+    const reliable = await fetchWorkerWithMock(
+        "/v1/models?reliability=reliable",
+    );
+    const reliableBody = (await reliable.json()) as {
+        data: { id: string }[];
+    };
+    expect(reliableBody.data.map(({ id }) => id)).toEqual([
+        "openai/gpt-5-nano",
+    ]);
+});
+
+test("accepts client-safe model filter headers", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+        Response.json({ data: [healthRow("openai/gpt-5-nano", 10, 0)] }),
+    );
+    const response = await fetchWorkerWithMock("/text/models", {
+        headers: {
+            "Pollinations-Model-Source": "official",
+            "Pollinations-Model-Reliability": "reliable",
+        },
+    });
+
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as {
+        name: string;
+        community: boolean;
+        health: { status: string };
+    }[];
+    expect(models.map(({ name }) => name)).toEqual(["openai/gpt-5-nano"]);
+    expect(models[0]).toMatchObject({
+        community: false,
+        health: { status: "on" },
+    });
+});
+
+test("reports unknown health when monitoring is unavailable", async () => {
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("offline"));
+
+    const response = await fetchWorkerWithMock("/v1/models?reliability=all");
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+        data: { health: Record<string, unknown> }[];
+    };
+    expect(body.data[0]?.health).toMatchObject({
+        status: "unknown",
+        success_rate: null,
+        sample_size: 0,
+        checked_at: null,
+        stale: true,
+    });
+});
+
+test("rejects invalid or conflicting discovery filters", async () => {
+    const responses = await Promise.all([
+        fetchWorker("/models?source=other"),
+        fetchWorker("/models?source=official&community=true"),
+        fetchWorker("/models?reliability=all", {
+            headers: { "Pollinations-Model-Reliability": "reliable" },
+        }),
+        fetchWorker("/models", {
+            headers: { "Pollinations-Model-Source": "other" },
+        }),
+    ]);
+
+    expect(responses.every(({ status }) => status === 400)).toBe(true);
 });
 
 test("advertises direct Responses support through supported_endpoints", async () => {

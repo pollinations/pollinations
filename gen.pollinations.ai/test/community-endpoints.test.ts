@@ -4195,7 +4195,7 @@ fixtureTest(
 );
 
 fixtureTest(
-    "filters model catalogs with ?community query parameter",
+    "filters model catalogs by source with legacy community aliases",
     async () => {
         const suffix = crypto.randomUUID().slice(0, 8);
         const textOwner = `filter-text-${suffix}`;
@@ -4269,21 +4269,23 @@ fixtureTest(
             allOnlyNumeric,
         ] = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=false"),
-            SELF.fetch("https://gen.pollinations.ai/models?community=true"),
+            SELF.fetch("https://gen.pollinations.ai/models?source=official"),
+            SELF.fetch("https://gen.pollinations.ai/models?source=community"),
             SELF.fetch(
-                "https://gen.pollinations.ai/text/models?community=false",
+                "https://gen.pollinations.ai/text/models?source=official",
             ),
             SELF.fetch(
-                "https://gen.pollinations.ai/text/models?community=true",
+                "https://gen.pollinations.ai/text/models?source=community",
             ),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?community=false"),
-            SELF.fetch("https://gen.pollinations.ai/v1/models?community=true"),
+            SELF.fetch("https://gen.pollinations.ai/v1/models?source=official"),
             SELF.fetch(
-                "https://gen.pollinations.ai/image/models?community=false",
+                "https://gen.pollinations.ai/v1/models?source=community",
             ),
             SELF.fetch(
-                "https://gen.pollinations.ai/image/models?community=true",
+                "https://gen.pollinations.ai/image/models?source=official",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/image/models?source=community",
             ),
             SELF.fetch("https://gen.pollinations.ai/models?community=0"),
             SELF.fetch("https://gen.pollinations.ai/models?community=1"),

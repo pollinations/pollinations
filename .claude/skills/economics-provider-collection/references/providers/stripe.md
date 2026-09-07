@@ -89,7 +89,7 @@ Economics use:
   complete coverage for every required account through the following month start.
 - Runway P&L separates Pollen/Ko-fi gross sales, refunds, and reversals. Fees
   belong in Operations. Cash change and balance continue to use Wise payouts.
-- Do not write Stripe activity to `economics_compute_ledger`.
+- Do not write Stripe activity to `economics_vendor_ledger`.
 
 Official references:
 

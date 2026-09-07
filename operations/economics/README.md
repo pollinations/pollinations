@@ -32,17 +32,17 @@ The canonical Economics Tinybird datasource and pipe definitions
 [`enter.pollinations.ai/observability/`](../../enter.pollinations.ai/observability/).
 
 `operations/economics/provider-registry.json` is the single vendor list. Every
-counterparty that appears in the bank ledger, the compute ledger, or a Runway
+counterparty that appears in the bank ledger, the vendor ledger, or a Runway
 line is registered there with its identity (aliases, accounts, connector) and
 its business category (`category`, plus `cashRules` for vendors whose bank
 description decides between purposes, and `runwayLine` for merchants folded
 into one Runway line). `web/src/lib/categories.ts` only defines the category
-vocabulary; the compute ledger `type` still maps `inference`/`gpu` to compute
+vocabulary; the vendor ledger `type` still maps `inference`/`gpu` to compute
 and `infra` to infrastructure. A vendor registered as `uncategorized` has not
 been reviewed yet and keeps its canonical supplied category until it is.
 
 Runway is derived mathematically from `economics_bank_ledger_api`,
-`economics_compute_ledger_api`,
+`economics_vendor_ledger_api`,
 checked balances, and the reviewed calculation rules in
 `web/src/lib/forecastTerms.ts`. It has no separate Tinybird forecast or runway
 ledger.
@@ -57,15 +57,15 @@ never falls back to cash: a vendor with bank payments and no ledger rows is
 shown as a warning line without an amount. Every other category is
 bank-based. Forecast columns remain cash projections.
 
-Corrections in the bank and compute ledgers are append-only: publishers reuse
-the stable `entry_id` with a newer `recorded_at`. Compute tombstones use the
+Corrections in the bank and vendor ledgers are append-only: publishers reuse
+the stable `entry_id` with a newer `recorded_at`. Vendor tombstones use the
 explicit `source=tombstone` marker and remain preserved in the raw ledger while
 the effective endpoint hides them.
 
-Vendor ledger rename: `economics_vendor_ledger` and
-`economics_vendor_ledger_api` are the replacement definitions. The existing
-Compute pair remains intact during migration. Keep readers and publishers on
-the old pair until all raw versions (including tombstones) and effective rows
-match in the new pair. Verify backups twice, promote and copy staging only
-with approval, then switch all consumers together. Production is a separate
-approved migration; never delete the old pair as part of the copy.
+The app and collection guides use `economics_vendor_ledger` and
+`economics_vendor_ledger_api`. Staging has the verified full-history copy;
+the legacy `economics_compute_ledger` pair remains intact. Before deploying
+the app to production, separately approve and verify the same migration there.
+Copy all raw versions, including tombstones, with a lossless format such as
+Parquet, and compare raw and effective rows exactly before switching readers.
+Never delete the old pair as part of the copy.

@@ -78,7 +78,7 @@ Known traps:
 - Current balance is a snapshot, not historical usage.
 - Do not maintain a local balance cache or forecast from the partial month.
 - A credit purchase invoice is cash evidence, not model usage; do not add the
-  purchase to `economics_compute_ledger` usage.
+  purchase to `economics_vendor_ledger` usage.
 - Perplexity per-request search fees were absent from the retained Pollen meter
   until commit `0aa5fb55ef6030493fd4884f209d17fb58737b04` shipped on
   2026-07-03. January–June provider/Pollen drift is therefore historical

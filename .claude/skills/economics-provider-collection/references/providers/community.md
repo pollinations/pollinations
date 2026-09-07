@@ -41,7 +41,7 @@ Collection steps:
    Save raw query output to `<collection-dir>/evidence/community-<period>-pollen-usage.json` or `.tsv`.
 
 2. Treat `model_paid` as the owner payout (already netted out of revenue as eco). Do **not** treat `cost_paid + cost_quests` as a provider cost — that meter copied the sale price and double-counts the payout.
-3. Do **not** book community into `economics_compute_ledger`. There is no upstream invoice.
+3. Do **not** book community into `economics_vendor_ledger`. There is no upstream invoice.
 4. Use this skill for saved raw evidence.
 
 Known traps:

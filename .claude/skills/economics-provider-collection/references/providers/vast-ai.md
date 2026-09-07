@@ -30,7 +30,7 @@ Collection steps:
 
    Preserve one reviewed row per billed instance and charge kind. When replacing
    legacy instance rows, compare against a current effective
-   `economics_compute_ledger` snapshot so every old entry ID is neutralized and
+   `economics_vendor_ledger` snapshot so every old entry ID is neutralized and
    require the detailed rows to equal the provider month total before publication.
    Verified instance-to-workload mappings come from
    `vast-ai-workloads.json`; update that registry when the GPU fleet changes.

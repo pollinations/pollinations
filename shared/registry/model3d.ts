@@ -58,7 +58,6 @@ const MODEL3D_BASE_SERVICES = {
         aliases: ["asset-harvester"],
         publisher: "NVIDIA",
         provider: "inferenceport",
-        brand: "NVIDIA",
         category: "3d",
         addedDate: new Date("2026-09-07").getTime(),
         priceMultiplier: 1,

@@ -119,7 +119,15 @@ try {
     });
     execFileSync(
         "npx",
-        ["wrangler", "secret", "bulk", outputPath, "--env", environment],
+        [
+            "--yes",
+            "wrangler@4.85.0",
+            "secret",
+            "bulk",
+            outputPath,
+            "--env",
+            environment,
+        ],
         {
             stdio: "inherit",
         },

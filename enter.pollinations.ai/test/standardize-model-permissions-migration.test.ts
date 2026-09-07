@@ -4,6 +4,7 @@ import {
     resolveModelName,
 } from "@shared/registry/registry.ts";
 import { describe, expect, it } from "vitest";
+import economicsRegistry from "../../operations/economics/provider-registry.json";
 import migrationSql from "../drizzle/0062_standardize-model-permissions.sql?raw";
 
 const modelMappings = [
@@ -11,6 +12,14 @@ const modelMappings = [
         /WHEN model\.type = 'text' AND model\.value = '([^']+)'\s+THEN '([^']+)'/g,
     ),
 ].map((match) => [match[1], match[2]] as const);
+
+it("pins Economics identity bridges to exactly the reviewed public promotions", () => {
+    expect(economicsRegistry.canonicalModelRenames).toEqual(
+        Object.fromEntries(
+            modelMappings.filter(([oldId]) => oldId !== "zimage-fal"),
+        ),
+    );
+});
 
 // Public canonical IDs immediately before this release. Keep this fixture
 // independent of the SQL so omitting a migration statement fails the test.
@@ -394,5 +403,30 @@ describe("standardize model permissions migration", () => {
             WHERE current.permissions IS NOT snapshot.permissions
         `).first<{ count: number }>();
         expect(changedOnSecondRun?.count).toBe(0);
+
+        // Old Enter may finish a write after the migration but before its
+        // deployment. The post-deploy pass must repair that row too.
+        const [oldId, newId] = modelMappings[0];
+        await env.DB.prepare(
+            "INSERT INTO canonical_rename_apikey VALUES (?, ?)",
+        )
+            .bind(
+                "late-old-writer",
+                JSON.stringify({
+                    models: [oldId, newId, "owner/community-model"],
+                    account: ["profile"],
+                }),
+            )
+            .run();
+        await runMigrationForTest();
+        const lateWriter = await env.DB.prepare(
+            "SELECT permissions FROM canonical_rename_apikey WHERE id = ?",
+        )
+            .bind("late-old-writer")
+            .first<{ permissions: string }>();
+        expect(JSON.parse(lateWriter?.permissions ?? "null")).toEqual({
+            models: [newId, "owner/community-model"],
+            account: ["profile"],
+        });
     });
 });

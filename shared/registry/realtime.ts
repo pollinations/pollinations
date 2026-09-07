@@ -10,7 +10,7 @@ export type RealtimeModelName = keyof typeof REALTIME_SERVICES;
 const OPENAI_REALTIME_BASE = {
     aliases: [],
     provider: "azure",
-    author: "OpenAI",
+    publisher: "OpenAI",
     category: "realtime",
     priceMultiplier: 0.75,
     inputModalities: ["text", "audio", "image"],
@@ -74,7 +74,7 @@ export const REALTIME_SERVICES = {
     "elevenlabs/scribe-v2-realtime": {
         aliases: ["scribe-realtime"],
         provider: "elevenlabs",
-        author: "ElevenLabs",
+        publisher: "ElevenLabs",
         category: "realtime",
         addedDate: new Date("2026-08-13").getTime(),
         paidOnly: true,
@@ -93,7 +93,7 @@ export const REALTIME_SERVICES = {
     "openai/gpt-live-transcribe": {
         aliases: ["gpt-live-transcribe"],
         provider: "azure",
-        author: "OpenAI",
+        publisher: "OpenAI",
         category: "realtime",
         addedDate: new Date("2026-08-19").getTime(),
         paidOnly: false,

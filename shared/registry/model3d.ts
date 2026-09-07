@@ -20,7 +20,7 @@ const MODEL3D_BASE_SERVICES = {
             "trellis-2",
         ],
         provider: "inferenceport",
-        author: "Microsoft",
+        publisher: "Microsoft",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
         priceMultiplier: 1,
@@ -57,7 +57,7 @@ const MODEL3D_BASE_SERVICES = {
     "hyper3d/rodin-2.5": {
         aliases: ["rodin", "hyper3d-rodin"],
         provider: "fal",
-        author: "Hyper3D",
+        publisher: "Hyper3D",
         category: "3d",
         addedDate: new Date("2026-06-24").getTime(),
         priceMultiplier: 1,

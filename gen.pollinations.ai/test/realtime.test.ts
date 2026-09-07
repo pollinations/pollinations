@@ -1649,7 +1649,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     expect(richResponse.status).toBe(200);
     const richModels = (await richResponse.json()) as {
         name: string;
-        author?: string;
+        publisher?: string;
         title?: string;
         description?: string;
         input_modalities?: string[];
@@ -1669,7 +1669,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     });
     expect(scribeRealtime).toMatchObject({
         aliases: ["scribe-realtime"],
-        author: "ElevenLabs",
+        publisher: "ElevenLabs",
         title: "Scribe v2 Realtime",
         input_modalities: ["audio"],
         output_modalities: ["text"],
@@ -1688,7 +1688,7 @@ test("includes realtime model in OpenAI-compatible model discovery", async ({
     );
     expect(gptLiveTranscribe).toMatchObject({
         aliases: ["gpt-live-transcribe"],
-        author: "OpenAI",
+        publisher: "OpenAI",
         title: "GPT Live Transcribe",
         input_modalities: ["audio"],
         output_modalities: ["text"],

@@ -599,7 +599,7 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 title: "Claude",
             },
             {
-                id: "google/gemini-3.6-flash",
+                id: "google/gemini-3.7-flash",
                 object: "model",
                 created: 1700000000,
                 owned_by: "pollinations",

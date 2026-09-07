@@ -292,7 +292,7 @@ async function generateMediaWithFallback(
     const shouldFallback = (error: unknown, candidate: FallbackCandidate) => {
         if (
             candidate.definition?.provider === "azure" &&
-            candidate.definition.author === "OpenAI"
+            candidate.definition.publisher === "OpenAI"
         ) {
             return (
                 error instanceof UpstreamError && error.upstreamStatus === 429

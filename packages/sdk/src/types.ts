@@ -922,7 +922,8 @@ export interface ModelInfo {
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
     title?: string;
     category?: ModelCategory;
-    author?: string;
+    /** Human-readable model publisher, not the inference provider. Replaces brand. */
+    publisher?: string;
     description?: string;
     aliases?: string[];
     community?: boolean;

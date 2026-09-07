@@ -240,14 +240,14 @@ const MobileModelRow: FC<MobileModelRowProps> = ({ model }) => {
                         )}
                     </div>
                     <ModelId name={model.name} showCopyIcon />
-                    {model.brandUrl && model.author && (
+                    {model.brandUrl && model.publisher && (
                         <a
                             href={model.brandUrl}
                             target="_blank"
                             rel="noreferrer"
                             className="w-fit max-w-full truncate text-xs text-theme-text-muted underline decoration-current/40 underline-offset-2 hover:text-theme-text-soft"
                         >
-                            {model.author}
+                            {model.publisher}
                         </a>
                     )}
                     <div className="flex min-w-0 flex-col gap-0.5">

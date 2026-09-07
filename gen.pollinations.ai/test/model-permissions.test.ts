@@ -1,9 +1,11 @@
-import { SELF } from "cloudflare:test";
+import { env, SELF } from "cloudflare:test";
+import { apikey } from "@shared/db/better-auth.ts";
 import { getAudioModelsInfo } from "@shared/registry/model-info.ts";
 import {
     getRegistryModelDefinition,
     getVisibleTextModels,
 } from "@shared/registry/registry.ts";
+import { filterPermissionsToVisibleModels } from "@shared/registry/visible-model-ids.ts";
 import {
     createTestApiKey,
     RESTRICTED_IMAGE_TEST_MODEL,
@@ -11,11 +13,120 @@ import {
     RESTRICTED_TEXT_TEST_MODEL,
     test,
 } from "@shared/test/fixtures/index.ts";
+import { eq } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/d1";
+import { Hono } from "hono";
 import { expect } from "vitest";
+import { type AuthEnv, authFromSnapshot } from "../src/middleware/auth.ts";
 
 async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
+
+test("catalog metadata exposes publisher rather than author or brand", async () => {
+    const response = await fetchWorker("/models");
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as Record<string, unknown>[];
+    expect(models.length).toBeGreaterThan(0);
+    for (const model of models) {
+        expect(typeof model.publisher).toBe("string");
+        expect(model).not.toHaveProperty("author");
+        expect(model).not.toHaveProperty("brand");
+    }
+});
+
+test("permission readback canonicalizes aliases without exposing hidden or unknown entries", () => {
+    const stored = {
+        models: ["openai", "openai/gpt-5.4-nano", "owner/custom", "unknown"],
+        account: ["profile"],
+    };
+    expect(
+        filterPermissionsToVisibleModels(
+            stored,
+            new Set(["openai/gpt-5.4-nano", "owner/custom"]),
+        ),
+    ).toEqual({
+        models: ["openai/gpt-5.4-nano", "owner/custom"],
+        account: ["profile"],
+    });
+    expect(stored.models).toContain("unknown");
+    expect(
+        filterPermissionsToVisibleModels(
+            { models: [] },
+            new Set(["openai/gpt-5.4-nano"]),
+        ),
+    ).toEqual({ models: [] });
+});
+
+test("legacy stored allowlists still filter catalogs after canonical promotion", async () => {
+    const { key, id } = await createTestApiKey({
+        allowedModels: ["nanobanana2"],
+        user: { packBalance: 100 },
+    });
+    // Simulate an old Enter writer after the one-time migration has run.
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify({ models: ["nanobanana2"] }) })
+        .where(eq(apikey.id, id));
+    const headers = { Authorization: `Bearer ${key}` };
+    const catalog = await fetchWorker("/image/models", { headers });
+    expect(catalog.status).toBe(200);
+    expect(
+        ((await catalog.json()) as { name: string }[]).map(
+            (model) => model.name,
+        ),
+    ).toEqual(["google/gemini-3.1-flash-image"]);
+    const denied = await fetchWorker("/text/test?model=openai", { headers });
+    expect(denied.status).toBe(403);
+    const stored = await drizzle(env.DB)
+        .select({ permissions: apikey.permissions })
+        .from(apikey)
+        .where(eq(apikey.id, id));
+    expect(JSON.parse(stored[0].permissions ?? "null")).toEqual({
+        models: ["nanobanana2"],
+    });
+});
+
+test("restored auth snapshots normalize aliases once without expanding model or account scope", async () => {
+    const snapshot = {
+        user: { id: "permission-test", tier: "seed" },
+        apiKey: {
+            id: "test",
+            permissions: {
+                models: ["openai", "openai/gpt-5.4-nano", "owner/custom"],
+                account: ["profile"],
+            },
+        },
+    };
+    const app = new Hono<AuthEnv>();
+    app.use("*", authFromSnapshot(snapshot));
+    app.get("/:model", (c) => {
+        const model = c.req.param("model");
+        c.set("model", {
+            requested: model,
+            resolved: model,
+        });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+    for (const model of ["openai/gpt-5.4-nano", "owner/custom"]) {
+        const response = await app.request(`/${encodeURIComponent(model)}`);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            models: ["openai/gpt-5.4-nano", "owner/custom"],
+            account: ["profile"],
+        });
+    }
+    expect((await app.request("/other%2Fcustom")).status).toBe(403);
+    expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
+        403,
+    );
+    expect(snapshot.apiKey.permissions.models).toEqual([
+        "openai",
+        "openai/gpt-5.4-nano",
+        "owner/custom",
+    ]);
+});
 
 test("filters OpenAI-compatible model list by API key permissions", async ({
     restrictedApiKey,

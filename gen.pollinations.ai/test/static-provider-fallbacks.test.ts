@@ -130,7 +130,7 @@ function expectInheritedRoute(
         aliases: [],
         hidden: true,
         fallbackOnly: true,
-        author: parent.author,
+        publisher: parent.publisher,
         category: parent.category,
         title: parent.title,
         inputModalities: parent.inputModalities,

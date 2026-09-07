@@ -200,7 +200,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
-        author: model.author,
+        publisher: model.publisher,
         brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,

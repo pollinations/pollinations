@@ -10,7 +10,7 @@ export const EMBEDDING_SERVICES = {
     "google/gemini-embedding-2": {
         aliases: ["embedding", "gemini-2"],
         provider: "google",
-        author: "Google",
+        publisher: "Google",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         paidOnly: true,
@@ -31,7 +31,7 @@ export const EMBEDDING_SERVICES = {
     "openai/text-embedding-3-small": {
         aliases: ["embedding-small", "openai-3-small"],
         provider: "azure",
-        author: "OpenAI",
+        publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         priceMultiplier: 0.75,
@@ -48,7 +48,7 @@ export const EMBEDDING_SERVICES = {
     "openai/text-embedding-3-large": {
         aliases: ["embedding-large", "openai-3-large"],
         provider: "azure",
-        author: "OpenAI",
+        publisher: "OpenAI",
         category: "embedding",
         addedDate: new Date("2026-05-08").getTime(),
         priceMultiplier: 0.75,
@@ -70,7 +70,7 @@ export const EMBEDDING_SERVICES = {
             "embed-v4.0",
         ],
         provider: "azure",
-        author: "Cohere",
+        publisher: "Cohere",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 0.75,
@@ -89,7 +89,7 @@ export const EMBEDDING_SERVICES = {
     "qwen/qwen3-embedding-8b": {
         aliases: ["qwen3-embedding", "qwen3-embedding-8b"],
         provider: "fireworks",
-        author: "Qwen",
+        publisher: "Qwen",
         category: "embedding",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,

@@ -60,7 +60,7 @@ export const getModelBrandLogoPath = (
     model: ModelPrice,
 ): string | undefined => {
     if (model.community) return undefined;
-    const logoName = model.author ? BRAND_LOGOS[model.author] : undefined;
+    const logoName = model.publisher ? BRAND_LOGOS[model.publisher] : undefined;
     return logoName ? `/brand-logos/${logoName}.svg` : undefined;
 };
 

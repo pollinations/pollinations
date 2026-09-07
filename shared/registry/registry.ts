@@ -158,7 +158,7 @@ export type ModelDefinition = {
     /** Input safety features callers cannot disable for this model. */
     requiredSafetyFeatures?: SafetyFeature[];
     /** Human-readable model publisher, e.g. "OpenAI" or "Anthropic". */
-    author: string;
+    publisher: string;
     category: Category;
     cost: CostDefinition;
     // Named alternate rate sheets, merged over `cost` when selectCostVariant

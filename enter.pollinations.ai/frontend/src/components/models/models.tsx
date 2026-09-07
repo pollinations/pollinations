@@ -148,12 +148,12 @@ const SORT_OPTIONS: Array<{
         accessibleLabel: "Name: Z to A",
     },
     {
-        value: "author",
+        value: "publisher",
         label: "Publisher: A–Z",
         accessibleLabel: "Publisher: A to Z",
     },
     {
-        value: "author-desc",
+        value: "publisher-desc",
         label: "Publisher: Z–A",
         accessibleLabel: "Publisher: Z to A",
     },
@@ -692,7 +692,9 @@ export const Models: FC = () => {
                         black-forest-labs/flux.1-schnell
                     </code>
                     . You can use the new IDs now. Existing IDs will keep
-                    working.
+                    working. Catalog integrations should read{" "}
+                    <code className="font-semibold">publisher</code> instead of{" "}
+                    <code className="font-semibold">brand</code>.
                 </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex w-full flex-col gap-2">

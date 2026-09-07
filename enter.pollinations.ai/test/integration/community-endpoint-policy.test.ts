@@ -57,6 +57,51 @@ async function publishPendingModel(
 }
 
 describe("community endpoint configuration policy", () => {
+    test("rejects exact bundled ID collisions without reserving the publisher namespace", async ({
+        sessionToken,
+    }) => {
+        await drizzle(env.DB)
+            .update(schema.user)
+            .set({ githubUsername: "fish-audio" })
+            .where(eq(schema.user.githubUsername, "testuser"));
+        const create = (name: string) =>
+            SELF.fetch(`${endpointUrl}/endpoint-agents`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({
+                    name,
+                    title: "Test agent",
+                    api: "responses",
+                    url: "https://agent.example.com/responses",
+                }),
+            });
+        const conflict = await create("s2.1-pro");
+        expect(conflict.status).toBe(400);
+        expect(await conflict.text()).toContain(
+            "conflicts with a bundled model or alias",
+        );
+        const available = await create("my-own-agent");
+        expect(available.status).toBe(200);
+        const created = await available.json<{ id: string }>();
+        const renamed = await SELF.fetch(
+            `${endpointUrl}/${created.id}/update`,
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Cookie: `better-auth.session_token=${sessionToken}`,
+                },
+                body: JSON.stringify({ name: "s2.1-pro" }),
+            },
+        );
+        expect(renamed.status).toBe(400);
+        expect(await renamed.text()).toContain(
+            "conflicts with a bundled model or alias",
+        );
+    });
     test("creates a private endpoint agent without proxy credentials or pricing", async ({
         sessionToken,
     }) => {

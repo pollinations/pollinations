@@ -595,7 +595,7 @@ describe("selection safety and composition", () => {
     ): ModelDefinition => ({
         aliases: [],
         provider: "test",
-        author: "Test",
+        publisher: "Test",
         category: "text",
         cost: { promptTextTokens: 1e-6, completionTextTokens: 2e-6 },
         priceMultiplier: 1,

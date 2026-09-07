@@ -63,7 +63,7 @@ export type ModelPrice = {
     perUserRpm?: number | null;
     displayName?: string;
     description?: string;
-    author?: string;
+    publisher?: string;
     brandUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];

@@ -82,9 +82,9 @@ Model approval never authorizes adding, rotating, synchronizing, deploying, revo
 
 - Resolve aliases to the canonical registry entry.
 - Before any canonical rename, count production and staging API keys whose
-  `permissions.models` contains the old canonical ID. Registry aliases do not
-  preserve restricted-key access because authorization compares the resolved
-  canonical ID.
+  `permissions.models` contains the old canonical ID. Verify the deployed
+  authorization code resolves stored aliases; registry aliases alone cannot
+  protect keys while an old exact-string reader is still running.
 - Audit every modality registry and every model change merged to `main` since
   the current production revision; production can lag behind `main`.
 - Trace every reachable runtime route and any configured fallback.
@@ -107,11 +107,11 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 
 ### 4. Implement the smallest complete change
 
-- Canonical public IDs use `<author-slug>/<official-model-slug>`. Keep both
+- Canonical public IDs use `<publisher-slug>/<official-model-slug>`. Keep both
   components lowercase, preserve the publisher's model family and version,
   and follow the publisher's public slug when one exists. Never invent, drop,
   or silently advance a version.
-- `author` is the human-readable publisher (`OpenAI`, `Anthropic`, `xAI`), not
+- `publisher` is the human-readable publisher (`OpenAI`, `Anthropic`, `xAI`), not
   the inference provider. Keep provider deployment IDs, casing, punctuation,
   and revision suffixes internal when they are routing details rather than the
   publisher's public model identity.
@@ -180,11 +180,22 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - API-key create and update paths must store recognized aliases as canonical
   IDs, while preserving unknown and community IDs, so migrations do not need to
   repair newly written aliases again.
-- For a pending canonical rename, merge the migration before the model PR but
-  do not promote the replacement-only migration while production still
-  resolves the old ID. Promote a revision containing both changes so D1 runs
-  immediately before the Worker deploy. Keep mappings in migrations only; do
-  not add a runtime normalization layer.
+- Before promoting a canonical rename or its migration, deploy and verify
+  alias-aware permission checks against the old registry, which must already
+  recognize every future canonical ID as an alias. Cover generation, catalogs,
+  realtime, fallback filtering and readback. Merging this prerequisite is not
+  sufficient: verify it is live before the migration can run.
+- For #13076, production migration is gated by the repository variable
+  `CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED=true`. Set it only after live
+  old/new-ID restricted-key checks pass on the compatibility deployment.
+  The post-deploy cleanup runs after both workers succeed; for a deployment
+  retry use `service=all` with `finalize_canonical_permissions=true`.
+- Keep request-time permission normalization permanently and use the existing
+  registry resolver, preserving unknown/community IDs and empty allowlists.
+  Writes and migrations still store canonical IDs. After both workers deploy,
+  repeat the bounded permission cleanup to catch old Enter writes made after
+  the migration; verify no audited old IDs remain. Do not rewrite historical
+  analytics using today's mutable aliases.
 - Update every consumer of a changed public ID at once.
 - Add aliases only for existing compatibility contracts or explicit approval.
 - Keep model names and aliases in `shared/registry/`; use the live model
@@ -222,7 +233,7 @@ A model change is not complete until all applicable statements are true:
 - Every non-zero usage field is accounted for and billed at the confirmed rate.
 - Malformed or rejected requests return useful 4xx responses rather than opaque 5xx responses.
 - Capacity and media latency fit the expected production load.
-- The catalog description is developer-facing, does not repeat the title, and the author logo resolves.
+- The catalog description is developer-facing, does not repeat the title, and the publisher logo resolves.
 - No public API surface was added or changed without its separate explicit confirmation.
 - No unapproved secret or deployment mutation occurred.
 - The PR contains only this model or tightly coupled family.

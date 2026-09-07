@@ -219,7 +219,7 @@ test("catalog prices keep community text models flagged for display", () => {
             aliases: ["community/voodoohop/openai"],
             category: "text",
             community: true,
-            author: "Example AI",
+            publisher: "Example AI",
             brand_url: "https://example.com/",
             title: "OpenAI relay",
             description: "OpenAI relay",
@@ -239,7 +239,7 @@ test("catalog prices keep community text models flagged for display", () => {
         type: "text",
         community: true,
         displayName: "OpenAI relay",
-        author: "Example AI",
+        publisher: "Example AI",
         brandUrl: "https://example.com/",
         capabilities: [],
     });
@@ -311,7 +311,7 @@ test("catalog models resolve brand logo SVG assets", () => {
         const logoPath = getModelBrandLogoPath(model);
         return logoPath && logoAssets.has(logoPath)
             ? []
-            : [{ name: model.name, author: model.author, logoPath }];
+            : [{ name: model.name, publisher: model.publisher, logoPath }];
     });
 
     expect(missingLogos).toEqual([]);
@@ -322,7 +322,7 @@ test("community models use their model type icon instead of a provider logo", ()
         name: "owner/model",
         type: "text" as const,
         community: true,
-        author: "Custom Provider",
+        publisher: "Custom Provider",
         capabilities: [],
         prices: [],
     };

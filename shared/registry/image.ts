@@ -12,7 +12,7 @@ const IMAGE_BASE_SERVICES = {
     "krea/krea-2-medium": {
         aliases: ["krea-2", "krea"],
         provider: "fal",
-        author: "Krea",
+        publisher: "Krea",
         category: "image",
         addedDate: new Date("2026-08-01").getTime(),
         priceMultiplier: 1,
@@ -31,7 +31,7 @@ const IMAGE_BASE_SERVICES = {
         // proxy worker keep working unchanged.
         aliases: ["sana", "dreamshaper"],
         provider: "vast",
-        author: "Lykon",
+        publisher: "Lykon",
         category: "image",
         addedDate: new Date("2026-07-30").getTime(),
         priceMultiplier: 1,
@@ -48,7 +48,7 @@ const IMAGE_BASE_SERVICES = {
     "black-forest-labs/flux.1-kontext-pro": {
         aliases: ["kontext"],
         provider: "azure",
-        author: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 0.75,
@@ -65,7 +65,7 @@ const IMAGE_BASE_SERVICES = {
     "black-forest-labs/flux.2-pro": {
         aliases: ["flux-2-pro"],
         provider: "azure",
-        author: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-08-31").getTime(),
         priceMultiplier: 0.75,
@@ -103,7 +103,7 @@ const IMAGE_BASE_SERVICES = {
     "black-forest-labs/flux.2-flex": {
         aliases: ["flux-2-flex"],
         provider: "azure",
-        author: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-08-31").getTime(),
         priceMultiplier: 0.75,
@@ -124,7 +124,7 @@ const IMAGE_BASE_SERVICES = {
     "microsoft/mai-image-2.5-flash": {
         aliases: [],
         provider: "azure",
-        author: "Microsoft",
+        publisher: "Microsoft",
         category: "image",
         addedDate: new Date("2026-09-05").getTime(),
         paidOnly: false,
@@ -147,7 +147,7 @@ const IMAGE_BASE_SERVICES = {
     "google/gemini-2.5-flash-image": {
         aliases: ["nanobanana"],
         provider: "openrouter",
-        author: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         paidOnly: true,
@@ -169,7 +169,7 @@ const IMAGE_BASE_SERVICES = {
     "google/gemini-3.1-flash-image": {
         aliases: ["nanobanana2", "nanobanana-2"],
         provider: "openrouter",
-        author: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         paidOnly: true,
@@ -191,7 +191,7 @@ const IMAGE_BASE_SERVICES = {
     "google/gemini-3.1-flash-lite-image": {
         aliases: ["nanobanana2lite", "nanobanana-lite", "nanobanana-2-lite"],
         provider: "openrouter",
-        author: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2026-06-30").getTime(),
         paidOnly: true,
@@ -213,7 +213,7 @@ const IMAGE_BASE_SERVICES = {
     "google/gemini-3-pro-image": {
         aliases: ["nanobanana-pro"],
         provider: "openrouter",
-        author: "Google",
+        publisher: "Google",
         category: "image",
         addedDate: new Date("2025-12-01").getTime(),
         paidOnly: true,
@@ -237,7 +237,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedream-5.0-lite": {
         aliases: ["seedream5"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2026-02-27").getTime(),
         priceMultiplier: 1,
@@ -256,7 +256,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedream-5.0-pro": {
         aliases: ["seedream-5-pro", "seedream-pro-5", "seedream5-pro"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2026-07-10").getTime(),
         priceMultiplier: 1,
@@ -273,7 +273,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedream-4.0": {
         aliases: ["seedream"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -290,7 +290,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedream-4.5": {
         aliases: ["seedream-pro"],
         provider: "openrouter",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "image",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
@@ -313,7 +313,7 @@ const IMAGE_BASE_SERVICES = {
     "ideogram-ai/ideogram-v4-turbo": {
         aliases: ["ideogram-v4-turbo"],
         provider: "replicate",
-        author: "Ideogram",
+        publisher: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -329,7 +329,7 @@ const IMAGE_BASE_SERVICES = {
     "ideogram-ai/ideogram-v4-balanced": {
         aliases: ["ideogram-v4-balanced"],
         provider: "replicate",
-        author: "Ideogram",
+        publisher: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -345,7 +345,7 @@ const IMAGE_BASE_SERVICES = {
     "ideogram-ai/ideogram-v4-quality": {
         aliases: ["ideogram-v4-quality"],
         provider: "replicate",
-        author: "Ideogram",
+        publisher: "Ideogram",
         category: "image",
         addedDate: new Date("2026-06-15").getTime(),
         priceMultiplier: 1,
@@ -362,7 +362,7 @@ const IMAGE_BASE_SERVICES = {
     "openai/gpt-image-1-mini": {
         aliases: ["gpt-image", "gpt-image-1-mini", "gptimage"],
         provider: "azure",
-        author: "OpenAI",
+        publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-10-10").getTime(),
         priceMultiplier: 0.75,
@@ -381,7 +381,7 @@ const IMAGE_BASE_SERVICES = {
     "openai/gpt-image-1.5": {
         aliases: ["gpt-image-1.5", "gpt-image-large", "gptimage-large"],
         provider: "azure",
-        author: "OpenAI",
+        publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2025-12-23").getTime(),
         priceMultiplier: 0.75,
@@ -403,7 +403,7 @@ const IMAGE_BASE_SERVICES = {
     "openai/gpt-image-2": {
         aliases: ["gpt-image-2"],
         provider: "azure",
-        author: "OpenAI",
+        publisher: "OpenAI",
         category: "image",
         addedDate: new Date("2026-04-22").getTime(),
         paidOnly: false,
@@ -425,7 +425,7 @@ const IMAGE_BASE_SERVICES = {
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],
         provider: "vast",
-        author: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2025-10-07").getTime(),
         priceMultiplier: 1,
@@ -441,7 +441,7 @@ const IMAGE_BASE_SERVICES = {
     "tongyi-mai/z-image-turbo": {
         aliases: ["z-image", "z-image-turbo", "zimage"],
         provider: "vast",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2025-12-08").getTime(),
         priceMultiplier: 1,
@@ -466,7 +466,7 @@ const IMAGE_BASE_SERVICES = {
             "veo",
         ],
         provider: "google",
-        author: "Google",
+        publisher: "Google",
         category: "video",
         addedDate: new Date("2025-11-27").getTime(),
         paidOnly: true,
@@ -506,7 +506,7 @@ const IMAGE_BASE_SERVICES = {
     "google/gemini-omni-1.1-flash": {
         aliases: [],
         provider: "google",
-        author: "Google",
+        publisher: "Google",
         category: "video",
         addedDate: new Date("2026-08-28").getTime(),
         paidOnly: true,
@@ -534,7 +534,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedance-1-pro-fast": {
         aliases: ["seedance-pro"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2025-12-04").getTime(),
         priceMultiplier: 1,
@@ -582,7 +582,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedance-2.0": {
         aliases: ["seedance-2", "seedance-2.0"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-05-07").getTime(),
         priceMultiplier: 1,
@@ -628,7 +628,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedance-2.0-mini": {
         aliases: ["seedance-2.0-mini"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -668,7 +668,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedance-2.0-fast": {
         aliases: ["seedance-2.0-fast"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -692,7 +692,7 @@ const IMAGE_BASE_SERVICES = {
     "alibaba/wan-2.6": {
         aliases: ["wan2.6", "wan-i2v", "wan"],
         provider: "replicate",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-01-21").getTime(),
         priceMultiplier: 1,
@@ -717,7 +717,7 @@ const IMAGE_BASE_SERVICES = {
     "alibaba/wan-2.2-fast": {
         aliases: ["wan2.2", "wan-2.2", "wan-fast"],
         provider: "replicate",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -749,7 +749,7 @@ const IMAGE_BASE_SERVICES = {
             "wan-pro",
         ],
         provider: "replicate",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-05-26").getTime(),
         priceMultiplier: 1,
@@ -809,7 +809,7 @@ const IMAGE_BASE_SERVICES = {
     "alibaba/wan-3.0": {
         aliases: ["wan-3.0"],
         provider: "fal",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-08-25").getTime(),
         priceMultiplier: 1,
@@ -864,7 +864,7 @@ const IMAGE_BASE_SERVICES = {
     "alibaba/wan-2.7-image": {
         aliases: ["wan2.7-image", "wan-img", "wan-image"],
         provider: "replicate",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         paidOnly: true,
@@ -883,7 +883,7 @@ const IMAGE_BASE_SERVICES = {
     "alibaba/wan-2.7-image-pro": {
         aliases: ["wan2.7-image-pro", "wan-img-pro", "wan-image-pro"],
         provider: "replicate",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "image",
         addedDate: new Date("2026-04-02").getTime(),
         priceMultiplier: 1,
@@ -909,7 +909,7 @@ const IMAGE_BASE_SERVICES = {
             "qwen-image",
         ],
         provider: "replicate",
-        author: "Qwen",
+        publisher: "Qwen",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         paidOnly: true,
@@ -945,7 +945,7 @@ const IMAGE_BASE_SERVICES = {
     "qwen/qwen-image-3": {
         aliases: ["qwen-image-3"],
         provider: "fal",
-        author: "Qwen",
+        publisher: "Qwen",
         category: "image",
         addedDate: new Date("2026-07-23").getTime(),
         paidOnly: true,
@@ -984,7 +984,7 @@ const IMAGE_BASE_SERVICES = {
     "x-ai/grok-imagine-image": {
         aliases: ["grok-imagine-image", "grok-imagine"],
         provider: "xai",
-        author: "xAI",
+        publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-02-25").getTime(),
         priceMultiplier: 1,
@@ -1008,7 +1008,7 @@ const IMAGE_BASE_SERVICES = {
             "grok-imagine-pro",
         ],
         provider: "openrouter",
-        author: "xAI",
+        publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1027,7 +1027,7 @@ const IMAGE_BASE_SERVICES = {
     "x-ai/grok-imagine-image-2.0": {
         aliases: ["grok-imagine-image-2.0"],
         provider: "openrouter",
-        author: "xAI",
+        publisher: "xAI",
         category: "image",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -1090,7 +1090,7 @@ const IMAGE_BASE_SERVICES = {
             "recraft-v4.1-vector",
         ],
         provider: "openrouter",
-        author: "Recraft",
+        publisher: "Recraft",
         category: "image",
         addedDate: new Date("2026-07-24").getTime(),
         priceMultiplier: 1,
@@ -1108,7 +1108,7 @@ const IMAGE_BASE_SERVICES = {
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
         provider: "openrouter",
-        author: "xAI",
+        publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1130,7 +1130,7 @@ const IMAGE_BASE_SERVICES = {
     "x-ai/grok-imagine-video-1.5": {
         aliases: ["grok-imagine-video-1.5"],
         provider: "openrouter",
-        author: "xAI",
+        publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-08-03").getTime(),
         priceMultiplier: 1,
@@ -1178,7 +1178,7 @@ const IMAGE_BASE_SERVICES = {
     "bytedance/seedance-2.5": {
         aliases: ["seedance-2.5"],
         provider: "replicate",
-        author: "ByteDance",
+        publisher: "ByteDance",
         category: "video",
         addedDate: new Date("2026-08-09").getTime(),
         priceMultiplier: 1,
@@ -1247,7 +1247,7 @@ const IMAGE_BASE_SERVICES = {
     "alibaba/happyhorse-1.1": {
         aliases: ["happyhorse", "happy-horse-1.1", "happyhorse-1.1"],
         provider: "openrouter",
-        author: "Alibaba",
+        publisher: "Alibaba",
         category: "video",
         addedDate: new Date("2026-07-18").getTime(),
         priceMultiplier: 1,
@@ -1268,7 +1268,7 @@ const IMAGE_BASE_SERVICES = {
     "minimax/minimax-h3": {
         aliases: ["minimax-h3"],
         provider: "fal",
-        author: "MiniMax",
+        publisher: "MiniMax",
         category: "video",
         addedDate: new Date("2026-08-14").getTime(),
         priceMultiplier: 1,
@@ -1310,7 +1310,7 @@ const IMAGE_BASE_SERVICES = {
     "minimax/minimax-h3-max-turbo": {
         aliases: [],
         provider: "fal",
-        author: "MiniMax",
+        publisher: "MiniMax",
         category: "video",
         addedDate: new Date("2026-09-04").getTime(),
         priceMultiplier: 1,
@@ -1349,7 +1349,7 @@ const IMAGE_BASE_SERVICES = {
     "black-forest-labs/flux.2-klein-4b": {
         aliases: ["flux-klein", "klein"],
         provider: "vast",
-        author: "Black Forest Labs",
+        publisher: "Black Forest Labs",
         category: "image",
         addedDate: new Date("2026-01-17").getTime(),
         priceMultiplier: 1,
@@ -1366,7 +1366,7 @@ const IMAGE_BASE_SERVICES = {
     "prunaai/p-image": {
         aliases: ["pruna-image", "pruna", "p-image"],
         provider: "deepinfra",
-        author: "Pruna",
+        publisher: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1382,7 +1382,7 @@ const IMAGE_BASE_SERVICES = {
     "prunaai/p-image-edit": {
         aliases: ["pruna-edit", "pruna-image-edit", "p-image-edit"],
         provider: "deepinfra",
-        author: "Pruna",
+        publisher: "Pruna",
         category: "image",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1407,7 +1407,7 @@ const IMAGE_BASE_SERVICES = {
             "p-video",
         ],
         provider: "replicate",
-        author: "Pruna",
+        publisher: "Pruna",
         category: "video",
         addedDate: new Date("2026-03-14").getTime(),
         priceMultiplier: 1,
@@ -1445,7 +1445,7 @@ const IMAGE_BASE_SERVICES = {
     "amazon/nova-canvas-v1": {
         aliases: ["amazon-nova-canvas", "nova-canvas"],
         provider: "bedrock",
-        author: "Amazon",
+        publisher: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,
@@ -1479,7 +1479,7 @@ const IMAGE_BASE_SERVICES = {
     "amazon/nova-reel-v1": {
         aliases: ["amazon-nova-reel", "nova-reel"],
         provider: "bedrock",
-        author: "Amazon",
+        publisher: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
         priceMultiplier: 1,

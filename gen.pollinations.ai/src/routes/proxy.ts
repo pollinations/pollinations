@@ -307,7 +307,7 @@ function toOpenAIModelEntry(entry: GenerationModelEntry) {
         id: entry.info.name,
         object: "model" as const,
         created: Math.floor(entry.definition.addedDate / 1000),
-        owned_by: entry.info.author,
+        owned_by: entry.info.publisher,
         aliases: entry.info.aliases,
         category: entry.info.category,
         community: entry.info.community,

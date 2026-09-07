@@ -49,7 +49,7 @@ describe("model rate limiting", () => {
             aliases: [],
             provider: "test",
             perUserRpm: 0.5,
-            author: "Test",
+            publisher: "Test",
             category: "text",
             cost: {},
             priceMultiplier: 1,

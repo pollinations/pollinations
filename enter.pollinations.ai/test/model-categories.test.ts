@@ -137,19 +137,19 @@ describe("model categories", () => {
     });
 
     it("accepts model sort options and ignores obsolete values", () => {
-        expect(validateModelSearch({ sort: "author" })).toEqual({
+        expect(validateModelSearch({ sort: "publisher" })).toEqual({
             category: undefined,
             q: undefined,
             agentQ: undefined,
             mcpQ: undefined,
-            sort: "author",
+            sort: "publisher",
         });
         expect(validateModelSearch({ sort: "title-desc" }).sort).toBe(
             "title-desc",
         );
         expect(validateModelSearch({ sort: "oldest" }).sort).toBeUndefined();
-        expect(validateModelSearch({ sort: "author-desc" }).sort).toBe(
-            "author-desc",
+        expect(validateModelSearch({ sort: "publisher-desc" }).sort).toBe(
+            "publisher-desc",
         );
         expect(
             validateModelSearch({ sort: "brand-desc" }).sort,

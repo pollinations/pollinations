@@ -22,7 +22,6 @@ function PlayPage() {
     const [prompt, setPrompt] = useState("");
     const { apiKey, isLoggedIn, login } = useAuth();
     const {
-        imageModels,
         allModels: registryModels,
         allowedImageModelIds,
         allowedTextModelIds,
@@ -54,15 +53,15 @@ function PlayPage() {
         );
     }, [registryModels]);
 
-    const currentModel = allModels.find((m) => m.id === selectedModel);
+    const currentModel = allModels.find(
+        (m) => m.id === selectedModel || m.aliases?.includes(selectedModel),
+    );
     const isVideoModel = !!currentModel?.hasVideoOutput;
     const isAudioModel =
         !isVideoModel &&
         (!!currentModel?.hasAudioOutput || currentModel?.type === "audio");
     const isImageModel =
-        !isVideoModel &&
-        !isAudioModel &&
-        imageModels.some((m) => m.id === selectedModel);
+        !isVideoModel && !isAudioModel && currentModel?.type === "image";
     const promptPlaceholder = isVideoModel
         ? pageCopy.videoPlaceholder
         : isAudioModel

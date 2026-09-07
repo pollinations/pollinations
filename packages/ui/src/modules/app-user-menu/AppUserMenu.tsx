@@ -9,6 +9,7 @@ import {
     ExternalLinkIcon,
     LockIcon,
     SignOutIcon,
+    SproutIcon,
     WalletIcon,
 } from "../../primitives/icons/index.tsx";
 import { LoginButton } from "../auth/sdk.ts";
@@ -17,6 +18,7 @@ import { Balance } from "../wallet/sdk.ts";
 export type AppUserMenuLabels = {
     authorize: string;
     appUserMenu: string;
+    getFreePollen: string;
     topUpAccount: string;
     logout: string;
 };
@@ -28,8 +30,9 @@ export type AppUserMenuProps = {
 const defaultLabels: AppUserMenuLabels = {
     authorize: "Connect Pollen",
     appUserMenu: "App user menu",
-    topUpAccount: "Top up Pollen",
-    logout: "Disconnect Pollen",
+    getFreePollen: "Get free Pollen",
+    topUpAccount: "Buy Pollen",
+    logout: "Disconnect",
 };
 
 /** Delegated API access. Logging out forgets this app's key; it does not revoke it. */
@@ -66,6 +69,23 @@ export function AppUserMenu({ labels: labelOverrides }: AppUserMenuProps) {
                 >
                     {(close) => (
                         <>
+                            <DropdownItem
+                                as="a"
+                                href={new URL("/quests", enterUrl).href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={close}
+                            >
+                                <SproutIcon
+                                    className="polli:h-4 polli:w-4 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                                {labels.getFreePollen}
+                                <ExternalLinkIcon
+                                    className="polli:ml-auto polli:h-3.5 polli:w-3.5 polli:shrink-0"
+                                    aria-hidden="true"
+                                />
+                            </DropdownItem>
                             <DropdownItem
                                 as="a"
                                 href={new URL("/pollen", enterUrl).href}

@@ -40,8 +40,8 @@ function createTestApp() {
         await c.req.json();
         c.set("model", {
             requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            resolved: "openai/gpt-5.4-nano",
+            definition: getRegistryModelDefinition("openai/gpt-5.4-nano"),
         });
         throw new UpstreamError(502, {
             message:
@@ -482,7 +482,7 @@ describe("error observability", () => {
             upstream_host: "portkey.test",
             upstream_body: "application/json",
             model_requested: "openai",
-            resolved_model_requested: "openai",
+            resolved_model_requested: "openai/gpt-5.4-nano",
             request_inputs: expect.any(String),
         });
         expect(
@@ -775,7 +775,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             },
@@ -860,7 +860,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),
@@ -930,7 +930,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),
@@ -1018,7 +1018,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),

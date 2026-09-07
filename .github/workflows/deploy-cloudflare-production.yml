@@ -31,6 +31,10 @@ on:
         description: 'Sync the approved Discord secrets to Enter'
         type: boolean
         default: false
+      finalize_canonical_permissions:
+        description: 'Repeat canonical allowlist cleanup after both Enter and Gen deploy (use service=all)'
+        type: boolean
+        default: false
 
 concurrency:
   group: pollinations-cloudflare-production
@@ -48,6 +52,7 @@ jobs:
       gen: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'gen') || steps.filter.outputs.gen == 'true' }}
       media: ${{ github.event_name == 'workflow_dispatch' && (inputs.service == 'all' || inputs.service == 'media') || steps.filter.outputs.media == 'true' }}
       mcp_apps: ${{ steps.mcp-apps.outputs.apps || '[]' }}
+      canonical_permissions: ${{ inputs.finalize_canonical_permissions || steps.filter.outputs.canonical_permissions == 'true' }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,6 +74,8 @@ jobs:
           # top-level `on.push.paths` filters had.
           base: ${{ github.ref }}
           filters: |
+            canonical_permissions:
+              - 'enter.pollinations.ai/drizzle/0062_standardize-model-permissions.sql'
             enter:
               - 'enter.pollinations.ai/**'
               - 'shared/**'
@@ -159,6 +166,17 @@ jobs:
     env:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
+      - name: Require verified live permission compatibility for canonical promotion
+        # Deliberately applies to manual retries too: path filters are not
+        # evidence that 0062 has already reached the production database.
+        env:
+          COMPAT_VERIFIED: ${{ vars.CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED }}
+        run: |
+          if [ "$COMPAT_VERIFIED" != "true" ]; then
+            echo "Deploy and verify alias-aware model permissions against the old registry first."
+            echo "Then set CANONICAL_MODEL_PERMISSION_COMPAT_VERIFIED=true and rerun this promotion."
+            exit 1
+          fi
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -283,6 +301,34 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run apply-lifecycle:production --workspace pollinations-gen
+
+  # Prerequisite: alias-aware permission readers must already be verified live
+  # before promoting 0062. This second pass fixes old Enter writes made between
+  # the first migration and deployment; it does not replace that prerequisite.
+  finalize-canonical-permissions:
+    needs: [changes, deploy-enter, deploy-gen]
+    if: >-
+      !cancelled() &&
+      needs.changes.outputs.canonical_permissions == 'true' &&
+      needs.deploy-enter.result == 'success' &&
+      needs.deploy-gen.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install dependencies
+        run: npm ci
+      - name: Finalize canonical model permissions
+        working-directory: enter.pollinations.ai
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
+        run: npx wrangler d1 execute DB --remote --env production --file drizzle/0062_standardize-model-permissions.sql
 
   deploy-media:
     needs: [changes, migrate]

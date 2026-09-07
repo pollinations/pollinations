@@ -24,6 +24,111 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
     return SELF.fetch(new Request(`https://gen.pollinations.ai${path}`, init));
 }
 
+test("catalog metadata exposes publisher rather than author or brand", async () => {
+    const response = await fetchWorker("/models");
+    expect(response.status).toBe(200);
+    const models = (await response.json()) as Record<string, unknown>[];
+    expect(models.length).toBeGreaterThan(0);
+    for (const model of models) {
+        expect(typeof model.publisher).toBe("string");
+        expect(model).not.toHaveProperty("author");
+        expect(model).not.toHaveProperty("brand");
+    }
+});
+
+test("permission readback canonicalizes aliases without exposing hidden or unknown entries", () => {
+    const stored = {
+        models: ["openai", "openai/gpt-5.4-nano", "owner/custom", "unknown"],
+        account: ["profile"],
+    };
+    expect(
+        filterPermissionsToVisibleModels(
+            stored,
+            new Set(["openai/gpt-5.4-nano", "owner/custom"]),
+        ),
+    ).toEqual({
+        models: ["openai/gpt-5.4-nano", "owner/custom"],
+        account: ["profile"],
+    });
+    expect(stored.models).toContain("unknown");
+    expect(
+        filterPermissionsToVisibleModels(
+            { models: [] },
+            new Set(["openai/gpt-5.4-nano"]),
+        ),
+    ).toEqual({ models: [] });
+});
+
+test("legacy stored allowlists still filter catalogs after canonical promotion", async () => {
+    const { key, id } = await createTestApiKey({
+        allowedModels: ["nanobanana2"],
+        user: { packBalance: 100 },
+    });
+    // Simulate an old Enter writer after the one-time migration has run.
+    await drizzle(env.DB)
+        .update(apikey)
+        .set({ permissions: JSON.stringify({ models: ["nanobanana2"] }) })
+        .where(eq(apikey.id, id));
+    const headers = { Authorization: `Bearer ${key}` };
+    const catalog = await fetchWorker("/image/models", { headers });
+    expect(catalog.status).toBe(200);
+    expect(
+        ((await catalog.json()) as { name: string }[]).map(
+            (model) => model.name,
+        ),
+    ).toEqual(["google/gemini-3.1-flash-image"]);
+    const denied = await fetchWorker("/text/test?model=openai", { headers });
+    expect(denied.status).toBe(403);
+    const stored = await drizzle(env.DB)
+        .select({ permissions: apikey.permissions })
+        .from(apikey)
+        .where(eq(apikey.id, id));
+    expect(JSON.parse(stored[0].permissions ?? "null")).toEqual({
+        models: ["nanobanana2"],
+    });
+});
+
+test("restored auth snapshots normalize aliases once without expanding model or account scope", async () => {
+    const snapshot = {
+        user: { id: "permission-test", tier: "seed" },
+        apiKey: {
+            id: "test",
+            permissions: {
+                models: ["openai", "openai/gpt-5.4-nano", "owner/custom"],
+                account: ["profile"],
+            },
+        },
+    };
+    const app = new Hono<AuthEnv>();
+    app.use("*", authFromSnapshot(snapshot));
+    app.get("/:model", (c) => {
+        const model = c.req.param("model");
+        c.set("model", {
+            requested: model,
+            resolved: model,
+        });
+        c.var.auth.requireModelAccess();
+        return c.json(c.var.auth.apiKey?.permissions);
+    });
+    for (const model of ["openai/gpt-5.4-nano", "owner/custom"]) {
+        const response = await app.request(`/${encodeURIComponent(model)}`);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            models: ["openai/gpt-5.4-nano", "owner/custom"],
+            account: ["profile"],
+        });
+    }
+    expect((await app.request("/other%2Fcustom")).status).toBe(403);
+    expect((await app.request("/anthropic%2Fclaude-haiku-4.5")).status).toBe(
+        403,
+    );
+    expect(snapshot.apiKey.permissions.models).toEqual([
+        "openai",
+        "openai/gpt-5.4-nano",
+        "owner/custom",
+    ]);
+});
+
 test("permission readback resolves future names against the current registry", () => {
     const stored = {
         models: ["openai-fast", "openai/gpt-5-nano", "owner/custom", "unknown"],
@@ -173,7 +278,9 @@ test("canonicalizes aliases in new model permissions", async () => {
 
     expect(response.status).toBe(200);
     const body = (await response.json()) as { name: string }[];
-    expect(body.map((model) => model.name)).toEqual(["nanobanana-2"]);
+    expect(body.map((model) => model.name)).toEqual([
+        "google/gemini-3.1-flash-image",
+    ]);
 });
 
 test("empty model permissions deny access and return an empty catalog", async () => {
@@ -305,12 +412,16 @@ test("filters paid-only audio models by paid balance", async ({
     );
     expect(freeModels.some((model) => model.paid_only)).toBe(false);
     expect(paidModels.some((model) => model.paid_only)).toBe(true);
-    expect(freeModels.some((model) => model.name === "universal-3.5-pro")).toBe(
-        true,
-    );
-    expect(paidModels.some((model) => model.name === "universal-3.5-pro")).toBe(
-        true,
-    );
+    expect(
+        freeModels.some(
+            (model) => model.name === "assemblyai/universal-3.5-pro",
+        ),
+    ).toBe(true);
+    expect(
+        paidModels.some(
+            (model) => model.name === "assemblyai/universal-3.5-pro",
+        ),
+    ).toBe(true);
 });
 
 test("requires paid balance for Recraft vector", async ({
@@ -327,10 +438,14 @@ test("requires paid balance for Recraft vector", async ({
     const paidModels = (await paidCatalog.json()) as { name: string }[];
 
     expect(
-        freeModels.some((model) => model.name === "recraft-v4.1-vector"),
+        freeModels.some(
+            (model) => model.name === "recraft/recraft-v4.1-vector",
+        ),
     ).toBe(false);
     expect(
-        paidModels.some((model) => model.name === "recraft-v4.1-vector"),
+        paidModels.some(
+            (model) => model.name === "recraft/recraft-v4.1-vector",
+        ),
     ).toBe(true);
 
     const generation = await fetchWorker(

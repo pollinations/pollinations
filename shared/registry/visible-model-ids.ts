@@ -92,8 +92,8 @@ export function filterPermissionsToVisibleModels(
 
     return {
         ...permissions,
-        models: permissions.models.filter((modelId) =>
-            visibleModelIds.has(modelId),
+        models: canonicalizeModelPermissionIds(permissions.models).filter(
+            (modelId) => visibleModelIds.has(modelId),
         ),
     };
 }

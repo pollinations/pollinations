@@ -676,26 +676,6 @@ export const Models: FC = () => {
                     </div>
                 }
             >
-                <Alert className="mb-4 shadow-well !bg-surface-opaque !text-theme-text-base">
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-soft">
-                        Upcoming change
-                    </div>
-                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
-                        <BeakerIcon className="h-4 w-4 shrink-0" />
-                        <span>
-                            We're standardizing model IDs on September 7
-                        </span>
-                    </div>
-                    Model IDs will use the publisher and official model name—for
-                    example, <code className="font-semibold">flux</code> →{" "}
-                    <code className="font-semibold">
-                        black-forest-labs/flux.1-schnell
-                    </code>
-                    . You can use the new IDs now. Existing IDs will keep
-                    working. Catalog integrations should read{" "}
-                    <code className="font-semibold">publisher</code> instead of{" "}
-                    <code className="font-semibold">brand</code>.
-                </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex w-full flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">

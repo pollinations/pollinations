@@ -521,7 +521,7 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error.message || getDefaultErrorMessage(status),
             MAX_ERROR_MESSAGE_LENGTH,
         ) || getDefaultErrorMessage(status);
-    const stack = truncateString(error.stack, MAX_STACK_LENGTH);
+    const stack = truncateString(stackWithCause(error), MAX_STACK_LENGTH);
     const resolvedRoutePath = getRoutePath(c);
     const edgeColo = (
         c.req.raw as Request & {
@@ -566,6 +566,25 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         userTier: vars.auth?.user?.tier,
         apiKeyId: vars.auth?.apiKey?.id,
     };
+}
+
+function stackWithCause(error: Error): string | undefined {
+    const cause = error.cause;
+    if (!(cause instanceof Error) && typeof cause !== "string") {
+        return error.stack;
+    }
+    const properties = cause as Error & Record<string, unknown>;
+    const flags = ["durableObjectReset", "overloaded", "retryable"]
+        .filter((key) => typeof properties[key] === "boolean")
+        .map((key) => `${key}=${properties[key]}`)
+        .join(" ");
+    const detail =
+        cause instanceof Error
+            ? cause.stack || `${cause.name}: ${cause.message}`
+            : cause;
+    // Put the underlying failure first so truncation keeps the useful detail.
+    // Do not serialize arbitrary error properties or traverse cause chains.
+    return `Caused by: ${flags}\n${detail}\nWrapped by: ${error.stack ?? error.message}`;
 }
 
 function toTinybirdErrorEvent(

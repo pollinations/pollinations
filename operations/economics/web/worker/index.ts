@@ -4,9 +4,12 @@ const SESSION_MAX_AGE_SECONDS = 43_200;
 const PASSWORD_CHECK_PAYLOAD = "economics-password-check";
 const READ_PIPES = new Set([
     "economics_bank_ledger_api",
-    "economics_compute_ledger_api",
+    "economics_vendor_ledger_api",
     "economics_pollen_usage_api",
     "economics_private_config_api",
+    "economics_revenue_share_api",
+    "economics_stripe_sales_api",
+    "economics_user_balances_api",
 ]);
 const POLLEN_PIPE_ROUTE = "economics_pollen_usage_api";
 const POLLEN_UPSTREAM_PIPES = new Set([

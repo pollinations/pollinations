@@ -10,7 +10,6 @@ import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -126,17 +125,13 @@ export function OpPollenTab({
                             className={GROUP_BORDER}
                             {...headerProps("price_paid")}
                         >
-                            <HeaderHint hint="Pollen consumed from paid balances before ecosystem shares.">
-                                Paid
-                            </HeaderHint>
+                            Paid
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             {...headerProps("price_quests")}
                         >
-                            <HeaderHint hint="Pollen consumed from Quest balances. This is usage, never fiat revenue.">
-                                Quest
-                            </HeaderHint>
+                            Quest
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"

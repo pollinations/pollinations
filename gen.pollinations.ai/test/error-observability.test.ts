@@ -69,6 +69,71 @@ function createTextTestApp() {
 
 describe("error observability", () => {
     it.each([
+        "error",
+        "string",
+        "long",
+    ])("logs a bounded %s cause only in internal telemetry", async (kind) => {
+        const cause =
+            kind === "string"
+                ? "original failure"
+                : Object.assign(new Error("original failure"), {
+                      retryable: true,
+                      unrelated: "must-not-be-serialized",
+                  });
+        if (cause instanceof Error) {
+            cause.cause = cause;
+            if (kind === "long") cause.stack += "x".repeat(20_000);
+        }
+        const requests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                requests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const app = new Hono<Env>();
+        app.use("*", logger);
+        app.get("/", () => {
+            const error = new HTTPException(503, {
+                message: "Temporarily unavailable",
+                cause,
+            });
+            error.stack = "wrapper stack".repeat(2_000);
+            throw error;
+        });
+        app.onError(handleError);
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.test/"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "error",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const body = await response.text();
+        expect(response.status).toBe(503);
+        expect(body).toContain("Temporarily unavailable");
+        expect(body).not.toContain("original failure");
+        expect(body).not.toContain("retryable");
+        expect(requests).toHaveLength(1);
+        const event = (await requests[0].json()) as {
+            stack: string;
+            message: string;
+        };
+        expect(event.message).toBe("Temporarily unavailable");
+        expect(event.stack).toContain("original failure");
+        expect(event.stack).not.toContain("must-not-be-serialized");
+        expect(event.stack.length).toBeLessThanOrEqual(12_003);
+        if (kind !== "string") expect(event.stack).toContain("retryable=true");
+    });
+
+    it.each([
         ["image", firstCommunityImageBytes],
         ["video", firstCommunityVideoBytes],
     ] as const)("preserves a retryable community %s failure when its error body cannot be read", async (kind, readMedia) => {

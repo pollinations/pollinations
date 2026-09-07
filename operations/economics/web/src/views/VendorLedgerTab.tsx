@@ -10,7 +10,6 @@ import { Fragment, useMemo, useState } from "react";
 import {
     DataTable,
     GROUP_BORDER,
-    HeaderHint,
     type SortColumn,
     TableScroller,
     useSortableRows,
@@ -19,7 +18,7 @@ import {
 import { EvidenceAction, EvidencePreview } from "../components/Evidence";
 import { SourceCell } from "../components/Provenance";
 import type { DriveDocumentLink } from "../lib/documents";
-import { fmtNumber, fmtUtcDateTime } from "../lib/format";
+import { fmtMonthDay, fmtNumber, fmtUtcDateTime } from "../lib/format";
 import {
     type MonthFilterValue,
     matchesMonth,
@@ -27,15 +26,29 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
-import type { Data, OpCloudRow } from "../types";
+import {
+    resolveProvider,
+    resolveProviderAccount,
+} from "../lib/providerRegistry";
+import type { Data, VendorLedgerRow } from "../types";
 
-function resourceLabel(row: OpCloudRow): string {
+function resourceLabel(row: VendorLedgerRow): string {
     return (
         row.model ||
         row.resource_name ||
         row.resource_id ||
         row.resource_sku ||
         "–"
+    );
+}
+
+function accountLabel(row: VendorLedgerRow): string {
+    const provider = resolveProvider(row.vendor);
+    return (
+        (provider && resolveProviderAccount(provider, row.account_id)?.label) ||
+        row.account_name ||
+        row.account_id ||
+        "Unassigned"
     );
 }
 
@@ -62,7 +75,7 @@ function DetailItem({ label, value }: { label: string; value: unknown }) {
     );
 }
 
-export function OpCloudTab({
+export function VendorLedgerTab({
     data,
     month = "",
     vendor = "all",
@@ -76,18 +89,19 @@ export function OpCloudTab({
         useState<DriveDocumentLink | null>(null);
     const baseRows = useMemo(
         () =>
-            (data.opCloud ?? []).filter(
+            (data.vendorLedger ?? []).filter(
                 (row) =>
                     row.start.slice(0, 7) >= WINDOW_START &&
                     matchesMonth(row.start, month) &&
                     matchesValue(row.vendor, vendor),
             ),
-        [data.opCloud, month, vendor],
+        [data.vendorLedger, month, vendor],
     );
-    const sortColumns = useMemo<SortColumn<OpCloudRow>[]>(
+    const sortColumns = useMemo<SortColumn<VendorLedgerRow>[]>(
         () => [
             { key: "start", value: (row) => row.start },
             { key: "vendor", value: (row) => row.vendor },
+            { key: "account", value: accountLabel },
             { key: "type", value: (row) => costTypeLabel(row.type) },
             { key: "resource", value: resourceLabel },
             { key: "paid", value: (row) => row.paid },
@@ -120,6 +134,15 @@ export function OpCloudTab({
                         <TableHeaderCell rowSpan={2} {...headerProps("vendor")}>
                             Vendor
                         </TableHeaderCell>
+                        <TableHeaderCell
+                            rowSpan={2}
+                            {...headerProps("account")}
+                        >
+                            Account
+                        </TableHeaderCell>
+                        <TableHeaderCell rowSpan={2} {...headerProps("start")}>
+                            Coverage
+                        </TableHeaderCell>
                         <TableHeaderCell rowSpan={2} {...headerProps("type")}>
                             Type
                         </TableHeaderCell>
@@ -151,17 +174,13 @@ export function OpCloudTab({
                             className={GROUP_BORDER}
                             {...headerProps("paid")}
                         >
-                            <HeaderHint hint="Usage rows: negative is cash-funded cost and positive is a refund. Balance rows: current cash prepaid.">
-                                Paid
-                            </HeaderHint>
+                            Paid
                         </TableHeaderCell>
                         <TableHeaderCell
                             align="right"
                             {...headerProps("credit")}
                         >
-                            <HeaderHint hint="Usage rows: negative is credit-funded cost and positive is a grant. Balance rows: current free credit.">
-                                Credit
-                            </HeaderHint>
+                            Credit
                         </TableHeaderCell>
                         <TableHeaderCell {...headerProps("currency")}>
                             Currency
@@ -184,7 +203,21 @@ export function OpCloudTab({
                             return (
                                 <Fragment key={key}>
                                     <TableRow>
-                                        <TableCell>{row.vendor}</TableCell>
+                                        <TableCell>
+                                            {resolveProvider(row.vendor)
+                                                ?.label ?? row.vendor}
+                                        </TableCell>
+                                        <TableCell>
+                                            {accountLabel(row)}
+                                        </TableCell>
+                                        <TableCell className="whitespace-nowrap text-xs">
+                                            <span>
+                                                {fmtMonthDay(row.start)}
+                                                {row.end
+                                                    ? ` – ${fmtMonthDay(row.end)}${row.end.slice(0, 4) !== row.start.slice(0, 4) ? `, ${row.end.slice(0, 4)}` : ""}`
+                                                    : ""}
+                                            </span>
+                                        </TableCell>
                                         <TableCell>
                                             {costTypeLabel(row.type)}
                                         </TableCell>
@@ -224,7 +257,7 @@ export function OpCloudTab({
                                     {isExpanded ? (
                                         <TableRow>
                                             <TableCell
-                                                colSpan={9}
+                                                colSpan={11}
                                                 className="bg-theme-bg-active/40"
                                             >
                                                 <dl className="grid gap-4 p-2 sm:grid-cols-2 lg:grid-cols-4">

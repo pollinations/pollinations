@@ -1,0 +1,35 @@
+{
+  "pr_number": 14550,
+  "title": "fix: unblock canonical model permission migration",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14550",
+  "merged_at": "2026-09-07T15:46:36Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes migration 0062's D1 CPU failure in [production run 34137739809](https://github.com/pollinations/pollinations/actions/runs/34137739809): replaces 159 full-table updates with one direct update and a shared rename lookup. All 159 reviewed mapping pairs are unchanged.\n- Preserves community/unknown IDs, unrelated permissions, order, deduplication, and retry safety. Adds coverage for all renames in one allowlist.\n- Deploys Gen when 0062 changes, so this migration-only repair completes both worker deployments and the required final cleanup.\n- Verified on staging through `wrangler d1 migrations apply`, not file import: 200,000 synthetic keys / 100,000 affected, 18.32s database time, zero mismatches. Late-writer cleanup and repeat execution passed; synthetic tables removed. Full Enter suite: 1,113 passing tests. Workflow tests, formatting and Enter typecheck pass.\n- Rollout: merge into main, promote to production, then verify migration, Enter/Gen deployments and final cleanup. No model definitions, SDK, Reddit, secrets or production data changed by this PR preparation.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The migration stops stampeding",
+    "blurb": "Model permission migration 0062 traded 159 laps around the database for one direct update and a shared rename map. Same carefully reviewed permissions, considerably less CPU drama.",
+    "summary": "Reworked Enter migration 0062 to replace 159 full-table model-permission updates with one direct update plus a shared rename lookup, preserving all 159 mappings, unknown IDs, permission ordering, deduplication, and retry safety.",
+    "impact": "Production D1 migrations can now standardize canonical model permissions efficiently—including late-writer cleanup—while deploying both Enter and Gen for the completed migration rollout.",
+    "keywords": [
+      "D1",
+      "migrations",
+      "model-permissions",
+      "Enter",
+      "Gen",
+      "deployment",
+      "performance"
+    ],
+    "visual_concept": "Depict Polli as a careful migration gardener pruning 159 tangled permission vines into one neat labeled path leading to a cozy D1 database planter. A CRT monitor robot can happily watch a small terminal report a successful cleanup, while model-name seedlings remain intact to represent preserved mappings and data safety.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully guiding many tangled code-vines into one neat lime green (#ecf874) path toward a glowing database flower pot; a cheerful CRT monitor robot displays pixel text: '0062 OK'. Include small model-name seedlings and warm cream, mint, lavender, and peach garden details to show every mapping was preserved. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14550.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny gardener tool belt, carefully guiding many tangled code-vines into one neat lime green (#ecf874) path toward a glowing database flower pot; a cheerful CRT monitor robot displays pixel text: '0062 OK'. Include small model-name seedlings and warm cream, mint, lavender, and peach garden details to show every mapping was preserved. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-07T15:47:36.404242+00:00"
+}

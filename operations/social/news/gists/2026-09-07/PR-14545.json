@@ -1,0 +1,34 @@
+{
+  "pr_number": 14545,
+  "title": "fix: resolve stored model aliases in permission reads",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14545",
+  "merged_at": "2026-09-07T14:33:22Z",
+  "labels": [],
+  "pr_body_excerpt": "- Normalizes stored model allowlists once in Gen auth snapshots and before Enter permission readback filtering.\n- Preserves empty restrictions, account scopes, community IDs, and canonical writes. No model names, pricing, routes, migration SQL, or stored records change.\n- Adds regression tests for future-name permissions against the current registry, old/new request names, denied models, community scope, and read-only behavior.\n- Prerequisite for #13076: deploy this to production and verify scoped keys before promoting the canonical rename or its migration.\n\nValidation: full Gen suite 1,833 passed / 6 skipped; full Enter suite 1,104 passed. Both worker typechecks and Biome pass. Live production verification remains pending.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Aliases find their way home",
+    "blurb": "Scoped keys can now recognize stored model aliases when reading permissions back. The hive keeps the old labels and the new labels pointed at the same flower.",
+    "summary": "Gen auth snapshots and permission readback now normalize stored model allowlists, so scoped keys resolve both legacy and current model names while preserving empty restrictions, account scopes, community IDs, and canonical writes.",
+    "impact": "Developers using scoped keys will see permitted models returned consistently across old and renamed model identifiers, without changing stored records, routes, pricing, or existing scope behavior.",
+    "keywords": [
+      "model permissions",
+      "aliases",
+      "scoped keys",
+      "authentication",
+      "registry",
+      "compatibility"
+    ],
+    "visual_concept": "A cozy model-permissions garden where two differently labeled signposts point to the same flowering code-plant, representing legacy and canonical model aliases resolving to one permission. Polli, wearing tiny librarian glasses, checks an allowlist on a clipboard while a helpful CRT Monitor Robot confirms the paths match; lime-green permission badges, vines, and a retro terminal make the compatibility fix visible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses and comparing two model-name signposts that lead to the same blooming code-plant; a chunky CRT monitor robot holds a lime green (#ecf874) allowlist clipboard beside a warm retro terminal, with flowers and vines growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"ALIAS OK\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14545.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded light-blue translucent wings, wearing tiny librarian glasses and comparing two model-name signposts that lead to the same blooming code-plant; a chunky CRT monitor robot holds a lime green (#ecf874) allowlist clipboard beside a warm retro terminal, with flowers and vines growing around it. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"ALIAS OK\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-07T14:34:20.648177+00:00"
+}

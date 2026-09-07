@@ -273,13 +273,15 @@ curl https://gen.pollinations.ai/v1/responses \
   }'
 ```
 
-The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and encrypted content or reusable item references are rejected. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. Missing or malformed usage on a completed or incomplete response fails closed and is not billed; failed responses may report null usage and remain unbilled.
+The endpoint is deliberately stateless. `store` must be `false`; `previous_response_id`, `conversation`, and `prompt` must be null or omitted; `background` must be false or omitted; and encrypted content or reusable item references are rejected. Streaming uses Responses event names and terminal usage events. Direct models preserve the provider's terminal marker; managed-agent streams add one `data: [DONE]` marker. Missing or malformed usage on a completed or incomplete response fails the request. Failed responses may report null usage. These failed requests are not billed, but completed child model calls and charged MCP operations within an agent run remain billable; the outer agent request adds no charge.
 
 The stateless surface follows the OpenAI Responses API and OpenResponses item/event vocabulary. It does not claim full OpenResponses conformance: persisted continuation, conversations, compaction, background jobs, Responses WebSocket transport, and normalization of every direct provider stream are outside this subset.
 
 Community text models and endpoint agents declare one upstream API and one exact URL. A Responses registration accepts both public APIs: Responses requests use the selected endpoint directly, while Chat Completions requests use the shared stateless adapter. A Chat Completions registration accepts Chat Completions only. Built-in models can have separate routes for the two public APIs; advertising Responses does not mean their Chat requests use the adapter.
 
-Managed prompt agents use Pollinations' configured Responses runtime and have no publisher-configured endpoint URL. Their configured MCP tools remain available; caller-supplied function tool definitions are ignored.
+Managed prompt agents use Pollinations' configured Responses runtime and have no publisher-configured endpoint URL. They use their configured MCP tools and ignore caller-supplied function tool definitions. Their Responses output contains assistant messages and `mcp_call` items describing tools already executed by the server. Chat clients receive those results as text and media links, not function calls to execute. For stateless continuation, send previous output items with the next input; completed MCP items are treated as history and are not executed again.
+
+Managed prompt agents accept `reasoning.effort` (Responses) and `reasoning_effort` (Chat Completions). Reasoning summaries are not supported: a non-null `reasoning.summary` returns HTTP 400.
 
 ### Reasoning
 
@@ -455,11 +457,11 @@ curl -X POST "https://gen.pollinations.ai/v1/chat/completions" \
 
 Generate a stateless OpenAI-compatible Response through a model that advertises `/v1/responses` in `supported_endpoints`.
 
-Built-in models, community proxies, and external endpoint agents use their configured native Responses URL. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Chat Completions requests for these models are adapted to the same Responses route.
+Built-in models use their configured Responses URL. Community text models and endpoint agents registered with the Responses API use their selected URL for both Responses and adapted Chat requests. Managed prompt agents serialize Responses JSON and SSE around their configured prompt and MCP tool loop. Built-in Chat routes may use a separate upstream API.
 
 OpenAI prompt_cache_options and prompt_cache_breakpoint controls pass through direct Responses requests and Chat requests adapted to Responses. Managed prompt agents preserve caller breakpoints or apply an explicit breakpoint after their configured static prompt.
 
-Response storage, previous response IDs, conversations, background execution, and encrypted or reusable state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents use only their configured MCP tools.
+Response storage, previous response IDs, conversations, background execution, and encrypted or referenced state are not supported. Direct providers may accept caller-supplied function tools; managed prompt agents ignore these definitions and use only their configured MCP tools. Completed MCP output items can be replayed as history without executing them again.
 
 Successful JSON responses and terminal streaming events contain usage; missing provider usage fails the response.
 
@@ -597,7 +599,7 @@ This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions`
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text prompt for generation |
 | `model` | `query` | `string` | Text model to use. See /v1/models or /text/models for the full list of available models. · default: `"openai"` |
-| `seed` | `query` | `integer` | Seed for reproducible results. -1 maps to the stable compatibility seed. · default: `0` · min: `-1` |
+| `seed` | `query` | `integer` | Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed. · min: `-1` |
 | `system` | `query` | `string` | System prompt to set the model's behavior and context. Acts as initial instructions before the user prompt. |
 | `json` | `query` | `boolean` | When true, the model returns valid JSON. Useful for structured data extraction. |
 | `temperature` | `query` | `number` | Controls randomness. Lower values (e.g. 0.2) produce more focused output, higher values (e.g. 1.5) produce more creative output. Range: 0.0 to 2.0. |
@@ -619,7 +621,7 @@ This is a simplified alternative to the OpenAI-compatible `/v1/chat/completions`
 💻 **Example**
 
 ```bash
-curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=openai&seed=0" \
+curl "https://gen.pollinations.ai/text/Write%20a%20haiku%20about%20coding?model=openai&seed=:seed" \
   -H "Authorization: Bearer $POLLINATIONS_KEY"
 ```
 
@@ -3471,7 +3473,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `name` * | `string` | — |
 | `upstreamStatus` | `integer` | — |
 | `upstreamHost` | `string` | — |
-| `upstreamBody` | `string` | — |
+| `upstreamBody` | `string` | Original provider response body, without redaction or truncation. |
 
 <sub>`*` = required field</sub>
 

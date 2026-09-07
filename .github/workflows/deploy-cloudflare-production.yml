@@ -274,6 +274,8 @@ jobs:
       # rollback. Deploying first guarantees latest == deployed so the secret
       # push can never hit that state. A brand-new secret is briefly missing in
       # the few seconds between deploy and push, which self-heals.
+      # Gen deploy scripts use the root lockfile-installed Wrangler: the test
+      # pool's older workspace CLI drops VPC keys from Vite's generated config.
       - name: Deploy to Cloudflare
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
@@ -284,6 +286,16 @@ jobs:
           SOPS_AGE_KEY: ${{ secrets.SOPS_AGE_KEY }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
         run: npm run push-secrets:production --workspace pollinations-gen
+
+      - name: Verify production VPC binding
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_GEN }}
+        run: |
+          set -euo pipefail
+          version_id="$(./node_modules/.bin/wrangler deployments list --config gen.pollinations.ai/wrangler.toml --env production --json | jq -r 'max_by(.created_on).versions[] | select(.percentage == 100) | .version_id')"
+          test -n "$version_id"
+          ./node_modules/.bin/wrangler versions view "$version_id" --config gen.pollinations.ai/wrangler.toml --env production --json \
+            | jq -e '.resources.bindings | any(.name == "KLEIN_VPC")'
 
       - name: Apply R2 lifecycle rules
         env:

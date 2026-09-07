@@ -27,7 +27,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `operations/infrastructure/gpu/` — Image GPU backends, fleet inventory, and deployment tooling
 - `pollinations.ai/` — React frontend
 - `packages/sdk/` — `@pollinations/sdk` (client + React hooks)
-- `packages/mcp/` — `@pollinations/mcp` (MCP server; see `packages/mcp/AGENTS.md`)
+- `packages/mcp/` — shared handlers for the hosted stateless MCP server (see `packages/mcp/AGENTS.md`)
 - `shared/` — auth, registry, IP queue; `shared/registry/` holds model registries
 - `apps/` — Applications maintained in this repository
 - `operations/app-management/` — Community app catalog and automation

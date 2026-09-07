@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-06",
+  "period_start": "2026-09-06",
+  "period_end": "2026-09-06",
+  "title": "Managed agents got clearer failures and a less ceremonial login",
+  "summary": "A reliability-heavy day: smoother MCP login and errors, sturdier streams, a more resilient Polli, and dashboards that load on their own terms.\n\nLocal stdio MCP clients can now sign in through OAuth device flow and check who they are without handing API keys around. Meanwhile, managed-agent MCP failures now stop before an unnecessary model call, clean up sibling sessions, and return typed, replayable tool-call errors instead of vague strings.\n\nText and managed-agent streams now handle provisional provider usage correctly while still validating final counts at completion. Wallet charges are applied only to valid successful streams, so partial usage metadata does not turn an otherwise good response into an error.\n\nPolli's generation, visual, and repository tools were restored after a model update, alongside stronger Discord search, permissions, links, and rendered charts. Its web handling now keeps scraping work bounded and isolated under load, preserves citations, and recovers clearly from empty model replies.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 13900,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14462,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14480,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14500,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14502,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14504,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14511,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14515,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14516,
+      "date": "2026-09-06"
+    },
+    {
+      "number": 14523,
+      "date": "2026-09-06"
+    }
+  ],
+  "generated_at": "2026-09-07T06:38:19.638749+00:00"
+}

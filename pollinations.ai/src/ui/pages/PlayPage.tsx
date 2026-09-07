@@ -8,6 +8,7 @@ import { useModelList } from "../../hooks/useModelList";
 import { usePageCopy } from "../../hooks/usePageCopy";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { ModelSelector } from "../components/play/ModelSelector";
+import { findModelById } from "../components/play/model-selection";
 import { PlayGenerator } from "../components/play/PlayGenerator";
 import { UserMenu } from "../components/UserMenu";
 import { PageCard } from "../components/ui/page-card";
@@ -53,9 +54,7 @@ function PlayPage() {
         );
     }, [registryModels]);
 
-    const currentModel = allModels.find(
-        (m) => m.id === selectedModel || m.aliases?.includes(selectedModel),
-    );
+    const currentModel = findModelById(allModels, selectedModel);
     const isVideoModel = !!currentModel?.hasVideoOutput;
     const isAudioModel =
         !isVideoModel &&
@@ -105,7 +104,7 @@ function PlayPage() {
 
                 <ModelSelector
                     models={allModels}
-                    selectedModel={selectedModel}
+                    selectedModel={currentModel?.id ?? selectedModel}
                     onSelectModel={setSelectedModel}
                     allowedImageModelIds={allowedImageModelIds}
                     allowedTextModelIds={allowedTextModelIds}

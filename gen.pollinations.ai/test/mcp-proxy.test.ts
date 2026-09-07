@@ -1,9 +1,6 @@
 import { env, SELF } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
-import {
-    MCP_OWNER_REWARD_RATE,
-    MCP_USAGE_HEADERS,
-} from "@shared/registry/mcp.ts";
+import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
 import {
     createTestApiKey,
     createTestUser,
@@ -129,10 +126,10 @@ test("lists the MCP servers exposed through Gen", async () => {
                 pricing: {
                     rates: [
                         {
-                            name: "robotic_robot.time.v1",
+                            name: "pollinations.time.v1",
                             label: "Time",
                             kind: "tool_call",
-                            price: "0.0001",
+                            price: "0",
                             currency: "pollen",
                             quantity: 1,
                             unit: "request",
@@ -150,33 +147,21 @@ test("lists the MCP servers exposed through Gen", async () => {
                     rates: [
                         {
                             name: "robotic_robot.run_js.0_01_vcpu.v1",
-                            label: "Run JS",
+                            label: "Run JS (0.01 vCPU)",
                             kind: "compute",
                             price: "0.000025",
                             currency: "pollen",
                             quantity: 1,
                             unit: "megabyte_second",
-                            option: {
-                                group: "vCPU",
-                                value: "0.01",
-                                label: "0.01 vCPU",
-                                default: true,
-                            },
                         },
                         {
                             name: "robotic_robot.run_js.0_025_vcpu.v1",
-                            label: "Run JS",
+                            label: "Run JS (0.025 vCPU)",
                             kind: "compute",
                             price: "0.0000625",
                             currency: "pollen",
                             quantity: 1,
                             unit: "megabyte_second",
-                            option: {
-                                group: "vCPU",
-                                value: "0.025",
-                                label: "0.025 vCPU",
-                                default: false,
-                            },
                         },
                     ],
                 },
@@ -322,19 +307,15 @@ test.each([
         name: "Time from Quest",
         endpoint: "time",
         request: ROBOTIC_ROBOT_TIME_REQUEST,
-        cost: 0.0001,
         user: { tierBalance: 1, packBalance: 0 },
-        expected: { tierBalance: 0.9999, packBalance: 0 },
-        ownerExpected: { tierBalance: 0.000075, packBalance: 0 },
+        expected: { tierBalance: 1, packBalance: 0 },
     },
     {
         name: "Time from Paid",
         endpoint: "time",
         request: ROBOTIC_ROBOT_TIME_REQUEST,
-        cost: 0.0001,
         user: { tierBalance: 0, packBalance: 1 },
-        expected: { tierBalance: 0, packBalance: 0.9999 },
-        ownerExpected: { tierBalance: 0, packBalance: 0.000075 },
+        expected: { tierBalance: 0, packBalance: 1 },
     },
     {
         name: "Run JS from Quest",
@@ -343,10 +324,8 @@ test.each([
             ...ROBOTIC_ROBOT_TIME_REQUEST,
             params: { name: "run-js", arguments: { code: "1 + 1" } },
         },
-        cost: 0.0008,
         user: { tierBalance: 1, packBalance: 0 },
         expected: { tierBalance: 0.9992, packBalance: 0 },
-        ownerExpected: { tierBalance: 0.0006, packBalance: 0 },
     },
     {
         name: "Run JS from Paid",
@@ -355,18 +334,14 @@ test.each([
             ...ROBOTIC_ROBOT_TIME_REQUEST,
             params: { name: "run-js", arguments: { code: "1 + 1" } },
         },
-        cost: 0.0008,
         user: { tierBalance: 0, packBalance: 1 },
         expected: { tierBalance: 0, packBalance: 0.9992 },
-        ownerExpected: { tierBalance: 0, packBalance: 0.0006 },
     },
-])("bills $name Pollen and rewards its owner", async ({
+])("charges $name without publisher payouts", async ({
     endpoint,
     request,
-    cost,
     user,
     expected,
-    ownerExpected,
 }) => {
     const ownerId = await createTestUser({
         githubId: 85689068,
@@ -398,12 +373,10 @@ test.each([
         expect(response.headers.has(header)).toBe(false);
     }
     expect(await getUserBalance(drizzle(env.DB), userId)).toEqual(expected);
-    expect(await getUserBalance(drizzle(env.DB), ownerId)).toEqual(
-        ownerExpected,
-    );
-    expect(cost * MCP_OWNER_REWARD_RATE).toBeCloseTo(
-        ownerExpected.tierBalance + ownerExpected.packBalance,
-    );
+    expect(await getUserBalance(drizzle(env.DB), ownerId)).toEqual({
+        tierBalance: 0,
+        packBalance: 0,
+    });
 });
 
 test("rejects MCP batch requests at the proxy", async () => {

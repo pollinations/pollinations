@@ -21,7 +21,11 @@ function sse(payload) {
 function request(payload, headers = {}, path = "/run-js") {
     return new Request(`https://robotic-robot.internal${path}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", ...headers },
+        headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json, text/event-stream",
+            ...headers,
+        },
         body: JSON.stringify(payload),
     });
 }
@@ -72,33 +76,69 @@ test("proxies discovery without billing or caller credentials", async () => {
     assert.doesNotMatch(body, /"time"/);
 });
 
-test("bills successful time requests at the flat rate", async () => {
-    const { worker } = createHarness({
-        jsonrpc: "2.0",
-        id: 1,
-        result: {
-            content: [{ type: "text", text: '{"utc":"2026-09-04T00:00:00Z"}' }],
-        },
-    });
+test("serves local time for free without an upstream call", async () => {
+    const { calls, worker } = createHarness({});
+    for (const timezone of [undefined, "Asia/Tokyo"]) {
+        const before = Date.now();
+        const response = await worker.fetch(
+            request(
+                {
+                    ...TOOL_CALL,
+                    params: { name: "time", arguments: { timezone } },
+                },
+                {},
+                "/time",
+            ),
+        );
+
+        assert.equal(response.status, 200);
+        assert.equal(response.headers.has(MCP_USAGE_HEADERS.cost), false);
+        const payload = JSON.parse((await response.text()).split("data: ")[1]);
+        const result = JSON.parse(payload.result.content[0].text);
+        assert.equal(result.timezone, timezone ?? "UTC");
+        assert.ok(
+            Date.parse(result.utc) >= before &&
+                Date.parse(result.utc) <= Date.now(),
+        );
+        assert.equal(
+            result.local,
+            new Intl.DateTimeFormat("en-US", {
+                timeZone: timezone ?? "UTC",
+                dateStyle: "full",
+                timeStyle: "long",
+            }).format(new Date(result.utc)),
+        );
+    }
+    assert.equal(calls.length, 0);
+});
+
+test("local time discovery and invalid timezones stay local", async () => {
+    const { calls, worker } = createHarness({});
+    const discovery = await worker.fetch(
+        request({ jsonrpc: "2.0", id: 1, method: "tools/list" }, {}, "/time"),
+    );
+    const catalog = JSON.parse((await discovery.text()).split("data: ")[1]);
+    assert.deepEqual(
+        catalog.result.tools.map((tool) => tool.name),
+        ["time"],
+    );
     const response = await worker.fetch(
         request(
             {
                 ...TOOL_CALL,
-                params: { name: "time", arguments: { timezone: "UTC" } },
+                params: {
+                    name: "time",
+                    arguments: { timezone: "not-a-timezone" },
+                },
             },
             {},
             "/time",
         ),
     );
-
-    assert.equal(response.headers.get(MCP_USAGE_HEADERS.cost), "0.0001");
-    assert.equal(response.headers.get(MCP_USAGE_HEADERS.tool), "time");
-    assert.equal(response.headers.get(MCP_USAGE_HEADERS.status), "200");
-    assert.equal(
-        response.headers.get(MCP_USAGE_HEADERS.adjustmentId),
-        "robotic_robot.time.v1",
-    );
-    assert.equal(response.headers.get(MCP_USAGE_HEADERS.adjustmentUnits), "1");
+    const payload = JSON.parse((await response.text()).split("data: ")[1]);
+    assert.equal(payload.result.isError, true);
+    assert.equal(response.headers.has(MCP_USAGE_HEADERS.cost), false);
+    assert.equal(calls.length, 0);
 });
 
 test("bills run-js by RAM, execution time, and selected vCPU", async () => {
@@ -154,7 +194,7 @@ test("keeps each MCP limited to its own tool", async () => {
 
     assert.equal(response.status, 200);
     assert.equal(calls.length, 0);
-    assert.match(await response.text(), /Tool not found/);
+    assert.match(await response.text(), /not found/);
 });
 
 test("bills the default run-js SKU with millisecond precision", async () => {
@@ -252,4 +292,31 @@ test("rejects JSON-RPC batches", async () => {
 
     assert.equal(response.status, 400);
     assert.equal(calls.length, 0);
+});
+
+test("rejects null, string and boolean runtime durations instead of coercing them", async () => {
+    for (const durationMs of [null, "0", false]) {
+        const { worker } = createHarness({
+            result: {
+                content: [
+                    {
+                        type: "text",
+                        text: JSON.stringify({
+                            ok: true,
+                            durationMs,
+                            sku: { ramMb: 4, cpu: 0.01 },
+                        }),
+                    },
+                ],
+            },
+        });
+        const response = await worker.fetch(
+            request({
+                ...TOOL_CALL,
+                params: { name: "run-js", arguments: { code: "1 + 1" } },
+            }),
+        );
+        assert.equal(response.status, 502);
+        assert.equal(response.headers.has(MCP_USAGE_HEADERS.cost), false);
+    }
 });

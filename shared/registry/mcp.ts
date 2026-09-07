@@ -26,10 +26,6 @@ type McpServerDefinitionBase = {
     pricing: McpPricingDefinition;
     userScoped?: boolean;
     accountPath?: string;
-    ownerReward?: {
-        githubId: number;
-        rate: number;
-    };
 };
 
 type McpPricingDefinition = {
@@ -64,15 +60,9 @@ export const FFMPEG_MCP_PRICE_PER_SECOND =
 const EXA_SEARCH_PRICE_PER_REQUEST = 0.007;
 const EXA_CONTENTS_PRICE_PER_PAGE = 0.001;
 export const COMPOSIO_TOOL_CALL_PRICE = 0.0002;
-export const ROBOTIC_ROBOT_TIME_PRICE_PER_REQUEST = 0.0001;
 export const ROBOTIC_ROBOT_RUN_JS_PRICE_PER_MB_SECOND = {
     0.01: 0.000025,
     0.025: 0.0000625,
-} as const;
-export const MCP_OWNER_REWARD_RATE = 0.75;
-const ROBOTIC_ROBOT_OWNER_REWARD = {
-    githubId: 85689068,
-    rate: MCP_OWNER_REWARD_RATE,
 } as const;
 const COMPOSIO_MCP_PRICING = {
     description: "Launch price",
@@ -188,16 +178,15 @@ export const MCP_SERVERS = [
         proxyPath: "/time",
         binding: "ROBOTIC_ROBOT_MCP",
         billing: "usage_receipt",
-        provider: "robotic-robot",
-        ownerReward: ROBOTIC_ROBOT_OWNER_REWARD,
+        provider: "pollinations",
         pricing: {
             rates: [
                 {
-                    id: "robotic_robot.time.v1",
+                    id: "pollinations.time.v1",
                     description: "Current time request",
                     kind: "tool_call",
                     unit: "request",
-                    unitCost: ROBOTIC_ROBOT_TIME_PRICE_PER_REQUEST,
+                    unitCost: 0,
                     publicPricing: {
                         label: "Time",
                         quantity: 1,
@@ -216,26 +205,19 @@ export const MCP_SERVERS = [
         binding: "ROBOTIC_ROBOT_MCP",
         billing: "usage_receipt",
         provider: "robotic-robot",
-        ownerReward: ROBOTIC_ROBOT_OWNER_REWARD,
         pricing: {
             rates: [
                 ...Object.entries(ROBOTIC_ROBOT_RUN_JS_PRICE_PER_MB_SECOND).map(
-                    ([cpu, unitCost], index) => ({
+                    ([cpu, unitCost]) => ({
                         id: `robotic_robot.run_js.${cpu.replace(".", "_")}_vcpu.v1`,
                         description: `Isolated JavaScript runtime with ${cpu} vCPU`,
                         kind: "compute",
                         unit: "megabyte_second",
                         unitCost,
                         publicPricing: {
-                            label: "Run JS",
+                            label: `Run JS (${cpu} vCPU)`,
                             quantity: 1,
                             unit: "megabyte_second",
-                            option: {
-                                group: "vCPU",
-                                value: cpu,
-                                label: `${cpu} vCPU`,
-                                default: index === 0,
-                            },
                         },
                     }),
                 ),

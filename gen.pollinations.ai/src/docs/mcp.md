@@ -124,7 +124,7 @@ connections from [MCP Connectors](https://enter.pollinations.ai/account#connecto
 
 ### Time MCP
 
-`time` returns the current date and time in UTC or a requested IANA timezone.
+`time` returns the current date and time in UTC or a requested IANA timezone. It runs locally in the Pollinations worker and is free.
 
 ### Run JS MCP
 
@@ -134,8 +134,7 @@ connections from [MCP Connectors](https://enter.pollinations.ai/account#connecto
 
 Calls use the same Pollen wallet as the Pollinations API. The catalog endpoint
 shows each server's current pricing. Pollinations generation tools use the
-selected model's listed rate. The Time and Run JS owner receives 75% of each
-charge in the same Quest or Paid Pollen bucket used by the caller.
+selected model's listed rate. Run JS is billed by runtime; Time is free.
 
 An MCP server can only use models and account features allowed by the caller's
 key and cannot spend beyond that key's budget. Configure both in

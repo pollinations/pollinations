@@ -333,15 +333,17 @@ export default defineWorkersConfig(async ({ mode }) => {
                                 const headers = new Headers({
                                     "Content-Type": "application/json",
                                 });
-                                if (payload.method === "tools/call") {
-                                    const isRunJs = pathname === "/run-js";
+                                if (
+                                    payload.method === "tools/call" &&
+                                    pathname === "/run-js"
+                                ) {
                                     headers.set(
                                         "x-pollinations-mcp-cost",
-                                        isRunJs ? "0.0008" : "0.0001",
+                                        "0.0008",
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-tool",
-                                        isRunJs ? "run-js" : "time",
+                                        "run-js",
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-status",
@@ -349,9 +351,7 @@ export default defineWorkersConfig(async ({ mode }) => {
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-adjustment-id",
-                                        isRunJs
-                                            ? "robotic_robot.run_js.0_01_vcpu.v1"
-                                            : "robotic_robot.time.v1",
+                                        "robotic_robot.run_js.0_01_vcpu.v1",
                                     );
                                     headers.set(
                                         "x-pollinations-mcp-adjustment-units",

@@ -124,6 +124,15 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
   route hidden and fallback-only, give it no aliases, and never expose or allow
   callers to select it. Provider identity and route-specific cost belong on
   this internal entry; callers retain the requested public model's price.
+- Preserve the complete public canonical ID, including existing suffixes, when
+  naming a fallback. For example, a fallback for
+  `google/gemini-2.5-flash-lite:search` would be
+  `google/gemini-2.5-flash-lite:search:fallback`, or
+  `google/gemini-2.5-flash-lite:search:fallback:<discriminator>` for multiple
+  routes. These are naming examples, not declarations of configured routes.
+  Link routes through explicit registry keys; do not split or strip colon
+  suffixes to infer fallback relationships. The fallback must preserve the
+  public model's behavior, including search in this example.
 - If users must deliberately choose a separately priced or paid-only offering
   of the exact same publisher model, expose it as
   `<public-canonical-id>:paid`, never with the inference provider in the slug.

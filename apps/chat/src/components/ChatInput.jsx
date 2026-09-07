@@ -86,7 +86,7 @@ const ChatInput = ({
     useEffect(() => {
         if (isListening) setInputValue("Listening…");
         else if (inputValue === "Listening…") setInputValue("");
-    }, [isListening]);
+    }, [isListening, inputValue]);
 
     useEffect(() => {
         const handleClickOutside = (e) => {

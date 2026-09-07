@@ -9,6 +9,7 @@ const MessageArea = ({
     isGenerating,
     isUserTyping,
     onRegenerate,
+    onOpenBYOP,
 }) => {
     const messagesEndRef = useRef(null);
     const [welcomeMessage, setWelcomeMessage] = useState("");
@@ -148,6 +149,16 @@ const MessageArea = ({
                         Powered by Pollinations AI — generate text, images,
                         video & audio
                     </p>
+                    <div className="welcome-auth-prompt">
+                        <span>Connect an API key to start generating.</span>
+                        <button
+                            type="button"
+                            className="message-byop-btn"
+                            onClick={onOpenBYOP}
+                        >
+                            Add API key
+                        </button>
+                    </div>
                     <div className="welcome-feature-grid">
                         <div className="welcome-feature-card">
                             <span className="welcome-feature-icon">💬</span>
@@ -342,6 +353,7 @@ MessageArea.propTypes = {
     isGenerating: PropTypes.bool,
     isUserTyping: PropTypes.bool,
     onRegenerate: PropTypes.func.isRequired,
+    onOpenBYOP: PropTypes.func.isRequired,
 };
 
 export default MessageArea;

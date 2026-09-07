@@ -1,13 +1,6 @@
-import {
-    createContext,
-    useCallback,
-    useContext,
-    useEffect,
-    useReducer,
-} from "react";
+import { useCallback, useEffect, useReducer } from "react";
 import Toast from "./Toast";
-
-const ToastContext = createContext();
+import { ToastContext } from "./ToastContext";
 
 const toastReducer = (state, action) => {
     switch (action.type) {
@@ -85,10 +78,3 @@ export const ToastProvider = ({ children }) => {
     );
 };
 
-export const useToast = () => {
-    const context = useContext(ToastContext);
-    if (!context) {
-        throw new Error("useToast must be used within a ToastProvider");
-    }
-    return context;
-};

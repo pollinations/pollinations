@@ -742,6 +742,19 @@ body.dark .reasoning-content {
   animation: fadeIn 0.8s ease-out 0.1s both;
 }
 
+.welcome-auth-prompt {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin: 1rem 0 1.5rem;
+}
+
+.welcome-auth-prompt .message-byop-btn {
+  margin: 0;
+}
+
 .welcome-feature-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

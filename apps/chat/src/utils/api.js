@@ -198,12 +198,6 @@ export const initializeModels = async () => {
     };
 };
 
-const _getCurrentModelInfo = (modelId) => {
-    return [...textModels, ...imageModels, ...videoModels, ...audioModels].find(
-        (m) => m.id === modelId,
-    );
-};
-
 const extractBase64FromDataUrl = (dataUrl) => {
     if (typeof dataUrl !== "string") return { base64: "", mimeType: null };
     const match = dataUrl.match(/^data:([^;]+);base64,(.*)$/);
@@ -214,7 +208,7 @@ const extractBase64FromDataUrl = (dataUrl) => {
     return { base64: dataUrl, mimeType: null };
 };
 
-export const formatMessagesForAPI = (messages, _modelId) => {
+export const formatMessagesForAPI = (messages) => {
     return messages.map((msg) => {
         const parts = [];
         const textContent = typeof msg.content === "string" ? msg.content : "";
@@ -570,7 +564,7 @@ export const generateVideo = async (prompt, options = {}) => {
 
 // Generate speech/audio — GET /audio/{text}?voice=...
 export const generateAudio = async (text, options = {}) => {
-    const { voice = "nova", model = "openai-audio" } = options;
+    const { voice = "nova", model = "elevenlabs" } = options;
 
     const params = new URLSearchParams({ voice, model });
     const url = `${BASE_URL}/audio/${encodeURIComponent(text)}?${params}`;

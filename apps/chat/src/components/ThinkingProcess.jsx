@@ -6,16 +6,22 @@ const ThinkingProcess = ({ isThinking, content }) => {
     const [isOpen, setIsOpen] = useState(isThinking);
     const startTimeRef = useRef(null);
     const timerRef = useRef(null);
+    const elapsedRef = useRef(0);
 
     useEffect(() => {
         if (isThinking) {
             // Start or resume timer
             if (!startTimeRef.current) {
-                startTimeRef.current = Date.now() - elapsed * 1000;
+                startTimeRef.current = Date.now() - elapsedRef.current * 1000;
             }
 
             timerRef.current = setInterval(() => {
-                setElapsed((Date.now() - startTimeRef.current) / 1000);
+                setElapsed(() => {
+                    const nextElapsed =
+                        (Date.now() - startTimeRef.current) / 1000;
+                    elapsedRef.current = nextElapsed;
+                    return nextElapsed;
+                });
             }, 100);
 
             // Auto-open when thinking starts
@@ -31,7 +37,7 @@ const ThinkingProcess = ({ isThinking, content }) => {
             // The user image shows it collapsed (implied by "Thought for ...").
             // Let's default to collapsed if it's done, unless the user opened it.
             // Actually, let's keep it collapsed by default when done.
-            if (elapsed > 0) {
+            if (elapsedRef.current > 0) {
                 setIsOpen(false);
             }
         }

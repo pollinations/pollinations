@@ -1,0 +1,35 @@
+{
+  "pr_number": 14544,
+  "title": "fix: preserve Klein VPC binding in production",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14544",
+  "merged_at": "2026-09-07T14:59:27Z",
+  "labels": [],
+  "pr_body_excerpt": "Klein production lost `KLEIN_VPC` after #14491 introduced a workspace-local Wrangler 4.72.0 through the Workers test pool. Deployment warned about unsupported `vpc_networks` but succeeded, leaving Klein routed to the retired RunPod URL. Production versions 581/582 are affected.\n\n- Calls the root lockfile-installed Wrangler (4.85.0) directly for staging and production deployments, avoiding npm workspace binary shadowing and deployment-time CLI downloads.\n- Resolves the same CLI from the secret script's location for consistency; the deploy step caused the binding loss, not secret bulk.\n- Checks the final active production version for `KLEIN_VPC` and fails CI if it is missing.\n- Leaves dependencies, model routing, secret values, and R2 lifecycle commands unchanged.\n\nValidation: reproduced the original command launching 4.72.0 through `npm run --workspace`; corrected production deployment dry-run launches 4.85.0 and includes `KLEIN_VPC`. Gen typecheck, formatting, and workflow YAML validation pass.\n\nRollout: merge to main, promote through a separate main → production PR, deploy gen via GitHub Actions, then verify a live Klein generation. This PR has not deployed production.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Klein finds its way home",
+    "blurb": "A deployment CLI mismatch had quietly sent Klein toward an old RunPod address. The hive now uses Wrangler 4.85.0 for production deploys and checks that Klein keeps its VPC map before CI calls it a day.",
+    "summary": "Cloudflare production deployments now invoke the root lockfile's Wrangler 4.85.0 instead of a workspace-shadowed 4.72.0, preserving the KLEIN_VPC binding and failing CI when the active production version lacks it.",
+    "impact": "Klein generations promoted through the corrected deployment path retain their intended VPC routing rather than being left pointed at the retired RunPod URL.",
+    "keywords": [
+      "Klein",
+      "Cloudflare Workers",
+      "KLEIN_VPC",
+      "Wrangler",
+      "deployment",
+      "CI",
+      "routing"
+    ],
+    "visual_concept": "Depict Klein's network route as a cozy garden path leading from a retro deployment terminal to a clearly labeled VPC gateway, with an old faded path safely bypassed. Polli, wearing a tiny site-reliability engineer hard hat and holding a route map, helps a CRT monitor robot verify the glowing KLEIN_VPC connection; code-plants and flowers make the infrastructure feel tended rather than alarming.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny engineer hard hat and guiding a glowing lime green (#ecf874) route cable from a retro deployment terminal to a garden-gate server labeled “KLEIN_VPC”; a chunky CRT monitor robot checks the connection while code-plants and warm flowers grow around an old faded path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14544.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blush, a small happy smile, and small rounded light blue translucent wings, wearing a tiny engineer hard hat and guiding a glowing lime green (#ecf874) route cable from a retro deployment terminal to a garden-gate server labeled “KLEIN_VPC”; a chunky CRT monitor robot checks the connection while code-plants and warm flowers grow around an old faded path. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) outlines, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-07T15:00:33.432565+00:00"
+}

@@ -118,10 +118,15 @@ try {
         mode: 0o600,
     });
     execFileSync(
-        "npx",
+        process.execPath,
         [
-            "--yes",
-            "wrangler@4.85.0",
+            // Match deploy scripts; the test pool's workspace-local CLI is older.
+            fileURLToPath(
+                new URL(
+                    "../../node_modules/wrangler/bin/wrangler.js",
+                    import.meta.url,
+                ),
+            ),
             "secret",
             "bulk",
             outputPath,

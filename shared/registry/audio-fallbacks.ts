@@ -2,7 +2,7 @@ import type { FallbackMap } from "./merge-fallbacks";
 
 export const AUDIO_FALLBACKS = {
     "openai/whisper-large-v3": {
-        "openai/whisper-large-v3:fallback": {
+        "openai/whisper-large-v3:deepinfra": {
             provider: "deepinfra",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {

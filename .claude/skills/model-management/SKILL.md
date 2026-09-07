@@ -118,21 +118,38 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Never encode an inference provider in a public canonical ID. Deduplicate the
   same publisher model across providers behind one public identity and declare
   automatic routing through the registry's ordered fallback relationship.
-- Automatic fallback routes are internal registry entries, not public models.
-  Name the only route `<public-canonical-id>:fallback`; if multiple routes are
-  required, append an internal discriminator after `:fallback:`. Mark every
-  route hidden and fallback-only, give it no aliases, and never expose or allow
-  callers to select it. Provider identity and route-specific cost belong on
-  this internal entry; callers retain the requested public model's price.
+- Give every bundled primary and fallback a stable execution `routeId`:
+  `<public-canonical-id>:<provider>`. The public registry key, catalogs, request
+  model, and permissions remain the public ID; the primary's `routeId` is
+  metadata, not a second public model or alias. Fallback-only entries use their
+  execution ID as the registry key; `mergeFallbacks` sets their `routeId`.
+- For a pinned OpenRouter endpoint, append a meaningful qualifier from the start:
+  `<public-canonical-id>:<provider>:<route-qualifier>`, such as
+  `google/gemini-2.5-flash-lite:openrouter:vertex-global` or
+  `google/gemini-2.5-flash-lite:openrouter:ai-studio`. Distinguish multiple
+  deployments through the same provider explicitly. Use lowercase labels;
+  never encode priority or the temporary fallback role. Preserve execution
+  IDs when changing route preference. For provider-managed routing without
+  a fixed backend, do not invent an endpoint qualifier.
+- The `provider` field and route configuration remain authoritative; the name
+  does not select an upstream endpoint. Keep fallback-only entries hidden,
+  without aliases, and excluded from catalogs and direct model selection.
+  Route-specific cost belongs on the serving definition; callers retain the
+  requested public model's price. Use the existing shared fallback mechanism.
+- Record the public ID in `resolved_model_requested` and the serving bundled
+  `routeId` in `model_used` and `x-model-used`. Determine `fallback_used` from
+  the attempted target/dispatch identity, never by comparing an execution ID
+  with the public ID: primary execution IDs differ too. Keep existing
+  community attribution and cache-hit semantics. No new analytics columns or
+  historical-event rewrites are needed for this separation.
 - Preserve the complete public canonical ID, including existing suffixes, when
-  naming a fallback. For example, a fallback for
-  `google/gemini-2.5-flash-lite:search` would be
-  `google/gemini-2.5-flash-lite:search:fallback`, or
-  `google/gemini-2.5-flash-lite:search:fallback:<discriminator>` for multiple
-  routes. These are naming examples, not declarations of configured routes.
-  Link routes through explicit registry keys; do not split or strip colon
-  suffixes to infer fallback relationships. The fallback must preserve the
-  public model's behavior, including search in this example.
+  naming an internal route. For example, a route for
+  `google/gemini-2.5-flash-lite:search` could be
+  `google/gemini-2.5-flash-lite:search:openrouter:ai-studio`.
+  These are naming examples, not declarations of configured routes. Link
+  routes through explicit registry keys; do not split or strip colon suffixes
+  to infer providers or fallback relationships. The fallback must preserve
+  the public model's behavior, including search in this example.
 - If users must deliberately choose a separately priced or paid-only offering
   of the exact same publisher model, expose it as
   `<public-canonical-id>:paid`, never with the inference provider in the slug.

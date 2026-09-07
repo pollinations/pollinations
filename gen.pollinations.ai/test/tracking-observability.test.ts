@@ -513,7 +513,8 @@ describe("tracking observability", () => {
             responseStatus: 200,
             modelRequested: "openai/gpt-5.4-nano",
             resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "gpt-5-nano-2025-08-07",
+            modelUsed: "openai/gpt-5.4-nano:azure",
+            fallbackUsed: false,
             modelProviderUsed: expect.any(String),
             userId: trackingUser.id,
             isBilledUsage: true,
@@ -766,7 +767,7 @@ describe("tracking observability", () => {
             error_class: "UpstreamUsageError",
             upstream_body: expect.any(String),
         });
-        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano:azure");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
@@ -1138,7 +1139,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "perplexity/sonar",
+            modelUsed: "perplexity/sonar:perplexity",
             totalCost: 0.005,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
@@ -1207,7 +1208,7 @@ describe("tracking observability", () => {
             responseStatus: 502,
             errorResponseCode: "usage_missing",
             fallbackUsed: true,
-            modelUsed: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano:azure",
             totalCost: 0,
             totalPrice: 0,
             devPrice: 0.005,
@@ -1268,7 +1269,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             isBilledUsage: false,
             fallbackUsed: true,
-            modelUsed: "perplexity/sonar",
+            modelUsed: "perplexity/sonar:perplexity",
             totalCost: 0.005,
             totalPrice: 0,
             devPrice: 0,
@@ -1441,7 +1442,7 @@ describe("tracking observability", () => {
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             responseStatus: 502,
             resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano:azure",
             isBilledUsage: false,
         });
     });
@@ -1914,7 +1915,7 @@ describe("tracking observability", () => {
             eventType: "generate.image",
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano:azure",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
@@ -2256,6 +2257,7 @@ describe("tracking observability", () => {
             tokenCountCompletionText: number;
             modelUsed: string;
             isBilledUsage: boolean;
+            fallbackUsed: boolean;
         };
         expect(event.responseTime).toBeGreaterThanOrEqual(100);
         expect(
@@ -2263,7 +2265,8 @@ describe("tracking observability", () => {
                 new Date(event.startTime).getTime(),
         ).toBeGreaterThanOrEqual(100);
         expect(event.tokenCountCompletionText).toBe(500);
-        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano:azure");
+        expect(event.fallbackUsed).toBe(false);
         expect(event.isBilledUsage).toBe(true);
     });
 
@@ -2553,7 +2556,7 @@ describe("tracking observability", () => {
         expect(tinybirdRequests).toHaveLength(1);
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             eventType: "generate.text",
-            modelUsed: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano:azure",
             tokenCountPromptText: 800,
             tokenCountPromptCached: 200,
             tokenCountCompletionText: 400,
@@ -2714,7 +2717,7 @@ function candidateFixture(
 }
 
 describe("trackResponse modelUsed", () => {
-    it("attributes a failed generation to the resolved model", async () => {
+    it("attributes a failed primary generation to its route without marking a fallback", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(),
@@ -2725,7 +2728,8 @@ describe("trackResponse modelUsed", () => {
             responseStatus: 502,
             cacheHit: false,
             isBilledUsage: false,
-            modelUsed: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano:azure",
+            fallbackUsed: false,
         });
     });
 
@@ -2735,12 +2739,13 @@ describe("trackResponse modelUsed", () => {
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
-            { ...candidateFixture(), id: "internal-fallback" },
+            candidateFixture("openai/gpt-image-2:openai"),
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "internal-fallback",
+            modelUsed: "openai/gpt-image-2:openai",
+            fallbackUsed: true,
         });
     });
 
@@ -2759,7 +2764,7 @@ describe("trackResponse modelUsed", () => {
         expect(tracking).toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "openai/gpt-5.4-nano",
+            modelUsed: "openai/gpt-5.4-nano:azure",
             errorTracking: { errorResponseCode: "usage_missing" },
         });
     });
@@ -2785,13 +2790,13 @@ describe("trackResponse modelUsed", () => {
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash:fallback",
+                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
                         "x-usage-prompt-cached-tokens": "1000000",
                         "x-usage-prompt-cache-type": "ephemeral",
                     },
                 },
             ),
-            candidateFixture("qwen/qwen3.7-flash:fallback"),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
         );
 
         // The reported variant is the caller's unchanged public tier; the
@@ -2809,12 +2814,12 @@ describe("trackResponse modelUsed", () => {
                 { choices: [] },
                 {
                     headers: {
-                        "x-model-used": "qwen/qwen3.7-flash:fallback",
+                        "x-model-used": "qwen/qwen3.7-flash:alibaba",
                         "x-usage-prompt-cached-tokens": "1000000",
                     },
                 },
             ),
-            candidateFixture("qwen/qwen3.7-flash:fallback"),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
             // Even a stale request-side hint must not override what the
             // provider actually reported on the response.
             { hasExplicitCacheHit: true },
@@ -2844,10 +2849,10 @@ describe("trackResponse modelUsed", () => {
             new Response(`data: ${usageEvent}\n\ndata: [DONE]\n\n`, {
                 headers: {
                     "content-type": "text/event-stream",
-                    "x-model-used": "qwen/qwen3.7-flash:fallback",
+                    "x-model-used": "qwen/qwen3.7-flash:alibaba",
                 },
             }),
-            candidateFixture("qwen/qwen3.7-flash:fallback"),
+            candidateFixture("qwen/qwen3.7-flash:alibaba"),
         );
 
         expect(tracking.costVariant).toBe("context_256k");

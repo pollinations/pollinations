@@ -12,7 +12,7 @@ const MEDIA_URL = "https://fal.media/output";
 const MEDIA_BYTES = new Uint8Array([0, 0, 0, 20, 102, 116, 121, 112]);
 
 const baseParams: ImageParams = {
-    model: "bytedance/seedream-5.0-lite:fallback",
+    model: "bytedance/seedream-5.0-lite:fal",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -85,24 +85,24 @@ describe("Fal fallback media models", () => {
             },
         });
         expect(result.trackingData).toEqual({
-            actualModel: "bytedance/seedream-5.0-lite:fallback",
+            actualModel: "bytedance/seedream-5.0-lite:fal",
             usage: { completionImageTokens: 1 },
         });
     });
 
     it.each([
         [
-            "x-ai/grok-imagine-video:fallback",
+            "x-ai/grok-imagine-video:fal",
             "xai/grok-imagine-video/text-to-video",
             { duration: 1, resolution: "720p", aspect_ratio: "1:1" },
         ],
         [
-            "alibaba/wan-2.6:fallback",
+            "alibaba/wan-2.6:fal",
             "wan/v2.6/text-to-video",
             { duration: 10, resolution: "720p", aspect_ratio: "1:1" },
         ],
         [
-            "bytedance/seedance-1-pro-fast:fallback",
+            "bytedance/seedance-1-pro-fast:fal",
             "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
             {
                 duration: 5,
@@ -120,7 +120,7 @@ describe("Fal fallback media models", () => {
             model,
             duration: input.duration,
             resolution:
-                model === "bytedance/seedance-1-pro-fast:fallback"
+                model === "bytedance/seedance-1-pro-fast:fal"
                     ? "480p"
                     : undefined,
         });
@@ -143,7 +143,7 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("a blue circle", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast:fallback",
+            model: "alibaba/wan-2.2-fast:fal",
         });
         await vi.advanceTimersByTimeAsync(5_000);
         const result = await resultPromise;
@@ -167,7 +167,7 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("a blue circle", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast:fallback",
+            model: "alibaba/wan-2.2-fast:fal",
             width: 1024,
             height: 768,
         });
@@ -183,7 +183,7 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("move", {
             ...baseParams,
-            model: "x-ai/grok-imagine-video-1.5:fallback",
+            model: "x-ai/grok-imagine-video-1.5:fal",
             duration: 5,
             resolution: "720p",
             image: ["https://example.com/input.png"],
@@ -206,7 +206,7 @@ describe("Fal fallback media models", () => {
         });
         const resultPromise = callFalFallbackVideo("move", {
             ...baseParams,
-            model: "alibaba/wan-2.2-fast:fallback",
+            model: "alibaba/wan-2.2-fast:fal",
             image: [
                 "https://example.com/start.png",
                 "https://example.com/end.png",
@@ -227,7 +227,7 @@ describe("Fal fallback media models", () => {
         });
         expect(result.durationSeconds).toBe(5);
         expect(result.trackingData).toEqual({
-            actualModel: "alibaba/wan-2.2-fast:fallback",
+            actualModel: "alibaba/wan-2.2-fast:fal",
             usage: { promptImageTokens: 2, completionVideoSeconds: 5 },
         });
     });

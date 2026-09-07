@@ -28,7 +28,7 @@ describe("model rate limiting", () => {
         expect(IMAGE_SERVICES["lykon/dreamshaper-8-lcm"].perUserRpm).toBe(300);
         expect(IMAGE_SERVICES["openai/gpt-image-2"].perUserRpm).toBe(6);
         expect(
-            IMAGE_SERVICES["openai/gpt-image-2:fallback"].perUserRpm,
+            IMAGE_SERVICES["openai/gpt-image-2:openai"].perUserRpm,
         ).toBeNull();
         expect(IMAGE_SERVICES["microsoft/mai-image-2.5-flash"].perUserRpm).toBe(
             12,

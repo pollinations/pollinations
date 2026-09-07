@@ -14,11 +14,11 @@ import {
 } from "../utils/replicateClient.ts";
 
 type ReplicateFallbackModel =
-    | "black-forest-labs/flux.1-kontext-pro:fallback"
-    | "black-forest-labs/flux.2-pro:fallback"
-    | "qwen/qwen-image-3:fallback"
-    | "prunaai/p-image-edit:fallback"
-    | "krea/krea-2-medium:fallback";
+    | "black-forest-labs/flux.1-kontext-pro:replicate"
+    | "black-forest-labs/flux.2-pro:replicate"
+    | "qwen/qwen-image-3:replicate"
+    | "prunaai/p-image-edit:replicate"
+    | "krea/krea-2-medium:replicate";
 
 const COMMON_RATIOS = [
     "1:1",
@@ -111,7 +111,7 @@ export async function callReplicateFallbackImage(
     let completionImageTokens = 1;
 
     switch (model) {
-        case "black-forest-labs/flux.2-pro:fallback": {
+        case "black-forest-labs/flux.2-pro:replicate": {
             if (params.image.length > 8) {
                 throw UpstreamError.fromProvider(400, {
                     message: "FLUX.2 Pro supports at most 8 reference images",
@@ -135,7 +135,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "black-forest-labs/flux.1-kontext-pro:fallback": {
+        case "black-forest-labs/flux.1-kontext-pro:replicate": {
             const images = await prepareFluxImages(params.image.slice(0, 1));
             buffer = await runReplicateImage(
                 "black-forest-labs/flux-kontext-pro",
@@ -155,7 +155,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "qwen/qwen-image-3:fallback": {
+        case "qwen/qwen-image-3:replicate": {
             const image = params.image[0]
                 ? await toDataUri(params.image[0])
                 : undefined;
@@ -174,7 +174,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "prunaai/p-image-edit:fallback": {
+        case "prunaai/p-image-edit:replicate": {
             if (params.image.length === 0) {
                 throw UpstreamError.fromProvider(400, {
                     message: "p-image-edit requires at least one input image",
@@ -197,7 +197,7 @@ export async function callReplicateFallbackImage(
             );
             break;
         }
-        case "krea/krea-2-medium:fallback": {
+        case "krea/krea-2-medium:replicate": {
             if (params.image.length > 0) {
                 throw UpstreamError.fromProvider(400, {
                     message: "Krea does not accept image input",

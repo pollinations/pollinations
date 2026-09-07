@@ -324,7 +324,7 @@ describe("resolveModelConfig", () => {
     ])("disables Qwen3.8 Flash thinking for %s tool choice", async (_label, toolChoice) => {
         for (const name of [
             "qwen/qwen3.8-flash",
-            "qwen/qwen3.8-flash:fallback",
+            "qwen/qwen3.8-flash:alibaba",
         ]) {
             const definition = findModelByName(name);
             const transformed = await definition?.transform?.(messages, {
@@ -455,7 +455,7 @@ describe("resolveModelConfig", () => {
         ["mimo-v2.5", "xiaomi/mimo-v2.5", "xiaomi/fp8"],
         ["mimo-v2.5-pro", "xiaomi/mimo-v2.5-pro", "xiaomi/fp8"],
         [
-            "meta/llama-4-scout:fallback",
+            "meta/llama-4-scout:openrouter:vertex-us-east5",
             "meta-llama/llama-4-scout",
             "google-vertex/us-east5",
         ],
@@ -471,7 +471,7 @@ describe("resolveModelConfig", () => {
 
     it("routes the MiniMax M2.7 fallback directly to DeepInfra", () => {
         const result = resolveModelConfig(messages, {
-            model: "minimax/minimax-m2.7:fallback",
+            model: "minimax/minimax-m2.7:deepinfra",
         });
 
         expect(result.options.model).toBe("MiniMaxAI/MiniMax-M2.7");

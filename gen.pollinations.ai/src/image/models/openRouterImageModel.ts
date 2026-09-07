@@ -76,7 +76,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: true,
     },
-    "google/gemini-3.1-flash-image:fallback": {
+    "google/gemini-3.1-flash-image:openrouter:ai-studio": {
         upstreamModel: "google/gemini-3.1-flash-image",
         provider: "google-ai-studio",
         maxReferenceImages: 14,
@@ -100,7 +100,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: false,
     },
-    "google/gemini-3-pro-image:fallback": {
+    "google/gemini-3-pro-image:openrouter:vertex-global": {
         upstreamModel: "google/gemini-3-pro-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,

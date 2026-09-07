@@ -41,6 +41,7 @@ export type TextModelName = keyof typeof TEXT_SERVICES;
 
 const TEXT_BASE_SERVICES = {
     "openai/gpt-5.4-nano": {
+        routeId: "openai/gpt-5.4-nano:azure",
         aliases: ["gpt-5.4-nano", "openai"],
         provider: "azure",
         author: "OpenAI",
@@ -63,6 +64,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5-nano": {
+        routeId: "openai/gpt-5-nano:azure",
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
         provider: "azure",
         author: "OpenAI",
@@ -85,6 +87,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-oss-20b": {
+        routeId: "openai/gpt-oss-20b:ovhcloud",
         aliases: ["gpt-oss-20b", "ovh-reasoning", "gpt-oss"],
         provider: "ovhcloud",
         author: "OpenAI",
@@ -106,6 +109,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.4": {
+        routeId: "openai/gpt-5.4:azure",
         aliases: [
             "gpt-5.4-reasoning",
             "gpt-5.2",
@@ -156,6 +160,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.4-mini": {
+        routeId: "openai/gpt-5.4-mini:azure",
         aliases: ["gpt-5-mini", "openai-mini", "gpt-5.4-mini"],
         provider: "azure",
         author: "OpenAI",
@@ -178,6 +183,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.5": {
+        routeId: "openai/gpt-5.5:azure",
         aliases: [
             "gpt-5.5",
             "gpt-5.5-reasoning",
@@ -226,6 +232,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.6-sol": {
+        routeId: "openai/gpt-5.6-sol:azure",
         aliases: ["chatgpt-sol", "chatgpt-5.6-sol", "gpt-5.6-sol"],
         provider: "azure",
         author: "OpenAI",
@@ -271,6 +278,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.6-terra": {
+        routeId: "openai/gpt-5.6-terra:azure",
         aliases: ["chatgpt-terra", "chatgpt-5.6-terra", "gpt-5.6-terra"],
         provider: "azure",
         author: "OpenAI",
@@ -313,6 +321,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-5.6-luna": {
+        routeId: "openai/gpt-5.6-luna:azure",
         aliases: ["chatgpt-luna", "chatgpt-5.6-luna", "gpt-5.6-luna"],
         provider: "azure",
         author: "OpenAI",
@@ -355,6 +364,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-6-astra": {
+        routeId: "openai/gpt-6-astra:azure",
         aliases: [],
         provider: "azure",
         author: "OpenAI",
@@ -398,6 +408,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "inception/mercury-2": {
+        routeId: "inception/mercury-2:openrouter:inception",
         aliases: ["mercury-2", "inception", "inception-mercury", "mercury"],
         provider: "openrouter",
         author: "Inception",
@@ -420,6 +431,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "inception/mercury-2.5-preview": {
+        routeId: "inception/mercury-2.5-preview:openrouter:inception",
         aliases: [],
         provider: "openrouter",
         author: "Inception",
@@ -444,6 +456,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "cohere/command-a-plus": {
+        routeId: "cohere/command-a-plus:azure",
         aliases: [
             "cohere-command-a-plus",
             "command-a-plus-05-2026",
@@ -470,6 +483,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-coder-30b-a3b-instruct": {
+        routeId: "qwen/qwen3-coder-30b-a3b-instruct:ovhcloud",
         aliases: ["qwen3-coder", "qwen3-coder-30b-a3b-instruct", "qwen-coder"],
         provider: "ovhcloud",
         author: "Qwen",
@@ -491,6 +505,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-small-3.2": {
+        routeId: "mistralai/mistral-small-3.2:openrouter:deepinfra-fp8",
         aliases: [
             "mistral-small-3.1",
             "mistral-small-2503",
@@ -517,6 +532,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-small-4": {
+        routeId: "mistralai/mistral-small-4:openrouter:mistral",
         aliases: [
             "mistral-4",
             "mistral-small",
@@ -550,6 +566,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-audio-mini": {
+        routeId: "openai/gpt-audio-mini:azure",
         aliases: [
             "gpt-audio-mini",
             "gpt-audio-mini-2025-12-15",
@@ -579,6 +596,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "openai/gpt-audio-1.5": {
+        routeId: "openai/gpt-audio-1.5:azure",
         aliases: [
             "gpt-audio",
             "gpt-audio-1.5",
@@ -609,6 +627,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3-flash-preview": {
+        routeId: "google/gemini-3-flash-preview:openrouter:vertex-global",
         aliases: ["gemini-3-flash-preview", "gemini-3-flash"],
         provider: "openrouter",
         author: "Google",
@@ -642,6 +661,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.7-flash": {
+        routeId: "google/gemini-3.7-flash:openrouter:vertex-global",
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
         provider: "openrouter",
         author: "Google",
@@ -679,6 +699,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.8-flash": {
+        routeId: "google/gemini-3.8-flash:openrouter:vertex-global",
         aliases: [],
         provider: "openrouter",
         author: "Google",
@@ -714,6 +735,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.5-flash-lite": {
+        routeId: "google/gemini-3.5-flash-lite:openrouter:vertex-global",
         aliases: [
             "gemini-flash-lite-3.1",
             "gemini-3.1-flash-lite",
@@ -754,6 +776,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite": {
+        routeId: "google/gemini-2.5-flash-lite:openrouter:vertex-eu",
         aliases: ["gemini-2.5-flash-lite", "gemini-fast"],
         provider: "openrouter",
         author: "Google",
@@ -787,6 +810,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash": {
+        routeId: "deepseek/deepseek-v4-flash:fireworks",
         aliases: [
             "deepseek-v4",
             "deepseek-v4-flash",
@@ -816,6 +840,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-flash-vision-exp": {
+        routeId: "deepseek/deepseek-v4-flash-vision-exp:fireworks",
         aliases: [],
         provider: "fireworks",
         author: "DeepSeek",
@@ -842,6 +867,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemma-4-26b-a4b-it": {
+        routeId: "google/gemma-4-26b-a4b-it:openrouter:novita-bf16",
         aliases: [
             "gemma-4",
             "gemma-4-26b",
@@ -872,6 +898,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemma-4-31b-it": {
+        routeId: "google/gemma-4-31b-it:openrouter:novita-bf16",
         aliases: ["gemma-large", "gemma-4-31b-it", "gemma-4-31b"],
         provider: "openrouter",
         addedDate: new Date("2026-07-18").getTime(),
@@ -896,6 +923,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "deepseek/deepseek-v4-pro": {
+        routeId: "deepseek/deepseek-v4-pro:fireworks",
         aliases: ["deepseek-v4-pro", "deepseek-pro"],
         provider: "fireworks",
         author: "DeepSeek",
@@ -917,6 +945,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.20": {
+        routeId: "x-ai/grok-4.20:azure",
         aliases: [
             "grok-fast",
             "grok-4-1-fast",
@@ -952,6 +981,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.3": {
+        routeId: "x-ai/grok-4.3:azure",
         aliases: ["grok-4.3", "grok-4-3", "grok-reasoning", "grok-large"],
         provider: "azure",
         author: "xAI",
@@ -977,6 +1007,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "x-ai/grok-4.6": {
+        routeId: "x-ai/grok-4.6:azure",
         aliases: ["grok-4.5", "grok-4-5", "grok-4.6"],
         provider: "azure",
         author: "xAI",
@@ -1004,6 +1035,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-2.5-flash-lite:search": {
+        routeId: "google/gemini-2.5-flash-lite:search:google",
         aliases: [
             "gemini-2.5-flash-search",
             "gemini-2.5-flash-lite-search",
@@ -1045,6 +1077,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "pollinations/midijourney": {
+        routeId: "pollinations/midijourney:azure",
         aliases: ["midijourney"],
         provider: "azure",
         author: "Pollinations",
@@ -1064,6 +1097,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: true,
     },
     "pollinations/midijourney-large": {
+        routeId: "pollinations/midijourney-large:azure",
         aliases: ["midijourney-large"],
         provider: "azure",
         author: "Pollinations",
@@ -1103,6 +1137,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: true,
     },
     "anthropic/claude-haiku-4.5": {
+        routeId: "anthropic/claude-haiku-4.5:bedrock",
         aliases: ["claude-haiku-4.5", "claude-haiku", "claude-fast"],
         provider: "bedrock",
         author: "Anthropic",
@@ -1128,6 +1163,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-sonnet-4.6": {
+        routeId: "anthropic/claude-sonnet-4.6:bedrock",
         aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],
         provider: "bedrock",
         author: "Anthropic",
@@ -1153,6 +1189,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-sonnet-5": {
+        routeId: "anthropic/claude-sonnet-5:bedrock",
         aliases: ["sonnet-5", "claude-sonnet-5"],
         provider: "bedrock",
         author: "Anthropic",
@@ -1178,6 +1215,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-opus-4.6": {
+        routeId: "anthropic/claude-opus-4.6:bedrock",
         aliases: ["claude-opus-4.5", "claude-opus-4.6"],
         provider: "bedrock",
         author: "Anthropic",
@@ -1203,6 +1241,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-opus-4.7": {
+        routeId: "anthropic/claude-opus-4.7:bedrock",
         aliases: ["claude-opus-4.7"],
         provider: "bedrock",
         author: "Anthropic",
@@ -1228,6 +1267,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-opus-5": {
+        routeId: "anthropic/claude-opus-5:bedrock",
         aliases: [
             "claude-opus-5",
             "claude-opus-4.8",
@@ -1258,6 +1298,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5": {
+        routeId: "anthropic/claude-fable-5:bedrock",
         aliases: ["claude-fable-5"],
         provider: "bedrock",
         author: "Anthropic",
@@ -1283,6 +1324,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "anthropic/claude-fable-5.1": {
+        routeId: "anthropic/claude-fable-5.1:bedrock",
         aliases: [],
         provider: "bedrock",
         author: "Anthropic",
@@ -1309,6 +1351,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "perplexity/sonar": {
+        routeId: "perplexity/sonar:perplexity",
         aliases: [
             "sonar",
             "perplexity-high",
@@ -1339,6 +1382,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "perplexity/sonar-pro": {
+        routeId: "perplexity/sonar-pro:perplexity",
         aliases: ["sonar-pro", "perplexity-pro", "perplexity"],
         provider: "perplexity",
         author: "Perplexity",
@@ -1362,6 +1406,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "perplexity/sonar-reasoning-pro": {
+        routeId: "perplexity/sonar-reasoning-pro:perplexity",
         aliases: [
             "sonar-reasoning",
             "sonar-reasoning-pro",
@@ -1390,6 +1435,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.6": {
+        routeId: "moonshotai/kimi-k2.6:fireworks",
         aliases: [
             "kimi-k2.6",
             "kimi-k2p6",
@@ -1421,6 +1467,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k2.7-code": {
+        routeId: "moonshotai/kimi-k2.7-code:fireworks",
         aliases: ["kimi-k2.7-code", "kimi-k2.7", "kimi-k2p7", "kimi-code"],
         provider: "fireworks",
         author: "Moonshot AI",
@@ -1448,6 +1495,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "moonshotai/kimi-k3": {
+        routeId: "moonshotai/kimi-k3:fireworks",
         aliases: ["kimi-k3"],
         provider: "fireworks",
         author: "Moonshot AI",
@@ -1472,6 +1520,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "poolside/laguna-s-2.1": {
+        routeId: "poolside/laguna-s-2.1:openrouter:poolside",
         aliases: [
             "laguna-s-2.1",
             "laguna-s2.1",
@@ -1501,6 +1550,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meituan/longcat-2.0": {
+        routeId: "meituan/longcat-2.0:openrouter:atlas-cloud-fp8",
         aliases: ["longcat-2.0", "longcat-2", "longcat"],
         provider: "openrouter",
         author: "Meituan",
@@ -1525,6 +1575,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "thinkingmachines/inkling-small": {
+        routeId: "thinkingmachines/inkling-small:openrouter:together",
         aliases: ["inkling-small", "inkling-small-20260730", "inkling"],
         provider: "openrouter",
         author: "Thinking Machines",
@@ -1551,6 +1602,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "thinkingmachines/inkling": {
+        routeId: "thinkingmachines/inkling:fireworks",
         aliases: [],
         provider: "fireworks",
         author: "Thinking Machines",
@@ -1577,6 +1629,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3-ultra": {
+        routeId: "nvidia/nemotron-3-ultra:deepinfra",
         aliases: [
             "nemotron-3-ultra",
             "nvidia-nemotron-3-ultra",
@@ -1607,6 +1660,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "nvidia/nemotron-3.5-lightning": {
+        routeId: "nvidia/nemotron-3.5-lightning:fireworks",
         aliases: ["nemotron-3.5-lightning"],
         provider: "fireworks",
         author: "NVIDIA",
@@ -1632,6 +1686,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "xiaomi/mimo-v2.5": {
+        routeId: "xiaomi/mimo-v2.5:openrouter:xiaomi-fp8",
         aliases: ["mimo", "mimo-2.5", "mimo-v2.5"],
         provider: "openrouter",
         author: "Xiaomi",
@@ -1655,6 +1710,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "xiaomi/mimo-v2.5-pro": {
+        routeId: "xiaomi/mimo-v2.5-pro:openrouter:xiaomi-fp8",
         aliases: ["mimo-pro", "mimo-2.5-pro", "mimo-v2.5-pro"],
         provider: "openrouter",
         author: "Xiaomi",
@@ -1678,6 +1734,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "google/gemini-3.1-pro-preview": {
+        routeId: "google/gemini-3.1-pro-preview:openrouter:vertex-global",
         aliases: ["gemini-3.1-pro", "gemini-2.5-pro", "gemini-large"],
         provider: "openrouter",
         author: "Google",
@@ -1739,6 +1796,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "amazon/nova-micro-v1": {
+        routeId: "amazon/nova-micro-v1:bedrock",
         aliases: ["amazon-nova-micro", "nova-micro", "nova-fast"],
         provider: "bedrock",
         author: "Amazon",
@@ -1763,6 +1821,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "amazon/nova-2-lite-v1": {
+        routeId: "amazon/nova-2-lite-v1:bedrock",
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2", "nova"],
         provider: "bedrock",
         author: "Amazon",
@@ -1789,6 +1848,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.2": {
+        routeId: "z-ai/glm-5.2:fireworks",
         aliases: ["glm-5.2", "glm-5p2", "glm"],
         provider: "fireworks",
         author: "Z.ai",
@@ -1811,6 +1871,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.3": {
+        routeId: "z-ai/glm-5.3:fireworks",
         aliases: ["glm-5.3"],
         provider: "fireworks",
         author: "Z.ai",
@@ -1835,6 +1896,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "z-ai/glm-5.3-flash": {
+        routeId: "z-ai/glm-5.3-flash:fireworks",
         aliases: [],
         provider: "fireworks",
         author: "Z.ai",
@@ -1861,6 +1923,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/llama-3.3-70b-instruct": {
+        routeId: "meta/llama-3.3-70b-instruct:azure",
         aliases: [
             "llama-3.3",
             "llama-3.3-70b",
@@ -1886,6 +1949,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/llama-4-maverick": {
+        routeId: "meta/llama-4-maverick:azure",
         aliases: [
             "llama-4",
             "llama-4-maverick",
@@ -1913,6 +1977,7 @@ const TEXT_BASE_SERVICES = {
         paidOnly: true,
     },
     "meta/llama-4-scout": {
+        routeId: "meta/llama-4-scout:openrouter:deepinfra-fp8",
         aliases: [
             "llama-4-scout",
             "llama-scout-17b",
@@ -1943,6 +2008,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "minimax/minimax-m2.7": {
+        routeId: "minimax/minimax-m2.7:openrouter:deepinfra-fp8",
         aliases: [
             "minimax-m2p7",
             "minimax-m2.5",
@@ -1970,6 +2036,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "minimax/minimax-m3": {
+        routeId: "minimax/minimax-m3:fireworks",
         aliases: ["minimax-m3", "minimax3", "minimax-3", "minimax"],
         provider: "fireworks",
         author: "MiniMax",
@@ -1996,6 +2063,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/muse-glimmer-30b": {
+        routeId: "meta/muse-glimmer-30b:fireworks",
         aliases: ["muse-glimmer"],
         provider: "fireworks",
         author: "Meta",
@@ -2022,6 +2090,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "meta/muse-spark-1.2": {
+        routeId: "meta/muse-spark-1.2:vercel",
         aliases: [
             "muse-spark-1.1",
             "muse-spark",
@@ -2050,6 +2119,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "mistralai/mistral-large-3": {
+        routeId: "mistralai/mistral-large-3:azure",
         aliases: ["mistral-large-3", "mistral-large"],
         provider: "azure",
         author: "Mistral",
@@ -2072,6 +2142,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-coder-next": {
+        routeId: "qwen/qwen3-coder-next:openrouter:parasail-bf16",
         aliases: ["qwen3-coder-next", "qwen-coder-large"],
         provider: "openrouter",
         author: "Qwen",
@@ -2095,6 +2166,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-plus": {
+        routeId: "qwen/qwen3.7-plus:openrouter",
         aliases: [
             "qwen3.7",
             "qwen3.7-plus",
@@ -2148,6 +2220,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-max": {
+        routeId: "qwen/qwen3.7-max:openrouter",
         aliases: ["qwen-max", "qwen3p7-max", "qwen3.7-max"],
         provider: "openrouter",
         author: "Qwen",
@@ -2172,6 +2245,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-2.4t-a95b": {
+        routeId: "qwen/qwen3.8-2.4t-a95b:fireworks",
         aliases: ["qwen3.8-2.4t-a95b"],
         provider: "fireworks",
         author: "Qwen",
@@ -2196,6 +2270,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-27b": {
+        routeId: "qwen/qwen3.8-27b:openrouter:chutes",
         aliases: ["qwen3.8-27b"],
         provider: "openrouter",
         author: "Qwen",
@@ -2225,6 +2300,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max": {
+        routeId: "qwen/qwen3.8-max:openrouter:alibaba",
         aliases: ["qwen3.8-max"],
         provider: "openrouter",
         author: "Qwen",
@@ -2253,6 +2329,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-max-0902": {
+        routeId: "qwen/qwen3.8-max-0902:alibaba",
         aliases: [],
         provider: "alibaba",
         author: "Qwen",
@@ -2283,6 +2360,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.8-flash": {
+        routeId: "qwen/qwen3.8-flash:openrouter:alibaba",
         aliases: [],
         provider: "openrouter",
         author: "Qwen",
@@ -2314,6 +2392,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3.7-flash": {
+        routeId: "qwen/qwen3.7-flash:openrouter:alibaba",
         aliases: ["qwen3.7-flash"],
         provider: "openrouter",
         author: "Qwen",
@@ -2383,6 +2462,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-vl-30b-a3b-instruct": {
+        routeId: "qwen/qwen3-vl-30b-a3b-instruct:openrouter:alibaba",
         aliases: [
             "qwen3-vl",
             "qwen3-vl-30b-a3b-instruct",
@@ -2412,6 +2492,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3-vl-235b-a22b-thinking": {
+        routeId: "qwen/qwen3-vl-235b-a22b-thinking:alibaba",
         aliases: [
             "qwen3-vl-pro",
             "qwen3-vl-235b",
@@ -2443,6 +2524,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "stepfun/step-3.7-flash": {
+        routeId: "stepfun/step-3.7-flash:deepinfra",
         aliases: [
             "stepfun-flash",
             "step-3.7-flash",
@@ -2475,6 +2557,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "stepfun/step-3.5-flash": {
+        routeId: "stepfun/step-3.5-flash:openrouter",
         aliases: ["stepfun-3.5-flash", "step-flash-3.5", "step-3.5-flash"],
         provider: "openrouter",
         author: "StepFun",
@@ -2498,6 +2581,7 @@ const TEXT_BASE_SERVICES = {
         isSpecialized: false,
     },
     "qwen/qwen3guard-gen-8b": {
+        routeId: "qwen/qwen3guard-gen-8b:ovhcloud",
         aliases: ["qwen3guard-gen-8b", "qwen-safety"],
         provider: "ovhcloud",
         author: "Qwen",

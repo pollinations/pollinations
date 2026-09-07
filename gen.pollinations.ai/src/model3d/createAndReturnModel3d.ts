@@ -20,7 +20,7 @@ export async function createAndReturnModel3d(
     switch (safeParams.model) {
         case "microsoft/trellis-2":
             return await callTrellis2(safeParams);
-        case "microsoft/trellis-2:fallback":
+        case "microsoft/trellis-2:fal":
             return await callTrellis2Fal(safeParams);
         case "hyper3d/rodin-2.5":
             return await callRodinFalAPI(prompt, safeParams);

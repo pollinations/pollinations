@@ -143,7 +143,7 @@ const models: ModelDefinition[] = [
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
     {
-        name: "qwen/qwen3-coder-next:fallback",
+        name: "qwen/qwen3-coder-next:openrouter:streamlake",
         config: portkeyConfig["qwen-coder-large-openrouter-streamlake"],
         transform: createSystemPromptTransform(BASE_PROMPTS.coding),
     },
@@ -162,7 +162,7 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "qwen/qwen3.8-2.4t-a95b:fallback",
+        name: "qwen/qwen3.8-2.4t-a95b:deepinfra",
         config: portkeyConfig["Qwen/Qwen3.8-2.4T-A95B"],
         transform: fireworksThinking,
     },
@@ -172,7 +172,7 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
-        name: "qwen/qwen3.8-27b:fallback",
+        name: "qwen/qwen3.8-27b:openrouter:akashml-fp8",
         config: portkeyConfig["qwen3.8-27b-openrouter-akashml"],
         transform: createReasoningEffortTransform("toggle"),
     },
@@ -191,7 +191,7 @@ const models: ModelDefinition[] = [
         transform: createReasoningEffortTransform("toggle"),
     },
     {
-        name: "qwen/qwen3.7-flash:fallback",
+        name: "qwen/qwen3.7-flash:alibaba",
         config: portkeyConfig["qwen3.7-flash-alibaba"],
         transform: createReasoningEffortTransform("toggle"),
     },
@@ -201,7 +201,7 @@ const models: ModelDefinition[] = [
         transform: qwenFlashTransform,
     },
     {
-        name: "qwen/qwen3.8-flash:fallback",
+        name: "qwen/qwen3.8-flash:alibaba",
         config: portkeyConfig["qwen3.8-flash-alibaba"],
         transform: qwenFlashTransform,
     },
@@ -218,7 +218,7 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "qwen/qwen3-vl-235b-a22b-thinking:fallback",
+        name: "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16",
         config: portkeyConfig["qwen-vision-pro-openrouter-novita"],
         transform: mandatoryReasoning,
     },
@@ -239,7 +239,7 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-small-3.2:fallback",
+        name: "mistralai/mistral-small-3.2:deepinfra",
         config: portkeyConfig["mistral-small-3.2-deepinfra"],
         transform: stripReasoning,
     },
@@ -248,7 +248,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["mistral-small-2603"],
     },
     {
-        name: "mistralai/mistral-small-4:fallback",
+        name: "mistralai/mistral-small-4:openrouter:mistral-eu",
         config: portkeyConfig["mistral-openrouter-eu"],
     },
     {
@@ -259,7 +259,7 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "deepseek/deepseek-v4-flash:fallback",
+        name: "deepseek/deepseek-v4-flash:deepinfra",
         config: portkeyConfig["deepseek-ai/DeepSeek-V4-Flash-0731"],
         transform: fireworksThinking,
     },
@@ -275,7 +275,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-26b-a4b-it"],
     },
     {
-        name: "google/gemma-4-26b-a4b-it:fallback",
+        name: "google/gemma-4-26b-a4b-it:deepinfra",
         config: portkeyConfig["google/gemma-4-26B-A4B-it"],
     },
     {
@@ -283,7 +283,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["google/gemma-4-31b-it"],
     },
     {
-        name: "google/gemma-4-31b-it:fallback",
+        name: "google/gemma-4-31b-it:deepinfra",
         config: portkeyConfig["google/gemma-4-31B-it"],
     },
     {
@@ -300,7 +300,7 @@ const models: ModelDefinition[] = [
         transform: grokTransform,
     },
     {
-        name: "x-ai/grok-4.20:fallback",
+        name: "x-ai/grok-4.20:openrouter:xai-zdr",
         config: portkeyConfig["grok-openrouter-xai-zdr"],
         transform: grokTransform,
     },
@@ -309,7 +309,7 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.3"],
     },
     {
-        name: "x-ai/grok-4.3:fallback",
+        name: "x-ai/grok-4.3:openrouter:xai-zdr",
         config: portkeyConfig["grok-large-openrouter-xai-zdr"],
     },
     {
@@ -333,7 +333,7 @@ const models: ModelDefinition[] = [
         transform: claudeManualThinking,
     },
     {
-        name: "anthropic/claude-haiku-4.5:fallback",
+        name: "anthropic/claude-haiku-4.5:openrouter:vertex-global",
         config: portkeyConfig["claude-fast-openrouter-vertex"],
         transform: claudeManualThinking,
     },
@@ -359,7 +359,7 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
-        name: "anthropic/claude-opus-4.7:fallback",
+        name: "anthropic/claude-opus-4.7:openrouter:vertex-global",
         config: portkeyConfig["claude-opus-4.7-openrouter-vertex"],
         transform: claudeAdaptiveThinking,
     },
@@ -374,7 +374,7 @@ const models: ModelDefinition[] = [
         transform: claudeAdaptiveThinking,
     },
     {
-        name: "anthropic/claude-fable-5:fallback",
+        name: "anthropic/claude-fable-5:openrouter:vertex-global",
         config: portkeyConfig["claude-fable-5-openrouter-vertex"],
         transform: claudeAdaptiveThinking,
     },
@@ -401,7 +401,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-3.7-flash:fallback",
+        name: "google/gemini-3.7-flash:openrouter:ai-studio-priority",
         config: portkeyConfig["gemini-openrouter-ai-studio-priority"],
         transform: pipe(
             adaptGoogleSearchToolForOpenRouter,
@@ -426,7 +426,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-3.5-flash-lite:fallback",
+        name: "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex",
         config: portkeyConfig[
             "gemini-flash-lite-3.5-openrouter-ai-studio-flex"
         ],
@@ -444,7 +444,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-2.5-flash-lite:fallback",
+        name: "google/gemini-2.5-flash-lite:openrouter:ai-studio",
         config: portkeyConfig["gemini-fast-openrouter-ai-studio"],
         transform: pipe(
             adaptGoogleSearchToolForOpenRouter,
@@ -489,7 +489,7 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "moonshotai/kimi-k2.6:fallback",
+        name: "moonshotai/kimi-k2.6:deepinfra",
         config: portkeyConfig["moonshotai/Kimi-K2.6"],
         transform: fireworksThinking,
     },
@@ -499,7 +499,7 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "moonshotai/kimi-k2.7-code:fallback",
+        name: "moonshotai/kimi-k2.7-code:deepinfra",
         config: portkeyConfig["kimi-code-deepinfra"],
         transform: fireworksThinking,
     },
@@ -540,7 +540,7 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "nvidia/nemotron-3.5-lightning:fallback",
+        name: "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16",
         config: portkeyConfig["nemotron-3.5-lightning-openrouter-coreweave"],
         transform: fireworksThinking,
     },
@@ -561,7 +561,7 @@ const models: ModelDefinition[] = [
         ),
     },
     {
-        name: "google/gemini-3.1-pro-preview:fallback",
+        name: "google/gemini-3.1-pro-preview:openrouter:ai-studio",
         config: portkeyConfig["gemini-large-openrouter-ai-studio"],
         transform: pipe(
             adaptGoogleSearchToolForOpenRouter,
@@ -590,7 +590,7 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "z-ai/glm-5.3:fallback",
+        name: "z-ai/glm-5.3:openrouter:friendli",
         config: portkeyConfig["glm-5.3-openrouter-friendli"],
         transform: mandatoryReasoning,
     },
@@ -607,7 +607,7 @@ const models: ModelDefinition[] = [
         transform: mandatoryReasoning,
     },
     {
-        name: "minimax/minimax-m2.7:fallback",
+        name: "minimax/minimax-m2.7:deepinfra",
         config: portkeyConfig["MiniMaxAI/MiniMax-M2.7"],
         transform: mandatoryReasoning,
     },
@@ -622,7 +622,7 @@ const models: ModelDefinition[] = [
         transform: fireworksThinking,
     },
     {
-        name: "meta/muse-glimmer-30b:fallback",
+        name: "meta/muse-glimmer-30b:openrouter:deepinfra-bf16",
         config: portkeyConfig["muse-glimmer-openrouter-deepinfra"],
         transform: fireworksThinking,
     },
@@ -637,7 +637,7 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "meta/llama-3.3-70b-instruct:fallback",
+        name: "meta/llama-3.3-70b-instruct:deepinfra",
         config: portkeyConfig["meta-llama/Llama-3.3-70B-Instruct-Turbo"],
         transform: stripReasoning,
     },
@@ -653,7 +653,7 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "meta/llama-4-scout:fallback",
+        name: "meta/llama-4-scout:openrouter:vertex-us-east5",
         config: portkeyConfig["llama-scout-openrouter-vertex"],
         transform: stripReasoning,
     },
@@ -664,7 +664,7 @@ const models: ModelDefinition[] = [
         transform: stripReasoning,
     },
     {
-        name: "mistralai/mistral-large-3:fallback",
+        name: "mistralai/mistral-large-3:openrouter:mistral-zdr",
         config: portkeyConfig["mistral-large-openrouter-zdr"],
         transform: stripReasoning,
     },

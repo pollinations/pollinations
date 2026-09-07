@@ -5,7 +5,10 @@ import {
     getVisibleImageModels,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+} from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     attachFallbackTarget,
@@ -13,6 +16,7 @@ import {
     type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
+    getProviderRouteId,
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
@@ -78,26 +82,24 @@ function communityEntry(
 describe("registry fallback linking", () => {
     it("marks provider routes as hidden, fallback-only registry entries", () => {
         expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
-            "tongyi-mai/z-image-turbo:fallback",
+            "tongyi-mai/z-image-turbo:fal",
         );
-        expect(
-            IMAGE_SERVICES["tongyi-mai/z-image-turbo:fallback"],
-        ).toMatchObject({
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo:fal"]).toMatchObject({
             aliases: [],
             hidden: true,
             fallbackOnly: true,
             provider: "fal",
         });
         expect(getVisibleImageModels()).not.toContain(
-            "tongyi-mai/z-image-turbo:fallback",
+            "tongyi-mai/z-image-turbo:fal",
         );
     });
 
     it("declares direct OpenAI fallbacks for every GPT Image model", () => {
         const pairs = [
-            ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:fallback"],
-            ["openai/gpt-image-1.5", "openai/gpt-image-1.5:fallback"],
-            ["openai/gpt-image-2", "openai/gpt-image-2:fallback"],
+            ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:openai"],
+            ["openai/gpt-image-1.5", "openai/gpt-image-1.5:openai"],
+            ["openai/gpt-image-2", "openai/gpt-image-2:openai"],
         ] as const;
 
         for (const [primary, fallback] of pairs) {
@@ -321,6 +323,80 @@ describe("formatFallbackTarget", () => {
         expect(formatFallbackTarget(1)).toBe("config.targets[1]");
         expect(formatFallbackTarget(2)).toBe("config.targets[2]");
         expect(formatFallbackTarget(10)).toBe("config.targets[10]");
+    });
+});
+
+describe("provider execution identity", () => {
+    const publicId = "qwen/qwen-image-3";
+    const primary = { id: publicId, definition: IMAGE_SERVICES[publicId] };
+    const backupId = `${publicId}:replicate`;
+    const backup = { id: backupId, definition: IMAGE_SERVICES[backupId] };
+    const model = {
+        resolved: publicId,
+        definition: primary.definition,
+        fallbackEntries: [
+            { ...registryEntry(backupId), definition: backup.definition },
+        ],
+    };
+
+    it("identifies the primary route without marking it as a fallback", async () => {
+        const response = await withModelFallbackResponse(
+            model,
+            async () => new Response("ok"),
+        );
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(`${publicId}:fal`);
+        expect(response.headers.has(FALLBACK_TARGET_HEADER)).toBe(false);
+    });
+
+    it("keeps route identity stable when a backup becomes the primary", async () => {
+        const promoted = { id: publicId, definition: backup.definition };
+        expect(getProviderRouteId(promoted)).toBe(getProviderRouteId(backup));
+        const response = await withModelFallbackResponse(
+            { resolved: publicId, definition: promoted.definition },
+            async () => new Response("ok"),
+        );
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(backupId);
+        expect(response.headers.has(FALLBACK_TARGET_HEADER)).toBe(false);
+    });
+
+    it("records both attempts and identifies the actual fallback route", async () => {
+        const attempts: FallbackAttempt[] = [];
+        const response = await withModelFallbackResponse(
+            model,
+            async (candidate) => {
+                if (candidate.id === publicId)
+                    throw Object.assign(new Error("busy"), { status: 429 });
+                return new Response("ok");
+            },
+            attempts,
+        );
+        expect(
+            attempts.map((attempt) => getProviderRouteId(attempt.candidate)),
+        ).toEqual([`${publicId}:fal`, backupId]);
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(backupId);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            formatFallbackTarget(1),
+        );
+    });
+
+    it("preserves community response attribution and cache-hit headers", async () => {
+        const community = {
+            resolved: "owner/model",
+            definition: communityEntry("owner/model", "owner").definition,
+        };
+        const response = await withModelFallbackResponse(
+            community,
+            async () =>
+                new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: "upstream-model" },
+                }),
+        );
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe("upstream-model");
+        const cached = await withModelFallbackResponse(
+            model,
+            async () => new Response("ok", { headers: { "x-cache": "HIT" } }),
+        );
+        expect(cached.headers.has(MODEL_USED_HEADER)).toBe(false);
     });
 });
 

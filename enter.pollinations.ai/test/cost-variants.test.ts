@@ -195,7 +195,7 @@ describe("long-context cost variants", () => {
         [256_001, "context_256k"],
     ] as const)("direct Alibaba uses its strict tier boundary at %s prompt tokens", (promptTextTokens, expectedVariant) => {
         expect(
-            bill("qwen/qwen3.7-flash:fallback", { promptTextTokens })
+            bill("qwen/qwen3.7-flash:alibaba", { promptTextTokens })
                 .costVariant,
         ).toBe(expectedVariant);
     });
@@ -203,7 +203,7 @@ describe("long-context cost variants", () => {
     it("records direct Alibaba explicit-cache cost without changing the quote", () => {
         const billing = fallbackBill(
             "qwen/qwen3.7-flash",
-            "qwen/qwen3.7-flash:fallback",
+            "qwen/qwen3.7-flash:alibaba",
             { promptCachedTokens: 10_000 },
             { hasExplicitCacheHit: true },
         );
@@ -216,7 +216,7 @@ describe("long-context cost variants", () => {
     it("keeps the Llama Scout quote and records the absorbed Vertex loss", () => {
         const billing = fallbackBill(
             "meta/llama-4-scout",
-            "meta/llama-4-scout:fallback",
+            "meta/llama-4-scout:openrouter:vertex-us-east5",
             {
                 promptTextTokens: 1_000_000,
                 promptImageTokens: 1_000_000,
@@ -796,7 +796,7 @@ describe("FLUX.2 image billing", () => {
                 completionImageTokens: 4,
             },
             servedBy: getRegistryModelDefinition(
-                "black-forest-labs/flux.2-pro:fallback",
+                "black-forest-labs/flux.2-pro:replicate",
             ),
             quotedBy: getRegistryModelDefinition(
                 "black-forest-labs/flux.2-pro",

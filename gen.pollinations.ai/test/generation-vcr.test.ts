@@ -936,7 +936,9 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     });
 
     expect(response.status, await response.clone().text()).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5.6-luna");
+    expect(response.headers.get("x-model-used")).toBe(
+        "openai/gpt-5.6-luna:azure",
+    );
     await expect(response.json()).resolves.toMatchObject({
         object: "chat.completion",
         choices: [
@@ -983,7 +985,7 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna",
+        modelUsed: "openai/gpt-5.6-luna:azure",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
@@ -1028,7 +1030,7 @@ test("Chat-over-Responses streaming converts events and bills terminal usage", a
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna",
+        modelUsed: "openai/gpt-5.6-luna:azure",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
@@ -1076,7 +1078,7 @@ test("Chat-over-Responses stream without usage fails closed and remains unbilled
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         responseStatus: 502,
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna",
+        modelUsed: "openai/gpt-5.6-luna:azure",
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "usage_missing",
@@ -1119,7 +1121,7 @@ test("Chat-over-Responses stream failure is tracked as an upstream error and rem
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         responseStatus: 502,
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna",
+        modelUsed: "openai/gpt-5.6-luna:azure",
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "upstream_finish_reason_error",
@@ -1159,7 +1161,9 @@ test("direct Responses JSON preserves protocol and bills once", async ({
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("qwen/qwen3.7-plus");
+    expect(response.headers.get("x-model-used")).toBe(
+        "qwen/qwen3.7-plus:openrouter",
+    );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("9");
     expect(response.headers.get("x-usage-prompt-cached-tokens")).toBe("2");
     expect(response.headers.get("x-usage-prompt-cache-write-tokens")).toBe("1");
@@ -1192,7 +1196,7 @@ test("direct Responses JSON preserves protocol and bills once", async ({
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         modelRequested: "qwen/qwen3.7-plus",
-        modelUsed: "qwen/qwen3.7-plus",
+        modelUsed: "qwen/qwen3.7-plus:openrouter",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
@@ -1266,7 +1270,7 @@ test("direct Responses SSE is unchanged and terminal usage bills once", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "qwen/qwen3.7-plus",
+        modelUsed: "qwen/qwen3.7-plus:openrouter",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountCompletionText: 4,
@@ -1308,7 +1312,7 @@ test("direct Responses stream failure remains unbilled", async ({ mocks }) => {
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         responseStatus: 502,
         modelRequested: "qwen/qwen3.7-plus",
-        modelUsed: "qwen/qwen3.7-plus",
+        modelUsed: "qwen/qwen3.7-plus:openrouter",
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "upstream_finish_reason_error",
@@ -1500,13 +1504,15 @@ test("canonical model headers preserve provider-reported payload models", async 
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5-nano");
+    expect(response.headers.get("x-model-used")).toBe(
+        "openai/gpt-5-nano:azure",
+    );
     await expect(response.json()).resolves.toMatchObject({
         model: "provider-model-version",
     });
     await wait();
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-5-nano",
+        modelUsed: "openai/gpt-5-nano:azure",
     });
 
     const { response: streamResponse, wait: waitForStream } = await fetchWorker(
@@ -1532,14 +1538,14 @@ test("canonical model headers preserve provider-reported payload models", async 
 
     expect(streamResponse.status).toBe(200);
     expect(streamResponse.headers.get("x-model-used")).toBe(
-        "openai/gpt-5-nano",
+        "openai/gpt-5-nano:azure",
     );
     const streamBody = await streamResponse.text();
     expect(streamBody).toContain('"model":"provider-model-version"');
     expect(streamBody).not.toContain('"model":"openai-fast"');
     await waitForStream();
     expect(mocks.tinybird.state.events[1]).toMatchObject({
-        modelUsed: "openai/gpt-5-nano",
+        modelUsed: "openai/gpt-5-nano:azure",
     });
 });
 
@@ -1622,7 +1628,9 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe("perplexity/sonar");
+        expect(response.headers.get("x-model-used")).toBe(
+            "perplexity/sonar:perplexity",
+        );
         await response.text();
         await wait();
     }
@@ -2139,7 +2147,7 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         "black-forest-labs/flux.1-schnell",
     );
     expect(response.headers.get("x-model-used")).toBe(
-        "black-forest-labs/flux.1-schnell:fallback",
+        "black-forest-labs/flux.1-schnell:deepinfra",
     );
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
@@ -2159,7 +2167,7 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         eventType: "generate.image",
         modelRequested: "flux",
         resolvedModelRequested: "black-forest-labs/flux.1-schnell",
-        modelUsed: "black-forest-labs/flux.1-schnell",
+        modelUsed: "black-forest-labs/flux.1-schnell:vast",
         modelProviderUsed: "vast",
         responseStatus: 503,
         isFinal: false,
@@ -2169,7 +2177,7 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         eventType: "generate.image",
         modelRequested: "flux",
         resolvedModelRequested: "black-forest-labs/flux.1-schnell",
-        modelUsed: "black-forest-labs/flux.1-schnell:fallback",
+        modelUsed: "black-forest-labs/flux.1-schnell:deepinfra",
         modelProviderUsed: "deepinfra",
         responseStatus: 200,
         fallbackUsed: true,
@@ -2184,7 +2192,7 @@ test("fallback-only provider routes cannot be called directly", async ({
 }) => {
     await mocks.enable("tinybird", "deepInfra");
     const { response, wait } = await fetchWorker(
-        "/image/test?model=black-forest-labs/flux.1-schnell:fallback",
+        "/image/test?model=black-forest-labs/flux.1-schnell:deepinfra",
         {
             headers: { authorization: `Bearer ${paidApiKey}` },
         },
@@ -2196,7 +2204,7 @@ test("fallback-only provider routes cannot be called directly", async ({
         error: {
             code: "BAD_REQUEST",
             message:
-                'Invalid model or alias: "black-forest-labs/flux.1-schnell:fallback". Must be a valid model name or alias.',
+                'Invalid model or alias: "black-forest-labs/flux.1-schnell:deepinfra". Must be a valid model name or alias.',
         },
     });
     await wait();
@@ -2314,7 +2322,7 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
         "openai/gpt-image-2",
     );
     expect(response.headers.get("x-model-used")).toBe(
-        "openai/gpt-image-2:fallback",
+        "openai/gpt-image-2:openai",
     );
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
@@ -2325,13 +2333,13 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
     ]);
     expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-image-2",
+        modelUsed: "openai/gpt-image-2:azure",
         modelProviderUsed: "azure",
         responseStatus: 502,
         isFinal: false,
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
-        modelUsed: "openai/gpt-image-2:fallback",
+        modelUsed: "openai/gpt-image-2:openai",
         modelProviderUsed: "openai",
         responseStatus: 200,
         fallbackUsed: true,
@@ -2354,7 +2362,7 @@ test("gpt-image-2 tries its fallback when the reference image host is over capac
     );
     expect(response.status).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(
-        "openai/gpt-image-2:fallback",
+        "openai/gpt-image-2:openai",
     );
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
@@ -2397,7 +2405,7 @@ test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
     expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-image-2",
+        modelUsed: "openai/gpt-image-2:azure",
         modelProviderUsed: "azure",
         responseStatus: 502,
         isFinal: true,
@@ -2438,7 +2446,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(
-        "lykon/dreamshaper-8-lcm",
+        "lykon/dreamshaper-8-lcm:vast",
     );
     await response.arrayBuffer();
     await wait();
@@ -2448,7 +2456,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
         eventType: "generate.image",
         // analytics keep the name the caller actually used
         modelRequested: "sana",
-        modelUsed: "lykon/dreamshaper-8-lcm",
+        modelUsed: "lykon/dreamshaper-8-lcm:vast",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.0001,
         isBilledUsage: true,

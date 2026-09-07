@@ -3101,7 +3101,8 @@ export async function handleTranscription(c: AudioContext): Promise<Response> {
             });
         }
 
-        const isDeepInfra = candidate.id === "openai/whisper-large-v3:fallback";
+        const isDeepInfra =
+            candidate.id === "openai/whisper-large-v3:deepinfra";
         const providerApiKey = isDeepInfra
             ? c.env.DEEPINFRA_API_KEY
             : c.env.OVHCLOUD_API_KEY;

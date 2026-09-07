@@ -61,7 +61,7 @@ describe("callReplicateFallbackImage", () => {
 
         const result = await callReplicateFallbackImage(
             "a red apple",
-            params("qwen/qwen-image-3:fallback"),
+            params("qwen/qwen-image-3:replicate"),
         );
 
         expect(fetchSpy.mock.calls[0][0]).toBe(
@@ -77,7 +77,7 @@ describe("callReplicateFallbackImage", () => {
             seed: 42,
         });
         expect(result.trackingData).toEqual({
-            actualModel: "qwen/qwen-image-3:fallback",
+            actualModel: "qwen/qwen-image-3:replicate",
             usage: { completionImageTokens: 1 },
         });
     });
@@ -87,7 +87,7 @@ describe("callReplicateFallbackImage", () => {
 
         const result = await callReplicateFallbackImage(
             "make it blue",
-            params("qwen/qwen-image-3:fallback", [PNG, PNG]),
+            params("qwen/qwen-image-3:replicate", [PNG, PNG]),
         );
 
         const body = JSON.parse(
@@ -105,7 +105,7 @@ describe("callReplicateFallbackImage", () => {
 
         await callReplicateFallbackImage(
             "make it blue",
-            params("prunaai/p-image-edit:fallback", [PNG, PNG]),
+            params("prunaai/p-image-edit:replicate", [PNG, PNG]),
         );
 
         expect(fetchSpy.mock.calls[0][0]).toBe(

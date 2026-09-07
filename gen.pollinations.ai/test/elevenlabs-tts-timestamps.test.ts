@@ -219,7 +219,7 @@ workerTest(
                 "config.targets[1]",
             );
             expect(response.headers.get("x-model-used")).toBe(
-                "elevenlabs/eleven-flash-v2.5",
+                "elevenlabs/eleven-flash-v2.5:elevenlabs",
             );
             expect(response.headers.get("x-pollinations-response-format")).toBe(
                 "audio-with-timestamps",

@@ -16,7 +16,7 @@ afterEach(() => {
 
 function params(resolution: "low" | "medium" | "high"): Model3dParams {
     return {
-        model: "microsoft/trellis-2:fallback",
+        model: "microsoft/trellis-2:fal",
         resolution,
         image: ["https://example.com/ref.jpg"],
         safe: false,
@@ -66,7 +66,7 @@ describe("callTrellis2Fal", () => {
             resolution: pixels,
         });
         expect(result.trackingData?.actualModel).toBe(
-            "microsoft/trellis-2:fallback",
+            "microsoft/trellis-2:fal",
         );
     });
 });

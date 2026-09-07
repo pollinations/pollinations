@@ -27,7 +27,7 @@ export async function callTrellis2Fal(
             buffer: await downloadMesh(mesh.url),
             contentType: "model/gltf-binary",
             trackingData: {
-                actualModel: "microsoft/trellis-2:fallback",
+                actualModel: "microsoft/trellis-2:fal",
                 usage: { completionImageTokens: 1 },
             },
         };

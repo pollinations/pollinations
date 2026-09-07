@@ -77,11 +77,11 @@ export async function createAndReturnVideo(
         case "bytedance/seedance-1-pro-fast":
             result = await callSeedanceProAPI(prompt, safeParams);
             break;
-        case "bytedance/seedance-1-pro-fast:fallback":
-        case "alibaba/wan-2.6:fallback":
-        case "alibaba/wan-2.2-fast:fallback":
-        case "x-ai/grok-imagine-video:fallback":
-        case "x-ai/grok-imagine-video-1.5:fallback":
+        case "bytedance/seedance-1-pro-fast:fal":
+        case "alibaba/wan-2.6:fal":
+        case "alibaba/wan-2.2-fast:fal":
+        case "x-ai/grok-imagine-video:fal":
+        case "x-ai/grok-imagine-video-1.5:fal":
             result = await callFalFallbackVideo(prompt, safeParams);
             break;
         case "bytedance/seedance-2.0":

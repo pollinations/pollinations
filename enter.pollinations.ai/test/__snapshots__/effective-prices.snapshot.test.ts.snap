@@ -20,7 +20,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0,
     },
   },
-  "alibaba/wan-2.2-fast:fallback": {
+  "alibaba/wan-2.2-fast:fal": {
     "cost": {
       "completionVideoSeconds": 0.01,
       "promptImageTokens": 0,
@@ -38,7 +38,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.1,
     },
   },
-  "alibaba/wan-2.6:fallback": {
+  "alibaba/wan-2.6:fal": {
     "cost": {
       "completionVideoSeconds": 0.1,
     },
@@ -171,7 +171,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00001,
     },
   },
-  "anthropic/claude-fable-5:fallback": {
+  "anthropic/claude-fable-5:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.00005,
       "promptCacheWriteTokens": 0.0000125,
@@ -199,7 +199,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000001,
     },
   },
-  "anthropic/claude-haiku-4.5:fallback": {
+  "anthropic/claude-haiku-4.5:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.000005,
       "promptCacheWriteTokens": 0.00000125,
@@ -241,7 +241,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000005,
     },
   },
-  "anthropic/claude-opus-4.7:fallback": {
+  "anthropic/claude-opus-4.7:openrouter:vertex-global": {
     "cost": {
       "completionTextTokens": 0.000025,
       "promptCacheWriteTokens": 0.00000625,
@@ -337,7 +337,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
-  "black-forest-labs/flux.1-kontext-pro:fallback": {
+  "black-forest-labs/flux.1-kontext-pro:replicate": {
     "cost": {
       "completionImageTokens": 0.04,
     },
@@ -353,7 +353,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.002,
     },
   },
-  "black-forest-labs/flux.1-schnell:fallback": {
+  "black-forest-labs/flux.1-schnell:deepinfra": {
     "cost": {
       "completionImageTokens": 0.0005,
     },
@@ -389,7 +389,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01125,
     },
   },
-  "black-forest-labs/flux.2-pro:fallback": {
+  "black-forest-labs/flux.2-pro:replicate": {
     "cost": {
       "completionImageTokens": 0.015,
       "promptImageTokens": 0.015,
@@ -415,7 +415,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionVideoSeconds": 0.025,
     },
   },
-  "bytedance/seedance-1-pro-fast:fallback": {
+  "bytedance/seedance-1-pro-fast:fal": {
     "cost": {
       "completionVideoSeconds": 0.0216,
     },
@@ -508,7 +508,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.035,
     },
   },
-  "bytedance/seedream-5.0-lite:fallback": {
+  "bytedance/seedream-5.0-lite:fal": {
     "cost": {
       "completionImageTokens": 0.035,
     },
@@ -570,7 +570,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000022,
     },
   },
-  "deepseek/deepseek-v4-flash:fallback": {
+  "deepseek/deepseek-v4-flash:deepinfra": {
     "cost": {
       "completionTextTokens": 0.00000018,
       "promptCachedTokens": 0.000000016,
@@ -718,7 +718,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000001,
     },
   },
-  "google/gemini-2.5-flash-lite:fallback": {
+  "google/gemini-2.5-flash-lite:openrouter:ai-studio": {
     "cost": {
       "completionTextTokens": 0.0000004,
       "promptAudioTokens": 0.0000003,
@@ -792,7 +792,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "google/gemini-3-pro-image:fallback": {
+  "google/gemini-3-pro-image:openrouter:vertex-global": {
     "cost": {
       "completionImageTokens": 0.00012,
       "completionTextTokens": 0.000012,
@@ -820,7 +820,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005,
     },
   },
-  "google/gemini-3.1-flash-image:fallback": {
+  "google/gemini-3.1-flash-image:openrouter:ai-studio": {
     "cost": {
       "completionImageTokens": 0.00006,
       "completionTextTokens": 0.000003,
@@ -878,7 +878,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.000002,
     },
   },
-  "google/gemini-3.1-pro-preview:fallback": {
+  "google/gemini-3.1-pro-preview:openrouter:ai-studio": {
     "cost": {
       "completionTextTokens": 0.000012,
       "promptAudioTokens": 0.000002,
@@ -928,7 +928,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.0000003,
     },
   },
-  "google/gemini-3.5-flash-lite:fallback": {
+  "google/gemini-3.5-flash-lite:openrouter:ai-studio-flex": {
     "cost": {
       "completionTextTokens": 0.00000125,
       "promptAudioTokens": 0.00000015,
@@ -968,7 +968,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000075,
     },
   },
-  "google/gemini-3.7-flash:fallback": {
+  "google/gemini-3.7-flash:openrouter:ai-studio-priority": {
     "cost": {
       "completionTextTokens": 0.00000675,
       "promptAudioTokens": 0.00000135,
@@ -1048,7 +1048,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000013,
     },
   },
-  "google/gemma-4-26b-a4b-it:fallback": {
+  "google/gemma-4-26b-a4b-it:deepinfra": {
     "cost": {
       "completionTextTokens": 0.00000034,
       "promptImageTokens": 0.00000007,
@@ -1072,7 +1072,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000014,
     },
   },
-  "google/gemma-4-31b-it:fallback": {
+  "google/gemma-4-31b-it:deepinfra": {
     "cost": {
       "completionTextTokens": 0.00000038,
       "promptImageTokens": 0.00000013,
@@ -1179,7 +1179,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.03,
     },
   },
-  "krea/krea-2-medium:fallback": {
+  "krea/krea-2-medium:replicate": {
     "cost": {
       "completionImageTokens": 0.03,
     },
@@ -1217,7 +1217,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000005325,
     },
   },
-  "meta/llama-3.3-70b-instruct:fallback": {
+  "meta/llama-3.3-70b-instruct:deepinfra": {
     "cost": {
       "completionTextTokens": 0.00000032,
       "promptTextTokens": 0.0000001,
@@ -1249,7 +1249,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000001,
     },
   },
-  "meta/llama-4-scout:fallback": {
+  "meta/llama-4-scout:openrouter:vertex-us-east5": {
     "cost": {
       "completionTextTokens": 0.0000007,
       "promptImageTokens": 0.00000025,
@@ -1275,7 +1275,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000035,
     },
   },
-  "meta/muse-glimmer-30b:fallback": {
+  "meta/muse-glimmer-30b:openrouter:deepinfra-bf16": {
     "cost": {
       "completionTextTokens": 0.0000012,
       "promptCachedTokens": 0.00000004,
@@ -1329,7 +1329,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.24,
     },
   },
-  "microsoft/trellis-2:fallback": {
+  "microsoft/trellis-2:fal": {
     "cost": {
       "completionImageTokens": 0.25,
     },
@@ -1386,7 +1386,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000025,
     },
   },
-  "minimax/minimax-m2.7:fallback": {
+  "minimax/minimax-m2.7:deepinfra": {
     "cost": {
       "completionTextTokens": 0.000001,
       "promptCachedTokens": 0.00000005,
@@ -1422,7 +1422,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000375,
     },
   },
-  "mistralai/mistral-large-3:fallback": {
+  "mistralai/mistral-large-3:openrouter:mistral-zdr": {
     "cost": {
       "completionTextTokens": 0.0000015,
       "promptCachedTokens": 0.00000005,
@@ -1444,7 +1444,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000000075,
     },
   },
-  "mistralai/mistral-small-3.2:fallback": {
+  "mistralai/mistral-small-3.2:deepinfra": {
     "cost": {
       "completionTextTokens": 0.0000002,
       "promptTextTokens": 0.000000075,
@@ -1468,7 +1468,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015,
     },
   },
-  "mistralai/mistral-small-4:fallback": {
+  "mistralai/mistral-small-4:openrouter:mistral-eu": {
     "cost": {
       "completionTextTokens": 0.00000066,
       "promptCachedTokens": 0.0000000165,
@@ -1496,7 +1496,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000095,
     },
   },
-  "moonshotai/kimi-k2.6:fallback": {
+  "moonshotai/kimi-k2.6:deepinfra": {
     "cost": {
       "completionTextTokens": 0.0000035,
       "promptCachedTokens": 0.00000015,
@@ -1526,7 +1526,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000095,
     },
   },
-  "moonshotai/kimi-k2.7-code:fallback": {
+  "moonshotai/kimi-k2.7-code:deepinfra": {
     "cost": {
       "completionTextTokens": 0.0000034,
       "promptCacheWriteTokens": 0.00000085,
@@ -1578,7 +1578,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000005,
     },
   },
-  "nvidia/nemotron-3.5-lightning:fallback": {
+  "nvidia/nemotron-3.5-lightning:openrouter:coreweave-bf16": {
     "cost": {
       "completionTextTokens": 0.00000025,
       "promptCachedTokens": 0.00000005,
@@ -1794,7 +1794,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
-  "openai/gpt-image-1-mini:fallback": {
+  "openai/gpt-image-1-mini:openai": {
     "cost": {
       "completionImageTokens": 0.000008,
       "promptCachedTokens": 0.0000002,
@@ -1824,7 +1824,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
-  "openai/gpt-image-1.5:fallback": {
+  "openai/gpt-image-1.5:openai": {
     "cost": {
       "completionImageTokens": 0.000032,
       "completionTextTokens": 0.00001,
@@ -1854,7 +1854,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000375,
     },
   },
-  "openai/gpt-image-2:fallback": {
+  "openai/gpt-image-2:openai": {
     "cost": {
       "completionImageTokens": 0.00003,
       "promptCachedTokens": 0.00000125,
@@ -1954,7 +1954,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptAudioSeconds": 0.0000452777777777778,
     },
   },
-  "openai/whisper-large-v3:fallback": {
+  "openai/whisper-large-v3:deepinfra": {
     "cost": {
       "promptAudioSeconds": 0.0000075,
     },
@@ -2051,7 +2051,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.01,
     },
   },
-  "prunaai/p-image-edit:fallback": {
+  "prunaai/p-image-edit:replicate": {
     "cost": {
       "completionImageTokens": 0.01,
     },
@@ -2101,7 +2101,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.003,
     },
   },
-  "qwen/qwen-image-3:fallback": {
+  "qwen/qwen-image-3:replicate": {
     "cost": {
       "completionImageTokens": 0.03,
       "promptImageTokens": 0,
@@ -2139,7 +2139,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000012,
     },
   },
-  "qwen/qwen3-coder-next:fallback": {
+  "qwen/qwen3-coder-next:openrouter:streamlake": {
     "cost": {
       "completionTextTokens": 0.0000009,
       "promptCachedTokens": 0.000000036,
@@ -2189,7 +2189,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000004,
     },
   },
-  "qwen/qwen3-vl-235b-a22b-thinking:fallback": {
+  "qwen/qwen3-vl-235b-a22b-thinking:openrouter:novita-bf16": {
     "cost": {
       "completionReasoningTokens": 0.00000395,
       "completionTextTokens": 0.00000395,
@@ -2249,7 +2249,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000003,
     },
   },
-  "qwen/qwen3.7-flash:fallback": {
+  "qwen/qwen3.7-flash:alibaba": {
     "cost": {
       "completionTextTokens": 0.00000013,
       "promptCacheWriteTokens": 0.000000038,
@@ -2352,7 +2352,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000002,
     },
   },
-  "qwen/qwen3.8-2.4t-a95b:fallback": {
+  "qwen/qwen3.8-2.4t-a95b:deepinfra": {
     "cost": {
       "completionTextTokens": 0.000006,
       "promptCachedTokens": 0.0000002,
@@ -2380,7 +2380,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000032,
     },
   },
-  "qwen/qwen3.8-27b:fallback": {
+  "qwen/qwen3.8-27b:openrouter:akashml-fp8": {
     "cost": {
       "completionTextTokens": 0.0000025,
       "promptCachedTokens": 0.000000032,
@@ -2414,7 +2414,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptVideoTokens": 0.00000015,
     },
   },
-  "qwen/qwen3.8-flash:fallback": {
+  "qwen/qwen3.8-flash:alibaba": {
     "cost": {
       "completionTextTokens": 0.00000047,
       "promptCacheWriteTokens": 0.0000002,
@@ -2570,7 +2570,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "completionImageTokens": 0.004,
     },
   },
-  "tongyi-mai/z-image-turbo:fallback": {
+  "tongyi-mai/z-image-turbo:fal": {
     "cost": {
       "completionImageTokens": 0,
     },
@@ -2592,7 +2592,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000015,
     },
   },
-  "x-ai/grok-4.20:fallback": {
+  "x-ai/grok-4.20:openrouter:xai-zdr": {
     "cost": {
       "completionTextTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
@@ -2628,7 +2628,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.0000009375,
     },
   },
-  "x-ai/grok-4.3:fallback": {
+  "x-ai/grok-4.3:openrouter:xai-zdr": {
     "cost": {
       "completionTextTokens": 0.0000025,
       "promptCachedTokens": 0.0000002,
@@ -2728,7 +2728,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
-  "x-ai/grok-imagine-video-1.5:fallback": {
+  "x-ai/grok-imagine-video-1.5:fal": {
     "cost": {
       "completionVideoSeconds": 0.14,
       "promptImageTokens": 0.01,
@@ -2746,7 +2746,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptImageTokens": 0.01,
     },
   },
-  "x-ai/grok-imagine-video:fallback": {
+  "x-ai/grok-imagine-video:fal": {
     "cost": {
       "completionVideoSeconds": 0.07,
       "promptImageTokens": 0.002,
@@ -2834,7 +2834,7 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.00000015,
     },
   },
-  "z-ai/glm-5.3:fallback": {
+  "z-ai/glm-5.3:openrouter:friendli": {
     "cost": {
       "completionTextTokens": 0.00000396,
       "promptCachedTokens": 0.000000234,

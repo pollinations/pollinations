@@ -2,7 +2,7 @@ import type { FallbackMap } from "./merge-fallbacks";
 
 export const MODEL3D_FALLBACKS = {
     "microsoft/trellis-2": {
-        "microsoft/trellis-2:fallback": {
+        "microsoft/trellis-2:fal": {
             provider: "fal",
             addedDate: new Date("2026-09-01").getTime(),
             cost: {

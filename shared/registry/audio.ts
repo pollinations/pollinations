@@ -155,6 +155,7 @@ export const AUDIO_VOICES = [
 export const DEFAULT_AUDIO_MODEL = "elevenlabs/eleven-v3" as const;
 const AUDIO_BASE_SERVICES = {
     "elevenlabs/eleven-v3": {
+        routeId: "elevenlabs/eleven-v3:elevenlabs",
         aliases: [
             "tts",
             "text-to-speech",
@@ -188,6 +189,7 @@ const AUDIO_BASE_SERVICES = {
         ],
     },
     "elevenlabs/eleven-flash-v2.5": {
+        routeId: "elevenlabs/eleven-flash-v2.5:elevenlabs",
         aliases: ["tts-flash", "eleven-flash", "flash", "elevenflash"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -214,6 +216,7 @@ const AUDIO_BASE_SERVICES = {
         ],
     },
     "elevenlabs/eleven-multilingual-v2": {
+        routeId: "elevenlabs/eleven-multilingual-v2:elevenlabs",
         aliases: [
             "multilingual-v2",
             "eleven-v2",
@@ -245,6 +248,7 @@ const AUDIO_BASE_SERVICES = {
         ],
     },
     "elevenlabs/eleven-v3:dialogue": {
+        routeId: "elevenlabs/eleven-v3:dialogue:elevenlabs",
         aliases: ["eleven-dialogue", "dialogue", "text-to-dialogue"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -264,6 +268,7 @@ const AUDIO_BASE_SERVICES = {
         voices: ELEVENLABS_VOICES as string[],
     },
     "elevenlabs/eleven-multilingual-sts-v2": {
+        routeId: "elevenlabs/eleven-multilingual-sts-v2:elevenlabs",
         aliases: ["voice-changer", "speech-to-speech", "eleven-voice-changer"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -284,6 +289,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/voice-changer"],
     },
     "elevenlabs/voice-isolator": {
+        routeId: "elevenlabs/voice-isolator:elevenlabs",
         aliases: ["voice-isolator", "audio-cleanup", "eleven-voice-isolator"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -303,6 +309,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/voice-isolator"],
     },
     "elevenlabs/music-v2": {
+        routeId: "elevenlabs/music-v2:elevenlabs",
         aliases: ["music", "elevenmusic"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -324,6 +331,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "google/lyria-3-clip-preview": {
+        routeId: "google/lyria-3-clip-preview:google",
         aliases: ["lyria", "lyria-3", "lyria-3-clip"],
         provider: "google",
         author: "Google",
@@ -342,6 +350,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "elevenlabs/eleven-text-to-sound-v2": {
+        routeId: "elevenlabs/eleven-text-to-sound-v2:elevenlabs",
         aliases: ["sfx", "sound-effects", "eleven-sound-effects", "eleven-sfx"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -359,6 +368,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "openai/whisper-large-v3": {
+        routeId: "openai/whisper-large-v3:ovhcloud",
         aliases: ["whisper-1", "whisper-large-v3", "whisper"],
         provider: "ovhcloud",
         author: "OpenAI",
@@ -376,6 +386,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "openai/gpt-transcribe": {
+        routeId: "openai/gpt-transcribe:azure",
         aliases: ["gpt-transcribe"],
         provider: "azure",
         author: "OpenAI",
@@ -396,6 +407,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "elevenlabs/scribe-v2": {
+        routeId: "elevenlabs/scribe-v2:elevenlabs",
         aliases: ["scribe_v2", "scribe-v2", "scribe"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -414,6 +426,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "x-ai/grok-transcribe": {
+        routeId: "x-ai/grok-transcribe:xai",
         aliases: ["grok-transcribe"],
         provider: "xai",
         author: "xAI",
@@ -433,6 +446,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "x-ai/grok-tts": {
+        routeId: "x-ai/grok-tts:xai",
         aliases: ["grok-tts"],
         provider: "xai",
         author: "xAI",
@@ -453,6 +467,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/audio/{text}", "/v1/audio/speech"],
     },
     "assemblyai/universal-2": {
+        routeId: "assemblyai/universal-2:assemblyai",
         aliases: ["assemblyai-universal-2", "assemblyai-u2", "universal-2"],
         provider: "assemblyai",
         author: "AssemblyAI",
@@ -486,6 +501,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "assemblyai/universal-3.5-pro": {
+        routeId: "assemblyai/universal-3.5-pro:assemblyai",
         aliases: [
             "universal-3-pro",
             "universal-3-5-pro",
@@ -552,6 +568,7 @@ const AUDIO_BASE_SERVICES = {
         supportedEndpoints: ["/v1/audio/transcriptions"],
     },
     "stability-ai/stable-audio-3-medium": {
+        routeId: "stability-ai/stable-audio-3-medium:fal",
         aliases: [
             "stable-audio",
             "stability-audio",
@@ -581,6 +598,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "stability-ai/stable-audio-3": {
+        routeId: "stability-ai/stable-audio-3:stability",
         // Distinct from stable-audio-3-medium (fal): this is the larger
         // API-only model served by Stability's direct API. Keep aliases
         // non-overlapping with the medium entry.
@@ -610,6 +628,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "fish-audio/s2.1-pro": {
+        routeId: "fish-audio/s2.1-pro:openrouter:fish-audio",
         aliases: ["fish-audio-s2.1-pro"],
         provider: "openrouter",
         author: "Fish Audio",
@@ -628,6 +647,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "qwen/qwen3-tts-flash": {
+        routeId: "qwen/qwen3-tts-flash:alibaba",
         aliases: ["qwen3-tts", "qwen3-tts-flash", "qwen-tts"],
         provider: "alibaba",
         author: "Qwen",
@@ -646,6 +666,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "qwen/qwen3-tts-instruct-flash": {
+        routeId: "qwen/qwen3-tts-instruct-flash:alibaba",
         aliases: [
             "qwen3-tts-instruct",
             "qwen3-tts-instruct-flash",
@@ -668,6 +689,7 @@ const AUDIO_BASE_SERVICES = {
         outputModalities: ["audio"],
     },
     "sesame/csm-1b": {
+        routeId: "sesame/csm-1b:deepinfra",
         aliases: ["csm", "sesame-csm", "sesame-csm-1b", "csm-1b"],
         provider: "deepinfra",
         author: "Sesame",
@@ -687,6 +709,7 @@ const AUDIO_BASE_SERVICES = {
         voices: [...CSM_VOICES],
     },
     "hexgrad/kokoro-82m": {
+        routeId: "hexgrad/kokoro-82m:deepinfra",
         aliases: ["kokoro-82m", "kokoro-tts", "hexgrad-kokoro-82m", "kokoro"],
         provider: "deepinfra",
         author: "Hexgrad",

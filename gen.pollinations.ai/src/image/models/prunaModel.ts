@@ -29,7 +29,7 @@ const DEEPINFRA_TIMEOUT_MS = 120_000;
 const DEEPINFRA_IMAGE_MODELS = {
     "prunaai/p-image": "PrunaAI/p-image",
     "prunaai/p-image-edit": "PrunaAI/p-image-Edit",
-    "black-forest-labs/flux.1-schnell:fallback":
+    "black-forest-labs/flux.1-schnell:deepinfra":
         "black-forest-labs/FLUX-1-schnell",
 } as const;
 
@@ -106,7 +106,7 @@ async function generateDeepInfraImage(
     input: PImageInput | PImageEditInput | FluxSchnellInput,
 ): Promise<ImageGenerationResult> {
     const displayName =
-        actualModel === "black-forest-labs/flux.1-schnell:fallback"
+        actualModel === "black-forest-labs/flux.1-schnell:deepinfra"
             ? "FLUX.1 Schnell"
             : `Pruna ${actualModel}`;
     const apiKey = getImageEnv("DEEPINFRA_API_KEY");
@@ -176,7 +176,7 @@ export async function callFluxSchnellDeepInfraAPI(
     };
     if (safeParams.seed !== undefined) input.seed = safeParams.seed;
     return generateDeepInfraImage(
-        "black-forest-labs/flux.1-schnell:fallback",
+        "black-forest-labs/flux.1-schnell:deepinfra",
         input,
     );
 }

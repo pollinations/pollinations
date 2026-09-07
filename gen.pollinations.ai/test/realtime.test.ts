@@ -662,6 +662,7 @@ test("serves GPT Live Transcribe through Azure and bills streamed duration", asy
     expect(balances?.tierBalance).toBeCloseTo(1 - expectedPrice, 8);
     expect(balances?.packBalance).toBe(0);
     expect(telemetry.resolvedModelRequested).toBe("openai/gpt-live-transcribe");
+    expect(telemetry.modelUsed).toBe("openai/gpt-live-transcribe:azure");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptAudioSeconds).toBe(60);
     expect(telemetry.totalCost).toBeCloseTo(expectedCost, 12);
@@ -951,6 +952,9 @@ test.each([
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.resolvedModelRequested).toBe(
         "elevenlabs/scribe-v2-realtime",
+    );
+    expect(telemetry.modelUsed).toBe(
+        "elevenlabs/scribe-v2-realtime:elevenlabs",
     );
     expect(telemetry.modelProviderUsed).toBe("elevenlabs");
     expect(telemetry.tokenCountPromptAudioSeconds).toBe(1);
@@ -1294,6 +1298,7 @@ test("deducts aggregate session usage from paid pack balance on close", async ()
     expect(telemetry.eventType).toBe("generate.realtime");
     expect(telemetry.responseStatus).toBe(200);
     expect(telemetry.resolvedModelRequested).toBe("openai/gpt-realtime-2.1");
+    expect(telemetry.modelUsed).toBe("openai/gpt-realtime-2.1:azure");
     expect(telemetry.modelProviderUsed).toBe("azure");
     expect(telemetry.tokenCountPromptText).toBe(200);
     expect(telemetry.tokenCountPromptCached).toBe(40);

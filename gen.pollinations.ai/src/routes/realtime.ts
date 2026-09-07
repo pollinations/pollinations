@@ -777,7 +777,9 @@ function createRealtimeTrackingEvent(args: {
         referrerDomain: args.tracking.referrerDomain,
         modelRequested: args.tracking.modelRequested,
         resolvedModelRequested: args.tracking.resolvedModelRequested,
-        modelUsed: args.tracking.resolvedModelRequested,
+        modelUsed:
+            args.tracking.modelDefinition.routeId ??
+            args.tracking.resolvedModelRequested,
         modelProviderUsed: args.tracking.modelDefinition.provider,
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),

@@ -365,7 +365,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "eastus2",
         },
     ],
-    "openai/gpt-image-1-mini:fallback": [
+    "openai/gpt-image-1-mini:openai": [
         {
             provider: "openai",
             baseUrl: "https://api.openai.com/v1",
@@ -374,7 +374,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "direct",
         },
     ],
-    "openai/gpt-image-1.5:fallback": [
+    "openai/gpt-image-1.5:openai": [
         {
             provider: "openai",
             baseUrl: "https://api.openai.com/v1",
@@ -383,7 +383,7 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "direct",
         },
     ],
-    "openai/gpt-image-2:fallback": [
+    "openai/gpt-image-2:openai": [
         {
             provider: "openai",
             baseUrl: "https://api.openai.com/v1",
@@ -713,9 +713,9 @@ const generateImage = async (
         case "openai/gpt-image-1-mini":
         case "openai/gpt-image-1.5":
         case "openai/gpt-image-2":
-        case "openai/gpt-image-1-mini:fallback":
-        case "openai/gpt-image-1.5:fallback":
-        case "openai/gpt-image-2:fallback": {
+        case "openai/gpt-image-1-mini:openai":
+        case "openai/gpt-image-1.5:openai":
+        case "openai/gpt-image-2:openai": {
             const [gptConfig] = GPTIMAGE_CONFIGS[safeParams.model];
             logError(
                 `GPT Image (${gptConfig.modelName}) authentication check:`,
@@ -742,7 +742,7 @@ const generateImage = async (
 
         case "google/gemini-2.5-flash-image":
         case "google/gemini-3.1-flash-image":
-        case "google/gemini-3.1-flash-image:fallback":
+        case "google/gemini-3.1-flash-image:openrouter:ai-studio":
         case "google/gemini-3.1-flash-lite-image": {
             logError(
                 "Nano Banana authentication check:",
@@ -766,7 +766,7 @@ const generateImage = async (
         }
 
         case "google/gemini-3-pro-image":
-        case "google/gemini-3-pro-image:fallback": {
+        case "google/gemini-3-pro-image:openrouter:vertex-global": {
             logError(
                 "Nano Banana authentication check:",
                 formatAuthInfo(userInfo),
@@ -825,7 +825,7 @@ const generateImage = async (
         case "bytedance/seedream-5.0-lite":
             return await callSeedream5API(prompt, safeParams);
 
-        case "bytedance/seedream-5.0-lite:fallback":
+        case "bytedance/seedream-5.0-lite:fal":
             return await callFalFallbackImage(prompt, safeParams);
 
         case "bytedance/seedream-5.0-pro":
@@ -889,11 +889,11 @@ const generateImage = async (
         case "qwen/qwen-image-3":
             return await callQwenImage3API(prompt, safeParams);
 
-        case "black-forest-labs/flux.1-kontext-pro:fallback":
-        case "black-forest-labs/flux.2-pro:fallback":
-        case "qwen/qwen-image-3:fallback":
-        case "prunaai/p-image-edit:fallback":
-        case "krea/krea-2-medium:fallback":
+        case "black-forest-labs/flux.1-kontext-pro:replicate":
+        case "black-forest-labs/flux.2-pro:replicate":
+        case "qwen/qwen-image-3:replicate":
+        case "prunaai/p-image-edit:replicate":
+        case "krea/krea-2-medium:replicate":
             return await callReplicateFallbackImage(prompt, safeParams);
 
         case "lykon/dreamshaper-8-lcm":
@@ -903,10 +903,10 @@ const generateImage = async (
         case "black-forest-labs/flux.1-schnell":
             return await callSelfHostedServer(prompt, safeParams, "flux");
 
-        case "black-forest-labs/flux.1-schnell:fallback":
+        case "black-forest-labs/flux.1-schnell:deepinfra":
             return await callFluxSchnellDeepInfraAPI(prompt, safeParams);
 
-        case "tongyi-mai/z-image-turbo:fallback":
+        case "tongyi-mai/z-image-turbo:fal":
             return await callZImageFalAPI(prompt, safeParams);
 
         default:

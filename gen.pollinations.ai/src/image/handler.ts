@@ -1,7 +1,10 @@
 import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { DEFAULT_IMAGE_MODEL } from "@shared/registry/image.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+} from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
 import {
@@ -288,6 +291,7 @@ async function generateMediaWithFallback(
     result: ImageGenerationResult | VideoGenerationResult;
     params: RuntimeImageParams;
     servedIndex: number;
+    servedRouteId?: string;
 }> {
     const shouldFallback = (error: unknown, candidate: FallbackCandidate) => {
         if (
@@ -300,7 +304,7 @@ async function generateMediaWithFallback(
         }
         return isRetryableFallbackError(error);
     };
-    const { result, index } = await withModelFallback(
+    const { result, index, candidate } = await withModelFallback(
         fallbackCandidates(c.var.model),
         async (attempt) => {
             const params = { ...safeParams, model: attempt.id };
@@ -343,6 +347,7 @@ async function generateMediaWithFallback(
     return {
         ...result,
         servedIndex: index,
+        servedRouteId: candidate.definition?.routeId,
     };
 }
 
@@ -428,17 +433,15 @@ export async function generateImageOrVideoResponse(
     });
 
     try {
-        const { result, params, servedIndex } = await generateMediaWithFallback(
-            c,
-            originalPrompt,
-            safeParams,
-        );
+        const { result, params, servedIndex, servedRouteId } =
+            await generateMediaWithFallback(c, originalPrompt, safeParams);
         const headers = mediaHeaders(
             originalPrompt,
             params,
             result,
             result.mimeType || detectMimeType(result.buffer),
         );
+        if (servedRouteId) headers.set(MODEL_USED_HEADER, servedRouteId);
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(

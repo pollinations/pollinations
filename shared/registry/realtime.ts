@@ -30,6 +30,7 @@ const OPENAI_REALTIME_COST = {
 
 export const REALTIME_SERVICES = {
     [DEFAULT_REALTIME_MODEL]: {
+        routeId: "openai/gpt-realtime-2.1:azure",
         ...OPENAI_REALTIME_BASE,
         aliases: ["gpt-realtime-2.1", "gpt-realtime-2"],
         addedDate: new Date("2026-07-16").getTime(),
@@ -41,6 +42,7 @@ export const REALTIME_SERVICES = {
         contextLength: 32000,
     },
     "openai/gpt-realtime-2.1-mini": {
+        routeId: "openai/gpt-realtime-2.1-mini:azure",
         ...OPENAI_REALTIME_BASE,
         aliases: ["gpt-realtime-2.1-mini"],
         addedDate: new Date("2026-07-26").getTime(),
@@ -72,6 +74,7 @@ export const REALTIME_SERVICES = {
         ],
     },
     "elevenlabs/scribe-v2-realtime": {
+        routeId: "elevenlabs/scribe-v2-realtime:elevenlabs",
         aliases: ["scribe-realtime"],
         provider: "elevenlabs",
         author: "ElevenLabs",
@@ -91,6 +94,7 @@ export const REALTIME_SERVICES = {
         supportedEndpoints: ["/realtime", "/v1/realtime"],
     },
     "openai/gpt-live-transcribe": {
+        routeId: "openai/gpt-live-transcribe:azure",
         aliases: ["gpt-live-transcribe"],
         provider: "azure",
         author: "OpenAI",

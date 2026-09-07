@@ -6,7 +6,10 @@ import {
     usesAgentRunToken,
 } from "@shared/community-endpoints.ts";
 import type { ModelDefinition } from "@shared/registry/registry.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+} from "@shared/registry/usage-headers.ts";
 import {
     firstContentPolicyMessage,
     providerErrorText,
@@ -214,6 +217,7 @@ export function isRetryableFallbackError(error: unknown): boolean {
  * seam below does not depend on how any one handler reaches its provider.
  */
 export type FallbackCandidate = {
+    /** Registry dispatch key; the primary keeps the requested public model ID. */
     id: string;
     /** Always present alongside `communityEndpoint`: it is what prices it. */
     definition?: ModelDefinition;
@@ -221,6 +225,11 @@ export type FallbackCandidate = {
     /** Serving registry entry. Absent on the model the caller asked for. */
     entry?: GenerationModelEntry;
 };
+
+/** Execution identity is independent of the public model and route priority. */
+export function getProviderRouteId(candidate: FallbackCandidate): string {
+    return candidate.definition?.routeId ?? candidate.id;
+}
 
 type PrimaryModel = {
     resolved: string;
@@ -398,12 +407,18 @@ export async function withModelFallbackResponse(
     attempts?: FallbackAttempt[],
     beforeAttempt?: (candidate: FallbackCandidate) => Promise<void>,
 ): Promise<Response> {
-    const { result, index } = await withModelFallback(
+    const { result, candidate, index } = await withModelFallback(
         fallbackCandidates(model),
         attempt,
         attempts,
         beforeAttempt,
     );
+    if (
+        candidate.definition?.routeId &&
+        result.headers.get("x-cache") !== "HIT"
+    ) {
+        result.headers.set(MODEL_USED_HEADER, getProviderRouteId(candidate));
+    }
     if (index > 0) {
         result.headers.set(FALLBACK_TARGET_HEADER, formatFallbackTarget(index));
     }

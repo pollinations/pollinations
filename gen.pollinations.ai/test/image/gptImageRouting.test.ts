@@ -102,9 +102,9 @@ describe("openai/gpt-image-2 Azure routing", () => {
 
 describe("GPT Image OpenAI fallback routing", () => {
     const routes = [
-        ["openai/gpt-image-1-mini:fallback", "gpt-image-1-mini"],
-        ["openai/gpt-image-1.5:fallback", "gpt-image-1.5"],
-        ["openai/gpt-image-2:fallback", "gpt-image-2"],
+        ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
+        ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],
+        ["openai/gpt-image-2:openai", "gpt-image-2"],
     ] as const;
 
     for (const [route, upstreamModel] of routes) {
@@ -141,9 +141,9 @@ describe("GPT Image OpenAI fallback routing", () => {
         await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
         await callGPTImage(
             "test",
-            { ...params, model: "openai/gpt-image-2:fallback" },
+            { ...params, model: "openai/gpt-image-2:openai" },
             userInfo,
-            "openai/gpt-image-2:fallback",
+            "openai/gpt-image-2:openai",
         );
         await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
 

@@ -103,6 +103,7 @@ import {
     type FallbackAttempt,
     type FallbackCandidate,
     fallbackCandidates,
+    getProviderRouteId,
 } from "../fallback.ts";
 
 export type ModelUsage = {
@@ -321,7 +322,7 @@ export const track = (eventType: EventType) =>
                 // loop can supply. So a request emits one row per upstream call.
                 for (const attempt of attempts) {
                     if (attempt.settled) continue;
-                    const model = attempt.candidate.id;
+                    const model = getProviderRouteId(attempt.candidate);
                     const status = failedAttemptStatus(attempt.error);
                     await emitRow({
                         startTime: attempt.startedAt,
@@ -333,7 +334,7 @@ export const track = (eventType: EventType) =>
                             isBilledUsage: false,
                             isFinal: false,
                             fallbackUsed:
-                                model !==
+                                attempt.candidate.id !==
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
                             modelProviderUsed:
@@ -663,6 +664,7 @@ export async function trackResponse(
     const log = getLogger(["hono", "track", "response"]);
     const { resolvedModelRequested } = requestTracking;
     const modelCalled = candidate.id || resolvedModelRequested;
+    const routeId = getProviderRouteId(candidate) || modelCalled;
     const modelProviderUsed =
         candidate.definition?.provider ?? requestTracking.modelProvider;
     const cacheHit = response.headers.get("x-cache") === "HIT";
@@ -684,16 +686,15 @@ export async function trackResponse(
     // say what failed — otherwise model_used falls back to the datasource
     // DEFAULT 'undefined' and per-model upstream health is unqueryable.
     //
-    // Which model that was: the one the request resolved to, unless the
-    // fallback loop moved on and stopped on a different one. Only the loop
-    // knows that, so it reports the id it stopped on and modelCalled prefers
-    // it.
+    // The loop supplies the serving definition. Its routeId labels execution;
+    // modelCalled remains the registry dispatch key, so a provider-qualified
+    // primary route is not misclassified as a fallback.
     if (cacheHit) {
         return notBilled();
     }
     if (!response.ok) {
         return notBilled({
-            modelUsed: modelCalled,
+            modelUsed: routeId,
         });
     }
 
@@ -716,7 +717,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: modelCalled });
+        return notBilled({ modelUsed: routeId });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -748,7 +749,10 @@ export async function trackResponse(
                 output,
                 input: billingInput,
             }),
-            modelUsed: modelUsage?.model ?? modelCalled,
+            modelUsed:
+                candidate.definition?.routeId ??
+                modelUsage?.model ??
+                modelCalled,
             modelProviderUsed,
             usage,
             contentFilterResults,
@@ -791,7 +795,7 @@ export async function trackResponse(
                 ...notBilled(),
                 ...adjustmentOnlyBilling,
                 responseStatus: 502,
-                modelUsed: modelCalled,
+                modelUsed: routeId,
                 usage: {},
                 contentFilterResults,
                 errorTracking: {
@@ -810,14 +814,14 @@ export async function trackResponse(
                 isBilledUsage: hasBillablePrice,
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
-                modelUsed: modelCalled,
+                modelUsed: routeId,
                 usage: {},
                 contentFilterResults,
             };
         }
         return notBilled({
             contentFilterResults,
-            modelUsed: modelCalled,
+            modelUsed: routeId,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -848,7 +852,7 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        modelUsed: modelUsage.model,
+        modelUsed: candidate.definition?.routeId ?? modelUsage.model,
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,

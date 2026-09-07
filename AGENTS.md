@@ -91,7 +91,8 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
 
 **CRITICAL — never mutate a secret without the user's separate, explicit, scoped approval.**
 
-- A secret mutation includes creating, replacing, rotating, revoking, regenerating, synchronizing, or deploying a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
+- A secret mutation changes secret material or its lifecycle: creating, replacing, rotating, revoking, or regenerating a credential, token, API key, certificate, GitHub secret, provider secret, or encrypted SOPS value.
+- Re-uploading unchanged encrypted values through an existing reviewed deployment workflow is routine deployment, not rotation, and needs no separate secret approval. This exception applies only when the user requested the deployment and the diff changes neither the secret source, mapping, target environment, nor upload command.
 - Before any mutation, stop and state the exact secret name (never its value), environments, reason, expected impact, execution order, verification, and rollback.
 - Require a new approval in the current conversation after presenting that plan. General instructions such as “go ahead,” “fix it,” “deploy,” “continue,” or approval for the surrounding model/task work do not count.
 - For a first-time secret addition, require: `Yes, you can add <SECRET_NAME> to <ENVIRONMENTS> now.`

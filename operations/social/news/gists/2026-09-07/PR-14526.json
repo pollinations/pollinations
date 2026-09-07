@@ -1,0 +1,35 @@
+{
+  "pr_number": 14526,
+  "title": "fix: preserve coordinator errors and recover cached results",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14526",
+  "merged_at": "2026-09-07T09:15:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Preserves original coordinator/cache errors and reset, overload, and retryable flags in the existing Tinybird error stack; no schema change or new public error details.\n- Checks the existing cache once after a coordinator RPC failure. Returns the saved result if present, otherwise 503; never restarts a job or makes another AI request.\n- Reuses normal cache-hit billing: recovery and a later identical request produce one provider call, one wallet debit, and one billed event. Recovered requests are not logged as failed requests in Tinybird.\n- Verified 141 focused tests, Gen typecheck, and Biome. No deployment or secret changes.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The cache catches the falling acorn",
+    "blurb": "When a coordinator stumbles, the hive now checks whether the answer already made it safely into the cache. Same result, no extra AI trip, no duplicate pollen toll.",
+    "summary": "Generation deduplication now preserves coordinator error flags and, after a coordinator RPC failure, checks the existing cache once to return any saved result without restarting the job or issuing another AI request.",
+    "impact": "Requests that recover from a coordinator hiccup can receive their already-generated result through the normal cache-hit path, with one provider call, one wallet debit, and one billed event.",
+    "keywords": [
+      "generation",
+      "cache",
+      "coordinator",
+      "deduplication",
+      "billing",
+      "reliability",
+      "errors"
+    ],
+    "visual_concept": "Depict generation recovery as a cozy garden delivery: Polli notices a small coordinator terminal briefly sputter, then finds a finished glowing response safely stored in a cache jar. A CRT monitor robot can eagerly hold the recovered result while a single path from the AI garden to the cache emphasizes that no second provider journey or duplicate billing occurs.",
+    "image_prompt": "A cozy pixel art garden-workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt and retrieves a glowing completed API response from a lime green (#ecf874) cache jar beside a gently blinking coordinator terminal; a cute CRT-monitor robot proudly holds the recovered code printout while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"CACHE HIT\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-07/PR-14526.jpg",
+    "prompt": "A cozy pixel art garden-workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny mechanic tool belt and retrieves a glowing completed API response from a lime green (#ecf874) cache jar beside a gently blinking coordinator terminal; a cute CRT-monitor robot proudly holds the recovered code printout while code-plants bloom nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"CACHE HIT\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-07T09:16:28.511168+00:00"
+}

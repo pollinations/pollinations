@@ -3472,9 +3472,14 @@ fixtureTest.each(
         if (usageKind === "valid") {
             expect(response.status, body).toBe(200);
             expect(body).toContain("managed answer");
-            expect(body).toContain(
-                route === "responses" ? '"mcp_call"' : "Tool Executed",
-            );
+            if (route === "responses") {
+                expect(body).toContain('"type":"function_call"');
+                expect(body).toContain('"type":"function_call_output"');
+                expect(body).not.toContain('"type":"mcp_call"');
+            } else {
+                expect(body).toContain("Tool Executed");
+                expect(body).not.toContain('"tool_calls":[');
+            }
         } else {
             expect(response.status).toBe(stream ? 200 : 502);
             expect(body).toContain('"error"');

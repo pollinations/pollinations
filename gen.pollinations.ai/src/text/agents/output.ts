@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { McpCallSchema, mcpCallError, safeMcpOutput } from "./mcp.ts";
+import {
+    type FunctionCall,
+    FunctionCallOutputSchema,
+    FunctionCallSchema,
+} from "./functionItems.ts";
+import { safeMcpOutput } from "./mcp.ts";
 import type { AgentPart } from "./runtime.ts";
 
 const MessageSchema = z.object({
@@ -18,7 +23,8 @@ const MessageSchema = z.object({
 });
 const OutputItemSchema = z.discriminatedUnion("type", [
     MessageSchema,
-    McpCallSchema,
+    FunctionCallSchema,
+    FunctionCallOutputSchema,
 ]);
 export type AgentOutputItem = z.infer<typeof OutputItemSchema>;
 
@@ -28,6 +34,8 @@ export function collectOutput(
 ) {
     const items: AgentOutputItem[] = [];
     const skippedToolCalls = new Set<string>();
+    const pendingCalls = new Map<string, FunctionCall>();
+    const callIds = new Set<string>();
     let message: z.infer<typeof MessageSchema> | undefined;
     const closeMessage = (status: "completed" | "incomplete" = "completed") => {
         if (!message) return;
@@ -101,18 +109,19 @@ export function collectOutput(
                     return;
                 }
                 closeMessage();
-                const [, serverLabel, name] =
-                    /^mcp__(.*?)__(.*)$/.exec(part.toolName) ?? [];
-                const item = McpCallSchema.parse({
-                    type: "mcp_call",
-                    id: part.toolCallId,
-                    server_label: serverLabel,
-                    name,
+                if (callIds.has(part.toolCallId)) {
+                    throw new Error("Agent reused a tool call ID");
+                }
+                callIds.add(part.toolCallId);
+                const item = FunctionCallSchema.parse({
+                    type: "function_call",
+                    id: `fc_${crypto.randomUUID()}`,
+                    call_id: part.toolCallId,
+                    name: part.toolName,
                     arguments: JSON.stringify(part.input ?? {}),
-                    status: "in_progress",
-                    output: null,
-                    error: null,
+                    status: "completed",
                 });
+                pendingCalls.set(part.toolCallId, item);
                 items.push(item);
                 const position = {
                     item_id: item.id,
@@ -120,47 +129,67 @@ export function collectOutput(
                 };
                 send?.("response.output_item.added", {
                     output_index: position.output_index,
-                    item,
+                    item: { ...item, arguments: "", status: "in_progress" },
                 });
-                send?.("response.mcp_call.in_progress", position);
-                send?.("response.mcp_call_arguments.done", {
+                send?.("response.function_call_arguments.delta", {
+                    ...position,
+                    delta: item.arguments,
+                });
+                send?.("response.function_call_arguments.done", {
                     ...position,
                     arguments: item.arguments,
+                });
+                send?.("response.output_item.done", {
+                    output_index: position.output_index,
+                    item,
                 });
                 return;
             }
             if (skippedToolCalls.delete(part.toolCallId)) return;
-            const index = items.findIndex(
-                (item) => item.id === part.toolCallId,
-            );
-            const item = items[index];
-            if (!item || item.type !== "mcp_call") {
+            const call = pendingCalls.get(part.toolCallId);
+            if (!call) {
                 throw new Error("Agent tool result has no matching call");
             }
-            if (part.type === "tool-error") {
-                item.error = mcpCallError(part.error);
-            } else {
-                const result = safeMcpOutput(part.output);
-                item.output = JSON.stringify(result);
-                if (result.isError) {
-                    item.error = {
-                        type: "mcp_tool_execution_error",
-                        content: result,
-                    };
-                }
-            }
-            item.status = item.error === null ? "completed" : "failed";
-            send?.(`response.mcp_call.${item.status}`, {
-                item_id: item.id,
-                output_index: index,
+            pendingCalls.delete(part.toolCallId);
+            closeMessage();
+            const result =
+                part.type === "tool-error"
+                    ? {
+                          isError: true,
+                          content: [
+                              {
+                                  type: "text",
+                                  text:
+                                      part.error instanceof Error
+                                          ? part.error.message
+                                          : String(part.error),
+                              },
+                          ],
+                      }
+                    : safeMcpOutput(part.output);
+            const item = FunctionCallOutputSchema.parse({
+                type: "function_call_output",
+                id: `fco_${crypto.randomUUID()}`,
+                call_id: call.call_id,
+                output: JSON.stringify(result),
+                status: "completed",
             });
-            send?.("response.output_item.done", { output_index: index, item });
+            items.push(item);
+            const output_index = items.length - 1;
+            send?.("response.output_item.added", {
+                output_index,
+                item: { ...item, output: "", status: "in_progress" },
+            });
+            send?.("response.output_item.done", { output_index, item });
         },
         finish(finishReason: string): AgentOutputItem[] {
+            if (pendingCalls.size) {
+                throw new Error("Agent tool call has no result");
+            }
             if (
                 !items.some(
                     (item) =>
-                        item.type === "mcp_call" ||
+                        item.type !== "message" ||
                         item.content.some((part) => part.text.trim()),
                 )
             ) {

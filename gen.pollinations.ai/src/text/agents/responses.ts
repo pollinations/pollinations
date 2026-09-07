@@ -5,9 +5,19 @@ import {
     type ResponseUsage,
     ResponseUsageSchema,
 } from "@shared/schemas/openai.ts";
-import { APICallError, type ModelMessage, type ToolResultPart } from "ai";
+import {
+    APICallError,
+    type ModelMessage,
+    type ToolCallPart,
+    type ToolResultPart,
+} from "ai";
 import { z } from "zod";
-import { McpCallSchema, mcpErrorText, safeMcpModelOutput } from "./mcp.ts";
+import {
+    type FunctionCall,
+    FunctionCallOutputSchema,
+    FunctionCallSchema,
+} from "./functionItems.ts";
+import { safeMcpModelOutput } from "./mcp.ts";
 import { type AgentOutputItem, collectOutput } from "./output.ts";
 import {
     type AgentOutput,
@@ -176,24 +186,37 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
         return messages;
     }
 
+    const itemIds = new Set<string>();
     const toolCallIds = new Set<string>();
+    const pendingCalls = new Map<string, FunctionCall>();
+    let calls: ToolCallPart[] = [];
+    let results: ToolResultPart[] = [];
     for (const raw of request.input) {
         const item = objectValue(raw, "input");
-        if (item.type === "mcp_call") {
-            const parsed = McpCallSchema.safeParse(item);
+        if (item.id !== undefined) {
+            const id = stringValue(item.id, "input.id");
+            if (!id || itemIds.has(id)) {
+                invalidRequest(
+                    "Responses history item IDs must be unique",
+                    "input.id",
+                );
+            }
+            itemIds.add(id);
+        }
+        if (item.type === "function_call") {
+            const parsed = FunctionCallSchema.safeParse(item);
             if (
                 !parsed.success ||
-                !["completed", "failed"].includes(parsed.data.status) ||
-                (parsed.data.output === null && parsed.data.error === null) ||
-                toolCallIds.has(parsed.data.id)
+                parsed.data.status !== "completed" ||
+                toolCallIds.has(parsed.data.call_id)
             ) {
                 invalidRequest(
-                    "MCP history must contain unique completed or failed calls with results",
+                    "Tool history must contain unique completed function calls",
                     "input",
                 );
             }
             const call = parsed.data;
-            toolCallIds.add(call.id);
+            toolCallIds.add(call.call_id);
             let input: JsonObject;
             try {
                 input = objectValue(
@@ -202,50 +225,73 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
                 );
             } catch {
                 invalidRequest(
-                    "MCP history arguments must be a JSON object",
+                    "Function call arguments must be a JSON object",
                     "input.arguments",
                 );
             }
-            const toolName = `mcp__${call.server_label}__${call.name}`;
-            let output: ToolResultPart["output"] = {
-                type:
-                    call.error !== null || call.status === "failed"
-                        ? "error-text"
-                        : "text",
-                value:
-                    call.error === null
-                        ? (call.output ?? "")
-                        : mcpErrorText(call.error),
-            };
-            if (call.error === null && call.output !== null) {
-                try {
-                    const saved = JSON.parse(call.output);
-                    if (Array.isArray(saved?.content)) {
-                        // Restore the same model-visible result used in the original step.
-                        output = safeMcpModelOutput({ output: saved });
-                    }
-                } catch {
-                    // External MCP calls may return plain text.
-                }
+            if (!pendingCalls.size) {
+                calls = [];
+                results = [];
+                messages.push({ role: "assistant", content: calls });
+                messages.push({ role: "tool", content: results });
             }
-            messages.push({
-                role: "assistant",
-                content: [
-                    { type: "tool-call", toolCallId: call.id, toolName, input },
-                ],
-            });
-            messages.push({
-                role: "tool",
-                content: [
-                    {
-                        type: "tool-result",
-                        toolCallId: call.id,
-                        toolName,
-                        output,
-                    },
-                ],
+            pendingCalls.set(call.call_id, call);
+            calls.push({
+                type: "tool-call",
+                toolCallId: call.call_id,
+                toolName: call.name,
+                input,
             });
             continue;
+        }
+        if (item.type === "function_call_output") {
+            const parsed = FunctionCallOutputSchema.safeParse(item);
+            const call = parsed.success
+                ? pendingCalls.get(parsed.data.call_id)
+                : undefined;
+            if (
+                !parsed.success ||
+                parsed.data.status !== "completed" ||
+                !call
+            ) {
+                invalidRequest(
+                    "Function outputs must match an unfinished history call",
+                    "input",
+                );
+            }
+            let output: JsonObject;
+            try {
+                output = objectValue(
+                    JSON.parse(parsed.data.output),
+                    "input.output",
+                );
+                if (
+                    !Array.isArray(output.content) ||
+                    (output.isError !== undefined &&
+                        typeof output.isError !== "boolean")
+                ) {
+                    throw new Error("Invalid MCP result");
+                }
+            } catch {
+                invalidRequest(
+                    "Function output must contain a JSON MCP result",
+                    "input.output",
+                );
+            }
+            results.push({
+                type: "tool-result",
+                toolCallId: call.call_id,
+                toolName: call.name,
+                output: safeMcpModelOutput({ output }),
+            });
+            pendingCalls.delete(call.call_id);
+            continue;
+        }
+        if (pendingCalls.size) {
+            invalidRequest(
+                "Function calls require results before the next message",
+                "input",
+            );
         }
         if (item.type && item.type !== "message") {
             invalidRequest(
@@ -283,6 +329,9 @@ function inputMessages(request: CreateResponseRequest): ModelMessage[] {
             continue;
         }
         invalidRequest(`Unsupported Responses message role: ${role}`, "input");
+    }
+    if (pendingCalls.size) {
+        invalidRequest("Function calls require matching results", "input");
     }
     return messages;
 }

@@ -168,13 +168,13 @@ test("POST /3d caches distinct JSON Trellis parameter sets", async () => {
     expect(mocks.tinybird.state.events).toEqual([
         expect.objectContaining({
             modelRequested: "trellis-2",
-            modelUsed: "trellis-2",
+            modelUsed: "microsoft/trellis-2",
             tokenPriceCompletionImage: 0.24,
             totalPrice: 0.24,
         }),
         expect.objectContaining({
             modelRequested: "trellis-2",
-            modelUsed: "trellis-2",
+            modelUsed: "microsoft/trellis-2",
             costVariant: "high",
             tokenPriceCompletionImage: 0.35,
             totalPrice: 0.35,
@@ -217,7 +217,7 @@ test("POST /3d sends JSON image and seed to the existing Rodin provider path", a
     ]);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "hyper3d-rodin",
-        modelUsed: "hyper3d-rodin",
+        modelUsed: "hyper3d/rodin-2.5",
         tokenPriceCompletionImage: 0.1,
         totalPrice: 0.1,
     });

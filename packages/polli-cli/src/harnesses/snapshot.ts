@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { join } from "node:path";
 import { readTextIfExists, removeIfExists, writeTextAtomic } from "./fs.js";
-import type { HarnessContext } from "./types.js";
+import type { HarnessContext, OffOutcome } from "./types.js";
 
 interface FileSnapshot {
     /** Content before the first `on`; null when the file did not exist. */
@@ -14,8 +14,6 @@ interface Snapshot {
     complete: boolean;
     files: Record<string, FileSnapshot>;
 }
-
-type RestoreOutcome = "restored" | "modified" | "missing";
 
 const sha256 = (content: string) =>
     createHash("sha256").update(content).digest("hex");
@@ -108,37 +106,31 @@ export const applyWithSnapshot = (
     writeSnapshot(ctx, id, paths, snapshot);
 };
 
-/** Put the files back byte-for-byte, unless something else edited them since `on`. */
-export const restoreSnapshot = (
+/** Restore untouched files byte-for-byte; otherwise strip only our config. */
+export const restoreOrStrip = (
     ctx: HarnessContext,
     id: string,
     paths: string[],
-): RestoreOutcome => {
+    strip: () => boolean,
+): OffOutcome => {
     const snapshot = loadSnapshot(ctx, id, paths);
-    if (!snapshot) return "missing";
-
-    if (!snapshot.complete) {
+    if (
+        snapshot &&
+        (!snapshot.complete ||
+            Object.entries(snapshot.files).every(
+                ([path, file]) =>
+                    contentHash(readTextIfExists(path)) === file.afterHash,
+            ))
+    ) {
         restoreFiles(snapshot.files);
-        removeIfExists(snapshotPath(ctx, id, paths));
+        clearSnapshot(ctx, id, paths);
         return "restored";
     }
 
-    const entries = Object.entries(snapshot.files);
-    if (
-        entries.some(
-            ([path, file]) =>
-                contentHash(readTextIfExists(path)) !== file.afterHash,
-        )
-    ) {
-        return "modified";
-    }
-    restoreFiles(snapshot.files);
-    removeIfExists(snapshotPath(ctx, id, paths));
-    return "restored";
+    const outcome = strip() ? "stripped" : "unchanged";
+    clearSnapshot(ctx, id, paths);
+    return outcome;
 };
 
-export const clearSnapshot = (
-    ctx: HarnessContext,
-    id: string,
-    paths: string[],
-) => removeIfExists(snapshotPath(ctx, id, paths));
+const clearSnapshot = (ctx: HarnessContext, id: string, paths: string[]) =>
+    removeIfExists(snapshotPath(ctx, id, paths));

@@ -24,6 +24,13 @@ import {
 import { ModalityChip } from "@pollinations/ui/gen";
 import { useCallback, useEffect, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
+import {
+    computeHealthStatus,
+    DEGRADED_5XX_PERCENT,
+    migrateFavorites,
+    modelKey,
+    OFF_5XX_PERCENT,
+} from "./model-data.js";
 
 const FAVORITES_KEY = "model-monitor-favorites";
 
@@ -43,10 +50,6 @@ function saveFavorites(list) {
     } catch {
         // storage full or blocked — silently ignore
     }
-}
-
-function modelKey(model) {
-    return `${model.type}-${model.name}`;
 }
 
 const WINDOW_OPTIONS = [
@@ -125,6 +128,7 @@ function isAdminPath() {
 }
 
 function statusSeverity(model) {
+    if (model.catalogStatus === "historical") return 0;
     const health = computeHealthStatus(model.stats);
     if (health === "off") return 6;
     if (health === "degraded") return 5;
@@ -140,9 +144,6 @@ function formatPercent(count, total, showZero = false) {
     if (pct === 0) return showZero ? "0%" : "-";
     return `${pct.toFixed(1)}%`;
 }
-
-const DEGRADED_5XX_PERCENT = 5;
-const OFF_5XX_PERCENT = 20;
 
 function get2xxColor(ok2xx, total) {
     if (!total || total <= 0) return "text-theme-text-muted";
@@ -162,21 +163,6 @@ function getLatencyColor(latencySec) {
     if (latencySec < 5) return "text-intent-success-text";
     if (latencySec < 10) return "text-theme-text-muted";
     return "text-intent-warning-text font-semibold";
-}
-
-function computeHealthStatus(stats) {
-    if (!stats?.total_requests) return "on";
-    const success = stats.status_2xx || 0;
-    const total5xx = stats.errors_5xx || 0;
-    // 4xx are client errors and don't count. Judge purely on the 5xx share of
-    // real (2xx+5xx) traffic — even a single 5xx-only request is off. Low
-    // volume is not a reason to call a failing model healthy.
-    const modelRequests = success + total5xx;
-    if (modelRequests === 0) return "on";
-    const pct5xx = (total5xx / modelRequests) * 100;
-    if (pct5xx >= OFF_5XX_PERCENT) return "off";
-    if (pct5xx >= DEGRADED_5XX_PERCENT) return "degraded";
-    return "on";
 }
 
 function healthIntent(status) {
@@ -199,6 +185,7 @@ function calcGroupStats(group) {
     let countOff = 0;
 
     for (const model of group) {
+        if (model.catalogStatus === "historical") continue;
         const stats = model.stats;
         if (!stats) continue;
         total2xx += stats.status_2xx || 0;
@@ -206,7 +193,7 @@ function calcGroupStats(group) {
         const status = computeHealthStatus(stats);
         if (status === "on") countOn++;
         else if (status === "degraded") countDegraded++;
-        else countOff++;
+        else if (status === "off") countOff++;
     }
 
     const modelRequests = total2xx + total5xx;
@@ -331,6 +318,13 @@ function ScopeTabs({ models, value, onChange }) {
 
 function StatusBadge({ stats }) {
     const status = computeHealthStatus(stats);
+    if (status === "waiting") {
+        return (
+            <Chip intent="neutral" size="sm">
+                Awaiting data
+            </Chip>
+        );
+    }
     const modelRequests = (stats?.status_2xx || 0) + (stats?.errors_5xx || 0);
     const lowSample = modelRequests > 0 && modelRequests < LOW_SAMPLE_REQUESTS;
 
@@ -366,6 +360,7 @@ function CatalogStatusBadge({ status }) {
     }
 
     const variants = {
+        historical: { label: "historical ID", intent: "neutral" },
         anomaly: { label: "anomaly", intent: "warning" },
         unregistered: { label: "unknown", intent: "warning" },
         "catalog-unavailable": { label: "unverified", intent: "neutral" },
@@ -467,6 +462,16 @@ function App() {
     }, [favorites]);
 
     useEffect(() => {
+        setFavorites((previous) => {
+            const next = migrateFavorites(previous, models);
+            return next.length === previous.length &&
+                next.every((key, index) => key === previous[index])
+                ? previous
+                : next;
+        });
+    }, [models]);
+
+    useEffect(() => {
         saveFilterState({ scope: scopeFilter, type: typeFilter });
     }, [scopeFilter, typeFilter]);
 
@@ -489,7 +494,9 @@ function App() {
     };
 
     const observedModels = models.filter(
-        (model) => (model.stats?.total_requests || 0) > 0,
+        (model) =>
+            model.catalogStatus === "visible" ||
+            (model.stats?.total_requests || 0) > 0,
     );
 
     const sortedModels = [...observedModels].sort((a, b) => {
@@ -678,6 +685,16 @@ function App() {
                     </Alert>
                 )}
 
+                {models.some(
+                    (model) => model.catalogStatus === "historical",
+                ) && (
+                    <Text size="xs" tone="soft" className="m-0">
+                        Historical IDs retain their recorded traffic and do not
+                        contribute to current model health. New IDs build their
+                        own statistics as traffic arrives.
+                    </Text>
+                )}
+
                 <div className="flex flex-col gap-2">
                     <ScopeTabs
                         models={observedModels}
@@ -838,7 +855,11 @@ function App() {
                                     const p95Sec = stats?.latency_p95_ms
                                         ? stats.latency_p95_ms / 1000
                                         : null;
-                                    const health = computeHealthStatus(stats);
+                                    const historical =
+                                        model.catalogStatus === "historical";
+                                    const health = historical
+                                        ? "historical"
+                                        : computeHealthStatus(stats);
                                     const modelSlug =
                                         model.name.split("/").pop() ||
                                         model.name;
@@ -907,9 +928,11 @@ function App() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-wrap items-center gap-1">
-                                                    <StatusBadge
-                                                        stats={stats}
-                                                    />
+                                                    {!historical && (
+                                                        <StatusBadge
+                                                            stats={stats}
+                                                        />
+                                                    )}
                                                     <CatalogStatusBadge
                                                         status={
                                                             model.catalogStatus

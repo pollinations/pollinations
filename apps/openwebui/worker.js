@@ -3,7 +3,7 @@ import { Container, getContainer } from "@cloudflare/containers";
 
 const CONTAINER_NAME = "primary";
 const WEBUI_URL = required("WEBUI_URL");
-const GEN_URL = "https://gen.pollinations.ai/v1";
+const GEN_URL = required("GEN_URL");
 
 function required(name) {
     const value = workerEnv[name];
@@ -42,8 +42,7 @@ export class OpenWebUIContainer extends Container {
         OAUTH_CLIENT_ID: required("OAUTH_CLIENT_ID"),
         OAUTH_CLIENT_SECRET: "",
         OAUTH_CODE_CHALLENGE_METHOD: "S256",
-        OPENID_PROVIDER_URL:
-            "https://enter.pollinations.ai/.well-known/oauth-authorization-server",
+        OPENID_PROVIDER_URL: `${required("ENTER_URL")}/.well-known/oauth-authorization-server`,
         OPENID_REDIRECT_URI: `${WEBUI_URL}/oauth/oidc/callback`,
         OAUTH_SCOPES: "profile",
         OAUTH_USERNAME_CLAIM: "name",
@@ -68,6 +67,7 @@ export class OpenWebUIContainer extends Container {
 
         // Model backend: gen.pollinations.ai, bearer = the user's OAuth sk_.
         ENABLE_OLLAMA_API: "false",
+        ENABLE_RESPONSES_API_STATEFUL: "false",
         OPENAI_API_BASE_URLS: GEN_URL,
         OPENAI_API_KEYS: "",
         OPENAI_API_CONFIGS: JSON.stringify({
@@ -76,10 +76,22 @@ export class OpenWebUIContainer extends Container {
                 auth_type: "system_oauth",
                 key: "",
                 prefix_id: "",
-                model_ids: [],
+                api_type: required("API_TYPE"),
+                model_ids: required("MODEL_IDS"),
                 connection_type: "external",
                 tags: [],
             },
+        }),
+
+        // Open WebUI injects its own builtin tools (time, chat history, ask_user)
+        // into every request that originates from its UI, unless the model says
+        // otherwise. Models fetched from a connection have no row in the model
+        // table, so utils/models.py applies this default metadata to them
+        // wholesale. Without it every chat carries tool specs, which managed
+        // agents and community models that do not support tool calling reject.
+        // The MCP tool server below is unaffected: it is opt-in per chat.
+        DEFAULT_MODEL_METADATA: JSON.stringify({
+            capabilities: { builtin_tools: false },
         }),
 
         // Pollinations MCP as a tool server, on the same per-user consent key as
@@ -89,31 +101,35 @@ export class OpenWebUIContainer extends Container {
         // Both of these are seeded into the DB only on a first boot with an
         // empty config table; afterwards the stored row wins and editing this
         // does nothing (Config.seed_defaults inserts missing keys only).
-        TOOL_SERVER_CONNECTIONS: JSON.stringify([
-            {
-                url: "https://mcp.pollinations.ai/",
-                path: "",
-                type: "mcp",
-                auth_type: "system_oauth",
-                key: "",
-                config: {
-                    enable: true,
-                    access_grants: [
-                        {
-                            principal_type: "user",
-                            principal_id: "*",
-                            permission: "read",
-                        },
-                    ],
-                },
-                info: {
-                    id: "pollinations",
-                    name: "Pollinations",
-                    description:
-                        "Generate images, video, audio, text and embeddings from your own wallet.",
-                },
-            },
-        ]),
+        TOOL_SERVER_CONNECTIONS: JSON.stringify(
+            workerEnv.MCP_URL
+                ? [
+                      {
+                          url: workerEnv.MCP_URL,
+                          path: "",
+                          type: "mcp",
+                          auth_type: "system_oauth",
+                          key: "",
+                          config: {
+                              enable: true,
+                              access_grants: [
+                                  {
+                                      principal_type: "user",
+                                      principal_id: "*",
+                                      permission: "read",
+                                  },
+                              ],
+                          },
+                          info: {
+                              id: "pollinations",
+                              name: "Pollinations",
+                              description:
+                                  "Generate images, video, audio, text and embeddings from your own wallet.",
+                          },
+                      },
+                  ]
+                : [],
+        ),
 
         // RAG embeds with the bundled SentenceTransformers model, not gen.
         // The RAG, image and audio subsystems all authenticate with a single

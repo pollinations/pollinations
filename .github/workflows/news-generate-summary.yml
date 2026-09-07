@@ -74,9 +74,6 @@ jobs:
             fi
             if [ "$DOM" = "01" ]; then
               RUN_MONTHLY=true
-            elif [ "$DOW" = "7" ]; then
-              RUN_MONTHLY=true
-              MONTHLY_TARGET=$(date -u +%Y-%m)
             fi
           elif [ "$MODE" = "daily" ]; then
             RUN_DAILY=true

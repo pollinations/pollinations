@@ -15,6 +15,7 @@ _registry_cache: dict[str, Any] | None = None
 _lock = asyncio.Lock()
 _METADATA_KEYS = {
     "id",
+    "aliases",
     "object",
     "owned_by",
     "capabilities",
@@ -266,6 +267,7 @@ def _infer_meta(item: dict[str, Any]) -> dict[str, Any]:
         params[key] = val
     return {
         "id": mid,
+        "aliases": list(item.get("aliases") or []),
         "modalities": modalities,
         "pricing": pricing,
         "capabilities": caps,
@@ -320,6 +322,21 @@ async def fetch_model_catalog() -> dict[str, dict[str, Any]]:
     return _adapt_rich_catalog(await _fetch_models("/models"))
 
 
+def find_model_meta(
+    catalog: dict[str, dict[str, Any]], model_id: str
+) -> dict[str, Any] | None:
+    if model_id in catalog:
+        return catalog[model_id]
+    return next(
+        (
+            entry
+            for entry in catalog.values()
+            if model_id in (entry.get("aliases") or [])
+        ),
+        None,
+    )
+
+
 async def refresh_registry() -> dict[str, Any]:
     global _registry_cache
     raw = await _fetch_models("/v1/models")
@@ -356,20 +373,15 @@ def get_model_catalog() -> dict[str, dict[str, Any]]:
 
 
 def get_modalities_for_model(model_id: str) -> list[str]:
-    reg = _registry_cache or {}
-    model = reg.get("models", {}).get(model_id, {})
-    return model.get("modalities", [])
+    return get_model_meta(model_id).get("modalities", [])
 
 
 def get_model_params(model_id: str) -> dict[str, Any]:
-    reg = _registry_cache or {}
-    model = reg.get("models", {}).get(model_id, {})
-    return dict(model.get("params", {}))
+    return dict(get_model_meta(model_id).get("params", {}))
 
 
 def get_model_meta(model_id: str) -> dict[str, Any]:
-    reg = _registry_cache or {}
-    return reg.get("models", {}).get(model_id, {})
+    return find_model_meta(get_model_catalog(), model_id) or {}
 
 
 def get_voices() -> list[str]:
@@ -473,8 +485,9 @@ def pick_model(
     # Image-specific: prompt-aware priority for text/infographic/diagram
     if modality == "image" and prompt and _prompt_needs_text_image(prompt):
         for model_id in _IMAGE_TEXT_PRIORITY:
-            if model_id in pool:
-                return model_id
+            model = find_model_meta(pool, model_id)
+            if model is not None:
+                return model["id"]
 
     scored = []
     for mid, meta in pool.items():

@@ -208,12 +208,11 @@ export const communityEndpoint = sqliteTable("community_endpoint", {
   // What this listing IS to callers, and the only thing deciding whether a
   // call is sent a run token that spends the caller's balance.
   //   proxy         → the owner's server, called with its upstream secret
-  //   prompt_agent  → an agent Enter runs, named by this row's id
+  //   prompt_agent  → an agent Gen runs, named by this row's id
   //   endpoint_agent → an agent on the owner's own server
   type: text("type", { enum: LISTING_TYPES }).default("proxy").notNull(),
   // Every listing stores an OpenAI-compatible target. Prompt agents use an
-  // environment-neutral placeholder which readers replace with this
-  // deployment's AGENT_RUNTIME_BASE_URL.
+  // environment-neutral sentinel which is never routed.
   baseUrl: text("base_url").notNull(),
   upstreamModel: text("upstream_model").notNull(),
   // Gateway policy shared by every community model and agent type.

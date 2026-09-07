@@ -28,12 +28,14 @@ function previewUrl(
 }
 
 export function driveDocumentLink(evidence: string): DriveDocumentLink | null {
+    let location: DriveDocumentLink | null = null;
     for (const href of documentUrls(evidence)) {
         const url = new URL(href);
 
         if (url.hostname === "drive.google.com") {
             if (url.pathname.includes("/folders/")) {
-                return { href, label: "Open folder" };
+                location ??= { href, label: "Open folder" };
+                continue;
             }
 
             const pathFileId = url.pathname.match(/^\/file\/d\/([^/]+)/)?.[1];
@@ -73,16 +75,17 @@ export function driveDocumentLink(evidence: string): DriveDocumentLink | null {
             }
 
             if (url.pathname.startsWith("/forms/")) {
-                return { href, label: "Open document" };
+                location ??= { href, label: "Open document" };
             }
         }
     }
 
-    return null;
+    return location;
 }
 
 export function hasArchivedEvidence(evidence: string): boolean {
-    return driveDocumentLink(evidence) != null;
+    // A folder or a form is a location, not a retained document proving a fact.
+    return driveDocumentLink(evidence)?.previewHref != null;
 }
 
 const OPEN_EVIDENCE_WORDING =
@@ -96,6 +99,18 @@ export function hasReconciledTransactionEvidence({
     evidence: string;
 }): boolean {
     if (!hasArchivedEvidence(evidence)) return false;
+    // An unqualified archive link proves retention, not the document's purpose.
+    // A bank statement proves cash, not a supplier invoice. Statement-only
+    // exceptions must be reviewed per fact (e.g. a payout or bank cashback),
+    // not inferred globally from the vendor name.
+    const supplierDocument = /\bevidence_type=supplier_document\b/u.test(
+        evidence,
+    );
+    const paymentStatement = /\bevidence_type=payment_statement\b/u.test(
+        evidence,
+    );
+    const paymentOnly = /\bevidence_requirement=payment\b/u.test(evidence);
+    if (paymentStatement ? !paymentOnly : !supplierDocument) return false;
     return !OPEN_EVIDENCE_WORDING.test(`${description} ${evidence}`);
 }
 

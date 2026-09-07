@@ -2,7 +2,17 @@ import {
     createExecutionContext,
     waitOnExecutionContext,
 } from "cloudflare:test";
-import { handleError, UpstreamError } from "@shared/error.ts";
+import {
+    firstCommunityImageBytes,
+    firstCommunityVideoBytes,
+} from "@shared/community-media.ts";
+import {
+    ensureUpstreamOk,
+    getErrorCodesForStatus,
+    handleError,
+    UpstreamError,
+} from "@shared/error.ts";
+import { PaymentRequiredError } from "@shared/http/payment-required-error.ts";
 import { getRegistryModelDefinition } from "@shared/registry/registry.ts";
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -11,6 +21,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import { logger } from "@/middleware/logger.ts";
 import { handleChatCompletionLocal } from "@/text/handler.ts";
+import { isRetryableFallbackError } from "../src/fallback.ts";
+import { throwImageError } from "../src/image/handler.ts";
+import { throw3dError } from "../src/model3d/handler.ts";
+import { throwTextError } from "../src/text/errors.ts";
+import { UserImageError } from "../src/userImage.ts";
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -25,8 +40,8 @@ function createTestApp() {
         await c.req.json();
         c.set("model", {
             requested: "openai",
-            resolved: "openai",
-            definition: getRegistryModelDefinition("openai"),
+            resolved: "openai/gpt-5.4-nano",
+            definition: getRegistryModelDefinition("openai/gpt-5.4-nano"),
         });
         throw new UpstreamError(502, {
             message:
@@ -53,6 +68,317 @@ function createTextTestApp() {
 }
 
 describe("error observability", () => {
+    it.each([
+        "error",
+        "string",
+        "long",
+    ])("logs a bounded %s cause only in internal telemetry", async (kind) => {
+        const cause =
+            kind === "string"
+                ? "original failure"
+                : Object.assign(new Error("original failure"), {
+                      retryable: true,
+                      unrelated: "must-not-be-serialized",
+                  });
+        if (cause instanceof Error) {
+            cause.cause = cause;
+            if (kind === "long") cause.stack += "x".repeat(20_000);
+        }
+        const requests: Request[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(
+            async (input, init) => {
+                requests.push(new Request(input, init));
+                return new Response("ok");
+            },
+        );
+        const app = new Hono<Env>();
+        app.use("*", logger);
+        app.get("/", () => {
+            const error = new HTTPException(503, {
+                message: "Temporarily unavailable",
+                cause,
+            });
+            error.stack = "wrapper stack".repeat(2_000);
+            throw error;
+        });
+        app.onError(handleError);
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.test/"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "error",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        const body = await response.text();
+        expect(response.status).toBe(503);
+        expect(body).toContain("Temporarily unavailable");
+        expect(body).not.toContain("original failure");
+        expect(body).not.toContain("retryable");
+        expect(requests).toHaveLength(1);
+        const event = (await requests[0].json()) as {
+            stack: string;
+            message: string;
+        };
+        expect(event.message).toBe("Temporarily unavailable");
+        expect(event.stack).toContain("original failure");
+        expect(event.stack).not.toContain("must-not-be-serialized");
+        expect(event.stack.length).toBeLessThanOrEqual(12_003);
+        if (kind !== "string") expect(event.stack).toContain("retryable=true");
+    });
+
+    it.each([
+        ["image", firstCommunityImageBytes],
+        ["video", firstCommunityVideoBytes],
+    ] as const)("preserves a retryable community %s failure when its error body cannot be read", async (kind, readMedia) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(
+                new ReadableStream({
+                    start(controller) {
+                        controller.error(
+                            new TypeError("invalid compressed data"),
+                        );
+                    },
+                }),
+                { status: 503 },
+            ),
+        );
+        const error = await readMedia(
+            { data: [{ url: "https://assets.test/output" }] },
+            "https://provider.test",
+        ).catch((error) => error);
+        expect(error).toBeInstanceOf(UpstreamError);
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 503,
+            requestUrl: new URL("https://assets.test/output"),
+            message: `Endpoint ${kind} URL responded 503`,
+            responseBody: undefined,
+        });
+        expect(isRetryableFallbackError(error)).toBe(true);
+    });
+
+    it.each([
+        "ContentModerationError",
+        "content_policy_violation",
+        "content_safety_violation",
+    ])("classifies provider code/type %s without rewriting its body", async (type) => {
+        const responseBody = JSON.stringify({
+            error: { type, message: "Request rejected" },
+        });
+        const error = await ensureUpstreamOk(
+            new Response(responseBody, { status: 403 }),
+            "https://provider.test",
+        ).catch((error) => error);
+        expect(isRetryableFallbackError(error)).toBe(false);
+        try {
+            throwImageError(error);
+        } catch (caught) {
+            expect(caught).toMatchObject({
+                status: 422,
+                errorCode: "content_policy_violation",
+                responseBody,
+            });
+        }
+    });
+
+    it("does not classify echoed prompt words as an image moderation failure", async () => {
+        const responseBody = JSON.stringify({
+            error: { code: "over_capacity" },
+            request: { prompt: "Explain the NSFW label" },
+        });
+        const error = await ensureUpstreamOk(
+            new Response(responseBody, { status: 503 }),
+            "https://provider.test",
+        ).catch((error) => error);
+        expect(isRetryableFallbackError(error)).toBe(true);
+        expect(() => throwImageError(error)).toThrow(error);
+        expect(error).toMatchObject({ status: 503, responseBody });
+    });
+
+    it.each([
+        ["image", throwImageError],
+        ["3D", throw3dError],
+        ["text", throwTextError],
+    ] as const)("returns complete provider bodies through the %s boundary", async (_name, throwError) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+        const message = `Provider diagnostic ${"x".repeat(20000)} END`;
+        const body = JSON.stringify(
+            {
+                error: {
+                    message,
+                    diagnostic: {
+                        token: "provider-test-token",
+                        extra: [1, 2, 3],
+                    },
+                },
+            },
+            null,
+            2,
+        );
+        const app = new Hono<Env>();
+        app.use("*", logger);
+        app.get("/", async () => {
+            try {
+                await ensureUpstreamOk(
+                    new Response(body, { status: 429 }),
+                    "https://provider.test/generate",
+                );
+            } catch (error) {
+                throwError(error as UpstreamError);
+            }
+            return new Response("unexpected success");
+        });
+        app.onError(handleError);
+        const ctx = createExecutionContext();
+        const response = await app.fetch(
+            new Request("https://gen.test/"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "error",
+                LOG_FORMAT: "text",
+                TINYBIRD_INGEST_URL:
+                    "https://tinybird.test/v0/events?name=generation_event_v2",
+                TINYBIRD_INGEST_TOKEN: "test_tinybird_token",
+            } as unknown as CloudflareBindings,
+            ctx,
+        );
+        await waitOnExecutionContext(ctx);
+        expect(response.status).toBe(502);
+        expect(await response.json()).toMatchObject({
+            status: 502,
+            error: {
+                message,
+                details: {
+                    upstreamStatus: 429,
+                    upstreamHost: "provider.test",
+                    upstreamBody: body,
+                },
+            },
+        });
+    });
+
+    it.each([
+        `plain provider error\n${"x".repeat(20000)}`,
+        "<html><body>gateway detail</body></html>",
+    ])("preserves non-JSON provider errors", async (body) => {
+        await expect(
+            ensureUpstreamOk(
+                new Response(body, { status: 408 }),
+                "https://provider.test/",
+            ),
+        ).rejects.toMatchObject({
+            message: body,
+            responseBody: body,
+            status: 504,
+            upstreamStatus: 408,
+        });
+    });
+
+    it.each([
+        [401, 502],
+        [403, 502],
+        [408, 504],
+        [415, 415],
+        [429, 502],
+        [503, 503],
+        [524, 502],
+    ])("maps provider %s to public %s without changing its body", (upstreamStatus, status) => {
+        const responseBody = '{"detail":"original provider detail"}';
+        expect(
+            UpstreamError.fromProvider(upstreamStatus, {
+                message: responseBody,
+                responseBody,
+            }),
+        ).toMatchObject({
+            status,
+            upstreamStatus,
+            responseBody,
+            message: responseBody,
+        });
+    });
+
+    it("preserves raw diagnostics when classifying image validation and moderation", () => {
+        for (const [body, expectedStatus, code] of [
+            ['{"detail":[{"msg":"width is too small"}]}', 400, undefined],
+            [
+                '{"error":{"message":"content policy violation","extra":"keep this"}}',
+                422,
+                "content_policy_violation",
+            ],
+        ] as const) {
+            const error = UpstreamError.fromProvider(422, {
+                message: "provider rejection",
+                responseBody: body,
+            });
+            try {
+                throwImageError(error);
+            } catch (caught) {
+                expect(caught).toMatchObject({
+                    status: expectedStatus,
+                    upstreamStatus: 422,
+                    responseBody: body,
+                    message: "provider rejection",
+                    errorCode: code,
+                });
+            }
+        }
+    });
+
+    it("keeps user-image failures at 400 with their original image-host status", () => {
+        const error = new UserImageError(
+            "Image URL is unavailable",
+            "failed_to_download_image",
+            new URL("https://images.test/"),
+            429,
+        );
+        for (const throwError of [
+            throwImageError,
+            throw3dError,
+            throwTextError,
+        ]) {
+            expect(() => throwError(error)).toThrow(error);
+        }
+        expect(error).toMatchObject({
+            status: 400,
+            upstreamStatus: 429,
+            errorCode: "failed_to_download_image",
+        });
+    });
+
+    it.each([
+        "KEY_BUDGET_EXHAUSTED",
+        "INSUFFICIENT_BALANCE",
+    ] as const)("preserves the payment reason %s in the 402 envelope", async (code) => {
+        const app = new Hono<Env>();
+        app.use("*", logger);
+        app.get("/", () => {
+            throw new PaymentRequiredError(code, "Actionable payment guidance");
+        });
+        app.onError(handleError);
+        const response = await app.fetch(
+            new Request("https://gen.test/"),
+            {
+                ENVIRONMENT: "test",
+                LOG_LEVEL: "error",
+                LOG_FORMAT: "text",
+            } as unknown as CloudflareBindings,
+            createExecutionContext(),
+        );
+        expect(response.status).toBe(402);
+        expect(await response.json()).toMatchObject({
+            status: 402,
+            error: { code, message: "Actionable payment guidance" },
+        });
+        expect(getErrorCodesForStatus(402)).toContain(code);
+    });
+
     it("emits structured Tinybird error events for actionable upstream failures", async () => {
         const tinybirdRequests: Request[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(
@@ -156,7 +482,7 @@ describe("error observability", () => {
             upstream_host: "portkey.test",
             upstream_body: "application/json",
             model_requested: "openai",
-            resolved_model_requested: "openai",
+            resolved_model_requested: "openai/gpt-5.4-nano",
             request_inputs: expect.any(String),
         });
         expect(
@@ -449,7 +775,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             },
@@ -534,7 +860,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),
@@ -604,7 +930,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),
@@ -692,7 +1018,7 @@ describe("error observability", () => {
                 method: "POST",
                 headers: { "content-type": "application/json" },
                 body: JSON.stringify({
-                    model: "openai-fast",
+                    model: "openai/gpt-5-nano",
                     messages: [{ role: "user", content: "test" }],
                 }),
             }),

@@ -144,7 +144,12 @@ export function CommunityEndpointCard({
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
-                        value={endpoint.baseUrl}
+                        value={
+                            endpoint.type === "endpoint_agent" ||
+                            endpoint.modality === "text"
+                                ? endpoint.url
+                                : endpoint.baseUrl
+                        }
                         copyLabel="Copy endpoint"
                     />
                 )}

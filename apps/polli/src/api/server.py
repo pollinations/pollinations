@@ -28,7 +28,7 @@ class ChatRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     messages: list[Message] = Field(min_length=1)
-    model: str = "polli"
+    model: str = Field(default="polli", min_length=1, max_length=128)
     stream: bool = False
     stream_options: dict[str, Any] | None = None
     user_name: str = "http_user"
@@ -38,19 +38,25 @@ class ChatRequest(BaseModel):
 
     @model_validator(mode="after")
     def validate_model(self):
-        if self.model != "polli":
-            raise ValueError(f"The model '{self.model}' does not exist")
+        if not self.model.strip():
+            raise ValueError("model must not be blank")
         return self
 
 
 class ResponsesRequest(BaseModel):
     model_config = ConfigDict(extra="allow")
 
-    model: str = "polli"
+    model: str = Field(default="polli", min_length=1, max_length=128)
     input: str | list[dict[str, Any]]
     instructions: str | None = None
     stream: bool = False
     user_name: str = "http_user"
+
+    @model_validator(mode="after")
+    def validate_model(self):
+        if not self.model.strip():
+            raise ValueError("model must not be blank")
+        return self
 
 
 _LOCAL_KEYS = {
@@ -81,10 +87,17 @@ def _error(message: str, status: int, code: str | None = None, param: str | None
 
 def _authorization(request: Request) -> str | None:
     value = request.headers.get("authorization", "")
-    return value if value.lower().startswith("bearer ") else None
+    if not value.lower().startswith("bearer "):
+        return None
+    token = value[7:].strip()
+    return value if token.startswith("ag_") else None
 
 
-def _request_args(request: ChatRequest) -> dict[str, Any]:
+def _model_name(model: str, config: Any) -> str:
+    return config.ai.model if model == "polli" else model
+
+
+def _request_args(request: ChatRequest, config: Any) -> dict[str, Any]:
     messages = [message.model_dump(exclude_none=True) for message in request.messages]
     last_user = next((message for message in reversed(messages) if message.get("role") == "user"), {})
     content = last_user.get("content", "")
@@ -95,6 +108,8 @@ def _request_args(request: ChatRequest) -> dict[str, Any]:
             if isinstance(part, dict) and part.get("type") in {"text", "input_text"}
         )
     params = request.model_dump(exclude_none=True, exclude=_LOCAL_KEYS)
+    params["model"] = _model_name(request.model, config)
+    params["_explicit_model"] = request.model != "polli"
     return {
         "user_message": content or "",
         "discord_username": request.user_name,
@@ -144,7 +159,7 @@ def _usage(usage: dict[str, int] | None) -> dict[str, int]:
     }
 
 
-def _chat_response(result: dict[str, Any], completion_id: str, created: int) -> dict[str, Any]:
+def _chat_response(result: dict[str, Any], completion_id: str, created: int, model: str) -> dict[str, Any]:
     message: dict[str, Any] = {"role": "assistant", "content": result.get("response", "")}
     if result.get("client_tool_calls"):
         message["tool_calls"] = result["client_tool_calls"]
@@ -152,7 +167,7 @@ def _chat_response(result: dict[str, Any], completion_id: str, created: int) -> 
         "id": completion_id,
         "object": "chat.completion",
         "created": created,
-        "model": "polli",
+        "model": model,
         "choices": [{"index": 0, "message": message, "finish_reason": result.get("finish_reason", "stop")}],
         "usage": _usage(result.get("usage")),
     }
@@ -162,7 +177,7 @@ def _sse(payload: dict[str, Any] | str) -> str:
     return f"data: {payload if isinstance(payload, str) else dumps(payload)}\n\n"
 
 
-async def _chat_stream(client, args: dict[str, Any], auth: str, include_usage: bool) -> AsyncIterator[str]:
+async def _chat_stream(client, args: dict[str, Any], auth: str, include_usage: bool, model: str) -> AsyncIterator[str]:
     completion_id = f"chatcmpl-{uuid4_hex()[:24]}"
     created = int(time.time())
     token = _auth_override.set(auth)
@@ -172,7 +187,7 @@ async def _chat_stream(client, args: dict[str, Any], auth: str, include_usage: b
                 "id": completion_id,
                 "object": "chat.completion.chunk",
                 "created": created,
-                "model": "polli",
+                "model": model,
                 "choices": [{"index": 0, "delta": {"role": "assistant", "content": ""}, "finish_reason": None}],
             }
         )
@@ -185,7 +200,7 @@ async def _chat_stream(client, args: dict[str, Any], auth: str, include_usage: b
                         "id": completion_id,
                         "object": "chat.completion.chunk",
                         "created": created,
-                        "model": "polli",
+                        "model": model,
                         "choices": [{"index": 0, "delta": {"content": event["delta"]}, "finish_reason": None}],
                     }
                 )
@@ -196,7 +211,7 @@ async def _chat_stream(client, args: dict[str, Any], auth: str, include_usage: b
                         "id": completion_id,
                         "object": "chat.completion.chunk",
                         "created": created,
-                        "model": "polli",
+                        "model": model,
                         "choices": [{"index": 0, "delta": {"tool_calls": [tool_call]}, "finish_reason": None}],
                     }
                 )
@@ -208,7 +223,7 @@ async def _chat_stream(client, args: dict[str, Any], auth: str, include_usage: b
                 "id": completion_id,
                 "object": "chat.completion.chunk",
                 "created": created,
-                "model": "polli",
+                "model": model,
                 "choices": [{"index": 0, "delta": {}, "finish_reason": finish_reason}],
             }
         )
@@ -218,7 +233,7 @@ async def _chat_stream(client, args: dict[str, Any], auth: str, include_usage: b
                     "id": completion_id,
                     "object": "chat.completion.chunk",
                     "created": created,
-                    "model": "polli",
+                    "model": model,
                     "choices": [],
                     "usage": usage or _usage(None),
                 }
@@ -233,6 +248,7 @@ def _response_object(
     created: int,
     text: str,
     usage: dict[str, int] | None,
+    model: str = "polli",
     message_id: str | None = None,
     tool_calls: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
@@ -265,7 +281,7 @@ def _response_object(
         "object": "response",
         "created_at": created,
         "status": "completed",
-        "model": "polli",
+        "model": model,
         "output": output,
         "output_text": text,
         "usage": {
@@ -278,11 +294,11 @@ def _response_object(
     }
 
 
-async def _responses_stream(client, args: dict[str, Any], auth: str) -> AsyncIterator[str]:
+async def _responses_stream(client, args: dict[str, Any], auth: str, model: str) -> AsyncIterator[str]:
     response_id = f"resp_{uuid4_hex()[:24]}"
     message_id = f"msg_{uuid4_hex()[:24]}"
     created = int(time.time())
-    base = _response_object(response_id, created, "", None)
+    base = _response_object(response_id, created, "", None, model)
     base.update({"status": "in_progress", "output": []})
     yield _sse({"type": "response.created", "sequence_number": 0, "response": base})
 
@@ -422,14 +438,29 @@ async def _responses_stream(client, args: dict[str, Any], auth: str) -> AsyncIte
         item = {"id": message_id, "type": "message", "status": "completed", "role": "assistant", "content": [done_part]}
         yield _sse({"type": "response.output_item.done", "sequence_number": sequence, "output_index": 0, "item": item})
         sequence += 1
-    response = _response_object(response_id, created, text, usage, message_id, tool_calls)
+    response = _response_object(response_id, created, text, usage, model, message_id, tool_calls)
     yield _sse({"type": "response.completed", "sequence_number": sequence, "response": response})
     yield _sse("[DONE]")
 
 
-def create_api_app(pollinations_client, config):
+def create_api_app(pollinations_client, config, discord_bot=None):
     app = FastAPI(title="Polli API", description="OpenAI-compatible API for Polli")
     app.state.start_time = time.time()
+    app.state.discord_bot = discord_bot
+
+    def add_discord_context(args: dict[str, Any]) -> dict[str, Any]:
+        if discord_bot is None:
+            return args
+        guild = discord_bot.get_guild(config.discord.guild_id)
+        return {
+            **args,
+            "tool_context": {
+                **args["tool_context"],
+                "discord_bot": discord_bot,
+                "discord_guild": guild,
+            },
+        }
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=list(config.api.cors_origins),
@@ -455,11 +486,11 @@ def create_api_app(pollinations_client, config):
         auth = _authorization(request)
         if not auth:
             return _error("Authorization header required", 401, "invalid_api_key")
-        args = _request_args(body)
+        args = add_discord_context(_request_args(body, config))
         if body.stream:
             include_usage = bool((body.stream_options or {}).get("include_usage"))
             return StreamingResponse(
-                _chat_stream(pollinations_client, args, auth, include_usage),
+                _chat_stream(pollinations_client, args, auth, include_usage, body.model),
                 media_type="text/event-stream",
                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
             )
@@ -473,7 +504,7 @@ def create_api_app(pollinations_client, config):
             return _error("Internal server error", 500, "internal_error")
         finally:
             _auth_override.reset(token)
-        return JSONResponse(_chat_response(result, f"chatcmpl-{uuid4_hex()[:24]}", int(time.time())))
+        return JSONResponse(_chat_response(result, f"chatcmpl-{uuid4_hex()[:24]}", int(time.time()), body.model))
 
     @app.post("/v1/responses")
     async def responses(body: ResponsesRequest, request: Request):
@@ -481,10 +512,10 @@ def create_api_app(pollinations_client, config):
         if not auth:
             return _error("Authorization header required", 401, "invalid_api_key")
         chat = _responses_chat_request(body)
-        args = _request_args(chat)
+        args = add_discord_context(_request_args(chat, config))
         if body.stream:
             return StreamingResponse(
-                _responses_stream(pollinations_client, args, auth),
+                _responses_stream(pollinations_client, args, auth, body.model),
                 media_type="text/event-stream",
                 headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
             )
@@ -504,6 +535,7 @@ def create_api_app(pollinations_client, config):
                 int(time.time()),
                 result.get("response", ""),
                 result.get("usage"),
+                body.model,
                 tool_calls=result.get("client_tool_calls"),
             )
         )

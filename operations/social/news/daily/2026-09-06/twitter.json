@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-06",
+  "period_start": "2026-09-06",
+  "period_end": "2026-09-06",
+  "generated_at": "2026-09-07T06:38:19.638749+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-06/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped 10 PRs today: managed agents now surface selected MCP startup failures and support device-flow login. streams tolerate provisional usage; provider errors keep their diagnostics; dashboard loading no longer waits on billing. software: briefly less ceremonial."
+}

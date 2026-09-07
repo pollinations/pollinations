@@ -151,8 +151,6 @@ export type BillingAdjustment = {
 export type ModelDefinition = {
     aliases: string[];
     provider: string;
-    /** Stable internal execution ID. Bundled routes set it explicitly; community IDs already identify their route. */
-    routeId?: string;
     /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */

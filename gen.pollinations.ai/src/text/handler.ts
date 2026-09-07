@@ -16,7 +16,6 @@ import {
     attachFallbackTarget,
     type FallbackCandidate,
     fallbackCandidates,
-    getProviderRouteId,
     withModelFallback,
 } from "../fallback.ts";
 import { fixWavHeader } from "../routes/audio.js";
@@ -375,9 +374,9 @@ async function generateTextResponse(
         // R2 cache snapshots never leak the field.
         attachFallbackTarget(completion, candidate.originalIndex);
 
-        // Diagnostics identify the serving route; request dispatch and public
-        // model identity stay on candidate.id.
-        const servedModelId = getProviderRouteId(candidate) || undefined;
+        // The successful candidate always carries the canonical registry id,
+        // including aliases, community models, and fallback targets.
+        const servedModelId = candidate.id || undefined;
         if (normalizedRequestData.stream) {
             if (!completion.responseStream) {
                 return sendTextStreamResponse(completion, servedModelId);

@@ -16,7 +16,6 @@ import {
     type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
-    getProviderRouteId,
     isRetryableFallbackError,
     linkFallbackEntries,
     withModelFallback,
@@ -326,77 +325,53 @@ describe("formatFallbackTarget", () => {
     });
 });
 
-describe("provider execution identity", () => {
+describe("fallback response model attribution", () => {
     const publicId = "qwen/qwen-image-3";
-    const primary = { id: publicId, definition: IMAGE_SERVICES[publicId] };
-    const backupId = `${publicId}:replicate`;
-    const backup = { id: backupId, definition: IMAGE_SERVICES[backupId] };
+    const backupId = "qwen/qwen-image-3:replicate";
     const model = {
         resolved: publicId,
-        definition: primary.definition,
+        definition: IMAGE_SERVICES[publicId],
         fallbackEntries: [
-            { ...registryEntry(backupId), definition: backup.definition },
+            {
+                ...registryEntry(backupId),
+                definition: IMAGE_SERVICES[backupId],
+            },
         ],
     };
 
-    it("identifies the primary route without marking it as a fallback", async () => {
+    it("preserves the primary handler's model header without adding a provider suffix", async () => {
         const response = await withModelFallbackResponse(
             model,
-            async () => new Response("ok"),
+            async () =>
+                new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: publicId },
+                }),
         );
-        expect(response.headers.get(MODEL_USED_HEADER)).toBe(`${publicId}:fal`);
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(publicId);
         expect(response.headers.has(FALLBACK_TARGET_HEADER)).toBe(false);
     });
 
-    it("keeps route identity stable when a backup becomes the primary", async () => {
-        const promoted = { id: publicId, definition: backup.definition };
-        expect(getProviderRouteId(promoted)).toBe(getProviderRouteId(backup));
-        const response = await withModelFallbackResponse(
-            { resolved: publicId, definition: promoted.definition },
-            async () => new Response("ok"),
-        );
-        expect(response.headers.get(MODEL_USED_HEADER)).toBe(backupId);
-        expect(response.headers.has(FALLBACK_TARGET_HEADER)).toBe(false);
-    });
-
-    it("records both attempts and identifies the actual fallback route", async () => {
+    it("keeps provider-qualified fallback IDs and per-attempt dispatch attribution", async () => {
         const attempts: FallbackAttempt[] = [];
         const response = await withModelFallbackResponse(
             model,
             async (candidate) => {
                 if (candidate.id === publicId)
                     throw Object.assign(new Error("busy"), { status: 429 });
-                return new Response("ok");
+                return new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: candidate.id },
+                });
             },
             attempts,
         );
-        expect(
-            attempts.map((attempt) => getProviderRouteId(attempt.candidate)),
-        ).toEqual([`${publicId}:fal`, backupId]);
+        expect(attempts.map((attempt) => attempt.candidate.id)).toEqual([
+            publicId,
+            backupId,
+        ]);
         expect(response.headers.get(MODEL_USED_HEADER)).toBe(backupId);
         expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
             formatFallbackTarget(1),
         );
-    });
-
-    it("preserves community response attribution and cache-hit headers", async () => {
-        const community = {
-            resolved: "owner/model",
-            definition: communityEntry("owner/model", "owner").definition,
-        };
-        const response = await withModelFallbackResponse(
-            community,
-            async () =>
-                new Response("ok", {
-                    headers: { [MODEL_USED_HEADER]: "upstream-model" },
-                }),
-        );
-        expect(response.headers.get(MODEL_USED_HEADER)).toBe("upstream-model");
-        const cached = await withModelFallbackResponse(
-            model,
-            async () => new Response("ok", { headers: { "x-cache": "HIT" } }),
-        );
-        expect(cached.headers.has(MODEL_USED_HEADER)).toBe(false);
     });
 });
 

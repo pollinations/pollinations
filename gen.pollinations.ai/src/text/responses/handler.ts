@@ -19,7 +19,6 @@ import {
     type FallbackCandidate,
     fallbackCandidates,
     formatFallbackTarget,
-    getProviderRouteId,
     withModelFallback,
 } from "../../fallback.ts";
 import { enforceModelRateLimit } from "../../utils/model-rate-limit.ts";
@@ -208,7 +207,7 @@ async function handleDirectResponse(
                 ? "text/event-stream; charset=utf-8"
                 : "application/json; charset=utf-8",
             "Cache-Control": request.stream ? "no-cache" : "no-store",
-            [MODEL_USED_HEADER]: getProviderRouteId(candidate),
+            [MODEL_USED_HEADER]: candidate.id,
         });
         if (candidate.originalIndex > 0) {
             headers.set(
@@ -220,7 +219,7 @@ async function handleDirectResponse(
         if (!request.stream && result.usage) {
             for (const [name, value] of Object.entries(
                 buildUsageHeaders(
-                    getProviderRouteId(candidate),
+                    candidate.id,
                     responsesUsageToUsage(result.usage),
                 ),
             )) {

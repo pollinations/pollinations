@@ -810,7 +810,7 @@ fixtureTest(
             "nosniff",
         );
         expect(getResponse.headers.get("x-model-used")).toBe(
-            "recraft/recraft-v4.1-vector:openrouter:recraft",
+            "recraft/recraft-v4.1-vector",
         );
         expect(getResponse.headers.get("x-usage-completion-image-tokens")).toBe(
             "1",
@@ -1031,7 +1031,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/wav");
         expect(response.headers.get("x-model-used")).toBe(
-            "qwen/qwen3-tts-instruct-flash:alibaba",
+            "qwen/qwen3-tts-instruct-flash",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "10",
@@ -1111,9 +1111,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
-        expect(response.headers.get("x-model-used")).toBe(
-            "sesame/csm-1b:deepinfra",
-        );
+        expect(response.headers.get("x-model-used")).toBe("sesame/csm-1b");
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "9",
         );
@@ -1273,7 +1271,7 @@ fixtureTest(
         expect(postResponse.status).toBe(200);
         expect(postResponse.headers.get("content-type")).toBe("audio/wav");
         expect(postResponse.headers.get("x-model-used")).toBe(
-            "hexgrad/kokoro-82m:deepinfra",
+            "hexgrad/kokoro-82m",
         );
         expect(
             postResponse.headers.get("x-usage-completion-audio-tokens"),
@@ -1299,7 +1297,7 @@ fixtureTest(
 
         expect(getResponse.status).toBe(200);
         expect(getResponse.headers.get("x-model-used")).toBe(
-            "hexgrad/kokoro-82m:deepinfra",
+            "hexgrad/kokoro-82m",
         );
         expect(getResponse.headers.get("x-tts-voice")).toBe("af_alloy");
         await getResponse.arrayBuffer();
@@ -1454,7 +1452,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "google/lyria-3-clip-preview:google",
+            "google/lyria-3-clip-preview",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
@@ -1996,7 +1994,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stability-ai/stable-audio-3-medium:fal",
+            "stability-ai/stable-audio-3-medium",
         );
         // text-to-audio bills 1 output audio unit ($0.0376 per generation).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -2094,7 +2092,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stability-ai/stable-audio-3-medium:fal",
+            "stability-ai/stable-audio-3-medium",
         );
         // audio-to-audio bills 1 output unit + 1 input unit
         // ($0.0376 + $0.0041 = $0.0417 per generation).
@@ -2209,7 +2207,7 @@ fixtureTest(
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe("audio/mpeg");
         expect(response.headers.get("x-model-used")).toBe(
-            "stability-ai/stable-audio-3:stability",
+            "stability-ai/stable-audio-3",
         );
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
             "1",
@@ -2314,7 +2312,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "stability-ai/stable-audio-3:stability",
+            "stability-ai/stable-audio-3",
         );
         // a2a bills the same flat fee as text-to-audio ($0.26 = 1 unit).
         expect(response.headers.get("x-usage-completion-audio-tokens")).toBe(
@@ -2537,7 +2535,7 @@ fixtureTest(
 
         expect(response.status).toBe(200);
         expect(response.headers.get("x-model-used")).toBe(
-            "openai/gpt-transcribe:azure",
+            "openai/gpt-transcribe",
         );
         expect(response.headers.get("x-usage-prompt-audio-seconds")).toBe("4");
         await expect(response.json()).resolves.toEqual({

@@ -513,8 +513,7 @@ describe("tracking observability", () => {
             responseStatus: 200,
             modelRequested: "openai/gpt-5.4-nano",
             resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "openai/gpt-5.4-nano:azure",
-            fallbackUsed: false,
+            modelUsed: "gpt-5-nano-2025-08-07",
             modelProviderUsed: expect.any(String),
             userId: trackingUser.id,
             isBilledUsage: true,
@@ -767,7 +766,7 @@ describe("tracking observability", () => {
             error_class: "UpstreamUsageError",
             upstream_body: expect.any(String),
         });
-        expect(event.modelUsed).toBe("openai/gpt-5.4-nano:azure");
+        expect(event.modelUsed).toBe("openai/gpt-5.4-nano");
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
 
@@ -1139,7 +1138,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "perplexity/sonar:perplexity",
+            modelUsed: "perplexity/sonar",
             totalCost: 0.005,
             totalPrice: 0,
             errorResponseCode: "usage_missing",
@@ -1208,7 +1207,7 @@ describe("tracking observability", () => {
             responseStatus: 502,
             errorResponseCode: "usage_missing",
             fallbackUsed: true,
-            modelUsed: "openai/gpt-5.4-nano:azure",
+            modelUsed: "openai/gpt-5.4-nano",
             totalCost: 0,
             totalPrice: 0,
             devPrice: 0.005,
@@ -1269,7 +1268,7 @@ describe("tracking observability", () => {
         expect(event).toMatchObject({
             isBilledUsage: false,
             fallbackUsed: true,
-            modelUsed: "perplexity/sonar:perplexity",
+            modelUsed: "perplexity/sonar",
             totalCost: 0.005,
             totalPrice: 0,
             devPrice: 0,
@@ -1442,7 +1441,7 @@ describe("tracking observability", () => {
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             responseStatus: 502,
             resolvedModelRequested: "openai/gpt-5.4-nano",
-            modelUsed: "openai/gpt-5.4-nano:azure",
+            modelUsed: "openai/gpt-5.4-nano",
             isBilledUsage: false,
         });
     });
@@ -1915,7 +1914,7 @@ describe("tracking observability", () => {
             eventType: "generate.image",
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai/gpt-5.4-nano:azure",
+            modelUsed: "openai/gpt-5.4-nano",
         });
         expect(consumePollen).toHaveBeenCalledWith(0);
     });
@@ -2257,7 +2256,6 @@ describe("tracking observability", () => {
             tokenCountCompletionText: number;
             modelUsed: string;
             isBilledUsage: boolean;
-            fallbackUsed: boolean;
         };
         expect(event.responseTime).toBeGreaterThanOrEqual(100);
         expect(
@@ -2265,8 +2263,7 @@ describe("tracking observability", () => {
                 new Date(event.startTime).getTime(),
         ).toBeGreaterThanOrEqual(100);
         expect(event.tokenCountCompletionText).toBe(500);
-        expect(event.modelUsed).toBe("openai/gpt-5.4-nano:azure");
-        expect(event.fallbackUsed).toBe(false);
+        expect(event.modelUsed).toBe("gpt-5-nano-2025-08-07");
         expect(event.isBilledUsage).toBe(true);
     });
 
@@ -2605,7 +2602,7 @@ describe("tracking observability", () => {
         expect(tinybirdRequests).toHaveLength(1);
         await expect(tinybirdRequests[0].json()).resolves.toMatchObject({
             eventType: "generate.text",
-            modelUsed: "openai/gpt-5.4-nano:azure",
+            modelUsed: "openai/gpt-5.4-nano",
             tokenCountPromptText: 800,
             tokenCountPromptCached: 200,
             tokenCountCompletionText: 400,
@@ -2766,7 +2763,7 @@ function candidateFixture(
 }
 
 describe("trackResponse modelUsed", () => {
-    it("attributes a failed primary generation to its route without marking a fallback", async () => {
+    it("attributes a failed generation to the resolved model", async () => {
         const tracking = await trackResponse(
             "generate.text",
             requestTrackingFixture(),
@@ -2777,8 +2774,7 @@ describe("trackResponse modelUsed", () => {
             responseStatus: 502,
             cacheHit: false,
             isBilledUsage: false,
-            modelUsed: "openai/gpt-5.4-nano:azure",
-            fallbackUsed: false,
+            modelUsed: "openai/gpt-5.4-nano",
         });
     });
 
@@ -2788,13 +2784,12 @@ describe("trackResponse modelUsed", () => {
             requestTrackingFixture(),
             // A JSON error body served with HTTP 200 instead of an image.
             Response.json({ error: "boom" }),
-            candidateFixture("openai/gpt-image-2:openai"),
+            { ...candidateFixture(), id: "internal-fallback" },
         );
         expect(tracking).toMatchObject({
             responseStatus: 200,
             isBilledUsage: false,
-            modelUsed: "openai/gpt-image-2:openai",
-            fallbackUsed: true,
+            modelUsed: "internal-fallback",
         });
     });
 
@@ -2813,7 +2808,7 @@ describe("trackResponse modelUsed", () => {
         expect(tracking).toMatchObject({
             responseStatus: 502,
             isBilledUsage: false,
-            modelUsed: "openai/gpt-5.4-nano:azure",
+            modelUsed: "openai/gpt-5.4-nano",
             errorTracking: { errorResponseCode: "usage_missing" },
         });
     });

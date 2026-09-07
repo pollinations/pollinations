@@ -936,9 +936,7 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     });
 
     expect(response.status, await response.clone().text()).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe(
-        "openai/gpt-5.6-luna:azure",
-    );
+    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5.6-luna");
     await expect(response.json()).resolves.toMatchObject({
         object: "chat.completion",
         choices: [
@@ -985,7 +983,7 @@ test("Chat uses a native Responses target and preserves billing usage", async ({
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna:azure",
+        modelUsed: "openai/gpt-5.6-luna",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
@@ -1030,7 +1028,7 @@ test("Chat-over-Responses streaming converts events and bills terminal usage", a
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna:azure",
+        modelUsed: "openai/gpt-5.6-luna",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
@@ -1078,7 +1076,7 @@ test("Chat-over-Responses stream without usage fails closed and remains unbilled
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         responseStatus: 502,
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna:azure",
+        modelUsed: "openai/gpt-5.6-luna",
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "usage_missing",
@@ -1121,7 +1119,7 @@ test("Chat-over-Responses stream failure is tracked as an upstream error and rem
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         responseStatus: 502,
         modelRequested: "openai/gpt-5.6-luna",
-        modelUsed: "openai/gpt-5.6-luna:azure",
+        modelUsed: "openai/gpt-5.6-luna",
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "upstream_finish_reason_error",
@@ -1161,9 +1159,7 @@ test("direct Responses JSON preserves protocol and bills once", async ({
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe(
-        "qwen/qwen3.7-plus:openrouter",
-    );
+    expect(response.headers.get("x-model-used")).toBe("qwen/qwen3.7-plus");
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("9");
     expect(response.headers.get("x-usage-prompt-cached-tokens")).toBe("2");
     expect(response.headers.get("x-usage-prompt-cache-write-tokens")).toBe("1");
@@ -1196,7 +1192,7 @@ test("direct Responses JSON preserves protocol and bills once", async ({
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         eventType: "generate.text",
         modelRequested: "qwen/qwen3.7-plus",
-        modelUsed: "qwen/qwen3.7-plus:openrouter",
+        modelUsed: "qwen/qwen3.7-plus",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountPromptCacheWrite: 1,
@@ -1270,7 +1266,7 @@ test("direct Responses SSE is unchanged and terminal usage bills once", async ({
     expect(mocks.responsesDirect.state.requests).toHaveLength(1);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "qwen/qwen3.7-plus:openrouter",
+        modelUsed: "qwen/qwen3.7-plus",
         tokenCountPromptText: 9,
         tokenCountPromptCached: 2,
         tokenCountCompletionText: 4,
@@ -1312,7 +1308,7 @@ test("direct Responses stream failure remains unbilled", async ({ mocks }) => {
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         responseStatus: 502,
         modelRequested: "qwen/qwen3.7-plus",
-        modelUsed: "qwen/qwen3.7-plus:openrouter",
+        modelUsed: "qwen/qwen3.7-plus",
         isBilledUsage: false,
         totalPrice: 0,
         errorResponseCode: "upstream_finish_reason_error",
@@ -1504,15 +1500,13 @@ test("canonical model headers preserve provider-reported payload models", async 
     });
 
     expect(response.status).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe(
-        "openai/gpt-5-nano:azure",
-    );
+    expect(response.headers.get("x-model-used")).toBe("openai/gpt-5-nano");
     await expect(response.json()).resolves.toMatchObject({
         model: "provider-model-version",
     });
     await wait();
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-5-nano:azure",
+        modelUsed: "openai/gpt-5-nano",
     });
 
     const { response: streamResponse, wait: waitForStream } = await fetchWorker(
@@ -1538,14 +1532,14 @@ test("canonical model headers preserve provider-reported payload models", async 
 
     expect(streamResponse.status).toBe(200);
     expect(streamResponse.headers.get("x-model-used")).toBe(
-        "openai/gpt-5-nano:azure",
+        "openai/gpt-5-nano",
     );
     const streamBody = await streamResponse.text();
     expect(streamBody).toContain('"model":"provider-model-version"');
     expect(streamBody).not.toContain('"model":"openai-fast"');
     await waitForStream();
     expect(mocks.tinybird.state.events[1]).toMatchObject({
-        modelUsed: "openai/gpt-5-nano:azure",
+        modelUsed: "openai/gpt-5-nano",
     });
 });
 
@@ -1628,9 +1622,7 @@ test("Perplexity aliases add no options and allow explicit override", async ({
         });
 
         expect(response.status).toBe(200);
-        expect(response.headers.get("x-model-used")).toBe(
-            "perplexity/sonar:perplexity",
-        );
+        expect(response.headers.get("x-model-used")).toBe("perplexity/sonar");
         await response.text();
         await wait();
     }
@@ -2167,7 +2159,7 @@ test("flux falls back to DeepInfra when the Vast pool is empty", async ({
         eventType: "generate.image",
         modelRequested: "flux",
         resolvedModelRequested: "black-forest-labs/flux.1-schnell",
-        modelUsed: "black-forest-labs/flux.1-schnell:vast",
+        modelUsed: "black-forest-labs/flux.1-schnell",
         modelProviderUsed: "vast",
         responseStatus: 503,
         isFinal: false,
@@ -2333,7 +2325,7 @@ test("gpt-image-2 falls back to OpenAI direct on an Azure 429", async ({
     ]);
     expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-image-2:azure",
+        modelUsed: "openai/gpt-image-2",
         modelProviderUsed: "azure",
         responseStatus: 502,
         isFinal: false,
@@ -2405,7 +2397,7 @@ test("gpt-image-2 does not duplicate an ambiguous Azure timeout", async ({
     expect(mocks.gptImage.state.openAIRequests).toHaveLength(0);
     expect(mocks.tinybird.state.events).toHaveLength(1);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
-        modelUsed: "openai/gpt-image-2:azure",
+        modelUsed: "openai/gpt-image-2",
         modelProviderUsed: "azure",
         responseStatus: 502,
         isFinal: true,
@@ -2446,7 +2438,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
 
     expect(response.status).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(
-        "lykon/dreamshaper-8-lcm:vast",
+        "lykon/dreamshaper-8-lcm",
     );
     await response.arrayBuffer();
     await wait();
@@ -2456,7 +2448,7 @@ test("the sana alias routes to the dreamshaper pool and records its flat price",
         eventType: "generate.image",
         // analytics keep the name the caller actually used
         modelRequested: "sana",
-        modelUsed: "lykon/dreamshaper-8-lcm:vast",
+        modelUsed: "lykon/dreamshaper-8-lcm",
         tokenCountCompletionImage: 1,
         tokenPriceCompletionImage: 0.0001,
         isBilledUsage: true,

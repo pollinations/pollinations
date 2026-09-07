@@ -112,7 +112,7 @@ test("nanobanana bills exact OpenRouter usage end-to-end", async ({
     expect(response.headers.get("content-type")).toMatch(/^image\//);
     expect((await response.arrayBuffer()).byteLength).toBeGreaterThan(0);
     expect(response.headers.get("x-model-used")).toBe(
-        "google/gemini-2.5-flash-image:openrouter:vertex-global",
+        "google/gemini-2.5-flash-image",
     );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("11");
     expect(response.headers.get("x-usage-completion-image-tokens")).toBe(
@@ -212,7 +212,7 @@ test("nanobanana-2 preserves 4K routing, reasoning, and exact billing", async ({
 
     expect(response.status, await response.clone().text()).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(
-        "google/gemini-3.1-flash-image:openrouter:vertex-global",
+        "google/gemini-3.1-flash-image",
     );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("12");
     expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
@@ -273,7 +273,7 @@ test("nanobanana-2-lite preserves fixed 1K routing and exact billing", async ({
 
     expect(response.status, await response.clone().text()).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(
-        "google/gemini-3.1-flash-lite-image:openrouter:vertex-global",
+        "google/gemini-3.1-flash-lite-image",
     );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("10");
     expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(
@@ -334,7 +334,7 @@ test("nanobanana-pro preserves 4K AI Studio routing and exact billing", async ({
 
     expect(response.status, await response.clone().text()).toBe(200);
     expect(response.headers.get("x-model-used")).toBe(
-        "google/gemini-3-pro-image:openrouter:ai-studio-global",
+        "google/gemini-3-pro-image",
     );
     expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("14");
     expect(response.headers.get("x-usage-completion-reasoning-tokens")).toBe(

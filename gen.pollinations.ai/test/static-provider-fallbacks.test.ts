@@ -5,13 +5,10 @@ import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
 import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
-    getModels,
-    getRegistryModelDefinition,
     getVisibleAudioModels,
     getVisibleImageModels,
     getVisibleTextModels,
     type ModelDefinition,
-    resolveModelName,
 } from "@shared/registry/registry.ts";
 import { TEXT_SERVICES } from "@shared/registry/text.ts";
 import { TEXT_FALLBACKS } from "@shared/registry/text-fallbacks.ts";
@@ -130,7 +127,6 @@ function expectInheritedRoute(
     }
     expect(parent.fallbacks).toContain(routeId);
     expect(route).toMatchObject({
-        routeId,
         aliases: [],
         hidden: true,
         fallbackOnly: true,
@@ -151,57 +147,6 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
-    it("gives every bundled route a unique execution ID without exposing primary IDs as aliases", () => {
-        const routeIds = new Set<string>();
-        for (const id of getModels()) {
-            const definition = getRegistryModelDefinition(id);
-            const routeId = definition.routeId;
-            expect(routeId, id).toBeDefined();
-            if (!routeId) throw new Error(`Missing execution ID for ${id}`);
-            expect(routeId).toBe(routeId.toLowerCase());
-            expect(routeIds.has(routeId)).toBe(false);
-            routeIds.add(routeId);
-            if (definition.fallbackOnly) {
-                expect(routeId).toBe(id);
-            } else {
-                expect(
-                    routeId === `${id}:${definition.provider}` ||
-                        routeId.startsWith(`${id}:${definition.provider}:`),
-                ).toBe(true);
-                expect(() => resolveModelName(routeId)).toThrow();
-            }
-        }
-        expect(routeIds.size).toBe(getModels().length);
-    });
-
-    it("binds every pinned OpenRouter text route ID to its configured endpoint", () => {
-        for (const [id, definition] of Object.entries(TEXT_SERVICES)) {
-            if (definition.provider !== "openrouter") continue;
-            const model = findModelByName(id);
-            if (!model) throw new Error(`Missing text config for ${id}`);
-            const options = model.config().defaultOptions as {
-                provider?: { only?: string[]; allow_fallbacks?: boolean };
-            };
-            const routing = options?.provider;
-            if (
-                routing?.only?.length !== 1 ||
-                routing.allow_fallbacks !== false
-            ) {
-                expect(definition.routeId).toBe(`${id}:openrouter`);
-                continue;
-            }
-            const qualifier = routing.only[0]
-                .toLowerCase()
-                .replace(/^google-vertex/, "vertex")
-                .replace(/^google-ai-studio/, "ai-studio")
-                .replaceAll("/", "-");
-            expect(
-                definition.routeId?.endsWith(`:openrouter:${qualifier}`),
-                id,
-            ).toBe(true);
-        }
-    });
-
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
         const parent: ModelDefinition = TEXT_SERVICES[parentId];

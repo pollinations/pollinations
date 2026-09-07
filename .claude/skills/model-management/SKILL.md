@@ -118,30 +118,31 @@ Present the mandatory row and obtain explicit confirmation before editing. If a 
 - Never encode an inference provider in a public canonical ID. Deduplicate the
   same publisher model across providers behind one public identity and declare
   automatic routing through the registry's ordered fallback relationship.
-- Give every bundled primary and fallback a stable execution `routeId`:
-  `<public-canonical-id>:<provider>`. The public registry key, catalogs, request
-  model, and permissions remain the public ID; the primary's `routeId` is
-  metadata, not a second public model or alias. Fallback-only entries use their
-  execution ID as the registry key; `mergeFallbacks` sets their `routeId`.
+- Name hidden fallback registry entries `<public-canonical-id>:<provider>`.
+  The public registry key, catalogs, request model, and permissions remain the
+  public ID. Keep fallback identity separate from priority: never use
+  `:fallback`, numbered fallback suffixes, or priority labels in these IDs.
 - For a pinned OpenRouter endpoint, append a meaningful qualifier from the start:
   `<public-canonical-id>:<provider>:<route-qualifier>`, such as
   `google/gemini-2.5-flash-lite:openrouter:vertex-global` or
   `google/gemini-2.5-flash-lite:openrouter:ai-studio`. Distinguish multiple
   deployments through the same provider explicitly. Use lowercase labels;
-  never encode priority or the temporary fallback role. Preserve execution
-  IDs when changing route preference. For provider-managed routing without
+  never encode priority or the temporary fallback role. Preserve fallback
+  registry IDs when changing their order. For provider-managed routing without
   a fixed backend, do not invent an endpoint qualifier.
 - The `provider` field and route configuration remain authoritative; the name
   does not select an upstream endpoint. Keep fallback-only entries hidden,
   without aliases, and excluded from catalogs and direct model selection.
   Route-specific cost belongs on the serving definition; callers retain the
   requested public model's price. Use the existing shared fallback mechanism.
-- Record the public ID in `resolved_model_requested` and the serving bundled
-  `routeId` in `model_used` and `x-model-used`. Determine `fallback_used` from
-  the attempted target/dispatch identity, never by comparing an execution ID
-  with the public ID: primary execution IDs differ too. Keep existing
-  community attribution and cache-hit semantics. No new analytics columns or
-  historical-event rewrites are needed for this separation.
+- Preserve existing `resolved_model_requested`, `model_used`, `x-model-used`,
+  provider, per-attempt, community and cache attribution semantics during a
+  canonical rename. Recorded IDs may adopt the new spelling, including hidden
+  fallback registry IDs; do not force primary IDs into execution identifiers.
+  Explicit primary execution IDs and their analytics/header contract are
+  deferred to [#14543](https://github.com/pollinations/pollinations/issues/14543).
+  Review affected consumers and any public API changes separately; do not
+  silently repurpose `x-model-used` or rewrite historical events.
 - Preserve the complete public canonical ID, including existing suffixes, when
   naming an internal route. For example, a route for
   `google/gemini-2.5-flash-lite:search` could be

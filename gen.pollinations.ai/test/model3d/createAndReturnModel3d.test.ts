@@ -121,7 +121,7 @@ workerTest("uses the shared fallback loop for 3D", async ({ paidApiKey }) => {
             "config.targets[1]",
         );
         expect(response.headers.get("x-model-used")).toBe(
-            "microsoft/trellis-2:inferenceport",
+            "microsoft/trellis-2",
         );
         expect(await response.text()).toBe("glTF");
         expect(upstreams).toEqual(["hyper3d/rodin-2.5", "microsoft/trellis-2"]);
@@ -177,7 +177,7 @@ workerTest(
                 expect(response.status).toBe(200);
                 expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBeNull();
                 expect(response.headers.get("x-model-used")).toBe(
-                    "microsoft/trellis-2:inferenceport",
+                    "microsoft/trellis-2",
                 );
                 expect(await response.text()).toBe("glTF");
             }

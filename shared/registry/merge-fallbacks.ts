@@ -14,12 +14,7 @@ import type { ModelDefinition } from "./registry";
 export type FallbackDefinition = Partial<
     Omit<
         ModelDefinition,
-        | "aliases"
-        | "fallbacks"
-        | "fallbackOnly"
-        | "hidden"
-        | "provider"
-        | "routeId"
+        "aliases" | "fallbacks" | "fallbackOnly" | "hidden" | "provider"
     >
 > & { provider: string };
 
@@ -74,14 +69,12 @@ export function mergeFallbacks<
             fallbacks: _fallbacks,
             fallbackOnly: _fallbackOnly,
             hidden: _hidden,
-            routeId: _routeId,
             ...inherited
         } = parent;
         for (const [routeId, overrides] of Object.entries(routes)) {
             merged[routeId] = {
                 ...inherited,
                 ...overrides,
-                routeId,
                 aliases: [],
                 hidden: true,
                 fallbackOnly: true,

@@ -370,16 +370,14 @@ describe("POST /v1/embeddings", () => {
             }
             expect(result.model).toBe(model);
             expect(result.usage).toEqual({ prompt_tokens: 8, total_tokens: 8 });
-            expect(response.headers.get("x-model-used")).toBe(
-                getRegistryModelDefinition(model).routeId,
-            );
+            expect(response.headers.get("x-model-used")).toBe(model);
             expect(response.headers.get("x-usage-prompt-text-tokens")).toBe(
                 "8",
             );
             await wait();
             expect(mocks.tinybird.state.events).toHaveLength(1);
             expect(mocks.tinybird.state.events[0]).toMatchObject({
-                modelUsed: getRegistryModelDefinition(model).routeId,
+                modelUsed: model,
                 tokenCountPromptText: 8,
                 isBilledUsage: true,
             });
@@ -427,9 +425,7 @@ describe("POST /v1/embeddings", () => {
         ]);
         expect(data.model).toBe(TEST_EMBEDDING_MODEL);
         expect(data.usage).toEqual({ prompt_tokens: 5, total_tokens: 5 });
-        expect(response.headers.get("x-model-used")).toBe(
-            getRegistryModelDefinition(TEST_EMBEDDING_MODEL).routeId,
-        );
+        expect(response.headers.get("x-model-used")).toBe(TEST_EMBEDDING_MODEL);
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("5");
         expect(mocks.vertex.state.requests).toHaveLength(1);
 
@@ -441,7 +437,7 @@ describe("POST /v1/embeddings", () => {
             eventType: "generate.embedding",
             modelRequested: TEST_EMBEDDING_MODEL,
             resolvedModelRequested: TEST_EMBEDDING_MODEL,
-            modelUsed: getRegistryModelDefinition(TEST_EMBEDDING_MODEL).routeId,
+            modelUsed: TEST_EMBEDDING_MODEL,
             tokenCountPromptText: 5,
             tokenCountCompletionText: 0,
             isBilledUsage: true,
@@ -476,7 +472,7 @@ describe("POST /v1/embeddings", () => {
                 "config.targets[1]",
             );
             expect(response.headers.get("x-model-used")).toBe(
-                getRegistryModelDefinition(TEST_OPENAI_LARGE_MODEL).routeId,
+                TEST_OPENAI_LARGE_MODEL,
             );
             await response.arrayBuffer();
             expect(mocks.azureOpenAI.state.requests).toMatchObject([
@@ -658,7 +654,7 @@ describe("POST /v1/embeddings", () => {
         expect(data.data.map(({ index }) => index)).toEqual([0, 1]);
         expect(data.usage).toEqual({ prompt_tokens: 8, total_tokens: 8 });
         expect(response.headers.get("x-model-used")).toBe(
-            getRegistryModelDefinition(TEST_OPENAI_SMALL_MODEL).routeId,
+            TEST_OPENAI_SMALL_MODEL,
         );
         expect(response.headers.get("x-usage-prompt-text-tokens")).toBe("8");
         expect(mocks.azureOpenAI.state.requests).toEqual([
@@ -679,8 +675,7 @@ describe("POST /v1/embeddings", () => {
             eventType: "generate.embedding",
             modelRequested: TEST_OPENAI_SMALL_MODEL,
             resolvedModelRequested: TEST_OPENAI_SMALL_MODEL,
-            modelUsed: getRegistryModelDefinition(TEST_OPENAI_SMALL_MODEL)
-                .routeId,
+            modelUsed: TEST_OPENAI_SMALL_MODEL,
             tokenCountPromptText: 8,
             totalCost: 0.00000016,
             totalPrice: 0.00000012,
@@ -732,8 +727,7 @@ describe("POST /v1/embeddings", () => {
             eventType: "generate.embedding",
             modelRequested: TEST_OPENAI_LARGE_MODEL,
             resolvedModelRequested: TEST_OPENAI_LARGE_MODEL,
-            modelUsed: getRegistryModelDefinition(TEST_OPENAI_LARGE_MODEL)
-                .routeId,
+            modelUsed: TEST_OPENAI_LARGE_MODEL,
             tokenCountPromptText: 4,
             totalCost: 0.00000052,
             totalPrice: 0.00000039,
@@ -789,7 +783,7 @@ describe("POST /v1/embeddings", () => {
             eventType: "generate.embedding",
             modelRequested: TEST_COHERE_MODEL,
             resolvedModelRequested: TEST_COHERE_MODEL,
-            modelUsed: getRegistryModelDefinition(TEST_COHERE_MODEL).routeId,
+            modelUsed: TEST_COHERE_MODEL,
             tokenCountPromptText: 8,
             isBilledUsage: true,
         });
@@ -880,7 +874,7 @@ describe("POST /v1/embeddings", () => {
 
         expect(mocks.tinybird.state.events[0]).toMatchObject({
             eventType: "generate.embedding",
-            modelUsed: getRegistryModelDefinition(TEST_COHERE_MODEL).routeId,
+            modelUsed: TEST_COHERE_MODEL,
             tokenCountPromptImage: 4,
             tokenCountPromptText: 0,
             isBilledUsage: true,
@@ -935,7 +929,7 @@ describe("POST /v1/embeddings", () => {
             eventType: "generate.embedding",
             modelRequested: TEST_QWEN_MODEL,
             resolvedModelRequested: TEST_QWEN_MODEL,
-            modelUsed: getRegistryModelDefinition(TEST_QWEN_MODEL).routeId,
+            modelUsed: TEST_QWEN_MODEL,
             tokenCountPromptText: 4,
             isBilledUsage: true,
         });

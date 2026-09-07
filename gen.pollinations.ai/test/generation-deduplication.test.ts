@@ -520,7 +520,7 @@ describe("generation request deduplication", () => {
         expect(response.status).toBe(503);
         const body = await response.text();
         expect(body).toContain(
-            failure === "rpc"
+            failure.startsWith("rpc")
                 ? "Generation coordination is unavailable"
                 : "Generation cache is temporarily unavailable",
         );
@@ -532,9 +532,9 @@ describe("generation request deduplication", () => {
         );
         const event = (await requests[0].json()) as { stack: string };
         expect(event.stack).toContain(
-            failure === "rpc" ? rpcError.message : cacheError.message,
+            failure.startsWith("rpc") ? rpcError.message : cacheError.message,
         );
-        if (failure === "rpc") {
+        if (failure.startsWith("rpc")) {
             expect(event.stack).toContain(
                 "durableObjectReset=true overloaded=false retryable=true",
             );

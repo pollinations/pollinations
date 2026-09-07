@@ -234,10 +234,13 @@ export const deduplicateGeneration = createMiddleware<DeduplicationEnv>(
                 "Error reading completed generation from cache: {error}",
                 { error },
             );
-            throw new HTTPException(503, {
-                message: "Generation cache is temporarily unavailable",
-                cause: error,
-            });
+            throw (
+                coordinationError ??
+                new HTTPException(503, {
+                    message: "Generation cache is temporarily unavailable",
+                    cause: error,
+                })
+            );
         }
         if (!response) {
             throw (

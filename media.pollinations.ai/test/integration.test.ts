@@ -237,7 +237,7 @@ describe("media.pollinations.ai", () => {
             `https://media.pollinations.ai/${id}`,
         );
         expect(response.headers.get("cache-control")).toBe(
-            "public, max-age=0, must-revalidate",
+            "public, max-age=31536000, immutable",
         );
         expect(response.headers.get("content-security-policy")).toBe(
             "default-src 'none'; sandbox",

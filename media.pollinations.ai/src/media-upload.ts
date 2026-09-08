@@ -1,8 +1,5 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
-import {
-    GENERATED_MEDIA_CACHE_CONTROL,
-    IMMUTABLE_CACHE_CONTROL,
-} from "@shared/http/cache-control.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
@@ -151,7 +148,7 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
                 contentType:
                     response.headers.get("content-type") ||
                     "application/octet-stream",
-                cacheControl: GENERATED_MEDIA_CACHE_CONTROL,
+                cacheControl: IMMUTABLE_CACHE_CONTROL,
             },
             customMetadata: metadata,
         });

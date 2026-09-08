@@ -343,7 +343,7 @@ describe("media cache", () => {
             expect(stored?.headers.has(name)).toBe(false);
         }
         expect(stored?.headers.get("Cache-Control")).toBe(
-            "public, max-age=0, must-revalidate",
+            IMMUTABLE_CACHE_CONTROL,
         );
         await stored?.arrayBuffer();
     });

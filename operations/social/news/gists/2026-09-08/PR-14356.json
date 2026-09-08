@@ -1,0 +1,35 @@
+{
+  "pr_number": 14356,
+  "title": "fix: canonicalize and validate API provider mappings",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14356",
+  "merged_at": "2026-09-08T10:23:42Z",
+  "labels": [],
+  "pr_body_excerpt": "- Uses the Economics vendor catalog to validate canonical IDs across all 219 bundled model routes. Checks every text route against its configured supplier and AWS attribution for Nova Canvas/Reel; other media routes have catalog-membership coverage only.\n- Standardizes `bedrock` attribution to `aws` and Economics' `vast.ai` ID to `vast`, preserving historical aliases. After deployment, `/v1/models/status` reports `aws` for affected traffic; overlapping windows can return either label. Model IDs, transports, routes, prices, and account identities stay unchanged.\n- Updates forecast, funding, GPU consumers, and the Vast collection guide. Normalizes saved forecast-rule keys when read and rejects alias collisions. September 8 production/staging audits found no affected saved keys; no stored-data migration was needed.\n- Intentionally leaves Tinybird's historical `vast.ai` output unchanged: Economics combines aliases. No Tinybird deployment is needed. MCP/Composio onboarding remains separate. Fixes the missing Tinybird mock in an existing Perplexity test.\n- Validation: compatibility 427 (including forecast alias checks in CI) and Economics 429 tests, Economics typecheck/build, and Biome pass. Earlier focused Gen 109, Enter aliases 473, and VCR 49 tests passed; VCR has no Claude/Nova snapshots. No deployment or live inference calls; external reporting consumers were not verified.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "Provider names find their hive",
+    "blurb": "The provider ledger got its labels combed. Bedrock traffic now reports as AWS, Vast aliases resolve cleanly, and 219 bundled model routes are checked against the catalog.",
+    "summary": "Canonicalized provider mappings across all 219 bundled model routes, standardizing Bedrock attribution to `aws` and Economics' `vast.ai` ID to `vast` while preserving historical aliases and validating configured text suppliers.",
+    "impact": "`/v1/models/status` now reports `aws` for affected Nova Canvas and Nova Reel traffic, while model IDs, routes, transports, prices, and account identities continue unchanged.",
+    "keywords": [
+      "providers",
+      "model-status",
+      "aws",
+      "bedrock",
+      "vast",
+      "economics",
+      "validation"
+    ],
+    "visual_concept": "A cozy provider-routing garden: Polli carefully relabels two sturdy flower pots, one marked AWS and one marked VAST, while neat glowing model-route vines lead into a retro status monitor. The monitor robot can inspect the canonical labels, and small alias tags are safely filed nearby to show compatibility without clutter.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny librarian visor, carefully replacing a `BEDROCK` garden label with `AWS` beside a `VAST` code-plant pot; a friendly CRT monitor robot checks glowing model-route vines on its lime green (#ecf874) screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, little flowers and alias tags tucked into a tidy garden, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14356.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute yellow bee with dark brown stripes, black oval eyes, pink rectangular cheek blushes, light blue rounded wings, and a tiny librarian visor, carefully replacing a `BEDROCK` garden label with `AWS` beside a `VAST` code-plant pot; a friendly CRT monitor robot checks glowing model-route vines on its lime green (#ecf874) screen. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, little flowers and alias tags tucked into a tidy garden, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T10:24:41.876233+00:00"
+}

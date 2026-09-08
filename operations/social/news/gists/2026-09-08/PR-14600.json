@@ -1,0 +1,34 @@
+{
+  "pr_number": 14600,
+  "title": "fix: retry oversized weekly LinkedIn drafts",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14600",
+  "merged_at": "2026-09-08T22:11:06Z",
+  "labels": [],
+  "pr_body_excerpt": "- Retry weekly LinkedIn generation once when the assembled post exceeds 1,248 characters, providing the previous draft and measured overflow to the model.\n- Preserve required-field validation and the final length guard; fail if the rewrite is still oversized.\n- Add `weekly-generation-only` to recover an archive without staging posts to Buffer.\n- Verify the live retry shortened a 1,297-character draft to 1,237 characters. All six weekly JSON files and seven valid JPEGs are saved with the correct August 30–September 5 coverage; Buffer staging was skipped.\n- Pass CI, Python imports, character counting, week dates, YAML, shell syntax, and mode selection. Biome does not process Python or YAML.\n\nAddresses the [September 6 weekly failure](https://github.com/pollinations/pollinations/actions/runs/34016444931). [Recovery run passed](https://github.com/pollinations/pollinations/actions/runs/34284137997).\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "LinkedIn Gets One More Pass",
+    "blurb": "The weekly social gardener now gives an overgrown LinkedIn draft one careful trim before calling it done. Recovery mode can also rebuild the archive without sending anything to Buffer.",
+    "summary": "Weekly LinkedIn generation now retries once when an assembled post exceeds 1,248 characters, passing the prior draft and measured overflow to the model, while a new weekly-generation-only mode rebuilds archive assets without Buffer staging.",
+    "impact": "Weekly runs can recover oversized LinkedIn posts automatically—verified shrinking a 1,297-character draft to 1,237 characters—and can regenerate the six JSON files and seven JPEGs for a week without publishing staged posts.",
+    "keywords": [
+      "social-pipeline",
+      "linkedin",
+      "weekly-digest",
+      "retry",
+      "buffer",
+      "automation"
+    ],
+    "visual_concept": "A cozy editorial garden represents the weekly social pipeline: Polli is carefully pruning an overlong paper-scroll LinkedIn post to fit beneath a 1,248-character measuring ruler, while a retro CRT robot archives finished weekly pages into a labeled box instead of sending them down a Buffer conveyor. Small code-plants and calendar flowers represent the August 30–September 5 recovery coverage.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny editor glasses and carefully trimming a long LinkedIn-style paper scroll beneath a chunky ruler marked “1248”; a helpful CRT monitor robot files completed pages into an archive box beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: “ONE MORE PASS”, nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14600.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny editor glasses and carefully trimming a long LinkedIn-style paper scroll beneath a chunky ruler marked “1248”; a helpful CRT monitor robot files completed pages into an archive box beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: “ONE MORE PASS”, nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-08T22:12:04.889581+00:00"
+}

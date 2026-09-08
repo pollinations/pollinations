@@ -163,6 +163,13 @@ D1/wrangler access needed on the box):
   public `requestPath`, timestamp, and request ID when returned. Match the
   failing operation when confirming a hide or recovery; generation success
   cannot clear an edit failure. Image output alone does not prove edit quality.
+- Text and image results record `modelUsed` and `fallbackUsed` from the
+  gateway's served-model header. A passing fallback is effective listing health,
+  not proof the primary works. Missing headers leave attribution unknown.
+  Image failures include `upstreamStatus`, `errorCode`, and a short error
+  message without copying the raw upstream body. Upstream 4xx still need
+  input/content-policy attribution; the daily audit surfaces them separately
+  in `needsDiagnosis` rather than silently dropping them or auto-hiding.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key.
 

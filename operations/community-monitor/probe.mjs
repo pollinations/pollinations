@@ -2,7 +2,11 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import { parseChatStream } from "./chat-stream.mjs";
-import { imageProbeRequest, nextImageOperation } from "./image-probe.mjs";
+import {
+    imageProbeRequest,
+    imageProbeResult,
+    nextImageOperation,
+} from "./image-probe.mjs";
 
 // One probe sweep across listed community text and image models via
 // gen.pollinations.ai. Text models get one request every cycle; image models
@@ -222,8 +226,11 @@ async function probeText(model) {
                 ? JSON.stringify(content.trim().slice(0, 200))
                 : "<empty>";
         const ok = res.ok && !protocolError && hasProbeMarker;
+        const modelUsed = res.headers.get("x-model-used");
         const result = {
             model: model.name,
+            modelUsed,
+            fallbackUsed: modelUsed ? modelUsed !== model.name : null,
             category: model.category,
             requestPath,
             requestId: res.headers.get("x-request-id"),
@@ -288,38 +295,18 @@ async function probeImage(model, operation) {
             signal: ctrl.signal,
         });
         const body = await res.text();
-        let parsed;
-        try {
-            parsed = JSON.parse(body);
-        } catch {
-            // handled below as an invalid successful response
-        }
-        const imageBase64 = parsed?.data?.[0]?.b64_json;
-        const hasImage =
-            typeof imageBase64 === "string" &&
-            Buffer.from(imageBase64, "base64").byteLength > 100;
-        const ok = res.ok && hasImage;
         const result = {
             model: model.name,
             category: model.category,
             operation,
             requestPath,
-            requestId: res.headers.get("x-request-id"),
-            httpStatus: res.status,
             timestamp: new Date(started).toISOString(),
-            ok,
-            status: res.ok && !hasImage ? "INVALID" : res.status,
             ms: Date.now() - started,
-            usage: parsed?.usage,
             probeMarker: marker,
-            detail: res.ok
-                ? hasImage
-                    ? undefined
-                    : "successful response did not contain a valid b64_json image"
-                : body.slice(0, 300),
+            ...imageProbeResult(res, body, model.name),
         };
         if (res.ok) {
-            result.billingFlags = imageBillingSanityFlags(parsed?.usage);
+            result.billingFlags = imageBillingSanityFlags(result.usage);
         }
         return result;
     } catch (err) {
@@ -541,7 +528,7 @@ for (const r of [...byModel.values()].sort(
     (a, b) => Number(a.ok) - Number(b.ok),
 )) {
     console.log(
-        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}`,
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}`,
     );
 }
 console.log(

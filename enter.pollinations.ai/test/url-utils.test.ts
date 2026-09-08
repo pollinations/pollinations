@@ -151,6 +151,73 @@ describe("redirectUriMatchesAllowlist", () => {
         ).toBe(false);
     });
 
+    test("verifies localhost and 127.0.0.1 loopback registrations on different ports", () => {
+        const allowlist = [
+            "https://pollinations.ai/play",
+            "http://localhost/play",
+            "http://127.0.0.1/play",
+        ];
+
+        // Both registered loopback hostnames accept any local port
+        expect(
+            redirectUriMatchesAllowlist(
+                "http://localhost:5173/play",
+                allowlist,
+            ),
+        ).toBe(true);
+        expect(
+            redirectUriMatchesAllowlist(
+                "http://127.0.0.1:5173/play",
+                allowlist,
+            ),
+        ).toBe(true);
+        expect(
+            redirectUriMatchesAllowlist(
+                "http://localhost:3000/play",
+                allowlist,
+            ),
+        ).toBe(true);
+        expect(
+            redirectUriMatchesAllowlist(
+                "http://127.0.0.1:8080/play",
+                allowlist,
+            ),
+        ).toBe(true);
+
+        // When 127.0.0.1 is not in the allowlist, it is rejected even if localhost is registered
+        expect(
+            redirectUriMatchesAllowlist("http://127.0.0.1:5173/play", [
+                "http://localhost/play",
+            ]),
+        ).toBe(false);
+
+        // When localhost is not in the allowlist, it is rejected even if 127.0.0.1 is registered
+        expect(
+            redirectUriMatchesAllowlist("http://localhost:5173/play", [
+                "http://127.0.0.1/play",
+            ]),
+        ).toBe(false);
+
+        // Unregistered path on loopback is rejected
+        expect(
+            redirectUriMatchesAllowlist(
+                "http://localhost:5173/other",
+                allowlist,
+            ),
+        ).toBe(false);
+        expect(
+            redirectUriMatchesAllowlist(
+                "http://127.0.0.1:5173/other",
+                allowlist,
+            ),
+        ).toBe(false);
+
+        // Unregistered hostname is rejected
+        expect(
+            redirectUriMatchesAllowlist("http://0.0.0.0:5173/play", allowlist),
+        ).toBe(false);
+    });
+
     test("matches when any allowlist entry matches", () => {
         expect(
             redirectUriMatchesAllowlist("https://staging.app.com/cb", [

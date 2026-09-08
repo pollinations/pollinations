@@ -12,6 +12,8 @@ import type { CommunityModelRateLimiter } from "../src/durable-objects/Community
 import type { Env } from "../src/env.ts";
 import { enforceModelRateLimit } from "../src/utils/model-rate-limit.ts";
 
+const FLUX = "black-forest-labs/flux.1-schnell";
+
 // Azure image deployments with a small quota cap each user at the deployment's
 // own request limit instead of the 60 RPM floor.
 const QUOTA_BOUND_MODELS = new Set([
@@ -31,8 +33,8 @@ describe("model rate limiting", () => {
                 requireModelAccess: () => {},
             });
             await enforceModelRateLimit(c, {
-                id: "flux",
-                definition: { ...IMAGE_SERVICES.flux, perUserRpm: 1 },
+                id: FLUX,
+                definition: { ...IMAGE_SERVICES[FLUX], perUserRpm: 1 },
             });
             return c.text("allowed");
         });
@@ -43,9 +45,7 @@ describe("model rate limiting", () => {
     });
 
     it("limits the self-hosted image models", () => {
-        expect(
-            IMAGE_SERVICES["black-forest-labs/flux.1-schnell"].perUserRpm,
-        ).toBe(60);
+        expect(IMAGE_SERVICES[FLUX].perUserRpm).toBe(60);
         expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].perUserRpm).toBe(60);
         expect(
             IMAGE_SERVICES["black-forest-labs/flux.2-klein-4b"].perUserRpm,

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14584,
+  "title": "feat: add independent activity navigation and chart selection",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14584",
+  "merged_at": "2026-09-08T22:25:08Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds separate Usage/Earnings cards with independent dates, filters, and metrics. Calendars remember the day across month changes and retain mobile week view.\n- Replaces chart tooltips with selectable bars that filter tables. Uses shared control variants and keyboard navigation. Escape respects portalled menus without Ark selectors; selecting the bar again also clears selection. Tables show the selected metric with matching totals, shares, and sorting. Compact Paid/Quest badges align left in two distinct columns.\n- Simplifies Last events with combined source/amount badges, hidden visible headers, gray separators, and blue incoming/red outgoing arrows beside plain labels. Shows 15 events initially, with Show more adding 15. Missing billing source displays a plain amount. Event labels are Spent/Earned, matching the available API data.\n- CSV exports depend only on each card’s date range, ignoring filters, metric, and bar selection. Uses existing APIs without backend/Tinybird changes; sample data remains local. Follow-up to #12790; addresses #12302.\n- Validation: 15 date/CSV tests, TypeScript, Biome, shared UI/frontend builds, and local browser checks for navigation, filters, event colors/alignment, and missing-source amounts.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Charts grew little handles",
+    "blurb": "The activity dashboard now lets Usage and Earnings keep their own calendars, filters, and metrics. Click a chart bar to follow one day’s pollen trail into the matching table; click it again and the trail politely disappears.",
+    "summary": "The dashboard activity page now gives Usage and Earnings independent date navigation, filters, metrics, CSV exports, and keyboard-accessible chart-bar selection that filters each card’s table with matching totals, shares, and sorting.",
+    "impact": "Users can inspect a specific usage or earnings day without disturbing the other card, export by date range alone, and browse a cleaner Last events list that loads 15 events at a time.",
+    "keywords": [
+      "activity-dashboard",
+      "usage",
+      "earnings",
+      "charts",
+      "csv-export",
+      "pollen",
+      "accessibility"
+    ],
+    "visual_concept": "A cozy split garden dashboard represents the independent Usage and Earnings cards: two separate calendar flowerbeds grow side by side, while a selected chart bar becomes a highlighted plant that guides Polli to a matching ledger table. Polli wears tiny analyst glasses and uses a pointer; a friendly CRT monitor robot holds the two-card dashboard, with date leaves, CSV scrolls, and subtle incoming/outgoing arrow flowers.",
+    "image_prompt": "Cozy pixel art scene of two separate digital garden plots labeled in simple pixel font “USAGE” and “EARNINGS,” each with its own tiny calendar and chart plants; one lime-green (#ecf874) chart bar is selected and sends a glowing vine to a matching table, while a CSV scroll rests nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny analyst glasses and points at the selected bar beside a cute chunky CRT-monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nature elements, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14584.jpg",
+    "prompt": "Cozy pixel art scene of two separate digital garden plots labeled in simple pixel font “USAGE” and “EARNINGS,” each with its own tiny calendar and chart plants; one lime-green (#ecf874) chart bar is selected and sends a glowing vine to a matching table, while a CSV scroll rests nearby. The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny analyst glasses and points at the selected bar beside a cute chunky CRT-monitor robot. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nature elements, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T22:26:16.242544+00:00"
+}

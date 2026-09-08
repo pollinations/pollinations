@@ -1,0 +1,34 @@
+{
+  "pr_number": 14606,
+  "title": "fix: preserve stream usage across cost-only updates",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14606",
+  "merged_at": "2026-09-08T22:51:55Z",
+  "labels": [],
+  "pr_body_excerpt": "- Keeps the latest token-count record when providers append cost/cache metadata without token totals.\n- Still rejects missing counts and invalid later token-count records; never invents or merges usage.\n- Leaves provider stream bytes unchanged. Runtime change: 12 lines in the existing validator.\n- Tests byte preservation, invalid/missing usage, exactly one wallet debit, and one billed analytics event.\n\nValidation: 40 focused tests pass; TypeScript and Biome pass. Separate from monitor error-message PR #14595.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The token ledger remembers",
+    "blurb": "Some providers send a final little cost note after the useful token counts. The stream now keeps the last complete count on hand, so one generation still gets one clean wallet debit and one analytics record.",
+    "summary": "The chat stream usage validator now preserves the latest valid token-count record when providers later append cost or cache metadata without token totals, while still rejecting missing or invalid token-count records.",
+    "impact": "Streaming generations retain accurate usage through provider-specific trailing metadata, producing exactly one wallet debit and one billed analytics event without altering provider stream bytes.",
+    "keywords": [
+      "streaming",
+      "usage",
+      "token-counts",
+      "billing",
+      "chat-api",
+      "analytics"
+    ],
+    "visual_concept": "Depict Polli as a careful librarian-accountant at a cozy retro terminal, placing a complete token ledger safely into a honeycomb filing slot while harmless trailing cost/cache notes drift past unchanged. A small CRT monitor robot can hold a stamped receipt marked \"1x\", with code-plants and flowers suggesting reliable data flow.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, a tiny accountant visor, and a warm smile carefully filing a complete glowing token ledger into a honeycomb archive beside a retro terminal; small trailing cost and cache notes float past untouched while a cheerful CRT monitor robot holds one stamped receipt reading \"1x\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14606.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, a tiny accountant visor, and a warm smile carefully filing a complete glowing token ledger into a honeycomb archive beside a retro terminal; small trailing cost and cache notes float past untouched while a cheerful CRT monitor robot holds one stamped receipt reading \"1x\". Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T22:52:49.578649+00:00"
+}

@@ -23,7 +23,11 @@ const app = new Hono<Env>()
         });
         const response = await auth.handle(c.req.raw);
         if (response) return response;
-        if (!(await auth.getUser(c.req.raw))) {
+        if (
+            !(await auth.getUser(c.req.raw, (value) =>
+                c.header("Set-Cookie", value, { append: true }),
+            ))
+        ) {
             return c.json({ error: "Sign in to this app to continue" }, 401);
         }
         await next();

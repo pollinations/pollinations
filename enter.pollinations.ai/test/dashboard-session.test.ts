@@ -207,27 +207,6 @@ test("all three apps use real identity OAuth and keep sign-out independent", asy
         "frame-ancestors 'self'",
     );
 
-    const pair = new WebSocketPair();
-    pair[1].accept();
-    forward.mockResolvedValueOnce(
-        new Response(null, { status: 101, webSocket: pair[0] }),
-    );
-    const upgraded = await observability.app.request(
-        `${observability.origin}/grafana/api/live/ws`,
-        {
-            headers: {
-                Cookie: sessions.get(observability.name) || "",
-                Upgrade: "websocket",
-            },
-        },
-        bindings(observability),
-    );
-    expect(upgraded.status).toBe(101);
-    expect(upgraded.webSocket).toBeTruthy();
-    upgraded.webSocket?.accept();
-    upgraded.webSocket?.close();
-    pair[1].close();
-
     const economics = apps[1];
     for (const pipe of [
         "economics_bank_ledger_api",
@@ -288,6 +267,62 @@ test("all three apps use real identity OAuth and keep sign-out independent", asy
     );
     expect(allowedAsset.status).toBe(200);
     expect(allowedAsset.headers.get("Cache-Control")).toBe("private, no-store");
+    // Expired checks are retryable on an Enter outage; they must not become 401s.
+    vi.spyOn(Date, "now").mockReturnValue(Date.now() + 60_000);
+    const pair = new WebSocketPair();
+    pair[1].accept();
+    forward.mockResolvedValueOnce(
+        new Response(null, { status: 101, webSocket: pair[0] }),
+    );
+    const upgraded = await observability.app.request(
+        `${observability.origin}/grafana/api/live/ws`,
+        {
+            headers: {
+                Cookie: sessions.get(observability.name) || "",
+                Upgrade: "websocket",
+            },
+        },
+        bindings(observability),
+    );
+    expect(upgraded.status).toBe(101);
+    expect(upgraded.webSocket).toBeTruthy();
+    upgraded.webSocket?.accept();
+    upgraded.webSocket?.close();
+    pair[1].close();
+
+    const refreshedAsset = await economics.app.request(
+        `${economics.origin}/private/provider-registry-hash.js`,
+        { headers: { Cookie: sessions.get(economics.name) || "" } },
+        privateBindings,
+    );
+    expect(refreshedAsset.headers.get("Set-Cookie")).toContain(
+        "pollinations_session=",
+    );
+    expect(refreshedAsset.headers.get("Cache-Control")).toBe(
+        "private, no-store",
+    );
+    for (const app of apps) {
+        vi.mocked(globalThis.fetch).mockResolvedValueOnce(
+            new Response(null, { status: 503 }),
+        );
+        const retry = await app.app.request(
+            app.origin + app.path,
+            { headers: { Cookie: sessions.get(app.name) || "" } },
+            bindings(app),
+        );
+        expect(retry.status).toBe(503);
+        expect(retry.headers.get("Set-Cookie")).toBeNull();
+        expect(retry.headers.get("Retry-After")).toBe("10");
+        const recovered = await app.app.request(
+            app.origin + app.path,
+            { headers: { Cookie: sessions.get(app.name) || "" } },
+            bindings(app),
+        );
+        expect(recovered.status).toBe(200);
+        expect(recovered.headers.get("Set-Cookie")).toContain(
+            "pollinations_session=",
+        );
+    }
     await drizzle(env.DB, { schema })
         .update(schema.user)
         .set({ banned: true })

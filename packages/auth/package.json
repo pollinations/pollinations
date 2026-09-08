@@ -18,6 +18,8 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/react-test-renderer": "^19.1.0",
+    "react-test-renderer": "^19.2.5",
     "typescript": "^5.7.2",
     "vitest": "^3.2.4"
   },

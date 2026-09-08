@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { HTTPException } from "hono/http-exception";
+import type { StatusCode } from "hono/utils/http-status";
 import type { Env } from "./env.ts";
 
 const READ_PIPES = new Set([
@@ -46,8 +47,8 @@ export const economicsRoutes = new Hono<Env>().get(
                 headers: { Authorization: `Bearer ${token}` },
             },
         );
-        return new Response(upstream.body, {
-            status: upstream.ok ? upstream.status : 502,
+        return c.newResponse(upstream.body, {
+            status: (upstream.ok ? upstream.status : 502) as StatusCode,
             headers: {
                 "Cache-Control": "private, no-store",
                 "Content-Type":

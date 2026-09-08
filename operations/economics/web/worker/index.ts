@@ -1,5 +1,6 @@
 import { createPollinationsAuth } from "@pollinations/auth/server";
 import { Hono } from "hono";
+import type { StatusCode } from "hono/utils/http-status";
 import { economicsRoutes } from "./economics.ts";
 import type { Env } from "./env.ts";
 
@@ -27,14 +28,21 @@ const app = new Hono<Env>()
         });
         const response = await auth.handle(c.req.raw);
         if (response) return response;
-        if (!(await auth.getUser(c.req.raw))) {
+        if (
+            !(await auth.getUser(c.req.raw, (value) =>
+                c.header("Set-Cookie", value, { append: true }),
+            ))
+        ) {
             return c.json({ error: "Sign in to this app to continue" }, 401);
         }
         if (path.startsWith("/private/")) {
             const asset = await c.env.ASSETS.fetch(c.req.raw);
             const headers = new Headers(asset.headers);
             headers.set("Cache-Control", "private, no-store");
-            return new Response(asset.body, { status: asset.status, headers });
+            return c.newResponse(asset.body, {
+                status: asset.status as StatusCode,
+                headers,
+            });
         }
         await next();
     })

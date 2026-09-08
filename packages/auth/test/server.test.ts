@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPollinationsAuth } from "../src/server";
+import { AuthUnavailableError, createPollinationsAuth } from "../src/server";
 
 const config = {
     clientId: "pk_internal_tools",
@@ -15,7 +15,11 @@ function cookieFrom(response: Response, name: string) {
 function flowFromCookie(value: string) {
     const base64 = value.replaceAll("-", "+").replaceAll("_", "/");
     const padded = base64.padEnd(Math.ceil(base64.length / 4) * 4, "=");
-    return JSON.parse(atob(padded)) as { returnTo: string };
+    return JSON.parse(atob(padded)) as {
+        returnTo: string;
+        exp?: number;
+        checkedAt?: number;
+    };
 }
 
 async function begin(auth: ReturnType<typeof createPollinationsAuth>) {
@@ -462,6 +466,8 @@ it("encrypts the identity token and rejects a session after admin access is revo
         headers: { Cookie: `pollinations_session=${session}` },
     });
     expect(await auth.getUser(request)).toMatchObject({ sub: "user-1" });
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(Date.now() + 60_000);
     upstream.mockResolvedValueOnce(
         Response.json({
             sub: "user-1",
@@ -472,4 +478,129 @@ it("encrypts the identity token and rejects a session after admin access is revo
     expect(await auth.getUser(request)).toBeNull();
     upstream.mockResolvedValueOnce(new Response(null, { status: 401 }));
     expect(await auth.getUser(request)).toBeNull();
+});
+
+it("reuses a checked cookie for 60 seconds and renews it without extending expiry", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const upstream = userUpstream();
+    const auth = createPollinationsAuth({ ...config, fetch: upstream });
+    const session = await authenticatedSession(auth);
+    const original = flowFromCookie(session.split(".")[0]);
+    const request = (value: string) =>
+        new Request("https://kpi.pollinations.ai/auth/session", {
+            headers: { Cookie: `pollinations_session=${value}` },
+        });
+    upstream.mockClear();
+    vi.setSystemTime(Date.now() + 59_000);
+    for (let i = 0; i < 50; i++)
+        expect(await auth.getUser(request(session))).toMatchObject({
+            sub: "user-1",
+        });
+    expect(upstream).not.toHaveBeenCalled();
+    vi.setSystemTime(Date.now() + 1_000);
+    const refreshed = await auth.handle(request(session));
+    expect(refreshed?.status).toBe(200);
+    if (!refreshed) throw new Error("Expected session response");
+    const renewed = cookieFrom(refreshed, "pollinations_session");
+    if (!renewed) throw new Error("Expected refreshed session cookie");
+    const payload = flowFromCookie(renewed.split(".")[0]);
+    expect(payload).toMatchObject({
+        exp: original.exp,
+        checkedAt: Math.floor(Date.now() / 1000),
+    });
+    expect(upstream).toHaveBeenCalledOnce();
+    // A new Worker instance uses the same refreshed cookie without a lookup.
+    const anotherWorker = createPollinationsAuth({
+        ...config,
+        fetch: upstream,
+    });
+    for (let i = 0; i < 50; i++)
+        expect(await anotherWorker.getUser(request(renewed))).toMatchObject({
+            sub: "user-1",
+        });
+    expect(upstream).toHaveBeenCalledOnce();
+});
+
+it.each([
+    401,
+    403,
+    500,
+    503,
+    "network",
+    "timeout",
+])("distinguishes UserInfo failure %s from revoked access", async (failure) => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const upstream = userUpstream();
+    const auth = createPollinationsAuth({ ...config, fetch: upstream });
+    const session = await authenticatedSession(auth);
+    vi.setSystemTime(Date.now() + 60_000);
+    if (typeof failure === "string")
+        upstream.mockRejectedValueOnce(new Error(String(failure)));
+    else
+        upstream.mockResolvedValueOnce(new Response(null, { status: failure }));
+    const request = new Request("https://kpi.pollinations.ai/auth/session", {
+        headers: { Cookie: `pollinations_session=${session}` },
+    });
+    const result = await auth.handle(request);
+    expect(result?.status).toBe(failure === 401 || failure === 403 ? 401 : 503);
+    expect(result?.headers.get("Set-Cookie")).toBeNull();
+    if (result?.status === 503) {
+        expect(await result.json()).toEqual({
+            error: new AuthUnavailableError().message,
+        });
+        // The same cookie works when Enter recovers.
+        expect((await auth.handle(request))?.status).toBe(200);
+    }
+});
+
+it("shows a retryable login error when UserInfo is temporarily unavailable", async () => {
+    const upstream = userUpstream()
+        .mockResolvedValueOnce(
+            Response.json({ access_token: "test-only-token" }),
+        )
+        .mockRejectedValueOnce(new Error("network"));
+    const auth = createPollinationsAuth({ ...config, fetch: upstream });
+    const { location, flow } = await begin(auth);
+    const result = await auth.handle(
+        new Request(
+            `https://kpi.pollinations.ai/auth/callback?code=test-code&state=${location.searchParams.get("state")}`,
+            { headers: { Cookie: `pollinations_oauth_flow=${flow}` } },
+        ),
+    );
+    expect(
+        new URL(result?.headers.get("Location") || "").searchParams.get(
+            "auth_error",
+        ),
+    ).toBe("unavailable");
+});
+
+it("coalesces simultaneous rechecks of a stale cookie across auth instances", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    const upstream = userUpstream();
+    const auth = createPollinationsAuth({ ...config, fetch: upstream });
+    const session = await authenticatedSession(auth);
+    vi.setSystemTime(Date.now() + 60_000);
+    let resolve!: (response: Response) => void;
+    upstream.mockClear().mockImplementationOnce(
+        () =>
+            new Promise<Response>((done) => {
+                resolve = done;
+            }),
+    );
+    const request = new Request("https://kpi.pollinations.ai/api/private", {
+        headers: { Cookie: `pollinations_session=${session}` },
+    });
+    const requests = Array.from({ length: 20 }, () =>
+        createPollinationsAuth({ ...config, fetch: upstream }).getUser(request),
+    );
+    await vi.waitFor(() => expect(upstream).toHaveBeenCalledOnce());
+    resolve(
+        Response.json({
+            sub: "user-1",
+            email: "alice@example.com",
+            role: "admin",
+        }),
+    );
+    expect(await Promise.all(requests)).toHaveLength(20);
+    expect(upstream).toHaveBeenCalledOnce();
 });

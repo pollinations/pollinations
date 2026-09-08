@@ -81,8 +81,10 @@ shared sign-in page as KPI and Economics. Its callback is
 `https://observability.pollinations.ai/auth/callback`. The trusted internal
 client requests `openid profile email`, uses PKCE and skips consent. Only
 Pollinations admins receive an app session, valid for 12 hours. Admin status
-is rechecked with Enter on every protected request, so demotion, bans and token
-revocation deny access. The identity token is encrypted inside the HttpOnly cookie.
+is rechecked with Enter once per 60-second signed-cookie window, so demotion,
+bans and token revocation deny access at the next check. Concurrent stale-cookie
+checks are coalesced within each Worker. Enter outages return 503 without
+clearing the app session; checks retry when connectivity returns. The identity token is encrypted inside the HttpOnly cookie.
 
 The Worker checks the app session on every `/grafana/*` request, including
 WebSocket handshakes. It removes incoming identity headers, authorization and

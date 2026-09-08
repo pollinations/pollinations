@@ -30,8 +30,9 @@ The app requires its own `POLLINATIONS_AUTH_SESSION_SECRET` and
 from `../secrets/web.dev.json`, never the production reader. These credentials
 require separate approval before provisioning; never reuse KPI's signing secret.
 Private reads use same-origin `/api/economics/pipes/:pipe`, protected by the
-app's session. Each protected request rechecks current admin status with Enter;
-demotion, bans and token revocation deny access. Sessions expire after 12 hours.
+app's session. Protected requests recheck current admin status with Enter once per
+60-second cookie window; demotion, bans and token revocation deny access at the
+next check. Temporary Enter failures return 503 without clearing the session. Sessions expire after 12 hours.
 The identity token is encrypted inside the HttpOnly cookie.
 `npm run decrypt-vars` preserves the separately approved app signing secret and
 loads only the staging reader; it never reads production secrets.

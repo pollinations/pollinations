@@ -18,7 +18,7 @@ export function useDashboardSession() {
                 .then(async (response) => {
                     if (!response.ok && response.status !== 401)
                         throw new Error(
-                            "Could not check your session. Please reload.",
+                            "Could not check your session. Please try again.",
                         );
                     const { user } = (await response.json()) as {
                         user: PollinationsUser | null;
@@ -28,11 +28,15 @@ export function useDashboardSession() {
                 })
                 .catch((error) => {
                     if (!controller.signal.aborted)
-                        setSession({
-                            user: null,
-                            isPending: false,
-                            error: error.message,
-                        });
+                        setSession((previous) =>
+                            previous.user
+                                ? previous
+                                : {
+                                      user: null,
+                                      isPending: false,
+                                      error: error.message,
+                                  },
+                        );
                 });
         const expired = () =>
             setSession({ user: null, isPending: false, error: null });

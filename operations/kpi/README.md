@@ -10,8 +10,10 @@ no provider token reaches the browser. This identity login does not grant
 access to Pollen balances or generation keys.
 
 “Sign out” clears only KPI's session. Enter and other apps stay signed in.
-Sessions expire after 12 hours. Each protected request rechecks current admin
-status with Enter; demoted or banned users and revoked tokens lose access.
+Sessions expire after 12 hours. Protected requests recheck current admin
+status with Enter at most once per 60-second cookie window. Demotion, bans and
+token revocation take effect at the next check. Temporary Enter failures return
+503 without clearing the app session or an already open dashboard.
 The identity token is encrypted inside the HttpOnly session cookie.
 
 ## Data

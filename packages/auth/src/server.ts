@@ -7,6 +7,7 @@ const FLOW_COOKIE = "pollinations_oauth_flow";
 const SESSION_COOKIE = "pollinations_session";
 const FLOW_MAX_AGE_SECONDS = 600;
 const SESSION_MAX_AGE_SECONDS = 43_200;
+const REVALIDATE_SECONDS = 60;
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -28,7 +29,32 @@ type Session = PollinationsUser & {
     exp: number;
     role: "admin";
     accessToken: string;
+    checkedAt: number;
 };
+
+// Coalesce a burst of requests carrying the same stale cookie in one Worker.
+// Entries exist only while UserInfo is in flight; the signed cookie owns the TTL.
+const pendingChecks = new Map<string, Promise<Userinfo | null>>();
+
+export class AuthUnavailableError extends Error {
+    constructor() {
+        super(
+            "Pollinations sign-in is temporarily unavailable. Please try again.",
+        );
+    }
+    getResponse() {
+        return Response.json(
+            { error: this.message },
+            {
+                status: 503,
+                headers: {
+                    "Cache-Control": "private, no-store",
+                    "Retry-After": "10",
+                },
+            },
+        );
+    }
+}
 
 type Flow = {
     state: string;
@@ -196,13 +222,21 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         );
     }
     async function currentUser(accessToken: string): Promise<Userinfo | null> {
-        const response = await requestFetch(userinfoUrl, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-            signal: AbortSignal.timeout(10_000),
-        });
-        if (!response.ok) return null;
-        const user = (await response.json()) as Userinfo;
-        return user?.sub && user.email && user.role === "admin" ? user : null;
+        try {
+            const response = await requestFetch(userinfoUrl, {
+                headers: { Authorization: `Bearer ${accessToken}` },
+                signal: AbortSignal.timeout(10_000),
+            });
+            if (response.status === 401 || response.status === 403) return null;
+            if (!response.ok) throw new AuthUnavailableError();
+            const user = (await response.json()) as Userinfo;
+            if (!user?.sub || !user.email || typeof user.role !== "string")
+                throw new AuthUnavailableError();
+            return user.role === "admin" ? user : null;
+        } catch (error) {
+            if (error instanceof AuthUnavailableError) throw error;
+            throw new AuthUnavailableError();
+        }
     }
 
     async function sign(payload: string) {
@@ -328,7 +362,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             return authError("OAuth token exchange failed", 502, clearFlow);
         }
 
-        const user = await currentUser(token.access_token).catch(() => null);
+        const user = await currentUser(token.access_token);
         if (!user) return authError("Forbidden", 403, clearFlow);
         const maxAge = Math.min(
             SESSION_MAX_AGE_SECONDS,
@@ -344,6 +378,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             role: "admin",
             aud: requestUrl.origin,
             exp: Math.floor(Date.now() / 1000) + maxAge,
+            checkedAt: Math.floor(Date.now() / 1000),
             accessToken: await encryptToken(
                 token.access_token,
                 requestUrl.origin,
@@ -362,7 +397,10 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         ]);
     }
 
-    async function getUser(request: Request): Promise<PollinationsUser | null> {
+    async function getUser(
+        request: Request,
+        onSessionRefresh?: (value: string) => void,
+    ): Promise<PollinationsUser | null> {
         const value = cookieValue(
             request,
             requestCookieName(request, SESSION_COOKIE),
@@ -388,15 +426,51 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             ) {
                 return null;
             }
-            // Check the current role and token validity on every private request.
-            // The identity token stays encrypted inside the HttpOnly app cookie.
-            const current = await currentUser(
-                await decryptToken(session.accessToken, session.aud),
-            );
-            if (!current || current.sub !== session.sub) return null;
-            const { role: _role, ...user } = current;
-            return { ...user, email: normalizeEmail(user.email) };
-        } catch {
+            const now = Math.floor(Date.now() / 1000);
+            if (
+                !Number.isInteger(session.checkedAt) ||
+                session.checkedAt > now ||
+                now - session.checkedAt >= REVALIDATE_SECONDS
+            ) {
+                const checkKey = `${userinfoUrl}:${value}`;
+                let pending = pendingChecks.get(checkKey);
+                if (!pending) {
+                    pending = (async () =>
+                        currentUser(
+                            await decryptToken(
+                                session.accessToken,
+                                session.aud,
+                            ),
+                        ))().finally(() => pendingChecks.delete(checkKey));
+                    pendingChecks.set(checkKey, pending);
+                }
+                const current = await pending;
+                if (!current || current.sub !== session.sub) return null;
+                session.email = normalizeEmail(current.email);
+                session.name = current.name;
+                session.picture = current.picture;
+                session.preferred_username = current.preferred_username;
+                session.checkedAt = now;
+                // Revalidation never extends the original session's lifetime.
+                const renewed = encodeJson(session);
+                onSessionRefresh?.(
+                    cookie(
+                        request,
+                        requestCookieName(request, SESSION_COOKIE),
+                        `${renewed}.${await sign(renewed)}`,
+                        session.exp - now,
+                    ),
+                );
+            }
+            return {
+                sub: session.sub,
+                email: normalizeEmail(session.email),
+                name: session.name,
+                picture: session.picture,
+                preferred_username: session.preferred_username,
+            };
+        } catch (error) {
+            if (error instanceof AuthUnavailableError) throw error;
             return null;
         }
     }
@@ -420,15 +494,22 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 ]);
             });
         if (url.pathname === SESSION_PATH && request.method === "GET") {
-            const user = await getUser(request);
-            return Response.json(
-                { user },
-                {
-                    status: user ? 200 : 401,
-                    headers: { "Cache-Control": "no-store" },
-                },
-            );
+            const headers = new Headers({ "Cache-Control": "no-store" });
+            try {
+                const user = await getUser(request, (value) =>
+                    headers.append("Set-Cookie", value),
+                );
+                return Response.json(
+                    { user },
+                    { status: user ? 200 : 401, headers },
+                );
+            } catch (error) {
+                if (error instanceof AuthUnavailableError)
+                    return error.getResponse();
+                throw error;
+            }
         }
+
         if (url.pathname === LOGOUT_PATH) {
             if (request.method !== "POST")
                 return new Response(null, {

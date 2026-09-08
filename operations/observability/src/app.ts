@@ -34,7 +34,10 @@ export function createObservabilityApp(
         });
         const authResponse = await auth.handle(c.req.raw);
         if (authResponse) return authResponse;
-        const user = await auth.getUser(c.req.raw);
+        let renewedSession: string | undefined;
+        const user = await auth.getUser(c.req.raw, (value) => {
+            renewedSession = value;
+        });
         if (!user)
             return c.json({ error: "Sign in to this app to continue" }, 401);
         if (!path.startsWith("/grafana/")) return c.notFound();
@@ -49,7 +52,10 @@ export function createObservabilityApp(
         headers.set("X-WEBAUTH-USER", user.sub);
         headers.set("X-WEBAUTH-ROLE", "Editor");
         c.res = await forward(new Request(c.req.raw, { headers }));
+        // Keep the upgrade response intact; normal HTTP/session polling renews cookies.
         if (c.res.status === 101) return c.res;
+        if (renewedSession)
+            c.header("Set-Cookie", renewedSession, { append: true });
         c.header("Cache-Control", "private, no-store");
         c.header("Content-Security-Policy", "frame-ancestors 'self'", {
             append: true,

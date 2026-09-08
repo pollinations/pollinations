@@ -1,0 +1,35 @@
+{
+  "pr_number": 14519,
+  "title": "feat: add model fallbacks and improve Grok video routing",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14519",
+  "merged_at": "2026-09-08T16:04:54Z",
+  "labels": [],
+  "pr_body_excerpt": "- Combines the five approved changes in one PR: Astra Global → existing East US Data Zone; Cohere embeddings and Grok 4.6 East US → Sweden; Veo Vertex → Replicate; Grok video Fal primary → OpenRouter fallback. Uses Pollinations’ existing fallback system.\n- Keeps public IDs, aliases, capabilities, access and customer prices unchanged. Absorbs Astra’s 10% Data Zone premium and Veo’s $0–$0.05/s premium. Existing credentials reused; no secrets or production deployment changes.\n- Raises only base Grok video’s OpenRouter timeout from 180s to 300s: real 15s clips completed in 195–201s. Grok 1.5 stays unchanged.\n- Updated against main (c8994770aa), including canonical model/fallback IDs. Fresh CI passes: Enter, Gen, lint/build. Local checks: 107 focused tests, pricing snapshot and Gen typecheck pass. Prior live probes passed; full authenticated billing/reconnect/cache E2E remains outstanding, so this stays draft.\n- Consolidates #14518, #14520, #14521 and #14522; their descriptions retain pricing sources and probe evidence. [Astra pricing](https://azure.microsoft.com/en-us/blog/gpt-6-astra-frontier-intelligence-for-work-now-generally-available-in-microsoft-foundry/). Known limitations: shared Astra resource, Replicate burst 429s, existing Cohere mixed text/image 422s, billable Fal policy rejections. Coordinator investigation remains separate.",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The fallback garden grows",
+    "blurb": "A few provider routes got replanted without changing the signs on the path. Models keep their public names, prices, and capabilities while the hive has more ways to keep requests moving.",
+    "summary": "Expanded the existing fallback system: Astra Global now routes through East US Data Zone, Cohere embeddings and Grok 4.6 East US through Sweden, Veo Vertex through Replicate, and Grok video uses OpenRouter when Fal is unavailable; base Grok video’s OpenRouter timeout is now 300 seconds.",
+    "impact": "Apps can keep using the same model IDs, aliases, access settings, and prices while these routes provide more resilient text, embedding, and video generation, including room for real 15-second Grok video clips that finish around 195–201 seconds.",
+    "keywords": [
+      "fallbacks",
+      "model-routing",
+      "grok-video",
+      "veo",
+      "embeddings",
+      "reliability",
+      "openrouter"
+    ],
+    "visual_concept": "Depict Polli tending a cozy garden of labeled model routes: text and embedding plants flow through alternate pastel pipes, while a small video projector sends a Grok clip along a longer, dependable path to an OpenRouter gate. A cheerful CRT Monitor Robot can watch the routes switch safely, emphasizing invisible reliability work rather than a new public interface.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carefully tends code-plants whose vines branch into reliable fallback paths toward a glowing retro video terminal; a cute chunky CRT monitor robot happily watches the routes connect. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, subtle pixel-font sign reading \"FALLBACK PATHS\", warm lighting, retro gaming vibes, soft pastel gradients, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14519.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny gardener tool belt as she carefully tends code-plants whose vines branch into reliable fallback paths toward a glowing retro video terminal; a cute chunky CRT monitor robot happily watches the routes connect. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm cream garden shed, subtle pixel-font sign reading \"FALLBACK PATHS\", warm lighting, retro gaming vibes, soft pastel gradients, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T16:05:58.937844+00:00"
+}

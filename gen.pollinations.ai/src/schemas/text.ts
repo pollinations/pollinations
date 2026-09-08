@@ -27,9 +27,9 @@ export const GenerateTextRequestQueryParamsSchema = z.object({
         description:
             "Text model to use. See /v1/models or /text/models for the full list of available models.",
     }),
-    seed: z.coerce.number().int().min(-1).optional().default(0).meta({
+    seed: z.coerce.number().int().min(-1).optional().meta({
         description:
-            "Seed for reproducible results. -1 maps to the stable compatibility seed.",
+            "Optional seed for reproducible results on models that support it. Omitted by default. -1 maps to the stable compatibility seed.",
     }),
     system: z.string().optional().meta({
         description:

@@ -1,17 +1,14 @@
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 import {
     commandExists,
     readTextIfExists,
     removeIfExists,
+    resolveHomePath,
     writeTextAtomic,
 } from "./fs.js";
 import { resolveHarnessKey } from "./keys.js";
 import { fetchHarnessModels } from "./models.js";
-import {
-    applyWithSnapshot,
-    clearSnapshot,
-    restoreSnapshot,
-} from "./snapshot.js";
+import { applyWithSnapshot, restoreOrStrip } from "./snapshot.js";
 import type { HarnessAdapter, HarnessContext, HarnessResult } from "./types.js";
 
 const ID = "opencode";
@@ -35,24 +32,17 @@ const pollinationsConfigDir = (ctx: HarnessContext) => {
     }
     const xdg = ctx.env.XDG_CONFIG_HOME?.trim();
     return join(
-        xdg ? resolve(expandTilde(ctx, xdg)) : join(ctx.home, ".config"),
+        xdg ? resolveHomePath(ctx.home, xdg) : join(ctx.home, ".config"),
         "pollinations",
     );
 };
 
-const expandTilde = (ctx: HarnessContext, path: string) =>
-    path === "~"
-        ? ctx.home
-        : path.startsWith("~/") || path.startsWith("~\\")
-          ? join(ctx.home, path.slice(2))
-          : path;
-
 const opencodeConfigFile = (ctx: HarnessContext) => {
     if (ctx.env.OPENCODE_CONFIG?.trim()) {
-        return resolve(expandTilde(ctx, ctx.env.OPENCODE_CONFIG));
+        return resolveHomePath(ctx.home, ctx.env.OPENCODE_CONFIG);
     }
     const dir = ctx.env.OPENCODE_CONFIG_DIR?.trim()
-        ? resolve(expandTilde(ctx, ctx.env.OPENCODE_CONFIG_DIR))
+        ? resolveHomePath(ctx.home, ctx.env.OPENCODE_CONFIG_DIR)
         : join(ctx.home, ".config", "opencode");
     return join(dir, "opencode.json");
 };
@@ -76,7 +66,7 @@ const readJson = (path: string): Record<string, unknown> | null => {
     }
 };
 
-const writeJson = (ctx: HarnessContext, path: string, data: unknown) =>
+const writeJson = (path: string, data: unknown) =>
     writeTextAtomic(path, `${JSON.stringify(data, null, 2)}\n`, 0o600);
 
 const isPluginEntry = (entry: unknown) =>
@@ -100,14 +90,14 @@ const hasPluginEntry = (config: Record<string, unknown>) => {
 };
 
 const readApiKey = (ctx: HarnessContext): string | null => {
-    const key = (readJson(pluginConfigFile(ctx)) ?? {}).apiKey;
+    const key = readJson(pluginConfigFile(ctx))?.apiKey;
     return typeof key === "string" && key.length > 5 ? key : null;
 };
 
 const writeApiKey = (ctx: HarnessContext, apiKey: string) => {
     const config = readJson(pluginConfigFile(ctx)) ?? {};
     config.apiKey = apiKey;
-    writeJson(ctx, pluginConfigFile(ctx), config);
+    writeJson(pluginConfigFile(ctx), config);
 };
 
 const deleteApiKey = (ctx: HarnessContext) => {
@@ -116,7 +106,7 @@ const deleteApiKey = (ctx: HarnessContext) => {
     if (config === null || config.apiKey === undefined) return false;
     delete config.apiKey;
     if (Object.keys(config).length === 0) removeIfExists(path);
-    else writeJson(ctx, path, config);
+    else writeJson(path, config);
     return true;
 };
 
@@ -141,7 +131,7 @@ const writeOpenCodeConfig = (ctx: HarnessContext, model: string) => {
         config[key] = [...entries, PLUGIN_SPEC];
     }
     config.model = defaultModelRef(model);
-    writeJson(ctx, opencodeConfigFile(ctx), config);
+    writeJson(opencodeConfigFile(ctx), config);
 };
 
 const stripOpenCodeConfig = (ctx: HarnessContext) => {
@@ -164,7 +154,7 @@ const stripOpenCodeConfig = (ctx: HarnessContext) => {
         changed = true;
     }
 
-    if (changed) writeJson(ctx, path, config);
+    if (changed) writeJson(path, config);
     return changed;
 };
 
@@ -210,12 +200,7 @@ export const configureOpenCode = (
 };
 
 export const disableOpenCode = (ctx: HarnessContext): HarnessResult => {
-    const managedFiles = files(ctx);
-    let outcome: HarnessResult["outcome"] = "restored";
-    if (restoreSnapshot(ctx, ID, managedFiles) !== "restored") {
-        outcome = stripConfig(ctx) ? "stripped" : "unchanged";
-        clearSnapshot(ctx, ID, managedFiles);
-    }
+    const outcome = restoreOrStrip(ctx, ID, files(ctx), () => stripConfig(ctx));
     return { ...result(ctx), configured: false, outcome };
 };
 
@@ -238,12 +223,7 @@ export const opencode: HarnessAdapter = {
             );
         }
         const model = options.model ?? DEFAULT_MODEL;
-        const models = await fetchHarnessModels();
-        if (!models.some((candidate) => candidate.id === model)) {
-            throw new Error(
-                `Model "${model}" is not a tool-calling text model. Run: polli models`,
-            );
-        }
+        await fetchHarnessModels(model);
         const apiKey = await resolveHarnessKey(
             {
                 id: ID,

@@ -24,6 +24,23 @@ beforeAll(async () => {
                             context_length: 100,
                         },
                         {
+                            id: "publisher/chat",
+                            input_modalities: ["text"],
+                            output_modalities: ["text"],
+                            supported_endpoints: ["/v1/chat/completions"],
+                            tools: true,
+                            context_length: 200,
+                        },
+                        {
+                            id: "owner/community-chat",
+                            community: true,
+                            input_modalities: ["text"],
+                            output_modalities: ["text"],
+                            supported_endpoints: ["/v1/chat/completions"],
+                            tools: true,
+                            context_length: 300,
+                        },
+                        {
                             id: "realtime",
                             input_modalities: ["text"],
                             output_modalities: ["text"],
@@ -76,8 +93,23 @@ describe("harness keys", () => {
 
 describe("harness models", () => {
     it("only includes models supporting chat completions", async () => {
-        await expect(fetchHarnessModels()).resolves.toEqual([
+        await expect(fetchHarnessModels("chat")).resolves.toEqual([
             { id: "chat", contextWindow: 100, input: ["text"] },
+            {
+                id: "publisher/chat",
+                contextWindow: 200,
+                input: ["text"],
+            },
         ]);
+    });
+
+    it.each([
+        "missing",
+        "realtime",
+        "owner/community-chat",
+    ])("rejects an unavailable harness model: %s", async (model) => {
+        await expect(fetchHarnessModels(model)).rejects.toThrow(
+            `Model "${model}" is not a tool-calling text model. Run: polli models`,
+        );
     });
 });

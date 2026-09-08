@@ -1,4 +1,4 @@
-import type { HttpError } from "@shared/http-error.ts";
+import { remapUpstreamStatus } from "@shared/error.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     type AuthResult,
@@ -10,6 +10,7 @@ import type { ImageParams } from "../../src/image/params.ts";
 const AZURE_KEY_ENV = {
     AZURE_MYCELI_PROD_IMG_2_SWEDEN_API_KEY: "img-2-sweden-key",
     AZURE_MYCELI_PROD_IMG_2_EASTUS2_API_KEY: "img-2-eastus2-key",
+    OPENAI_API_KEY: "openai-key",
 } as const;
 
 const AZURE_KEY_NAMES = Object.keys(
@@ -22,7 +23,7 @@ const EXPECTED_HOSTS = new Set([
 ]);
 
 const params: ImageParams = {
-    model: "gpt-image-2",
+    model: "openai/gpt-image-2",
     width: 1024,
     height: 1024,
     dimensionsExplicit: true,
@@ -60,7 +61,7 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("gpt-image-2 Azure routing", () => {
+describe("openai/gpt-image-2 Azure routing", () => {
     it("round robins across all Azure endpoints", async () => {
         const urls: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -69,7 +70,7 @@ describe("gpt-image-2 Azure routing", () => {
         });
 
         for (let index = 0; index < EXPECTED_HOSTS.size; index++) {
-            await callGPTImage("test", params, userInfo, "gpt-image-2");
+            await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
         }
 
         expect(new Set(urls.map((url) => new URL(url).host))).toEqual(
@@ -89,9 +90,66 @@ describe("gpt-image-2 Azure routing", () => {
                 );
 
             await expect(
-                callGPTImage("test", params, userInfo, "gpt-image-2"),
-            ).rejects.toMatchObject({ status } satisfies Partial<HttpError>);
+                callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
+            ).rejects.toMatchObject({
+                status: remapUpstreamStatus(status),
+                upstreamStatus: status,
+            });
             expect(fetchMock).toHaveBeenCalledOnce();
         });
     }
+});
+
+describe("GPT Image OpenAI fallback routing", () => {
+    const routes = [
+        ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
+        ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],
+        ["openai/gpt-image-2:openai", "gpt-image-2"],
+    ] as const;
+
+    for (const [route, upstreamModel] of routes) {
+        it(`routes ${route} directly to ${upstreamModel}`, async () => {
+            const fetchMock = vi
+                .spyOn(globalThis, "fetch")
+                .mockResolvedValue(successResponse());
+
+            await callGPTImage(
+                "test",
+                { ...params, model: route },
+                userInfo,
+                route,
+            );
+
+            expect(fetchMock).toHaveBeenCalledOnce();
+            const [url, init] = fetchMock.mock.calls[0];
+            expect(String(url)).toBe(
+                "https://api.openai.com/v1/images/generations",
+            );
+            expect(JSON.parse(String(init?.body))).toMatchObject({
+                model: upstreamModel,
+            });
+        });
+    }
+
+    it("keeps Azure rotation independent from direct OpenAI calls", async () => {
+        const urls: string[] = [];
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+            urls.push(String(input));
+            return successResponse();
+        });
+
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
+        await callGPTImage(
+            "test",
+            { ...params, model: "openai/gpt-image-2:openai" },
+            userInfo,
+            "openai/gpt-image-2:openai",
+        );
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
+
+        const azureHosts = urls
+            .map((url) => new URL(url).host)
+            .filter((host) => host !== "api.openai.com");
+        expect(new Set(azureHosts)).toEqual(EXPECTED_HOSTS);
+    });
 });

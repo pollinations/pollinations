@@ -81,7 +81,7 @@ export function processParameters(
         }
     }
 
-    // Claude Opus 4.7+, and Fable 5 reject non-default sampling params.
+    // Claude Opus 4.7+, and Fable 5+ reject non-default sampling params.
     // Strip them entirely.
     if (/claude-(opus-(4-[78]|5)|fable-5)/i.test(model)) {
         for (const param of ["temperature", "top_p", "top_k"] as const) {

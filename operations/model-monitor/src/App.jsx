@@ -10,6 +10,7 @@ import {
     GitHubIcon,
     Heading,
     IconButton,
+    StarIcon,
     Surface,
     TabButton,
     Table,
@@ -18,10 +19,18 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
+    Text,
 } from "@pollinations/ui";
 import { ModalityChip } from "@pollinations/ui/gen";
 import { useCallback, useEffect, useState } from "react";
 import { useModelMonitor } from "./hooks/useModelMonitor";
+import {
+    computeHealthStatus,
+    DEGRADED_5XX_PERCENT,
+    migrateFavorites,
+    modelKey,
+    OFF_5XX_PERCENT,
+} from "./model-data.js";
 
 const FAVORITES_KEY = "model-monitor-favorites";
 
@@ -41,28 +50,6 @@ function saveFavorites(list) {
     } catch {
         // storage full or blocked — silently ignore
     }
-}
-
-function modelKey(model) {
-    return `${model.type}-${model.name}`;
-}
-
-function StarIcon({ filled }) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill={filled ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            role="img"
-            aria-label={filled ? "Favorited" : "Not favorited"}
-        >
-            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-    );
 }
 
 const WINDOW_OPTIONS = [
@@ -141,6 +128,7 @@ function isAdminPath() {
 }
 
 function statusSeverity(model) {
+    if (model.catalogStatus === "historical") return 0;
     const health = computeHealthStatus(model.stats);
     if (health === "off") return 6;
     if (health === "degraded") return 5;
@@ -156,9 +144,6 @@ function formatPercent(count, total, showZero = false) {
     if (pct === 0) return showZero ? "0%" : "-";
     return `${pct.toFixed(1)}%`;
 }
-
-const DEGRADED_5XX_PERCENT = 5;
-const OFF_5XX_PERCENT = 20;
 
 function get2xxColor(ok2xx, total) {
     if (!total || total <= 0) return "text-theme-text-muted";
@@ -178,21 +163,6 @@ function getLatencyColor(latencySec) {
     if (latencySec < 5) return "text-intent-success-text";
     if (latencySec < 10) return "text-theme-text-muted";
     return "text-intent-warning-text font-semibold";
-}
-
-function computeHealthStatus(stats) {
-    if (!stats?.total_requests) return "on";
-    const success = stats.status_2xx || 0;
-    const total5xx = stats.errors_5xx || 0;
-    // 4xx are client errors and don't count. Judge purely on the 5xx share of
-    // real (2xx+5xx) traffic — even a single 5xx-only request is off. Low
-    // volume is not a reason to call a failing model healthy.
-    const modelRequests = success + total5xx;
-    if (modelRequests === 0) return "on";
-    const pct5xx = (total5xx / modelRequests) * 100;
-    if (pct5xx >= OFF_5XX_PERCENT) return "off";
-    if (pct5xx >= DEGRADED_5XX_PERCENT) return "degraded";
-    return "on";
 }
 
 function healthIntent(status) {
@@ -215,6 +185,7 @@ function calcGroupStats(group) {
     let countOff = 0;
 
     for (const model of group) {
+        if (model.catalogStatus === "historical") continue;
         const stats = model.stats;
         if (!stats) continue;
         total2xx += stats.status_2xx || 0;
@@ -222,7 +193,7 @@ function calcGroupStats(group) {
         const status = computeHealthStatus(stats);
         if (status === "on") countOn++;
         else if (status === "degraded") countDegraded++;
-        else countOff++;
+        else if (status === "off") countOff++;
     }
 
     const modelRequests = total2xx + total5xx;
@@ -347,6 +318,13 @@ function ScopeTabs({ models, value, onChange }) {
 
 function StatusBadge({ stats }) {
     const status = computeHealthStatus(stats);
+    if (status === "waiting") {
+        return (
+            <Chip intent="neutral" size="sm">
+                Awaiting data
+            </Chip>
+        );
+    }
     const modelRequests = (stats?.status_2xx || 0) + (stats?.errors_5xx || 0);
     const lowSample = modelRequests > 0 && modelRequests < LOW_SAMPLE_REQUESTS;
 
@@ -382,6 +360,7 @@ function CatalogStatusBadge({ status }) {
     }
 
     const variants = {
+        historical: { label: "historical ID", intent: "neutral" },
         anomaly: { label: "anomaly", intent: "warning" },
         unregistered: { label: "unknown", intent: "warning" },
         "catalog-unavailable": { label: "unverified", intent: "neutral" },
@@ -483,6 +462,16 @@ function App() {
     }, [favorites]);
 
     useEffect(() => {
+        setFavorites((previous) => {
+            const next = migrateFavorites(previous, models);
+            return next.length === previous.length &&
+                next.every((key, index) => key === previous[index])
+                ? previous
+                : next;
+        });
+    }, [models]);
+
+    useEffect(() => {
         saveFilterState({ scope: scopeFilter, type: typeFilter });
     }, [scopeFilter, typeFilter]);
 
@@ -505,7 +494,9 @@ function App() {
     };
 
     const observedModels = models.filter(
-        (model) => (model.stats?.total_requests || 0) > 0,
+        (model) =>
+            model.catalogStatus === "visible" ||
+            (model.stats?.total_requests || 0) > 0,
     );
 
     const sortedModels = [...observedModels].sort((a, b) => {
@@ -637,38 +628,38 @@ function App() {
     };
 
     return (
-        <div className="min-h-dvh min-w-fit bg-app-bg text-theme-text-base">
+        <div className="min-h-dvh bg-app-bg text-theme-text-base">
             <AppHeader
                 navLabel="Model Monitor links"
                 autoHide
-                innerClassName="polli:max-w-6xl polli:flex-row polli:items-center polli:justify-between"
+                innerClassName="polli:max-w-6xl"
             >
                 {EXTERNAL_LINKS.map((link) => (
                     <HeaderLink key={link.href} {...link} />
                 ))}
                 <ColorModeToggle />
             </AppHeader>
-            <main className="mx-auto flex w-full min-w-fit max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
-                <section className="flex flex-row items-end justify-between gap-3">
+            <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-5 sm:px-6 md:py-7">
+                <section className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div className="flex min-w-0 flex-col gap-1">
                         <Heading
                             as="h1"
                             size="title"
-                            className="polli-model-monitor-title polli:m-0 polli:text-theme-text-strong"
+                            className="polli:m-0 sm:text-5xl"
                         >
                             Model Monitor
                         </Heading>
-                        <p className="m-0 max-w-3xl text-base leading-relaxed text-theme-text-base">
+                        <Text className="m-0 max-w-3xl">
                             Real-time health monitoring for Pollinations AI
                             models.
-                        </p>
+                        </Text>
                     </div>
                     <div className="flex flex-col items-start gap-2 sm:items-end">
                         <WindowTabs
                             value={aggregationWindow}
                             onChange={setAggregationWindow}
                         />
-                        <p className="m-0 text-xs leading-normal text-theme-text-soft">
+                        <Text size="xs" tone="soft" className="m-0">
                             Data as of:{" "}
                             {lastUpdated?.toLocaleTimeString("en-GB", {
                                 timeZone: "UTC",
@@ -677,7 +668,7 @@ function App() {
                                 second: "2-digit",
                             }) || "-"}{" "}
                             UTC
-                        </p>
+                        </Text>
                     </div>
                 </section>
 
@@ -692,6 +683,16 @@ function App() {
                         Showing observed Tinybird traffic only until the live
                         model catalog responds.
                     </Alert>
+                )}
+
+                {models.some(
+                    (model) => model.catalogStatus === "historical",
+                ) && (
+                    <Text size="xs" tone="soft" className="m-0">
+                        Historical IDs retain their recorded traffic and do not
+                        contribute to current model health. New IDs build their
+                        own statistics as traffic arrives.
+                    </Text>
                 )}
 
                 <div className="flex flex-col gap-2">
@@ -709,12 +710,11 @@ function App() {
 
                 {favorites.length > 0 && (
                     <div className="flex items-center gap-2">
-                        <Button
-                            type="button"
+                        <TabButton
+                            active={favoritesOnly}
+                            variant="ghost"
                             size="sm"
-                            intent={favoritesOnly ? "info" : undefined}
-                            aria-pressed={favoritesOnly}
-                            aria-label={`Show favorites only (${favorites.length})`}
+                            ariaLabel={`Show favorites only (${favorites.length})`}
                             onClick={() => setFavoritesOnly((prev) => !prev)}
                         >
                             <span className="inline-flex items-center gap-1">
@@ -724,15 +724,20 @@ function App() {
                                     {favorites.length}
                                 </span>
                             </span>
-                        </Button>
+                        </TabButton>
                     </div>
                 )}
 
-                <Surface variant="card" className="p-0">
-                    <Table>
+                <Surface
+                    variant="card"
+                    className="max-w-full overflow-x-auto p-0"
+                >
+                    <Table className="min-w-[64rem]">
                         <TableHead>
                             <tr>
-                                <TableHeaderCell className="w-8" />
+                                <TableHeaderCell className="w-8">
+                                    <span className="sr-only">Favorite</span>
+                                </TableHeaderCell>
                                 <SortableTh
                                     label="Type"
                                     sortKey="type"
@@ -850,7 +855,11 @@ function App() {
                                     const p95Sec = stats?.latency_p95_ms
                                         ? stats.latency_p95_ms / 1000
                                         : null;
-                                    const health = computeHealthStatus(stats);
+                                    const historical =
+                                        model.catalogStatus === "historical";
+                                    const health = historical
+                                        ? "historical"
+                                        : computeHealthStatus(stats);
                                     const modelSlug =
                                         model.name.split("/").pop() ||
                                         model.name;
@@ -858,6 +867,9 @@ function App() {
                                     const showCanonicalId =
                                         model.title ||
                                         model.name !== modelLabel;
+                                    const isFavorite = favorites.includes(
+                                        modelKey(model),
+                                    );
 
                                     return (
                                         <TableRow
@@ -866,12 +878,17 @@ function App() {
                                         >
                                             <TableCell className="w-8">
                                                 <IconButton
+                                                    variant="ghost"
+                                                    pressed={isFavorite}
                                                     title={
-                                                        favorites.includes(
-                                                            modelKey(model),
-                                                        )
+                                                        isFavorite
                                                             ? "Remove from favorites"
                                                             : "Add to favorites"
+                                                    }
+                                                    className={
+                                                        isFavorite
+                                                            ? "polli:text-theme-text-soft polli:hover:text-theme-text-soft"
+                                                            : undefined
                                                     }
                                                     onClick={() =>
                                                         toggleFavorite(
@@ -880,9 +897,8 @@ function App() {
                                                     }
                                                 >
                                                     <StarIcon
-                                                        filled={favorites.includes(
-                                                            modelKey(model),
-                                                        )}
+                                                        filled={isFavorite}
+                                                        className="h-4 w-4"
                                                     />
                                                 </IconButton>
                                             </TableCell>
@@ -912,9 +928,11 @@ function App() {
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex flex-wrap items-center gap-1">
-                                                    <StatusBadge
-                                                        stats={stats}
-                                                    />
+                                                    {!historical && (
+                                                        <StatusBadge
+                                                            stats={stats}
+                                                        />
+                                                    )}
                                                     <CatalogStatusBadge
                                                         status={
                                                             model.catalogStatus

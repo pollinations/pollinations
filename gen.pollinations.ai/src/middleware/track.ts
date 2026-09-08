@@ -22,7 +22,15 @@ import {
     remapUpstreamStatus,
     UpstreamError,
 } from "@shared/error.ts";
-import { sendToTinybird } from "@shared/events.ts";
+import {
+    getTinybirdDatasourceIngestUrl,
+    sendErrorEventToTinybird,
+    sendToTinybird,
+} from "@shared/events.ts";
+import {
+    collectRequestInputs,
+    stringifyRequestInputs,
+} from "@shared/observability/request-inputs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import {
     type BillingAdjustment,
@@ -38,8 +46,10 @@ import {
 } from "@shared/registry/registry.ts";
 import {
     FALLBACK_TARGET_HEADER,
+    hasExplicitPromptCacheHit,
     MODEL_USED_HEADER,
     openaiUsageToUsage,
+    PROMPT_CACHE_TYPE_HEADER,
     parseUsageHeaders,
     USAGE_MISSING_HEADER,
 } from "@shared/registry/usage-headers.ts";
@@ -54,7 +64,6 @@ import {
     usageToEventParams,
 } from "@shared/schemas/generation-event.ts";
 import {
-    type CompletionUsage,
     CompletionUsageSchema,
     type ContentFilterResult,
     ContentFilterResultSchema,
@@ -69,6 +78,11 @@ import type { HonoRequest } from "hono";
 import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 import { mergeContentFilterResults } from "@/content-filter.ts";
+import {
+    CONTENT_POLICY_ERROR_CODE,
+    CONTENT_POLICY_STATUS,
+    isContentPolicyViolation,
+} from "@/image/utils/contentModeration.ts";
 import type { AuthVariables } from "@/middleware/auth.ts";
 import type { BalanceVariables } from "@/middleware/balance.ts";
 import {
@@ -78,6 +92,11 @@ import {
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
+import {
+    getResponsesEventUsage,
+    isResponsesFailure,
+    normalizeResponsesTerminalEvent,
+} from "@/text/responses/tracking.ts";
 import { generateRandomId, parseBooleanLike } from "@/util.ts";
 import { releaseApiKeyBudgetReservation } from "@/utils/generation-access.ts";
 import {
@@ -90,6 +109,7 @@ export type ModelUsage = {
     model: string;
     usage: Usage;
     output?: unknown;
+    pricingInput?: PricingInput;
 };
 
 type RequestTrackingData = {
@@ -131,6 +151,8 @@ type ResponseTrackingData = {
     // A failure the response status cannot show. Replaces the status-derived
     // error data when the settlement row is emitted.
     errorTracking?: ErrorData;
+    // Parsed response/SSE output retained for the private 24-hour error log.
+    errorOutput?: unknown;
 };
 
 export type TrackVariables = {
@@ -258,7 +280,7 @@ export const track = (eventType: EventType) =>
                 responseOverride = response;
             },
             setPricingInput: (input: PricingInput) => {
-                pricingInput = input;
+                pricingInput = { ...pricingInput, ...input };
             },
             attempts,
         });
@@ -418,7 +440,9 @@ export const track = (eventType: EventType) =>
                     : balanceTracking();
 
                 await c.var.frontendKeyRateLimit?.consumePollen(
-                    responseTracking.price?.totalPrice || 0,
+                    responseTracking.isBilledUsage
+                        ? responseTracking.price?.totalPrice || 0
+                        : 0,
                 );
 
                 const finalEvent = await emitRow({
@@ -433,6 +457,59 @@ export const track = (eventType: EventType) =>
                         responseTracking.errorTracking ??
                         collectErrorData(response.status, c.get("error")),
                 });
+
+                if (
+                    responseTracking.errorOutput !== undefined &&
+                    responseTracking.responseStatus >= 500
+                ) {
+                    const errorTracking = responseTracking.errorTracking;
+                    await sendErrorEventToTinybird(
+                        {
+                            timestamp: endTime.toISOString(),
+                            kind: "server_error",
+                            severity: "error",
+                            request_id: finalEvent.requestId,
+                            environment: finalEvent.environment,
+                            route_path: finalEvent.requestPath,
+                            method: c.req.method,
+                            status: responseTracking.responseStatus,
+                            duration_ms:
+                                endTime.getTime() - startTime.getTime(),
+                            error_code: errorTracking?.errorResponseCode,
+                            error_class:
+                                errorTracking?.errorResponseCode ===
+                                "usage_missing"
+                                    ? "UpstreamUsageError"
+                                    : "UpstreamFinishReasonError",
+                            message: errorTracking?.errorMessage,
+                            upstream_status: response.status,
+                            upstream_body: stringifyErrorOutput(
+                                responseTracking.errorOutput,
+                            ),
+                            edge_colo: (
+                                c.req.raw as Request & {
+                                    cf?: { colo?: string };
+                                }
+                            ).cf?.colo,
+                            model_requested:
+                                finalEvent.modelRequested ?? undefined,
+                            resolved_model_requested:
+                                finalEvent.resolvedModelRequested,
+                            request_inputs: stringifyRequestInputs(
+                                await collectRequestInputs(c),
+                            ),
+                            user_id: finalEvent.userId,
+                            user_tier: finalEvent.userTier,
+                            api_key_id: finalEvent.apiKeyId,
+                        },
+                        getTinybirdDatasourceIngestUrl(
+                            c.env.TINYBIRD_INGEST_URL,
+                            "error_event",
+                        ),
+                        c.env.TINYBIRD_INGEST_TOKEN,
+                        log,
+                    );
+                }
 
                 log.trace(
                     [
@@ -639,7 +716,7 @@ export async function trackResponse(
                 kind: contentTypeGuard.kind,
             },
         );
-        return notBilled({ modelUsed: resolvedModelRequested });
+        return notBilled({ modelUsed: modelCalled });
     }
 
     const { modelUsage, output, contentFilterResults } =
@@ -648,16 +725,17 @@ export async function trackResponse(
             requestTracking,
             response,
         );
-    const hasFinishReasonError =
-        eventType === "generate.text"
-            ? containsFinishReasonError(output)
-            : false;
-    if (hasFinishReasonError) {
+    const billingInput = modelUsage?.pricingInput
+        ? { ...pricingInput, ...modelUsage.pricingInput }
+        : pricingInput;
+    const finishError =
+        eventType === "generate.text" ? finishReasonError(output) : undefined;
+    if (finishError) {
         // Keep the proxy response untouched; only billing and health reflect
         // the upstream protocol's explicit terminal failure.
         const usage = modelUsage?.usage ?? {};
         return {
-            responseStatus: 502,
+            responseStatus: finishError.status,
             cacheHit,
             isBilledUsage: false,
             fallbackUsed,
@@ -668,17 +746,26 @@ export async function trackResponse(
                     candidate.definition ?? requestTracking.modelDefinition,
                 quotedBy: requestTracking.modelDefinition,
                 output,
-                input: pricingInput,
+                input: billingInput,
             }),
             modelUsed: modelUsage?.model ?? modelCalled,
             modelProviderUsed,
             usage,
             contentFilterResults,
             errorTracking: {
-                errorResponseCode: "upstream_finish_reason_error",
+                errorResponseCode:
+                    finishError.code ??
+                    (finishError.status === CONTENT_POLICY_STATUS
+                        ? CONTENT_POLICY_ERROR_CODE
+                        : "upstream_finish_reason_error"),
                 errorMessage:
-                    "Upstream ended generation with finish_reason=error",
+                    finishError.code === "usage_missing"
+                        ? "Upstream stream failed usage validation"
+                        : finishError.status === CONTENT_POLICY_STATUS
+                          ? "Upstream rejected generation for content policy"
+                          : "Upstream ended generation with finish_reason=error",
             },
+            errorOutput: output,
         };
     }
     if (!modelUsage) {
@@ -696,6 +783,24 @@ export async function trackResponse(
             output,
             input: pricingInput,
         });
+        if (eventType === "generate.text") {
+            // Usage is required by both text protocols. The HTTP stream may
+            // already be 200, but an incomplete generation is not a success.
+            // Retain independently knowable provider fees, never charge the user.
+            return {
+                ...notBilled(),
+                ...adjustmentOnlyBilling,
+                responseStatus: 502,
+                modelUsed: modelCalled,
+                usage: {},
+                contentFilterResults,
+                errorTracking: {
+                    errorResponseCode: "usage_missing",
+                    errorMessage: `Provider omitted valid usage for model ${resolvedModelRequested}`,
+                },
+                errorOutput: output ?? { streamEvents: [] },
+            };
+        }
         const hasKnownProviderCost = adjustmentOnlyBilling.cost.totalCost > 0;
         const hasBillablePrice = adjustmentOnlyBilling.price.totalPrice > 0;
         if (hasKnownProviderCost || hasBillablePrice) {
@@ -710,19 +815,9 @@ export async function trackResponse(
                 contentFilterResults,
             };
         }
-        // Nothing was charged and nothing could be. Mark the row so a billable
-        // text generation with no charge stays queryable instead of passing
-        // for an ordinary unbilled one.
         return notBilled({
             contentFilterResults,
             modelUsed: modelCalled,
-            errorTracking:
-                eventType === "generate.text"
-                    ? {
-                          errorResponseCode: "usage_missing",
-                          errorMessage: `No usage and no determinable charge for model ${resolvedModelRequested}`,
-                      }
-                    : undefined,
         });
     }
     // Cost follows the model that ran; price follows the one the caller asked
@@ -740,7 +835,7 @@ export async function trackResponse(
         servedBy: candidate.definition ?? requestTracking.modelDefinition,
         quotedBy: requestTracking.modelDefinition,
         output: modelUsage.output,
-        input: pricingInput,
+        input: billingInput,
     });
     return {
         responseStatus: response.status,
@@ -760,22 +855,60 @@ export async function trackResponse(
     };
 }
 
-function containsFinishReasonError(output: unknown): boolean {
-    if (!output || typeof output !== "object") return false;
+function finishReasonError(
+    output: unknown,
+): { status: number; code?: "usage_missing" } | undefined {
+    if (!output || typeof output !== "object") return undefined;
     const streamEvents = (output as { streamEvents?: unknown }).streamEvents;
     const events = Array.isArray(streamEvents) ? streamEvents : [output];
     for (const event of events) {
         if (!event || typeof event !== "object") continue;
+        const eventError = (event as { error?: unknown }).error;
+        if (
+            (eventError &&
+                typeof eventError === "object" &&
+                (eventError as { code?: unknown }).code === "usage_missing") ||
+            ((event as { type?: unknown }).type === "error" &&
+                (event as { code?: unknown }).code === "usage_missing")
+        ) {
+            return { status: 502, code: "usage_missing" };
+        }
+        if (isResponsesFailure(event)) return { status: 502 };
+        if (eventError) {
+            return {
+                status: isContentPolicyViolation(JSON.stringify(eventError))
+                    ? CONTENT_POLICY_STATUS
+                    : 502,
+            };
+        }
         const choices = (event as { choices?: unknown }).choices;
         if (!Array.isArray(choices)) continue;
         for (const choice of choices) {
             if (!choice || typeof choice !== "object") continue;
-            const finish = choice as { finish_reason?: unknown };
+            const finish = choice as {
+                finish_reason?: unknown;
+                error?: unknown;
+            };
             if (finish.finish_reason !== "error") continue;
-            return true;
+            return {
+                status: isContentPolicyViolation(JSON.stringify(finish.error))
+                    ? CONTENT_POLICY_STATUS
+                    : 502,
+            };
         }
     }
-    return false;
+    return undefined;
+}
+
+function stringifyErrorOutput(output: unknown): string {
+    try {
+        return JSON.stringify(output).slice(0, 16_000);
+    } catch (error) {
+        return JSON.stringify({
+            error: "error_output_json_stringify_failed",
+            message: error instanceof Error ? error.message : String(error),
+        });
+    }
 }
 
 // The fallback loop reports the served candidate as "config.targets[N]" via
@@ -856,7 +989,7 @@ async function* extractResponseStream(
         } catch {
             continue;
         }
-        yield data;
+        yield normalizeResponsesTerminalEvent(data, event.event);
     }
 }
 
@@ -1095,6 +1228,10 @@ function extractUsageHeaders(response: Response): ModelUsage | null {
     return {
         model: modelUsed,
         usage,
+        pricingInput: {
+            hasExplicitCacheHit:
+                response.headers.get(PROMPT_CACHE_TYPE_HEADER) === "ephemeral",
+        },
     };
 }
 
@@ -1156,17 +1293,20 @@ async function extractUsageAndContentFilterResultsStream(
 }> {
     const log = getLogger(["hono", "track", "stream"]);
     const EventSchema = z.object({
-        model: z.string(),
+        // Usage-only terminal chunks need not repeat model or choice metadata.
+        model: z.string().optional(),
         // Preserve Perplexity's provider-reported request cost for billing
         // rules that inspect the original event.
         usage: CompletionUsageSchema.extend({
             cost: z.unknown().nullish(),
         }).nullish(),
-        choices: z.array(
-            z.object({
-                content_filter_results: ContentFilterResultSchema.nullish(),
-            }),
-        ),
+        choices: z
+            .array(
+                z.object({
+                    content_filter_results: ContentFilterResultSchema.nullish(),
+                }),
+            )
+            .default([]),
         prompt_filter_results: z
             .array(
                 z.object({
@@ -1177,13 +1317,18 @@ async function extractUsageAndContentFilterResultsStream(
     });
 
     let model: string | undefined;
-    let usage: CompletionUsage | undefined;
+    let usage: Usage | undefined;
+    let hasExplicitCacheHit = false;
     let promptFilterResults: ContentFilterResult = {};
     let completionFilterResults: ContentFilterResult = {};
     const streamEvents: unknown[] = [];
 
     for await (const event of events) {
         const parseResult = EventSchema.safeParse(event);
+        // Optional choice/filter metadata must not invalidate genuine usage.
+        const usageResult = EventSchema.shape.usage.safeParse(
+            (event as { usage?: unknown } | null)?.usage,
+        );
         streamEvents.push(event);
 
         const incomingPromptFilterResults =
@@ -1204,12 +1349,24 @@ async function extractUsageAndContentFilterResultsStream(
             completionFilterResults,
         ]);
 
-        if (parseResult.data?.usage) {
+        if (usageResult.data) {
             if (usage) {
                 log.warn("Multiple usage objects found in event stream");
             }
-            usage = parseResult.data?.usage;
-            model = parseResult.data?.model;
+            usage = openaiUsageToUsage(usageResult.data);
+            hasExplicitCacheHit = hasExplicitPromptCacheHit(usageResult.data);
+            const eventModel = (event as { model?: unknown } | null)?.model;
+            if (typeof eventModel === "string") model = eventModel;
+        }
+
+        const responsesUsage = getResponsesEventUsage(event);
+        if (responsesUsage) {
+            if (usage) {
+                log.warn("Multiple usage objects found in event stream");
+            }
+            usage = responsesUsage.usage;
+            hasExplicitCacheHit = responsesUsage.hasExplicitCacheHit;
+            model = responsesUsage.model ?? model;
         }
     }
 
@@ -1235,8 +1392,9 @@ async function extractUsageAndContentFilterResultsStream(
     return {
         modelUsage: {
             model: servedModel,
-            usage: openaiUsageToUsage(usage),
+            usage,
             output,
+            pricingInput: { hasExplicitCacheHit },
         },
         output,
         contentFilterResults,

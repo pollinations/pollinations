@@ -131,7 +131,10 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "restricted-child",
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: [
+                            "black-forest-labs/flux.1-schnell",
+                            "openai/gpt-5.4-nano",
+                        ],
                         pollenBudget: 50,
                         accountPermissions: ["profile", "usage"],
                     }),
@@ -141,7 +144,10 @@ describe("Account Key Management API", () => {
             expect(response.status).toBe(200);
             const data = await response.json();
             expect(data.permissions).toEqual({
-                models: ["flux", "openai"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "openai/gpt-5.4-nano",
+                ],
                 account: ["profile", "usage"],
             });
             expect(data.pollenBudget).toBe(50);
@@ -340,7 +346,10 @@ describe("Account Key Management API", () => {
                     },
                     body: JSON.stringify({
                         name: "account-key-with-retired-model",
-                        allowedModels: ["flux", "retired-model"],
+                        allowedModels: [
+                            "black-forest-labs/flux.1-schnell",
+                            "retired-model",
+                        ],
                     }),
                 },
             );
@@ -361,7 +370,9 @@ describe("Account Key Management API", () => {
             const listed = body.data.find(
                 (key: { id: string }) => key.id === created.id,
             );
-            expect(listed.permissions.models).toEqual(["flux"]);
+            expect(listed.permissions.models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+            ]);
         });
 
         test("should reject API key without account:keys permission", async ({

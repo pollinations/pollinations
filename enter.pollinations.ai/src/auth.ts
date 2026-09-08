@@ -1,3 +1,4 @@
+import { oauthProvider } from "@better-auth/oauth-provider";
 import { authAdditionalFields } from "@shared/auth/additional-fields.ts";
 import {
     assertStagingAccess,
@@ -19,7 +20,6 @@ import {
     type BetterAuthPlugin,
     betterAuth,
     type GenericEndpointContext,
-    type User as GenericUser,
 } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import {
@@ -33,11 +33,28 @@ import { drizzle } from "drizzle-orm/d1";
 import { discordConfigFromEnv } from "./services/discord.ts";
 
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
+const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
+
+export function isAdminUser(user: {
+    id: string;
+    role?: string | null;
+    banned?: boolean | null;
+}) {
+    return (
+        !user.banned &&
+        (ADMIN_USER_IDS.includes(user.id) ||
+            user.role
+                ?.split(",")
+                .map((role) => role.trim())
+                .includes("admin") === true)
+    );
+}
 
 export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const db = drizzle(env.DB);
     const apiKeyPlugin = createApiKeyPlugin();
     const discordConfig = discordConfigFromEnv(env);
+    let githubProfile: { id: number; username: string } | undefined;
 
     const hasDiscordAccount = async (userId: string) => {
         const [account] = await db
@@ -59,8 +76,24 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             message: "Only one Discord account can be connected.",
         });
 
-    const adminPlugin = admin({
-        adminUserIds: ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"],
+    const adminPlugin = admin({ adminUserIds: ADMIN_USER_IDS });
+
+    const oauthProviderPlugin = oauthProvider({
+        loginPage: "/app/sign-in",
+        allowPublicClientPrelogin: true,
+        // Only trusted internal dashboard clients are registered, so
+        // consent is skipped. Explicit consent requests fail closed here.
+        consentPage: "/error",
+        // Clients are seeded by migrations, not managed through the public API.
+        clientPrivileges: () => false,
+        scopes: ["openid", "profile", "email"],
+        grantTypes: ["authorization_code"],
+        // Apps recheck UserInfo throughout their 12-hour session; no refresh grant.
+        accessTokenExpiresIn: 43_200,
+        disableJwtPlugin: true,
+        customUserInfoClaims: ({ user }) => ({
+            role: isAdminUser(user) ? "admin" : "user",
+        }),
     });
 
     const openAPIPlugin = openAPI({
@@ -135,6 +168,22 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
                             throw discordAccountAlreadyConnected();
                         }
                     },
+                    after: async (account) => {
+                        if (account.providerId !== "github") return;
+                        // These authorization fields stay read-only in Better
+                        // Auth, so persist the verified provider profile here.
+                        const githubId = Number(account.accountId);
+                        await db
+                            .update(userTable)
+                            .set({
+                                githubId,
+                                githubUsername:
+                                    githubProfile?.id === githubId
+                                        ? githubProfile.username
+                                        : undefined,
+                            })
+                            .where(eq(userTable.id, account.userId));
+                    },
                 },
             },
         },
@@ -160,6 +209,13 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             ...AUTH_TRUSTED_ORIGINS,
             "http://localhost:3000",
             "http://127.0.0.1:3000",
+            ...(env.ENVIRONMENT === "production"
+                ? []
+                : [
+                      "http://localhost:3457",
+                      "http://localhost:4180",
+                      "http://localhost:4000",
+                  ]),
         ],
         user: {
             additionalFields: authAdditionalFields.user,
@@ -180,10 +236,26 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             github: {
                 clientId: env.GITHUB_CLIENT_ID,
                 clientSecret: env.GITHUB_CLIENT_SECRET,
-                mapProfileToUser: (profile) => ({
-                    githubId: profile.id,
-                    githubUsername: profile.login,
-                }),
+                mapProfileToUser: (profile) => {
+                    try {
+                        assertStagingAccess(env, {
+                            githubId: Number(profile.id),
+                            email: profile.email,
+                        });
+                    } catch (error) {
+                        if (error instanceof StagingAccessDeniedError) {
+                            throw new APIError("FORBIDDEN", {
+                                message: error.message,
+                            });
+                        }
+                        throw error;
+                    }
+                    githubProfile = {
+                        id: Number(profile.id),
+                        username: profile.login,
+                    };
+                    return {};
+                },
             },
             ...(discordConfig && {
                 discord: {
@@ -200,9 +272,9 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         },
         plugins: [
             adminPlugin,
+            oauthProviderPlugin,
             apiKeyPlugin,
             githubProfileSyncPlugin(env, ctx),
-            stagingAccessPlugin(env),
             openAPIPlugin,
         ],
         telemetry: { enabled: false },
@@ -312,52 +384,4 @@ function onAfterSessionCreate(
             })(),
         );
     };
-}
-
-/**
- * Restricts new signups on staging to explicit GitHub ID or email allowlists.
- * GitHub IDs are immutable, unlike usernames. No-op outside staging.
- *
- * This is a thin UX layer only — it rejects disallowed users during OAuth
- * before a `user` row is created, so /error shows "staging is invite-only"
- * instead of a 403 after they think they're logged in. The actual security
- * boundary is {@link assertStagingAccess} called per-request in
- * `shared/auth/api-key.ts` and the per-service auth middleware, which is what
- * blocks spend on the production provider keys held by staging-gen. See #11137.
- */
-function stagingAccessPlugin(env: Cloudflare.Env): BetterAuthPlugin {
-    if (env.ENVIRONMENT !== "staging") {
-        return { id: "staging-access" };
-    }
-    return {
-        id: "staging-access",
-        init: () => ({
-            options: {
-                databaseHooks: {
-                    user: {
-                        create: {
-                            before: async (user: GenericUser) => {
-                                try {
-                                    assertStagingAccess(env, {
-                                        githubId: (
-                                            user as { githubId?: number }
-                                        ).githubId,
-                                        email: user.email,
-                                    });
-                                } catch (e) {
-                                    if (e instanceof StagingAccessDeniedError) {
-                                        throw new APIError("FORBIDDEN", {
-                                            message: e.message,
-                                        });
-                                    }
-                                    throw e;
-                                }
-                                return { data: user };
-                            },
-                        },
-                    },
-                },
-            } satisfies Partial<BetterAuthOptions>,
-        }),
-    } satisfies BetterAuthPlugin;
 }

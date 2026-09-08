@@ -10,7 +10,7 @@ const intentClasses: Record<AlertIntent, string> = {
     danger: "polli:bg-intent-danger-bg-light polli:text-intent-danger-text",
 };
 
-export type AlertProps = ComponentPropsWithoutRef<"div"> & {
+export type AlertProps = Omit<ComponentPropsWithoutRef<"div">, "title"> & {
     intent?: AlertIntent;
     title?: ReactNode;
 };

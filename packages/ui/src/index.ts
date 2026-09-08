@@ -1,3 +1,7 @@
+export {
+    AccountMenu,
+    type AccountMenuProps,
+} from "./compositions/AccountMenu.tsx";
 export { Alert, type AlertProps } from "./compositions/Alert.tsx";
 export { AppHeader, type AppHeaderProps } from "./compositions/AppHeader.tsx";
 export { CodeBlock, type CodeBlockProps } from "./compositions/CodeBlock.tsx";
@@ -12,6 +16,8 @@ export {
 export {
     EditableCombobox,
     type EditableComboboxProps,
+    EditableComboboxToken,
+    type EditableComboboxTokenProps,
 } from "./compositions/EditableCombobox.tsx";
 export {
     ExternalLinkButton,
@@ -81,6 +87,7 @@ export {
     IconButton,
     type IconButtonIntent,
     type IconButtonProps,
+    type IconButtonVariant,
 } from "./primitives/IconButton.tsx";
 export { InlineLink, type InlineLinkProps } from "./primitives/InlineLink.tsx";
 export { Input, type InputProps } from "./primitives/Input.tsx";

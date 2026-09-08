@@ -117,7 +117,12 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     const failureBody =
         response.status === 200 ? "" : await response.clone().text();
     expect(response.status, failureBody).toBe(200);
-    expect(response.headers.get("x-model-used")).toBe("zimage-fal");
+    expect(response.headers.get("x-model-requested")).toBe(
+        "tongyi-mai/z-image-turbo",
+    );
+    expect(response.headers.get("x-model-used")).toBe(
+        "tongyi-mai/z-image-turbo:fal",
+    );
     expect(response.headers.get("x-fallback-target")).toBe("config.targets[1]");
     await response.arrayBuffer();
     expect(mocks.fal.state.falRequests).toEqual([
@@ -136,7 +141,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     expect(mocks.tinybird.state.events).toHaveLength(2);
     expect(mocks.tinybird.state.events[0]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "zimage",
+        modelUsed: "tongyi-mai/z-image-turbo",
         modelProviderUsed: "vast",
         responseStatus: 503,
         isFinal: false,
@@ -144,7 +149,7 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
     });
     expect(mocks.tinybird.state.events[1]).toMatchObject({
         modelRequested: "zimage",
-        modelUsed: "zimage-fal",
+        modelUsed: "tongyi-mai/z-image-turbo:fal",
         modelProviderUsed: "fal",
         responseStatus: 200,
         fallbackUsed: true,
@@ -156,4 +161,26 @@ test("uses Fal only after the Vast Z-Image pool exhausts its 503s", async ({
         1.048576 * 0.005,
         10,
     );
+});
+
+test("rejects direct calls to the internal Fal route", async ({
+    paidApiKey,
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "fal");
+    const { response, wait } = await fetchWorker(
+        "/image/a%20red%20apple?model=zimage-fal",
+        { headers: { authorization: `Bearer ${paidApiKey}` } },
+    );
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+        error: {
+            code: "BAD_REQUEST",
+            message:
+                'Invalid model or alias: "zimage-fal". Must be a valid model name or alias.',
+        },
+    });
+    await wait();
+    expect(mocks.fal.state.falRequests).toHaveLength(0);
 });

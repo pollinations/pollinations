@@ -4,6 +4,7 @@ import { Tooltip } from "./Tooltip.tsx";
 
 /** `danger` (delete, red) and `info` (edit/links, blue). */
 export type IconButtonIntent = "danger" | "info";
+export type IconButtonVariant = "tile" | "ghost";
 
 const intentClasses: Record<IconButtonIntent, string> = {
     danger:
@@ -14,13 +15,19 @@ const intentClasses: Record<IconButtonIntent, string> = {
         "polli:text-intent-info-text",
 };
 
-// Default (no intent): cascade-driven theme tile, deeper on hover.
-const defaultClasses =
-    "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover " +
-    "polli:text-theme-text-soft polli:hover:text-theme-text-strong";
+const variantClasses: Record<IconButtonVariant, string> = {
+    tile:
+        "polli:bg-theme-bg-active polli:hover:bg-theme-bg-hover " +
+        "polli:text-theme-text-soft polli:hover:text-theme-text-strong",
+    ghost:
+        "polli:bg-transparent polli:hover:bg-transparent " +
+        "polli:text-theme-text-muted polli:hover:text-theme-text-soft",
+};
 
 export type IconButtonProps = {
     intent?: IconButtonIntent;
+    variant?: IconButtonVariant;
+    pressed?: boolean;
     title?: string;
     tooltip?: ReactNode;
     tooltipAlign?: "start" | "center";
@@ -40,6 +47,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     (
         {
             intent,
+            variant = "tile",
+            pressed,
             title,
             tooltip,
             tooltipAlign,
@@ -57,11 +66,12 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
                 type="button"
                 onClick={onClick}
                 aria-label={title}
+                aria-pressed={pressed}
                 data-intent={intent}
                 className={cn(
                     "polli-control polli:inline-flex polli:cursor-pointer polli:items-center polli:justify-center polli:transition-colors",
                     sizeClasses[size],
-                    intent ? intentClasses[intent] : defaultClasses,
+                    intent ? intentClasses[intent] : variantClasses[variant],
                     className,
                 )}
             >

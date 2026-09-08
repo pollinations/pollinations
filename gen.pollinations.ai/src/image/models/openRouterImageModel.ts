@@ -1,5 +1,4 @@
 import { UpstreamError } from "@shared/error.ts";
-import { HttpError } from "@shared/http-error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
@@ -61,7 +60,7 @@ type GeminiImageConfig = {
     reasoning: boolean;
 };
 const GEMINI_IMAGE_CONFIGS = {
-    nanobanana: {
+    "google/gemini-2.5-flash-image": {
         upstreamModel: "google/gemini-2.5-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 3,
@@ -69,7 +68,7 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "none",
         reasoning: false,
     },
-    "nanobanana-2": {
+    "google/gemini-3.1-flash-image": {
         upstreamModel: "google/gemini-3.1-flash-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -77,7 +76,15 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "tiered",
         reasoning: true,
     },
-    "nanobanana-2-lite": {
+    "google/gemini-3.1-flash-image:openrouter:ai-studio": {
+        upstreamModel: "google/gemini-3.1-flash-image",
+        provider: "google-ai-studio",
+        maxReferenceImages: 14,
+        generator: "Google AI Studio Gemini 3.1 Flash Image",
+        resolution: "tiered",
+        reasoning: true,
+    },
+    "google/gemini-3.1-flash-lite-image": {
         upstreamModel: "google/gemini-3.1-flash-lite-image",
         provider: "google-vertex/global",
         maxReferenceImages: 14,
@@ -85,11 +92,19 @@ const GEMINI_IMAGE_CONFIGS = {
         resolution: "1K",
         reasoning: true,
     },
-    "nanobanana-pro": {
+    "google/gemini-3-pro-image": {
         upstreamModel: "google/gemini-3-pro-image",
         provider: "google-ai-studio/global",
         maxReferenceImages: 14,
         generator: "Google AI Studio Gemini 3 Pro Image",
+        resolution: "tiered",
+        reasoning: false,
+    },
+    "google/gemini-3-pro-image:openrouter:vertex-global": {
+        upstreamModel: "google/gemini-3-pro-image",
+        provider: "google-vertex/global",
+        maxReferenceImages: 14,
+        generator: "Vertex AI Gemini 3 Pro Image",
         resolution: "tiered",
         reasoning: false,
     },
@@ -138,10 +153,9 @@ interface OpenRouterImageUsage {
 function requireOpenRouterImageApiKey(): string {
     const apiKey = getImageEnv("OPENROUTER_API_KEY");
     if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "OPENROUTER_API_KEY environment variable is required",
+        });
     }
     return apiKey;
 }
@@ -174,19 +188,20 @@ function invalidOpenRouterImageUsage(
         "OpenRouter returned invalid image billing usage:",
         JSON.stringify(usage),
     );
-    throw new HttpError(
-        "OpenRouter returned invalid image billing usage",
-        502,
-        usage,
-        OPENROUTER_IMAGE_URL,
-    );
+    throw UpstreamError.fromProvider(502, {
+        message: "OpenRouter returned invalid image billing usage",
+        responseBody: JSON.stringify(usage),
+        requestUrl: new URL(OPENROUTER_IMAGE_URL),
+    });
 }
 
 function addUsage(usage: Usage, key: keyof Usage, amount: number) {
     if (amount > 0) usage[key] = amount;
 }
 
-function buildOpenRouterNoImageError(data: OpenRouterImageResponse): HttpError {
+function buildOpenRouterNoImageError(
+    data: OpenRouterImageResponse,
+): UpstreamError {
     const providerMessage =
         typeof data.error === "string"
             ? data.error
@@ -199,15 +214,15 @@ function buildOpenRouterNoImageError(data: OpenRouterImageResponse): HttpError {
     const isContentRejection =
         /content.?policy|prohibited|refusal|refused|safety/i.test(errorText);
 
-    return new HttpError(
-        providerMessage ||
+    return UpstreamError.fromProvider(isContentRejection ? 400 : 502, {
+        message:
+            providerMessage ||
             (isContentRejection
                 ? "Image generation rejected by content policy"
                 : "OpenRouter image API returned no image"),
-        isContentRejection ? 400 : 502,
-        data,
-        OPENROUTER_IMAGE_URL,
-    );
+        responseBody: JSON.stringify(data),
+        requestUrl: new URL(OPENROUTER_IMAGE_URL),
+    });
 }
 
 export function mapOpenRouterGeminiImageUsage(
@@ -318,10 +333,9 @@ function resolveSeedreamProAspectRatio(
         requested === "9:21" ||
         !(SEEDREAM_PRO_ASPECT_RATIOS as readonly string[]).includes(requested)
     ) {
-        throw new HttpError(
-            `aspectRatio "${requested}" is not supported by Seedream 4.5. Supported: auto, ${SEEDREAM_PRO_ASPECT_RATIOS.join(", ")}.`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `aspectRatio "${requested}" is not supported by Seedream 4.5. Supported: auto, ${SEEDREAM_PRO_ASPECT_RATIOS.join(", ")}.`,
+        });
     }
     return requested as SeedreamProAspectRatio;
 }
@@ -331,10 +345,9 @@ export async function callOpenRouterSeedreamProAPI(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     if (safeParams.image.length > 14) {
-        throw new HttpError(
-            `Seedream 4.5 supports at most 14 reference images (received ${safeParams.image.length}).`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Seedream 4.5 supports at most 14 reference images (received ${safeParams.image.length}).`,
+        });
     }
 
     const apiKey = requireOpenRouterImageApiKey();
@@ -399,7 +412,7 @@ export async function callOpenRouterSeedreamProAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "seedream-pro",
+            actualModel: "bytedance/seedream-4.5",
             usage: {
                 completionImageTokens: 1,
                 totalTokenCount: 1,
@@ -440,12 +453,11 @@ export async function callOpenRouterGrokImagineProAPI(
     );
     const encodedImage = data.data?.[0]?.b64_json;
     if (!encodedImage) {
-        throw new HttpError(
-            "OpenRouter image API returned no image",
-            502,
-            data,
-            OPENROUTER_IMAGE_URL,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter image API returned no image",
+            responseBody: JSON.stringify(data),
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
+        });
     }
 
     logOps("Grok Imagine Pro generation complete", {
@@ -458,7 +470,7 @@ export async function callOpenRouterGrokImagineProAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "grok-imagine-pro",
+            actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
                 ...(referenceImage ? { promptImageTokens: 1 } : {}),
                 completionImageTokens: 1,
@@ -472,10 +484,10 @@ export async function callOpenRouterGrokImagineImage2API(
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> {
     if (safeParams.image.length > 3) {
-        throw new HttpError(
-            "grok-imagine-image-2.0 supports at most 3 reference images",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "grok-imagine-image-2.0 supports at most 3 reference images",
+        });
     }
     const apiKey = requireOpenRouterImageApiKey();
     const inputReferences = safeParams.image.map((url) => ({
@@ -520,7 +532,7 @@ export async function callOpenRouterGrokImagineImage2API(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "grok-imagine-image-2.0",
+            actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
                 ...(inputReferences.length > 0
                     ? { promptImageTokens: inputReferences.length }
@@ -540,16 +552,14 @@ export async function callOpenRouterGeminiImageAPI(
             safeParams.model as keyof typeof GEMINI_IMAGE_CONFIGS
         ];
     if (!config) {
-        throw new HttpError(
-            `Unsupported OpenRouter Gemini image model: ${safeParams.model}`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `Unsupported OpenRouter Gemini image model: ${safeParams.model}`,
+        });
     }
     if (safeParams.image.length > config.maxReferenceImages) {
-        throw new HttpError(
-            `${safeParams.model} supports at most ${config.maxReferenceImages} reference images`,
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message: `${safeParams.model} supports at most ${config.maxReferenceImages} reference images`,
+        });
     }
 
     const apiKey = requireOpenRouterImageApiKey();
@@ -669,8 +679,9 @@ export async function callOpenRouterRecraftVectorAPI(
             "OpenRouter vector generation request failed",
         );
     } catch (error) {
-        if (error instanceof HttpError && error.status === 429) {
+        if (error instanceof UpstreamError && error.upstreamStatus === 429) {
             throw new UpstreamError(429, {
+                ...error,
                 message:
                     "Recraft vector generation is at capacity. Please retry shortly.",
                 requestUrl: new URL(OPENROUTER_IMAGE_URL),
@@ -682,20 +693,18 @@ export async function callOpenRouterRecraftVectorAPI(
     }
     const generatedImage = data.data?.[0];
     if (!generatedImage?.b64_json) {
-        throw new HttpError(
-            "OpenRouter image API returned no vector",
-            502,
-            data,
-            OPENROUTER_IMAGE_URL,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter image API returned no vector",
+            responseBody: JSON.stringify(data),
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
+        });
     }
     if (generatedImage.media_type !== SVG_MEDIA_TYPE) {
-        throw new HttpError(
-            `OpenRouter image API returned unsupported media type: ${generatedImage.media_type || "missing"}`,
-            502,
-            data,
-            OPENROUTER_IMAGE_URL,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `OpenRouter image API returned unsupported media type: ${generatedImage.media_type || "missing"}`,
+            responseBody: JSON.stringify(data),
+            requestUrl: new URL(OPENROUTER_IMAGE_URL),
+        });
     }
 
     logOps("Recraft vector generation complete", {
@@ -709,7 +718,7 @@ export async function callOpenRouterRecraftVectorAPI(
         isMature: false,
         isChild: false,
         trackingData: {
-            actualModel: "recraft-v4.1-vector",
+            actualModel: "recraft/recraft-v4.1-vector",
             // OpenRouter bills this endpoint a fixed $0.08 per output image.
             usage: { completionImageTokens: 1 },
         },

@@ -20,15 +20,15 @@ import { resetGenerationModelRegistryCache } from "../../src/model-registry.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
-const TEST_EMBEDDING_MODEL = "gemini-2";
+const TEST_EMBEDDING_MODEL = "google/gemini-embedding-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2";
-const TEST_OPENAI_SMALL_MODEL = "openai-3-small";
-const TEST_OPENAI_LARGE_MODEL = "openai-3-large";
+const TEST_OPENAI_SMALL_MODEL = "openai/text-embedding-3-small";
+const TEST_OPENAI_LARGE_MODEL = "openai/text-embedding-3-large";
 const TEST_OPENAI_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
 const TEST_OPENAI_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
-const TEST_COHERE_MODEL = "cohere-embed-v4";
+const TEST_COHERE_MODEL = "cohere/embed-v4.0";
 const TEST_COHERE_PROVIDER_MODEL = "embed-v-4-0";
-const TEST_QWEN_MODEL = "qwen3-embedding-8b";
+const TEST_QWEN_MODEL = "qwen/qwen3-embedding-8b";
 const TEST_QWEN_PROVIDER_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
@@ -188,14 +188,16 @@ function createAzureOpenAIMock(): MockAPI<{
 
                 return Response.json({
                     object: "list",
-                    data: inputs.map((_, index) => ({
-                        object: "embedding",
-                        embedding: Array.from(
-                            { length: dimensions },
-                            (_, valueIndex) => index + valueIndex / 10,
-                        ),
-                        index,
-                    })),
+                    data: inputs
+                        .map((_, index) => ({
+                            object: "embedding",
+                            embedding: Array.from(
+                                { length: dimensions },
+                                (_, valueIndex) => index + valueIndex / 10,
+                            ),
+                            index,
+                        }))
+                        .reverse(),
                     model: body.model,
                     usage: {
                         prompt_tokens: inputs.length * 4,
@@ -240,14 +242,16 @@ function createCohereAzureMock(): MockAPI<{
 
                 return Response.json({
                     object: "list",
-                    data: inputs.map((_, index) => ({
-                        object: "embedding",
-                        embedding: Array.from(
-                            { length: dimensions },
-                            (_, valueIndex) => index + valueIndex / 10,
-                        ),
-                        index,
-                    })),
+                    data: inputs
+                        .map((_, index) => ({
+                            object: "embedding",
+                            embedding: Array.from(
+                                { length: dimensions },
+                                (_, valueIndex) => index + valueIndex / 10,
+                            ),
+                            index,
+                        }))
+                        .reverse(),
                     model: body.model,
                     usage: {
                         prompt_tokens: inputs.length * 4,
@@ -288,14 +292,16 @@ function createFireworksMock(): MockAPI<{
 
                 return Response.json({
                     object: "list",
-                    data: inputs.map((_, index) => ({
-                        object: "embedding",
-                        embedding: Array.from(
-                            { length: dimensions },
-                            (_, valueIndex) => index + valueIndex / 10,
-                        ),
-                        index,
-                    })),
+                    data: inputs
+                        .map((_, index) => ({
+                            object: "embedding",
+                            embedding: Array.from(
+                                { length: dimensions },
+                                (_, valueIndex) => index + valueIndex / 10,
+                            ),
+                            index,
+                        }))
+                        .reverse(),
                     model: body.model,
                     usage: {
                         prompt_tokens: inputs.length * 4,
@@ -325,6 +331,59 @@ async function fetchWorker(path: string, init: RequestInit = {}) {
 }
 
 describe("POST /v1/embeddings", () => {
+    for (const [model, provider] of [
+        [TEST_OPENAI_SMALL_MODEL, "azureOpenAI"],
+        [TEST_COHERE_MODEL, "cohereAzure"],
+        [TEST_QWEN_MODEL, "fireworks"],
+    ] as const) {
+        test(`sorts out-of-order ${model} embeddings before base64 encoding`, async ({
+            paidApiKey: apiKey,
+            mocks,
+        }) => {
+            await mocks.enable("tinybird", "tinybirdStats", provider);
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({
+                    model,
+                    input: ["Hello", "World"],
+                    dimensions: 256,
+                    encoding_format: "base64",
+                }),
+            });
+            expect(response.status).toBe(200);
+            const result = await response.json<{
+                data: { object: string; embedding: string; index: number }[];
+                model: string;
+                usage: { prompt_tokens: number; total_tokens: number };
+            }>();
+            expect(result.data.map(({ index }) => index)).toEqual([0, 1]);
+            for (const item of result.data) {
+                expect(item.object).toBe("embedding");
+                const bytes = Buffer.from(item.embedding, "base64");
+                expect(bytes.length).toBe(256 * 4);
+                expect(bytes.readFloatLE(0)).toBe(item.index);
+                expect(bytes.readFloatLE(4)).toBeCloseTo(item.index + 0.1);
+            }
+            expect(result.model).toBe(model);
+            expect(result.usage).toEqual({ prompt_tokens: 8, total_tokens: 8 });
+            expect(response.headers.get("x-model-used")).toBe(model);
+            expect(response.headers.get("x-usage-prompt-text-tokens")).toBe(
+                "8",
+            );
+            await wait();
+            expect(mocks.tinybird.state.events).toHaveLength(1);
+            expect(mocks.tinybird.state.events[0]).toMatchObject({
+                modelUsed: model,
+                tokenCountPromptText: 8,
+                isBilledUsage: true,
+            });
+        });
+    }
+
     test("rejects Gemini task hints without text content", () => {
         expect(() => applyGeminiTaskInstruction([], "RETRIEVAL_QUERY")).toThrow(
             "task_type requires non-empty Gemini text input",

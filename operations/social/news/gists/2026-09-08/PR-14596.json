@@ -1,0 +1,34 @@
+{
+  "pr_number": 14596,
+  "title": "fix: publish SDK through npm OIDC",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14596",
+  "merged_at": "2026-09-08T21:52:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes SDK publishing authentication by using GitHub OIDC and Node 24, following the existing CLI publisher.\n- Triggers the SDK publisher when the release workflow changes so the unpublished `5.1.0-alpha.7` can be recovered on merge.\n- Preserves the `alpha` dist-tag and already-published version check.\n- Validated with actionlint, SDK build, 73 tests, and npm pack dry run. Biome does not process this YAML file.\n- Requires npm Trusted Publishing for `@pollinations/sdk`: repository `pollinations/pollinations`, workflow `release-publish-npm-packages.yml`, permission to run `npm publish`. Package configuration and live publication are pending.\n\nAddresses #14514\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The SDK gets a passport",
+    "blurb": "The SDK release worker now uses GitHub OIDC to prove it belongs at npm. Alpha packages can resume their small but important journey from hive to registry.",
+    "summary": "Updated the SDK npm publishing workflow to use GitHub OIDC with Node 24, preserve the alpha dist-tag and published-version check, and rerun publishing when the release workflow changes so @pollinations/sdk 5.1.0-alpha.7 can be recovered.",
+    "impact": "Once npm Trusted Publishing is configured for @pollinations/sdk, SDK alpha releases can publish through the same OIDC-based path as the CLI without maintaining a separate npm authentication secret.",
+    "keywords": [
+      "sdk",
+      "npm",
+      "oidc",
+      "github-actions",
+      "release",
+      "alpha"
+    ],
+    "visual_concept": "Polli wears a tiny passport-holder scarf and presents an official OIDC badge at a cozy npm package-post office, while a CRT monitor robot stamps an @pollinations/sdk alpha parcel; code-plants and a lime-green release conveyor represent the automated publishing path.",
+    "image_prompt": "Cozy pixel art scene of the cute pollinations bee mascot with a tiny passport-holder scarf handing an @pollinations/sdk alpha package to a friendly CRT-monitor robot at a warm little package registry post office, with an official OIDC badge and code-plants growing beside a prominent lime green (#ecf874) release conveyor. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel-font sign reads \"OIDC VERIFIED\", with the bee’s yellow body, dark brown stripes, pink blush, happy smile, and light blue wings clearly visible."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14596.jpg",
+    "prompt": "Cozy pixel art scene of the cute pollinations bee mascot with a tiny passport-holder scarf handing an @pollinations/sdk alpha package to a friendly CRT-monitor robot at a warm little package registry post office, with an official OIDC badge and code-plants growing beside a prominent lime green (#ecf874) release conveyor. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes; subtle pixel-font sign reads \"OIDC VERIFIED\", with the bee’s yellow body, dark brown stripes, pink blush, happy smile, and light blue wings clearly visible."
+  },
+  "generated_at": "2026-09-08T21:53:09.499526+00:00"
+}

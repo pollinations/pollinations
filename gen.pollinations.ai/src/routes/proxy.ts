@@ -57,7 +57,10 @@ import {
     GetModelsResponseSchema,
 } from "@shared/schemas/openai.ts";
 import { SafeSchema } from "@shared/schemas/safety.ts";
-import { errorResponseDescriptions } from "@shared/utils/api-docs.ts";
+import {
+    errorResponseDescriptions,
+    mediaResponseHeaders,
+} from "@shared/utils/api-docs.ts";
 import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
@@ -850,6 +853,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns the generated image",
+                    headers: mediaResponseHeaders,
                     content: {
                         "image/jpeg": {
                             schema: {
@@ -908,6 +912,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns the generated video",
+                    headers: mediaResponseHeaders,
                     content: {
                         "video/mp4": {
                             schema: {
@@ -950,6 +955,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
+                    headers: mediaResponseHeaders,
                     content: {
                         "model/gltf-binary": {
                             schema: {
@@ -985,6 +991,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns the generated 3D model",
+                    headers: mediaResponseHeaders,
                     content: {
                         "model/gltf-binary": {
                             schema: {
@@ -1048,6 +1055,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success - Returns audio data",
+                    headers: mediaResponseHeaders,
                     content: {
                         "audio/mpeg": {
                             schema: { type: "string", format: "binary" },
@@ -1093,6 +1101,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
                             schema: resolver(CreateImageResponseSchema),
@@ -1147,6 +1156,7 @@ export const proxyRoutes = new Hono<Env>()
             responses: {
                 200: {
                     description: "Success",
+                    headers: mediaResponseHeaders,
                     content: {
                         "application/json": {
                             schema: resolver(CreateImageResponseSchema),

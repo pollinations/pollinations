@@ -1,5 +1,6 @@
 import { bytesToHex } from "@shared/client-ip.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -782,7 +783,10 @@ api.on(
             "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
         security: [],
         responses: {
-            200: { description: "File content with appropriate Content-Type" },
+            200: {
+                description: "File content with appropriate Content-Type",
+                headers: mediaResponseHeaders,
+            },
             404: {
                 description: "File not found",
                 content: {

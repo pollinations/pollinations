@@ -9,6 +9,7 @@ import {
     type GenerationCacheAdapter,
     hashGenerationCacheIdentity,
 } from "./generation-cache.ts";
+import { withLegacyMediaCache } from "./legacy-media-cache.ts";
 import { getRequiredSafetyFeatures, type ModelVariables } from "./model.ts";
 
 type MediaCacheConfig = {
@@ -35,7 +36,7 @@ const CACHED_HEADERS = new Set([
 ]);
 
 function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
-    return {
+    return withLegacyMediaCache({
         storage: "media",
         label: config.label,
         async getKey(c) {
@@ -89,7 +90,7 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
                 write: c.env.MEDIA.put(cacheKey, stored),
             };
         },
-    };
+    });
 }
 
 const imageAdapter = mediaCacheAdapter({

@@ -40,6 +40,11 @@ id = "84512601e2a44679a4d3b0f7415d90ec"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
+
 [[durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
 class_name = "PollenRateLimiter"
@@ -143,6 +148,11 @@ entrypoint = "MediaUpload"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[env.production.r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
+
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
@@ -236,6 +246,11 @@ entrypoint = "MediaUpload"
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
 
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[env.staging.r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
+
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
 namespace_id = "1001"
@@ -320,6 +335,11 @@ entrypoint = "MediaUpload"
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[env.test.r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
 
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"

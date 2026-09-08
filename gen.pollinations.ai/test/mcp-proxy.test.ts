@@ -1,7 +1,11 @@
 import { env, SELF } from "cloudflare:test";
 import { getUserBalance } from "@shared/billing/balance.ts";
 import { MCP_USAGE_HEADERS } from "@shared/registry/mcp.ts";
-import { createTestApiKey, test } from "@shared/test/fixtures/index.ts";
+import {
+    createTestApiKey,
+    createTestUser,
+    test,
+} from "@shared/test/fixtures/index.ts";
 import { drizzle } from "drizzle-orm/d1";
 import { expect } from "vitest";
 
@@ -12,6 +16,16 @@ const MCP_REQUEST = {
     params: {
         name: "listModels",
         arguments: {},
+    },
+};
+
+const ROBOTIC_ROBOT_TIME_REQUEST = {
+    jsonrpc: "2.0",
+    id: 1,
+    method: "tools/call",
+    params: {
+        name: "time",
+        arguments: { timezone: "UTC" },
     },
 };
 
@@ -99,6 +113,55 @@ test("lists the MCP servers exposed through Gen", async () => {
                             currency: "pollen",
                             quantity: 1,
                             unit: "call",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "time",
+                name: "Time",
+                description:
+                    "Get the current date and time in any IANA timezone.",
+                url: "https://gen.pollinations.ai/mcp/time",
+                pricing: {
+                    rates: [
+                        {
+                            name: "pollinations.time.v1",
+                            label: "Time",
+                            kind: "tool_call",
+                            price: "0",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "request",
+                        },
+                    ],
+                },
+            },
+            {
+                id: "run-js",
+                name: "Run JS",
+                description:
+                    "Run JavaScript in a network-disabled V8 isolate with selectable RAM and vCPU limits.",
+                url: "https://gen.pollinations.ai/mcp/run-js",
+                pricing: {
+                    rates: [
+                        {
+                            name: "robotic_robot.run_js.0_01_vcpu.v1",
+                            label: "Run JS (0.01 vCPU)",
+                            kind: "compute",
+                            price: "0.000025",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "megabyte_second",
+                        },
+                        {
+                            name: "robotic_robot.run_js.0_025_vcpu.v1",
+                            label: "Run JS (0.025 vCPU)",
+                            kind: "compute",
+                            price: "0.0000625",
+                            currency: "pollen",
+                            quantity: 1,
+                            unit: "megabyte_second",
                         },
                     ],
                 },
@@ -236,6 +299,83 @@ test("routes Composio with the authenticated user", async () => {
         jsonrpc: "2.0",
         id: 1,
         result: { content: [{ type: "text", text: userId }] },
+    });
+});
+
+test.each([
+    {
+        name: "Time from Quest",
+        endpoint: "time",
+        request: ROBOTIC_ROBOT_TIME_REQUEST,
+        user: { tierBalance: 1, packBalance: 0 },
+        expected: { tierBalance: 1, packBalance: 0 },
+    },
+    {
+        name: "Time from Paid",
+        endpoint: "time",
+        request: ROBOTIC_ROBOT_TIME_REQUEST,
+        user: { tierBalance: 0, packBalance: 1 },
+        expected: { tierBalance: 0, packBalance: 1 },
+    },
+    {
+        name: "Run JS from Quest",
+        endpoint: "run-js",
+        request: {
+            ...ROBOTIC_ROBOT_TIME_REQUEST,
+            params: { name: "run-js", arguments: { code: "1 + 1" } },
+        },
+        user: { tierBalance: 1, packBalance: 0 },
+        expected: { tierBalance: 0.9992, packBalance: 0 },
+    },
+    {
+        name: "Run JS from Paid",
+        endpoint: "run-js",
+        request: {
+            ...ROBOTIC_ROBOT_TIME_REQUEST,
+            params: { name: "run-js", arguments: { code: "1 + 1" } },
+        },
+        user: { tierBalance: 0, packBalance: 1 },
+        expected: { tierBalance: 0, packBalance: 0.9992 },
+    },
+])("charges $name without publisher payouts", async ({
+    endpoint,
+    request,
+    user,
+    expected,
+}) => {
+    const ownerId = await createTestUser({
+        githubId: 85689068,
+        githubUsername: "pegalink",
+    });
+    const { key, userId } = await createTestApiKey({ user });
+    const response = await SELF.fetch(
+        `https://gen.pollinations.ai/mcp/${endpoint}`,
+        {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${key}`,
+                Cookie: "session=private",
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+        },
+    );
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+        jsonrpc: "2.0",
+        id: 1,
+        result: {
+            content: [{ type: "text", text: "robotic robot proxied" }],
+        },
+    });
+    for (const header of Object.values(MCP_USAGE_HEADERS)) {
+        expect(response.headers.has(header)).toBe(false);
+    }
+    expect(await getUserBalance(drizzle(env.DB), userId)).toEqual(expected);
+    expect(await getUserBalance(drizzle(env.DB), ownerId)).toEqual({
+        tierBalance: 0,
+        packBalance: 0,
     });
 });
 

@@ -46,7 +46,7 @@ function requestForMcp(
     const url = new URL(request.url);
     url.protocol = "https:";
     url.host = "mcp.internal";
-    url.pathname = "/";
+    url.pathname = server.proxyPath ?? "/";
     return new Request(url, {
         method: request.method,
         headers,

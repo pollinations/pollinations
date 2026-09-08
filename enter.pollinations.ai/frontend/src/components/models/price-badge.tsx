@@ -83,6 +83,7 @@ const formatAdjustmentUnit = ({
     }
     if (quantity === 1) {
         if (unit === "second") return "sec";
+        if (unit === "megabyte_second") return "MB/sec";
         if (unit === "page") return "page";
         if (unit === "generation") return "gen";
     }

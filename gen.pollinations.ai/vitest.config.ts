@@ -318,6 +318,66 @@ export default defineConfig(async ({ mode }) => {
                                     },
                                 });
                             },
+                            ROBOTIC_ROBOT_MCP: async (request: Request) => {
+                                const pathname = new URL(request.url).pathname;
+                                if (
+                                    request.headers.has("authorization") ||
+                                    request.headers.has("cookie")
+                                ) {
+                                    return new Response(
+                                        "Caller credentials reached MCP",
+                                        { status: 500 },
+                                    );
+                                }
+                                const payload = (await request.json()) as {
+                                    jsonrpc: string;
+                                    id?: string | number;
+                                    method?: string;
+                                };
+                                const headers = new Headers({
+                                    "Content-Type": "application/json",
+                                });
+                                if (
+                                    payload.method === "tools/call" &&
+                                    pathname === "/run-js"
+                                ) {
+                                    headers.set(
+                                        "x-pollinations-mcp-cost",
+                                        "0.0008",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-tool",
+                                        "run-js",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-status",
+                                        "200",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-id",
+                                        "robotic_robot.run_js.0_01_vcpu.v1",
+                                    );
+                                    headers.set(
+                                        "x-pollinations-mcp-adjustment-units",
+                                        "1",
+                                    );
+                                }
+                                return Response.json(
+                                    {
+                                        jsonrpc: payload.jsonrpc,
+                                        id: payload.id,
+                                        result: {
+                                            content: [
+                                                {
+                                                    type: "text",
+                                                    text: "robotic robot proxied",
+                                                },
+                                            ],
+                                        },
+                                    },
+                                    { headers },
+                                );
+                            },
                         },
                     },
                 },

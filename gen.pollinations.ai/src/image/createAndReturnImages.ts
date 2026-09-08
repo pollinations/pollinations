@@ -1018,9 +1018,11 @@ export async function createAndReturnImageCached(
         const { buffer: _buffer, ...maturity } = result;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
-        // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
+        // Preserve vector output and PNG alpha; JPEG conversion flattens transparency.
         const processedBuffer =
-            result.mimeType === "image/svg+xml"
+            result.mimeType === "image/svg+xml" ||
+            (safeParams.transparent &&
+                detectMimeType(result.buffer) === "image/png")
                 ? result.buffer
                 : await processImageBuffer(
                       result.buffer,

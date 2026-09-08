@@ -398,6 +398,10 @@ describe("community endpoint OpenAI service", () => {
             const url = input instanceof Request ? input.url : String(input);
             if (url.endsWith("/images/edits")) {
                 editRequested = true;
+                const request = new Request(input, init);
+                const form = await request.formData();
+                expect(form.get("model")).toBe("gpt-image-1");
+                expect(form.get("image")).toBeInstanceOf(File);
                 return Response.json({
                     data: [{ b64_json: "iVBORw0KGgo=" }],
                 });
@@ -462,15 +466,17 @@ describe("community endpoint OpenAI service", () => {
         expect(editRequested).toBe(true);
     });
 
-    it("accepts generation-only image endpoints without OpenAI token usage", async () => {
+    it.each([
+        [405, "Not supported"],
+        [500, "Image edit failed"],
+        [400, "Missing model parameter"],
+        [429, "Quota exceeded"],
+    ])("preserves generation success and edit failure details for HTTP %i", async (status, message) => {
         vi.stubGlobal(
             "fetch",
             vi.fn(async (input) => {
                 if (String(input).endsWith("/images/edits")) {
-                    return Response.json(
-                        { error: { message: "Not supported" } },
-                        { status: 405 },
-                    );
+                    return Response.json({ error: { message } }, { status });
                 }
                 return Response.json({
                     data: [{ b64_json: "iVBORw0KGgo=" }],
@@ -489,6 +495,59 @@ describe("community endpoint OpenAI service", () => {
             billableUsage: { completionImageTokens: 1 },
             imagePricing: "request",
             inputModalities: ["text"],
+            imageEditError: `Endpoint responded ${status}: ${message}`,
+        });
+    });
+
+    it.each([
+        ["missing image", { data: [] }],
+        ["invalid image", { data: [{ b64_json: "bm90IGFuIGltYWdl" }] }],
+    ])("reports an editing response with %s without failing generation", async (_, editResponse) => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input) =>
+                Response.json(
+                    String(input).endsWith("/images/edits")
+                        ? editResponse
+                        : { data: [{ b64_json: "iVBORw0KGgo=" }] },
+                ),
+            ),
+        );
+        await expect(
+            testCommunityImageEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-image-1",
+            }),
+        ).resolves.toMatchObject({
+            billableUsage: { completionImageTokens: 1 },
+            inputModalities: ["text"],
+            imageEditError: "Editing endpoint did not return a supported image",
+        });
+    });
+
+    it("preserves generation success when the edit request times out", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input) => {
+                if (String(input).endsWith("/images/edits")) {
+                    throw new DOMException("Probe timed out", "TimeoutError");
+                }
+                return Response.json({
+                    data: [{ b64_json: "iVBORw0KGgo=" }],
+                });
+            }),
+        );
+        await expect(
+            testCommunityImageEndpoint({
+                baseUrl: "https://api.example.com/v1",
+                bearerToken: "sk_saved_token",
+                model: "gpt-image-1",
+            }),
+        ).resolves.toMatchObject({
+            billableUsage: { completionImageTokens: 1 },
+            inputModalities: ["text"],
+            imageEditError: "Endpoint request timed out or could not connect",
         });
     });
 

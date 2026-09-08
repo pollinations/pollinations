@@ -45,7 +45,8 @@ integration identifier is sent as `client_id` for attribution.
    the account's `/image/models` catalog, including community image models.
    Editing only offers models advertising image input. Resolution controls
    appear only when the model advertises resolutions; other options use the
-   provider defaults. Generation may take several minutes.
+   provider defaults. Generation may take several minutes and has no fixed
+   client timeout; account and catalog requests retain their 30-second timeout.
 4. **Disconnect Account** removes the saved authorization on this computer.
    To revoke it server-side as well, use the account's Keys page.
 
@@ -59,7 +60,7 @@ displayed in error dialogs.
 
 Expired authorization prompts reconnection; denied model access prompts a
 permission check; insufficient Pollen prompts a balance/budget check. After a
-generation timeout, check account activity before retrying, as the request may
+network interruption, check account activity before retrying, as the request may
 have completed remotely. Network work stays off the GTK thread.
 
 ## Verification

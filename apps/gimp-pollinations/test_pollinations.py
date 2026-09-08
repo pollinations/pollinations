@@ -7,6 +7,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest.mock import patch
 
 import pollinations_api as api
 from token_store import TokenStore
@@ -81,6 +82,18 @@ class TransportTests(unittest.TestCase):
             with self.subTest(kwargs=kwargs), self.assertRaises(api.ApiError):
                 api.generate("sk_test", model, **({"prompt": "test"} | kwargs))
         self.assertEqual(self.server.requests, [])
+
+    def test_generation_waits_without_deadline_but_catalog_remains_bounded(self):
+        # Spy on the real localhost transport: both generation routes must
+        # override urllib's default timeout, without unbounding metadata calls.
+        with patch.object(api.urllib.request, "urlopen", wraps=api.urllib.request.urlopen) as opened:
+            for source in (None, b"png-source"):
+                self.reply({"data": [{"b64_json": base64.b64encode(b"result").decode()}]})
+                self.assertEqual(api.generate("sk_test", {"name": "image", "input_modalities": ["image"]}, "prompt", source=source), b"result")
+                self.assertIsNone(opened.call_args.kwargs["timeout"])
+            self.reply([{"name": "image", "output_modalities": ["image"]}])
+            api.load_models("sk_test")
+            self.assertEqual(opened.call_args.kwargs["timeout"], 30)
 
     def test_errors_do_not_echo_credentials(self):
         for status in [400, 401, 402, 403, 429, 500]:

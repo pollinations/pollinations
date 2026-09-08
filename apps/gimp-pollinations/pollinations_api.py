@@ -126,7 +126,9 @@ def generate(token, model, prompt, resolution=None, source=None):
             raise ApiError("Choose a model that supports image input.")
         payload["image"] = "data:image/png;base64," + base64.b64encode(source).decode("ascii")
         route = "/v1/images/edits"
-    result = request_json(GEN + route, payload, token, timeout=600)
+    # Durable generations may legitimately outlive a fixed client deadline.
+    # Keep waiting for the result; do not disconnect and encourage a paid retry.
+    result = request_json(GEN + route, payload, token, timeout=None)
     try:
         encoded = result["data"][0]["b64_json"]
         data = base64.b64decode(encoded, validate=True)

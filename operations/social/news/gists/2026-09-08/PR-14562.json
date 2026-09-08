@@ -1,0 +1,35 @@
+{
+  "pr_number": 14562,
+  "title": "docs: update README — 2026-09-08",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14562",
+  "merged_at": "2026-09-08T07:23:02Z",
+  "labels": [
+    "NEWS"
+  ],
+  "pr_body_excerpt": "Daily README update: Latest News and star history. Recent Apps is refreshed when an app is published.",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The stars keep blooming",
+    "blurb": "The README’s little constellation got its daily tending. Star-history charts are freshly watered and ready to show the hive’s growth.",
+    "summary": "Refreshed the light and dark GitHub star-history SVG charts used in the project’s README for the 2026-09-08 daily news update.",
+    "impact": "Visitors checking the README now see an up-to-date view of pollinations.ai’s GitHub star growth in both color themes.",
+    "keywords": [
+      "readme",
+      "github",
+      "star-history",
+      "news",
+      "community"
+    ],
+    "visual_concept": "A cozy garden observatory where Polli updates a pair of glowing star charts on a retro CRT display, with tiny pixel stars blooming like flowers. The scene represents the README’s refreshed community-growth history rather than a product feature.",
+    "image_prompt": "Cozy pixel art scene of the cute pollinations.ai bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny astronomer glasses as she pins fresh star-history charts beside a glowing retro CRT monitor; pixel stars bloom from little code-flower pots around her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"STARS\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14562.jpg",
+    "prompt": "Cozy pixel art scene of the cute pollinations.ai bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny astronomer glasses as she pins fresh star-history charts beside a glowing retro CRT monitor; pixel stars bloom from little code-flower pots around her. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"STARS\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-08T21:48:55.824868+00:00"
+}

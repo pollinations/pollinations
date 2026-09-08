@@ -9,7 +9,6 @@ import {
 } from "@pollinations/ui";
 import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
-import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityFilter,
     CsvDownloadButton,
@@ -62,7 +61,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
         chartData,
         hasData,
         stats,
-        exportRows,
+        hasPeriodData,
     } = useUsageData(filters);
 
     const keySelectOptions = usedApiKeys.map((k) => ({
@@ -81,8 +80,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
         value: m.id,
         label: m.label,
     }));
-    const hasUsageData = stats.totalRequests > 0;
-    const downloadDisabled = loading || !hasUsageData;
+    const downloadDisabled = loading || !hasPeriodData;
     const downloadDisabledReason = loading
         ? "Loading usage data"
         : "No transactions to download for this selected period";
@@ -90,34 +88,12 @@ export const UsageSection: FC<UsageSectionProps> = ({
     function downloadDetailedUsage(): void {
         if (downloadDisabled) return;
 
-        if (period.bucket !== undefined) {
-            downloadActivityCsv(
-                `usage-summary-${period.period}-${period.bucket}`,
-                [
-                    "date",
-                    "api_key",
-                    "model",
-                    "meter_source",
-                    "requests",
-                    "cost_usd",
-                ],
-                exportRows,
-            );
-            return;
-        }
         const params = new URLSearchParams({
             format: "csv",
             granularity: period.granularity,
             period: period.period,
             limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
         });
-        if (selectedKeyIds.length > 0) {
-            params.set("api_key_ids", selectedKeyIds.join(","));
-        }
-        if (selectedModels.length > 0) {
-            params.set("models", selectedModels.join(","));
-        }
-
         downloadFile(`/api/account/usage?${params.toString()}`);
     }
 
@@ -142,9 +118,6 @@ export const UsageSection: FC<UsageSectionProps> = ({
                         disabled={downloadDisabled}
                         disabledReason={downloadDisabledReason}
                         onClick={downloadDetailedUsage}
-                        label={
-                            period.bucket !== undefined ? "Summary CSV" : "CSV"
-                        }
                     />
                 }
             >

@@ -222,7 +222,7 @@ export const Chart: FC<ChartProps> = ({
                 viewBox={`0 0 ${width} ${height}`}
                 className="overflow-visible"
                 role="group"
-                aria-label={`${label} chart. Use arrow keys to move between bars and Enter or Space to filter the table. Select again, press Escape within this card, or use Show full period to clear selection.`}
+                aria-label={`${label} chart. Use arrow keys to move between bars and Enter or Space to filter the table. Select again or press Escape within this card to clear selection.`}
             >
                 {/* Grid lines */}
                 {yTicks.map((t) => (
@@ -357,7 +357,7 @@ export const Chart: FC<ChartProps> = ({
                                 tabIndex={index === activeIndex ? 0 : -1}
                                 onFocus={() => setFocusedIndex(index)}
                                 aria-disabled={!canSelect(bar)}
-                                aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)} ${metric}. ${selected ? "Show full period" : "Filter table"}`}
+                                aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)} ${metric}. ${selected ? "Clear selection" : "Filter table"}`}
                                 className="outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-theme-text-muted"
                                 style={{
                                     cursor: canSelect(bar)

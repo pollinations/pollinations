@@ -25,7 +25,7 @@ type UsageDataResult = {
     usedApiKeys: { id: string; label: string }[];
     chartData: DataPoint[];
     hasData: boolean;
-    exportRows: DailyUsageRecord[];
+    hasPeriodData: boolean;
     stats: {
         totalRequests: number;
         totalPollen: number;
@@ -109,7 +109,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             .sort((a, b) => a.label.localeCompare(b.label));
     }, [dailyUsage]);
 
-    const { chartData, stats, exportRows, hasData } = useMemo(() => {
+    const { chartData, stats, hasData } = useMemo(() => {
         const selectedKeyIds = filters.selectedKeyIds;
         const selectedModels = filters.selectedModels;
         const filtered = dailyUsage.filter((r: DailyUsageRecord) => {
@@ -253,7 +253,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         return {
             chartData: sorted,
             hasData: filtered.length > 0,
-            exportRows: selectedRows,
             stats: {
                 totalRequests: totalReq,
                 totalPollen,
@@ -289,6 +288,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         chartData,
         hasData,
         stats,
-        exportRows,
+        hasPeriodData: dailyUsage.length > 0,
     };
 }

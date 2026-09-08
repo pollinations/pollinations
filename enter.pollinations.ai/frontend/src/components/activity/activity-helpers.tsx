@@ -85,14 +85,12 @@ export function clearActivitySelectionOnEscape(
 }
 
 type CsvDownloadButtonProps = {
-    label?: string;
     disabled: boolean;
     disabledReason: string;
     onClick: () => void;
 };
 
 export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
-    label = "CSV",
     disabled,
     disabledReason,
     onClick,
@@ -106,7 +104,7 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             className="gap-2 whitespace-nowrap"
         >
             <DownloadIcon className="h-4 w-4 shrink-0" />
-            {label}
+            CSV
         </Button>
     );
 

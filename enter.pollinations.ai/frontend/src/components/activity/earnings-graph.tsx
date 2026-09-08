@@ -80,8 +80,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     }));
 
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
-    const downloadDisabled =
-        loading || (stats.totalRequests === 0 && stats.totalPollen === 0);
+    const downloadDisabled = loading || exportRows.length === 0;
     const downloadDisabledReason = loading
         ? "Loading earnings data"
         : "No earnings to download for this selected period";
@@ -90,7 +89,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         if (downloadDisabled) return;
 
         downloadActivityCsv(
-            `earnings-${period.period}${period.bucket !== undefined ? `-${period.bucket}` : ""}`,
+            `earnings-${period.period}`,
             [
                 "date",
                 "source",

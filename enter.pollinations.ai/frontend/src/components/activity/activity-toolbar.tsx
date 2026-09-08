@@ -1,4 +1,3 @@
-import { Button } from "@pollinations/ui";
 import type { FC, ReactNode } from "react";
 import type { ActivityPeriod } from "./activity-period";
 import { ActivityPeriodNavigation } from "./activity-period-navigation";
@@ -30,19 +29,6 @@ export const ActivityToolbar: FC<{
                     value={period}
                     onChange={onPeriodChange}
                 />
-                {period.bucket && (
-                    <div data-theme="neutral">
-                        <Button
-                            size="sm"
-                            aria-label={`Show full ${label.toLowerCase()} period`}
-                            onClick={() =>
-                                onPeriodChange({ ...period, bucket: undefined })
-                            }
-                        >
-                            Show full period
-                        </Button>
-                    </div>
-                )}
             </div>
             <div data-theme="neutral" className="shrink-0">
                 {download}

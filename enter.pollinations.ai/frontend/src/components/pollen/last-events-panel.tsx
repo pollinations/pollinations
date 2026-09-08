@@ -18,7 +18,7 @@ import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
 import type { EarningsSource } from "../activity/use-earnings-data.ts";
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
 const TABLE_HEADER_CELL_CLASS = "px-2 py-1.5";
 const TABLE_CELL_CLASS = "px-2 py-1.5 text-xs";
@@ -373,7 +373,7 @@ export const LastEventsPanel: FC = () => {
                             disabled={state.loading}
                             className="self-start sm:self-auto"
                         >
-                            {loadingMore ? "Loading…" : "Load more"}
+                            {loadingMore ? "Loading…" : "Show more"}
                         </Button>
                     )}
                 </div>

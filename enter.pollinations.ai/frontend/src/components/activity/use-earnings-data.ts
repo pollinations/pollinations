@@ -310,7 +310,7 @@ export function useEarningsData(
         usedModels,
         chartData,
         stats,
-        exportRows: selectedEarnings,
+        exportRows: dailyEarnings,
         hasData: filteredDailyEarnings.length > 0,
     };
 }

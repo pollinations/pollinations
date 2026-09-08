@@ -30,7 +30,7 @@ jobs:
     outputs:
       authorized: ${{ steps.authorize.outputs.authorized }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
@@ -61,7 +61,7 @@ jobs:
     env:
       POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: token
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -190,11 +190,14 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
-      - uses: actions/checkout@v4
+      # Start from trusted configuration. The assistant action checks out the
+      # target PR itself and restores its configuration from the base branch.
+      - name: Checkout trusted base
+        uses: actions/checkout@v5
         if: needs.authorize-write.outputs.authorized == 'true'
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || (github.event.issue.pull_request && format('refs/pull/{0}/head', github.event.issue.number)) || github.sha }}
+          ref: ${{ github.event.repository.default_branch }}
           repository: ${{ github.repository }}
           token: ${{ steps.token.outputs.token }}
 

@@ -1,4 +1,5 @@
 import { bytesToHex } from "@shared/client-ip.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -33,7 +34,6 @@ const DOMAIN = "media.pollinations.ai";
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
 // IDs can be reused after expiry; neither should remain in downstream caches.
-const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const UNCACHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 

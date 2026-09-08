@@ -1,9 +1,11 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
-import { GENERATED_MEDIA_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import {
+    GENERATED_MEDIA_CACHE_CONTROL,
+    IMMUTABLE_CACHE_CONTROL,
+} from "@shared/http/cache-control.ts";
 import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 
 const DEFAULT_MAX_SIZE = 100 * 1024 * 1024;
-const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 type MediaStorageEnv = {
     MEDIA_BUCKET: R2Bucket;

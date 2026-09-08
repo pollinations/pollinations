@@ -1,5 +1,6 @@
 import { bytesToHex } from "@shared/client-ip.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
+import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
+import { mediaResponseHeaders } from "@shared/utils/api-docs.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -24,6 +25,8 @@ import {
     tagsForItems,
 } from "./catalog.ts";
 
+import { readMedia } from "./media-upload.ts";
+
 export { MediaUpload } from "./media-upload.ts";
 
 const DOMAIN = "media.pollinations.ai";
@@ -32,7 +35,6 @@ const DOMAIN = "media.pollinations.ai";
 const KEY_VERIFY_URL = "https://gen.pollinations.ai/account/key";
 // Random unlisted IDs are immutable. Tagged uploads can be deleted, and custom
 // IDs can be reused after expiry; neither should remain in downstream caches.
-const IMMUTABLE_CACHE_CONTROL = "public, max-age=31536000, immutable";
 const UNCACHED_CACHE_CONTROL = "no-store";
 const DEFAULT_MAX_SIZE = 104857600; // 100 MB
 
@@ -771,15 +773,20 @@ api.delete(
     },
 );
 
-api.get(
+api.on(
+    ["GET", "HEAD"],
     "/:id",
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
-        description: "Get a file by its id. Access keeps files from expiring.",
+        description:
+            "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
         security: [],
         responses: {
-            200: { description: "File content with appropriate Content-Type" },
+            200: {
+                description: "File content with appropriate Content-Type",
+                headers: mediaResponseHeaders,
+            },
             404: {
                 description: "File not found",
                 content: {
@@ -792,45 +799,16 @@ api.get(
         const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.get(id);
-
-            if (!object) {
+            const response = await readMedia(
+                c.env,
+                id,
+                c.executionCtx,
+                c.req.method,
+            );
+            if (!response) {
                 return c.json({ error: "Not found" }, 404);
             }
-
-            const headers = new Headers();
-            headers.set(
-                "Content-Type",
-                object.httpMetadata?.contentType || "application/octet-stream",
-            );
-            headers.set(
-                "Cache-Control",
-                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
-            );
-            headers.set("X-Content-Id", id);
-            headers.set("X-Content-Size", object.size.toString());
-
-            const originalName = object.customMetadata?.originalName;
-            if (originalName) {
-                // RFC 5987: use filename* with UTF-8 encoding to safely handle any characters
-                const sanitized = encodeURIComponent(originalName);
-                headers.set(
-                    "Content-Disposition",
-                    `inline; filename*=UTF-8''${sanitized}`,
-                );
-            }
-
-            const responseBody = refreshR2ObjectTtl(
-                c.env.MEDIA_BUCKET,
-                id,
-                object,
-                (promise) => c.executionCtx.waitUntil(promise),
-                (error) => {
-                    console.error("TTL refresh error:", error);
-                },
-            );
-
-            return new Response(responseBody, { headers });
+            return response;
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);
@@ -894,56 +872,6 @@ api.get(
     },
 );
 
-api.on(
-    "HEAD",
-    "/:id",
-    describeRoute({
-        tags: ["media.pollinations.ai"],
-        summary: "Check if media exists",
-        description:
-            "Check existence and metadata without downloading the file.",
-        security: [],
-        responses: {
-            200: {
-                description:
-                    "File exists (headers include Content-Type, Content-Length, X-Content-Id)",
-            },
-            404: { description: "File not found" },
-        },
-    }),
-    async (c) => {
-        const id = c.req.param("id");
-
-        try {
-            const object = await c.env.MEDIA_BUCKET.head(id);
-
-            if (!object) {
-                return new Response(null, { status: 404 });
-            }
-
-            const headers = new Headers();
-            headers.set(
-                "Content-Type",
-                object.httpMetadata?.contentType || "application/octet-stream",
-            );
-            headers.set("Content-Length", object.size.toString());
-            headers.set(
-                "Cache-Control",
-                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
-            );
-            headers.set("X-Content-Id", id);
-
-            if (object.customMetadata?.uploadedAt) {
-                headers.set("X-Uploaded-At", object.customMetadata.uploadedAt);
-            }
-
-            return new Response(null, { status: 200, headers });
-        } catch {
-            return new Response(null, { status: 500 });
-        }
-    },
-);
-
 const app = new Hono<{ Bindings: Env }>();
 
 app.use(
@@ -952,7 +880,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Id", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Id", "X-Content-Size", "Link"],
     }),
 );
 

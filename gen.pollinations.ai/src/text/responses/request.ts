@@ -1,5 +1,4 @@
 import type { CreateResponseRequest } from "@shared/schemas/openai.ts";
-import { stripSamplingParameters } from "../transforms/parameterProcessor.js";
 import {
     cleanNullAndUndefined,
     isPlainObject,
@@ -55,12 +54,12 @@ export function buildDirectResponsesRequestBody(
     request: CreateResponseRequest,
     target: DirectResponsesTarget,
 ): Record<string, unknown> {
-    const body = stripSamplingParameters(target.model, {
+    const body: Record<string, unknown> = {
         ...target.defaults,
         ...request,
         model: target.model,
         store: false,
-    });
+    };
     delete body.safe;
 
     const toolChoice = body.tool_choice;

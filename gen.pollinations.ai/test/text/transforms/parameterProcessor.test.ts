@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
+import { findModelByName } from "../../../src/text/availableModels.js";
 import { processParameters } from "../../../src/text/transforms/parameterProcessor.js";
+import {
+    omitParameters,
+    preferTemperature,
+} from "../../../src/text/transforms/parameterTransforms.js";
+import { pipe } from "../../../src/text/transforms/pipe.js";
 import { resolveModelConfig } from "../../../src/text/utils/modelResolver.js";
 
 const messages = [{ role: "user" as const, content: "hello" }];
@@ -78,175 +84,198 @@ describe("processParameters", () => {
         expect(result.options.stream_options).toEqual({ include_usage: true });
     });
 
-    it.each([
-        "gpt-5.5",
-        "gpt-5.6-sol",
-        "gpt-6-astra",
-        "gpt-6-astra-datazone",
-        "openai/gpt-6-astra",
-        "o3",
-    ])("normalizes unsupported sampling parameters for %s", (model) => {
-        const result = processParameters(messages, {
-            model,
-            temperature: 0.7,
-            top_p: 0.9,
-            frequency_penalty: 0.5,
-            presence_penalty: 0.5,
-            top_k: 40,
-            seed: 42,
-            repetition_penalty: 1.1,
-            modelConfig: {
-                provider: "azure-openai",
-                "azure-deployment-id": model,
-            },
-            modelDef,
-        });
-
-        expect(result.options.temperature).toBeUndefined();
-        expect(result.options.top_p).toBeUndefined();
-        expect(result.options.frequency_penalty).toBeUndefined();
-        expect(result.options.presence_penalty).toBeUndefined();
-        expect(result.options.top_k).toBeUndefined();
-        expect(result.options.seed).toBeUndefined();
-        expect(result.options.repetition_penalty).toBeUndefined();
-    });
-
-    it.each([
-        undefined,
-        "none",
-        "high",
-    ])("uses the same sampling policy with reasoning_effort=%s", (reasoning_effort) => {
-        const options = {
-            model: "openai/gpt-5.4",
-            temperature: 0.7,
-            top_p: 0.9,
-            reasoning_effort,
-            max_tokens: 128,
-            stop: ["END"],
-            logprobs: true,
-        };
-        const resolved = resolveModelConfig(messages, options);
-        const result = processParameters(resolved.messages, resolved.options);
-        expect(result.options.temperature).toBeUndefined();
-        expect(result.options.top_p).toBeUndefined();
-        expect(result.options).toMatchObject({
-            max_completion_tokens: 128,
-            stop: ["END"],
-            logprobs: true,
-        });
-        expect(result.options.reasoning_effort).toBe(reasoning_effort);
-        expect(options.temperature).toBe(0.7);
-        expect(result.messages).toBe(messages);
-    });
-
-    it.each([
-        "openai/gpt-6-astra",
-        "openai/gpt-5.6-luna",
-        "gpt-5.6-luna",
-    ])("strips sampling after resolving catalog model %s", (model) => {
-        const resolved = resolveModelConfig(messages, {
-            model,
-            temperature: 0.7,
-        });
-        expect(
-            processParameters(resolved.messages, resolved.options).options,
-        ).not.toHaveProperty("temperature");
-    });
-
     it("omits stream_options when not streaming", () => {
         const result = processParameters(messages, {
             model: "gpt-oss-20b",
             stream: false,
             stream_options: { include_usage: true },
-            modelConfig: { provider: "fireworks-ai" },
+            modelConfig: { provider: "openai" },
             modelDef,
         });
         expect(result.options).not.toHaveProperty("stream_options");
     });
 
-    it.each([
-        "gpt-4.1",
-        "gpt-oss-20b",
-        "google/gemini-2.5-flash-lite",
-        "deepseek-v4-flash",
-        "qwen/qwen3.7-plus",
-        "mistralai/mistral-large-2512",
-    ])("keeps sampling parameters for %s", (model) => {
-        const result = processParameters(messages, {
-            model,
+    it("composes immutable parameter transforms without inspecting model names", async () => {
+        const options = Object.freeze({
+            model: "arbitrary-model",
             temperature: 0.7,
             top_p: 0.9,
-            top_k: 40,
             seed: 42,
-            repetition_penalty: 1.1,
-            frequency_penalty: 0.5,
-            presence_penalty: 0.5,
-            modelConfig: { provider: "openai" },
-            modelDef,
+            reasoning_effort: "high",
+            max_tokens: 128,
+            stop: ["END"],
         });
-
-        expect(result.options.temperature).toBe(0.7);
-        expect(result.options.top_p).toBe(0.9);
-        expect(result.options.top_k).toBe(40);
-        expect(result.options.seed).toBe(42);
-        expect(result.options.repetition_penalty).toBe(1.1);
-        expect(result.options.frequency_penalty).toBe(0.5);
-        expect(result.options.presence_penalty).toBe(0.5);
+        const transform = pipe(omitParameters("seed"), preferTemperature);
+        const result = await transform(messages, options);
+        expect(result.options).toEqual({
+            model: "arbitrary-model",
+            temperature: 0.7,
+            reasoning_effort: "high",
+            max_tokens: 128,
+            stop: ["END"],
+        });
+        expect(result.messages).toBe(messages);
+        expect(options.seed).toBe(42);
+        expect(options.top_p).toBe(0.9);
     });
 
     it.each([
-        "us.anthropic.claude-opus-4-7",
-        "global.anthropic.claude-opus-4-8",
-        "global.anthropic.claude-opus-5",
-        "global.anthropic.claude-fable-5",
-        "global.anthropic.claude-fable-5-1",
-        "global.anthropic.claude-sonnet-5",
-        "anthropic/claude-opus-4.7",
-    ])("strips temperature/top_p/top_k for %s", (model) => {
-        const result = processParameters(messages, {
-            model,
-            temperature: 0.7,
-            top_p: 0.9,
-            top_k: 40,
-            modelConfig: { provider: "bedrock" },
-            modelDef,
-        });
-
-        expect(result.options.temperature).toBeUndefined();
-        expect(result.options.top_p).toBeUndefined();
-        expect(result.options.top_k).toBeUndefined();
+        "openai/gpt-5.4-nano",
+        "openai/gpt-5-nano",
+        "openai/gpt-5.4",
+        "openai/gpt-5.4-mini",
+        "openai/gpt-5.5",
+        "openai/gpt-5.6-sol",
+        "openai/gpt-5.6-terra",
+        "openai/gpt-5.6-luna",
+        "openai/gpt-6-astra",
+        "pollinations/midijourney",
+        "pollinations/midijourney-large",
+    ])("removes sampling without changing reasoning or reintroducing defaults for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error("expected catalog transform");
+        for (const reasoning_effort of [
+            undefined,
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ]) {
+            for (const stream of [false, true]) {
+                const options = {
+                    model,
+                    reasoning_effort,
+                    stream,
+                    temperature: 0.7,
+                    top_p: 0.9,
+                    top_k: 40,
+                    seed: 42,
+                    frequency_penalty: 0.5,
+                    presence_penalty: 0.5,
+                    repetition_penalty: 1.1,
+                    max_tokens: 128,
+                    stop: ["END"],
+                    logprobs: true,
+                };
+                const transformed = await transform(messages, options);
+                const resolved = resolveModelConfig(
+                    transformed.messages,
+                    transformed.options,
+                );
+                const result = processParameters(
+                    resolved.messages,
+                    resolved.options,
+                );
+                for (const key of [
+                    "temperature",
+                    "top_p",
+                    "top_k",
+                    "seed",
+                    "frequency_penalty",
+                    "presence_penalty",
+                    "repetition_penalty",
+                ]) {
+                    expect(result.options).not.toHaveProperty(key);
+                }
+                expect(result.options.reasoning_effort).toBe(reasoning_effort);
+                expect(result.options).toMatchObject({
+                    stream,
+                    max_completion_tokens: 128,
+                    stop: ["END"],
+                    logprobs: true,
+                });
+                expect(result.options.stream_options).toEqual(
+                    stream ? { include_usage: true } : undefined,
+                );
+                expect(options.temperature).toBe(0.7);
+            }
+        }
     });
 
-    it("drops top_p when temperature is also set for Bedrock Claude models", () => {
-        const both = processParameters(messages, {
-            model: "global.anthropic.claude-sonnet-4-6",
+    it.each([
+        "anthropic/claude-sonnet-5",
+        "anthropic/claude-opus-4.7",
+        "anthropic/claude-opus-4.7:openrouter:vertex-global",
+        "anthropic/claude-opus-5",
+        "anthropic/claude-fable-5",
+        "anthropic/claude-fable-5:openrouter:vertex-global",
+        "anthropic/claude-fable-5.1",
+    ])("removes sampling while keeping the model's existing thinking behavior for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error("expected catalog transform");
+        for (const reasoning_effort of [
+            undefined,
+            "none",
+            "minimal",
+            "low",
+            "medium",
+            "high",
+            "xhigh",
+            "max",
+        ]) {
+            const options = { model, reasoning_effort, max_tokens: 16000 };
+            const baseline = await transform(messages, options);
+            const withSampling = await transform(messages, {
+                ...options,
+                temperature: 0.7,
+                top_p: 0.9,
+                top_k: 40,
+            });
+            expect(withSampling).toEqual(baseline);
+            const resolved = resolveModelConfig(
+                withSampling.messages,
+                withSampling.options,
+            );
+            const result = processParameters(
+                resolved.messages,
+                resolved.options,
+            );
+            expect(result.options).not.toHaveProperty("temperature");
+            expect(result.options).not.toHaveProperty("top_p");
+            expect(result.options).not.toHaveProperty("top_k");
+        }
+    });
+
+    it.each([
+        "anthropic/claude-haiku-4.5",
+        "anthropic/claude-sonnet-4.6",
+        "anthropic/claude-opus-4.6",
+    ])("keeps the existing temperature preference for %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error("expected catalog transform");
+        const both = await transform(messages, {
             temperature: 0.7,
             top_p: 0.9,
-            modelConfig: { provider: "bedrock" },
-            modelDef,
         });
-
-        expect(both.options.top_p).toBeUndefined();
         expect(both.options.temperature).toBe(0.7);
-
-        const topPOnly = processParameters(messages, {
-            model: "global.anthropic.claude-sonnet-4-6",
-            top_p: 0.9,
-            modelConfig: { provider: "bedrock" },
-            modelDef,
-        });
-
+        expect(both.options).not.toHaveProperty("top_p");
+        const topPOnly = await transform(messages, { top_p: 0.9 });
         expect(topPOnly.options.top_p).toBe(0.9);
     });
 
-    it("does not strip temperature for Claude Opus 4.6", () => {
-        const result = processParameters(messages, {
-            model: "us.anthropic.claude-opus-4-6-v1",
-            temperature: 0.7,
-            modelConfig: { provider: "bedrock" },
-            modelDef,
-        });
+    it.each([
+        "openai/gpt-5.6-luna",
+        "gpt-5.6-luna",
+    ])("uses the same declared transform for canonical names and aliases: %s", async (model) => {
+        const transform = findModelByName(model)?.transform;
+        if (!transform) throw new Error("expected catalog transform");
+        expect(
+            (await transform(messages, { model, temperature: 0.7 })).options,
+        ).not.toHaveProperty("temperature");
+    });
 
-        expect(result.options.temperature).toBe(0.7);
+    it("does not impose sampling rules on an undeclared upstream model name", () => {
+        const options = {
+            model: "gpt-5-custom",
+            temperature: 0.7,
+            top_p: 0.9,
+            seed: 42,
+            modelConfig: { provider: "openai" },
+            modelDef,
+        };
+        expect(processParameters(messages, options).options).toEqual(options);
     });
 });

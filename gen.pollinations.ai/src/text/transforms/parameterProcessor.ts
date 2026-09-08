@@ -7,47 +7,6 @@ import type {
 
 const log = debug("pollinations:transforms:parameters");
 
-/** Shared by Chat and Responses; model is the resolved upstream ID. */
-export function stripSamplingParameters<T extends Record<string, unknown>>(
-    model: string,
-    options: T,
-): T {
-    const result = { ...options };
-
-    // Keep one policy per family, even when some reasoning modes accept sampling.
-    if (/^(?:openai\/)?(?:o[134]|gpt-5|gpt-6-astra)\b/i.test(model)) {
-        for (const param of [
-            "temperature",
-            "top_p",
-            "top_k",
-            "frequency_penalty",
-            "presence_penalty",
-            "repetition_penalty",
-            "seed",
-        ]) {
-            delete result[param];
-        }
-    }
-
-    // Newer Claude models reject non-default sampling parameters.
-    if (/claude-(opus-(4[.-][78]|5)|sonnet-5|fable-5)/i.test(model)) {
-        for (const param of ["temperature", "top_p", "top_k"]) {
-            delete result[param];
-        }
-    }
-
-    // Bedrock Claude rejects temperature and top_p together.
-    if (
-        /anthropic\.claude/i.test(model) &&
-        result.temperature !== undefined &&
-        result.top_p !== undefined
-    ) {
-        delete result.top_p;
-    }
-
-    return result;
-}
-
 /**
  * Transform that applies streaming options and provider-specific parameter
  * conversions.
@@ -61,10 +20,7 @@ export function processParameters(
     }
 
     const config = options.modelConfig as Record<string, unknown>;
-    const updatedOptions = stripSamplingParameters(
-        options.model || "",
-        options,
-    );
+    const updatedOptions = { ...options };
 
     if (updatedOptions.stream) {
         log("Adding stream_options to include usage data in stream");

@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Polli, a Discord and GitHub engineering assistant</title>
+  <desc id="desc">A restrained banner showing Discord, GitHub, and API inputs flowing through Polli to research and engineering tools.</desc>
+  <style>
+    .bg { fill: #f8fafc; }
+    .panel { fill: #ffffff; stroke: #cbd5e1; }
+    .ink { fill: #172033; }
+    .muted { fill: #526077; }
+    .line { fill: none; stroke: #64748b; stroke-width: 3; stroke-linecap: round; }
+    .accent { fill: #4f46e5; }
+    .warm { fill: #f4b942; }
+    .label { font: 600 18px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .small { font: 500 15px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    .wordmark { font: 750 64px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: -2px; }
+    .tagline { font: 500 24px ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #0f172a; }
+      .panel { fill: #172033; stroke: #475569; }
+      .ink { fill: #f1f5f9; }
+      .muted { fill: #b7c2d4; }
+      .line { stroke: #94a3b8; }
+      .accent { fill: #818cf8; }
+      .warm { fill: #f6c453; }
+    }
+  </style>
+  <rect class="bg" width="1200" height="360" rx="28"/>
+  <g opacity=".55">
+    <path class="line" d="M72 68h140M988 292h140M1090 68h38M72 292h38"/>
+    <circle class="accent" cx="72" cy="68" r="6"/>
+    <circle class="warm" cx="1128" cy="292" r="6"/>
+  </g>
+  <text class="wordmark ink" x="92" y="160">Polli</text>
+  <text class="tagline muted" x="94" y="204">Engineering context, where the conversation happens.</text>
+  <text class="small muted" x="94" y="247">Discord · GitHub · OpenAI-compatible API</text>
+
+  <path class="line" d="M695 94h82M695 180h82M695 266h82"/>
+  <circle class="accent" cx="777" cy="94" r="5"/>
+  <circle class="accent" cx="777" cy="180" r="5"/>
+  <circle class="accent" cx="777" cy="266" r="5"/>
+
+  <g transform="translate(592 61)">
+    <rect class="panel" width="150" height="66" rx="13"/>
+    <circle class="accent" cx="25" cy="33" r="10"/>
+    <text class="label ink" x="46" y="40">Discord</text>
+  </g>
+  <g transform="translate(592 147)">
+    <rect class="panel" width="150" height="66" rx="13"/>
+    <circle class="ink" cx="25" cy="33" r="10"/>
+    <text class="label ink" x="46" y="40">GitHub</text>
+  </g>
+  <g transform="translate(592 233)">
+    <rect class="panel" width="150" height="66" rx="13"/>
+    <path class="line" d="M17 33h16M25 25v16"/>
+    <text class="label ink" x="46" y="40">API</text>
+  </g>
+
+  <g transform="translate(777 76)">
+    <rect class="panel" width="174" height="208" rx="22"/>
+    <path class="warm" d="M87 28l31 18v36l-31 18-31-18V46z"/>
+    <circle class="ink" cx="87" cy="64" r="9"/>
+    <path class="line" d="M87 40v15M66 76l13-7M108 76l-13-7"/>
+    <text class="label ink" x="87" y="133" text-anchor="middle">Polli</text>
+    <text class="small muted" x="87" y="163" text-anchor="middle">context + tools</text>
+  </g>
+
+  <path class="line" d="M951 180h74"/>
+  <path class="accent" d="M1025 173l14 7-14 7z"/>
+  <g transform="translate(1039 126)">
+    <rect class="panel" width="93" height="108" rx="16"/>
+    <path class="line" d="M24 34h45M24 54h34M24 74h40"/>
+    <text class="small ink" x="46" y="99" text-anchor="middle">answer</text>
+  </g>
+</svg>

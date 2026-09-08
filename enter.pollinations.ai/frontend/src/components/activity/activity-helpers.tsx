@@ -1,5 +1,14 @@
-import { Button, DownloadIcon, MultiSelect, Tooltip } from "@pollinations/ui";
+import {
+    Button,
+    CardIcon,
+    DownloadIcon,
+    MultiSelect,
+    SproutIcon,
+    Tooltip,
+} from "@pollinations/ui";
+import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
+import { formatActivityPollen } from "./format-activity-pollen";
 
 type ActivityFilterProps = {
     label: string;
@@ -114,4 +123,56 @@ export function formatActivityChartDate(
             }),
         }),
     };
+}
+
+export function PollenUsageBadges(usage: {
+    paidPollen: number;
+    tierPollen: number;
+    paidRequests: number;
+    tierRequests: number;
+}) {
+    return (
+        <div className="grid min-w-80 grid-cols-2 gap-2">
+            <PaidChip
+                size="sm"
+                className="grid grid-cols-2 gap-0 whitespace-nowrap tabular-nums"
+                title="Paid Pollen and requests"
+                aria-label={`${formatActivityPollen(usage.paidPollen)} Paid Pollen, ${usage.paidRequests.toLocaleString()} requests`}
+            >
+                <span className="inline-flex items-center gap-1 pr-2">
+                    <CardIcon
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                    />
+                    {formatActivityPollen(usage.paidPollen)}
+                </span>
+                <span className="inline-flex items-center justify-end gap-1 border-l border-current/20 pl-2">
+                    <span aria-hidden="true" className="opacity-60">
+                        #
+                    </span>
+                    {usage.paidRequests.toLocaleString()}
+                </span>
+            </PaidChip>
+            <TierChip
+                size="sm"
+                className="grid grid-cols-2 gap-0 whitespace-nowrap tabular-nums"
+                title="Quest Pollen and requests"
+                aria-label={`${formatActivityPollen(usage.tierPollen)} Quest Pollen, ${usage.tierRequests.toLocaleString()} requests`}
+            >
+                <span className="inline-flex items-center gap-1 pr-2">
+                    <SproutIcon
+                        className="h-3.5 w-3.5 shrink-0"
+                        aria-hidden="true"
+                    />
+                    {formatActivityPollen(usage.tierPollen)}
+                </span>
+                <span className="inline-flex items-center justify-end gap-1 border-l border-current/20 pl-2">
+                    <span aria-hidden="true" className="opacity-60">
+                        #
+                    </span>
+                    {usage.tierRequests.toLocaleString()}
+                </span>
+            </TierChip>
+        </div>
+    );
 }

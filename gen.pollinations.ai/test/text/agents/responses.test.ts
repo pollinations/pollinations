@@ -502,9 +502,19 @@ describe("managed agent Responses runtime", () => {
     });
 
     it.each([
-        "completed",
-        "failed",
-    ] as const)("replays %s MCP calls as history without executing them", async (status) => {
+        null,
+        { type: "http_error", code: 503, message: "Saved failure" },
+        { type: "mcp_protocol_error", code: -32603, message: "Saved failure" },
+        { type: "mcp_tool_execution_error", content: "Saved failure" },
+        {
+            type: "mcp_tool_execution_error",
+            content: {
+                content: [{ type: "text", text: "Saved failure" }],
+                isError: true,
+            },
+        },
+    ])("replays MCP calls with error %j without executing them", async (error) => {
+        const status = error === null ? "completed" : "failed";
         const history = {
             type: "mcp_call",
             id: "prior-call",
@@ -518,7 +528,7 @@ describe("managed agent Responses runtime", () => {
                           content: [{ type: "text", text: "Saved answer" }],
                       })
                     : null,
-            error: status === "failed" ? "Saved failure" : null,
+            error,
         };
         const fetchMock = vi.fn(
             async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -545,11 +555,14 @@ describe("managed agent Responses runtime", () => {
                         {
                             role: "tool",
                             tool_call_id: "prior-call",
-                            content:
-                                history.error ??
-                                JSON.stringify([
-                                    { type: "text", text: "Saved answer" },
-                                ]),
+                            content: error
+                                ? "Saved failure"
+                                : JSON.stringify([
+                                      {
+                                          type: "text",
+                                          text: "Saved answer",
+                                      },
+                                  ]),
                         },
                         expect.objectContaining({
                             role: "user",
@@ -593,6 +606,24 @@ describe("managed agent Responses runtime", () => {
             [history, history],
             [{ ...history, status: "in_progress" }],
             [{ ...history, arguments: "invalid JSON" }],
+            [{ ...history, error: "legacy string error" }],
+            [
+                {
+                    ...history,
+                    error: { type: "http_error", message: "Missing code" },
+                },
+            ],
+            [
+                {
+                    ...history,
+                    error: {
+                        type: "mcp_protocol_error",
+                        code: -1.5,
+                        message: "Invalid code",
+                    },
+                },
+            ],
+            [{ ...history, error: { type: "mcp_tool_execution_error" } }],
         ]) {
             const invalid = await handlePromptAgentResponsesRequest(
                 request({ input }),

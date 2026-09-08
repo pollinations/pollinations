@@ -1,6 +1,5 @@
-import { remapUpstreamStatus, UpstreamError } from "@shared/error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { IMMUTABLE_CACHE_CONTROL } from "@shared/http/cache-control.ts";
-import { HttpError } from "@shared/http-error.ts";
 import { buildUsageHeaders } from "@shared/registry/usage-headers.ts";
 import type { Context } from "hono";
 import type { Env } from "@/env.ts";
@@ -93,7 +92,9 @@ export function parseModel3dParams(
 
 export function assertNonEmptyMedia(result: Model3dGenerationResult): void {
     if (!result.buffer || result.buffer.length === 0) {
-        throw new HttpError("3D provider returned an empty response", 502);
+        throw UpstreamError.fromProvider(502, {
+            message: "3D provider returned an empty response",
+        });
     }
 }
 
@@ -132,16 +133,6 @@ export function mediaHeaders(
 export function throw3dError(error: unknown): never {
     if (error instanceof UpstreamError) throw error;
 
-    if (error instanceof HttpError) {
-        throw new UpstreamError(remapUpstreamStatus(error.status), {
-            message: error.message,
-            // Propagate only — the code is decided at the throw site.
-            errorCode: error.errorCode,
-            upstreamStatus: error.status,
-            responseBody: JSON.stringify({ message: error.message }),
-            cause: error,
-        });
-    }
     const message = error instanceof Error ? error.message : String(error);
     throw new UpstreamError(500, {
         message: message || "3D model generation failed",

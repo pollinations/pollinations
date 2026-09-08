@@ -6,6 +6,7 @@ import {
     FalError,
     runFalJob,
 } from "../../src/model3d/models/falClient.ts";
+import { toUpstreamError } from "../../src/model3d/modelUtils.ts";
 
 beforeEach(() => {
     syncModel3dEnvironment({
@@ -20,6 +21,26 @@ afterEach(() => {
 });
 
 describe("runFalJob", () => {
+    it("retains the full provider body through the public error adapter", async () => {
+        const body = JSON.stringify({
+            detail: "x".repeat(20000),
+            token: "test-only",
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(body, { status: 429 }),
+        );
+        const error = await runFalJob({
+            endpoint: "fal-ai/triposr",
+            input: {},
+        }).catch(toUpstreamError);
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+        expect(error.message).toContain(body);
+    });
+
     it("submits, polls status, and fetches the final result", async () => {
         vi.useFakeTimers();
         const fetchSpy = vi.spyOn(globalThis, "fetch");

@@ -1,5 +1,17 @@
 import { z } from "zod";
 
+const McpCallErrorSchema = z.discriminatedUnion("type", [
+    z.object({
+        type: z.enum(["mcp_protocol_error", "http_error"]),
+        code: z.number().int(),
+        message: z.string(),
+    }),
+    z.object({
+        type: z.literal("mcp_tool_execution_error"),
+        content: z.json(),
+    }),
+]);
+
 export const McpCallSchema = z.object({
     type: z.literal("mcp_call"),
     id: z.string().min(1),
@@ -10,10 +22,54 @@ export const McpCallSchema = z.object({
         .enum(["in_progress", "completed", "incomplete", "calling", "failed"])
         .default("completed"),
     output: z.string().nullable().default(null),
-    error: z.string().nullable().default(null),
+    error: McpCallErrorSchema.nullable().default(null),
 });
 
 export type McpCall = z.infer<typeof McpCallSchema>;
+type McpCallError = z.infer<typeof McpCallErrorSchema>;
+
+export function mcpCallError(error: unknown): McpCallError {
+    const message = error instanceof Error ? error.message : String(error);
+    if (error && typeof error === "object") {
+        // The MCP SDK exposes HTTP and JSON-RPC codes on its transport errors.
+        if ("statusCode" in error && Number.isSafeInteger(error.statusCode)) {
+            return {
+                type: "http_error",
+                code: error.statusCode as number,
+                message,
+            };
+        }
+        if ("code" in error && Number.isSafeInteger(error.code)) {
+            return {
+                type: "mcp_protocol_error",
+                code: error.code as number,
+                message,
+            };
+        }
+    }
+    return {
+        type: "mcp_tool_execution_error",
+        content: message,
+    };
+}
+
+/** Keep Chat rendering and model-visible replay consistent with structured errors. */
+export function mcpErrorText(error: McpCallError): string {
+    if (error.type !== "mcp_tool_execution_error") return error.message;
+    const content = error.content;
+    if (
+        content &&
+        typeof content === "object" &&
+        "content" in content &&
+        Array.isArray(content.content)
+    ) {
+        const output = safeMcpModelOutput({ output: content });
+        return output.type === "text"
+            ? output.value
+            : output.value.map((part) => part.text).join("\n");
+    }
+    return typeof content === "string" ? content : JSON.stringify(content);
+}
 
 const SafeMcpPartSchema = z.union([
     z.object({ type: z.literal("text"), text: z.string() }),
@@ -109,14 +165,15 @@ function escapeHtml(value: string): string {
 /** Chat clients display server-executed tools as details, not function calls. */
 export function formatMcpCall(item: McpCall, seenUrls: Set<string>): string {
     let output: unknown;
-    let text = item.error ?? item.output ?? "";
+    const errorText = item.error === null ? null : mcpErrorText(item.error);
+    let text = errorText ?? item.output ?? "";
     if (item.output) {
         try {
             output = JSON.parse(item.output);
             if (output && typeof output === "object" && "content" in output) {
                 const modelOutput = safeMcpModelOutput({ output });
                 text =
-                    item.error ??
+                    errorText ??
                     (modelOutput.type === "text"
                         ? modelOutput.value
                         : modelOutput.value

@@ -34,11 +34,16 @@ export type EarningsFilterState = {
     selectedModelIds: string[];
 };
 
-type TopEarningEntity = {
+type EarningEntity = {
     id: string;
+    source: EarningsSource;
     label: string;
     requests: number;
     pollen: number;
+    paidPollen: number;
+    tierPollen: number;
+    paidRequests: number;
+    tierRequests: number;
 };
 
 function filterRowsBySelection(
@@ -68,8 +73,10 @@ type EarningsDataResult = {
         totalPollen: number;
         totalPaid: number;
         totalTier: number;
+        paidRequests: number;
+        tierRequests: number;
         entityCount: number;
-        topEntity: TopEarningEntity | null;
+        entityBreakdowns: EarningEntity[];
     };
 };
 
@@ -297,31 +304,37 @@ export function useEarningsData(
         );
         const entityCount = filteredPerEntity.length;
 
-        const topEntityRow = [...filteredPerEntity].sort((a, b) => {
-            const left =
-                filters.metric === "requests" ? a.requests : a.pollen_earned;
-            const right =
-                filters.metric === "requests" ? b.requests : b.pollen_earned;
-            return right - left;
-        })[0];
-        const topEntity: TopEarningEntity | null = topEntityRow
-            ? {
-                  id: topEntityRow.entity_id,
-                  label: topEntityRow.entity_name,
-                  requests: topEntityRow.requests,
-                  pollen: topEntityRow.pollen_earned,
-              }
-            : null;
+        const entityBreakdowns: EarningEntity[] = filteredPerEntity
+            .map((row) => ({
+                id: `${row.source}:${row.entity_id}`,
+                source: row.source,
+                label: row.entity_name,
+                requests: row.requests,
+                pollen: row.pollen_earned,
+                paidPollen: row.paid_earned,
+                tierPollen: row.tier_earned,
+                paidRequests: row.paid_requests,
+                tierRequests: row.tier_requests,
+            }))
+            .sort((a, b) => b.pollen - a.pollen);
 
         return {
             totalRequests,
             totalPollen,
             totalPaid,
             totalTier,
+            paidRequests: filteredPerEntity.reduce(
+                (sum, row) => sum + row.paid_requests,
+                0,
+            ),
+            tierRequests: filteredPerEntity.reduce(
+                (sum, row) => sum + row.tier_requests,
+                0,
+            ),
             entityCount,
-            topEntity,
+            entityBreakdowns,
         };
-    }, [filteredPerEntity, filters.metric]);
+    }, [filteredPerEntity]);
 
     return {
         loading,

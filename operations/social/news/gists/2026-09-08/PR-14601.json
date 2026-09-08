@@ -1,0 +1,35 @@
+{
+  "pr_number": 14601,
+  "title": "feat: recover old cached media on demand",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14601",
+  "merged_at": "2026-09-08T23:27:53Z",
+  "labels": [],
+  "pr_body_excerpt": "Stacked on #14587; merge that first.\n\n- Checks the old binary cache only when Media has no result.\n- Copies matching files into Media and returns its enclosure Link, without regenerating or charging again.\n- Leaves old objects untouched. Missing entries follow normal generation; storage failures return the existing cache error.\n- Keeps migration in one temporary module, one wrapper call and bucket binding. No cutoff; remove them together later.\n\nValidation: 157 targeted tests and typecheck passed. Live staging verified synthetic image/video/audio/3D promotion, speech and image POST routes, public bytes, Link headers, default base64, repeat/concurrent hits and a 10 MB file. Fresh GPT Image generation survived disconnect/rejoin: identical public bytes, one billed Tinybird event under the original request ID, and exactly one matching wallet debit (0.0063975 Pollen). Not a full provider matrix or 300-second boundary test. Parent changes through e9600d4248 included; no edits to the parent branch.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The old hive remembers",
+    "blurb": "Some perfectly good pixels were still resting in the old pantry. Now Media can fetch them on demand, promote them to the current cache, and serve them without making the generators do the same work twice.",
+    "summary": "Media now performs an on-demand read-through of the legacy binary cache when its current cache has no result, promoting matching image, video, audio, speech, and 3D files into Media and returning their enclosure Link without regenerating or charging again.",
+    "impact": "Requests for previously cached media can return the original public bytes and Link headers from the current Media cache, while uncached entries continue through normal generation and billing exactly once.",
+    "keywords": [
+      "media-cache",
+      "legacy-cache",
+      "read-through",
+      "storage",
+      "billing",
+      "generation",
+      "links"
+    ],
+    "visual_concept": "A cozy archive garden represents the legacy binary cache: old labeled jars or seed packets containing image, video, audio, speech, and 3D artifacts are gently moved into a fresh Media pantry. Polli, wearing a tiny archivist cap, carries a glowing file along a vine between the old cache shelf and a modern CRT-backed cache cabinet, showing preservation and promotion rather than regeneration; code-plants and flowers establish the pollinations garden.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny archivist cap as she carries a glowing media file from an old wooden cache shelf of image, video, audio, speech, and 3D jars into a fresh CRT Media cabinet; lime green (#ecf874) cache glow, code-plants, flowers, and warm cream-and-lavender garden shelves surround her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14601.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing a tiny archivist cap as she carries a glowing media file from an old wooden cache shelf of image, video, audio, speech, and 3D jars into a fresh CRT Media cabinet; lime green (#ecf874) cache glow, code-plants, flowers, and warm cream-and-lavender garden shelves surround her. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, chunky sprites, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-09-08T23:29:08.692410+00:00"
+}

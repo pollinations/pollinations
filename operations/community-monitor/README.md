@@ -113,7 +113,7 @@ updater knows only the legacy path and cannot migrate itself.
 Run from the merged `main` revision. Never deploy an unmerged prompt snapshot.
 
 ```bash
-scp operations/community-monitor/{CYCLE.md,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
+scp operations/community-monitor/{CYCLE.md,probe.mjs,chat-stream.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
   community-monitor:/home/ubuntu/monitor/
 ssh community-monitor "mkdir -p /home/ubuntu/monitor/.claude"
 scp operations/community-monitor/.claude/settings.json \

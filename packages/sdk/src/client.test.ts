@@ -685,78 +685,76 @@ describe("Pollinations chat streaming", () => {
         });
     });
 
-    it.each(["\n", "\r", "\r\n"])(
-        "preserves UTF-8 and tool/usage events split at every byte (%j)",
-        async (newline) => {
-            const events = [
-                {
-                    choices: [
-                        {
-                            index: 0,
-                            delta: { content: "🌸 café" },
-                            finish_reason: null,
-                        },
-                    ],
-                },
-                {
-                    choices: [
-                        {
-                            index: 0,
-                            delta: {
-                                tool_calls: [
-                                    {
-                                        index: 0,
-                                        id: "call_1",
-                                        type: "function",
-                                        function: {
-                                            name: "search",
-                                            arguments: "{}",
-                                        },
-                                    },
-                                ],
-                            },
-                            finish_reason: "tool_calls",
-                        },
-                    ],
-                },
-                {
-                    choices: [],
-                    usage: {
-                        prompt_tokens: 2,
-                        completion_tokens: 3,
-                        total_tokens: 5,
+    it.each([
+        "\n",
+        "\r",
+        "\r\n",
+    ])("preserves UTF-8 and tool/usage events split at every byte (%j)", async (newline) => {
+        const events = [
+            {
+                choices: [
+                    {
+                        index: 0,
+                        delta: { content: "🌸 café" },
+                        finish_reason: null,
                     },
+                ],
+            },
+            {
+                choices: [
+                    {
+                        index: 0,
+                        delta: {
+                            tool_calls: [
+                                {
+                                    index: 0,
+                                    id: "call_1",
+                                    type: "function",
+                                    function: {
+                                        name: "search",
+                                        arguments: "{}",
+                                    },
+                                },
+                            ],
+                        },
+                        finish_reason: "tool_calls",
+                    },
+                ],
+            },
+            {
+                choices: [],
+                usage: {
+                    prompt_tokens: 2,
+                    completion_tokens: 3,
+                    total_tokens: 5,
                 },
-            ];
-            const sse = events
-                .map(
-                    (event) =>
-                        `data:${JSON.stringify(event)}${newline}${newline}`,
-                )
-                .join("");
-            const bytes = new TextEncoder().encode(
-                `${sse}data: [DONE]${newline}${newline}`,
-            );
-            const body = new ReadableStream<Uint8Array>({
-                start(controller) {
-                    for (const byte of bytes)
-                        controller.enqueue(Uint8Array.of(byte));
-                    controller.close();
-                },
-            });
-            fetchMock.mockResolvedValue(new Response(body));
+            },
+        ];
+        const sse = events
+            .map((event) => `data:${JSON.stringify(event)}${newline}${newline}`)
+            .join("");
+        const bytes = new TextEncoder().encode(
+            `${sse}data: [DONE]${newline}${newline}`,
+        );
+        const body = new ReadableStream<Uint8Array>({
+            start(controller) {
+                for (const byte of bytes)
+                    controller.enqueue(Uint8Array.of(byte));
+                controller.close();
+            },
+        });
+        fetchMock.mockResolvedValue(new Response(body));
 
-            const chunks = [];
-            for await (const chunk of newClient().chatStream([
-                { role: "user", content: "hello" },
-            ])) {
-                chunks.push(chunk);
-            }
+        const chunks = [];
+        for await (const chunk of newClient().chatStream([
+            { role: "user", content: "hello" },
+        ])) {
+            chunks.push(chunk);
+        }
 
-            expect(chunks).toEqual(events);
-            expect(body.locked).toBe(false);
-        },
-    );
+        expect(chunks).toEqual(events);
+        expect(body.locked).toBe(false);
+    });
 
     it("discards an incomplete SSE event at EOF", async () => {
         const event = { choices: [{ delta: { content: "last" } }] };
@@ -1090,49 +1088,46 @@ describe("Pollinations simple text facade", () => {
         [{ code: 200 }, 502, "STREAM_ERROR"],
         [{ code: 600 }, 502, "STREAM_ERROR"],
         [{ code: 400.5 }, 502, "STREAM_ERROR"],
-    ])(
-        "preserves streamed error status and code: %j",
-        async (error, status, code) => {
-            fetchMock.mockResolvedValue(
-                makeResponse(
-                    `data: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`,
-                    { kind: "stream", contentType: "text/event-stream" },
-                ),
-            );
-            const consume = async () => {
-                for await (const _chunk of newClient().textStream("hello")) {
-                    /* consume */
-                }
-            };
-            await expect(consume()).rejects.toMatchObject({
-                name: "PollinationsError",
-                status,
-                code,
-            });
-        },
-    );
+    ])("preserves streamed error status and code: %j", async (error, status, code) => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                `data: ${JSON.stringify({ error })}\n\ndata: [DONE]\n\n`,
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const consume = async () => {
+            for await (const _chunk of newClient().textStream("hello")) {
+                /* consume */
+            }
+        };
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            status,
+            code,
+        });
+    });
 
-    it.each([undefined, null])(
-        "rejects an error finish reason even with error=%s",
-        async (error) => {
-            fetchMock.mockResolvedValue(
-                makeResponse(
-                    `data: ${JSON.stringify({ error, choices: [{ delta: {}, finish_reason: "error" }] })}\n\ndata: [DONE]\n\n`,
-                    { kind: "stream", contentType: "text/event-stream" },
-                ),
-            );
-            const consume = async () => {
-                for await (const _chunk of newClient().textStream("hello")) {
-                    /* consume */
-                }
-            };
-            await expect(consume()).rejects.toMatchObject({
-                name: "PollinationsError",
-                status: 502,
-                code: "STREAM_ERROR",
-            });
-        },
-    );
+    it.each([
+        undefined,
+        null,
+    ])("rejects an error finish reason even with error=%s", async (error) => {
+        fetchMock.mockResolvedValue(
+            makeResponse(
+                `data: ${JSON.stringify({ error, choices: [{ delta: {}, finish_reason: "error" }] })}\n\ndata: [DONE]\n\n`,
+                { kind: "stream", contentType: "text/event-stream" },
+            ),
+        );
+        const consume = async () => {
+            for await (const _chunk of newClient().textStream("hello")) {
+                /* consume */
+            }
+        };
+        await expect(consume()).rejects.toMatchObject({
+            name: "PollinationsError",
+            status: 502,
+            code: "STREAM_ERROR",
+        });
+    });
 
     it("rejects malformed stream events without choices", async () => {
         fetchMock.mockResolvedValue(

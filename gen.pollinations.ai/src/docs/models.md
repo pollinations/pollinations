@@ -15,17 +15,42 @@ Discover available models with pricing, capabilities, and metadata. No authentic
 
 ### Query Parameters
 
-All model discovery endpoints accept an optional `community` query parameter:
+All model discovery endpoints accept optional `source` and `reliable` query
+parameters. Every listing carries a minimal `health` block (status, success
+rate, sample count, window, freshness) per model when health data is
+available.
 
 | Parameter | Values | Behaviour |
 |-----------|--------|-----------|
-| *(omitted)* | | Returns all models (default, backward-compatible) |
-| `community=false` | `false`, `0` | Excludes community models — returns official models only |
-| `community=true` | `true`, `1` | Returns community models only |
+| *(omitted)* | | Returns all models (default) |
+| `source=official` | `official` | Returns first-party models only |
+| `source=community` | `community` | Returns community-published models only |
+| `reliable=true` | `true`, `1` | Keeps only models with `healthy` status |
+| `reliable=false` | `false`, `0`, *(omitted)* | Keeps every model |
 
-Any other value (e.g. `tru`, `yes`, `2`) returns **400 Bad Request**.
+`community=true|false|1|0` remains available as a backward-compatible alias
+for `source`. Personal access rules are never changed by these discovery
+filters: permission and paid-balance filtering always applies first, and a
+model hidden from a filtered listing can still be called and retrieved by id.
+Reliability uses the health status computed from the monitored window
+(`healthy` / `degraded` / `unavailable` / `unknown`); missing or stale health
+data reports `unknown`, which is excluded by `reliable=true`.
 
-Example: `GET /models?community=false`
+Any other value (e.g. `source=bogus`, `reliable=2`, `community=tru`) or
+conflicting source filters (e.g. `source=official&community=true`) returns
+**400 Bad Request**.
+
+Example: `GET /models?source=official&reliable=true`
+
+OpenAI-compatible clients that append `/models` to a configured base URL
+(Open WebUI, LibreChat, Cline) cannot carry query parameters there. Send the
+same filters as the `X-Pollinations-Model-Filter` header in URL query format;
+explicit query parameters (or the legacy `community` alias) win if both are
+present:
+
+```text
+X-Pollinations-Model-Filter: source=official&reliable=true
+```
 
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
@@ -41,6 +66,6 @@ Built-in models may use separate upstream routes for Chat and Responses.
 
 ## Community Models
 
-Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.
+Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `source=community` to return only community models or `source=official` to exclude them.
 
 For registration, publishing, pricing, fallbacks, and health monitoring, see [Publish a Model](/docs#tag/publish-a-model). For ownership endpoints and schemas, see [Community Models](/docs#tag/community-models) under Resources.

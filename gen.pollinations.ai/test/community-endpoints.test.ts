@@ -4267,6 +4267,10 @@ fixtureTest(
             imageOnly,
             allExcludeNumeric,
             allOnlyNumeric,
+            sourceOfficial,
+            sourceCommunity,
+            sourceTextOfficial,
+            sourceTextCommunity,
         ] = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models"),
             SELF.fetch("https://gen.pollinations.ai/models?community=false"),
@@ -4287,6 +4291,14 @@ fixtureTest(
             ),
             SELF.fetch("https://gen.pollinations.ai/models?community=0"),
             SELF.fetch("https://gen.pollinations.ai/models?community=1"),
+            SELF.fetch("https://gen.pollinations.ai/models?source=official"),
+            SELF.fetch("https://gen.pollinations.ai/models?source=community"),
+            SELF.fetch(
+                "https://gen.pollinations.ai/text/models?source=official",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/text/models?source=community",
+            ),
         ]);
 
         for (const r of [
@@ -4301,6 +4313,10 @@ fixtureTest(
             imageOnly,
             allExcludeNumeric,
             allOnlyNumeric,
+            sourceOfficial,
+            sourceCommunity,
+            sourceTextOfficial,
+            sourceTextCommunity,
         ]) {
             expect(r.status).toBe(200);
         }
@@ -4321,6 +4337,14 @@ fixtureTest(
         const excludeNumeric =
             (await allExcludeNumeric.json()) as ListedModel[];
         const onlyNumeric = (await allOnlyNumeric.json()) as ListedModel[];
+        const sourceOfficialModels =
+            (await sourceOfficial.json()) as ListedModel[];
+        const sourceCommunityModels =
+            (await sourceCommunity.json()) as ListedModel[];
+        const sourceTextOfficialModels =
+            (await sourceTextOfficial.json()) as ListedModel[];
+        const sourceTextCommunityModels =
+            (await sourceTextCommunity.json()) as ListedModel[];
 
         expect(defaultModels.some((m) => m.community)).toBe(true);
         expect(defaultModels.some((m) => !m.community)).toBe(true);
@@ -4366,12 +4390,32 @@ fixtureTest(
             onlyModels.map((m) => m.name),
         );
 
+        // The new source filter matches the legacy community parameter.
+        expect(sourceOfficialModels.map((m) => m.name)).toEqual(
+            excludeModels.map((m) => m.name),
+        );
+        expect(sourceCommunityModels.map((m) => m.name)).toEqual(
+            onlyModels.map((m) => m.name),
+        );
+        expect(sourceTextOfficialModels.map((m) => m.name)).toEqual(
+            textExcludeModels.map((m) => m.name),
+        );
+        expect(sourceTextCommunityModels.map((m) => m.name)).toEqual(
+            textOnlyModels.map((m) => m.name),
+        );
+
         const invalidResponses = await Promise.all([
             SELF.fetch("https://gen.pollinations.ai/models?community=tru"),
             SELF.fetch("https://gen.pollinations.ai/models?community=yes"),
             SELF.fetch("https://gen.pollinations.ai/v1/models?community=2"),
             SELF.fetch(
                 "https://gen.pollinations.ai/image/models?community=nope",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/models?source=official&community=true",
+            ),
+            SELF.fetch(
+                "https://gen.pollinations.ai/models?source=community&community=false",
             ),
         ]);
         for (const r of invalidResponses) {

@@ -144,6 +144,12 @@ export async function getModelHealthSnapshot(
     };
 }
 
+// Test-only: drop the module-level health cache so tests can install a new
+// mocked Tinybird response without waiting out the TTL.
+export function resetModelHealthCache(): void {
+    cache.clear();
+}
+
 export const modelStatusRoutes = new Hono<Env>().get(
     "/v1/models/status",
     describeRoute({

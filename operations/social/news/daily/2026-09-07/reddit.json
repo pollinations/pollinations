@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "daily",
+  "date": "2026-09-07",
+  "period_start": "2026-09-07",
+  "period_end": "2026-09-07",
+  "generated_at": "2026-09-08T21:47:31.987788+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-07/images/reddit.jpg"
+    }
+  ],
+  "title": "Canonical model names and recoverable generations",
+  "text": "Ten PRs merged today, mostly around making names and failures behave less mysteriously.\n\nThe model catalog now has canonical model names ([#13076](https://github.com/pollinations/pollinations/pull/13076)). Compatibility work is included: stored aliases are resolved during permission reads ([#14545](https://github.com/pollinations/pollinations/pull/14545)), and the permission migration is no longer blocked ([#14550](https://github.com/pollinations/pollinations/pull/14550)). Old code should keep finding the model it meant, which is the least exciting and therefore best outcome for a naming refactor.\n\nGeneration handling also got less fragile. Coordinator errors are preserved, and cached results can be recovered when the surrounding plumbing fails ([#14526](https://github.com/pollinations/pollinations/pull/14526)). Production also keeps its Klein VPC binding ([#14544](https://github.com/pollinations/pollinations/pull/14544)).\n\nMedia uploads can now use account-scoped IDs ([#14555](https://github.com/pollinations/pollinations/pull/14555)), so uploads can have identifiers people can actually remember. The shared account menu was consolidated too ([#14478](https://github.com/pollinations/pollinations/pull/14478)).\n\nFinally, README and API docs were regenerated: [README update](https://github.com/pollinations/pollinations/pull/14530), [APIDOCS](https://github.com/pollinations/pollinations/pull/14552). The garden signs have been updated."
+}

@@ -422,6 +422,50 @@ const IMAGE_BASE_SERVICES = {
         outputModalities: ["image"],
         maxReferenceImages: 16, // GPT Image edit endpoint accepts up to 16 input images.
     },
+    "openai/gpt-image-2.5-flare": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-flare
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Flare",
+        description:
+            "Fast image generation and precise editing with reference images",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
+    "openai/gpt-image-2.5-sunburst": {
+        aliases: [],
+        provider: "openai",
+        publisher: "OpenAI",
+        category: "image",
+        addedDate: new Date("2026-09-08").getTime(),
+        paidOnly: true,
+        priceMultiplier: 1,
+        cost: {
+            // https://developers.openai.com/api/docs/models/gpt-image-2.5-sunburst
+            promptTextTokens: perMillion(5),
+            promptCachedTokens: perMillion(1.25),
+            promptImageTokens: perMillion(8),
+            completionImageTokens: perMillion(30),
+        },
+        title: "GPT Image 2.5 Sunburst",
+        description:
+            "Detailed image generation with precise control over reference-image edits",
+        inputModalities: ["text", "image"],
+        outputModalities: ["image"],
+        maxReferenceImages: 16,
+    },
     "black-forest-labs/flux.1-schnell": {
         aliases: ["flux"],
         provider: "vast",
@@ -1107,7 +1151,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

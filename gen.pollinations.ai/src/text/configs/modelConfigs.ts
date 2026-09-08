@@ -127,6 +127,11 @@ export const portkeyConfig: PortkeyConfigMap = {
             textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
             "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra/chat/completions?api-version=2025-04-01-preview",
         ),
+    "gpt-6-astra-azure-datazone": () =>
+        createAzureResponsesModelConfig(
+            textEnvironmentValue("AZURE_MYCELI_PROD_API_KEY"),
+            "https://myceli-prod-eastus.openai.azure.com/openai/deployments/gpt-6-astra-datazone/chat/completions?api-version=2025-04-01-preview",
+        ),
 
     // -- Azure (Myceli Prod — swedencentral, audio mini) ------------------------
     "gpt-audio-mini-2025-12-15": () =>
@@ -167,6 +172,15 @@ export const portkeyConfig: PortkeyConfigMap = {
         responsesEndpoint:
             "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
         responsesAuthHeader: "api-key",
+    }),
+
+    "grok-4.6-azure-sweden": () => ({
+        ...portkeyConfig["grok-4.6"](),
+        directEndpoint:
+            "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+        authKey: textEnvironmentValue("AZURE_MYCELI_PROD_SWEDEN_API_KEY"),
+        responsesEndpoint:
+            "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
     }),
 
     // -- Azure (Myceli Prod — eastus, Cohere) --------------------------------

@@ -19,11 +19,11 @@ export function parseChatStream(body) {
         } catch {
             throw new Error("stream contained invalid JSON");
         }
-        if (!Array.isArray(chunk.choices)) {
+        if (chunk?.error || !Array.isArray(chunk?.choices)) {
             throw new Error(
-                chunk.error?.code === "usage_missing"
+                chunk?.error?.code === "usage_missing"
                     ? "stream returned usage_missing: missing or invalid token usage"
-                    : chunk.error
+                    : chunk?.error
                       ? "stream returned an error event"
                       : "stream event is missing a choices array",
             );

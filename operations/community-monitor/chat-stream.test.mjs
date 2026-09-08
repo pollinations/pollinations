@@ -39,10 +39,20 @@ test("preserves healthy streams and existing non-error validation", () => {
     });
     for (const [body, error] of [
         [`data: {}\n\n${done}`, "stream event is missing a choices array"],
+        [`data: null\n\n${done}`, "stream event is missing a choices array"],
         [`data: {broken}\n\n${done}`, "stream contained invalid JSON"],
         [content + counts, "stream is missing [DONE]"],
         [content + done + counts, "stream contained data after [DONE]"],
     ]) {
         assert.equal(parseChatStream(body).protocolError, error);
     }
+});
+
+test("rejects an error event even if it includes choices", () => {
+    assert.equal(
+        parseChatStream(
+            `${content}data: {"choices":[],"error":{"code":"usage_missing"}}\n\n${done}`,
+        ).protocolError,
+        "stream returned usage_missing: missing or invalid token usage",
+    );
 });

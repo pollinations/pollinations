@@ -16,10 +16,14 @@ on:
 jobs:
   authorize-write:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '!polli')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '!polli')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '!polli')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '!polli') || contains(github.event.issue.title, '!polli')))
+      contains(fromJSON('[5099901,36901823,158852059,74301576]'), github.event.sender.id) &&
+      github.triggering_actor == github.actor && github.event.sender.login == github.actor &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '!polli')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '!polli')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '!polli')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, '!polli') || contains(github.event.issue.title, '!polli')))
+      )
     runs-on: ubuntu-latest
     permissions:
       contents: read

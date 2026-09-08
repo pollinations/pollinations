@@ -13,10 +13,24 @@ on:
 jobs:
   authorize:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '!askpolli')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '!askpolli')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '!askpolli')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '!askpolli') || contains(github.event.issue.title, '!askpolli')))
+      (
+        contains(fromJSON('[5099901,36901823,158852059,74301576]'), github.event.sender.id) ||
+        (
+          contains(fromJSON('[34513273,204561696,182555207,189873015,228371309]'), github.event.sender.id) &&
+          (
+            github.event_name == 'pull_request_review_comment' ||
+            github.event_name == 'pull_request_review' ||
+            (github.event_name == 'issue_comment' && github.event.issue.pull_request)
+          )
+        )
+      ) &&
+      github.triggering_actor == github.actor && github.event.sender.login == github.actor &&
+      (
+        (github.event_name == 'issue_comment' && contains(github.event.comment.body, '!askpolli')) ||
+        (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '!askpolli')) ||
+        (github.event_name == 'pull_request_review' && contains(github.event.review.body, '!askpolli')) ||
+        (github.event_name == 'issues' && (contains(github.event.issue.body, '!askpolli') || contains(github.event.issue.title, '!askpolli')))
+      )
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:

@@ -39,6 +39,33 @@ test("read execution and publication have separate permissions", () => {
     );
 });
 
+test("both first jobs whitelist callers before allocating a runner", () => {
+    for (const source of [full, workflow]) {
+        const gate = source
+            .split(/ {4}if: \|\r?\n/)[1]
+            .split("    runs-on:")[0];
+        assert.match(
+            gate,
+            /contains\(fromJSON\('\[5099901,36901823,158852059,74301576\]'\), github\.event\.sender\.id\)/,
+        );
+        assert.match(gate, /github\.triggering_actor == github\.actor/);
+        assert.match(gate, /github\.event\.sender\.login == github\.actor/);
+    }
+    const readGate = workflow
+        .split(/ {4}if: \|\r?\n/)[1]
+        .split("    runs-on:")[0];
+    assert.match(
+        readGate,
+        /\[34513273,204561696,182555207,189873015,228371309\]/,
+    );
+    assert.match(readGate, /github\.event\.issue\.pull_request/);
+    const writeGate = full.split(/ {4}if: \|\r?\n/)[1].split("    runs-on:")[0];
+    assert.doesNotMatch(
+        writeGate,
+        /34513273|204561696|182555207|189873015|228371309/,
+    );
+});
+
 const publisher = workflow
     .split("  publish:")[1]
     .split("<<'NODE'\n")[1]

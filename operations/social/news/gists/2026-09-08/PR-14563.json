@@ -1,0 +1,34 @@
+{
+  "pr_number": 14563,
+  "title": "chore: rotate production OpenRouter API key",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14563",
+  "merged_at": "2026-09-08T08:05:17Z",
+  "labels": [],
+  "pr_body_excerpt": "- Rotates only `OPENROUTER_API_KEY` in the encrypted Gen production secrets, with explicit maintainer approval.\n- Scopes production synchronization to OpenRouter when it is the only changed secret; adds the same option for manual deployment.\n- Preserves staging, development, and all other secret values.\n- Validates the key with OpenRouter, verifies only its decrypted value changed, and checks workflow YAML and production scope selection. Biome passes.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "One key, freshly turned",
+    "blurb": "The production OpenRouter key got a careful rotation, without disturbing the rest of the secret garden. Deployments can now sync just that one pollen grain when that is all that changed.",
+    "summary": "Rotated the encrypted production OPENROUTER_API_KEY and updated Cloudflare production deployment workflows to validate OpenRouter and synchronize only that secret when it is the sole change, while preserving staging, development, and other production secrets.",
+    "impact": "Production OpenRouter-backed text generation keeps running on a newly validated credential, with narrower secret synchronization for routine key rotations and manual deployments.",
+    "keywords": [
+      "OpenRouter",
+      "production",
+      "secrets",
+      "Cloudflare",
+      "deployment",
+      "key-rotation"
+    ],
+    "visual_concept": "A careful greenhouse key rotation: Polli acts as a tiny maintainer, replacing one glowing key in a labeled OpenRouter terminal cabinet while every other sealed jar remains untouched. A small CRT monitor robot verifies the single changed key, surrounded by code-plants and warm garden lights.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wearing a tiny maintainer tool belt as she carefully swaps one glowing key in a retro terminal cabinet labeled \"OPENROUTER\"; a chunky CRT monitor robot checks a single lime green (#ecf874) key while untouched secret jars and code-plants grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14563.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow bee mascot with dark brown horizontal stripes, small black legs, black antennae, black oval eyes, bright pink rectangular cheek blushes, a happy smile, and rounded translucent light-blue wings, wearing a tiny maintainer tool belt as she carefully swaps one glowing key in a retro terminal cabinet labeled \"OPENROUTER\"; a chunky CRT monitor robot checks a single lime green (#ecf874) key while untouched secret jars and code-plants grow nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, emotionally warm."
+  },
+  "generated_at": "2026-09-08T08:36:56.305953+00:00"
+}

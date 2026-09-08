@@ -39,7 +39,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: "22"
-          package-manager-cache: false
 
       - name: Update Latest News section
         run: python operations/social/scripts/update_readme.py

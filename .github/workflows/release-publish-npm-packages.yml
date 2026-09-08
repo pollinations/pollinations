@@ -51,7 +51,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          package-manager-cache: false
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies & build
@@ -95,7 +94,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          package-manager-cache: false
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies & build
@@ -142,7 +140,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 24
-          package-manager-cache: false
           registry-url: https://registry.npmjs.org/
 
       - name: Install dependencies & build

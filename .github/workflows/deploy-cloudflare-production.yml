@@ -158,7 +158,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          package-manager-cache: false
 
       - name: Install dependencies
         run: npm ci
@@ -210,7 +209,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          package-manager-cache: false
 
       - name: Install root dependencies
         run: npm ci
@@ -239,7 +237,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          package-manager-cache: false
 
       - name: Install root dependencies
         run: npm ci
@@ -362,7 +359,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          package-manager-cache: false
       - name: Install dependencies
         run: npm ci
       - name: Finalize canonical model permissions
@@ -383,7 +379,6 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: '24'
-          package-manager-cache: false
 
       - name: Install shared dependencies
         run: npm install --workspace shared --include-workspace-root=false
@@ -434,7 +429,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-          package-manager-cache: false
 
       - name: Setup SOPS
         if: matrix.app.sops != 'none'

@@ -184,7 +184,7 @@ export async function callMinimaxH3API(
             seed: safeParams.seed,
         },
         H3_DURATION_SECONDS,
-        "minimax-h3",
+        "minimax/minimax-h3",
     );
 }
 

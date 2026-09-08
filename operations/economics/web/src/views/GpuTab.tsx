@@ -22,11 +22,6 @@ import {
 import { GaugeSummary } from "../components/EconomicsGauge";
 import { StatCards } from "../components/StatCards";
 import {
-    opCloudCreditBurnUsd,
-    opCloudMonth,
-    opCloudPaidBurnUsd,
-} from "../lib/computeLedger";
-import {
     computeModeIndex,
     providerMonthComputeMode,
 } from "../lib/computeModes";
@@ -39,9 +34,14 @@ import {
     type ValueFilter,
     WINDOW_START,
 } from "../lib/months";
-import { canonicalProvider } from "../lib/providerRegistry";
+import { canonicalVendor } from "../lib/tb";
 import { signedToneOrSoft } from "../lib/tone";
-import type { Data, OpCloudRow } from "../types";
+import {
+    vendorLedgerCreditBurnUsd,
+    vendorLedgerMonth,
+    vendorLedgerPaidBurnUsd,
+} from "../lib/vendorLedger";
+import type { Data, VendorLedgerRow } from "../types";
 
 export type GpuResourceRow = {
     kind: "gpu" | "overhead";
@@ -113,11 +113,11 @@ const LEGACY_HOURLY_VENDORS = new Set(["lambda", "runpod"]);
 const NON_RESOURCE_PATTERN =
     /refund|grant|promo|credit|settlement|reconcil|account total|billing-history|startup program|top.?up|storage/i;
 
-function usageKind(row: OpCloudRow): UsageKind | null {
+function usageKind(row: VendorLedgerRow): UsageKind | null {
     return USAGE_KIND_BY_SKU[row.resource_sku.trim().toLowerCase()] ?? null;
 }
 
-function isFinancialOrAggregateRow(row: OpCloudRow): boolean {
+function isFinancialOrAggregateRow(row: VendorLedgerRow): boolean {
     if (usageKind(row)) return false;
     return NON_RESOURCE_PATTERN.test(
         `${row.resource_id} ${row.resource_name} ${row.resource_sku}`,
@@ -188,16 +188,16 @@ export function gpuResourceRows(
 
     const groups = new Map<string, ResourceAcc>();
 
-    for (const row of data.opCloud ?? []) {
-        const vendor = canonicalProvider(row.vendor);
+    for (const row of data.vendorLedger ?? []) {
+        const vendor = canonicalVendor(row.vendor);
         if (row.type !== "gpu" || vendor === "community") continue;
-        const month = opCloudMonth(row);
+        const month = vendorLedgerMonth(row);
         if (month < WINDOW_START || !matchesMonth(month, monthFilter)) {
             continue;
         }
 
-        const paidCostUsd = opCloudPaidBurnUsd(row);
-        const creditCostUsd = opCloudCreditBurnUsd(row);
+        const paidCostUsd = vendorLedgerPaidBurnUsd(row);
+        const creditCostUsd = vendorLedgerCreditBurnUsd(row);
         const totalCostUsd = paidCostUsd + creditCostUsd;
         if (paidCostUsd === 0 && creditCostUsd === 0) continue;
 
@@ -469,7 +469,7 @@ export function gpuWorkloadRows(
 
     const modeIndex = computeModeIndex(data);
     for (const pollen of data.opPollen ?? []) {
-        const vendor = canonicalProvider(pollen.vendor);
+        const vendor = canonicalVendor(pollen.vendor);
         if (
             vendor === "community" ||
             pollen.month < WINDOW_START ||
@@ -999,23 +999,13 @@ export function GpuTab({
                                 className={GROUP_BORDER}
                                 {...headerProps("retainedUsd")}
                             >
-                                <HeaderHint
-                                    hint={{
-                                        meaning:
-                                            "Cash-backed Pollen used on this workload after owner, BYOP, and model payouts.",
-                                        tables: "economics_pollen_usage_api",
-                                    }}
-                                >
-                                    Retained Paid
-                                </HeaderHint>
+                                Retained Paid
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
                                 {...headerProps("questUsd")}
                             >
-                                <HeaderHint hint="Free Quest Pollen used on this workload; it is not fiat revenue.">
-                                    Quest
-                                </HeaderHint>
+                                Quest
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -1055,9 +1045,7 @@ export function GpuTab({
                                 align="right"
                                 {...headerProps("currentPerformancePct")}
                             >
-                                <HeaderHint hint="Current result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                             <TableHeaderCell
                                 align="right"
@@ -1070,9 +1058,7 @@ export function GpuTab({
                                 align="right"
                                 {...headerProps("fullCostPerformancePct")}
                             >
-                                <HeaderHint hint="Full-cost result divided by retained Paid Pollen.">
-                                    Performance
-                                </HeaderHint>
+                                Performance
                             </TableHeaderCell>
                         </TableRow>
                     </TableHead>

@@ -255,7 +255,11 @@ async def generate_video(
         )
 
     frames = [await _public_frame_url(f) for f in (image, end_image) if f]
-    if frames and model.startswith("veo") and duration not in _VEO_I2V_DURATIONS:
+    if (
+        frames
+        and model.rsplit("/", 1)[-1].startswith("veo")
+        and duration not in _VEO_I2V_DURATIONS
+    ):
         # veo's image-to-video upstream hard-rejects other durations (400).
         duration = min(_VEO_I2V_DURATIONS, key=lambda d: (abs(d - duration), d))
     params = {

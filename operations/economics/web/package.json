@@ -9,7 +9,6 @@
     "decrypt-vars": "sops exec-env ../secrets/web.json 'sops exec-env ../secrets/web.dev.json \"node scripts/write-dev-vars.mjs\"'",
     "build": "vite build",
     "prebuild": "npm run build --prefix ../../../packages/ui",
-    "deploy": "npm run build && wrangler deploy",
     "preview": "vite preview",
     "pretest": "npm run build --prefix ../../../packages/ui",
     "test": "vitest run",

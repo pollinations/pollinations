@@ -7,6 +7,7 @@ import {
 import { createMiddleware } from "hono/factory";
 import { getRealClientIp } from "../client-ip.ts";
 import { ensureConfigured, type LogFormat } from "../logger.ts";
+import { redactCredentialQueryParams } from "../observability/request-inputs.ts";
 import { getPublicUrl } from "../public-origin.ts";
 
 export type LoggerVariables = {
@@ -36,7 +37,7 @@ export const logger = createMiddleware<Env>(async (c, next) => {
     const shouldEmitRequestLogs =
         c.env.ENVIRONMENT === "local" || c.env.ENVIRONMENT === "test";
 
-    const publicUrl = getPublicUrl(c).toString();
+    const publicUrl = redactCredentialQueryParams(getPublicUrl(c));
 
     await withContext(
         {

@@ -30,10 +30,9 @@ export type AutomaticForecastRule = ForecastLineRule & {
 // New lines remain visibly unmodeled until they are added here.
 const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     // Revenue
-    "github|revenue": { method: "one_off", paymentTiming: "direct" },
     "polar|revenue": { method: "one_off", paymentTiming: "direct" },
-    "stripe|revenue": { method: "last", paymentTiming: "direct" },
-    "wise|revenue": { method: "one_off", paymentTiming: "direct" },
+    "stripe sales|revenue": { method: "last", paymentTiming: "direct" },
+    "stripe refunds|revenue": { method: "last", paymentTiming: "direct" },
 
     // Cash adjustments
     "deel|balance_sheet": {
@@ -53,16 +52,13 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "one_off",
         paymentTiming: "direct",
     },
-    "self-issued|balance_sheet": {
-        method: "one_off",
-        paymentTiming: "direct",
-    },
-    "thomas-haferlach|balance_sheet": {
-        method: "one_off",
-        paymentTiming: "direct",
-    },
 
-    // Metered compute and infrastructure that should project from OP Cloud.
+    // Metered compute and infrastructure projected from the Compute ledger.
+    "assemblyai|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "alibaba|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -102,6 +98,13 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "fixed",
         paymentTiming: "direct",
     },
+    // Exa search API on a promotional credit balance (lots with verified
+    // expiry); cash only once the credits are used up.
+    "exa|infrastructure": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "fal|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -122,6 +125,11 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "postpaid",
         automaticUsage: true,
     },
+    "inception|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "inferenceport|compute": {
         method: "last",
         paymentTiming: "prepaid",
@@ -132,9 +140,30 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         paymentTiming: "prepaid",
         automaticUsage: true,
     },
+    // Modal usage is covered by the $30 monthly plan credit per workspace.
+    "modal|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
     "openrouter|compute": {
         method: "last",
         paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "openai|compute": {
+        method: "last",
+        paymentTiming: "prepaid",
+        automaticUsage: true,
+    },
+    "ovhcloud|compute": {
+        method: "last",
+        paymentTiming: "postpaid",
+        automaticUsage: true,
+    },
+    "ovhcloud|infrastructure": {
+        method: "last",
+        paymentTiming: "postpaid",
         automaticUsage: true,
     },
     "perplexity|compute": {
@@ -171,15 +200,28 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
 
     // Reviewed historical or discontinued metered lines. One-time means their
     // observed cash stays historical and is never repeated automatically.
+    "airforce|compute": { method: "one_off", paymentTiming: null },
     "anthropic|compute": { method: "one_off", paymentTiming: "prepaid" },
     "bytedance|compute": { method: "one_off", paymentTiming: "postpaid" },
     "daytona|infrastructure": {
         method: "one_off",
         paymentTiming: "direct",
     },
+    "digitalocean|infrastructure": {
+        method: "one_off",
+        paymentTiming: "postpaid",
+    },
     "io.net|compute": { method: "one_off", paymentTiming: "prepaid" },
     "lambda|compute": { method: "one_off", paymentTiming: "direct" },
+    "pointsflyer|compute": { method: "one_off", paymentTiming: null },
     "retell|compute": { method: "one_off", paymentTiming: "direct" },
+    // Scaleway stopped after February 2026: no invoices, no vouchers left.
+    "scaleway|compute": { method: "one_off", paymentTiming: "postpaid" },
+    "scaleway|infrastructure": {
+        method: "one_off",
+        paymentTiming: "postpaid",
+    },
+    "seraphyn|compute": { method: "one_off", paymentTiming: null },
     "stability|compute": { method: "one_off", paymentTiming: "prepaid" },
 
     // Development
@@ -217,6 +259,12 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
     "telecom|operations": { method: "fixed", paymentTiming: "direct" },
 
     // Office
+    "gaswerksiedlung|office": {
+        method: "fixed",
+        paymentTiming: "direct",
+        // Rent resumes only with a reviewed private budget, never old payments.
+        fixedAmounts: [],
+    },
     "barbara-khamouguinoff|office": {
         method: "one_off",
         paymentTiming: "direct",
@@ -244,7 +292,6 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
         method: "fixed",
         paymentTiming: "direct",
     },
-    "tax office|admin": { method: "one_off", paymentTiming: "direct" },
     "taxes|admin": { method: "one_off", paymentTiming: "direct" },
     "ayushman|payroll": { method: "one_off", paymentTiming: "direct" },
     "deel|payroll": {
@@ -276,6 +323,9 @@ export function forecastLineRule(
     category: string,
     privateRules?: Readonly<Record<string, PrivateForecastRule>>,
 ): ForecastLineRule | null {
+    if (category.trim().toLowerCase() === "revenue_share") {
+        return { method: "one_off", paymentTiming: "direct" };
+    }
     const rule = FORECAST_RULE_BY_LINE[key(vendor, category)];
     if (!rule) return null;
     return { ...rule, ...privateRule(vendor, category, privateRules) };

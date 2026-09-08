@@ -1,5 +1,8 @@
 import logging
+import re
 from dataclasses import dataclass
+
+GITHUB_LOGIN_RE = re.compile(r"^(?!.*--)[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 
 import aiohttp
 
@@ -179,14 +182,29 @@ class GitHubPRManager(PRReviewMixin):
                 "checks_state": rollup.get("state", "UNKNOWN"),
                 "node_id": pr["id"],
             }
-        except Exception as e:
-            logger.error(f"Error getting PR: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting PR")
+            return {"error": "GitHub request failed"}
 
-    async def list_prs(self, state: str = "open", limit: int = 10, base: str | None = None) -> dict:
+    async def list_prs(
+        self,
+        state: str | None = None,
+        limit: int = 10,
+        base: str | None = None,
+        author: str | None = None,
+        query: str | None = None,
+        cursor: str | None = None,
+    ) -> dict:
         """List pull requests using GraphQL."""
         if not has_github_auth():
             return {"error": "GitHub token not configured"}
+        if author and not GITHUB_LOGIN_RE.fullmatch(author):
+            return {"error": "author must be a valid GitHub login"}
+        if query is not None and not query.strip():
+            return {"error": "query must not be blank"}
+        if cursor and query is None:
+            return {"error": "cursor requires query search mode"}
+        state = state or ("all" if query is not None else "open")
 
         states_map = {
             "open": "OPEN",
@@ -196,10 +214,94 @@ class GitHubPRManager(PRReviewMixin):
         }
         gql_state = states_map.get(state.lower())
 
+        limit = max(1, min(limit, 100))
+        if author or base or query is not None:
+            from .graphql import build_scoped_search_query
+
+            native_query = build_scoped_search_query(
+                query or "",
+                repository=self.repo,
+                kind="pr",
+                state=state if query else None,
+                author=author,
+                base=base,
+            )
+            if isinstance(native_query, dict):
+                return native_query
+            if not query:
+                qualifiers = [f"repo:{self.repo}", "is:pr"]
+                if author:
+                    qualifiers.append(f"author:{author}")
+                if state != "all":
+                    qualifiers.append(f"is:{state}")
+                if base:
+                    escaped_base = base.replace("\\", "\\\\").replace('"', '\\"')
+                    qualifiers.append(f'base:"{escaped_base}"')
+                native_query = " ".join(qualifiers)
+
+            query = """
+            query SearchPullRequests($query: String!, $limit: Int!, $after: String) {
+                search(query: $query, type: ISSUE, first: $limit, after: $after) {
+                    issueCount
+                    pageInfo { hasNextPage endCursor }
+                    nodes {
+                        ... on PullRequest {
+                            number title state isDraft url author { login } headRefName baseRefName createdAt updatedAt
+                            labels(first: 5) { nodes { name } }
+                        }
+                    }
+                }
+            }
+            """
+            try:
+                result = await github_graphql._execute(
+                    query, {"query": native_query, "limit": limit, "after": cursor}
+                )
+                if result.get("error"):
+                    return {"error": result["error"], "partial": result.get("partial", False)}
+                connection = result.get("data", {}).get("search", {})
+                prs_data = connection.get("nodes", [])
+                prs = [
+                    {
+                        "number": pr["number"],
+                        "title": pr["title"],
+                        "state": pr["state"].lower(),
+                        "draft": pr["isDraft"],
+                        "url": pr["url"],
+                        "author": pr["author"]["login"] if pr.get("author") else "unknown",
+                        "head": pr["headRefName"],
+                        "base": pr["baseRefName"],
+                        "created_at": pr["createdAt"][:10],
+                        "updated_at": pr["updatedAt"][:10],
+                        "labels": [label["name"] for label in pr.get("labels", {}).get("nodes", [])],
+                    }
+                    for pr in prs_data
+                    if pr
+                ]
+                return {
+                    "prs": prs,
+                    "count": len(prs),
+                    "matched_total": connection.get("issueCount", 0),
+                    "fetched": len(prs_data),
+                    "source_total": connection.get("issueCount", 0),
+                    "truncated": bool(connection.get("pageInfo", {}).get("hasNextPage")),
+                    "next_cursor": connection.get("pageInfo", {}).get("endCursor")
+                    if connection.get("pageInfo", {}).get("hasNextPage")
+                    else None,
+                    "state": state,
+                    "base": base,
+                    "author": author,
+                }
+            except Exception:
+                logger.exception("Error listing pull requests by author")
+                return {"error": "Failed to list pull requests"}
+
         query = """
         query($owner: String!, $repo: String!, $limit: Int!, $states: [PullRequestState!]) {
             repository(owner: $owner, name: $repo) {
                 pullRequests(first: $limit, states: $states, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                    totalCount
+                    pageInfo { hasNextPage }
                     nodes {
                         number
                         title
@@ -228,12 +330,11 @@ class GitHubPRManager(PRReviewMixin):
             if result.get("error"):
                 return {"error": result["error"]}
 
-            prs_data = result.get("data", {}).get("repository", {}).get("pullRequests", {}).get("nodes", [])
+            connection = result.get("data", {}).get("repository", {}).get("pullRequests", {})
+            prs_data = connection.get("nodes", [])
 
             prs = []
             for pr in prs_data:
-                if base and pr["baseRefName"] != base:
-                    continue
                 prs.append(
                     {
                         "number": pr["number"],
@@ -250,10 +351,20 @@ class GitHubPRManager(PRReviewMixin):
                     }
                 )
 
-            return {"prs": prs, "count": len(prs), "state": state}
-        except Exception as e:
-            logger.error(f"Error listing PRs: {e}")
-            return {"error": str(e)}
+            return {
+                "prs": prs,
+                "count": len(prs),
+                "matched_total": len(prs),
+                "fetched": len(prs_data),
+                "source_total": connection.get("totalCount", 0),
+                "truncated": bool(connection.get("pageInfo", {}).get("hasNextPage")),
+                "state": state,
+                "base": base,
+                "author": author,
+            }
+        except Exception:
+            logger.exception("Error listing PRs")
+            return {"error": "Failed to list pull requests"}
 
     async def get_pr_files(self, pr_number: int) -> dict:
         """Get files changed in a PR using REST API (GraphQL doesn't expose patches)."""
@@ -282,16 +393,16 @@ class GitHubPRManager(PRReviewMixin):
                         "pr_number": pr_number,
                         "files": files,
                         "count": len(files),
-                        "total_additions": sum(f["additions"] for f in files),
-                        "total_deletions": sum(f["deletions"] for f in files),
+                        "total_additions": sum(int(f.get("additions", 0)) for f in files),
+                        "total_deletions": sum(int(f.get("deletions", 0)) for f in files),
                     }
                 elif response.status == 404:
                     return {"error": f"PR #{pr_number} not found", "not_found": True}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error getting PR files: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting PR files")
+            return {"error": "GitHub request failed"}
 
     async def get_pr_diff(self, pr_number: int) -> dict:
         """Get the unified diff for a PR."""
@@ -300,6 +411,8 @@ class GitHubPRManager(PRReviewMixin):
 
         url = f"https://api.github.com/repos/{self.repo}/pulls/{pr_number}"
         headers = await self._get_headers()
+        if not headers:
+            return {"error": "GitHub token not configured"}
         headers["Accept"] = "application/vnd.github.v3.diff"
 
         try:
@@ -312,9 +425,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"PR #{pr_number} not found", "not_found": True}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error getting PR diff: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting PR diff")
+            return {"error": "GitHub request failed"}
 
     async def get_pr_checks(self, pr_number: int) -> dict:
         """Get CI/workflow status for a PR using GraphQL statusCheckRollup."""
@@ -416,9 +529,9 @@ class GitHubPRManager(PRReviewMixin):
                 "checks": checks,
                 "count": len(checks),
             }
-        except Exception as e:
-            logger.error(f"Error getting PR checks: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting PR checks")
+            return {"error": "GitHub request failed"}
 
     # ============================================================
     # PR WRITE OPERATIONS (GraphQL Mutations + REST)
@@ -463,9 +576,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"Cannot request reviewer: {error_data.get('message', 'validation failed')}"}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error requesting reviewers: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error requesting reviewers")
+            return {"error": "GitHub request failed"}
 
     async def create_review(self, pr_number: int, event: str, body: str | None = None) -> dict:
         """Create a review on a PR (approve, request changes, or comment)."""
@@ -505,9 +618,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"Review failed: {error_data.get('message', 'validation failed')}"}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error creating review: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error creating review")
+            return {"error": "GitHub request failed"}
 
     async def merge_pr(
         self,
@@ -554,9 +667,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"Merge conflict: {error_data.get('message', 'conflict')}"}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error merging PR: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error merging PR")
+            return {"error": "GitHub request failed"}
 
     async def update_pr(
         self,
@@ -598,9 +711,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"PR #{pr_number} not found", "not_found": True}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error updating PR: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error updating PR")
+            return {"error": "GitHub request failed"}
 
     async def create_pr(self, title: str, body: str, head: str, base: str = "main", draft: bool = False) -> dict:
         """Create a new pull request."""
@@ -632,9 +745,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"Cannot create PR: {error_data.get('message', 'validation failed')}"}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error creating PR: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error creating PR")
+            return {"error": "GitHub request failed"}
 
     async def convert_to_draft(self, pr_number: int) -> dict:
         """Convert a PR to draft using GraphQL mutation."""
@@ -668,9 +781,9 @@ class GitHubPRManager(PRReviewMixin):
                 "is_draft": True,
                 "pr_url": f"https://github.com/{self.repo}/pull/{pr_number}",
             }
-        except Exception as e:
-            logger.error(f"Error converting to draft: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error converting to draft")
+            return {"error": "GitHub request failed"}
 
     async def mark_ready_for_review(self, pr_number: int) -> dict:
         """Mark a draft PR as ready for review using GraphQL mutation."""
@@ -704,9 +817,9 @@ class GitHubPRManager(PRReviewMixin):
                 "is_draft": False,
                 "pr_url": f"https://github.com/{self.repo}/pull/{pr_number}",
             }
-        except Exception as e:
-            logger.error(f"Error marking ready: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error marking ready")
+            return {"error": "GitHub request failed"}
 
     async def update_branch(self, pr_number: int) -> dict:
         """Update a PR branch with the latest from base branch."""
@@ -731,9 +844,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": "Branch cannot be updated (no updates available or conflict)"}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error updating branch: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error updating branch")
+            return {"error": "GitHub request failed"}
 
     async def add_comment(self, pr_number: int, body: str, author: str = "Discord User") -> dict:
         """Add a comment to a PR."""
@@ -756,9 +869,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"PR #{pr_number} not found", "not_found": True}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error adding comment: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error adding comment")
+            return {"error": "GitHub request failed"}
 
     # ============================================================
     # NEW: INLINE REVIEW COMMENTS
@@ -829,9 +942,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"Invalid comment position: {error_data.get('message', 'validation failed')}"}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error adding inline comment: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error adding inline comment")
+            return {"error": "GitHub request failed"}
 
     async def add_code_suggestion(
         self,
@@ -926,9 +1039,9 @@ class GitHubPRManager(PRReviewMixin):
                     }
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error getting file at ref: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting file at ref")
+            return {"error": "GitHub request failed"}
 
     async def get_pr_commits(self, pr_number: int) -> dict:
         """Get all commits in a PR."""
@@ -962,9 +1075,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"PR #{pr_number} not found", "not_found": True}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error getting PR commits: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting PR commits")
+            return {"error": "GitHub request failed"}
 
     # ============================================================
     # NEW: REVIEW THREADS (Resolve/Unresolve)
@@ -989,9 +1102,9 @@ class GitHubPRManager(PRReviewMixin):
                 return {"error": result["error"]}
 
             return {"success": True, "thread_id": thread_id, "resolved": True}
-        except Exception as e:
-            logger.error(f"Error resolving thread: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error resolving thread")
+            return {"error": "GitHub request failed"}
 
     async def unresolve_thread(self, thread_id: str) -> dict:
         """Unresolve a review thread using GraphQL."""
@@ -1012,9 +1125,9 @@ class GitHubPRManager(PRReviewMixin):
                 return {"error": result["error"]}
 
             return {"success": True, "thread_id": thread_id, "resolved": False}
-        except Exception as e:
-            logger.error(f"Error unresolving thread: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error unresolving thread")
+            return {"error": "GitHub request failed"}
 
     async def get_review_threads(self, pr_number: int) -> dict:
         """Get all review threads for a PR."""
@@ -1084,9 +1197,9 @@ class GitHubPRManager(PRReviewMixin):
                 "resolved": sum(1 for t in threads if t["resolved"]),
                 "unresolved": sum(1 for t in threads if not t["resolved"]),
             }
-        except Exception as e:
-            logger.error(f"Error getting review threads: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting review threads")
+            return {"error": "GitHub request failed"}
 
     # ============================================================
     # NEW: AUTO-MERGE
@@ -1123,9 +1236,9 @@ class GitHubPRManager(PRReviewMixin):
                 "merge_method": gql_method,
                 "pr_url": f"https://github.com/{self.repo}/pull/{pr_number}",
             }
-        except Exception as e:
-            logger.error(f"Error enabling auto-merge: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error enabling auto-merge")
+            return {"error": "GitHub request failed"}
 
     async def disable_auto_merge(self, pr_number: int) -> dict:
         """Disable auto-merge for a PR."""
@@ -1152,9 +1265,9 @@ class GitHubPRManager(PRReviewMixin):
                 "auto_merge": False,
                 "pr_url": f"https://github.com/{self.repo}/pull/{pr_number}",
             }
-        except Exception as e:
-            logger.error(f"Error disabling auto-merge: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error disabling auto-merge")
+            return {"error": "GitHub request failed"}
 
     # ============================================================
     # NEW: LIST REVIEW COMMENTS
@@ -1194,9 +1307,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"PR #{pr_number} not found", "not_found": True}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error getting review comments: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error getting review comments")
+            return {"error": "GitHub request failed"}
 
     async def remove_reviewer(
         self,
@@ -1233,9 +1346,9 @@ class GitHubPRManager(PRReviewMixin):
                     return {"error": f"PR #{pr_number} not found", "not_found": True}
                 else:
                     return {"error": f"GitHub API error: {response.status}"}
-        except Exception as e:
-            logger.error(f"Error removing reviewers: {e}")
-            return {"error": str(e)}
+        except Exception:
+            logger.exception("Error removing reviewers")
+            return {"error": "GitHub request failed"}
 
 
 # Singleton instance
@@ -1249,44 +1362,47 @@ github_pr_manager = GitHubPRManager()
 
 async def tool_github_pr(
     action: str,
-    pr_number: int = None,
+    pr_number: int | None = None,
     # List filters
-    state: str = "open",
+    state: str | None = None,
     limit: int = 10,
-    base: str = None,
+    base: str | None = None,
+    author: str | None = None,
+    query: str | None = None,
+    cursor: str | None = None,
     # Create/Update fields
-    title: str = None,
-    body: str = None,
-    head: str = None,
+    title: str | None = None,
+    body: str | None = None,
+    head: str | None = None,
     draft: bool = False,
     # Reviewers
-    reviewers: list[str] = None,
-    team_reviewers: list[str] = None,
+    reviewers: list[str] | None = None,
+    team_reviewers: list[str] | None = None,
     # Review
-    event: str = None,
+    event: str | None = None,
     # Merge
-    commit_title: str = None,
-    commit_message: str = None,
+    commit_title: str | None = None,
+    commit_message: str | None = None,
     merge_method: str = "merge",
     # Comment
-    comment: str = None,
+    comment: str | None = None,
     # AI Review
     post_review_to_github: bool = False,
     # Inline comments
-    path: str = None,
-    line: int = None,
+    path: str | None = None,
+    line: int | None = None,
     side: str = "RIGHT",
-    suggestion: str = None,
+    suggestion: str | None = None,
     # Review threads
-    thread_id: str = None,
+    thread_id: str | None = None,
     # Get file at ref
-    file_path: str = None,
+    file_path: str | None = None,
     ref: str = "main",  # Default to main branch (pollinations/pollinations uses main, not master)
     # Edit history
-    edit_index: int = None,  # For get_history - get full diff for specific edit (0=most recent)
+    edit_index: int | None = None,  # For get_history - get full diff for specific edit (0=most recent)
     # Injected context
     reporter: str = "Discord User",
-    _context: dict = None,
+    _context: dict | None = None,
     **kwargs,  # Catch any extra args
 ) -> dict:
     """
@@ -1378,7 +1494,9 @@ async def tool_github_pr(
         return await github_pr_manager.get_pr(pr_number)
 
     elif action == "list":
-        return await github_pr_manager.list_prs(state=state, limit=limit, base=base)
+        return await github_pr_manager.list_prs(
+            state=state, limit=limit, base=base, author=author, query=query, cursor=cursor
+        )
 
     elif action == "get_history":
         if not pr_number:

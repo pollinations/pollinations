@@ -116,18 +116,21 @@ describe("economics Worker auth", () => {
         vi.stubGlobal("fetch", upstream);
 
         const response = await request(
-            "/api/pipes/economics_compute_ledger_api",
+            "/api/pipes/economics_vendor_ledger_api",
         );
 
         expect(response.status).toBe(401);
         expect(upstream).not.toHaveBeenCalled();
     });
 
-    it("rejects pipes outside the read allowlist", async () => {
+    it.each([
+        "secret_pipe",
+        "economics_compute_ledger_api",
+    ])("rejects %s outside the read allowlist", async (pipe) => {
         const upstream = vi.fn();
         vi.stubGlobal("fetch", upstream);
 
-        const response = await request("/api/pipes/secret_pipe", {
+        const response = await request(`/api/pipes/${pipe}`, {
             headers: { Cookie: await authenticatedCookie() },
         });
 
@@ -144,7 +147,7 @@ describe("economics Worker auth", () => {
         vi.stubGlobal("fetch", upstream);
 
         const response = await request(
-            "/api/pipes/economics_compute_ledger_api",
+            "/api/pipes/economics_vendor_ledger_api",
             {
                 headers: { Cookie: await authenticatedCookie() },
             },
@@ -155,7 +158,59 @@ describe("economics Worker auth", () => {
             data: [{ entry_id: "cloud-1" }],
         });
         expect(upstream).toHaveBeenCalledWith(
-            `${env.TINYBIRD_API}/v0/pipes/economics_compute_ledger_api.json`,
+            `${env.TINYBIRD_API}/v0/pipes/economics_vendor_ledger_api.json`,
+            {
+                headers: {
+                    Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,
+                },
+            },
+        );
+    });
+
+    it("keeps revenue-share identity data behind authentication", async () => {
+        const upstream = vi.fn().mockResolvedValue(Response.json({ data: [] }));
+        vi.stubGlobal("fetch", upstream);
+
+        const unauthorized = await request(
+            "/api/pipes/economics_revenue_share_api",
+        );
+        expect(unauthorized.status).toBe(401);
+        expect(upstream).not.toHaveBeenCalled();
+
+        const response = await request(
+            "/api/pipes/economics_revenue_share_api",
+            { headers: { Cookie: await authenticatedCookie() } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(upstream).toHaveBeenCalledWith(
+            `${env.TINYBIRD_API}/v0/pipes/economics_revenue_share_api.json`,
+            {
+                headers: {
+                    Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,
+                },
+            },
+        );
+    });
+
+    it("keeps aggregate D1 balances behind authentication", async () => {
+        const upstream = vi.fn().mockResolvedValue(Response.json({ data: [] }));
+        vi.stubGlobal("fetch", upstream);
+
+        const unauthorized = await request(
+            "/api/pipes/economics_user_balances_api",
+        );
+        expect(unauthorized.status).toBe(401);
+        expect(upstream).not.toHaveBeenCalled();
+
+        const response = await request(
+            "/api/pipes/economics_user_balances_api",
+            { headers: { Cookie: await authenticatedCookie() } },
+        );
+
+        expect(response.status).toBe(200);
+        expect(upstream).toHaveBeenCalledWith(
+            `${env.TINYBIRD_API}/v0/pipes/economics_user_balances_api.json`,
             {
                 headers: {
                     Authorization: `Bearer ${env.TINYBIRD_ECONOMICS_READ_TOKEN}`,

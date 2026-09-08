@@ -21,6 +21,7 @@ export type CopyButtonProps = Omit<
     tooltip?: ReactNode;
     tooltipAlign?: "start" | "center";
     tooltipClampToViewport?: boolean;
+    tooltipMaxWidth?: number;
     copiedTooltip?: ReactNode;
     tooltipClassName?: string;
     className?: string | ((copied: boolean) => string);
@@ -35,6 +36,7 @@ export function CopyButton({
     tooltip = "📋 Click to copy",
     tooltipAlign,
     tooltipClampToViewport,
+    tooltipMaxWidth,
     copiedTooltip = "✅ Copied!",
     tooltipClassName,
     className,
@@ -95,7 +97,9 @@ export function CopyButton({
             content={copied ? copiedTooltip : tooltip}
             align={tooltipAlign}
             clampToViewport={tooltipClampToViewport}
+            maxWidth={tooltipMaxWidth}
             displayContents
+            tapEnabled={false}
             className={tooltipClassName}
         >
             {button}

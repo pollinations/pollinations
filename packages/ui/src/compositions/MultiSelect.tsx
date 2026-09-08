@@ -57,8 +57,11 @@ export const MultiSelect: FC<MultiSelectProps> = ({
     const displayText = disabled
         ? disabledText
         : isAllSelected
-          ? "All"
-          : `${selected.length} selected`;
+          ? placeholder
+          : selected.length === 1
+            ? (options.find((option) => option.value === selected[0])?.label ??
+              "1 selected")
+            : `${selected.length} selected`;
 
     const labelNode = label ? (
         <span className="polli:text-xs polli:font-medium polli:text-theme-text-soft">
@@ -79,6 +82,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                     <button
                         type="button"
                         disabled
+                        aria-label={label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
                             "polli:cursor-not-allowed polli:bg-theme-bg-active polli:opacity-50",
@@ -106,6 +110,7 @@ export const MultiSelect: FC<MultiSelectProps> = ({
                 trigger={(open) => (
                     <button
                         type="button"
+                        aria-label={label || placeholder}
                         className={cn(
                             TRIGGER_BASE,
                             open

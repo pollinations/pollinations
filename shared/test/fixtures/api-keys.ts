@@ -1,4 +1,5 @@
 import { env } from "cloudflare:test";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { createApiKeyAuth } from "../../auth/api-key.ts";
 import {
@@ -6,7 +7,10 @@ import {
     type CallerMetadata,
     createApiKeyForUser,
 } from "../../auth/api-key-creation.ts";
-import { user as userTable } from "../../db/better-auth.ts";
+import {
+    apikey as apiKeyTable,
+    user as userTable,
+} from "../../db/better-auth.ts";
 
 export type CreateTestUserOptions = {
     id?: string;
@@ -55,6 +59,10 @@ export async function createTestApiKey(opts: CreateTestApiKeyOptions = {}) {
     const userId = opts.userId ?? (await createTestUser(opts.user));
     const authClient = createApiKeyAuth(env);
     const type = opts.type ?? "secret";
+    const testPollenBudget =
+        opts.pollenBudget === undefined && type === "publishable"
+            ? 100
+            : opts.pollenBudget;
 
     const created = await createApiKeyForUser({
         authClient,
@@ -64,15 +72,24 @@ export async function createTestApiKey(opts: CreateTestApiKeyOptions = {}) {
         type,
         expiresIn: opts.expiresIn,
         allowedModels: opts.allowedModels,
-        pollenBudget: opts.pollenBudget,
+        pollenBudget: type === "publishable" ? 0 : testPollenBudget,
         accountPermissions: opts.accountPermissions,
         metadata: opts.metadata,
         allowAccountKeysPermission: true,
         defaultCreatedVia: "test",
     });
 
+    if (type === "publishable" && testPollenBudget != null) {
+        await drizzle(env.DB)
+            .update(apiKeyTable)
+            .set({ pollenBalance: testPollenBudget })
+            .where(eq(apiKeyTable.id, created.id));
+    }
+
     return {
         ...created,
+        ...(type === "publishable" &&
+            testPollenBudget != null && { pollenBudget: testPollenBudget }),
         userId,
     };
 }

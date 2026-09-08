@@ -5,6 +5,7 @@ import { cn } from "../lib/cn.ts";
 type ButtonIntent = "danger" | "info";
 
 const sizes = {
+    xs: "polli:h-5 polli:px-1.5 polli:py-0 polli:text-[11px] polli:leading-none",
     sm: "polli:px-2 polli:pt-0.5 polli:pb-1",
     md: "polli:px-4 polli:pt-1.5 polli:pb-2",
     lg: "polli:px-6 polli:py-3",

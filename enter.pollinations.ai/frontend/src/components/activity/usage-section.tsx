@@ -1,11 +1,5 @@
 import {
-    Button,
-    CardIcon,
-    DownloadIcon,
     InlineLink,
-    MultiSelect,
-    SproutIcon,
-    StatCard,
     Surface,
     Table,
     TableBody,
@@ -13,21 +7,19 @@ import {
     TableHead,
     TableHeaderCell,
     TableRow,
-    Tooltip,
     UsageIcon,
 } from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useMemo } from "react";
+import {
+    ActivityFilter,
+    CsvDownloadButton,
+    downloadFile,
+    PollenUsageBadges,
+} from "./activity-helpers";
 import { Chart } from "./chart";
-import { formatActivityPollen } from "./format-activity-pollen";
 import { MetricTabs } from "./metric-tabs";
-import type {
-    FilterState,
-    Metric,
-    ModelBreakdown,
-    UsagePeriodSelection,
-} from "./types";
+import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
@@ -109,37 +101,8 @@ export const UsageSection: FC<UsageSectionProps> = ({
             params.set("models", effectiveModels.join(","));
         }
 
-        const anchor = document.createElement("a");
-        anchor.href = `/api/account/usage?${params.toString()}`;
-        anchor.rel = "noopener";
-        document.body.appendChild(anchor);
-        anchor.click();
-        anchor.remove();
+        downloadFile(`/api/account/usage?${params.toString()}`);
     }
-
-    const downloadButton = (
-        <Button
-            as="button"
-            onClick={downloadDetailedUsage}
-            disabled={downloadDisabled}
-            className="flex items-center gap-1.5"
-        >
-            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            CSV
-        </Button>
-    );
-    const downloadAction = downloadDisabled ? (
-        <Tooltip
-            triggerAs="span"
-            content={downloadDisabledReason}
-            align="center"
-            className="inline-flex"
-        >
-            {downloadButton}
-        </Tooltip>
-    ) : (
-        downloadButton
-    );
 
     return (
         <div className="flex flex-col gap-2">
@@ -148,51 +111,29 @@ export const UsageSection: FC<UsageSectionProps> = ({
                     <UsageIcon className="h-4 w-4 shrink-0" />
                     Usage
                 </div>
-                {downloadAction}
+                <CsvDownloadButton
+                    disabled={downloadDisabled}
+                    disabledReason={downloadDisabledReason}
+                    onClick={downloadDetailedUsage}
+                />
             </div>
             <Surface className="flex flex-col gap-4">
                 <div className="flex flex-col gap-4">
                     <div className="flex flex-col items-start gap-2">
-                        <div className="flex w-full items-center gap-3">
-                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                                Keys
-                            </span>
-                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                {keySelectOptions.length === 0 ? (
-                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
-                                        No API key usage in this period
-                                    </span>
-                                ) : (
-                                    <MultiSelect
-                                        options={keySelectOptions}
-                                        selected={selectedKeyIds}
-                                        onChange={onSelectedKeyIdsChange}
-                                        placeholder="All"
-                                        align="start"
-                                    />
-                                )}
-                            </div>
-                        </div>
-                        <div className="flex w-full items-center gap-3">
-                            <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
-                                Models
-                            </span>
-                            <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-                                {modelSelectOptions.length === 0 ? (
-                                    <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
-                                        No model usage in this period
-                                    </span>
-                                ) : (
-                                    <MultiSelect
-                                        options={modelSelectOptions}
-                                        selected={selectedModels}
-                                        onChange={onSelectedModelsChange}
-                                        placeholder="All"
-                                        align="start"
-                                    />
-                                )}
-                            </div>
-                        </div>
+                        <ActivityFilter
+                            label="Keys"
+                            options={keySelectOptions}
+                            selected={selectedKeyIds}
+                            onChange={onSelectedKeyIdsChange}
+                            emptyMessage="No API key usage in this period"
+                        />
+                        <ActivityFilter
+                            label="Models"
+                            options={modelSelectOptions}
+                            selected={selectedModels}
+                            onChange={onSelectedModelsChange}
+                            emptyMessage="No model usage in this period"
+                        />
                         <MetricTabs value={metric} onChange={onMetricChange} />
                     </div>
 
@@ -265,56 +206,8 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                 )}
                 {!loading && !error && !hasUsage && <UsageEmptyState />}
             </div>
-
             {!loading && !error && hasUsage && (
-                <>
-                    {stats.modelBreakdowns.length > 0 && (
-                        <ModelBreakdownTable
-                            models={stats.modelBreakdowns}
-                            totalPollen={stats.totalPollen}
-                        />
-                    )}
-                    <div className="grid grid-cols-2 gap-4 border-t border-divider pt-4">
-                        <StatCard
-                            className="min-w-0"
-                            label="Pollen"
-                            value={formatActivityPollen(stats.totalPollen)}
-                            detail={
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <PaidChip
-                                        size="lg"
-                                        className="font-semibold"
-                                    >
-                                        <CardIcon className="h-4 w-4" />
-                                        {formatActivityPollen(stats.paidPollen)}
-                                    </PaidChip>
-                                    <TierChip
-                                        size="lg"
-                                        className="font-semibold"
-                                    >
-                                        <SproutIcon className="h-4 w-4" />
-                                        {formatActivityPollen(stats.tierPollen)}
-                                    </TierChip>
-                                </div>
-                            }
-                        />
-                        <StatCard
-                            className="min-w-0"
-                            label="Requests"
-                            value={stats.totalRequests.toLocaleString()}
-                            detail={
-                                stats.activeApiKeyCount === null ? null : (
-                                    <span className="text-theme-text-soft">
-                                        across {stats.activeApiKeyCount} API key
-                                        {stats.activeApiKeyCount === 1
-                                            ? ""
-                                            : "s"}
-                                    </span>
-                                )
-                            }
-                        />
-                    </div>
-                </>
+                <ModelBreakdownTable stats={stats} />
             )}
         </>
     );
@@ -332,17 +225,13 @@ const UsageEmptyState: FC = () => (
 );
 
 type ModelBreakdownTableProps = {
-    models: ModelBreakdown[];
-    totalPollen: number;
+    stats: ReturnType<typeof useUsageData>["stats"];
 };
 
-const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
-    models,
-    totalPollen,
-}) => (
+const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({ stats }) => (
     <div className="min-w-0 max-w-full overflow-x-auto">
         <Table aria-label="Usage by model" className="min-w-[420px]">
-            <TableHead>
+            <TableHead className="sr-only">
                 <TableRow>
                     <TableHeaderCell scope="col">Model</TableHeaderCell>
                     <TableHeaderCell scope="col" align="right">
@@ -351,34 +240,39 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                     <TableHeaderCell scope="col" align="right">
                         Pollen
                     </TableHeaderCell>
-                    <TableHeaderCell scope="col" align="right">
-                        Requests
-                    </TableHeaderCell>
                 </TableRow>
             </TableHead>
             <TableBody>
-                {models.map((model) => (
+                {stats.modelBreakdowns.map((model) => (
                     <TableRow key={model.model}>
                         <TableCell className="max-w-64 break-words text-xs">
                             {model.label}
                         </TableCell>
                         <TableCell align="right" numeric className="text-xs">
-                            {totalPollen > 0
-                                ? ((model.pollen / totalPollen) * 100).toFixed(
-                                      1,
-                                  )
+                            {stats.totalPollen > 0
+                                ? (
+                                      (model.pollen / stats.totalPollen) *
+                                      100
+                                  ).toFixed(1)
                                 : "0.0"}
                             %
                         </TableCell>
                         <TableCell align="right" numeric className="text-xs">
-                            {formatActivityPollen(model.pollen)}
-                        </TableCell>
-                        <TableCell align="right" numeric className="text-xs">
-                            {model.requests.toLocaleString()}
+                            <PollenUsageBadges {...model} />
                         </TableCell>
                     </TableRow>
                 ))}
             </TableBody>
+            <tfoot className="border-t border-divider font-semibold">
+                <TableRow>
+                    <TableHeaderCell scope="row" colSpan={2}>
+                        Total
+                    </TableHeaderCell>
+                    <TableCell align="right" numeric className="text-xs">
+                        <PollenUsageBadges {...stats} />
+                    </TableCell>
+                </TableRow>
+            </tfoot>
         </Table>
     </div>
 );

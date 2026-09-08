@@ -1,3 +1,4 @@
+import { getRedirectUris } from "@shared/auth/api-key-metadata.ts";
 import { PKCE_S256_CHALLENGE_REGEX } from "@shared/auth/authorize-config.ts";
 import { redirectUriMatchesAllowlistExact } from "@shared/auth/redirect-uri.ts";
 import { validator } from "@shared/middleware/validator.ts";
@@ -14,13 +15,11 @@ import {
     handleUserinfo,
     parseFormOrJsonBody,
 } from "./device.ts";
-import { getRedirectUris } from "./metadata-utils.ts";
 
 const KV_TTL = 600; // 10 minutes — codes are single-use and short-lived
 const CODE_LENGTH = 40;
 export const DEVICE_CODE_GRANT = "urn:ietf:params:oauth:grant-type:device_code";
 
-/** What the consent page stored when the user approved the request. */
 type StoredCode = {
     key: string;
     clientId: string;

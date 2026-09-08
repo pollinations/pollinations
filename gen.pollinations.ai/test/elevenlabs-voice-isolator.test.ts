@@ -1,7 +1,9 @@
-import { env, SELF } from "cloudflare:test";
+import { createExecutionContext, env } from "cloudflare:test";
 import { test as workerTest } from "@shared/test/fixtures/index.ts";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import worker from "../src/index.ts";
 import { isolateVoiceWithElevenLabs } from "../src/routes/audio.ts";
+import { withInlineGenerationCoordinator } from "./helpers/inline-generation-coordinator.ts";
 
 const errorLog = vi.fn();
 const log = {
@@ -9,6 +11,14 @@ const log = {
     info: vi.fn(),
     warn: vi.fn(),
 } as never;
+
+async function fetchGen(input: RequestInfo | URL, init?: RequestInit) {
+    return worker.fetch(
+        new Request(input, init),
+        withInlineGenerationCoordinator(env),
+        createExecutionContext(),
+    );
+}
 
 function createWav(seconds: number): File {
     const sampleRate = 16000;
@@ -115,7 +125,7 @@ workerTest(
         formData.append("model", "eleven-voice-isolator");
         formData.append("input", "Not an isolation request.");
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/speech",
             {
                 method: "POST",
@@ -139,7 +149,7 @@ workerTest.runIf(Boolean(env.ELEVENLABS_API_KEY))(
         formData.append("model", "voice-isolator");
         formData.append("audio", createWav(5));
 
-        const response = await SELF.fetch(
+        const response = await fetchGen(
             "https://gen.pollinations.ai/v1/audio/voice-isolator",
             {
                 method: "POST",

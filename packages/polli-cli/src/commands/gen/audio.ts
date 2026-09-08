@@ -1,8 +1,6 @@
 import { writeFileSync } from "node:fs";
 import { Command } from "commander";
-import { requireKey } from "../../lib/api.js";
-import { BASE_URL } from "../../lib/config.js";
-import { budgetHint } from "../../lib/errors.js";
+import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
     getOutputMode,
     printError,
@@ -33,7 +31,6 @@ export function createAudioCommand() {
         .option("--output <path>", "Save to file", "speech.mp3")
         .option("--play", "Play the audio after saving (platform player)")
         .action(async (textArg, opts) => {
-            const key = requireKey();
             const isHuman = getOutputMode() === "human";
             const inputText = textArg || (await readStdin());
             if (!inputText) {
@@ -53,25 +50,12 @@ export function createAudioCommand() {
             if (opts.seed) params.set("seed", opts.seed);
 
             const encodedText = encodeURIComponent(inputText);
-            const url = `${BASE_URL}/audio/${encodedText}?${params}`;
+            const path = `/audio/${encodedText}?${params}`;
 
             if (isHuman) printInfo("Generating audio...");
 
             try {
-                const res = await fetch(url, {
-                    headers: { Authorization: `Bearer ${key}` },
-                });
-                if (!res.ok) {
-                    const errText = await res.text().catch(() => "");
-                    const hint = await budgetHint(res.status, errText);
-                    if (hint) {
-                        printError(hint);
-                        process.exit(1);
-                    }
-                    throw new Error(
-                        `${res.status} ${res.statusText}: ${errText}`,
-                    );
-                }
+                const res = await fetchGen(path);
 
                 const buffer = Buffer.from(await res.arrayBuffer());
                 writeFileSync(opts.output, buffer);
@@ -86,11 +70,8 @@ export function createAudioCommand() {
                     const ok = await playAudio(opts.output);
                     if (!ok) printWarn(playerMissingHint());
                 }
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "unknown error",
-                );
-                process.exit(1);
+            } catch (error) {
+                exitWithError(error);
             }
         });
 }

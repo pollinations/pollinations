@@ -46,5 +46,5 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN_MYCELI }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
         run: >-
-          node .github/scripts/sync-github-usernames.mjs
+          node enter.pollinations.ai/scripts/sync-github-usernames.mjs
           ${{ inputs.dry_run && '--dry-run' || '' }}

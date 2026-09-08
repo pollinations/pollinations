@@ -126,6 +126,88 @@ async function fetchProfileLabel(key: string): Promise<string | null> {
     return `Logged in as ${profile.githubUsername ?? "unknown"}`;
 }
 
+/** Run the browser device flow, store the resulting key, and return it. */
+export async function loginWithDeviceFlow(
+    opts: { browser?: boolean } = {},
+): Promise<string> {
+    printInfo("Requesting device code...");
+
+    const res = await fetch(`${ENTER_URL}/api/device/code`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            client_id: "pk_VZF38YW4tQX36SEn",
+            scope: "generate profile usage keys",
+        }),
+    }).catch((err) => {
+        printError(
+            `Failed to start device flow: ${err instanceof Error ? err.message : err}`,
+        );
+        printInfo(
+            "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
+        );
+        printInfo("Get your key at: https://enter.pollinations.ai/keys");
+        process.exit(1);
+    });
+
+    if (!res.ok) {
+        printError(
+            `Failed to start device flow: ${res.status} ${await res.text()}`,
+        );
+        process.exit(1);
+    }
+
+    const deviceResp = (await res.json()) as DeviceCodeResponse;
+
+    printInfo(`\nYour code: ${deviceResp.user_code}\n`);
+
+    const url = deviceResp.verification_uri_complete;
+    printInfo(`Open this URL in your browser:\n  ${url}`);
+
+    if (opts.browser !== false) {
+        const open = (await import("open")).default;
+        await open(url).catch(() =>
+            printInfo("Could not open browser automatically."),
+        );
+    }
+
+    printInfo("Waiting for approval...");
+    const tokenResp = await pollForToken(
+        deviceResp.device_code,
+        deviceResp.interval,
+        deviceResp.expires_in,
+    );
+
+    if (!tokenResp.access_token) {
+        let errMsg: string;
+        switch (tokenResp.error) {
+            case "access_denied":
+                errMsg = "Access denied. You declined the authorization.";
+                break;
+            case "expired_token":
+                errMsg = "Code expired. Run `polli auth login` to try again.";
+                break;
+            default:
+                errMsg = `Login failed: ${tokenResp.error_description ?? tokenResp.error}`;
+        }
+        printError(errMsg);
+        process.exit(1);
+    }
+
+    const key = tokenResp.access_token;
+    storeKey(key);
+    printSuccess("Authenticated!");
+
+    const label = await fetchProfileLabel(key);
+    if (label) {
+        printSuccess(label);
+    } else {
+        printInfo("Key stored. Could not fetch profile, but auth is complete.");
+    }
+    printInfo(flavor.login);
+    return key;
+}
+
 const login = new Command("login")
     .description("Authenticate with Pollinations")
     .addOption(
@@ -148,84 +230,7 @@ const login = new Command("login")
             return;
         }
 
-        printInfo("Requesting device code...");
-
-        const res = await fetch(`${ENTER_URL}/api/device/code`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                client_id: "pk_VZF38YW4tQX36SEn",
-                scope: "generate profile usage keys",
-            }),
-        }).catch((err) => {
-            printError(
-                `Failed to start device flow: ${err instanceof Error ? err.message : err}`,
-            );
-            printInfo(
-                "Fallback: printf '%s' '<your-key>' | polli auth login --with-token",
-            );
-            printInfo("Get your key at: https://enter.pollinations.ai/keys");
-            process.exit(1);
-        });
-
-        if (!res.ok) {
-            printError(
-                `Failed to start device flow: ${res.status} ${await res.text()}`,
-            );
-            process.exit(1);
-        }
-
-        const deviceResp = (await res.json()) as DeviceCodeResponse;
-
-        printInfo(`\nYour code: ${deviceResp.user_code}\n`);
-
-        const url = deviceResp.verification_uri_complete;
-        printInfo(`Open this URL in your browser:\n  ${url}`);
-
-        if (opts.browser !== false) {
-            const open = (await import("open")).default;
-            await open(url).catch(() =>
-                printInfo("Could not open browser automatically."),
-            );
-        }
-
-        printInfo("Waiting for approval...");
-        const tokenResp = await pollForToken(
-            deviceResp.device_code,
-            deviceResp.interval,
-            deviceResp.expires_in,
-        );
-
-        if (!tokenResp.access_token) {
-            let errMsg: string;
-            switch (tokenResp.error) {
-                case "access_denied":
-                    errMsg = "Access denied. You declined the authorization.";
-                    break;
-                case "expired_token":
-                    errMsg =
-                        "Code expired. Run `polli auth login` to try again.";
-                    break;
-                default:
-                    errMsg = `Login failed: ${tokenResp.error_description ?? tokenResp.error}`;
-            }
-            printError(errMsg);
-            process.exit(1);
-        }
-
-        const key = tokenResp.access_token;
-        storeKey(key);
-        printSuccess("Authenticated!");
-
-        const label = await fetchProfileLabel(key);
-        if (label) {
-            printSuccess(label);
-        } else {
-            printInfo(
-                "Key stored. Could not fetch profile, but auth is complete.",
-            );
-        }
-        printInfo(flavor.login);
+        await loginWithDeviceFlow({ browser: opts.browser });
     });
 
 const logout = new Command("logout")

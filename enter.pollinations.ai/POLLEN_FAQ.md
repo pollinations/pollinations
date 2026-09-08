@@ -2,113 +2,106 @@
 
 ## 🪷 What is Pollen?
 
-Pollen is our **prepaid credit system**. **$1 ≈ 1 Pollen** *(pricing may evolve)*.
+Pollen is the prepaid credit used by the Pollinations API. **$1 ≈ 1 Pollen**; a generation spends Pollen according to the selected model's price and usage.
 
-🔒 Pollen is in-app credit for the Pollinations API. It lives inside your Pollinations wallet, isn't transferable between accounts, and isn't redeemable outside Pollinations.
-
-⚡ You spend Pollen to make API calls — every generation costs Pollen based on the model you use.
+Pollen stays inside your Pollinations wallet. It is not transferable between accounts or redeemable outside Pollinations.
 
 ## 🧩 Is Pollinations a coding tool or app builder?
 
-**No.** Pollinations isn't a code editor or app builder like Lovable, Bolt, or Cursor. It's two pieces of infrastructure you wire into your own app:
+No. Pollinations provides infrastructure that you connect to your own application:
 
-- 🤖 **AI Generation APIs** — 38+ models (text, image, audio, video) behind one API
-- 💰 **Payment Infrastructure** — your users pay for requests in your app, not you
-- 🌻 **BYOP** — users spend their own Pollen. Flip on Developer earnings on your App Key to take a cut.
+- **Generation APIs** for text, image, video, audio, realtime, embeddings, and 3D.
+- **Managed agents** built from a prompt, a base model, and optional Pollinations tools.
+- **Community models** for developers who operate compatible model endpoints.
+- **Connect User Wallets**, also called BYOP, so each app user can fund their own requests.
 
-You build the app. We handle the models and the billing.
+You build and host the application. Pollinations provides model access, account authorization, and billing.
 
 ## 🛒 How do I get Pollen?
 
-There are **three ways**:
+- **Buy Pollen** from the [Pollen dashboard](https://enter.pollinations.ai/pollen) through Stripe Checkout.
+- **Complete Quests** and claim eligible rewards from the [Quests dashboard](https://enter.pollinations.ai/quests).
+- **Earn from an app** by enabling Developer earnings on its App Key. Users pay a 25% markup on that app's model usage, which is credited to the developer.
+- **Publish a community model** with a price. The model owner receives 75% of the Pollen spent on it.
 
-1. 💳 **Buy** — Pay by card, Pollen goes to your **Paid Pollen** balance. Expires after 12 months of account inactivity. *(Want other payment options? [Vote here](https://github.com/pollinations/pollinations/issues/4826)!)*
-2. 🎯 **Quests** — Complete tasks from the Quests dashboard. Rewards land as **Quest Pollen**. Contribute quests pay a fixed reward when your assigned GitHub issue is merged.
-3. 🌻 **Dev earnings** — Flip on Developer earnings on an App Key to take +25% on top of model price on user traffic.
+## 🆓 Can I try Pollinations without a credit card?
 
-## 🆓 Can I try it for free?
-
-Yes — complete Quests from the Quests dashboard to earn Pollen. No credit card to register.
+Yes. Create an account, complete eligible Quests, and claim the rewards to receive Quest Pollen. Available Quests and rewards are shown in the [Quests dashboard](https://enter.pollinations.ai/quests).
 
 ## 🎯 How do Quests work?
 
-Earn Pollen by completing useful actions — onboarding, growing an app, GitHub contributions, and more.
+Quests reward eligible account activity and community contributions.
 
-- 🧪 **In alpha** — new quests are added, rewards and details are evolving.
-- 📋 **Browse** the Quests dashboard for what's open and what you've done.
-- ✅ **Claim** a completed quest's reward from the dashboard to credit your wallet. Past activity counts.
-- 🐙 **Contribute quests** are GitHub issues with fixed rewards — get your assigned issue merged, then claim it.
+- Browse the dashboard for current requirements, progress, and rewards.
+- Claim completed rewards from the dashboard; past qualifying activity may count.
+- Contribution quests are labeled GitHub issues with a stated reward. Multiple contributors may submit solutions without claiming the issue first. The author of the selected merged PR can claim the reward afterward.
 
-## 💳 What payment methods do you accept?
-
-Currently **credit cards** via Stripe. We're actively exploring more options based on community feedback.
-
-🗳️ **Want to pay differently?** Vote for your preferred method in our [payment methods issue](https://github.com/pollinations/pollinations/issues/4826) — PayPal, Alipay, and more!
-
-## 📅 Is there a monthly subscription?
-
-**Not yet** — but we're considering it based on community feedback.
-
-💬 Share your thoughts in the [voting issue](https://github.com/pollinations/pollinations/issues/2202) or join our [Discord](https://discord.gg/pollinations-ai-885844321461485618) for updates!
-
-## 🎉 What do I get when I register?
-
-Registration gets you API keys. There are two:
-
-- **🔒 Secret Key (sk\_)** — server-side only, no rate limits.
-- **🖥️ App Key** — for BYOP. Surfaces your app name and GitHub on the consent screen and attributes usage and earnings to you.
+Quest availability and reward amounts can change, so the dashboard and the linked issue are the source of truth.
 
 ## 👛 How does my Pollen wallet work?
 
-One central wallet across all your apps, split into two balances:
+Your wallet has two balances:
 
-- **🌱 Quest Pollen** — earned by completing Quests.
-- **💳 Paid Pollen** — purchased Pollen.
-- **Earnings** — credited to the balance the user spent from.
+- **Quest Pollen** — earned from Quests and eligible developer rewards.
+- **Paid Pollen** — purchased through Stripe and eligible developer rewards.
 
-Balances expire after 12 months of account inactivity.
+Every request is charged to one balance, never split across both:
 
-**Every request comes from one balance, not both at once.**
+- A regular model uses Quest Pollen when that balance can cover the estimated charge; otherwise it uses Paid Pollen.
+- A paid-only model requires Paid Pollen.
+- The final cost can exceed the estimate and make the selected balance negative.
 
-- **Regular models** use your Quest Pollen first. If it can't cover the cost, they switch to Paid Pollen.
-- **Paid-only models** always charge your Paid Pollen.
+Developer rewards are credited to the matching balance type used by the paying user.
 
-⏰ A request can overshoot its estimate and push the balance that paid for it negative. Your 💳 Paid Pollen stays negative until you top up.
+## 💰 How much does a generation cost?
 
-## 🔌 What is BYOP (Bring Your Own Pollen)?
-
-BYOP lets your users connect their Pollinations account to your app and spend their own Pollen on AI generations.
-
-**If you build with Pollinations:**
-
-1. Your users pay for their requests, not you.
-2. Turn on Developer earnings on an App Key to charge +25% over model cost — kept by you.
-3. Earnings only count for traffic through that App Key.
-
-**If you use a Pollinations app:**
-
-1. You spend Pollen from your wallet, not the developer's.
-2. Apps may add a 25% share — shown at sign-in.
-3. Quest Pollen pays first; Paid Pollen covers it if Quest Pollen can't.
-4. Revoke or cap any app at [enter.pollinations.ai](https://enter.pollinations.ai/keys).
-
-📖 **[Full BYOP guide →](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md)**
+Prices depend on the model and may use tokens, images, seconds, or another model-specific unit. Check the live [model catalog](https://enter.pollinations.ai/models) or [`GET /v1/models`](https://gen.pollinations.ai/v1/models) instead of relying on a hardcoded model list or price.
 
 ## 🎨 What can I create with Pollen?
 
-Text, images, audio, and video — one API.
+Pollinations supports text, images and image edits, video, speech and audio, transcription, realtime conversations, embeddings, and 3D generation. Availability and capabilities differ by model; use the live model catalog to choose one for your task.
 
-- 30+ language models for text.
-- Flux, Turbo, and others for images.
-- Text-to-speech and music generation.
-- Video via Wan, Veo, and LTX.
+## 🔑 Which API key should I use?
 
-## 🚀 What's coming?
+- **Personal Secret Key (`sk_`)** — use on a trusted server for your own model usage. It can have a Pollen budget, expiry, model restrictions, and account permissions. Do not ship a personal Secret Key in browser or mobile code.
+- **App Key (`pk_`)** — a publishable OAuth client identifier for Connect User Wallets. It identifies your app and its redirect URIs; it is not the generation credential. After user consent, your app receives a scoped, user-authorized `sk_` for API calls.
+- **Raw publishable key (`pk_` without an app binding)** — legacy direct generation only, limited to 1 Pollen per IP per hour. Do not create new integrations around this flow.
 
-- 🎯 **More quests** — more achievements, milestones, and GitHub issue rewards.
-- 🔑 **Pollinations Login** — OAuth sign-in for your users, with token handling handled for you.
-- 🏠 **App Hosting** — run your app on our infra, no separate hosting bill.
-- 🗺️ **App Discovery** — a marketplace for users to find your app.
-- 📣 **Ads SDK** — optional ad placements next to generations, revenue back into your wallet.
+All traffic remains subject to platform abuse protection and any model-specific constraints.
 
-🌱 Plans change. We build in the open and figure it out as we go.
+## 🔌 What is Connect User Wallets?
+
+Connect User Wallets, also called BYOP (Bring Your Own Pollen), lets users authorize an application to spend Pollen from their own wallet.
+
+For app developers:
+
+1. Create an App Key. Web apps must register their exact redirect URIs.
+2. Use the OAuth authorization-code flow with PKCE, or the device flow for headless clients.
+3. Call the API with the scoped user key returned after consent.
+4. Optionally enable Developer earnings, which adds a disclosed 25% markup to that app's traffic.
+
+Users choose the budget, expiry, models, and account permissions they approve. They can edit or revoke issued keys from the dashboard.
+
+Read the [Connect User Wallets guide](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_POLLEN.md) for the complete integration.
+
+## 🤖 Can I build my own agent?
+
+Yes. A managed agent combines a system prompt, a Pollinations base model, and optional built-in Pollinations tools. Create one in [My Models](https://enter.pollinations.ai/my-models), then call its registered `owner/name` ID through the normal text-generation API.
+
+An agent listing has no owner-set price, but the caller pays for its base model and any generations performed by tools. A linked GitHub username is required to create an agent. Private agents are owner-only; publishing requires community publisher access. Read [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for setup details.
+
+## 🧩 Can I bring my own model?
+
+Yes. Register a compatible text, image, or transcription provider from [My Models](https://enter.pollinations.ai/my-models) or the `/account/my-models` API. A linked GitHub username is required. Private models are owner-only; public publishing requires community publisher access. Read [Publish a Model](https://github.com/pollinations/pollinations/blob/main/BRING_YOUR_OWN_MODEL.md) for setup details.
+
+Public community models can set prices and compatible fallback models. Pollinations monitors public text and image endpoints and credits 75% of the Pollen spent on them to the owner.
+
+## 💳 What payment options are available?
+
+Paid Pollen is available as a one-time purchase through Stripe Checkout. Stripe displays the payment methods and local pricing available for the buyer's region and checkout session. Pollinations does not currently require a monthly subscription.
+
+You can also configure automatic top-up from the Pollen dashboard after adding a supported default payment method.
+
+## 🆘 Where can I get help?
+
+Use [Discord](https://discord.gg/pollinations-ai-885844321461485618) for community help, email [hello@pollinations.ai](mailto:hello@pollinations.ai) for general support, or email [billing@pollinations.ai](mailto:billing@pollinations.ai) for billing questions.

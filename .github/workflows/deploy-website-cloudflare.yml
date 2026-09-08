@@ -6,7 +6,6 @@ on:
       - production
     paths:
       - 'pollinations.ai/**'
-      - 'apps/APPS.md'
       - 'shared/**'
       - 'packages/sdk/**'
       - 'packages/ui/**'

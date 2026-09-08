@@ -1,8 +1,10 @@
+import { createParser } from "eventsource-parser";
 import { pollinationsErrorFromResponse } from "./error-response.js";
 import type {
     AccountBalance,
     AccountKey,
     AccountProfile,
+    AccountQuestsResponse,
     AudioBinaryResponse,
     AudioGenerateOptions,
     AuthorizeDeviceOptions,
@@ -14,9 +16,11 @@ import type {
     CreateKeyOptions,
     DailyUsageOptions,
     DailyUsageResponse,
+    DeveloperEarningsResponse,
     DeviceAuthorization,
     DeviceCodeResponse,
     DeviceTokenResponse,
+    EarningsOptions,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -48,7 +52,7 @@ const DEVICE_FLOW_DEFAULT_SCOPE = "generate keys usage";
 // Default timeouts in milliseconds
 const DEFAULT_TIMEOUT = 300_000; // 5min for text/chat
 const DEFAULT_IMAGE_TIMEOUT = 600_000; // 10min for images
-const DEFAULT_VIDEO_TIMEOUT = 600_000; // 10min for videos
+const DEFAULT_VIDEO_TIMEOUT = 1_200_000; // 20min for videos
 
 // Helper to get env var (works in Node.js, Deno, Bun, and edge runtimes)
 function getEnvVar(name: string): string | undefined {
@@ -132,37 +136,74 @@ function stripKeyFromUrl(url: string): string {
     return urlObj.toString();
 }
 
-// SSE parsing result
-interface SSEParseResult<T> {
-    chunks: T[];
-    remainingBuffer: string;
-}
+function chatStreamError(chunk: unknown): PollinationsError | null {
+    if (!chunk || typeof chunk !== "object") return null;
+    const { error, choices } = chunk as {
+        error?: unknown;
+        choices?: { finish_reason?: unknown }[];
+    };
+    const failed =
+        Array.isArray(choices) &&
+        choices.some((choice) => choice?.finish_reason === "error");
+    if (error == null && !failed) return null;
 
-// Parse SSE lines from buffer and extract data
-function parseSSEBuffer<T>(
-    buffer: string,
-    parseChunk: (data: string) => T | null,
-): SSEParseResult<T> {
-    const lines = buffer.split("\n");
-    const remainingBuffer = lines.pop() || "";
-    const chunks: T[] = [];
-
-    for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed === "data: [DONE]") continue;
-        if (trimmed.startsWith("data: ")) {
-            try {
-                const parsed = parseChunk(trimmed.slice(6));
-                if (parsed !== null) {
-                    chunks.push(parsed);
-                }
-            } catch {
-                // Skip invalid JSON
-            }
+    let message = "Streaming request failed";
+    let status = 502;
+    let code = "STREAM_ERROR";
+    if (typeof error === "string") message = error;
+    else if (error && typeof error === "object") {
+        const {
+            message: errorMessage,
+            code: errorCode,
+            status: errorStatus,
+        } = error as { message?: unknown; code?: unknown; status?: unknown };
+        if (typeof errorMessage === "string") message = errorMessage;
+        const numericStatus = Number(errorStatus ?? errorCode);
+        if (
+            Number.isInteger(numericStatus) &&
+            numericStatus >= 400 &&
+            numericStatus <= 599
+        ) {
+            status = numericStatus;
+        }
+        if (
+            typeof errorCode === "string" &&
+            errorCode &&
+            !Number.isFinite(Number(errorCode))
+        ) {
+            code = errorCode;
         }
     }
+    return new PollinationsError(message, code, status);
+}
 
-    return { chunks, remainingBuffer };
+function parseChatStreamData(data: string): ChatStreamChunk {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(data);
+    } catch {
+        throw new PollinationsError(
+            "Invalid JSON in chat completion stream",
+            "MALFORMED_STREAM",
+            502,
+        );
+    }
+    const error = chatStreamError(parsed);
+    if (error) throw error;
+
+    if (
+        !parsed ||
+        typeof parsed !== "object" ||
+        !("choices" in parsed) ||
+        !Array.isArray((parsed as { choices: unknown }).choices)
+    ) {
+        throw new PollinationsError(
+            "Invalid chat completion stream event",
+            "MALFORMED_STREAM",
+            502,
+        );
+    }
+    return parsed as ChatStreamChunk;
 }
 
 /**
@@ -235,6 +276,17 @@ export class Pollinations {
         throw await pollinationsErrorFromResponse(response);
     }
 
+    private async getJson<T>(url: string, signal?: AbortSignal): Promise<T> {
+        const response = await fetchWithTimeout(
+            url,
+            { headers: this.getHeaders() },
+            this.textTimeout,
+            signal,
+        );
+        if (!response.ok) await this.handleErrorResponse(response);
+        return response.json() as Promise<T>;
+    }
+
     private buildQueryParams(
         params: Record<string, unknown>,
         includeKey: boolean = true,
@@ -281,9 +333,10 @@ export class Pollinations {
         options: ImageGenerateOptions = {},
     ): string {
         const params: Record<string, unknown> = {
-            model: options.model || "zimage",
+            model: options.model,
             width: options.width,
             height: options.height,
+            resolution: options.resolution,
             seed: options.seed,
             safe: options.safe,
             quality: options.quality,
@@ -387,7 +440,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "flux",
+            model: options.model,
         };
 
         if (options.image) {
@@ -472,7 +525,7 @@ export class Pollinations {
 
         const body: Record<string, unknown> = {
             prompt,
-            model: options.model || "zimage",
+            model: options.model,
         };
         if (size) body.size = size;
         if (options.n !== undefined) body.n = options.n;
@@ -535,6 +588,9 @@ export class Pollinations {
                 this.imageTimeout,
                 signal,
             );
+            if (!imgResponse.ok) {
+                await this.handleErrorResponse(imgResponse);
+            }
             const buffer = await imgResponse.arrayBuffer();
             const contentType =
                 imgResponse.headers.get("content-type") || "image/png";
@@ -568,12 +624,11 @@ export class Pollinations {
         prompt: string,
         options: VideoGenerateOptions = {},
     ): string {
-        const model = options.model || "veo";
-
         const params: Record<string, unknown> = {
-            model,
+            model: options.model,
             duration: options.duration,
             aspectRatio: options.aspectRatio,
+            resolution: options.resolution,
             seed: options.seed,
             audio: options.audio,
             image: options.referenceImage,
@@ -605,7 +660,7 @@ export class Pollinations {
 
     /**
      * Generate a video and return it as binary data.
-     * Note: Video generation can take several minutes - timeout is set to 10 minutes.
+     * Note: Video generation can take several minutes - timeout is set to 20 minutes.
      *
      * @example
      * ```ts
@@ -667,51 +722,43 @@ export class Pollinations {
             );
         }
 
-        const messages: Message[] = [];
-
-        if (options.systemPrompt) {
-            messages.push({
-                role: "system",
-                content: options.systemPrompt,
-            });
-        }
-        messages.push({ role: "user", content: prompt });
-
-        const body: Record<string, unknown> = {
-            messages,
-            model: options.model || "openai",
-            temperature: options.temperature,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
-            seed: options.seed,
-            stream: false,
-            private: options.private,
-        };
-
-        if (options.json) {
-            body.response_format = { type: "json_object" };
-        }
-
-        this.stripUndefined(body);
-
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/chat/completions`,
+        const response = await this.chat(
+            this.buildTextMessages(prompt, options.systemPrompt),
             {
-                method: "POST",
-                headers: this.getHeaders("application/json"),
-                body: JSON.stringify(body),
+                ...this.buildTextChatOptions(options),
+                signal: options.signal,
             },
-            this.textTimeout,
-            options.signal,
         );
+        return response.choices[0]?.message?.content || "";
+    }
 
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
+    /** Adapt the simple text facade to the canonical chat-completions request. */
+    private buildTextMessages(
+        prompt: string,
+        systemPrompt?: string,
+    ): Message[] {
+        return [
+            ...(systemPrompt
+                ? [{ role: "system" as const, content: systemPrompt }]
+                : []),
+            { role: "user", content: prompt },
+        ];
+    }
 
-        const data = (await response.json()) as ChatResponse;
-        return data.choices[0]?.message?.content || "";
+    /** Map simple text options without introducing SDK-owned defaults. */
+    private buildTextChatOptions(
+        options: Omit<TextGenerateOptions, "stream">,
+    ): Omit<ChatOptions, "stream" | "signal"> {
+        return {
+            model: options.model,
+            temperature: options.temperature,
+            maxTokens: options.maxTokens,
+            frequencyPenalty: options.frequencyPenalty,
+            presencePenalty: options.presencePenalty,
+            seed: options.seed,
+            private: options.private,
+            responseFormat: options.json ? { type: "json_object" } : undefined,
+        };
     }
 
     /**
@@ -736,72 +783,16 @@ export class Pollinations {
             );
         }
 
-        const messages: Message[] = [];
-
-        if (options.systemPrompt) {
-            messages.push({ role: "system", content: options.systemPrompt });
-        }
-        messages.push({ role: "user", content: prompt });
-
-        const body: Record<string, unknown> = {
-            messages,
-            model: options.model || "openai",
-            temperature: options.temperature,
-            max_tokens: options.maxTokens,
-            frequency_penalty: options.frequencyPenalty,
-            presence_penalty: options.presencePenalty,
-            seed: options.seed,
-            stream: true,
-            private: options.private,
-        };
-
-        if (options.json) {
-            body.response_format = { type: "json_object" };
-        }
-
-        this.stripUndefined(body);
-
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/chat/completions`,
+        const chunks = this.chatStream(
+            this.buildTextMessages(prompt, options.systemPrompt),
             {
-                method: "POST",
-                headers: this.getHeaders("application/json"),
-                body: JSON.stringify(body),
+                ...this.buildTextChatOptions(options),
+                signal: options.signal,
             },
-            this.textTimeout,
-            options.signal,
         );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        const reader = response.body?.getReader();
-        if (!reader) {
-            throw new PollinationsError("No response body", "NO_BODY", 500);
-        }
-
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        try {
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<string>(buffer, (data) => {
-                    const json = JSON.parse(data) as ChatStreamChunk;
-                    return json.choices[0]?.delta?.content || null;
-                });
-
-                buffer = result.remainingBuffer;
-                for (const content of result.chunks) {
-                    yield content;
-                }
-            }
-        } finally {
-            reader.releaseLock();
+        for await (const chunk of chunks) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) yield content;
         }
     }
 
@@ -817,7 +808,8 @@ export class Pollinations {
     ): Record<string, unknown> {
         return this.stripUndefined({
             messages,
-            model: options.model || "openai",
+            model: options.model,
+            routing: options.routing,
             temperature: options.temperature,
             top_p: options.topP,
             max_tokens: options.maxTokens,
@@ -826,6 +818,7 @@ export class Pollinations {
             repetition_penalty: options.repetitionPenalty,
             stop: options.stop,
             seed: options.seed,
+            private: options.private,
             stream,
             stream_options: options.streamOptions,
             response_format: options.responseFormat,
@@ -933,25 +926,42 @@ export class Pollinations {
         }
 
         const decoder = new TextDecoder();
-        let buffer = "";
+        let events: string[] = [];
+        const parser = createParser({
+            onEvent: ({ data }) => events.push(data),
+        });
+        const cancelReader = () => {
+            void reader.cancel().catch(() => undefined);
+        };
+        options.signal?.addEventListener("abort", cancelReader, { once: true });
 
         try {
+            options.signal?.throwIfAborted();
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
-
-                buffer += decoder.decode(value, { stream: true });
-                const result = parseSSEBuffer<ChatStreamChunk>(
-                    buffer,
-                    (data) => JSON.parse(data) as ChatStreamChunk,
-                );
-
-                buffer = result.remainingBuffer;
-                for (const chunk of result.chunks) {
-                    yield chunk;
+                options.signal?.throwIfAborted();
+                parser.feed(decoder.decode(value, { stream: !done }));
+                for (const data of events) {
+                    options.signal?.throwIfAborted();
+                    if (data.trim() === "[DONE]") return;
+                    if (data) yield parseChatStreamData(data);
                 }
+                events = [];
+                if (done) return;
             }
+        } catch (error) {
+            if (options.signal?.aborted) {
+                throw new PollinationsError(
+                    "Request was cancelled",
+                    "CANCELLED",
+                    499,
+                );
+            }
+            throw error;
         } finally {
+            options.signal?.removeEventListener("abort", cancelReader);
+            // Release the connection on [DONE], early exit, or error.
+            await reader.cancel().catch(() => undefined);
             reader.releaseLock();
         }
     }
@@ -1035,8 +1045,8 @@ export class Pollinations {
 
         const body = {
             input: text,
-            voice: options.voice || "alloy",
-            model: options.model || "elevenlabs",
+            voice: options.voice,
+            model: options.model,
         };
 
         const response = await fetchWithTimeout(
@@ -1075,17 +1085,7 @@ export class Pollinations {
      * ```
      */
     async textModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/text/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/text/models`);
     }
 
     /**
@@ -1098,21 +1098,11 @@ export class Pollinations {
      * ```
      */
     async imageModels(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/image/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/image/models`);
     }
 
     /**
-     * Get available models (OpenAI-compatible endpoint)
+     * Get all available models
      *
      * @example
      * ```ts
@@ -1120,17 +1110,7 @@ export class Pollinations {
      * ```
      */
     async models(): Promise<ModelInfo[]> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/v1/models`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) {
-            await this.handleErrorResponse(response);
-        }
-
-        return response.json() as Promise<ModelInfo[]>;
+        return this.getJson<ModelInfo[]>(`${this.baseUrl}/models`);
     }
 
     // ============================================================================
@@ -1173,7 +1153,7 @@ export class Pollinations {
                 : new Blob([audio], { type: "audio/mpeg" });
 
         formData.append("file", blob, "audio.mp3");
-        formData.append("model", options.model || "whisper-large-v3");
+        if (options.model) formData.append("model", options.model);
 
         if (options.language) formData.append("language", options.language);
         if (options.responseFormat)
@@ -1443,15 +1423,10 @@ export class Pollinations {
      * ```
      */
     async userInfo(options: RequestOptions = {}): Promise<UserInfo> {
-        const response = await fetchWithTimeout(
+        return this.getJson<UserInfo>(
             `${AUTH_BASE_URL}/api/device/userinfo`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UserInfo>;
     }
 
     // ============================================================================
@@ -1468,14 +1443,7 @@ export class Pollinations {
      * ```
      */
     async accountProfile(): Promise<AccountProfile> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/profile`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountProfile>;
+        return this.getJson<AccountProfile>(`${this.baseUrl}/account/profile`);
     }
 
     /**
@@ -1488,14 +1456,22 @@ export class Pollinations {
      * ```
      */
     async accountBalance(): Promise<AccountBalance> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/balance`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
+        return this.getJson<AccountBalance>(`${this.baseUrl}/account/balance`);
+    }
 
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<AccountBalance>;
+    /**
+     * Get quest catalog with the authenticated account's status
+     *
+     * @example
+     * ```ts
+     * const { quests } = await pollinations.accountQuests();
+     * quests.forEach(q => console.log(q.title, q.status));
+     * ```
+     */
+    async accountQuests(): Promise<AccountQuestsResponse> {
+        return this.getJson<AccountQuestsResponse>(
+            `${this.baseUrl}/account/quests`,
+        );
     }
 
     /**
@@ -1519,14 +1495,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+        return this.getJson<UsageResponse>(url);
     }
 
     /**
@@ -1552,14 +1521,7 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/usage/daily${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<DailyUsageResponse>;
+        return this.getJson<DailyUsageResponse>(url);
     }
 
     /**
@@ -1572,14 +1534,7 @@ export class Pollinations {
      * ```
      */
     async validateKey(): Promise<KeyInfo> {
-        const response = await fetchWithTimeout(
-            `${this.baseUrl}/account/key`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<KeyInfo>;
+        return this.getJson<KeyInfo>(`${this.baseUrl}/account/key`);
     }
 
     /**
@@ -1604,14 +1559,31 @@ export class Pollinations {
         const qs = params.toString();
         const url = `${this.baseUrl}/account/key/usage${qs ? `?${qs}` : ""}`;
 
-        const response = await fetchWithTimeout(
-            url,
-            { headers: this.getHeaders() },
-            this.textTimeout,
-        );
+        return this.getJson<UsageResponse>(url);
+    }
 
-        if (!response.ok) await this.handleErrorResponse(response);
-        return response.json() as Promise<UsageResponse>;
+    /**
+     * Get developer earnings from BYOP apps and community models
+     *
+     * @example
+     * ```ts
+     * const { daily, perEntity } = await pollinations.accountEarnings({ days: 30 });
+     * perEntity.forEach(e => console.log(e.entity_name, e.pollen_earned));
+     * ```
+     */
+    async accountEarnings(
+        options: EarningsOptions = {},
+    ): Promise<DeveloperEarningsResponse> {
+        const params = new URLSearchParams();
+        if (options.days !== undefined)
+            params.set("days", String(options.days));
+        if (options.granularity) params.set("granularity", options.granularity);
+        if (options.period) params.set("period", options.period);
+
+        const qs = params.toString();
+        const url = `${this.baseUrl}/account/earnings${qs ? `?${qs}` : ""}`;
+
+        return this.getJson<DeveloperEarningsResponse>(url);
     }
 
     // ============================================================================
@@ -1628,15 +1600,10 @@ export class Pollinations {
      * ```
      */
     async listKeys(options: RequestOptions = {}): Promise<AccountKey[]> {
-        const response = await fetchWithTimeout(
+        const body = await this.getJson<{ data?: AccountKey[] }>(
             `${this.baseUrl}/account/keys`,
-            { headers: this.getHeaders() },
-            this.textTimeout,
             options.signal,
         );
-
-        if (!response.ok) await this.handleErrorResponse(response);
-        const body = (await response.json()) as { data?: AccountKey[] };
         return body.data || [];
     }
 

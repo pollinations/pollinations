@@ -25,6 +25,7 @@ type Spec = {
     info: { title: string; description: string; version: string };
     openapi: string;
     servers: { url: string }[];
+    tags?: { name: string; description?: string }[];
     paths: Record<string, Record<string, Operation>>;
     components: { schemas: Record<string, Schema> };
 };
@@ -410,7 +411,7 @@ function buildCurl(
     // The /image and /video routes share a query schema whose `model` default
     // is an image model. Override so the video example uses a video model.
     const queryOverrides: Record<string, string> = path.startsWith("/video/")
-        ? { model: "veo" }
+        ? { model: "google/veo-3.1-fast" }
         : {};
     if (queryParams.length) {
         const queryStr = queryParams
@@ -756,10 +757,10 @@ function loadIntroductionTagline(): string {
 function renderGettingStarted(): string {
     return `## ${sectionHeading(SECTIONS.start)}
 
-**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Two key types are available:
+**1. Get an API key** at [enter.pollinations.ai](https://enter.pollinations.ai/keys). Use the key type for your environment:
 
-- \`sk_*\` — secret key for backend use (full account access)
-- \`pk_*\` — publishable key, safe to ship in browsers and mobile apps
+- \`sk_*\` — secret key for backend use. Never ship it in a browser, mobile app, or repository.
+- \`pk_*\` App Key — public OAuth client id for BYOP. Use it to obtain a scoped user \`sk_*\`; do not use raw publishable keys for new browser generation integrations.
 
 **2. Send the key** in the \`Authorization\` header (or as \`?key=\` query param for GET endpoints):
 
@@ -770,7 +771,7 @@ curl ${BASE_URL}/v1/models \\
 
 **3. Pick an endpoint** from the [${sectionHeading(SECTIONS.contents)}](#${sectionAnchor(SECTIONS.contents)}) below.
 
-**Integration guides:** [BYOP](https://gen.pollinations.ai/docs#tag/byop) · [CLI](https://gen.pollinations.ai/docs#tag/cli) · [MCP Server](https://gen.pollinations.ai/docs#tag/mcp-server)`;
+**Integration guides:** [Connect User Wallets](https://gen.pollinations.ai/docs#tag/connect-user-wallets) · [Publish a Model](https://gen.pollinations.ai/docs#tag/publish-a-model) · [Publish an Agent](https://gen.pollinations.ai/docs#tag/publish-an-agent) · [MCP Servers](https://gen.pollinations.ai/docs#tag/mcp-servers) · [CLI](https://gen.pollinations.ai/docs#tag/cli)`;
 }
 
 function renderTableOfContents(
@@ -837,6 +838,13 @@ function renderEndpoints(
     for (const [tag, ops] of byTag) {
         out.push(`### ${tag}`);
         out.push("");
+        const description = spec.tags?.find(
+            (item) => item.name === tag,
+        )?.description;
+        if (description) {
+            out.push(description.trim());
+            out.push("");
+        }
         for (const { method, path, op } of ops) {
             out.push(renderEndpoint(spec, method, path, op));
             out.push("---");
@@ -889,6 +897,10 @@ All endpoints return errors in this envelope:
 | Status | Code | Description |
 |---|---|---|
 | \`400\` | \`BAD_REQUEST\` | Invalid input. \`details\` includes \`formErrors\` and \`fieldErrors\` for validation failures. |
+| \`400\` | \`invalid_image_url\` | A supplied image URL is malformed, not HTTP(S), points at a private or credentialed host, or redirects. Provide a direct public image URL. |
+| \`400\` | \`failed_to_download_image\` | A supplied image URL could not be downloaded — host unreachable, DNS failure, a non-2xx response from the image host, or a body that ended mid-read. The host's status is reported in \`details.upstreamStatus\`. |
+| \`400\` | \`image_too_large\` | A supplied image exceeds the per-image size cap, or the request exceeds the per-request image size or count cap. |
+| \`400\` | \`unsupported_image_media_type\` | A supplied image declares no media type and could not be recognized from its content. A declared media type is forwarded to the provider as-is, so whether a given format is usable is answered by the provider, not here. |
 | \`401\` | \`UNAUTHORIZED\` | Missing or invalid API key. Provide via \`Authorization: Bearer <key>\` header or \`?key=<key>\` query param. |
 | \`402\` | \`PAYMENT_REQUIRED\` | Insufficient pollen balance or API key budget exhausted. |
 | \`403\` | \`FORBIDDEN\` | Access denied — insufficient permissions or paid-model access for this model. |
@@ -933,25 +945,36 @@ function simplifyModelEnums(spec: Spec): void {
  */
 const CURATED_BODIES: Record<string, Json> = {
     postV1ChatCompletions: {
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
         messages: [{ role: "user", content: "Hello!" }],
+    },
+    postV1Responses: {
+        model: "openai",
+        input: "Hello!",
     },
     postV1ImagesGenerations: {
         prompt: "a serene mountain landscape at sunset",
-        model: "flux",
+        model: "black-forest-labs/flux.1-schnell",
         size: "1024x1024",
     },
     postText: {
         messages: [{ role: "user", content: "Hello!" }],
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
     },
     postAccountKeys: {
         name: "my-app-backend",
         type: "secret",
-        allowedModels: ["openai", "flux"],
+        allowedModels: [
+            "openai/gpt-5.4-nano",
+            "black-forest-labs/flux.1-schnell",
+        ],
         pollenBudget: 100,
     },
     postV1AudioSpeech: {
+        input: "Hello world",
+        voice: "nova",
+    },
+    postV1AudioSpeechWithTimestamps: {
         input: "Hello world",
         voice: "nova",
     },
@@ -959,6 +982,10 @@ const CURATED_BODIES: Record<string, Json> = {
         name: "my-community-model",
         baseUrl: "https://api.example.com/v1",
         bearerToken: "sk-upstream-token",
+    },
+    postAccountMyModelsProvider: {
+        name: "My Provider",
+        url: "https://api.example.com",
     },
     postAccountMyModelsModels: {
         baseUrl: "https://api.example.com/v1",
@@ -971,6 +998,29 @@ const CURATED_BODIES: Record<string, Json> = {
     },
     postAccountMyModelsByIdUpdate: {
         description: "Updated model description",
+    },
+    postAccountMyModelsEndpointAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        baseUrl: "https://agent.example.com/v1",
+    },
+    postAccountAgents: {
+        name: "my-agent",
+        title: "My Agent",
+        systemPrompt: "You are a helpful assistant.",
+        baseModel: "openai",
+        mcpServers: ["pollinations"],
+    },
+    patchAccountAgentsById: {
+        systemPrompt: "You are a concise assistant.",
+        baseModel: "openai",
+        mcpServers: ["pollinations"],
+    },
+    postAccountIntegrations: {
+        toolkit: "github",
+    },
+    post3dByPrompt: {
+        model: "hyper3d-rodin",
     },
 };
 
@@ -1012,12 +1062,12 @@ function visibleParams(path: string, params: Schema[]): Schema[] {
 const CURATED_MULTIPART: Record<string, Array<[string, string]>> = {
     postV1AudioTranscriptions: [
         ["file", "@./audio.mp3"],
-        ["model", "whisper-large-v3"],
+        ["model", "openai/whisper-large-v3"],
     ],
     postV1ImagesEdits: [
         ["image", "@./input.png"],
         ["prompt", "make the sky a vivid sunset"],
-        ["model", "kontext"],
+        ["model", "black-forest-labs/flux.1-kontext-pro"],
     ],
     postUpload: [["file", "@./image.png"]],
 };
@@ -1047,9 +1097,26 @@ const TAG_ORDER = [
     "Realtime",
     "Embeddings",
     "Models",
+    "Community Models",
+    "Community Agents",
     "Media Storage",
     "Account",
 ];
+
+const REQUIRED_PATHS = [
+    "/account/profile",
+    "/account/my-models",
+    "/account/agents",
+];
+
+function requireMergedPaths(spec: Spec): void {
+    const missing = REQUIRED_PATHS.filter((path) => !spec.paths[path]);
+    if (missing.length > 0) {
+        throw new Error(
+            `OpenAPI schema is incomplete; missing required paths: ${missing.join(", ")}`,
+        );
+    }
+}
 
 /** Group operations by tag, then re-key the map to follow TAG_ORDER. */
 function groupByTag(
@@ -1101,6 +1168,7 @@ function groupByTag(
 async function main() {
     console.log(`Fetching OpenAPI spec from ${OPENAPI_URL}...`);
     const spec = (await fetch(OPENAPI_URL).then((r) => r.json())) as Spec;
+    requireMergedPaths(spec);
     simplifyModelEnums(spec);
 
     const byTag = groupByTag(spec);

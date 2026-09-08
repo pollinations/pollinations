@@ -1,6 +1,6 @@
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
 
@@ -33,7 +33,7 @@ interface ImageGenerationResult {
  * - 320-4096px per side, divisible by 16
  * - Total pixels < 4,194,304
  */
-function clampDimensions(
+export function clampNovaCanvasDimensions(
     width: number,
     height: number,
 ): { width: number; height: number } {
@@ -64,20 +64,18 @@ export async function callNovaCanvasAPI(
     const region = getImageEnv("AWS_REGION") || "us-east-1";
 
     if (!accessKeyId || !secretAccessKey) {
-        throw new HttpError("AWS credentials not configured", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "AWS credentials not configured",
+        });
     }
 
-    const { width, height } = clampDimensions(
+    const { width, height } = clampNovaCanvasDimensions(
         safeParams.width || 1024,
         safeParams.height || 1024,
     );
 
     // Check if image input is provided for editing mode
-    const rawImageUrl = safeParams.image
-        ? Array.isArray(safeParams.image)
-            ? safeParams.image[0]
-            : safeParams.image
-        : undefined;
+    const rawImageUrl = safeParams.image?.[0];
     const mode = rawImageUrl ? "IMAGE_VARIATION" : "TEXT_IMAGE";
 
     logOps(`Calling Nova Canvas API (${mode}):`, {
@@ -150,14 +148,15 @@ export async function callNovaCanvasAPI(
 
         if (responseBody.error) {
             logError("Nova Canvas API error:", responseBody.error);
-            throw new HttpError(
-                `Nova Canvas generation failed: ${responseBody.error}`,
-                400,
-            );
+            throw UpstreamError.fromProvider(400, {
+                message: `Nova Canvas generation failed: ${responseBody.error}`,
+            });
         }
 
         if (!responseBody.images || responseBody.images.length === 0) {
-            throw new HttpError("Nova Canvas returned no images", 500);
+            throw UpstreamError.fromProvider(500, {
+                message: "Nova Canvas returned no images",
+            });
         }
 
         const imageBuffer = base64ToBuffer(responseBody.images[0]);
@@ -172,7 +171,7 @@ export async function callNovaCanvasAPI(
             isMature: false,
             isChild: false,
             trackingData: {
-                actualModel: "nova-canvas",
+                actualModel: "amazon/nova-canvas-v1",
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1,
@@ -180,17 +179,14 @@ export async function callNovaCanvasAPI(
             },
         };
     } catch (error) {
-        if (error instanceof HttpError) throw error;
+        if (error instanceof UpstreamError) throw error;
         const message = error instanceof Error ? error.message : String(error);
         logError("Nova Canvas API call failed:", message);
         const status = getNovaCanvasErrorStatus(error);
-        throw new HttpError(
-            `Nova Canvas generation failed: ${message}`,
-            status,
-            status === 400
-                ? { validation: true, body: JSON.stringify({ message }) }
-                : { body: JSON.stringify({ message }) },
-        );
+        throw UpstreamError.fromProvider(status, {
+            message: `Nova Canvas generation failed: ${message}`,
+            responseBody: JSON.stringify({ message }),
+        });
     }
 }
 

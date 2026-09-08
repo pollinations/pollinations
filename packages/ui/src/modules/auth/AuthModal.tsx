@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from "react";
 import logoUrl from "../../brand/mark.svg";
+import { cn } from "../../lib/cn.ts";
 import { Dialog } from "../../primitives/Dialog.tsx";
 
 const authLogoMaskUrl = `url('${logoUrl}')`;
@@ -17,6 +18,7 @@ const authLogoMask: CSSProperties = {
 
 export type AuthModalProps = {
     children: ReactNode;
+    contentClassName?: string;
     dialog?: {
         label?: string;
         labelledBy?: string;
@@ -26,6 +28,7 @@ export type AuthModalProps = {
 
 export function AuthModal({
     children,
+    contentClassName,
     dialog,
     tone = "default",
 }: AuthModalProps) {
@@ -40,7 +43,11 @@ export function AuthModal({
             ariaLabel={dialog?.label}
             labelledBy={dialog?.labelledBy}
             positionerClassName="polli:items-start polli:overflow-y-auto polli:bg-app-bg"
-            contentClassName={`polli:bg-surface-white polli:border-2 ${borderClass} polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto`}
+            contentClassName={cn(
+                "polli:bg-surface-white polli:border-2 polli:rounded-lg polli:shadow-lg polli:max-w-xl polli:w-full polli:my-auto",
+                borderClass,
+                contentClassName,
+            )}
         >
             {children}
         </Dialog>

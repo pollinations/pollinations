@@ -5,24 +5,17 @@
 
 HOURS="${1:-24}"
 
-SCRIPT_DIR="$(dirname "$0")"
-ENTER_DIR="$SCRIPT_DIR/../../../../enter.pollinations.ai"
+source "$(dirname "$0")/tinybird-query.sh"
 
-# Get Tinybird admin token
-TINYBIRD_TOKEN=$(jq -r '.token' "$ENTER_DIR/observability/.tinyb" 2>/dev/null)
-if [ -z "$TINYBIRD_TOKEN" ] || [ "$TINYBIRD_TOKEN" = "null" ]; then
-    echo "Error: Could not read Tinybird token from $ENTER_DIR/observability/.tinyb" >&2
-    exit 1
-fi
-
-QUERY="SELECT user_github_username, model_requested, error_message, count() as error_count 
-FROM generation_event_v2
-WHERE response_status >= 500 
-  AND start_time > now() - interval $HOURS hour 
-GROUP BY user_github_username, model_requested, error_message 
-ORDER BY error_count DESC 
+QUERY="SELECT ge.user_id, any(users.github_username) as github_username, ge.model_requested, ge.error_message, count() as error_count
+FROM generation_event_v2 ge
+LEFT JOIN (SELECT id, github_username FROM d1_user WHERE synced_at = (SELECT max(synced_at) FROM d1_user)) users
+  ON ge.user_id = users.id
+WHERE ge.response_status >= 500
+  AND ge.start_time > now() - interval $HOURS hour
+GROUP BY ge.user_id, ge.model_requested, ge.error_message
+ORDER BY error_count DESC
 LIMIT 50"
 
 echo "=== 500+ Errors (Last ${HOURS}h) ==="
-curl -s "https://api.europe-west2.gcp.tinybird.co/v0/sql?token=$TINYBIRD_TOKEN" \
-    --data-urlencode "q=$QUERY"
+run_tinybird_query "$QUERY"

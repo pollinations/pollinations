@@ -2,10 +2,12 @@ import {
     createApiKeyForUser,
     validateRedirectUriFormat,
 } from "@shared/auth/api-key-creation.ts";
+import { parseMetadata } from "@shared/auth/api-key-metadata.ts";
 import { sanitizeAuthorizeAccountPermissions } from "@shared/auth/authorize-config.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
 import {
+    canonicalizeModelPermissionIds,
     filterPermissionsToVisibleModels,
     getVisibleModelIdsForUser,
 } from "@shared/registry/visible-model-ids.ts";
@@ -17,7 +19,8 @@ import { describeRoute } from "hono-openapi";
 import { z } from "zod";
 import type { Env } from "../env.ts";
 import { auth } from "../middleware/auth.ts";
-import { parseMetadata } from "./metadata-utils.ts";
+import { checkQuestsForUser } from "../services/quest-checker.ts";
+import { ACCOUNT_SETUP_QUEST_GROUP } from "../services/quests/index.ts";
 
 const SECONDS_PER_DAY = 24 * 60 * 60;
 
@@ -41,7 +44,13 @@ function buildUpdatedPermissions(
         return undefined;
     }
     const updated = { ...existing };
-    applyPermissionField(updated, "models", allowedModels);
+    applyPermissionField(
+        updated,
+        "models",
+        Array.isArray(allowedModels)
+            ? canonicalizeModelPermissionIds(allowedModels)
+            : allowedModels,
+    );
     applyPermissionField(updated, "account", accountPermissions);
     return updated;
 }
@@ -83,7 +92,7 @@ async function requireOwnedKey(
     const key = await db.query.apikey.findFirst({
         where: and(
             eq(schema.apikey.id, keyId),
-            eq(schema.apikey.userId, userId),
+            eq(schema.apikey.referenceId, userId),
         ),
     });
     if (!key) {
@@ -168,7 +177,9 @@ const CreateApiKeySchema = z.object({
         .number()
         .nullable()
         .optional()
-        .describe("Pollen budget cap for this key. null = unlimited"),
+        .describe(
+            "Pollen budget cap. Publishable keys accept only null, omission, or 0 and always use 0; secret keys use null for unlimited",
+        ),
     accountPermissions: z
         .array(z.string())
         .nullable()
@@ -183,25 +194,12 @@ const CreateApiKeySchema = z.object({
  * Schema for updating metadata on an API key.
  * Only caller-owned fields are accepted. Server-controlled fields like
  * keyType, createdVia, and plaintextKey cannot be modified after creation.
+ * redirectUris stay plain strings here; the handler calls
+ * validateRedirectUriFormat so the precise error message is returned.
  */
-const UrlWithSchemeSchema = z.string().refine(
-    (val) => {
-        try {
-            validateRedirectUriFormat(val);
-            return true;
-        } catch {
-            return false;
-        }
-    },
-    {
-        message:
-            "Must be an https:// redirect URI with no fragment, or http:// on a loopback host",
-    },
-);
-
 const UpdateMetadataSchema = z.object({
     description: z.string().optional(),
-    redirectUris: z.array(UrlWithSchemeSchema).optional(),
+    redirectUris: z.array(z.string()).optional(),
     earningsEnabled: z.boolean().optional(),
 });
 
@@ -249,6 +247,16 @@ export const apiKeysRoutes = new Hono<Env>()
                 defaultCreatedVia: createdVia,
             });
 
+            c.executionCtx.waitUntil(
+                checkQuestsForUser(c.env, user.id, [
+                    ACCOUNT_SETUP_QUEST_GROUP,
+                ]).catch((error) =>
+                    c.get("log").warn("API key quest check failed: {error}", {
+                        error,
+                    }),
+                ),
+            );
+
             return c.json(created);
         },
     )
@@ -270,7 +278,7 @@ export const apiKeysRoutes = new Hono<Env>()
             setPrivateNoStoreHeaders(c);
 
             const keys = await db.query.apikey.findMany({
-                where: eq(schema.apikey.userId, user.id),
+                where: eq(schema.apikey.referenceId, user.id),
                 orderBy: (apikey, { desc }) => [desc(apikey.createdAt)],
             });
             const parsedPermissions = keys.map((key) =>

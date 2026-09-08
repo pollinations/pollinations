@@ -15,55 +15,65 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-function params(model: string): Model3dParams {
+function params(resolution: "low" | "medium" | "high" = "low"): Model3dParams {
     return {
-        model,
+        model: "trellis-2",
+        resolution,
         image: ["https://example.com/ref.jpg"],
         safe: false,
     };
 }
 
-const syncSuccessResponse = (b64 = "aW5mZXJlbmNlcG9ydA==") =>
-    new Response(JSON.stringify({ data: [{ model_glb_b64_bytes: b64 }] }), {
-        status: 200,
-    });
+function mockAsyncSuccess(b64 = "aW5mZXJlbmNlcG9ydA==") {
+    return vi
+        .spyOn(globalThis, "fetch")
+        .mockResolvedValueOnce(
+            Response.json(
+                { job_id: "job_123", status: "pending" },
+                { status: 202 },
+            ),
+        )
+        .mockResolvedValueOnce(
+            Response.json({
+                job_id: "job_123",
+                status: "completed",
+                data: [{ model_glb_b64_bytes: b64 }],
+            }),
+        );
+}
 
 describe("callTrellis2", () => {
-    it("uses ?sync=true and the correct inferenceport model name", async () => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(syncSuccessResponse());
+    it("uses the async API and correct inferenceport model name", async () => {
+        const fetchSpy = mockAsyncSuccess();
 
-        await callTrellis2(params("trellis-2-medium"));
+        await callTrellis2(params("medium"));
 
         const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit];
-        expect(url).toContain("?sync=true");
+        expect(url).not.toContain("sync=true");
         const body = JSON.parse(init.body as string);
         expect(body.model).toBe("trellis2");
         expect(body.resolution).toBe("medium");
     });
 
     it.each([
-        ["trellis-2-low", "low"],
-        ["trellis-2-medium", "medium"],
-        ["trellis-2-high", "high"],
-    ])("sends correct resolution for %s", async (modelId, expectedResolution) => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(syncSuccessResponse());
+        "low",
+        "medium",
+        "high",
+    ] as const)("sends %s resolution", async (resolution) => {
+        const fetchSpy = mockAsyncSuccess();
 
-        await callTrellis2(params(modelId));
+        await callTrellis2(params(resolution));
 
         const body = JSON.parse(
             (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,
         );
-        expect(body.resolution).toBe(expectedResolution);
+        expect(body.resolution).toBe(resolution);
     });
 
-    it("returns a GLB buffer from the sync response", async () => {
-        vi.spyOn(globalThis, "fetch").mockResolvedValue(syncSuccessResponse());
+    it("returns a GLB buffer from the completed job", async () => {
+        mockAsyncSuccess();
 
-        const result = await callTrellis2(params("trellis-2-low"));
+        const result = await callTrellis2(params());
 
         expect(result.contentType).toBe("model/gltf-binary");
         expect(result.buffer.length).toBeGreaterThan(0);
@@ -72,7 +82,8 @@ describe("callTrellis2", () => {
     it("throws when no image is provided", async () => {
         await expect(
             callTrellis2({
-                model: "trellis-2-low",
+                model: "trellis-2",
+                resolution: "low",
                 image: [],
                 safe: false,
             }),
@@ -80,11 +91,9 @@ describe("callTrellis2", () => {
     });
 
     it("does not forward seed (inferenceport support unconfirmed)", async () => {
-        const fetchSpy = vi
-            .spyOn(globalThis, "fetch")
-            .mockResolvedValue(syncSuccessResponse());
+        const fetchSpy = mockAsyncSuccess();
 
-        await callTrellis2({ ...params("trellis-2-low"), seed: 12345 });
+        await callTrellis2({ ...params(), seed: 12345 });
 
         const body = JSON.parse(
             (fetchSpy.mock.calls[0] as [string, RequestInit])[1].body as string,

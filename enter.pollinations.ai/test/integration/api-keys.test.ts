@@ -22,6 +22,70 @@ type ApiKeyListResponse = {
 
 describe("API Key Management", () => {
     describe("POST /api/api-keys", () => {
+        test("forces publishable keys to zero direct-spend budget", async ({
+            sessionToken,
+        }) => {
+            for (const pollenBudget of [undefined, null, 0]) {
+                const response = await SELF.fetch(
+                    "http://localhost:3000/api/api-keys",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Cookie: `better-auth.session_token=${sessionToken}`,
+                        },
+                        body: JSON.stringify({
+                            name: `forced-zero-publishable-${String(pollenBudget)}`,
+                            type: "publishable",
+                            pollenBudget,
+                            metadata: {
+                                redirectUris: [
+                                    "https://zero-budget.example/callback",
+                                ],
+                            },
+                        }),
+                    },
+                );
+
+                expect(response.status).toBe(200);
+                const created = await response.json();
+                expect(created.pollenBudget).toBe(0);
+
+                const db = drizzle(env.DB, { schema });
+                const stored = await db.query.apikey.findFirst({
+                    where: (apikey, { eq }) => eq(apikey.id, created.id),
+                });
+                expect(stored?.pollenBalance).toBe(0);
+            }
+        });
+
+        test("rejects non-zero publishable-key budgets", async ({
+            sessionToken,
+        }) => {
+            const response = await SELF.fetch(
+                "http://localhost:3000/api/api-keys",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Cookie: `better-auth.session_token=${sessionToken}`,
+                    },
+                    body: JSON.stringify({
+                        name: "invalid-budget-publishable",
+                        type: "publishable",
+                        pollenBudget: 5,
+                    }),
+                },
+            );
+
+            expect(response.status).toBe(400);
+            await expect(response.json()).resolves.toMatchObject({
+                error: {
+                    message: "Publishable keys must have a pollen budget of 0",
+                },
+            });
+        });
+
         test("should create publishable key metadata in one step", async ({
             sessionToken,
         }) => {
@@ -282,6 +346,17 @@ describe("API Key Management", () => {
             expect(created.metadata.clientId).toBeUndefined();
             expect(created.metadata.createdForUserId).toBeUndefined();
             expect(created.metadata.createdForApp).toBeUndefined();
+
+            const db = drizzle(env.DB, { schema });
+            await expect
+                .poll(async () => {
+                    const reward = await db.query.rewards.findFirst({
+                        where: (rewards, { eq }) =>
+                            eq(rewards.questId, "first_api_key"),
+                    });
+                    return Boolean(reward?.claimedAt);
+                })
+                .toBe(true);
         });
 
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
@@ -814,7 +889,10 @@ describe("API Key Management", () => {
             );
             expect(restrictedKey).toBeTruthy();
             expect(restrictedKey.permissions).toEqual({
-                models: ["openai-fast", "flux"],
+                models: [
+                    "openai/gpt-5-nano",
+                    "black-forest-labs/flux.1-schnell",
+                ],
             });
         });
 
@@ -837,12 +915,17 @@ describe("API Key Management", () => {
             expect(response.headers.get("pragma")).toBe("no-cache");
         });
 
-        test("should omit retired models without rewriting stored permissions", async ({
+        test("should canonicalize model aliases while preserving unknown permissions", async ({
             sessionToken,
         }) => {
             const created = await createApiKeyViaApi(sessionToken, {
-                name: "key-with-retired-model",
-                allowedModels: ["flux", "nanobanana2", "retired-model"],
+                name: "key-with-alias-and-unknown-model",
+                allowedModels: [
+                    "flux",
+                    "nanobanana2",
+                    "gpt-realtime-2",
+                    "retired-model",
+                ],
             });
 
             const response = await SELF.fetch(
@@ -857,15 +940,20 @@ describe("API Key Management", () => {
             expect(response.status).toBe(200);
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((key) => key.id === created.id);
-            expect(listed?.permissions?.models).toEqual(["flux"]);
+            expect(listed?.permissions?.models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+                "google/gemini-3.1-flash-image",
+                "openai/gpt-realtime-2.1",
+            ]);
 
             const db = drizzle(env.DB, { schema });
             const stored = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                "flux",
-                "nanobanana2",
+                "black-forest-labs/flux.1-schnell",
+                "google/gemini-3.1-flash-image",
+                "openai/gpt-realtime-2.1",
                 "retired-model",
             ]);
         });
@@ -884,8 +972,9 @@ describe("API Key Management", () => {
             const key = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
-            expect(key?.userId).toBeTruthy();
-            const ownerUserId = key?.userId as string;
+            expect(key?.configId).toBe("default");
+            expect(key?.referenceId).toBeTruthy();
+            const ownerUserId = key?.referenceId as string;
 
             await db
                 .update(schema.user)
@@ -904,9 +993,18 @@ describe("API Key Management", () => {
                     id: "owner-private-model",
                     ownerUserId,
                     name: "private-model",
+                    title: "Owner private model",
                     baseUrl: "https://owner.example.com/v1",
                     upstreamModel: "private-model",
-                    bearerTokenCiphertext: "encrypted-token",
+                    payload: JSON.stringify({
+                        bearerTokenCiphertext: "encrypted-token",
+                        modality: "text",
+                        imagePricing: "request",
+                        inputModalities: ["text"],
+                        perUserRpm: null,
+                        fallbacks: [],
+                        prices: {},
+                    }),
                     visibility: "private",
                     promptTextPrice: 0,
                     completionTextPrice: 0,
@@ -915,9 +1013,18 @@ describe("API Key Management", () => {
                     id: "other-private-model",
                     ownerUserId: "other-model-owner-id",
                     name: "private-model",
+                    title: "Other private model",
                     baseUrl: "https://other.example.com/v1",
                     upstreamModel: "private-model",
-                    bearerTokenCiphertext: "encrypted-token",
+                    payload: JSON.stringify({
+                        bearerTokenCiphertext: "encrypted-token",
+                        modality: "text",
+                        imagePricing: "request",
+                        inputModalities: ["text"],
+                        perUserRpm: null,
+                        fallbacks: [],
+                        prices: {},
+                    }),
                     visibility: "private",
                     promptTextPrice: 0,
                     completionTextPrice: 0,
@@ -1019,7 +1126,7 @@ describe("API Key Management", () => {
                         Cookie: `better-auth.session_token=${sessionToken}`,
                     },
                     body: JSON.stringify({
-                        allowedModels: ["flux", "openai"],
+                        allowedModels: ["flux", "nanobanana2", "nanobanana-2"],
                         accountPermissions: ["profile", "usage"],
                     }),
                 },
@@ -1041,7 +1148,10 @@ describe("API Key Management", () => {
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: ["flux", "openai"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "google/gemini-3.1-flash-image",
+                ],
                 account: ["profile", "usage"],
             });
         });
@@ -1081,7 +1191,9 @@ describe("API Key Management", () => {
             const keyInfo = (await accountKeyResponse.json()) as {
                 permissions?: { models?: string[] };
             };
-            expect(keyInfo.permissions?.models).toEqual(["flux"]);
+            expect(keyInfo.permissions?.models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+            ]);
         });
 
         test("should reflect updated metadata immediately after update", async ({
@@ -1221,7 +1333,9 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
-            expect(JSON.parse(result.permissions).models).toEqual(["flux"]);
+            expect(JSON.parse(result.permissions).models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+            ]);
 
             // Verify in list
             const listResponse = await SELF.fetch(
@@ -1460,7 +1574,9 @@ describe("API Key Management", () => {
 
             expect(finalKey.name).toBe("final-name");
             expect(finalKey.pollenBalance).toBe(25);
-            expect(finalKey.permissions.models).toEqual(["openai"]);
+            expect(finalKey.permissions.models).toEqual([
+                "openai/gpt-5.4-nano",
+            ]);
             expect(finalKey.expiresAt).toBeTruthy();
         });
     });

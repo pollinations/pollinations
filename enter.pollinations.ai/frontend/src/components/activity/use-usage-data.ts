@@ -1,12 +1,20 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { formatActivityChartDate } from "./activity-helpers";
 import type {
     DailyUsageRecord,
     DataPoint,
     FilterState,
     ModelBreakdown,
 } from "./types";
+
+type UsageModelBreakdown = ModelBreakdown & {
+    paidPollen: number;
+    tierPollen: number;
+    paidRequests: number;
+    tierRequests: number;
+};
 
 type UsageDataResult = {
     loading: boolean;
@@ -20,8 +28,9 @@ type UsageDataResult = {
         totalPollen: number;
         tierPollen: number;
         paidPollen: number;
-        activeApiKeyCount: number | null;
-        modelBreakdowns: ModelBreakdown[];
+        paidRequests: number;
+        tierRequests: number;
+        modelBreakdowns: UsageModelBreakdown[];
     };
 };
 
@@ -197,30 +206,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 filters.metric === "requests" ? "paidRequests" : "paidPollen";
 
             return {
-                label: isHourly
-                    ? date.toLocaleTimeString("en-US", {
-                          timeZone: "UTC",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                      })
-                    : date.toLocaleDateString("en-US", {
-                          timeZone: "UTC",
-                          month: "short",
-                          day: "numeric",
-                      }),
-                fullDate: date.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    ...(isHourly && {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                    }),
-                }),
+                ...formatActivityChartDate(date, isHourly),
                 value: d[filters.metric],
                 tierValue: d[tierKey],
                 paidValue: d[paidKey],
@@ -251,21 +237,37 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             );
         const modelTotals = new Map<
             string,
-            { requests: number; pollen: number }
+            {
+                requests: number;
+                pollen: number;
+                paidPollen: number;
+                tierPollen: number;
+                paidRequests: number;
+                tierRequests: number;
+            }
         >();
-        const activeApiKeyIds = new Set<string>();
         for (const r of filtered) {
-            if (r.api_key_id) activeApiKeyIds.add(r.api_key_id);
             if (!r.model) continue;
             const cur = modelTotals.get(r.model) || {
                 requests: 0,
                 pollen: 0,
+                paidPollen: 0,
+                tierPollen: 0,
+                paidRequests: 0,
+                tierRequests: 0,
             };
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
+            if (r.meter_source === "tier") {
+                cur.tierPollen += r.cost_usd || 0;
+                cur.tierRequests += r.requests || 0;
+            } else {
+                cur.paidPollen += r.cost_usd || 0;
+                cur.paidRequests += r.requests || 0;
+            }
             modelTotals.set(r.model, cur);
         }
-        const modelBreakdowns: ModelBreakdown[] = Array.from(
+        const modelBreakdowns: UsageModelBreakdown[] = Array.from(
             modelTotals.entries(),
         )
             .map(([model, totals]) => ({ model, label: model, ...totals }))
@@ -277,8 +279,16 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 totalPollen,
                 tierPollen,
                 paidPollen,
-                activeApiKeyCount:
-                    activeApiKeyIds.size > 0 ? activeApiKeyIds.size : null,
+                paidRequests: filtered.reduce(
+                    (sum, row) =>
+                        sum + (row.meter_source !== "tier" ? row.requests : 0),
+                    0,
+                ),
+                tierRequests: filtered.reduce(
+                    (sum, row) =>
+                        sum + (row.meter_source === "tier" ? row.requests : 0),
+                    0,
+                ),
                 modelBreakdowns,
             },
         };

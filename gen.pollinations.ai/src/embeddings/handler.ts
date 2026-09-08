@@ -15,7 +15,7 @@ import {
     inputToText,
     normalizeInputs,
 } from "./input.ts";
-import { callOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
+import { callAzureOpenAIEmbed, extractOpenAIUsage } from "./openai.ts";
 import type { EmbeddingRequest } from "./types.ts";
 import {
     callGeminiEmbed,
@@ -32,11 +32,11 @@ type EmbeddingData = {
 // Provider-facing model IDs (what the upstream APIs expect), keyed by
 // registry model name. The registry only carries public names and pricing.
 const EMBEDDING_PROVIDER_MODEL_IDS: Record<EmbeddingServiceId, string> = {
-    "gemini-2": "gemini-embedding-2",
-    "openai-3-small": "text-embedding-3-small",
-    "openai-3-large": "text-embedding-3-large",
-    "cohere-embed-v4": "embed-v-4-0",
-    "qwen3-embedding-8b": "accounts/fireworks/models/qwen3-embedding-8b",
+    "google/gemini-embedding-2": "gemini-embedding-2",
+    "openai/text-embedding-3-small": "text-embedding-3-small",
+    "openai/text-embedding-3-large": "text-embedding-3-large",
+    "cohere/embed-v4.0": "embed-v-4-0",
+    "qwen/qwen3-embedding-8b": "accounts/fireworks/models/qwen3-embedding-8b",
 };
 
 export function getEmbeddingProviderModelId(modelName: string): string {
@@ -54,11 +54,11 @@ const EMBEDDING_DIMENSIONS: Record<
     EmbeddingServiceId,
     { max: number; allowed?: readonly number[] }
 > = {
-    "gemini-2": { max: 3072 },
-    "openai-3-small": { max: 1536 },
-    "openai-3-large": { max: 3072 },
-    "cohere-embed-v4": { max: 1536, allowed: [256, 512, 1024, 1536] },
-    "qwen3-embedding-8b": { max: 4096 },
+    "google/gemini-embedding-2": { max: 3072 },
+    "openai/text-embedding-3-small": { max: 1536 },
+    "openai/text-embedding-3-large": { max: 3072 },
+    "cohere/embed-v4.0": { max: 1536, allowed: [256, 512, 1024, 1536] },
+    "qwen/qwen3-embedding-8b": { max: 4096 },
 };
 
 export async function generateEmbeddings(
@@ -71,11 +71,17 @@ export async function generateEmbeddings(
         return await generateGeminiEmbeddings(env, request, responseModel);
     }
 
-    if (serviceDef.provider === "openai") {
-        return await generateOpenAIEmbeddings(env, request, responseModel);
-    }
-
     if (serviceDef.provider === "azure") {
+        if (
+            responseModel === "openai/text-embedding-3-small" ||
+            responseModel === "openai/text-embedding-3-large"
+        ) {
+            return await generateAzureOpenAIEmbeddings(
+                env,
+                request,
+                responseModel,
+            );
+        }
         return await generateCohereAzureEmbeddings(env, request, responseModel);
     }
 
@@ -159,13 +165,7 @@ async function generateFireworksEmbeddings(
     );
     const usage = extractFireworksUsage(result);
 
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
+    const data = toEmbeddingData(result.data, request.encoding_format);
 
     return embeddingsResponse(responseModel, data, usage);
 }
@@ -210,7 +210,7 @@ async function generateGeminiEmbeddings(
     return embeddingsResponse(responseModel, data, aggregatedUsage);
 }
 
-async function generateOpenAIEmbeddings(
+async function generateAzureOpenAIEmbeddings(
     env: CloudflareBindings,
     request: EmbeddingRequest,
     responseModel: string,
@@ -228,7 +228,7 @@ async function generateOpenAIEmbeddings(
         return embeddingsResponse(responseModel, [], { promptTextTokens: 0 });
     }
 
-    const result = await callOpenAIEmbed(
+    const result = await callAzureOpenAIEmbed(
         env,
         request.model,
         textInputs,
@@ -236,13 +236,7 @@ async function generateOpenAIEmbeddings(
     );
     const usage = extractOpenAIUsage(result);
 
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
+    const data = toEmbeddingData(result.data, request.encoding_format);
 
     return embeddingsResponse(responseModel, data, usage);
 }
@@ -285,15 +279,22 @@ function cohereEmbeddingsResponse(
     modality: "text" | "image",
 ): Response {
     const usage = extractCohereAzureUsage(result, modality);
-    const data = [...result.data]
-        .sort((a, b) => a.index - b.index)
-        .map(({ embedding, index }) => ({
-            object: "embedding" as const,
-            embedding: encodeEmbedding(embedding, request.encoding_format),
-            index,
-        }));
+    const data = toEmbeddingData(result.data, request.encoding_format);
 
     return embeddingsResponse(responseModel, data, usage);
+}
+
+function toEmbeddingData(
+    embeddings: { embedding: number[]; index: number }[],
+    encodingFormat: EmbeddingRequest["encoding_format"],
+): EmbeddingData[] {
+    return [...embeddings]
+        .sort((a, b) => a.index - b.index)
+        .map(({ embedding, index }) => ({
+            object: "embedding",
+            embedding: encodeEmbedding(embedding, encodingFormat),
+            index,
+        }));
 }
 
 function encodeEmbedding(

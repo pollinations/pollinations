@@ -22,6 +22,8 @@ SCHEMA >
 -- User
 `user_id`               String                  `json:$.userId` DEFAULT 'undefined',
 `user_tier`             LowCardinality(String)  `json:$.userTier` DEFAULT 'undefined',
+-- Legacy columns retained to avoid a destructive datasource migration. New
+-- events use user_id and leave these at their defaults.
 `user_github_id`        String                  `json:$.userGithubId` DEFAULT 'undefined',
 `user_github_username`  String                  `json:$.userGithubUsername` DEFAULT 'undefined',
 

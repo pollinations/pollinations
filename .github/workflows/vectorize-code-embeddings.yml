@@ -57,7 +57,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.POLLI_VECTOR_ID }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.POLLI_VECTOR_KEY }}
           POLLI_VECTOR_DB: ${{ secrets.POLLI_VECTOR_DB }}
-        run: python .github/scripts/embed_code.py --mode full --repo-root .
+        run: python apps/polli/scripts/embed_code.py --mode full --repo-root .
 
       - name: Run incremental embed
         if: steps.params.outputs.mode == 'incremental'
@@ -70,7 +70,7 @@ jobs:
           if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
             BASE_SHA=$(git rev-parse HEAD~1)
           fi
-          python .github/scripts/embed_code.py \
+          python apps/polli/scripts/embed_code.py \
             --mode incremental \
             --repo-root . \
             --base-sha "$BASE_SHA" \

@@ -6,6 +6,8 @@ import {
     exportD1TinybirdPage,
     isD1TinybirdDatasource,
 } from "../services/d1-tinybird-sync.ts";
+import { questGrantAdminRoutes } from "./quest-grants.ts";
+import { statusNoticeAdminRoutes } from "./status-notice.ts";
 
 export const adminRoutes = new Hono<Env>()
     .use("*", async (c, next) => {
@@ -80,7 +82,9 @@ export const adminRoutes = new Hono<Env>()
             next_cursor: result.nextCursor,
             done: result.done,
         });
-    });
+    })
+    .route("/status-notice", statusNoticeAdminRoutes)
+    .route("/quest-grants", questGrantAdminRoutes);
 
 async function sha256(value: string): Promise<string> {
     const bytes = new TextEncoder().encode(value);

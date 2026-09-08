@@ -9,26 +9,48 @@ on:
 jobs:
   analyze:
     runs-on: ubuntu-latest
-    permissions:
+    permissions: &codeql_permissions
       security-events: write
       contents: read
 
-    strategy:
+    strategy: &codeql_strategy
       fail-fast: false
       matrix:
         language: [actions, javascript-typescript, python]
 
     steps:
-      - name: Checkout repository
+      - &checkout_repository
+        name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Initialize CodeQL
+      - &initialize_codeql
+        name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
           languages: ${{ matrix.language }}
 
-      - name: Autobuild
+      - &autobuild
+        name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3
+
+  # Keep the pre-rename categories available while historical branch results
+  # still reference them. This can be removed after those stale analyses are
+  # retired from the repository's code-scanning history.
+  analyze_legacy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions: *codeql_permissions
+    strategy: *codeql_strategy
+
+    steps:
+      - *checkout_repository
+      - *initialize_codeql
+      - *autobuild
+
+      - name: Perform legacy CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: .github/workflows/codeql.yml:analyze/language:${{ matrix.language }}

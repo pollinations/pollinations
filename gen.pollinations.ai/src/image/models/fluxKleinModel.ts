@@ -1,7 +1,7 @@
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { fetchUpstream } from "../utils/fetchUpstream.ts";
 import { base64ToBuffer, downloadUserImage } from "../utils/imageDownload.ts";
@@ -22,7 +22,9 @@ const getKleinGenerateUrl = (): string => {
     }
     const url = getImageEnv("KLEIN_URL");
     if (!url) {
-        throw new HttpError("KLEIN_URL is not configured", 500);
+        throw UpstreamError.fromProvider(500, {
+            message: "KLEIN_URL is not configured",
+        });
     }
     return `${url}/generate`;
 };
@@ -36,23 +38,14 @@ export const callFluxKleinAPI = async (
     safeParams: ImageParams,
 ): Promise<ImageGenerationResult> => {
     try {
-        const hasReferenceImages =
-            safeParams.image && safeParams.image.length > 0;
-
         // Download and encode reference images if provided
-        let imagesB64: string[] = [];
-        if (hasReferenceImages) {
-            const imageUrls = (safeParams.image || []).slice(
-                0,
-                MAX_INPUT_IMAGES,
-            );
-            const downloads = await Promise.all(
-                imageUrls.map((url) => downloadUserImage(url)),
-            );
-            imagesB64 = downloads.map(({ buffer }) =>
-                buffer.toString("base64"),
-            );
-        }
+        const imageUrls = safeParams.image.slice(0, MAX_INPUT_IMAGES);
+        const downloads = await Promise.all(
+            imageUrls.map((url) => downloadUserImage(url)),
+        );
+        const imagesB64 = downloads.map(({ buffer }) =>
+            buffer.toString("base64"),
+        );
 
         const body: Record<string, unknown> = {
             prompts: [prompt],
@@ -96,12 +89,10 @@ export const callFluxKleinAPI = async (
         const item = Array.isArray(result) ? result[0] : result;
 
         if (!item?.image) {
-            throw new HttpError(
-                "Klein API returned no image",
-                500,
-                undefined,
-                kleinUrl,
-            );
+            throw UpstreamError.fromProvider(500, {
+                message: "Klein API returned no image",
+                requestUrl: new URL(kleinUrl),
+            });
         }
 
         const imageBuffer = base64ToBuffer(item.image);
@@ -117,7 +108,7 @@ export const callFluxKleinAPI = async (
             isMature: false,
             isChild: false,
             trackingData: {
-                actualModel: "klein",
+                actualModel: "black-forest-labs/flux.2-klein-4b",
                 usage: {
                     completionImageTokens: 1,
                     totalTokenCount: 1,
@@ -126,7 +117,7 @@ export const callFluxKleinAPI = async (
         };
     } catch (error) {
         logError("Error calling Flux Klein API:", error);
-        if (error instanceof HttpError) {
+        if (error instanceof UpstreamError) {
             throw error;
         }
         const message = error instanceof Error ? error.message : String(error);

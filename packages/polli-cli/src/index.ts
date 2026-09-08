@@ -2,9 +2,12 @@ import { readFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
 
+import { agentsCommand } from "./commands/agents.js";
 import { authCommand } from "./commands/auth.js";
 import { docsCommand } from "./commands/docs.js";
+import { earningsCommand } from "./commands/earnings.js";
 import { createGenCommand } from "./commands/gen/index.js";
+import { harnessCommand } from "./commands/harness.js";
 import { keysCommand } from "./commands/keys.js";
 import { modelsCommand } from "./commands/models.js";
 import { myModelsCommand } from "./commands/my-models.js";
@@ -62,8 +65,13 @@ program
 program.addCommand(authCommand);
 program.addCommand(keysCommand);
 program.addCommand(usageCommand);
+program.addCommand(earningsCommand);
 program.addCommand(questsCommand);
+program.addCommand(agentsCommand);
 program.addCommand(myModelsCommand);
+
+// Coding harness integrations
+program.addCommand(harnessCommand);
 
 // Generation
 program.addCommand(createGenCommand());

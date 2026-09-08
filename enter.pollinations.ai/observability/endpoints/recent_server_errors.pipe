@@ -21,6 +21,8 @@ SQL >
         upstream_host,
         upstream_status,
         upstream_body,
+        edge_colo,
+        upstream_headers,
         model_requested,
         resolved_model_requested,
         request_inputs,

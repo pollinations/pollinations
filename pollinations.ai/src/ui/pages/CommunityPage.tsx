@@ -1,4 +1,3 @@
-import { COPY_CONSTANTS } from "../../copy/constants";
 import { COMMUNITY_PAGE } from "../../copy/content/community";
 import { LINKS, SOCIAL_LINKS } from "../../copy/content/socialLinks";
 import { useDocumentMeta } from "../../hooks/useDocumentMeta";
@@ -6,7 +5,6 @@ import { usePageCopy } from "../../hooks/usePageCopy";
 import { useTranslate } from "../../hooks/useTranslate";
 import { ExternalLinkIcon } from "../assets/ExternalLinkIcon";
 import { BuildDiary } from "../components/BuildDiary";
-import { ImageGenerator } from "../components/ImageGenerator";
 import { TopContributors } from "../components/TopContributors";
 import { Button } from "../components/ui/button";
 import { Divider } from "../components/ui/divider";
@@ -29,11 +27,6 @@ export default function CommunityPage() {
     const { translated: translatedVotingIssues } = useTranslate(
         COMMUNITY_PAGE.votingIssues as VotingIssue[],
         "title",
-    );
-
-    const { translated: translatedSupporters } = useTranslate(
-        COMMUNITY_PAGE.supportersList,
-        "description",
     );
 
     return (
@@ -348,48 +341,45 @@ export default function CommunityPage() {
                     <Heading variant="section" className="mb-8">
                         {pageCopy.supportersTitle}
                     </Heading>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-8">
-                        {translatedSupporters.map((supporter, index) => {
-                            const originalSupporter =
-                                COMMUNITY_PAGE.supportersList[index];
-                            const borderColors = [
-                                "border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
-                                "border-secondary-strong shadow-[2px_2px_0_rgb(var(--secondary-strong)_/_0.3)]",
-                                "border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
-                                "border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
-                            ];
-                            return (
-                                <div
-                                    key={supporter.name}
-                                    className="flex flex-col items-center text-center"
-                                >
+                    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-8">
+                        {COMMUNITY_PAGE.supportersList.map(
+                            (supporter, index) => {
+                                const borderColors = [
+                                    "border-primary-strong shadow-[2px_2px_0_rgb(var(--primary-strong)_/_0.3)]",
+                                    "border-secondary-strong shadow-[2px_2px_0_rgb(var(--secondary-strong)_/_0.3)]",
+                                    "border-tertiary-strong shadow-[2px_2px_0_rgb(var(--tertiary-strong)_/_0.3)]",
+                                    "border-accent-strong shadow-[2px_2px_0_rgb(var(--accent-strong)_/_0.3)]",
+                                ];
+                                return (
                                     <a
+                                        key={supporter.name}
                                         href={supporter.url}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className={`block w-16 h-16 overflow-hidden bg-white/60 rounded-sub-card border-r-2 border-b-2 ${borderColors[index % borderColors.length]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none mb-2`}
+                                        aria-label={supporter.name}
+                                        className={`group flex aspect-square w-full flex-col items-center justify-center gap-2 bg-white/60 rounded-sub-card border-r-2 border-b-2 p-2 text-center ${borderColors[index % borderColors.length]} transition hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none active:translate-x-[2px] active:translate-y-[2px] active:shadow-none`}
                                     >
-                                        <ImageGenerator
-                                            key={`${supporter.name}-logo`}
-                                            prompt={`${COPY_CONSTANTS.supporterLogoPrompt} ${originalSupporter.name}. ${originalSupporter.description}`}
-                                            width={200}
-                                            height={200}
-                                            seed={
-                                                COPY_CONSTANTS.supporterLogoSeed
-                                            }
-                                            model={
-                                                COPY_CONSTANTS.supporterLogoModel
-                                            }
-                                            alt={supporter.name}
-                                            className="w-full h-full object-cover"
+                                        <span
+                                            aria-hidden="true"
+                                            className="block h-10 w-10 bg-dark transition group-hover:scale-105"
+                                            style={{
+                                                maskImage: `url(${supporter.logo})`,
+                                                WebkitMaskImage: `url(${supporter.logo})`,
+                                                maskRepeat: "no-repeat",
+                                                WebkitMaskRepeat: "no-repeat",
+                                                maskPosition: "center",
+                                                WebkitMaskPosition: "center",
+                                                maskSize: "contain",
+                                                WebkitMaskSize: "contain",
+                                            }}
                                         />
+                                        <span className="font-body text-[9px] font-bold text-dark leading-[1.1]">
+                                            {supporter.name}
+                                        </span>
                                     </a>
-                                    <p className="font-body text-[10px] font-bold text-dark leading-tight">
-                                        {supporter.name}
-                                    </p>
-                                </div>
-                            );
-                        })}
+                                );
+                            },
+                        )}
                     </div>
                 </div>
             </PageCard>

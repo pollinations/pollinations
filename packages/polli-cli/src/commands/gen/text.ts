@@ -1,9 +1,7 @@
 import { writeFileSync } from "node:fs";
 import chalk from "chalk";
 import { Command } from "commander";
-import { requireKey } from "../../lib/api.js";
-import { BASE_URL } from "../../lib/config.js";
-import { budgetHint } from "../../lib/errors.js";
+import { exitWithError, fetchGen } from "../../lib/errors.js";
 import {
     getOutputMode,
     printError,
@@ -49,7 +47,6 @@ export function createTextCommand() {
             "Wait for full response instead of streaming tokens",
         )
         .action(async (promptArg, opts) => {
-            const key = requireKey();
             const stdinText = await readStdin();
             const prompt = promptArg || stdinText;
 
@@ -122,26 +119,13 @@ export function createTextCommand() {
             if (isHuman && !useStream) printInfo("Generating...");
 
             try {
-                const res = await fetch(`${BASE_URL}/v1/chat/completions`, {
+                const res = await fetchGen("/v1/chat/completions", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${key}`,
                     },
                     body: JSON.stringify(body),
                 });
-
-                if (!res.ok) {
-                    const errText = await res.text().catch(() => "");
-                    const hint = await budgetHint(res.status, errText);
-                    if (hint) {
-                        printError(hint);
-                        process.exit(1);
-                    }
-                    throw new Error(
-                        `${res.status} ${res.statusText}: ${errText}`,
-                    );
-                }
 
                 if (useStream) {
                     // Dim the model's streamed output in TTY mode so it's
@@ -180,11 +164,8 @@ export function createTextCommand() {
                         : content;
                     process.stdout.write(`${out}\n`);
                 }
-            } catch (err) {
-                printError(
-                    err instanceof Error ? err.message : "unknown error",
-                );
-                process.exit(1);
+            } catch (error) {
+                exitWithError(error);
             }
         });
 }

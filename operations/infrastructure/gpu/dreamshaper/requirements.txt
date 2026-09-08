@@ -1,0 +1,18 @@
+# DreamShaper-8 + LCM-LoRA server
+#
+# Install PyTorch with CUDA support first:
+#   pip install torch torchvision --index-url https://download.pytorch.org/whl/cu128
+#
+# Then install the rest:
+diffusers>=0.38.0
+transformers<5
+accelerate
+peft
+safetensors
+huggingface-hub
+fastapi
+uvicorn
+pydantic
+aiohttp
+pillow
+requests

@@ -7,17 +7,13 @@ import {
     useState,
 } from "react";
 import { pollinationsErrorFromResponse } from "../error-response.js";
-import {
-    fetchModelCatalog,
-    type ModelCatalog,
-    type ModelCatalogItem,
-} from "../models.js";
+import { fetchModelCatalog, type ModelCatalog } from "../models.js";
 import type {
     AccountBalance,
     AccountProfile,
     KeyInfo,
     KeyUsageOptions,
-    ModelCategory,
+    ModelInfo,
     UsageResponse,
 } from "../types.js";
 import { PollinationsError } from "../types.js";
@@ -170,18 +166,15 @@ export function useAccountProfile(options: { enabled?: boolean } = {}) {
 }
 
 export interface UseModelCatalogValue {
-    models: ModelCatalogItem[];
+    models: ModelInfo[];
     allowedModelIds: ReadonlySet<string>;
-    /** Categories the key may use: restricted to allowed models when logged in,
-     * every public category when logged out. */
-    allowedCategories: ModelCategory[];
     isLoggedIn: boolean;
     isLoading: boolean;
     error: Error | null;
     refresh: () => Promise<void>;
 }
 
-const EMPTY_MODELS: ModelCatalogItem[] = [];
+const EMPTY_MODELS: ModelInfo[] = [];
 const EMPTY_ALLOWED: ReadonlySet<string> = new Set();
 
 /**
@@ -229,16 +222,9 @@ export function useModelCatalog(
     return useMemo(() => {
         const models = catalog?.models ?? EMPTY_MODELS;
         const allowedModelIds = catalog?.allowedModelIds ?? EMPTY_ALLOWED;
-        const allowed = isLoggedIn
-            ? models.filter((model) => allowedModelIds.has(model.id))
-            : models;
-        const allowedCategories = [
-            ...new Set(allowed.map((model) => model.category)),
-        ];
         return {
             models,
             allowedModelIds,
-            allowedCategories,
             isLoggedIn,
             isLoading,
             error,

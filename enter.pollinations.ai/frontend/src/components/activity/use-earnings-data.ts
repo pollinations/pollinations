@@ -1,6 +1,7 @@
 import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { apiClient } from "../../api.ts";
+import { formatActivityChartDate } from "./activity-helpers";
 import type {
     DataPoint,
     Metric,
@@ -39,6 +40,10 @@ type EarningEntity = {
     label: string;
     requests: number;
     pollen: number;
+    paidPollen: number;
+    tierPollen: number;
+    paidRequests: number;
+    tierRequests: number;
 };
 
 function filterRowsBySelection(
@@ -68,6 +73,8 @@ type EarningsDataResult = {
         totalPollen: number;
         totalPaid: number;
         totalTier: number;
+        paidRequests: number;
+        tierRequests: number;
         entityCount: number;
         entityBreakdowns: EarningEntity[];
     };
@@ -264,30 +271,7 @@ export function useEarningsData(
             const isRequestsMetric = filters.metric === "requests";
 
             return {
-                label: isHourly
-                    ? date.toLocaleTimeString("en-US", {
-                          timeZone: "UTC",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                      })
-                    : date.toLocaleDateString("en-US", {
-                          timeZone: "UTC",
-                          month: "short",
-                          day: "numeric",
-                      }),
-                fullDate: date.toLocaleDateString("en-US", {
-                    timeZone: "UTC",
-                    weekday: "short",
-                    year: "numeric",
-                    month: "short",
-                    day: "numeric",
-                    ...(isHourly && {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: false,
-                    }),
-                }),
+                ...formatActivityChartDate(date, isHourly),
                 value: isRequestsMetric ? bucket.requests : bucket.pollen,
                 tierValue: isRequestsMetric
                     ? bucket.tierRequests
@@ -327,6 +311,10 @@ export function useEarningsData(
                 label: row.entity_name,
                 requests: row.requests,
                 pollen: row.pollen_earned,
+                paidPollen: row.paid_earned,
+                tierPollen: row.tier_earned,
+                paidRequests: row.paid_requests,
+                tierRequests: row.tier_requests,
             }))
             .sort((a, b) => b.pollen - a.pollen);
 
@@ -335,6 +323,14 @@ export function useEarningsData(
             totalPollen,
             totalPaid,
             totalTier,
+            paidRequests: filteredPerEntity.reduce(
+                (sum, row) => sum + row.paid_requests,
+                0,
+            ),
+            tierRequests: filteredPerEntity.reduce(
+                (sum, row) => sum + row.tier_requests,
+                0,
+            ),
             entityCount,
             entityBreakdowns,
         };

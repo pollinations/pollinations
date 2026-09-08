@@ -10,6 +10,7 @@ import {
     sendErrorEventToTinybird,
     type TinybirdErrorEvent,
 } from "./events.ts";
+import { PaymentRequiredError } from "./http/payment-required-error.ts";
 import { ValidationError } from "./http/validation-error.ts";
 import {
     collectRequestInputs,
@@ -31,6 +32,8 @@ type ErrorHandlerEnv = {
     Variables: RequestIdVariables & ErrorVariables;
 };
 
+export type UpstreamHeaders = Record<string, string>;
+
 type UpstreamErrorOptions = {
     res?: Response;
     message?: string;
@@ -39,6 +42,7 @@ type UpstreamErrorOptions = {
     requestBody?: unknown;
     upstreamStatus?: number;
     responseBody?: string;
+    upstreamHeaders?: UpstreamHeaders;
     /**
      * Overrides the status-derived error code in the response envelope. Used to
      * surface a stable, machine-readable code (e.g. `content_policy_violation`)
@@ -47,12 +51,14 @@ type UpstreamErrorOptions = {
     errorCode?: string;
 };
 
+/** Public HTTP failure plus original provider diagnostics. Bodies are not redacted or truncated. */
 export class UpstreamError extends HTTPException {
-    public readonly name = "UpstreamError" as const;
+    public override readonly name: string = "UpstreamError";
     public readonly requestUrl?: URL;
     public readonly requestBody?: unknown;
     public readonly upstreamStatus?: number;
     public readonly responseBody?: string;
+    public readonly upstreamHeaders?: UpstreamHeaders;
     public readonly errorCode?: string;
 
     constructor(status: ContentfulStatusCode, options?: UpstreamErrorOptions) {
@@ -61,8 +67,33 @@ export class UpstreamError extends HTTPException {
         this.requestBody = options?.requestBody;
         this.upstreamStatus = options?.upstreamStatus;
         this.responseBody = options?.responseBody;
+        this.upstreamHeaders = options?.upstreamHeaders;
         this.errorCode = options?.errorCode;
     }
+
+    /** Keep the provider status for diagnostics and retries; expose gateway failures as 5xx. */
+    static fromProvider(status: number, options: UpstreamErrorOptions) {
+        return new UpstreamError(remapUpstreamStatus(status), {
+            ...options,
+            upstreamStatus: status,
+        });
+    }
+}
+
+const REDACTED_HEADER_VALUE = "[redacted]";
+const SENSITIVE_HEADER_NAME =
+    /(^|[-_])(authorization|cookie|api[-_]?key|token|secret)([-_]|$)/i;
+
+/** Preserves upstream response headers while redacting credential-bearing values. */
+export function collectUpstreamHeaders(
+    headers: Headers,
+): UpstreamHeaders | undefined {
+    const entries = Array.from(headers.entries(), ([name, value]) => [
+        name,
+        SENSITIVE_HEADER_NAME.test(name) ? REDACTED_HEADER_VALUE : value,
+    ]);
+
+    return entries.length > 0 ? Object.fromEntries(entries) : undefined;
 }
 
 export async function ensureUpstreamOk(
@@ -70,16 +101,25 @@ export async function ensureUpstreamOk(
     requestUrl: string | URL,
 ): Promise<Response> {
     if (response.ok) return response;
-    const responseBody = await response.text();
+    let responseBody: string | undefined;
+    let cause: unknown;
+    try {
+        responseBody = await response.text();
+    } catch (error) {
+        cause = error;
+    }
     const rawMessage =
-        extractUpstreamMessage(responseBody) ||
-        getDefaultErrorMessage(response.status);
-    throw new UpstreamError(remapUpstreamStatus(response.status), {
-        message: truncateString(rawMessage, MAX_ERROR_MESSAGE_LENGTH) ?? "",
+        (responseBody && extractUpstreamMessage(responseBody)) ||
+        (cause instanceof Error
+            ? cause.message
+            : getDefaultErrorMessage(response.status));
+    throw UpstreamError.fromProvider(response.status, {
+        message: rawMessage,
         requestUrl:
             typeof requestUrl === "string" ? new URL(requestUrl) : requestUrl,
-        upstreamStatus: response.status,
         responseBody,
+        cause,
+        upstreamHeaders: collectUpstreamHeaders(response.headers),
     });
 }
 
@@ -98,12 +138,49 @@ function extractUpstreamMessage(body: string): string {
     return body;
 }
 
+/**
+ * Stable, machine-readable codes for failures involving a user-supplied image
+ * (URL or upload). Values are OpenAI `ResponseErrorCode` names so callers can
+ * branch on a code instead of parsing our error prose. All are returned with
+ * HTTP 400 — a bad user-supplied image is a client error, never an upstream one.
+ */
+export type ImageInputErrorCode =
+    | "failed_to_download_image"
+    | "invalid_image_url"
+    | "image_too_large"
+    | "unsupported_image_media_type";
+
+/**
+ * Codes we emit in place of the status-derived code, keyed by the status they
+ * are emitted with. The response envelope's `code` is therefore not always
+ * `getErrorCode(status)`, and the published schema must say so.
+ */
+const OVERRIDE_ERROR_CODES: Record<number, readonly string[]> = {
+    402: ["KEY_BUDGET_EXHAUSTED", "INSUFFICIENT_BALANCE"],
+    400: [
+        "failed_to_download_image",
+        "invalid_image_url",
+        "image_too_large",
+        "unsupported_image_media_type",
+    ],
+    422: ["content_policy_violation"],
+};
+
+export function getErrorCodesForStatus(status: number): [string, ...string[]] {
+    return [getErrorCode(status), ...(OVERRIDE_ERROR_CODES[status] ?? [])];
+}
+
 const GenericErrorDetailsSchema = z
     .object({
         name: z.string(),
         upstreamStatus: z.number().int().optional(),
         upstreamHost: z.string().optional(),
-        upstreamBody: z.string().optional(),
+        upstreamBody: z
+            .string()
+            .describe(
+                "Original provider response body, without redaction or truncation.",
+            )
+            .optional(),
     })
     .meta({ $id: "ErrorDetails" });
 
@@ -126,7 +203,7 @@ export function createErrorResponseSchema(
         status: z.literal(status),
         success: z.literal(false),
         error: z.object({
-            code: z.literal(getErrorCode(status)),
+            code: z.enum(getErrorCodesForStatus(status)),
             message: z.union([
                 z.literal(getDefaultErrorMessage(status)),
                 z.string(),
@@ -134,7 +211,6 @@ export function createErrorResponseSchema(
             timestamp: z.string(),
             details: errorDetailsSchema,
             requestId: z.string().optional(),
-            cause: z.unknown().optional(),
         }),
     });
 }
@@ -148,7 +224,6 @@ export const GenericErrorResponseSchema = z.object({
         timestamp: z.string(),
         details: GenericErrorDetailsSchema.optional(),
         requestId: z.string().optional(),
-        cause: z.unknown().optional(),
     }),
 });
 
@@ -176,6 +251,8 @@ type ServerErrorEnvelope = {
     upstreamHost?: string;
     upstreamStatus?: number;
     upstreamBody?: string;
+    edgeColo?: string;
+    upstreamHeaders?: UpstreamHeaders;
     modelRequested?: string;
     resolvedModelRequested?: string;
     requestInputs?: RequestInputs;
@@ -225,7 +302,16 @@ export async function handleError<TEnv extends ErrorHandlerEnv>(
                 message: err.message || getDefaultErrorMessage(err.status),
             });
         }
-        return c.json(createErrorResponse(err, status, timestamp), status);
+        return c.json(
+            createErrorResponse(
+                err,
+                status,
+                timestamp,
+                undefined,
+                err instanceof PaymentRequiredError ? err.errorCode : undefined,
+            ),
+            status,
+        );
     }
 
     if (err instanceof APIError) {
@@ -266,7 +352,6 @@ function createErrorResponse(
             code: code ?? getErrorCode(status),
             timestamp,
             ...(details && { details }),
-            ...(!!error.cause && { cause: error.cause }),
         },
         status,
     };
@@ -307,22 +392,23 @@ function createUpstreamErrorResponse(
             name: error.name,
             upstreamStatus: error.upstreamStatus,
             upstreamHost: error.requestUrl?.hostname,
-            upstreamBody: truncateString(
-                error.responseBody,
-                MAX_UPSTREAM_BODY_LENGTH,
-            ),
+            upstreamBody: error.responseBody,
         },
         error.errorCode,
     );
 }
 
 /**
- * Remap upstream 4xx statuses that are our operational concern (auth, routing,
- * quota, conflicts) to 502 Bad Gateway. Leaves input-content errors
- * (400/413/422) as-is since those can reflect user input we failed to validate.
+ * Remap upstream statuses that are our operational concern (auth, routing,
+ * quota, conflicts, proxy timeouts) to 502 Bad Gateway. Leaves input-content
+ * errors (400/413/415/422) as-is since those can reflect user input we failed to
+ * validate.
  */
 export function remapUpstreamStatus(status: number): ContentfulStatusCode {
-    const remapTo502 = new Set([401, 403, 404, 409, 415, 429]);
+    // A timeout waiting on our provider is a gateway failure, not a caller's
+    // incomplete request. Keep upstreamStatus separately for retry decisions.
+    if (status === 408) return 504;
+    const remapTo502 = new Set([401, 402, 403, 404, 409, 429, 524]);
     if (remapTo502.has(status)) return 502;
     return status as ContentfulStatusCode;
 }
@@ -335,18 +421,25 @@ export function getErrorCode(status: number): string {
         403: "FORBIDDEN",
         404: "NOT_FOUND",
         405: "METHOD_NOT_ALLOWED",
+        408: "REQUEST_TIMEOUT",
         409: "CONFLICT",
+        410: "GONE",
+        413: "PAYLOAD_TOO_LARGE",
+        415: "UNSUPPORTED_MEDIA_TYPE",
         422: "UNPROCESSABLE_ENTITY",
+        426: "UPGRADE_REQUIRED",
         429: "RATE_LIMITED",
         500: "INTERNAL_ERROR",
         502: "BAD_GATEWAY",
         503: "SERVICE_UNAVAILABLE",
+        504: "GATEWAY_TIMEOUT",
     };
     return codes[status] || "UNKNOWN_ERROR";
 }
 
 export const KNOWN_ERROR_STATUS_CODES = [
-    400, 401, 402, 403, 405, 409, 422, 426, 429, 500, 502, 503,
+    400, 401, 402, 403, 404, 405, 408, 409, 410, 413, 415, 422, 426, 429, 500,
+    502, 503, 504,
 ] as const;
 
 export type ErrorStatusCode = (typeof KNOWN_ERROR_STATUS_CODES)[number];
@@ -359,13 +452,18 @@ export function getDefaultErrorMessage(status: number): string {
         403: "Access denied! You don't have the required permissions for this resource or model.",
         404: "Oh no, there's nothing here.",
         405: "That HTTP method isn't supported here. Please check the API docs.",
+        408: "The request was not received in time.",
         409: "Something with these details already exists. Maybe update it instead?",
+        410: "This resource is no longer available.",
+        413: "The request payload is too large. Reduce its size and try again.",
+        415: "The request media type isn't supported.",
         422: "Your request looks good, but some required fields are missing or invalid.",
         426: "This endpoint requires a WebSocket upgrade request.",
         429: "You're making requests too quickly. Please slow down a bit.",
         500: "Oh snap, something went wrong on our end. We're on it!",
         502: "We couldn't reach our backend services. Please try again shortly.",
         503: "We're temporarily down for maintenance. Sorry about that!",
+        504: "The upstream service did not respond in time.",
     };
     return messages[status] || "UNKNOWN_ERROR";
 }
@@ -423,8 +521,13 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error.message || getDefaultErrorMessage(status),
             MAX_ERROR_MESSAGE_LENGTH,
         ) || getDefaultErrorMessage(status);
-    const stack = truncateString(error.stack, MAX_STACK_LENGTH);
+    const stack = truncateString(stackWithCause(error), MAX_STACK_LENGTH);
     const resolvedRoutePath = getRoutePath(c);
+    const edgeColo = (
+        c.req.raw as Request & {
+            cf?: { colo?: string };
+        }
+    ).cf?.colo;
 
     return {
         kind: "server_error",
@@ -453,6 +556,9 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
             error instanceof UpstreamError
                 ? truncateString(error.responseBody, MAX_UPSTREAM_BODY_LENGTH)
                 : undefined,
+        edgeColo,
+        upstreamHeaders:
+            error instanceof UpstreamError ? error.upstreamHeaders : undefined,
         modelRequested: vars.model?.requested,
         resolvedModelRequested: vars.model?.resolved,
         requestInputs: await collectRequestInputs(c),
@@ -460,6 +566,25 @@ async function createServerErrorEnvelope<TEnv extends ErrorHandlerEnv>(
         userTier: vars.auth?.user?.tier,
         apiKeyId: vars.auth?.apiKey?.id,
     };
+}
+
+function stackWithCause(error: Error): string | undefined {
+    const cause = error.cause;
+    if (!(cause instanceof Error) && typeof cause !== "string") {
+        return error.stack;
+    }
+    const properties = cause as Error & Record<string, unknown>;
+    const flags = ["durableObjectReset", "overloaded", "retryable"]
+        .filter((key) => typeof properties[key] === "boolean")
+        .map((key) => `${key}=${properties[key]}`)
+        .join(" ");
+    const detail =
+        cause instanceof Error
+            ? cause.stack || `${cause.name}: ${cause.message}`
+            : cause;
+    // Put the underlying failure first so truncation keeps the useful detail.
+    // Do not serialize arbitrary error properties or traverse cause chains.
+    return `Caused by: ${flags}\n${detail}\nWrapped by: ${error.stack ?? error.message}`;
 }
 
 function toTinybirdErrorEvent(
@@ -482,6 +607,10 @@ function toTinybirdErrorEvent(
         upstream_host: envelope.upstreamHost,
         upstream_status: envelope.upstreamStatus,
         upstream_body: envelope.upstreamBody,
+        edge_colo: envelope.edgeColo,
+        upstream_headers: envelope.upstreamHeaders
+            ? JSON.stringify(envelope.upstreamHeaders)
+            : undefined,
         model_requested: envelope.modelRequested,
         resolved_model_requested: envelope.resolvedModelRequested,
         request_inputs: stringifyRequestInputs(envelope.requestInputs),

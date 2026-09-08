@@ -2,33 +2,30 @@ import debug from "debug";
 import type { ChatMessage, ServiceError, TransformOptions } from "./types.js";
 
 const log = debug("pollinations:utils");
-// OpenAI message.name/function name contract: ASCII alnum, underscore, hyphen, max 64 chars.
 const MESSAGE_NAME_PATTERN = /^[a-zA-Z0-9_-]{1,64}$/;
 const SEMANTIC_NAME_ROLES = new Set(["tool", "function"]);
-
-function createInvalidMessageNameError(role: string): ServiceError {
-    const error = new Error(
-        `Invalid message name for role '${role}'. Names must match ^[a-zA-Z0-9_-]{1,64}$.`,
-    ) as ServiceError;
-    error.status = 400;
-    return error;
-}
 
 function normalizeMessageName(name: unknown, role: string): string | undefined {
     if (name === undefined || name === null) return undefined;
     if (typeof name === "string" && MESSAGE_NAME_PATTERN.test(name)) {
         return name;
     }
-
     if (SEMANTIC_NAME_ROLES.has(role)) {
-        throw createInvalidMessageNameError(role);
+        const error = new Error(
+            `Invalid message name for role '${role}'. Names must match ^[a-zA-Z0-9_-]{1,64}$.`,
+        ) as ServiceError;
+        error.status = 400;
+        throw error;
     }
-
     log("Dropped invalid message name for role=%s: %s", role, String(name));
     return undefined;
 }
 
-export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
+/**
+ * Apply the compatibility repairs required by upstream providers without
+ * discarding provider-specific message fields.
+ */
+export function prepareMessages(messages: unknown): ChatMessage[] {
     if (!Array.isArray(messages) || messages.length === 0) {
         const error = new Error(
             "Messages must be a non-empty array",
@@ -37,39 +34,28 @@ export function validateAndNormalizeMessages(messages: unknown): ChatMessage[] {
         throw error;
     }
 
-    return messages.map((raw: unknown) => {
-        const msg = raw as ChatMessage;
-        const hasToolContext = msg.tool_calls || msg.role === "tool";
-        let content: string | unknown[] | null;
-        if (hasToolContext) {
-            content = msg.content != null ? msg.content : null;
-        } else {
-            content = msg.content || "";
-        }
+    return messages.map((raw) => {
+        const message = raw as ChatMessage;
+        const role = message.role || "user";
+        const hasToolContext = Boolean(message.tool_calls) || role === "tool";
+        const content = hasToolContext
+            ? (message.content ?? null)
+            : (message.content ?? "");
+        const name = normalizeMessageName(message.name, role);
+        const {
+            name: _name,
+            role: _role,
+            content: _content,
+            ...extensions
+        } = message;
 
-        const normalizedMsg: ChatMessage = {
-            role: msg.role || "user",
+        return {
+            ...extensions,
+            role,
             content,
+            ...(name ? { name } : {}),
         };
-
-        if (msg.tool_call_id) normalizedMsg.tool_call_id = msg.tool_call_id;
-        const normalizedName = normalizeMessageName(
-            msg.name,
-            normalizedMsg.role,
-        );
-        if (normalizedName) normalizedMsg.name = normalizedName;
-        if (msg.tool_calls) normalizedMsg.tool_calls = msg.tool_calls;
-        if (msg.function_call) normalizedMsg.function_call = msg.function_call;
-        if (msg.reasoning_content)
-            normalizedMsg.reasoning_content = msg.reasoning_content;
-        if (msg.audio) normalizedMsg.audio = msg.audio;
-
-        return normalizedMsg;
     });
-}
-
-function clamp(value: number, min: number, max: number): number {
-    return Math.max(min, Math.min(max, value));
 }
 
 export function normalizeOptions(
@@ -79,45 +65,9 @@ export function normalizeOptions(
     const normalized = { ...defaults, ...options } as TransformOptions &
         Record<string, unknown>;
 
-    // Stream is already validated to boolean|undefined at the request boundary
-    // (validateBoolean in parameterValidators.ts); coerce undefined to false.
     normalized.stream = Boolean(normalized.stream);
-    log("Normalized stream option to %s", normalized.stream);
-
-    if (
-        normalized.temperature !== undefined &&
-        normalized.temperature !== null
-    ) {
-        normalized.temperature = clamp(normalized.temperature, 0, 3);
-    }
-    if (normalized.top_p !== undefined && normalized.top_p !== null) {
-        normalized.top_p = clamp(normalized.top_p, 0, 1);
-    }
-    if (
-        normalized.presence_penalty !== undefined &&
-        normalized.presence_penalty !== null
-    ) {
-        normalized.presence_penalty = clamp(normalized.presence_penalty, -2, 2);
-    }
-    if (
-        normalized.frequency_penalty !== undefined &&
-        normalized.frequency_penalty !== null
-    ) {
-        normalized.frequency_penalty = clamp(
-            normalized.frequency_penalty,
-            -2,
-            2,
-        );
-    }
-
-    if (typeof normalized.seed === "number") {
-        normalized.seed = Math.floor(normalized.seed);
-    }
-
     if (normalized.jsonMode) {
-        if (!normalized.response_format) {
-            normalized.response_format = { type: "json_object" };
-        }
+        normalized.response_format ??= { type: "json_object" };
         delete normalized.jsonMode;
     }
 

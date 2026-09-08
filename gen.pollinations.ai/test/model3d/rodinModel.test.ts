@@ -23,6 +23,7 @@ afterEach(() => {
 function params(overrides: Partial<Model3dParams> = {}): Model3dParams {
     return {
         model: "hyper3d-rodin",
+        resolution: "low",
         image: [],
         safe: false,
         ...overrides,

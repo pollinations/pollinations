@@ -9,7 +9,7 @@ export interface PollinationsConfig {
     textTimeout?: number;
     /** Timeout in ms for image requests (default: 600000 = 10min) */
     imageTimeout?: number;
-    /** Timeout in ms for video requests (default: 600000 = 10min) */
+    /** Timeout in ms for video requests (default: 1200000 = 20min) */
     videoTimeout?: number;
 }
 
@@ -37,12 +37,14 @@ export type ImageReasoningMode = "fast" | "balanced" | "pro";
 
 /** Options for image generation */
 export interface ImageGenerateOptions extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'zimage') */
     model?: ImageModel;
     /** Image width in pixels (default: 1024) */
     width?: number;
     /** Image height in pixels (default: 1024) */
     height?: number;
+    /** Model-specific output resolution tier (for example, "1k" or "2k") */
+    resolution?: string;
     /** Seed for reproducible generation (default: random) */
     seed?: number;
     /** Enable safety content filters (default: false) */
@@ -65,7 +67,7 @@ export interface ImageGenerateOptions extends RequestOptions {
 
 /** Options for image editing (POST /v1/images/edits) */
 export interface ImageEditOptions extends RequestOptions {
-    /** Image model to use (default: 'flux') */
+    /** Image model to use (server default: 'flux') */
     model?: ImageModel;
     /** Source image URL(s) for editing */
     image?: string | string[];
@@ -87,12 +89,14 @@ export interface ImageResponse {
 
 /** Options for video generation */
 export interface VideoGenerateOptions extends RequestOptions {
-    /** Video model to use (default: 'veo') */
+    /** Video model to use (server default: 'veo') */
     model?: VideoModel;
     /** Duration in seconds (supported range varies by model) */
     duration?: number;
     /** Aspect ratio (e.g., '16:9', '9:16', '1:1') */
     aspectRatio?: string;
+    /** Model-specific output resolution tier (for example, "720p" or "1080p") */
+    resolution?: string;
     /** Seed for reproducible generation */
     seed?: number;
     /** Enable audio generation where supported by the selected video model */
@@ -198,7 +202,7 @@ export interface Message {
 
 /** Options for simple text generation */
 export interface TextGenerateOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai') */
     model?: TextModel;
     /** System prompt to set context */
     systemPrompt?: string;
@@ -254,10 +258,28 @@ export type BuiltInToolType =
     | "computer_use"
     | "file_search";
 
+/** Capabilities that router models can delegate to downstream models. */
+export const CHAT_ROUTING_CAPABILITIES = [
+    "text",
+    "web_search",
+    "image_generation",
+    "image_editing",
+    "video",
+    "audio",
+] as const;
+
+/** Capability names accepted by router-model routing preferences. */
+export type ChatRoutingCapability = (typeof CHAT_ROUTING_CAPABILITIES)[number];
+
+/** Optional downstream-model overrides for router models. */
+export type ChatRouting = Partial<Record<ChatRoutingCapability, string>>;
+
 /** Options for chat completions (POST endpoint) */
 export interface ChatOptions extends RequestOptions {
-    /** Text model to use (default: 'openai') */
+    /** Text model to use (server default: 'openai') */
     model?: TextModel;
+    /** Per-capability downstream model overrides for router models. */
+    routing?: ChatRouting;
     /** Temperature 0-2 (default: 1) */
     temperature?: number;
     /** Top P sampling 0-1 (default: 1) */
@@ -274,6 +296,8 @@ export interface ChatOptions extends RequestOptions {
     stop?: string | string[];
     /** Seed for reproducible generation */
     seed?: number;
+    /** Keep generation private (default: false) */
+    private?: boolean;
     /** Enable streaming response (default: false) */
     stream?: boolean;
     /** Include usage stats in streaming response */
@@ -396,8 +420,14 @@ export interface ChatStreamChunk {
     choices: Array<{
         index: number;
         delta: {
-            role?: "assistant";
-            content?: string;
+            role?: Exclude<MessageRole, "function">;
+            content?: string | null;
+            /** Deprecated OpenAI function-call delta. */
+            function_call?: {
+                name?: string;
+                arguments?: string;
+            };
+            refusal?: string | null;
             tool_calls?: Array<{
                 index: number;
                 id?: string;
@@ -413,9 +443,13 @@ export interface ChatStreamChunk {
             | "length"
             | "tool_calls"
             | "content_filter"
+            | "function_call"
             | null;
+        logprobs?: ChatChoice["logprobs"];
     }>;
-    usage?: CompletionUsage;
+    usage?: CompletionUsage | null;
+    service_tier?: "auto" | "default" | "flex" | "scale" | "priority" | null;
+    system_fingerprint?: string;
 }
 
 // ============================================================================
@@ -433,9 +467,9 @@ export type AudioModel = "elevenlabs" | "elevenmusic" | string;
 
 /** Options for text-to-speech generation (GET /audio/{text} or POST /v1/audio/speech) */
 export interface AudioGenerateOptions extends RequestOptions {
-    /** Voice to use (default: 'alloy') */
+    /** Voice to use (server default: 'alloy') */
     voice?: AudioVoice;
-    /** Audio model to use (default: 'elevenlabs') */
+    /** Audio model to use (server default: 'elevenlabs') */
     model?: AudioModel;
     /** Duration in seconds (for music models like elevenmusic) */
     duration?: number;
@@ -473,6 +507,7 @@ export type TranscriptionModel =
     | "whisper-1"
     | "scribe"
     | "universal-2"
+    | "universal-3.5-pro"
     | "universal-3-pro"
     | string;
 
@@ -486,7 +521,7 @@ export type TranscriptionResponseFormat =
 
 /** Options for speech-to-text transcription */
 export interface TranscribeOptions extends RequestOptions {
-    /** Model to use (default: 'whisper-large-v3') */
+    /** Model to use (server default: 'whisper-large-v3') */
     model?: TranscriptionModel;
     /** Language code (ISO-639-1, e.g. 'en', 'fr') */
     language?: string;
@@ -584,7 +619,50 @@ export interface AccountProfile {
 
 /** Account balance */
 export interface AccountBalance {
+    /**
+     * Pollen remaining for this caller. Budgeted API keys see the key budget
+     * here, not the account total.
+     */
     balance: number;
+    /**
+     * Full account balances. Present only when the caller can view account
+     * usage (session or `account:usage`).
+     */
+    accountBalance?: {
+        total: number;
+        tier: number;
+        paid: number;
+    };
+}
+
+/** Quest reward earned by the authenticated account */
+export interface AccountQuestReward {
+    id: string;
+    questId: string | null;
+    title: string;
+    pollenAmount: number;
+    balanceBucket: string;
+    earnedAt: string;
+    claimedAt: string | null;
+}
+
+/** Quest catalog entry with the authenticated account's status */
+export interface AccountQuest {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    state: "available" | "completed" | "coming_soon";
+    status: "open" | "completed" | "coming_soon";
+    rewardAmount: number;
+    balanceBucket: "tier" | "pack";
+    url: string | null;
+    reward: AccountQuestReward | null;
+}
+
+/** Quest status response */
+export interface AccountQuestsResponse {
+    quests: AccountQuest[];
 }
 
 /** Usage record */
@@ -663,6 +741,37 @@ export interface DailyUsageResponse {
     usage: DailyUsageRecord[];
     count: number;
 }
+
+/** Developer earnings row for one (date, earning entity) bucket */
+export interface DeveloperEarningsRow {
+    /** Date bucket (YYYY-MM-DD); empty string on rollup rows */
+    date: string;
+    /** Earning entity id (BYOP app key or community model) */
+    entity_id: string;
+    entity_name: string;
+    source: "byop_markup" | "community_model";
+    requests: number;
+    paid_requests: number;
+    tier_requests: number;
+    baseline_price: number;
+    pollen_earned: number;
+    paid_earned: number;
+    tier_earned: number;
+    cost_usd: number;
+    reward_rate: number;
+}
+
+/** Response for GET /account/earnings */
+export interface DeveloperEarningsResponse {
+    daily: DeveloperEarningsRow[];
+    perEntity: DeveloperEarningsRow[];
+}
+
+/** Options for fetching developer earnings (time-window selection) */
+export type EarningsOptions = Pick<
+    DailyUsageOptions,
+    "days" | "granularity" | "period"
+>;
 
 /** API key validation response */
 export interface KeyInfo {
@@ -766,6 +875,7 @@ export const MODEL_CATEGORIES = [
     "video",
     "text",
     "audio",
+    "3d",
     "embedding",
     "realtime",
 ] as const;
@@ -773,11 +883,26 @@ export const MODEL_CATEGORIES = [
 /** Model category */
 export type ModelCategory = (typeof MODEL_CATEGORIES)[number];
 
+/** Inputs accepted by a model */
+export type ModelInputModality = "text" | "image" | "audio" | "video";
+
+/** Outputs produced by a model */
+export type ModelOutputModality =
+    | "text"
+    | "image"
+    | "audio"
+    | "video"
+    | "embedding"
+    | "3d";
+
 /** Per-model video frame-control capabilities (video models only) */
 export type VideoCapability =
     | "start_frame"
     | "end_frame"
     | "keyframes"
+    | "reference_images"
+    | "reference_videos"
+    | "reference_audios"
     | "audio_output";
 
 /** Per-model agentic/text capabilities */
@@ -785,22 +910,34 @@ export type ModelCapability =
     | "tool_calling"
     | "reasoning"
     | "web_search"
-    | "code_execution";
+    | "code_execution"
+    | "pollinations_models";
 
 /** Model information */
 export interface ModelInfo {
+    /** Fields added by the model registry pass through without an SDK release. */
+    [key: string]: unknown;
     id?: string;
     name: string;
     /** Display name. Present on registry endpoints (/models, /text/models, …); absent on OpenAI-compatible /v1/models. */
     title?: string;
     category?: ModelCategory;
-    brand?: string;
+    /** Human-readable model publisher, not the inference provider. Replaces brand. */
+    publisher?: string;
     description?: string;
     aliases?: string[];
     community?: boolean;
-    input_modalities?: string[];
-    output_modalities?: string[];
+    agent?: boolean;
+    base_model?: string;
+    input_modalities?: ModelInputModality[];
+    output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
+    resolutions?: string[];
+    min_duration?: number;
+    max_duration?: number;
+    default_duration?: number;
+    allowed_durations?: number[];
+    duration_step?: number;
     max_reference_images?: number;
     max_reference_videos?: number;
     capabilities?: ModelCapability[];
@@ -879,7 +1016,7 @@ export interface UserInfo {
 
 /** Options for POST /v1/images/generations */
 export interface ImageGenerateV1Options extends RequestOptions {
-    /** Image model to use (default: 'zimage') */
+    /** Image model to use (server default: 'flux') */
     model?: ImageModel;
     /** Size string like "1024x1024". Alternative to width + height. */
     size?: string;

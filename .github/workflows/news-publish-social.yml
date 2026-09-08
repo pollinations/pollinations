@@ -46,7 +46,7 @@ jobs:
         run: pip install requests PyYAML Jinja2 paramiko
 
       - name: Overlay news branch data
-        run: git fetch origin news && git checkout origin/news -- social/news/ || echo "No news branch data yet"
+        run: git fetch origin news && git checkout origin/news -- operations/social/news/ || echo "No news branch data yet"
 
       - name: Determine mode
         id: mode
@@ -72,7 +72,7 @@ jobs:
           REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
           REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
           REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
-        run: python social/scripts/publish_daily.py
+        run: python operations/social/scripts/publish_daily.py
 
       - name: Publish weekly Reddit + Discord
         if: steps.mode.outputs.mode == 'weekly'
@@ -85,4 +85,4 @@ jobs:
           REDDIT_VPS_HOST: ${{ secrets.REDDIT_VPS_HOST }}
           REDDIT_VPS_USER: ${{ secrets.REDDIT_VPS_USER }}
           REDDIT_VPS_SSH_KEY: ${{ secrets.REDDIT_VPS_SSH_KEY }}
-        run: python social/scripts/publish_weekly.py
+        run: python operations/social/scripts/publish_weekly.py

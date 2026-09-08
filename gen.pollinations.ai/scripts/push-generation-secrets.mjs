@@ -33,7 +33,6 @@ const REQUIRED_SECRET_KEYS = [
     "GOOGLE_PRIVATE_KEY",
     "GOOGLE_PRIVATE_KEY_ID",
     "GOOGLE_PROJECT_ID",
-    "INCEPTION_API_KEY",
     "INFERENCEPORT_API_KEY",
     "KLEIN_URL",
     "MISTRAL_API_KEY",
@@ -119,8 +118,21 @@ try {
         mode: 0o600,
     });
     execFileSync(
-        "npx",
-        ["wrangler", "secret", "bulk", outputPath, "--env", environment],
+        process.execPath,
+        [
+            // Match deploy scripts; the test pool's workspace-local CLI is older.
+            fileURLToPath(
+                new URL(
+                    "../../node_modules/wrangler/bin/wrangler.js",
+                    import.meta.url,
+                ),
+            ),
+            "secret",
+            "bulk",
+            outputPath,
+            "--env",
+            environment,
+        ],
         {
             stdio: "inherit",
         },

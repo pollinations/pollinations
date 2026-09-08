@@ -1,7 +1,7 @@
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import type { VideoGenerationResult } from "../createAndReturnVideos.ts";
 import { getImageEnv } from "../env.ts";
-import { HttpError } from "../httpError.ts";
 import type { ImageParams } from "../params.ts";
 import { sleep } from "../util.ts";
 import {
@@ -17,6 +17,7 @@ const logError = debug("pollinations:openrouter-video:error");
 const OPENROUTER_VIDEO_URL = "https://openrouter.ai/api/v1/videos";
 const HAPPYHORSE_MODEL = "alibaba/happyhorse-1.1";
 const GROK_VIDEO_MODEL = "x-ai/grok-imagine-video";
+const GROK_VIDEO_15_MODEL = "x-ai/grok-imagine-video-1.5";
 const POLL_INTERVAL_MS = 3000;
 const MAX_POLL_DELAY_MS = 30000;
 const HAPPYHORSE_POLL_TIMEOUT_MS = 5 * 60 * 1000;
@@ -49,10 +50,10 @@ interface OpenRouterVideoResponse {
 function resolveDuration(duration?: number): number {
     const resolved = duration ?? 5;
     if (!Number.isInteger(resolved) || resolved < 3 || resolved > 15) {
-        throw new HttpError(
-            "HappyHorse duration must be an integer from 3 to 15 seconds",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "HappyHorse duration must be an integer from 3 to 15 seconds",
+        });
     }
     return resolved;
 }
@@ -113,7 +114,7 @@ export async function callHappyHorseAPI(
         mimeType: "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: "happyhorse-1.1",
+            actualModel: "alibaba/happyhorse-1.1",
             usage: { completionVideoSeconds: duration },
         },
     };
@@ -122,10 +123,10 @@ export async function callHappyHorseAPI(
 function resolveGrokDuration(duration?: number): number {
     const requested = duration || 5;
     if (!Number.isInteger(requested)) {
-        throw new HttpError(
-            "Grok Video Pro duration must be an integer from 1 to 15 seconds",
-            400,
-        );
+        throw UpstreamError.fromProvider(400, {
+            message:
+                "Grok Video Pro duration must be an integer from 1 to 15 seconds",
+        });
     }
     return Math.min(Math.max(requested, 1), 15);
 }
@@ -146,10 +147,12 @@ export async function callOpenRouterGrokVideoAPI(
     safeParams: ImageParams,
 ): Promise<VideoGenerationResult> {
     const duration = resolveGrokDuration(safeParams.duration);
+    const isVersion15 = safeParams.model === "x-ai/grok-imagine-video-1.5";
+    const resolution = isVersion15 ? (safeParams.resolution ?? "720p") : "720p";
     const requestBody: Record<string, unknown> = {
-        model: GROK_VIDEO_MODEL,
+        model: isVersion15 ? GROK_VIDEO_15_MODEL : GROK_VIDEO_MODEL,
         prompt,
-        resolution: "720p",
+        resolution,
         duration,
     };
 
@@ -182,7 +185,7 @@ export async function callOpenRouterGrokVideoAPI(
         mimeType: "video/mp4",
         durationSeconds: duration,
         trackingData: {
-            actualModel: "grok-video-pro",
+            actualModel: safeParams.model,
             usage: {
                 ...(safeParams.image?.[0] ? { promptImageTokens: 1 } : {}),
                 completionVideoSeconds: duration,
@@ -197,10 +200,9 @@ async function generateOpenRouterVideo(
 ): Promise<{ buffer: Buffer; providerCost?: number | null }> {
     const apiKey = getImageEnv("OPENROUTER_API_KEY");
     if (!apiKey) {
-        throw new HttpError(
-            "OPENROUTER_API_KEY environment variable is required",
-            500,
-        );
+        throw UpstreamError.fromProvider(500, {
+            message: "OPENROUTER_API_KEY environment variable is required",
+        });
     }
 
     const submitResponse = await fetchUpstream(OPENROUTER_VIDEO_URL, {
@@ -214,12 +216,11 @@ async function generateOpenRouterVideo(
     });
     const submitted = (await submitResponse.json()) as OpenRouterVideoResponse;
     if (!submitted.id || !submitted.polling_url) {
-        throw new HttpError(
-            "OpenRouter video API did not return a polling URL",
-            502,
-            submitted,
-            OPENROUTER_VIDEO_URL,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter video API did not return a polling URL",
+            responseBody: JSON.stringify(submitted),
+            requestUrl: new URL(OPENROUTER_VIDEO_URL),
+        });
     }
 
     const completed = await pollVideo(
@@ -229,12 +230,11 @@ async function generateOpenRouterVideo(
     );
     const videoUrl = completed.unsigned_urls?.[0];
     if (!videoUrl) {
-        throw new HttpError(
-            "OpenRouter video completed without a download URL",
-            502,
-            completed,
-            OPENROUTER_VIDEO_URL,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: "OpenRouter video completed without a download URL",
+            responseBody: JSON.stringify(completed),
+            requestUrl: new URL(OPENROUTER_VIDEO_URL),
+        });
     }
 
     const downloadHeaders =
@@ -275,24 +275,22 @@ async function pollVideo(
                 response.status >= 400 &&
                 response.status < 500
             ) {
-                throw new HttpError(
-                    `OpenRouter video poll failed: ${body}`,
-                    response.status,
-                    undefined,
-                    url,
-                );
+                throw UpstreamError.fromProvider(response.status, {
+                    message: `OpenRouter video poll failed: ${body}`,
+                    responseBody: body,
+                    requestUrl: new URL(url),
+                });
             }
             delay = getPollRetryDelay(response);
         } else {
             const result = (await response.json()) as OpenRouterVideoResponse;
             if (result.status === "completed") return result;
             if (["failed", "cancelled", "expired"].includes(result.status)) {
-                throw new HttpError(
-                    `OpenRouter video generation ${result.status}: ${result.error ?? "unknown error"}`,
-                    502,
-                    result,
-                    url,
-                );
+                throw UpstreamError.fromProvider(502, {
+                    message: `OpenRouter video generation ${result.status}: ${result.error ?? "unknown error"}`,
+                    responseBody: JSON.stringify(result),
+                    requestUrl: new URL(url),
+                });
             }
         }
 
@@ -301,12 +299,10 @@ async function pollVideo(
         await sleep(Math.min(delay, remaining));
     }
 
-    throw new HttpError(
-        "OpenRouter video generation timed out",
-        504,
-        undefined,
-        url,
-    );
+    throw UpstreamError.fromProvider(504, {
+        message: "OpenRouter video generation timed out",
+        requestUrl: new URL(url),
+    });
 }
 
 function getPollRetryDelay(response: Response): number {

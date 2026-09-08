@@ -387,9 +387,11 @@ export function PlayGenerator({
                 },
                 async (response) => {
                     const data = await response.json();
-                    const text =
-                        data.choices?.[0]?.message?.content || copy.noResponse;
-                    setResult(text);
+                    const content = data.choices?.[0]?.message?.content;
+                    const text = Array.isArray(content)
+                        ? content.find((part) => part.type === "text")?.text
+                        : content;
+                    setResult(text || copy.noResponse);
                     setResultType("text");
                     setIsLoading(false);
                 },

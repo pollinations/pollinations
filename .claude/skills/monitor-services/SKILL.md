@@ -139,7 +139,8 @@ Symptom: dashboard banner "*This server has recently suffered a network outage*"
    chmod 600 /tmp/klein-key
    ssh -i /tmp/klein-key -p <publicPort> root@<publicIp>
    ```
-4. Copy `image.pollinations.ai/klein-runpod/handler.py` and `requirements.txt` to `/workspace`.
+4. Copy `operations/infrastructure/gpu/klein/handler.py` and
+   `requirements.txt` to `/workspace`.
 5. Install runtime packages without replacing the base CUDA torch:
    ```bash
    python -m venv --system-site-packages /workspace/venv
@@ -166,7 +167,10 @@ Symptom: dashboard banner "*This server has recently suffered a network outage*"
    ```
 10. Verify direct pod `/health`, direct authenticated `/generate`, and production `gen.pollinations.ai/image/...model=klein`, remove `/tmp/klein-key`, then terminate the old outage pod.
 
-Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and `restart.sh` live on the pod volume only (not baked into a Docker image despite `image.pollinations.ai/klein-runpod/Dockerfile`). The pod volume is destroyed on terminate.
+Note: the pod uses a generic `runpod/pytorch` image; `handler.py` and
+`restart.sh` live on the pod volume only (not baked into a Docker image despite
+`operations/infrastructure/gpu/klein/Dockerfile`). The pod volume is destroyed
+on terminate.
 
 ---
 
@@ -201,7 +205,10 @@ curl -s -X POST "https://api.runpod.io/graphql?api_key=$RUNPOD_TOKEN" -H "Conten
 ssh -i /tmp/zk -p <PORT> -o StrictHostKeyChecking=no root@<IP> \
   "nvidia-smi --query-gpu=utilization.gpu,memory.used --format=csv,noheader; ps aux | grep 'z-image/server.py' | grep -v grep; ss -ltn | grep 8767"
 ```
-Code lives at `/root/pollinations/image.pollinations.ai/z-image/`; service auto-sources env from PID 1 (port 8767, `ZIMAGE_MODEL_ID`, `PLN_GPU_TOKEN`, `HF_TOKEN`). Direct `curl /generate` returns **403 without the GPU token** — a 403 still proves the server is up.
+Code lives at `/root/pollinations/operations/infrastructure/gpu/zimage/`;
+service auto-sources env from PID 1 (port 8767, `ZIMAGE_MODEL_ID`,
+`PLN_GPU_TOKEN`, `HF_TOKEN`). Direct `curl /generate` returns **403 without the
+GPU token** — a 403 still proves the server is up.
 
 **Recovery decision tree:**
 
@@ -242,37 +249,40 @@ The registry is Cloudflare KV-backed (`image:server:<env>:<type>:<hash>`, 240s T
 
 ---
 
-### 6. Sana Sprint 1.6B Worker (GH200 - same host as LTX-2)
+### 6. `sana` pool — DreamShaper 8 LCM (Vast 3090)
 
-One worker registered as `sana` type with OVH legacy service via heartbeat.
+Since PR #12900 the `sana` **pool key** serves the `dreamshaper` model on two
+Vast 3090s load-balanced by observed latency. SANA-Sprint is retired.
 
-| Instance | GPU | Host | Port | SSH |
-|----------|-----|------|------|-----|
-| Lambda GH200 | GH200 (96GB) | `192.222.51.105` | `8766` | `ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105` |
+| Backend | Model | Host | Registered URL |
+|---------|-------|------|----------------|
+| dreamshaper-vast-01 | DreamShaper 8 LCM | Vast 3090 `46607014` | `https://dreamshaper-canary-46600159.myceli.ai` |
+| dreamshaper-vast-02 | DreamShaper 8 LCM | Vast 3090 `46387155` | `https://dreamshaper-vast-02.pollinations.ai` |
 
-**Health check:**
 ```bash
-curl -s --connect-timeout 5 --max-time 10 http://192.222.51.105:8766/health
-```
-Expected: `{"status":"healthy","model":"Efficient-Large-Model/Sana_Sprint_1.6B_1024px_diffusers"}`
-
-**Sana registry check (OVH side):**
-```bash
-ssh -i ~/.ssh/id_rsa_ovh -o ConnectTimeout=5 ubuntu@57.130.31.42 "curl -s http://localhost:16384/register"
-```
-Expected: 1 worker with 0% error rate
-
-**Restart:**
-```bash
-ssh -i <SOPS:SSH_LAMBDA_SANA_LTX2_ACESTEP> ubuntu@192.222.51.105 "sudo systemctl restart sana"
+# both members must be present, and each must show its hostname,
+# never a raw IP:port — gen cannot fetch a Vast IP:port, and the heartbeat
+# stays green while every request through it fails
+curl -s https://gen.pollinations.ai/register -H "authorization: Bearer $PLN_GPU_TOKEN" \
+  | python3 -c "import json,sys;[print(s['type'],s['url'],s.get('lastMs')) for s in json.load(sys.stdin)]"
+curl -s --max-time 10 https://dreamshaper-canary-46600159.myceli.ai/health
 ```
 
-**Notes:**
-- GH200 generates at ~0.165s/img
-- Runs alongside LTX-2 (port 8765) and ACE-Step (port 8189) on the same host
-- Oracle A10/A100 instances decommissioned on 2026-04-12
-- Server code: `image.pollinations.ai/sana/server.py` (MAX_DIM=768, MAX_PIXELS=512*512)
-- Systemd service: `sana.service`
+Each host runs `WORKERS=3` uvicorn processes and sustains ~8 img/s; a single
+process plateaus at ~4.3 img/s with the GPU 26-45% idle, because the limit is
+the Python path (global lock, JPEG + base64), not the GPU. Combined ~16 img/s
+against a 5.72 img/s peak, so either card can carry production alone.
+
+If latency climbs steadily rather than spiking, that is a queue building because
+arrival exceeds service rate — check `WORKERS` is really >1 (`ps` shows
+`spawn_main` children) before adding hardware.
+
+Cloudflare bot protection 403s `User-Agent: Python-urllib/*` on these tunnel
+hostnames. Use curl or set a UA, or health checks will look broken when they
+are fine.
+
+Deployment and restart details live in
+`operations/infrastructure/gpu/dreamshaper/`.
 
 ---
 
@@ -296,7 +306,8 @@ ssh -i ~/.ssh/id_rsa_ovh ubuntu@57.130.31.42 "sudo truncate -s 0 /var/log/syslog
 Flux is self-hosted on Vast.ai 5090s since 2026-07-02 (PR #12171) with automatic
 Fireworks fallback: the worker sheds load with 503 beyond `QUEUE_LIMIT`, and the
 gateway retries those requests on Fireworks. Instance coordinates, provisioning
-one-liner, and host gotchas live in `image.pollinations.ai/GPU_INSTANCES.md`
+one-liner, and host gotchas live in
+`operations/infrastructure/gpu/GPU_INSTANCES.md`
 (source of truth — instance IDs/IPs/ports change on recreate).
 
 **Check:**

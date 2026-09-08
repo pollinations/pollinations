@@ -1,9 +1,8 @@
-import { type ModelCatalogItem, pricingEntries } from "@pollinations/sdk";
+import type { ModelInfo } from "@pollinations/sdk";
 import {
     useAccountKey,
     useAccountKeyUsage,
     useAccountProfile,
-    useAuthActions,
     useModelCatalog,
 } from "@pollinations/sdk/react";
 import {
@@ -31,6 +30,15 @@ import {
 import { type ReactNode, useState } from "react";
 import { GEN_BASE_URL } from "../config";
 import { PageIntro, SectionHeader } from "./reference-layout";
+
+const CATEGORY_ORDER: ModelSelectorCategory[] = [
+    "image",
+    "video",
+    "text",
+    "audio",
+    "embedding",
+    "realtime",
+];
 
 function AccountSummaryText({
     value,
@@ -110,6 +118,21 @@ function CatalogTable({
 
 function formatCatalogToken(value: string): string {
     return value.replace(/_/g, " ");
+}
+
+function modelId(model: ModelInfo): string {
+    return model.id ?? model.name;
+}
+
+function pricingEntries(
+    pricing: ModelInfo["pricing"],
+): Array<[label: string, value: string]> {
+    return Object.entries(pricing ?? {})
+        .filter(([key]) => key !== "currency")
+        .map(([key, value]) => [
+            key.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase(),
+            value,
+        ]);
 }
 
 function ModalityChipList({ values }: { values: readonly string[] }) {
@@ -196,29 +219,22 @@ function CategoryChips({
 }
 
 function selectedCatalogModel(
-    models: readonly ModelCatalogItem[],
+    models: readonly ModelInfo[],
     category: ModelSelectorCategory,
     selectedModelId: string | undefined,
-): ModelCatalogItem | undefined {
+): ModelInfo | undefined {
     return (
         (selectedModelId
-            ? models.find((model) => model.id === selectedModelId)
+            ? models.find((model) => modelId(model) === selectedModelId)
             : undefined) ?? models.find((model) => model.category === category)
     );
 }
 
 export function ModulesPage() {
-    const {
-        models,
-        allowedModelIds,
-        allowedCategories,
-        isLoggedIn,
-        isLoading,
-        error,
-    } = useModelCatalog({
-        baseUrl: GEN_BASE_URL,
-    });
-    const { enterUrl } = useAuthActions();
+    const { models, allowedModelIds, isLoggedIn, isLoading, error } =
+        useModelCatalog({
+            baseUrl: GEN_BASE_URL,
+        });
     const profile = useAccountProfile({ enabled: isLoggedIn });
     const accountKey = useAccountKey({ enabled: isLoggedIn });
     const keyUsage = useAccountKeyUsage({
@@ -232,14 +248,14 @@ export function ModulesPage() {
     const [selectedByCategory, setSelectedByCategory] = useState<
         Partial<Record<ModelSelectorCategory, string>>
     >({});
-    // Categories come only from the catalog the key can actually see. No
-    // hardcoded fallback list — an empty catalog renders an empty state.
-    const categories = allowedCategories;
+    const visibleModels = isLoggedIn
+        ? models.filter((model) => allowedModelIds.has(modelId(model)))
+        : models;
+    const categories = CATEGORY_ORDER.filter((item) =>
+        visibleModels.some((model) => model.category === item),
+    );
     const activeCategory =
         category && categories.includes(category) ? category : categories[0];
-    const visibleModels = isLoggedIn
-        ? models.filter((model) => allowedModelIds.has(model.id))
-        : models;
     const selectedModel = activeCategory
         ? selectedCatalogModel(
               visibleModels,
@@ -247,13 +263,15 @@ export function ModulesPage() {
               selectedByCategory[activeCategory],
           )
         : undefined;
-    const selectedModelId = selectedModel?.id ?? "";
+    const selectedModelId = selectedModel ? modelId(selectedModel) : "";
     const selectedModelAccess = !isLoggedIn
         ? "Public catalog"
-        : selectedModel && allowedModelIds.has(selectedModel.id)
+        : selectedModel && allowedModelIds.has(modelId(selectedModel))
           ? "Allowed by key"
           : "Not allowed";
     const selectedPricingEntries = pricingEntries(selectedModel?.pricing);
+    const selectedVideoCapabilities = selectedModel?.video_capabilities ?? [];
+    const selectedVoices = selectedModel?.voices ?? [];
 
     return (
         <>
@@ -270,7 +288,7 @@ export function ModulesPage() {
                     className="flex flex-col items-start gap-5"
                 >
                     <div className="flex flex-wrap items-center gap-3">
-                        <AppUserMenu dashboardHref={enterUrl} />
+                        <AppUserMenu />
                         {!isLoggedIn ? (
                             <span className="text-sm font-medium text-intent-danger-text">
                                 Authorize the app to load your account and
@@ -453,12 +471,12 @@ export function ModulesPage() {
                                         <>
                                             <CatalogTableRow label="ID">
                                                 <CatalogValue mono>
-                                                    {selectedModel.id}
+                                                    {modelId(selectedModel)}
                                                 </CatalogValue>
                                             </CatalogTableRow>
-                                            <CatalogTableRow label="Brand">
+                                            <CatalogTableRow label="Publisher">
                                                 <CatalogValue>
-                                                    {selectedModel.brand ??
+                                                    {selectedModel.publisher ??
                                                         "Not listed"}
                                                 </CatalogValue>
                                             </CatalogTableRow>
@@ -468,13 +486,19 @@ export function ModulesPage() {
                                                         selectedModelAccess ===
                                                         "Not allowed"
                                                             ? "warning"
-                                                            : "success"
+                                                            : "neutral"
                                                     }
                                                     size="sm"
+                                                    className={
+                                                        selectedModelAccess ===
+                                                        "Not allowed"
+                                                            ? undefined
+                                                            : "text-intent-success-text"
+                                                    }
                                                 >
                                                     {selectedModelAccess}
                                                 </Chip>
-                                                {selectedModel.paidOnly ? (
+                                                {selectedModel.paid_only ? (
                                                     <Chip size="sm">paid</Chip>
                                                 ) : null}
                                             </CatalogTableRow>
@@ -487,66 +511,69 @@ export function ModulesPage() {
                                             <CatalogTableRow label="Input">
                                                 <ModalityChipList
                                                     values={
-                                                        selectedModel.inputModalities
+                                                        selectedModel.input_modalities ??
+                                                        []
                                                     }
                                                 />
                                             </CatalogTableRow>
                                             <CatalogTableRow label="Output">
                                                 <ModalityChipList
                                                     values={
-                                                        selectedModel.outputModalities
+                                                        selectedModel.output_modalities ??
+                                                        []
                                                     }
                                                 />
                                             </CatalogTableRow>
                                             <CatalogTableRow label="Tools">
                                                 <BooleanCapability
-                                                    value={selectedModel.tools}
+                                                    value={
+                                                        selectedModel.tools ??
+                                                        false
+                                                    }
                                                 />
                                             </CatalogTableRow>
                                             <CatalogTableRow label="Reasoning">
                                                 <BooleanCapability
                                                     value={
-                                                        selectedModel.reasoning
+                                                        selectedModel.reasoning ??
+                                                        false
                                                     }
                                                 />
                                             </CatalogTableRow>
-                                            {selectedModel.contextLength ? (
+                                            {selectedModel.context_length ? (
                                                 <CatalogTableRow label="Context">
                                                     <CatalogValue>
-                                                        {`${selectedModel.contextLength.toLocaleString()} tokens`}
+                                                        {`${selectedModel.context_length.toLocaleString()} tokens`}
                                                     </CatalogValue>
                                                 </CatalogTableRow>
                                             ) : null}
-                                            {selectedModel.maxReferenceImages ? (
+                                            {selectedModel.max_reference_images ? (
                                                 <CatalogTableRow label="Reference images">
                                                     <CatalogValue>
-                                                        {selectedModel.maxReferenceImages.toLocaleString()}
+                                                        {selectedModel.max_reference_images.toLocaleString()}
                                                     </CatalogValue>
                                                 </CatalogTableRow>
                                             ) : null}
-                                            {selectedModel.maxReferenceVideos ? (
+                                            {selectedModel.max_reference_videos ? (
                                                 <CatalogTableRow label="Reference videos">
                                                     <CatalogValue>
-                                                        {selectedModel.maxReferenceVideos.toLocaleString()}
+                                                        {selectedModel.max_reference_videos.toLocaleString()}
                                                     </CatalogValue>
                                                 </CatalogTableRow>
                                             ) : null}
-                                            {selectedModel.videoCapabilities
-                                                .length ? (
+                                            {selectedVideoCapabilities.length ? (
                                                 <CatalogTableRow label="Video">
                                                     <TokenChipList
                                                         values={
-                                                            selectedModel.videoCapabilities
+                                                            selectedVideoCapabilities
                                                         }
                                                     />
                                                 </CatalogTableRow>
                                             ) : null}
-                                            {selectedModel.voices.length ? (
+                                            {selectedVoices.length ? (
                                                 <CatalogTableRow label="Voices">
                                                     <TokenChipList
-                                                        values={
-                                                            selectedModel.voices
-                                                        }
+                                                        values={selectedVoices}
                                                     />
                                                 </CatalogTableRow>
                                             ) : null}

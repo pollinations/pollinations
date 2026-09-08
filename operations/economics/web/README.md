@@ -15,18 +15,34 @@ npm install
 npm run dev
 ```
 
-The dev server is pinned to `http://127.0.0.1:4180`.
+The dev server uses `http://localhost:4180`; run Enter on port 3000.
+KPI, Economics and Observability share the same sign-in page, provider button
+and admin-only OAuth session implementation. “Sign out” clears only the current
+app's session. No generation key or Pollen permission is requested.
 
-Auth uses a password gate backed by the Cloudflare Worker. For local development,
-the shared password and the staging-only Tinybird reader are assembled from
-`../secrets/web.json` and `../secrets/web.dev.json` into the ignored `.dev.vars`
-file. Production deployment continues to use `../secrets/web.json`. No secret is
-bundled or stored in the browser.
+In local `.dev.vars`, use `POLLINATIONS_AUTH_BASE_URL=http://localhost:3000`
+and `TINYBIRD_POLLEN_PIPE=economics_pollen_usage_snapshot_api`.
+Register `http://localhost:4180/auth/callback` on the local Economics OAuth
+client. The production registration accepts only the HTTPS app callback.
+
+The app requires its own `POLLINATIONS_AUTH_SESSION_SECRET` and
+`TINYBIRD_ECONOMICS_READ_TOKEN`. Local development must use the staging reader
+from `../secrets/web.dev.json`, never the production reader. These credentials
+require separate approval before provisioning; never reuse KPI's signing secret.
+Private reads use same-origin `/api/economics/pipes/:pipe`, protected by the
+app's session. Protected requests recheck current admin status with Enter once per
+60-second cookie window; demotion, bans and token revocation deny access at the
+next check. Temporary Enter failures return 503 without clearing the session. Sessions expire after 12 hours.
+The identity token is encrypted inside the HttpOnly cookie.
+`npm run decrypt-vars` preserves the separately approved app signing secret and
+loads only the staging reader; it never reads production secrets.
+Deploy Enter's client registration first, provision approved app secrets, then
+build and deploy the Economics Worker through GitHub Actions.
 
 ## Fixtures Mode
 
-`http://127.0.0.1:4180/?fixtures=1` renders bundled sample data with no password
-and no network calls.
+`http://localhost:4180/?fixtures=1` renders bundled sample data after admin sign-in,
+without fetching live ledger data.
 
 ## Data Contract
 
@@ -53,16 +69,11 @@ Collection and correction conventions live in
 Each view loads only its required endpoints. An unrelated endpoint failure does
 not block other views. Refresh retains the selected view and reporting month.
 
-The app is a read-only mirror; all reads go through the Worker proxy. In
-deployed environments the Worker authenticates every request before serving
-the SPA shell or any static asset, so private forecast assumptions and
-reconciliation explanations cannot be downloaded before login. Localhost keeps
-direct asset access for development and fixture mode. The public workers.dev
-origin is disabled; only the two configured custom domains serve the app.
-Production deployment is CI-only. Its existing readiness check uses the same
-row and serialization validators as the dashboard and requires populated
-datasets, including private configuration and the D1 snapshot. Deploy and verify
-Tinybird contracts and data before promoting a Worker that reads them.
+The sign-in shell is public. Provider registry evidence is isolated in a
+`/private/` bundle chunk, served only after admin authentication with private,
+no-store caching. Real ledger data and forecast assumptions use protected read
+endpoints. Deployment validates the Tinybird contract before uploading the Worker
+with its approved production secrets; secret synchronization requires approval.
 
 Runway reconstructs cash from one statement-backed opening-balance row in
 `economics_bank_ledger` plus later bank movements. Closed months are actuals. The

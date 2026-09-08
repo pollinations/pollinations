@@ -1,0 +1,34 @@
+{
+  "pr_number": 14593,
+  "title": "docs: simplify review and code-simplifier guidance",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14593",
+  "merged_at": "2026-09-08T20:50:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Makes the existing review command and simplifier use the shared coding principles in AGENTS.md, following #14581.\n- Removes duplicated style rules, the generic findings template, and automatic simplification instructions; preserves scope and behavior checks.\n- Keeps advisory reviews read-only unless fixes are requested and asks for concrete findings with relevant verification gaps.\n- Documentation only: two files, 57 fewer lines. Validated agent frontmatter, guidance references, and whitespace; Biome does not process Markdown.\n",
+  "gist": {
+    "category": "docs",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Less Script, Same Scrutiny",
+    "blurb": "The review bees put away the duplicate rulebook. Shared AGENTS.md principles now guide both review and simplification, while the useful guardrails stay planted.",
+    "summary": "Simplified the code-simplifier and review agent guidance to reuse AGENTS.md principles, retain scope and behavior checks, keep advisory reviews read-only, and require concrete findings with verification gaps.",
+    "impact": "Contributors get leaner, consistent review guidance while advisory reviews remain non-destructive unless fixes are explicitly requested.",
+    "keywords": [
+      "documentation",
+      "code review",
+      "agents",
+      "AGENTS.md",
+      "code simplifier",
+      "contributor guidance"
+    ],
+    "visual_concept": "Polli, wearing tiny librarian glasses, tidies two duplicate coding-rule scrolls into one glowing AGENTS.md book beside a cozy review desk; a retro terminal and small code-plants represent preserved verification and behavior checks.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, filing duplicate rule scrolls into one large glowing AGENTS.md book at a warm retro review terminal, with code-plants growing from lime green (#ecf874) pots and a small checklist still open. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"ONE RULEBOOK\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14593.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot wearing tiny librarian glasses, filing duplicate rule scrolls into one large glowing AGENTS.md book at a warm retro review terminal, with code-plants growing from lime green (#ecf874) pots and a small checklist still open. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, subtle pixel-font text: \"ONE RULEBOOK\"."
+  },
+  "generated_at": "2026-09-08T20:51:31.398375+00:00"
+}

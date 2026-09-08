@@ -1,0 +1,34 @@
+{
+  "pr_number": 14597,
+  "title": "fix: allow daily news generation without Buffer staging",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14597",
+  "merged_at": "2026-09-08T21:55:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Add a `daily-generation-only` mode to restore a daily news archive without staging posts to Buffer.\n- Keep the existing scheduled, daily, weekly, and monthly modes unchanged.\n- Recover the September 7 archive after the failed image requests: summary, Twitter and Reddit JSON, and both JPEG images are now present on `news`.\n- Validate YAML, shell syntax, mode selection and Buffer gating; verify the [successful recovery run](https://github.com/pollinations/pollinations/actions/runs/34282435760), saved dates, image links, and JPEG signatures. Biome does not process this YAML file.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "News blooms without Buffer",
+    "blurb": "The daily news garden can now be replanted without sending anything through Buffer. September 7 is back on the archive shelf, with its summary, posts, and little JPEGs intact.",
+    "summary": "Added a daily-generation-only mode to the news workflow so a daily archive can be generated or recovered without staging posts to Buffer, restoring the September 7 summary, Twitter and Reddit JSON, and both JPEG images.",
+    "impact": "Readers regain the complete September 7 news archive, while maintainers can rerun daily news generation independently of Buffer staging.",
+    "keywords": [
+      "news archive",
+      "daily summary",
+      "Buffer",
+      "GitHub Actions",
+      "recovery",
+      "workflow"
+    ],
+    "visual_concept": "A cozy archive garden represents the recovered daily-news run: Polli, wearing a tiny librarian hat, carefully files a dated September 7 newspaper beside a retro terminal while two finished JPEG picture cards bloom from code-plants. A small closed Buffer-style delivery crate sits off to the side, showing that the archive can grow without staging a delivery; lime green folders, flowers, and warm shelves make the recovery feel complete.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, filing a glowing \"SEP 7\" news page into a warm archive garden while a retro terminal grows two JPEG picture cards from lime green (#ecf874) code-plants; a small unopened delivery crate rests nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: \"ARCHIVE RESTORED\", nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14597.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian hat, filing a glowing \"SEP 7\" news page into a warm archive garden while a retro terminal grows two JPEG picture cards from lime green (#ecf874) code-plants; a small unopened delivery crate rests nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, subtle pixel-font text: \"ARCHIVE RESTORED\", nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T22:34:49.274922+00:00"
+}

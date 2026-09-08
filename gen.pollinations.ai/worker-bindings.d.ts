@@ -21,6 +21,8 @@ interface CloudflareBindings {
     KV: KVNamespace;
     MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
+    /** Temporary old binary-cache source; used only for reads. */
+    LEGACY_MEDIA_BUCKET: R2Bucket;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator
     >;

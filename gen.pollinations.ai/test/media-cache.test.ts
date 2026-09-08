@@ -69,6 +69,7 @@ function createMediaCacheEnv(
 ): CloudflareBindings {
     const mediaCtx = createExecutionContext();
     return {
+        LEGACY_MEDIA_BUCKET: createTestR2Bucket(),
         MEDIA: new MediaUpload(mediaCtx, {
             MEDIA_BUCKET: bucket,
             MAX_FILE_SIZE: "104857600",

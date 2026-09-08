@@ -1,0 +1,33 @@
+{
+  "pr_number": 14608,
+  "title": "fix: show image edit test failures in the model dashboard",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14608",
+  "merged_at": "2026-09-08T23:39:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Shows the actual edit-test failure instead of claiming editing is unsupported.\n- Keeps successful generation and pricing detection usable when editing fails; preserves existing modality declarations.\n- Reuses the current dashboard message UI and documents the optional imageEditError response field.\n- Verified: 38 endpoint service tests, Enter typecheck, Biome, and regression cases for HTTP errors, timeouts, and invalid image responses.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The dashboard tells the truth",
+    "blurb": "When an image-edit check trips over a root, the model dashboard now shows the actual pebble instead of declaring the whole garden edit-free. Generation, pricing, and modality data keep blooming as usual.",
+    "summary": "The community model dashboard now returns and displays an optional imageEditError for failed image-edit tests, while preserving successful generation checks, pricing detection, and existing modality declarations.",
+    "impact": "Model providers and dashboard users can distinguish HTTP errors, timeouts, and invalid image responses from genuinely unsupported editing without losing otherwise valid model capability and pricing information.",
+    "keywords": [
+      "community endpoints",
+      "model dashboard",
+      "image editing",
+      "error reporting",
+      "OpenAI compatibility"
+    ],
+    "visual_concept": "Depict Polli as a careful garden inspector using a magnifying glass to read a small, clear error note attached to a code-plant labeled IMAGE EDIT, while neighboring generation and pricing plants remain healthy and flowering. A friendly CRT monitor robot can show a readable diagnostic panel, making the distinction between one failed edit check and an otherwise working model immediately visible.",
+    "image_prompt": "A cozy pixel art model garden where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny inspector glasses, holds a magnifying glass over a code-plant sign reading \"IMAGE EDIT ERROR\" while healthy flowering plants labeled \"GENERATE\" and \"PRICING\" glow beside it; a cheerful chunky CRT monitor robot displays a small clear diagnostic message. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14608.jpg",
+    "prompt": "A cozy pixel art model garden where Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny inspector glasses, holds a magnifying glass over a code-plant sign reading \"IMAGE EDIT ERROR\" while healthy flowering plants labeled \"GENERATE\" and \"PRICING\" glow beside it; a cheerful chunky CRT monitor robot displays a small clear diagnostic message. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, dark purple (#110518) outlines, chunky retro sprites, warm lighting, subtle CRT glow, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-08T23:40:49.745958+00:00"
+}

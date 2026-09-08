@@ -19,7 +19,7 @@ For detailed integration guidance on user-pays authorization, including OAuth di
 
 ### x402 payments (staging preview)
 
-On `https://staging.gen.pollinations.ai`, supported requests can use Weft x402 payments without a Pollinations API key. Production still requires an API key.
+On `https://staging.gen.pollinations.ai`, supported requests can use Weft x402 payments without a Pollinations API key. Settlement goes through `https://x402.staging.weft.network` on Base Sepolia (`eip155:84532`). `https://x402.weft.network` is production / Base mainnet — do not use it for this preview. Production Pollinations still requires an API key.
 
 | Endpoint | Supported requests |
 |----------|--------------------|

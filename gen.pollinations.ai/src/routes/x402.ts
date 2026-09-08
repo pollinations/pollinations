@@ -24,7 +24,7 @@ import {
     WEFT_REQUEST_EXTENSION_KEY,
     WEFT_REQUEST_INFO_SCHEMA,
     weftPaymentMiddlewareHono,
-} from "@weft-labs/sdk/facilitator/middleware";
+} from "@weftlabs/sdk/facilitator/middleware";
 import {
     decodePaymentSignatureHeader,
     SETTLEMENT_OVERRIDES_HEADER,
@@ -67,7 +67,8 @@ import {
 } from "./images.ts";
 
 const ROUTE = "/v1/chat/completions";
-const DEFAULT_FACILITATOR_URL = "https://x402.weft.network";
+// x402.weft.network is Base mainnet. This preview is Sepolia-only.
+const DEFAULT_FACILITATOR_URL = "https://x402.staging.weft.network";
 const DEFAULT_NETWORK = "eip155:84532";
 const MIN_CHARGE_USD = 0.001;
 const MAX_X402_OUTPUT_TOKENS = 4096;

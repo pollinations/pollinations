@@ -7,7 +7,7 @@ import {
     type PaymentResumeCandidate,
     WEFT_REQUEST_EXTENSION_KEY,
     WEFT_REQUEST_INFO_SCHEMA,
-} from "@weft-labs/sdk/facilitator/middleware";
+} from "@weftlabs/sdk/facilitator/middleware";
 import type { PaymentPayload } from "@x402/core/types";
 import { Hono } from "hono";
 import { expect } from "vitest";

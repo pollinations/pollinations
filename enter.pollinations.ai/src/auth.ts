@@ -35,13 +35,18 @@ import { discordConfigFromEnv } from "./services/discord.ts";
 const DELETE_ACCOUNT_FRESH_SESSION_MS = 10 * 60 * 1000;
 const ADMIN_USER_IDS = ["Py5RZYN9c10OsC1fjUYiqMYjttf0PLGv"];
 
-export function isAdminUser(user: { id: string; role?: string | null }) {
+export function isAdminUser(user: {
+    id: string;
+    role?: string | null;
+    banned?: boolean | null;
+}) {
     return (
-        ADMIN_USER_IDS.includes(user.id) ||
-        user.role
-            ?.split(",")
-            .map((role) => role.trim())
-            .includes("admin") === true
+        !user.banned &&
+        (ADMIN_USER_IDS.includes(user.id) ||
+            user.role
+                ?.split(",")
+                .map((role) => role.trim())
+                .includes("admin") === true)
     );
 }
 
@@ -75,6 +80,7 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
 
     const oauthProviderPlugin = oauthProvider({
         loginPage: "/app/sign-in",
+        allowPublicClientPrelogin: true,
         // Only trusted internal dashboard clients are registered, so
         // consent is skipped. Explicit consent requests fail closed here.
         consentPage: "/error",
@@ -82,7 +88,8 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
         clientPrivileges: () => false,
         scopes: ["openid", "profile", "email"],
         grantTypes: ["authorization_code"],
-        accessTokenExpiresIn: 60,
+        // Apps recheck UserInfo throughout their 12-hour session; no refresh grant.
+        accessTokenExpiresIn: 43_200,
         disableJwtPlugin: true,
         customUserInfoClaims: ({ user }) => ({
             role: isAdminUser(user) ? "admin" : "user",

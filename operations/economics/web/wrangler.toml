@@ -11,7 +11,7 @@ routes = [
 [assets]
 directory = "./dist"
 binding = "ASSETS"
-run_worker_first = ["/auth/*", "/api/*"]
+run_worker_first = ["/auth/*", "/api/*", "/private/*"]
 not_found_handling = "single-page-application"
 
 [vars]

@@ -27,9 +27,21 @@ export const economicsRoutes = new Hono<Env>().get(
             pipe === "economics_pollen_usage_api"
                 ? c.env.TINYBIRD_POLLEN_PIPE
                 : pipe;
+        if (
+            pipe === "economics_pollen_usage_api" &&
+            ![
+                "economics_pollen_usage_api",
+                "economics_pollen_usage_snapshot_api",
+            ].includes(upstreamPipe)
+        ) {
+            throw new HTTPException(503, {
+                message:
+                    "TINYBIRD_POLLEN_PIPE must select the production or staging Pollen endpoint",
+            });
+        }
         const origin = new URL(c.env.TINYBIRD_INGEST_URL).origin;
         const upstream = await fetch(
-            `${origin}/v0/pipes/${upstreamPipe}.json`,
+            `${origin}/v0/pipes/${encodeURIComponent(upstreamPipe)}.json`,
             {
                 headers: { Authorization: `Bearer ${token}` },
             },

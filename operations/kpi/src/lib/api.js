@@ -1,6 +1,8 @@
+import { dashboardFetch } from "@pollinations/auth/react";
+
 // Private reads use only this app's session, never Enter's cookie.
 async function getRows(path) {
-    const res = await fetch(`/api${path}`, { credentials: "same-origin" });
+    const res = await dashboardFetch(`/api${path}`);
     if (!res.ok) return null;
     const body = await res.json();
     return body.data ?? null;
@@ -15,7 +17,7 @@ export const weekly = (pipe, weeks) =>
     getRows(`/kpi/${pipe}?weeks_back=${weeks}`);
 
 export async function github() {
-    const res = await fetch("/api/kpi/github", { credentials: "same-origin" });
+    const res = await dashboardFetch("/api/kpi/github");
     if (!res.ok) return { stars: 0, forks: 0 };
     return res.json();
 }

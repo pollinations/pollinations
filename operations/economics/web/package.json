@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "predev": "npm run build --prefix ../../../packages/ui",
+    "predev": "npm run build --prefix ../../../packages/ui && npm run decrypt-vars",
     "build": "vite build",
     "prebuild": "npm run build --prefix ../../../packages/ui",
     "preview": "vite preview",
@@ -13,7 +13,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "pretypecheck": "npm run build --prefix ../../../packages/ui",
-    "deploy": "npm run build && wrangler deploy"
+    "deploy": "npm run build && wrangler deploy",
+    "decrypt-vars": "sops exec-env ../secrets/web.dev.json 'node scripts/write-dev-vars.mjs'"
   },
   "dependencies": {
     "@pollinations/auth": "*",

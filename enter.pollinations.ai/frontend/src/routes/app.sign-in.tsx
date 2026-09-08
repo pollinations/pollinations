@@ -1,6 +1,9 @@
 import { Heading, Text } from "@pollinations/ui";
 import { AuthModal, AuthModalHeader } from "@pollinations/ui/auth";
 import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { authClient } from "../auth.ts";
+import { oauthSignInCallback } from "../lib/oauth-sign-in.ts";
 import { SignedOutAccountArea } from "./_dashboard.tsx";
 
 export const Route = createFileRoute("/app/sign-in")({
@@ -13,12 +16,21 @@ export const Route = createFileRoute("/app/sign-in")({
 
 function AppSignIn() {
     const { client_id } = Route.useSearch();
-    const name =
-        {
-            pk_Bxny9FSNDpousKqW: "KPI",
-            pk_LBL0KnkHI6AZopCc: "Economics",
-            pk_vVa38CFt1R1gGScW: "Observability",
-        }[client_id] || "Pollinations";
+    const [name, setName] = useState("Pollinations");
+    useEffect(() => {
+        let cancelled = false;
+        void authClient.oauth2
+            .publicClientPrelogin({ client_id })
+            .then(({ data }) => {
+                if (!cancelled && data?.client_name) setName(data.client_name);
+            })
+            .catch(() => {
+                /* The sign-in endpoint will report an invalid request. */
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [client_id]);
     return (
         <AuthModal dialog={{ labelledBy: "app-title" }}>
             <AuthModalHeader />
@@ -29,7 +41,13 @@ function AppSignIn() {
                         Sign in with your Pollinations admin account.
                     </Text>
                 </div>
-                <SignedOutAccountArea />
+                <SignedOutAccountArea
+                    callbackURL={
+                        typeof window === "undefined"
+                            ? undefined
+                            : oauthSignInCallback(window.location.href)
+                    }
+                />
             </div>
         </AuthModal>
     );

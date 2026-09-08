@@ -27,6 +27,7 @@ type Session = PollinationsUser & {
     aud: string;
     exp: number;
     role: "admin";
+    accessToken: string;
 };
 
 type Flow = {
@@ -117,16 +118,6 @@ function redirect(location: string, cookies: string[] = []) {
     return new Response(null, { status: 302, headers });
 }
 
-function authError(message: string, status: number, clearCookie: string) {
-    return new Response(message, {
-        status,
-        headers: {
-            "Cache-Control": "no-store",
-            "Set-Cookie": clearCookie,
-        },
-    });
-}
-
 function safeReturnTo(value: unknown, origin: string) {
     if (typeof value !== "string") return `${origin}/`;
     try {
@@ -170,6 +161,49 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         authBaseUrl,
     ).toString();
     const key = hmacKey(config.sessionSecret);
+    const encryptionKey = crypto.subtle
+        .digest(
+            "SHA-256",
+            encoder.encode(`dashboard-token:${config.sessionSecret}`),
+        )
+        .then((raw) =>
+            crypto.subtle.importKey("raw", raw, "AES-GCM", false, [
+                "encrypt",
+                "decrypt",
+            ]),
+        );
+    async function encryptToken(token: string, origin: string) {
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await crypto.subtle.encrypt(
+            { name: "AES-GCM", iv, additionalData: encoder.encode(origin) },
+            await encryptionKey,
+            encoder.encode(token),
+        );
+        return `${base64Url(iv)}.${base64Url(new Uint8Array(encrypted))}`;
+    }
+    async function decryptToken(token: string, origin: string) {
+        const [iv, ciphertext] = token.split(".");
+        return decoder.decode(
+            await crypto.subtle.decrypt(
+                {
+                    name: "AES-GCM",
+                    iv: fromBase64Url(iv),
+                    additionalData: encoder.encode(origin),
+                },
+                await encryptionKey,
+                fromBase64Url(ciphertext),
+            ),
+        );
+    }
+    async function currentUser(accessToken: string): Promise<Userinfo | null> {
+        const response = await requestFetch(userinfoUrl, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+            signal: AbortSignal.timeout(10_000),
+        });
+        if (!response.ok) return null;
+        const user = (await response.json()) as Userinfo;
+        return user?.sub && user.email && user.role === "admin" ? user : null;
+    }
 
     async function sign(payload: string) {
         const signature = await crypto.subtle.sign(
@@ -232,6 +266,24 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         const requestUrl = new URL(request.url);
         const flowCookie = requestCookieName(request, FLOW_COOKIE);
         const clearFlow = cookie(request, flowCookie, "", 0, CALLBACK_PATH);
+        function authError(
+            message: string,
+            status: number,
+            clearCookie: string,
+        ) {
+            const target = new URL("/", requestUrl.origin);
+            target.searchParams.set(
+                "auth_error",
+                status === 403
+                    ? "admin_required"
+                    : message === "Login cancelled"
+                      ? "cancelled"
+                      : status === 400
+                        ? "invalid_state"
+                        : "unavailable",
+            );
+            return redirect(target.toString(), [clearCookie]);
+        }
         const code = requestUrl.searchParams.get("code");
         const state = requestUrl.searchParams.get("state");
         const error = requestUrl.searchParams.get("error");
@@ -270,32 +322,32 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         });
         const token = (await tokenResponse.json().catch(() => null)) as {
             access_token?: string;
+            expires_in?: number;
         } | null;
         if (!tokenResponse.ok || !token?.access_token) {
             return authError("OAuth token exchange failed", 502, clearFlow);
         }
 
-        const userResponse = await requestFetch(userinfoUrl, {
-            headers: { Authorization: `Bearer ${token.access_token}` },
-        });
-        const user = (await userResponse
-            .json()
-            .catch(() => null)) as Userinfo | null;
-        if (
-            !userResponse.ok ||
-            !user?.sub ||
-            !user.email ||
-            user.role !== "admin"
-        ) {
-            return authError("Forbidden", 403, clearFlow);
-        }
+        const user = await currentUser(token.access_token).catch(() => null);
+        if (!user) return authError("Forbidden", 403, clearFlow);
+        const maxAge = Math.min(
+            SESSION_MAX_AGE_SECONDS,
+            typeof token.expires_in === "number" &&
+                Number.isFinite(token.expires_in)
+                ? Math.max(0, token.expires_in)
+                : SESSION_MAX_AGE_SECONDS,
+        );
 
         const session: Session = {
             ...user,
             email: normalizeEmail(user.email),
             role: "admin",
             aud: requestUrl.origin,
-            exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS,
+            exp: Math.floor(Date.now() / 1000) + maxAge,
+            accessToken: await encryptToken(
+                token.access_token,
+                requestUrl.origin,
+            ),
         };
         const payload = encodeJson(session);
         const sessionCookie = `${payload}.${await sign(payload)}`;
@@ -305,7 +357,7 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
                 request,
                 requestCookieName(request, SESSION_COOKIE),
                 sessionCookie,
-                SESSION_MAX_AGE_SECONDS,
+                maxAge,
             ),
         ]);
     }
@@ -336,8 +388,14 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
             ) {
                 return null;
             }
-            const { aud: _aud, exp: _exp, role: _role, ...user } = session;
-            return user;
+            // Check the current role and token validity on every private request.
+            // The identity token stays encrypted inside the HttpOnly app cookie.
+            const current = await currentUser(
+                await decryptToken(session.accessToken, session.aud),
+            );
+            if (!current || current.sub !== session.sub) return null;
+            const { role: _role, ...user } = current;
+            return { ...user, email: normalizeEmail(user.email) };
         } catch {
             return null;
         }
@@ -348,7 +406,19 @@ export function createPollinationsAuth(config: PollinationsAuthConfig) {
         if (url.pathname === LOGIN_PATH && request.method === "GET")
             return startLogin(request);
         if (url.pathname === CALLBACK_PATH && request.method === "GET")
-            return finishLogin(request);
+            return finishLogin(request).catch(() => {
+                const target = new URL("/", url.origin);
+                target.searchParams.set("auth_error", "unavailable");
+                return redirect(target.toString(), [
+                    cookie(
+                        request,
+                        requestCookieName(request, FLOW_COOKIE),
+                        "",
+                        0,
+                        CALLBACK_PATH,
+                    ),
+                ]);
+            });
         if (url.pathname === SESSION_PATH && request.method === "GET") {
             const user = await getUser(request);
             return Response.json(

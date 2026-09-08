@@ -30,14 +30,18 @@ The app requires its own `POLLINATIONS_AUTH_SESSION_SECRET` and
 from `../secrets/web.dev.json`, never the production reader. These credentials
 require separate approval before provisioning; never reuse KPI's signing secret.
 Private reads use same-origin `/api/economics/pipes/:pipe`, protected by the
-app's session. Admin status is checked at sign-in; sessions expire after 12 hours.
+app's session. Each protected request rechecks current admin status with Enter;
+demotion, bans and token revocation deny access. Sessions expire after 12 hours.
+The identity token is encrypted inside the HttpOnly cookie.
+`npm run decrypt-vars` preserves the separately approved app signing secret and
+loads only the staging reader; it never reads production secrets.
 Deploy Enter's client registration first, provision approved app secrets, then
 build and deploy the Economics Worker through GitHub Actions.
 
 ## Fixtures Mode
 
-`http://localhost:4180/?fixtures=1` renders bundled sample data with no login
-and no network calls.
+`http://localhost:4180/?fixtures=1` renders bundled sample data after admin sign-in,
+without fetching live ledger data.
 
 ## Data Contract
 
@@ -64,10 +68,11 @@ Collection and correction conventions live in
 Each view loads only its required endpoints. An unrelated endpoint failure does
 not block other views. Refresh retains the selected view and reporting month.
 
-The frontend and its demo fixtures are public static assets. Real ledger data,
-forecast assumptions and reconciliation explanations are loaded only through
-the Economics Worker's protected read endpoints. The app deployment does not
-synchronize secrets.
+The sign-in shell is public. Provider registry evidence is isolated in a
+`/private/` bundle chunk, served only after admin authentication with private,
+no-store caching. Real ledger data and forecast assumptions use protected read
+endpoints. Deployment validates the Tinybird contract before uploading the Worker
+with its approved production secrets; secret synchronization requires approval.
 
 Runway reconstructs cash from one statement-backed opening-balance row in
 `economics_bank_ledger` plus later bank movements. Closed months are actuals. The

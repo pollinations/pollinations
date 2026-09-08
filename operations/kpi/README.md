@@ -10,8 +10,9 @@ no provider token reaches the browser. This identity login does not grant
 access to Pollen balances or generation keys.
 
 “Sign out” clears only KPI's session. Enter and other apps stay signed in.
-Sessions expire after 12 hours; admin status is checked at sign-in, so a role
-change takes effect on the next sign-in or when the existing session expires.
+Sessions expire after 12 hours. Each protected request rechecks current admin
+status with Enter; demoted or banned users and revoked tokens lose access.
+The identity token is encrypted inside the HttpOnly session cookie.
 
 ## Data
 
@@ -37,8 +38,8 @@ Run Enter locally on port 3000. Set `POLLINATIONS_AUTH_BASE_URL` to
 The production callback registration stays HTTPS-only.
 
 The Worker needs its own `POLLINATIONS_AUTH_SESSION_SECRET` (at least 32
-characters), a staging-only `TINYBIRD_READ_TOKEN`, and GitHub App credentials
-for GitHub metrics. Adding or copying credentials requires separate approval
+characters), a staging-only `TINYBIRD_READ_TOKEN`, and optionally `GITHUB_TOKEN`
+for authenticated GitHub metrics (public reads also work without it). Adding or copying credentials requires separate approval
 under the repository's secret rules. Never reuse Enter's session signing secret.
 Private reads use same-origin `/api/kpi/*`; cookies are separated by port locally.
 

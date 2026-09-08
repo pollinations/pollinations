@@ -153,8 +153,7 @@ describe("Pollinations OAuth", () => {
     });
 
     it("exchanges the code and creates a dashboard session", async () => {
-        const upstream = vi
-            .fn()
+        const upstream = userUpstream()
             .mockResolvedValueOnce(
                 Response.json({ access_token: "oauth_login" }),
             )
@@ -209,8 +208,7 @@ describe("Pollinations OAuth", () => {
     });
 
     it("does not create a dashboard session for a non-admin", async () => {
-        const upstream = vi
-            .fn()
+        const upstream = userUpstream()
             .mockResolvedValueOnce(
                 Response.json({ access_token: "oauth_login" }),
             )
@@ -230,7 +228,10 @@ describe("Pollinations OAuth", () => {
             ),
         );
 
-        expect(response?.status).toBe(403);
+        expect(response?.status).toBe(302);
+        expect(response?.headers.get("Location")).toBe(
+            "https://kpi.pollinations.ai/?auth_error=admin_required",
+        );
         expect(cookieFrom(response as Response, "pollinations_session")).toBe(
             undefined,
         );
@@ -247,7 +248,7 @@ describe("Pollinations OAuth", () => {
             ),
         );
 
-        expect(response?.status).toBe(400);
+        expect(response?.status).toBe(302);
         expect(upstream).not.toHaveBeenCalled();
     });
 
@@ -262,8 +263,10 @@ describe("Pollinations OAuth", () => {
             ),
         );
 
-        expect(response?.status).toBe(400);
-        await expect(response?.text()).resolves.toBe("Login cancelled");
+        expect(response?.status).toBe(302);
+        expect(response?.headers.get("Location")).toBe(
+            "https://kpi.pollinations.ai/?auth_error=cancelled",
+        );
         expect(response?.headers.get("Set-Cookie")).toContain("Max-Age=0");
         expect(upstream).not.toHaveBeenCalled();
     });
@@ -374,8 +377,7 @@ describe("Pollinations OAuth", () => {
     });
 
     it("isolates local cookies by port", async () => {
-        const upstream = vi
-            .fn()
+        const upstream = userUpstream()
             .mockResolvedValueOnce(
                 Response.json({ access_token: "oauth_login" }),
             )
@@ -448,4 +450,26 @@ describe("Pollinations OAuth", () => {
         expect(response?.status).toBe(401);
         expect(await response?.json()).toEqual({ user: null });
     });
+});
+
+it("encrypts the identity token and rejects a session after admin access is revoked", async () => {
+    const upstream = userUpstream();
+    const auth = createPollinationsAuth({ ...config, fetch: upstream });
+    const session = await authenticatedSession(auth);
+    const payload = JSON.stringify(flowFromCookie(session.split(".")[0]));
+    expect(payload).not.toContain("oauth_login");
+    const request = new Request("https://kpi.pollinations.ai/api/private", {
+        headers: { Cookie: `pollinations_session=${session}` },
+    });
+    expect(await auth.getUser(request)).toMatchObject({ sub: "user-1" });
+    upstream.mockResolvedValueOnce(
+        Response.json({
+            sub: "user-1",
+            email: "alice@example.com",
+            role: "user",
+        }),
+    );
+    expect(await auth.getUser(request)).toBeNull();
+    upstream.mockResolvedValueOnce(new Response(null, { status: 401 }));
+    expect(await auth.getUser(request)).toBeNull();
 });

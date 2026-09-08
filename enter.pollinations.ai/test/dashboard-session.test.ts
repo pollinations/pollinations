@@ -2,12 +2,14 @@ import { env, SELF } from "cloudflare:test";
 import * as schema from "@shared/db/better-auth.ts";
 import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { expect, vi } from "vitest";
+import { afterEach, expect, vi } from "vitest";
 import economicsApp from "../../operations/economics/web/worker/index";
 import kpiApp from "../../operations/kpi/worker/index";
 import { createObservabilityApp } from "../../operations/observability/src/app";
 import { createPollinationsAuth } from "../../packages/auth/src/server";
 import { test } from "./fixtures.ts";
+
+afterEach(() => vi.restoreAllMocks());
 
 const ENTER = "http://localhost:3000";
 const forward = vi.fn(async (request: Request) =>
@@ -54,6 +56,7 @@ const apps = [
 }));
 function bindings(app: (typeof apps)[number]) {
     return {
+        POLLINATIONS_AUTH_BASE_URL: ENTER,
         POLLINATIONS_OAUTH_CLIENT_ID: app.clientId,
         POLLINATIONS_AUTH_SESSION_SECRET: app.config.sessionSecret,
         TINYBIRD_INGEST_URL: "http://localhost:7181",
@@ -117,6 +120,13 @@ test("all three apps use real identity OAuth and keep sign-out independent", asy
     mocks.tinybird.handlerMap["localhost:7181"] = async () =>
         Response.json({ data: [] });
     await mocks.enable("tinybird");
+    const upstream = globalThis.fetch;
+    vi.spyOn(globalThis, "fetch").mockImplementation((input, init) => {
+        const request = new Request(input, init);
+        return request.url.startsWith(`${ENTER}/api/auth/`)
+            ? SELF.fetch(request)
+            : upstream(input, init);
+    });
     const sessions = new Map<string, string>();
     for (const app of apps) {
         const response = await login(app, enterCookie);
@@ -245,6 +255,56 @@ test("all three apps use real identity OAuth and keep sign-out independent", asy
         bindings(economics),
     );
     expect(unknown.status).toBe(404);
+    for (const pipe of ["", "typo", "../private"]) {
+        const denied = await economics.app.request(
+            `${economics.origin}/api/economics/pipes/economics_pollen_usage_api`,
+            { headers: { Cookie: sessions.get(economics.name) || "" } },
+            { ...bindings(economics), TINYBIRD_POLLEN_PIPE: pipe },
+        );
+        expect(denied.status).toBe(503);
+        expect(await denied.text()).toContain("TINYBIRD_POLLEN_PIPE");
+    }
+    const assetFetch = vi.fn(
+        async () =>
+            new Response("private registry", {
+                headers: { "Cache-Control": "public, max-age=31536000" },
+            }),
+    );
+    const privateBindings = {
+        ...bindings(economics),
+        ASSETS: { fetch: assetFetch as typeof fetch },
+    };
+    const deniedAsset = await economics.app.request(
+        `${economics.origin}/private/provider-registry-hash.js`,
+        {},
+        privateBindings,
+    );
+    expect(deniedAsset.status).toBe(401);
+    expect(assetFetch).not.toHaveBeenCalled();
+    const allowedAsset = await economics.app.request(
+        `${economics.origin}/private/provider-registry-hash.js`,
+        { headers: { Cookie: sessions.get(economics.name) || "" } },
+        privateBindings,
+    );
+    expect(allowedAsset.status).toBe(200);
+    expect(allowedAsset.headers.get("Cache-Control")).toBe("private, no-store");
+    await drizzle(env.DB, { schema })
+        .update(schema.user)
+        .set({ banned: true })
+        .where(
+            and(
+                eq(schema.user.id, user.id),
+                eq(schema.user.email, "test@example.com"),
+            ),
+        );
+    for (const app of apps) {
+        const denied = await app.app.request(
+            app.origin + app.path,
+            { headers: { Cookie: sessions.get(app.name) || "" } },
+            bindings(app),
+        );
+        expect(denied.status).toBe(401);
+    }
 });
 
 test("non-admin identities cannot create any dashboard session", async ({
@@ -255,7 +315,10 @@ test("non-admin identities cannot create any dashboard session", async ({
             app,
             `better-auth.session_token=${sessionToken}`,
         );
-        expect(response.status).toBe(403);
+        expect(response.status).toBe(302);
+        expect(response.headers.get("Location")).toContain(
+            "auth_error=admin_required",
+        );
         expect(response.headers.get("Set-Cookie")).not.toContain(
             "pollinations_session=",
         );

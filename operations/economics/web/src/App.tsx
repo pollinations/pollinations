@@ -1,5 +1,4 @@
 import {
-    AccountMenu,
     Alert,
     Button,
     ChevronIcon,
@@ -8,7 +7,6 @@ import {
     cn,
     DatabaseIcon,
     Drawer,
-    DropdownItem,
     EyeIcon,
     GlobeIcon,
     Heading,
@@ -17,7 +15,6 @@ import {
     NavItem,
     RocketIcon,
     ScrollArea,
-    SignOutIcon,
     SproutIcon,
     Text,
     Tooltip,
@@ -25,7 +22,7 @@ import {
     WalletIcon,
     XIcon,
 } from "@pollinations/ui";
-import { DashboardSignIn } from "@pollinations/ui/auth";
+import { DashboardAccountMenu } from "@pollinations/ui/auth";
 import logoUrl from "@pollinations/ui/brand/mark.svg";
 import {
     type ComponentType,
@@ -37,7 +34,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { signIn, signOut, useDashboardSession } from "./auth";
+import { signOut } from "./auth";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import {
     FilterBar,
@@ -78,15 +75,6 @@ type AccountUser = {
     picture?: string | null;
     preferred_username?: string;
 };
-
-const FIXTURE_ACCOUNT_USER: AccountUser = {
-    email: "fixture@pollinations.ai",
-    name: "Fixture User",
-};
-
-function accountName(user: AccountUser) {
-    return user.preferred_username || user.name || user.email;
-}
 
 type InsightTab =
     | "close"
@@ -816,27 +804,8 @@ function viewInfoContent(activeView: ActiveView) {
     return null;
 }
 
-export default function App() {
-    if (fixturesMode()) return <Dashboard accountUser={FIXTURE_ACCOUNT_USER} />;
-    return <AuthenticatedDashboard />;
-}
-
-function AuthenticatedDashboard() {
-    const { user, isPending, error } = useDashboardSession();
-    if (isPending)
-        return (
-            <main>
-                <Text>Checking sign-in…</Text>
-            </main>
-        );
-    if (error)
-        return (
-            <main>
-                <Alert>Could not check your session. Please reload.</Alert>
-            </main>
-        );
-    if (!user) return <DashboardSignIn appName="Economics" onSignIn={signIn} />;
-    return <Dashboard accountUser={user} />;
+export default function App({ accountUser }: { accountUser: AccountUser }) {
+    return <Dashboard accountUser={accountUser} />;
 }
 
 function Dashboard({ accountUser }: { accountUser: AccountUser }) {
@@ -969,29 +938,12 @@ function Dashboard({ accountUser }: { accountUser: AccountUser }) {
     const drawerFooter = (
         <>
             {accountUser && (
-                <AccountMenu
-                    name={accountName(accountUser)}
-                    avatarUrl={accountUser.picture}
+                <DashboardAccountMenu
+                    user={accountUser}
+                    onSignOut={signOut}
                     className="polli:w-full"
-                    menuClassName="polli:w-max polli:min-w-0"
                     side="top"
-                >
-                    <DropdownItem
-                        onClick={() =>
-                            fixtures
-                                ? window.location.assign("/")
-                                : void signOut().catch((error: Error) =>
-                                      setError(error.message),
-                                  )
-                        }
-                    >
-                        <SignOutIcon
-                            aria-hidden="true"
-                            className="h-4 w-4 shrink-0"
-                        />
-                        Sign out
-                    </DropdownItem>
-                </AccountMenu>
+                />
             )}
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}

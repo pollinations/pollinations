@@ -81,7 +81,8 @@ shared sign-in page as KPI and Economics. Its callback is
 `https://observability.pollinations.ai/auth/callback`. The trusted internal
 client requests `openid profile email`, uses PKCE and skips consent. Only
 Pollinations admins receive an app session, valid for 12 hours. Admin status
-is checked at sign-in; role changes take effect after the current session expires.
+is rechecked with Enter on every protected request, so demotion, bans and token
+revocation deny access. The identity token is encrypted inside the HttpOnly cookie.
 
 The Worker checks the app session on every `/grafana/*` request, including
 WebSocket handshakes. It removes incoming identity headers, authorization and

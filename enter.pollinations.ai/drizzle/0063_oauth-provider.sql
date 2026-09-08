@@ -89,21 +89,21 @@ INSERT INTO `oauth_client` (
     'internal-observability', 'pk_vVa38CFt1R1gGScW', false, true,
     '["openid","profile","email"]', unixepoch(), unixepoch(),
     'Pollinations Observability',
-    '["https://observability.pollinations.ai/auth/callback"]',
+    '["https://observability.pollinations.ai/auth/callback","https://observability.myceli.ai/auth/callback"]',
     'none', '["authorization_code"]', '["code"]', true,
     'user-agent-based', true
 ),
 (
     'internal-kpi', 'pk_Bxny9FSNDpousKqW', false, true,
     '["openid","profile","email"]', unixepoch(), unixepoch(),
-    'Pollinations KPI', '["https://kpi.pollinations.ai/auth/callback"]',
+    'Pollinations KPI', '["https://kpi.pollinations.ai/auth/callback","https://kpi.myceli.ai/auth/callback"]',
     'none', '["authorization_code"]', '["code"]', true,
     'user-agent-based', true
 ),
 (
     'internal-economics', 'pk_LBL0KnkHI6AZopCc', false, true,
     '["openid","profile","email"]', unixepoch(), unixepoch(),
-    'Pollinations Economics', '["https://economics.pollinations.ai/auth/callback"]',
+    'Pollinations Economics', '["https://economics.pollinations.ai/auth/callback","https://economics.myceli.ai/auth/callback"]',
     'none', '["authorization_code"]', '["code"]', true,
     'user-agent-based', true
 );

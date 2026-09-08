@@ -1,18 +1,15 @@
 import {
-    AccountMenu,
     Alert,
     AppHeader,
     Button,
     ColorModeToggle,
     DownloadIcon,
-    DropdownItem,
     Heading,
-    SignOutIcon,
     StatCard,
     Surface,
     Text,
 } from "@pollinations/ui";
-import { DashboardSignIn } from "@pollinations/ui/auth";
+import { DashboardAccountMenu, DashboardSignIn } from "@pollinations/ui/auth";
 import { useState } from "react";
 import { signIn, signOut, useDashboardSession } from "./auth";
 import { FunnelBars } from "./components/FunnelBars";
@@ -68,32 +65,11 @@ function Tile({ label, value, format, current, previous }) {
 }
 
 function AccountControls({ accountUser }) {
-    const [error, setError] = useState(null);
     return (
         <>
-            {error && <Alert>{error}</Alert>}
             <ColorModeToggle />
             {accountUser && (
-                <AccountMenu
-                    name={accountName(accountUser)}
-                    avatarUrl={accountUser.picture}
-                    menuClassName="polli:w-max polli:min-w-0"
-                >
-                    <DropdownItem
-                        onClick={() => {
-                            setError(null);
-                            void signOut().catch((error) =>
-                                setError(error.message),
-                            );
-                        }}
-                    >
-                        <SignOutIcon
-                            aria-hidden="true"
-                            className="h-4 w-4 shrink-0"
-                        />
-                        Sign out
-                    </DropdownItem>
-                </AccountMenu>
+                <DashboardAccountMenu user={accountUser} onSignOut={signOut} />
             )}
         </>
     );
@@ -148,10 +124,6 @@ function LoadingScreen({ done, active, accountUser }) {
 }
 
 const EXPLORER_ID = "kpi-explorer";
-
-function accountName(user) {
-    return user.name || user.email;
-}
 
 export default function App() {
     const { user, isPending, error } = useDashboardSession();

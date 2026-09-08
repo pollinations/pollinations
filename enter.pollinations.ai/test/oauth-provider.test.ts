@@ -1,7 +1,10 @@
 import { env, SELF } from "cloudflare:test";
+import { oauthProviderClient } from "@better-auth/oauth-provider/client";
 import * as schema from "@shared/db/better-auth.ts";
+import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
-import { describe, expect } from "vitest";
+import { describe, expect, vi } from "vitest";
+import { oauthSignInCallback } from "../frontend/src/lib/oauth-sign-in.ts";
 import { test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";
@@ -26,11 +29,15 @@ async function challenge() {
     return base64Url(new Uint8Array(digest));
 }
 
-async function authorize(sessionToken?: string) {
+async function authorize(
+    sessionToken?: string,
+    redirectUri = REDIRECT_URI,
+    clientId = CLIENT_ID,
+) {
     const url = new URL(`${BASE}/api/auth/oauth2/authorize`);
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("client_id", CLIENT_ID);
-    url.searchParams.set("redirect_uri", REDIRECT_URI);
+    url.searchParams.set("client_id", clientId);
+    url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("scope", "openid profile email");
     url.searchParams.set("state", "test-state");
     url.searchParams.set("code_challenge", await challenge());
@@ -150,7 +157,22 @@ describe("Better Auth OAuth Provider", () => {
         sessionToken,
     }) => {
         const db = drizzle(env.DB, { schema });
-        await db.update(schema.user).set({ role: "admin" });
+        const current = await SELF.fetch(`${BASE}/api/auth/get-session`, {
+            headers: { Cookie: `better-auth.session_token=${sessionToken}` },
+        });
+        const { user } = (await current.json()) as {
+            user: { id: string; email: string };
+        };
+        expect(user.email).toBe("test@example.com");
+        await db
+            .update(schema.user)
+            .set({ role: "admin" })
+            .where(
+                and(
+                    eq(schema.user.id, user.id),
+                    eq(schema.user.email, "test@example.com"),
+                ),
+            );
 
         const {
             authorization,
@@ -165,7 +187,7 @@ describe("Better Auth OAuth Provider", () => {
         expect(callback.searchParams.get("state")).toBe("test-state");
         expect(tokenResponse.status).toBe(200);
         expect(token.access_token).toBeTruthy();
-        expect(token.expires_in).toBe(60);
+        expect(token.expires_in).toBe(43_200);
         expect(token.scope).toBe("openid profile email");
         expect(userinfo.status).toBe(200);
         expect(profile).toMatchObject({
@@ -187,3 +209,125 @@ describe("Better Auth OAuth Provider", () => {
         expect(profile).toMatchObject({ role: "user" });
     });
 });
+
+test("fresh GitHub sign-in resumes the signed OAuth request through the actual client plugin", async ({
+    mocks,
+}) => {
+    await mocks.enable("github", "tinybird");
+    const authorization = await authorize();
+    const loginPage = new URL(
+        authorization.headers.get("Location") || "",
+        BASE,
+    );
+    expect(loginPage.pathname).toBe("/app/sign-in");
+    const onRequest = oauthProviderClient().fetchPlugins[0].hooks.onRequest;
+    const context = {
+        method: "POST",
+        headers: new Headers({ "Content-Type": "application/json" }),
+        body: JSON.stringify({
+            provider: "github",
+            callbackURL: oauthSignInCallback(loginPage.toString()),
+        }),
+    };
+    vi.stubGlobal("window", { location: { search: loginPage.search } });
+    try {
+        await onRequest(context as Parameters<typeof onRequest>[0]);
+    } finally {
+        vi.unstubAllGlobals();
+    }
+    expect(JSON.parse(context.body).oauth_query).toContain("sig=");
+    const metadata = await SELF.fetch(
+        `${BASE}/api/auth/oauth2/public-client-prelogin`,
+        {
+            method: "POST",
+            headers: context.headers,
+            body: JSON.stringify({
+                client_id: CLIENT_ID,
+                oauth_query: JSON.parse(context.body).oauth_query,
+            }),
+        },
+    );
+    expect(metadata.status).toBe(200);
+    expect(await metadata.json()).toMatchObject({
+        client_name: "Pollinations Observability",
+    });
+    const tampered = await SELF.fetch(
+        `${BASE}/api/auth/oauth2/public-client-prelogin`,
+        {
+            method: "POST",
+            headers: context.headers,
+            body: JSON.stringify({
+                client_id: CLIENT_ID,
+                oauth_query: "sig=invalid",
+            }),
+        },
+    );
+    expect(tampered.status).toBe(400);
+
+    const social = await SELF.fetch(`${BASE}/api/auth/sign-in/social`, {
+        method: "POST",
+        headers: context.headers,
+        body: context.body,
+    });
+    expect(social.status).toBe(200);
+    const signup = (await social.json()) as { url: string };
+    const callback = new URL(`${BASE}/api/auth/callback/github`);
+    callback.searchParams.set("code", "test-code");
+    callback.searchParams.set(
+        "state",
+        new URL(signup.url).searchParams.get("state") || "",
+    );
+    const completed = await SELF.fetch(callback, {
+        headers: {
+            Cookie: social.headers.get("Set-Cookie") || "",
+            Accept: "text/html",
+        },
+        redirect: "manual",
+    });
+    expect(completed.status).toBe(302);
+    const resume = new URL(completed.headers.get("Location") || "");
+    expect(resume.pathname).toBe("/api/auth/oauth2/authorize");
+    const resumed = await SELF.fetch(resume, {
+        headers: {
+            Cookie:
+                completed.headers
+                    .get("Set-Cookie")
+                    ?.match(/better-auth\.session_token=[^;]+/)?.[0] || "",
+            Accept: "text/html",
+        },
+        redirect: "manual",
+    });
+    expect(resumed.status).toBe(302);
+    const app = new URL(resumed.headers.get("Location") || "", BASE);
+    expect(app.origin + app.pathname).toBe(REDIRECT_URI);
+    expect(app.searchParams.get("state")).toBe("test-state");
+    expect(app.searchParams.get("code")).toBeTruthy();
+    const token = await exchangeCode(app.searchParams.get("code") || "");
+    expect(token.status).toBe(200);
+});
+
+for (const [app, clientId] of [
+    ["kpi", "pk_Bxny9FSNDpousKqW"],
+    ["economics", "pk_LBL0KnkHI6AZopCc"],
+    ["observability", CLIENT_ID],
+]) {
+    for (const domain of ["myceli.ai", "pollinations.ai"]) {
+        test(`accepts the registered ${app}.${domain} callback`, async ({
+            sessionToken,
+        }) => {
+            const redirectUri = `https://${app}.${domain}/auth/callback`;
+            const response = await authorize(
+                sessionToken,
+                redirectUri,
+                clientId,
+            );
+            const callback = new URL(
+                response.headers.get("Location") || "",
+                BASE,
+            );
+            expect(callback.origin + callback.pathname).toBe(redirectUri);
+            expect(callback.searchParams.get("code")).toBeTruthy();
+            expect(callback.searchParams.has("error")).toBe(false);
+        });
+    }
+}

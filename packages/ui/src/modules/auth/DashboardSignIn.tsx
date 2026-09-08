@@ -1,3 +1,4 @@
+import { Alert } from "../../compositions/Alert.tsx";
 import { AppHeader } from "../../compositions/AppHeader.tsx";
 import { ColorModeToggle } from "../../primitives/ColorModeToggle.tsx";
 import { Heading } from "../../primitives/Typography.tsx";
@@ -10,6 +11,18 @@ export function DashboardSignIn({
     appName: string;
     onSignIn: () => void;
 }) {
+    const code =
+        typeof window === "undefined"
+            ? null
+            : new URLSearchParams(window.location.search).get("auth_error");
+    const messages: Record<string, string> = {
+        admin_required: "This dashboard requires a Pollinations admin account.",
+        cancelled: "Sign-in was cancelled. You can try again.",
+        invalid_state: "This sign-in link expired. Please try again.",
+        unavailable: "Sign-in could not be completed. Please try again.",
+    };
+    const message =
+        code && Object.hasOwn(messages, code) ? messages[code] : null;
     return (
         <div className="polli:min-h-screen polli:bg-app-bg">
             <AppHeader navLabel={`${appName} links`}>
@@ -23,6 +36,7 @@ export function DashboardSignIn({
                     <Heading as="h2" size="subsection">
                         Sign in
                     </Heading>
+                    {message && <Alert>{message}</Alert>}
                     <PollinationsSignInButton
                         className="polli:w-full"
                         onClick={onSignIn}

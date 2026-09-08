@@ -1,8 +1,4 @@
 import { Hono } from "hono";
-import {
-    getInstallationToken,
-    githubAppCredentialsFromEnv,
-} from "../../../shared/github/app-auth.ts";
 import type { Env } from "./env.ts";
 
 // Data start date - Oct 1, 2025
@@ -292,7 +288,9 @@ async function githubHeaders(
     return {
         "User-Agent": "KPI-Dashboard",
         Accept: "application/vnd.github+json",
-        Authorization: `Bearer ${await getInstallationToken(githubAppCredentialsFromEnv(env), "pollinations")}`,
+        ...(env.GITHUB_TOKEN
+            ? { Authorization: `Bearer ${env.GITHUB_TOKEN}` }
+            : {}),
     };
 }
 

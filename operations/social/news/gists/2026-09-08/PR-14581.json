@@ -1,0 +1,33 @@
+{
+  "pr_number": 14581,
+  "title": "fix: simplify agent guidance and remove stale workflows",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14581",
+  "merged_at": "2026-09-08T17:53:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Condenses repeated feedback into practical coding principles: radical YAGNI, plain data and functions, clear one-way data flow, loose coupling, and migrations over permanent compatibility code.\n- Replaces automatic rule growth with narrow curation and checks current decisions before reviving work; removes duplicated references and templates while preserving the team ownership table.\n- Allows task-related staging database migrations/resets without repeated confirmation and aligns Tinybird guidance; preserves production and secret approval requirements.\n- Aligns production sync with promotion PRs and removes the direct-merge script. Adds no runtime features or new skills; net removal: 282 lines.\n- Validation: three skill schemas and whitespace checks pass; reviewed guidance against eight recent tasks and earlier feedback. Biome does not process these Markdown files.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Less scripture, more signal",
+    "blurb": "The hive pruned its agent handbook down to the rules that actually help code ship. Production still gets its guardrails; staging migrations can now get on with it.",
+    "summary": "Condensed AGENTS.md and Claude skill guidance around YAGNI, plain data, one-way flow, loose coupling, and migrations, while removing the direct production-merge script and allowing task-related staging database resets without repeated confirmation.",
+    "impact": "Contributors and coding agents now get shorter, curated guidance, promotion-PR-based production syncs, and a clearer path for staging migrations while production and secret approvals remain protected.",
+    "keywords": [
+      "agent-guidance",
+      "claude-skills",
+      "staging-migrations",
+      "production-sync",
+      "developer-experience"
+    ],
+    "visual_concept": "Polli is a thoughtful gardener-librarian pruning an overgrown stack of rule scrolls into a small, useful handbook, while a safe staging garden gets freshly turned soil. A nearby CRT robot watches a clearly marked promotion path from staging to production, with a locked gate protecting production.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny gardener glasses, carefully pruning an overgrown vine of duplicate rule scrolls into one neat handbook beside a freshly prepared lime green (#ecf874) staging garden; a cheerful CRT monitor robot points toward a small locked production gate and a sign reading \"PROMOTE\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-flowers and vines, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14581.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny gardener glasses, carefully pruning an overgrown vine of duplicate rule scrolls into one neat handbook beside a freshly prepared lime green (#ecf874) staging garden; a cheerful CRT monitor robot points toward a small locked production gate and a sign reading \"PROMOTE\". Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, code-flowers and vines, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T17:54:51.434675+00:00"
+}

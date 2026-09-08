@@ -1,0 +1,34 @@
+{
+  "pr_number": 14574,
+  "title": "fix: separate Polli maintainer and read-only commands",
+  "author": "Itachi-1824",
+  "url": "https://github.com/pollinations/pollinations/pull/14574",
+  "merged_at": "2026-09-08T12:24:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Restricts `!polli` to voodoohop, ElliotEtag, Itachi-1824, and Circuit-Overtime using immutable GitHub IDs.\n- Adds `!askpolli` for read-only PR questions from the existing contributor allowlist, including fisventurous.\n- Separates read-only inference from reply publication and uses bounded GitHub context with direct model inference.\n- Adds authorization and workflow regression checks to CI.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polli gets two doors",
+    "blurb": "Polli now keeps publishing commands behind the maintainer gate while opening a read-only question window for approved contributors. Same helpful bee, fewer accidental megaphones.",
+    "summary": "Split GitHub PR assistant commands so immutable-ID-approved maintainers can use !polli to publish replies, while the contributor allowlist can use the new !askpolli command for bounded-context, read-only PR questions via direct model inference.",
+    "impact": "Approved contributors, including fisventurous, can ask Polli about pull requests without reply-publishing access, while CI regression checks keep both authorization paths and workflows behaving as intended.",
+    "keywords": [
+      "polli",
+      "github-actions",
+      "authorization",
+      "pull-requests",
+      "ci",
+      "inference"
+    ],
+    "visual_concept": "A cozy repository garden has two clearly labeled little gates: a sturdy maintainer gate leading to a message-posting mailbox, and a friendly read-only question desk for contributors. Polli, wearing a tiny librarian hat, calmly directs question notes to a glowing terminal while code-vines and flowers represent bounded PR context; the monitor robot can hold a small approved-access list.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny librarian hat, tending two garden gates beside a retro terminal: one says '!POLLI' and leads to a reply mailbox, while the other says '!ASKPOLLI' and leads to a glowing read-only question desk; a cute CRT monitor robot holds an approved-access list among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14574.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee with black oval eyes, pink rectangular cheek blush, light blue rounded wings, and a tiny librarian hat, tending two garden gates beside a retro terminal: one says '!POLLI' and leads to a reply mailbox, while the other says '!ASKPOLLI' and leads to a glowing read-only question desk; a cute CRT monitor robot holds an approved-access list among code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T12:25:50.399860+00:00"
+}

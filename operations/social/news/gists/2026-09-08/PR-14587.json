@@ -1,0 +1,35 @@
+{
+  "pr_number": 14587,
+  "title": "feat: use media storage for generated files",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14587",
+  "merged_at": "2026-09-08T23:22:48Z",
+  "labels": [],
+  "pr_body_excerpt": "Moves generated files into the existing Media service.\n\n- Covers images, video, audio and 3D files.\n- Image generation and editing share storage and URL/base64 responses.\n- Returns public file links that never trigger generation; preserves file metadata, including song and generation IDs.\n- Starts with a fresh cache; old files stay untouched and requests regenerate at normal cost.\n- Deploys Media before Gen.\n\nGen selects reusable headers; Media stores them without provider-specific rules. Both use the same immutable caching policy: older cached results remain acceptable after regeneration. Disconnect/rejoin uses the existing coordinator.\n\nChecks: 64 focused tests, Gen typecheck and CI-version formatting passed for the final caching-policy cleanup. CI pending. Media has an existing typecheck failure, reproduced on the unchanged base.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Generated files found a garden",
+    "blurb": "Images, video, audio, and 3D generations now settle into the Media service instead of wandering around separate caches. The hive can hand back public file links that point to the finished artifact, not another trip through generation.",
+    "summary": "Moved generated images, edited images, video, audio, and 3D files into the Media service, unifying shared storage plus URL/base64 responses while preserving file metadata such as song and generation IDs.",
+    "impact": "Users and API builders receive public links to completed media that never trigger a new generation, with consistent immutable caching across Gen and Media.",
+    "keywords": [
+      "media-storage",
+      "generated-files",
+      "images",
+      "video",
+      "audio",
+      "caching",
+      "api"
+    ],
+    "visual_concept": "Depict Media as a warm shared garden shed/archive where finished image, video, audio, and 3D artifacts are safely stored in labeled jars or glowing file crates. Polli, wearing a tiny librarian scarf, carries a generated-file parcel from a retro Gen terminal into the garden archive while a CRT-monitor robot happily points at a public-link sign; code-plants and flowers show that the files have found a stable home.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blush, a happy smile, rounded light-blue translucent wings, and a tiny librarian scarf, carrying a glowing generated-media file into a warm garden shed labeled \"MEDIA\" beside a retro terminal labeled \"GEN\"; friendly CRT-monitor robot points at a small pixel sign reading \"PUBLIC LINK,\" with image, music-note, video-frame, and 3D-cube file crates among flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14587.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, bright pink rectangular cheek blush, a happy smile, rounded light-blue translucent wings, and a tiny librarian scarf, carrying a glowing generated-media file into a warm garden shed labeled \"MEDIA\" beside a retro terminal labeled \"GEN\"; friendly CRT-monitor robot points at a small pixel sign reading \"PUBLIC LINK,\" with image, music-note, video-frame, and 3D-cube file crates among flowering code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T23:23:48.747867+00:00"
+}

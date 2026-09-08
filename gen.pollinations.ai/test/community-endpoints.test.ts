@@ -5334,9 +5334,10 @@ fixtureTest(
         await expect(urlImageResponse.json()).resolves.toMatchObject({
             data: [
                 {
-                    url: expect.stringContaining(
-                        `/image/blue%20flower?model=${encodeURIComponent(registered.modelId)}`,
+                    url: expect.stringMatching(
+                        /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
                     ),
+                    media_type: "image/png",
                 },
             ],
         });

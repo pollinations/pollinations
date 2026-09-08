@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 import type { Env } from "@/env.ts";
 import { imageCache } from "@/middleware/media-cache.ts";
 import { generateCacheKey } from "@/utils/media-cache.ts";
+import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 import {
     formatOpenAIImageGeneration,
     prepareOpenAIImageGeneration,
@@ -119,7 +120,7 @@ describe("OpenAI image cache", () => {
             "https://gen.pollinations.ai/image/a%20cat?model=flux&width=1024&height=1024&quality=medium&seed=7",
         );
         await bucket.put(
-            generateCacheKey(cacheUrl),
+            await generateCacheKey(cacheUrl),
             new TextEncoder().encode("legacy-image"),
             { httpMetadata: { contentType: "image/jpeg" } },
         );
@@ -157,11 +158,16 @@ describe("OpenAI image cache", () => {
                     response_format: "url",
                 }),
             }),
-            { IMAGE_BUCKET: bucket } as unknown as CloudflareBindings,
+            {
+                MEDIA: new MediaUpload(ctx, {
+                    MEDIA_BUCKET: bucket,
+                    MAX_FILE_SIZE: "104857600",
+                }),
+            } as unknown as CloudflareBindings,
             ctx,
         );
         const result = await response.json<{
-            data: Array<{ url: string }>;
+            data: Array<{ url: string; media_type: string }>;
             usage: { total_tokens: number };
         }>();
         await waitOnExecutionContext(ctx);
@@ -169,7 +175,10 @@ describe("OpenAI image cache", () => {
         expect(response.status).toBe(200);
         expect(response.headers.get("x-cache")).toBe("HIT");
         expect(response.headers.get("x-model-used")).toBe("flux");
-        expect(result.data[0]?.url).toBe(cacheUrl.toString());
+        expect(result.data[0]?.url).toBe(
+            `https://media.pollinations.ai/${await generateCacheKey(cacheUrl)}`,
+        );
+        expect(result.data[0]?.media_type).toBe("image/jpeg");
         expect(result.usage.total_tokens).toBe(0);
     });
 });

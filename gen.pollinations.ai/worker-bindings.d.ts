@@ -19,7 +19,7 @@ interface CloudflareBindings {
     INFERENCEPORT_API_KEY?: string;
     STABILITY_API_KEY?: string;
     KV: KVNamespace;
-    IMAGE_BUCKET: R2Bucket;
+    MEDIA: Service<import("../media.pollinations.ai/src/media-upload.ts").MediaUpload>;
     TEXT_BUCKET: R2Bucket;
     GENERATION_COORDINATOR: DurableObjectNamespace<
         import("./src/durable-objects/GenerationCoordinator.ts").GenerationCoordinator

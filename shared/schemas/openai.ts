@@ -812,7 +812,7 @@ export const CreateImageRequestSchema = z
             .default("b64_json")
             .meta({
                 description:
-                    'Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data',
+                    'Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data',
             }),
         user: z.string().optional().meta({
             description: "End-user identifier for abuse tracking",
@@ -842,7 +842,8 @@ const ImageDataSchema = z.object({
     url: z.string().optional(),
     b64_json: z.string().optional(),
     media_type: z.string().optional().meta({
-        description: "MIME type for non-raster output such as image/svg+xml",
+        description:
+            "MIME type, included for URL responses and non-raster output",
     }),
     revised_prompt: z.string().optional(),
 });

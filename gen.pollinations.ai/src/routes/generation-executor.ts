@@ -50,7 +50,6 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import {
-    formatOpenAIImageGeneration,
     handleImageEdit,
     handleImageGeneration,
     prepareOpenAIImageGeneration,
@@ -189,7 +188,6 @@ generationExecutorRoutes.post(
     resolveModel("generate.image"),
     track("generate.image"),
     prepareOpenAIImageGeneration,
-    formatOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
     apiKeyBudgetReservation,

@@ -1,5 +1,4 @@
 import { bytesToHex } from "@shared/client-ip.ts";
-import { refreshR2ObjectTtl } from "@shared/r2-storage.ts";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import {
@@ -23,6 +22,8 @@ import {
     TagError,
     tagsForItems,
 } from "./catalog.ts";
+
+import { readMedia } from "./media-upload.ts";
 
 export { MediaUpload } from "./media-upload.ts";
 
@@ -771,7 +772,8 @@ api.delete(
     },
 );
 
-api.get(
+api.on(
+    ["GET", "HEAD"],
     "/:id",
     describeRoute({
         tags: ["media.pollinations.ai"],
@@ -792,45 +794,16 @@ api.get(
         const id = c.req.param("id");
 
         try {
-            const object = await c.env.MEDIA_BUCKET.get(id);
-
-            if (!object) {
+            const response = await readMedia(
+                c.env,
+                id,
+                c.executionCtx,
+                c.req.method,
+            );
+            if (!response) {
                 return c.json({ error: "Not found" }, 404);
             }
-
-            const headers = new Headers();
-            headers.set(
-                "Content-Type",
-                object.httpMetadata?.contentType || "application/octet-stream",
-            );
-            headers.set(
-                "Cache-Control",
-                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
-            );
-            headers.set("X-Content-Id", id);
-            headers.set("X-Content-Size", object.size.toString());
-
-            const originalName = object.customMetadata?.originalName;
-            if (originalName) {
-                // RFC 5987: use filename* with UTF-8 encoding to safely handle any characters
-                const sanitized = encodeURIComponent(originalName);
-                headers.set(
-                    "Content-Disposition",
-                    `inline; filename*=UTF-8''${sanitized}`,
-                );
-            }
-
-            const responseBody = refreshR2ObjectTtl(
-                c.env.MEDIA_BUCKET,
-                id,
-                object,
-                (promise) => c.executionCtx.waitUntil(promise),
-                (error) => {
-                    console.error("TTL refresh error:", error);
-                },
-            );
-
-            return new Response(responseBody, { headers });
+            return response;
         } catch (error) {
             console.error("Retrieve error:", error);
             return c.json({ error: "Retrieval failed" }, 500);
@@ -890,56 +863,6 @@ api.get(
         } catch (error) {
             console.error("Metadata error:", error);
             return c.json({ error: "Metadata lookup failed" }, 500);
-        }
-    },
-);
-
-api.on(
-    "HEAD",
-    "/:id",
-    describeRoute({
-        tags: ["media.pollinations.ai"],
-        summary: "Check if media exists",
-        description:
-            "Check existence and metadata without downloading the file.",
-        security: [],
-        responses: {
-            200: {
-                description:
-                    "File exists (headers include Content-Type, Content-Length, X-Content-Id)",
-            },
-            404: { description: "File not found" },
-        },
-    }),
-    async (c) => {
-        const id = c.req.param("id");
-
-        try {
-            const object = await c.env.MEDIA_BUCKET.head(id);
-
-            if (!object) {
-                return new Response(null, { status: 404 });
-            }
-
-            const headers = new Headers();
-            headers.set(
-                "Content-Type",
-                object.httpMetadata?.contentType || "application/octet-stream",
-            );
-            headers.set("Content-Length", object.size.toString());
-            headers.set(
-                "Cache-Control",
-                object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
-            );
-            headers.set("X-Content-Id", id);
-
-            if (object.customMetadata?.uploadedAt) {
-                headers.set("X-Uploaded-At", object.customMetadata.uploadedAt);
-            }
-
-            return new Response(null, { status: 200, headers });
-        } catch {
-            return new Response(null, { status: 500 });
         }
     },
 );

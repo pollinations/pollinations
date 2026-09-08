@@ -240,11 +240,13 @@ jobs:
           --config enter.pollinations.ai/wrangler.toml'
 
   deploy-gen:
-    needs: [changes, migrate, deploy-mcp-apps]
+    needs: [changes, migrate, deploy-media, deploy-mcp-apps]
     if: >-
       always() &&
       needs.changes.outputs.gen == 'true' &&
       needs.migrate.result == 'success' &&
+      (needs.deploy-media.result == 'success' ||
+       needs.deploy-media.result == 'skipped') &&
       (needs.deploy-mcp-apps.result == 'success' ||
        needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest

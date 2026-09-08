@@ -11,6 +11,8 @@ import { describe, expect, it } from "vitest";
 import type { GenerationCacheVariables } from "@/middleware/generation-cache.ts";
 import type { LoggerVariables } from "@/middleware/logger.ts";
 import { audioCache, imageCache } from "@/middleware/media-cache.ts";
+import { generateCacheKey } from "@/utils/media-cache.ts";
+import { MediaUpload } from "../../media.pollinations.ai/src/media-upload.ts";
 
 const testLog = {
     getChild: () => testLog,
@@ -65,8 +67,13 @@ function createMediaCacheApp(cache: MediaCache, contentType: string) {
 function createMediaCacheEnv(
     bucket = createTestR2Bucket(),
 ): CloudflareBindings {
+    const mediaCtx = createExecutionContext();
     return {
-        IMAGE_BUCKET: bucket,
+        MEDIA: new MediaUpload(mediaCtx, {
+            MEDIA_BUCKET: bucket,
+            MAX_FILE_SIZE: "104857600",
+        }),
+        mediaCtx,
     } as unknown as CloudflareBindings;
 }
 
@@ -85,7 +92,14 @@ async function dispatch(
 
     return {
         response,
-        wait: () => waitOnExecutionContext(ctx),
+        wait: () =>
+            Promise.all([
+                waitOnExecutionContext(ctx),
+                waitOnExecutionContext(
+                    (env as CloudflareBindings & { mediaCtx: ExecutionContext })
+                        .mediaCtx,
+                ),
+            ]),
     };
 }
 
@@ -96,6 +110,28 @@ async function consumeAndWait(result: Awaited<ReturnType<typeof dispatch>>) {
 }
 
 describe("media cache", () => {
+    it("uses an opaque full-request hash, including long prompt suffixes", async () => {
+        const prefix = "x".repeat(2000);
+        const first = await generateCacheKey(
+            new URL(
+                `https://gen.pollinations.ai/image/${prefix}first?model=flux&key=secret`,
+            ),
+        );
+        const second = await generateCacheKey(
+            new URL(
+                `https://gen.pollinations.ai/image/${prefix}second?model=flux`,
+            ),
+        );
+        expect(first).toMatch(/^[a-f0-9]{64}$/);
+        expect(second).not.toBe(first);
+        expect(first).toBe(
+            await generateCacheKey(
+                new URL(
+                    `https://gen.pollinations.ai/image/${prefix}first?key=different&model=flux`,
+                ),
+            ),
+        );
+    });
     it("coordinates audio cache misses like other finite media", async () => {
         let coordinated = false;
         const app = new Hono<TestEnv>()

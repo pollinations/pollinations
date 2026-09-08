@@ -236,6 +236,9 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             Record<string, unknown>;
         const model = c.var.model.resolved;
 
+        // This endpoint returns a complete image/JSON, never an SSE stream.
+        // A passthrough stream flag must not bypass durable media storage.
+        if (c.var.track) c.var.track.streamRequested = false;
         const resolved = resolveParams(body);
         const safePrompt = await applySafetyToInput(
             c,
@@ -289,14 +292,16 @@ export const formatOpenAIImageGeneration = createMiddleware<Env>(
                 : {};
 
         if (body.response_format === "url") {
-            await response.arrayBuffer();
+            const url = response.headers.get("X-Media-URL");
+            if (!url) throw new Error("Generated media was not stored");
+            await response.body?.pipeTo(new WritableStream());
             c.res = withSafetyHeaders(
                 c,
                 c.json(
                     imageResponse(
                         {
-                            url: c.var.generationCacheUrl?.toString(),
-                            ...mediaData,
+                            url,
+                            media_type: mediaType,
                         },
                         body.prompt,
                         usage,

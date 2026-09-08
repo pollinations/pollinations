@@ -40,6 +40,52 @@ afterEach(() => {
 });
 
 describe("GenerationCoordinator", () => {
+    it("finds completed media through the real storage RPC service", async () => {
+        const key = "d".repeat(64);
+        await env.MEDIA.put(
+            key,
+            new Response("generated-image", {
+                headers: { "Content-Type": "image/png" },
+            }),
+        );
+        const job = testJob(key);
+        job.cache.storage = "media";
+        const stub = env.GENERATION_COORDINATOR.getByName(
+            `media-${crypto.randomUUID()}`,
+        );
+        expect(
+            await runInDurableObject(stub, (coordinator) =>
+                coordinator.startAndWait(job),
+            ),
+        ).toEqual({ status: "cached" });
+        const response = await env.MEDIA.get(key);
+        expect(response?.headers.get("x-media-url")).toBe(
+            `https://media.pollinations.ai/${key}`,
+        );
+        expect(await response?.text()).toBe("generated-image");
+    });
+
+    it("streams files above the RPC value-size limit through media storage", async () => {
+        const key = "e".repeat(64);
+        const size = 33 * 1024 * 1024;
+        await env.MEDIA.put(
+            key,
+            new Response(new Uint8Array(size), {
+                headers: { "Content-Type": "video/mp4" },
+            }),
+        );
+        const response = await env.MEDIA.get(key);
+        expect(response?.headers.get("x-content-size")).toBe(String(size));
+        if (!response?.body) throw new Error("Stored video is missing");
+        const reader = response.body.getReader();
+        let received = 0;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            received += value.length;
+        }
+        expect(received).toBe(size);
+    });
     it("returns an existing cached generation without scheduling work", async () => {
         const key = `cached-${crypto.randomUUID()}`;
         await env.TEXT_BUCKET.put(key, "cached");

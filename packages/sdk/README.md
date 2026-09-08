@@ -455,6 +455,35 @@ audioEl.play();
 
 alloy, echo, fable, onyx, nova, shimmer, ash, ballad, coral, sage, verse, rachel, domi, bella, elli, charlotte, dorothy, sarah, emily, lily, matilda, adam, antoni, arnold, josh, sam, daniel, charlie, james, fin, callum, liam, george, brian, bill
 
+## Embeddings
+
+Generate vector embeddings from text.
+
+```javascript
+import { Pollinations } from '@pollinations/sdk';
+
+const client = new Pollinations();
+
+// Single input
+const response = await client.embeddings('Hello world');
+console.log(response.data[0].embedding); // number[]
+
+// Multiple inputs with options
+const response = await client.embeddings(['Hello', 'World'], {
+  model: 'gemini-2',
+  dimensions: 1536,
+});
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `model` | `string` | `gemini-2` | Embedding model (`gemini-2`, `cohere-embed-v4`, `openai-3-small`, `openai-3-large`, `qwen3-embedding-8b`) |
+| `encodingFormat` | `'float' \| 'base64'` | `float` | Output encoding format |
+| `dimensions` | `number` | model default | Number of output dimensions (model-specific) |
+| `user` | `string` | — | User identifier for tracking |
+
+See available embedding models at [gen.pollinations.ai/embeddings/models](https://gen.pollinations.ai/embeddings/models).
+
 ## Vision (Image Input)
 
 ```javascript

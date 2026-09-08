@@ -1,0 +1,571 @@
+{
+  "date": "2026-09-06",
+  "period_start": "2026-08-30",
+  "period_end": "2026-09-05",
+  "title": "The Responses API became a first-class route",
+  "summary": "Pollinations spent the week turning a large model catalog into a more capable agent-and-media platform, with Responses API support, community publishing, MCP tools, and fallback plumbing all growing roots at once.\n\nThe week began with direct stateless Responses support for 56 provider routes, then expanded it across built-in, community, and agent-backed text models. Managed agents now return structured JSON and lifecycle SSE events through Responses, with replayable history, MCP activity, usage, media results, and per-child billing. The surrounding work hardened SSE parsing, error semantics, missing-usage handling, request options, and provider-native streaming. The API is now much less of a translation layer and much more of a proper road.\n\nCommunity endpoints gained embeddings, video, and speech/TTS support, all wired through catalog discovery, dashboard controls, Account APIs, Polli CLI, billing, rewards, fallback behavior, and OpenAI-compatible routes. A substantial catalog cleanup made modality behavior declarative, listing schemas consistent, titles reliable, queued changes visible, and publishing faster. Community publishers can now bring considerably more than chat models to the garden.\n\nHosted MCP servers received their own catalog, documentation, connection flow, and clearer architecture. Composio connectors brought Gmail, Slack, GitHub, Drive, and a great many other outside-world buttons to agents through caller-owned connections. Managed prompt agents moved into Gen with scoped run tokens, while agent metadata, tool rendering, stream handling, and Open WebUI compatibility were tightened around the edges. Agents can now browse, generate, call tools, and bill the right wallet without having to pretend this is simple.\n\nPolli CLI added harness profiles for Pi, OpenCode, Prime Agent, and OpenClaw, each with reversible setup, managed keys, live model catalogs, and Pollinations skills. The React SDK moved its PolliProvider to OAuth PKCE, the OAuth examples split clean browser login from server-backed account linking, and Open WebUI launched as a Pollinations-login chat workspace with per-user generation and MCP access. The infrastructure is increasingly meeting developers where they already have terminal tabs open.",
+  "pr_count": 140,
+  "prs": [
+    {
+      "number": 13406,
+      "date": "2026-08-30"
+    },
+    {
+      "number": 14106,
+      "date": "2026-08-30"
+    },
+    {
+      "number": 14128,
+      "date": "2026-08-30"
+    },
+    {
+      "number": 14138,
+      "date": "2026-08-30"
+    },
+    {
+      "number": 13566,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14008,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14043,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14097,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14125,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14155,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14156,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14161,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14175,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14178,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14179,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14180,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14182,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14183,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14184,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14185,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14187,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14188,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14189,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14190,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14197,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14200,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14201,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14202,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14204,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14205,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14207,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14208,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14211,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14213,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14215,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14220,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14221,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 14226,
+      "date": "2026-08-31"
+    },
+    {
+      "number": 13675,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14176,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14225,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14229,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14231,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14237,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14240,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14241,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14250,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14260,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14264,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14273,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14274,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14275,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14280,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14282,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14283,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14284,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14291,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14297,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14307,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14308,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14312,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14313,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14317,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14319,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14320,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14321,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14323,
+      "date": "2026-09-01"
+    },
+    {
+      "number": 14239,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14249,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14293,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14318,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14324,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14328,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14330,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14331,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14335,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14336,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14342,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14344,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14345,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14355,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14362,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14363,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14368,
+      "date": "2026-09-02"
+    },
+    {
+      "number": 14294,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14325,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14343,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14364,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14367,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14372,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14377,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14380,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14382,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14383,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14384,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14385,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14396,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14400,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14402,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14407,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14414,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14417,
+      "date": "2026-09-03"
+    },
+    {
+      "number": 14309,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14376,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14405,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14420,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14424,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14428,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14430,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14433,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14434,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14438,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14440,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14441,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14447,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14449,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14451,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14452,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14454,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14457,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14459,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14461,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14464,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14466,
+      "date": "2026-09-04"
+    },
+    {
+      "number": 14360,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14387,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14467,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14469,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14477,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14479,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14482,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14485,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14487,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14488,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14490,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14491,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14492,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14493,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14494,
+      "date": "2026-09-05"
+    },
+    {
+      "number": 14498,
+      "date": "2026-09-05"
+    }
+  ],
+  "generated_at": "2026-09-08T22:07:03.474422+00:00"
+}

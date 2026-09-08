@@ -1,4 +1,4 @@
-import type { PeriodSelection } from "@pollinations/ui";
+import type { ActivityPeriod } from "./activity-period";
 
 export type DailyUsageRecord = {
     date: string;
@@ -12,7 +12,7 @@ export type DailyUsageRecord = {
 
 export type { PeriodGranularity } from "@pollinations/ui";
 
-export type UsagePeriodSelection = PeriodSelection;
+export type UsagePeriodSelection = ActivityPeriod;
 
 export type Metric = "requests" | "pollen";
 
@@ -37,5 +37,4 @@ export type DataPoint = {
     paidValue: number;
     timestamp: Date;
     fullDate: string;
-    modelBreakdown?: ModelBreakdown[];
 };

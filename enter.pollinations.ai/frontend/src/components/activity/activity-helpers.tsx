@@ -25,18 +25,31 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
     onChange,
     emptyMessage,
 }) => (
-    <div className="flex w-full items-center gap-3">
-        <span className="w-20 shrink-0 text-xs font-medium text-theme-text-soft">
+    <div className="flex min-w-0 flex-col gap-1.5">
+        <span className="px-1 text-xs font-medium text-theme-text-muted">
             {label}
         </span>
-        <div className="min-w-0 flex-1 max-w-60 [&_button]:w-full">
-            {options.length === 0 ? (
+        <div
+            data-theme={selected.length ? undefined : "neutral"}
+            className="min-w-0 [&_button]:w-full [&_button]:min-w-0!"
+        >
+            {options.length === 0 && selected.length === 0 ? (
                 <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
                     {emptyMessage}
                 </span>
             ) : (
                 <MultiSelect
-                    options={options}
+                    options={[
+                        ...options,
+                        ...selected
+                            .filter(
+                                (id) =>
+                                    !options.some(
+                                        (option) => option.value === id,
+                                    ),
+                            )
+                            .map((id) => ({ value: id, label: id })),
+                    ]}
                     selected={selected}
                     onChange={onChange}
                     placeholder="All"
@@ -48,12 +61,14 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
 );
 
 type CsvDownloadButtonProps = {
+    label?: string;
     disabled: boolean;
     disabledReason: string;
     onClick: () => void;
 };
 
 export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
+    label = "CSV",
     disabled,
     disabledReason,
     onClick,
@@ -63,10 +78,11 @@ export const CsvDownloadButton: FC<CsvDownloadButtonProps> = ({
             as="button"
             onClick={onClick}
             disabled={disabled}
-            className="flex items-center gap-1.5"
+            size="lg"
+            className="gap-2 whitespace-nowrap"
         >
-            <DownloadIcon className="h-3.5 w-3.5 shrink-0" />
-            CSV
+            <DownloadIcon className="h-4 w-4 shrink-0" />
+            {label}
         </Button>
     );
 

@@ -1,4 +1,4 @@
-import type { FC } from "react";
+import type { FC, ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "../lib/cn.ts";
 import {
@@ -19,6 +19,10 @@ export type PeriodPickerProps = {
     onChange: (value: PeriodSelection) => void;
     minDate?: Date;
     maxDate?: Date;
+    /** Custom trigger for a calendar with a fixed granularity. */
+    trigger?: (open: boolean) => ReactNode;
+    /** Optional controls above the calendar grid. */
+    header?: ReactNode;
 };
 
 const WEEKDAY_LABELS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -128,6 +132,8 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
     onChange,
     minDate = new Date(0),
     maxDate,
+    trigger,
+    header,
 }) => {
     const [open, setOpen] = useState(false);
     const [viewDate, setViewDate] = useState<Date>(() => periodDate(value));
@@ -185,42 +191,56 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
             : formatMonthYear(viewDate, "long");
 
     return (
-        <div className="polli:flex polli:w-full polli:flex-wrap polli:items-center polli:gap-2">
-            <div className="polli:flex polli:flex-wrap polli:gap-1.5">
-                {(["day", "week", "month"] as PeriodGranularity[]).map(
-                    (granularity) => (
-                        <TabButton
-                            key={granularity}
-                            active={value.granularity === granularity}
-                            onClick={() => setGranularity(granularity)}
-                        >
-                            {granularity[0].toUpperCase() +
-                                granularity.slice(1)}
-                        </TabButton>
-                    ),
-                )}
-            </div>
+        <div
+            className={
+                trigger
+                    ? "polli:contents"
+                    : "polli:flex polli:w-full polli:flex-wrap polli:items-center polli:gap-2"
+            }
+        >
+            {!trigger && (
+                <div className="polli:flex polli:flex-wrap polli:gap-1.5">
+                    {(["day", "week", "month"] as PeriodGranularity[]).map(
+                        (granularity) => (
+                            <TabButton
+                                key={granularity}
+                                active={value.granularity === granularity}
+                                onClick={() => setGranularity(granularity)}
+                            >
+                                {granularity[0].toUpperCase() +
+                                    granularity.slice(1)}
+                            </TabButton>
+                        ),
+                    )}
+                </div>
+            )}
             <Dropdown
                 open={open}
                 onOpenChange={setOpen}
-                className="polli:w-[320px] polli:rounded-xl polli:p-3.5"
-                trigger={(isOpen) => (
-                    <button
-                        type="button"
-                        aria-label={`Select period, current ${summaryLabel}`}
-                        className={cn(
-                            "polli-control polli:inline-flex polli:w-[320px] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:px-4 polli:py-1.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
-                            "polli:bg-theme-bg-active polli:text-theme-text-base",
-                            "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-hover",
-                            isOpen &&
-                                "polli:bg-theme-bg-hover polli:text-theme-text-strong",
-                        )}
-                    >
-                        <span className="polli:truncate">{summaryLabel}</span>
-                        <ChevronIcon expanded={isOpen} />
-                    </button>
-                )}
+                className="polli:w-[320px] polli:max-w-[calc(100vw-2rem)] polli:rounded-xl polli:p-3.5"
+                trigger={
+                    trigger ??
+                    ((isOpen) => (
+                        <button
+                            type="button"
+                            aria-label={`Select period, current ${summaryLabel}`}
+                            className={cn(
+                                "polli-control polli:inline-flex polli:w-[320px] polli:max-w-full polli:items-center polli:justify-between polli:gap-2 polli:rounded-full polli:px-4 polli:py-1.5 polli:text-left polli:text-base polli:font-medium polli:leading-normal",
+                                "polli:bg-theme-bg-active polli:text-theme-text-base",
+                                "polli:transition-all polli:duration-200 polli:ease-out polli:hover:bg-theme-bg-hover",
+                                isOpen &&
+                                    "polli:bg-theme-bg-hover polli:text-theme-text-strong",
+                            )}
+                        >
+                            <span className="polli:truncate">
+                                {summaryLabel}
+                            </span>
+                            <ChevronIcon expanded={isOpen} />
+                        </button>
+                    ))
+                }
             >
+                {header}
                 <div className="polli:mb-3 polli:flex polli:items-center polli:justify-between">
                     <button
                         type="button"

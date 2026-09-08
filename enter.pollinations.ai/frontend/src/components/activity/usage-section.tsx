@@ -1,24 +1,23 @@
 import {
     InlineLink,
-    Surface,
     Table,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
-    UsageIcon,
 } from "@pollinations/ui";
 import type { FC } from "react";
-import { useMemo } from "react";
+import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityFilter,
     CsvDownloadButton,
     downloadFile,
     PollenUsageBadges,
 } from "./activity-helpers";
+import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
+import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
-import { MetricTabs } from "./metric-tabs";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
 
@@ -26,6 +25,7 @@ const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
 type UsageSectionProps = {
     period: UsagePeriodSelection;
+    onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
     selectedKeyIds: string[];
     selectedModels: string[];
@@ -36,6 +36,7 @@ type UsageSectionProps = {
 
 export const UsageSection: FC<UsageSectionProps> = ({
     period,
+    onPeriodChange,
     metric,
     selectedKeyIds,
     selectedModels,
@@ -56,18 +57,13 @@ export const UsageSection: FC<UsageSectionProps> = ({
         usedModels,
         usedApiKeys,
         chartData,
+        hasData,
         stats,
+        exportRows,
     } = useUsageData(filters);
 
-    const effectiveKeyIds = useMemo(() => {
-        const valid = new Set(usedApiKeys.map((k) => k.id));
-        return filters.selectedKeyIds.filter((id) => valid.has(id));
-    }, [usedApiKeys, filters.selectedKeyIds]);
-
-    const effectiveModels = useMemo(() => {
-        const valid = new Set(usedModels.map((m) => m.id));
-        return filters.selectedModels.filter((id) => valid.has(id));
-    }, [usedModels, filters.selectedModels]);
+    const effectiveKeyIds = selectedKeyIds;
+    const effectiveModels = selectedModels;
 
     const keySelectOptions = usedApiKeys.map((k) => ({
         value: k.id,
@@ -77,8 +73,6 @@ export const UsageSection: FC<UsageSectionProps> = ({
         value: m.id,
         label: m.label,
     }));
-    const showModelBreakdown =
-        effectiveModels.length === 0 || effectiveModels.length > 1;
     const hasUsageData = stats.totalRequests > 0;
     const downloadDisabled = loading || !hasUsageData;
     const downloadDisabledReason = loading
@@ -88,6 +82,21 @@ export const UsageSection: FC<UsageSectionProps> = ({
     function downloadDetailedUsage(): void {
         if (downloadDisabled) return;
 
+        if (period.bucket !== undefined) {
+            downloadActivityCsv(
+                `usage-summary-${period.period}-${period.bucket}`,
+                [
+                    "date",
+                    "api_key",
+                    "model",
+                    "meter_source",
+                    "requests",
+                    "cost_usd",
+                ],
+                exportRows,
+            );
+            return;
+        }
         const params = new URLSearchParams({
             format: "csv",
             granularity: period.granularity,
@@ -105,59 +114,62 @@ export const UsageSection: FC<UsageSectionProps> = ({
     }
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-                <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
-                    <UsageIcon className="h-4 w-4 shrink-0" />
-                    Usage
-                </div>
-                <CsvDownloadButton
-                    disabled={downloadDisabled}
-                    disabledReason={downloadDisabledReason}
-                    onClick={downloadDetailedUsage}
-                />
-            </div>
-            <Surface className="flex flex-col gap-4">
-                <div className="flex flex-col gap-4">
-                    <div className="flex flex-col items-start gap-2">
-                        <ActivityFilter
-                            label="Keys"
-                            options={keySelectOptions}
-                            selected={selectedKeyIds}
-                            onChange={onSelectedKeyIdsChange}
-                            emptyMessage="No API key usage in this period"
-                        />
-                        <ActivityFilter
-                            label="Models"
-                            options={modelSelectOptions}
-                            selected={selectedModels}
-                            onChange={onSelectedModelsChange}
-                            emptyMessage="No model usage in this period"
-                        />
-                        <MetricTabs value={metric} onChange={onMetricChange} />
-                    </div>
-
-                    <UsageChartView
-                        loading={loading}
-                        error={error}
-                        fetchUsage={fetchUsage}
-                        chartData={chartData}
-                        metric={metric}
-                        showModelBreakdown={showModelBreakdown}
-                        stats={stats}
+        <div className="@container flex min-w-0 flex-col gap-4">
+            <ActivityToolbar
+                label="Usage"
+                period={period}
+                onPeriodChange={onPeriodChange}
+                metric={metric}
+                onMetricChange={onMetricChange}
+                download={
+                    <CsvDownloadButton
+                        disabled={downloadDisabled}
+                        disabledReason={downloadDisabledReason}
+                        onClick={downloadDetailedUsage}
+                        label={
+                            period.bucket !== undefined ? "Summary CSV" : "CSV"
+                        }
                     />
-                </div>
-            </Surface>
+                }
+            >
+                <ActivityFilter
+                    label="Keys"
+                    options={keySelectOptions}
+                    selected={selectedKeyIds}
+                    onChange={onSelectedKeyIdsChange}
+                    emptyMessage="No API key usage in this period"
+                />
+                <ActivityFilter
+                    label="Models"
+                    options={modelSelectOptions}
+                    selected={selectedModels}
+                    onChange={onSelectedModelsChange}
+                    emptyMessage="No model usage in this period"
+                />
+            </ActivityToolbar>
+
+            <UsageChartView
+                loading={loading}
+                error={error}
+                fetchUsage={fetchUsage}
+                chartData={chartData}
+                metric={metric}
+                hasData={hasData}
+                stats={stats}
+                period={period}
+                onPeriodChange={onPeriodChange}
+            />
         </div>
     );
 };
 
 type UsageChartViewProps = Pick<
     ReturnType<typeof useUsageData>,
-    "loading" | "error" | "fetchUsage" | "chartData" | "stats"
+    "loading" | "error" | "fetchUsage" | "chartData" | "stats" | "hasData"
 > & {
     metric: Metric;
-    showModelBreakdown: boolean;
+    period: ActivityPeriod;
+    onPeriodChange: (period: ActivityPeriod) => void;
 };
 
 const UsageChartView: FC<UsageChartViewProps> = ({
@@ -166,10 +178,12 @@ const UsageChartView: FC<UsageChartViewProps> = ({
     fetchUsage,
     chartData,
     metric,
-    showModelBreakdown,
+    hasData,
     stats,
+    period,
+    onPeriodChange,
 }) => {
-    const hasUsage = stats.totalRequests > 0;
+    const hasUsage = hasData;
 
     return (
         <>
@@ -199,13 +213,24 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                 )}
                 {!loading && !error && hasUsage && (
                     <Chart
+                        key={`${period.granularity}:${period.period}`}
+                        period={period}
+                        label="Usage"
+                        onClearSelection={() =>
+                            onPeriodChange({ ...period, bucket: undefined })
+                        }
+                        onSelect={(point) =>
+                            onPeriodChange(
+                                toggleActivityBucket(period, point.timestamp),
+                            )
+                        }
                         data={chartData}
                         metric={metric}
-                        showModelBreakdown={showModelBreakdown}
                     />
                 )}
                 {!loading && !error && !hasUsage && <UsageEmptyState />}
             </div>
+
             {!loading && !error && hasUsage && (
                 <ModelBreakdownTable stats={stats} />
             )}
@@ -245,7 +270,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({ stats }) => (
                     </TableHeaderCell>
                 </TableRow>
             </TableHead>
-            <TableBody>
+            <TableBody className="[&>tr]:border-divider!">
                 {stats.modelBreakdowns.map((model) => (
                     <TableRow key={model.model}>
                         <TableCell className="max-w-64 break-words text-xs">

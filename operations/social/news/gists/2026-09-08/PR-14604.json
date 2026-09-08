@@ -1,0 +1,34 @@
+{
+  "pr_number": 14604,
+  "title": "fix: request JSON mode for PR gist analysis",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14604",
+  "merged_at": "2026-09-08T22:38:34Z",
+  "labels": [],
+  "pr_body_excerpt": "- Request `response_format: {type: json_object}` for PR gist analysis while preserving the existing gist schema validation.\n- Fix repeated #14597 failures: the original prompt-only JSON request cached an unterminated `image_prompt` string. Every identical rerun replayed that response (`X-Cache: HIT`, cached September 8 at 21:56 UTC, provider finish reason `stop`).\n- Log cache status, finish reason, and response length so future generation failures can be diagnosed without guessing.\n- Verify the live differential: the original cached request still returns 1,839 characters of invalid JSON, while JSON mode uses a distinct cache entry containing 1,795 characters of valid JSON. Python imports and syntax pass; Biome does not process Python.\n- Recover #14597 through the [successful workflow](https://github.com/pollinations/pollinations/actions/runs/34286546071); verify gist JSON, JPEG signature, schema validation, and Discord delivery.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "none",
+    "importance": "minor",
+    "headline": "The JSON Jar Has a Lid",
+    "blurb": "The PR-gist worker now asks for actual JSON instead of hoping a prompt will persuade it. A few diagnostic breadcrumbs were planted too, so cached half-sentences no longer get to cosplay as valid reports.",
+    "summary": "PR gist analysis now requests `response_format: {type: json_object}` while retaining schema validation, logs cache status/finish reason/response length, and restores the #14597 social workflow after validating its gist JSON, JPEG, and Discord delivery.",
+    "impact": "The social pipeline gets a distinct JSON-mode cache entry with valid 1,795-character output instead of replaying the prior 1,839-character unterminated JSON response, with enough logs to diagnose future failures directly.",
+    "keywords": [
+      "social-pipeline",
+      "json-mode",
+      "gist-analysis",
+      "cache",
+      "schema-validation",
+      "diagnostics"
+    ],
+    "visual_concept": "A cozy social-workshop scene: Polli seals a glowing JSON document in a labeled jar while a friendly CRT monitor robot checks it against a tidy schema clipboard. A faded broken cache jar sits safely on a shelf, with code-plants and small flowers suggesting that validated output can grow into a finished announcement image.",
+    "image_prompt": "Cozy pixel art scene in a warm garden-hackerspace where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carefully seals a glowing JSON scroll in a jar beside a cute CRT-monitor robot checking a schema clipboard, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"VALID JSON\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14604.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden-hackerspace where the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears tiny librarian glasses and carefully seals a glowing JSON scroll in a jar beside a cute CRT-monitor robot checking a schema clipboard, surrounded by code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"VALID JSON\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-08T22:39:32.218003+00:00"
+}

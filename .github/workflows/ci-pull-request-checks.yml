@@ -76,6 +76,7 @@ jobs:
       - name: Test maintenance scripts
         run: >-
           node --test
+          .github/scripts/*.test.mjs
           enter.pollinations.ai/scripts/*.test.mjs
           operations/app-management/*.test.js
           operations/app-management/ingestion/*.test.js

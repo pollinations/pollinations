@@ -1,0 +1,34 @@
+{
+  "pr_number": 12790,
+  "title": "feat: add usage and earnings breakdown tables",
+  "author": "TopProjectsCreator",
+  "url": "https://github.com/pollinations/pollinations/pull/12790",
+  "merged_at": "2026-09-08T11:58:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds usage and earnings breakdown tables sorted by Pollen using existing account API responses.\n- Shows Paid and Quest Pollen with request counts in icon badges, aligned dividers, and matching Total rows; earnings sources use neutral App/Model labels.\n- Preserves filters and graphs, with one horizontally scrollable table per section, accessible column labels, and no row hover highlights.\n- Removes the token/audio/video expansion and API/Tinybird changes from this PR.\n- Validated with service typecheck, frontend build, Biome, and desktop/mobile local preview checks.\n\nAddresses #12302\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Where the Pollen went",
+    "blurb": "The account garden got some proper labels. Usage and earnings now break down by source, so every Paid and Quest Pollen grain has a place to stand.",
+    "summary": "Added horizontally scrollable usage and earnings breakdown tables in the account activity view, sorting rows by Pollen and showing Paid and Quest Pollen, request counts, totals, and neutral App/Model earnings sources using existing account API data.",
+    "impact": "Users can now see which apps or models account for their usage and earnings at a glance, with matching totals and filters and graphs still intact on desktop and mobile.",
+    "keywords": [
+      "account activity",
+      "usage",
+      "earnings",
+      "pollen",
+      "analytics",
+      "frontend"
+    ],
+    "visual_concept": "Polli acts as a careful garden accountant, comparing two cozy ledger tables: one for Pollen used and one for Pollen earned. Tiny app and model seedlings sit in labeled rows while a retro CRT companion displays simple bar graphs; Pollen grains, request badges, dividers, and a Total row make the new breakdowns tangible.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny round accountant glasses, tending a lime green (#ecf874) Pollen ledger beside two neatly organized scrollable tables labeled in simple pixel font 'USAGE' and 'EARNINGS'; small app and model seedlings grow from each row while a friendly CRT monitor robot shows a gentle graph and flowers bloom around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-12790.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and tiny round accountant glasses, tending a lime green (#ecf874) Pollen ledger beside two neatly organized scrollable tables labeled in simple pixel font 'USAGE' and 'EARNINGS'; small app and model seedlings grow from each row while a friendly CRT monitor robot shows a gentle graph and flowers bloom around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T11:59:19.340791+00:00"
+}

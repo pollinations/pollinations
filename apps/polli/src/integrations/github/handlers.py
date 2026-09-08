@@ -17,7 +17,8 @@ async def tool_github_issue(
     action: str,
     issue_number: int = None,
     keywords: str = None,
-    state: str = "open",
+    state: str | None = None,
+    query: str | None = None,
     title: str = None,
     description: str = None,
     body: str = None,
@@ -35,6 +36,7 @@ async def tool_github_issue(
     limit: int = 10,
     child_issue_number: int = None,  # For sub-issue actions
     edit_index: int = None,  # For get_history - get full diff for specific edit (0=most recent)
+    cursor: str | None = None,  # Search and bounded list pagination cursor
     # Injected by bot.py for subscriptions (legacy params kept for compatibility)
     user_id: int = 0,
     channel_id: int = 0,
@@ -135,20 +137,33 @@ async def tool_github_issue(
         return history
 
     elif action == "search":
-        if not keywords:
-            return {"error": "keywords required for 'search' action"}
-        issues = await github_graphql.search_issues_full(keywords=keywords, state=state, limit=limit)
+        if not keywords and query is None:
+            return {"error": "keywords or query required for 'search' action"}
+        issues = await github_graphql.search_issues_full(
+            keywords=keywords,
+            state=state or ("all" if query is not None else "open"),
+            limit=limit,
+            query=query,
+            cursor=cursor,
+        )
+        if issues.get("error"):
+            return issues
         return {
-            "issues": issues,
-            "count": len(issues),
-            "query": keywords,
+            "issues": issues["items"],
+            "count": issues["count"],
+            "matched_total": issues["matched_total"],
+            "query": query or keywords,
             "state": state,
+            "truncated": issues["truncated"],
+            "next_cursor": issues["next_cursor"],
         }
 
     elif action == "search_user":
         if not discord_username:
             return {"error": "discord_username required for 'search_user' action"}
-        issues = await github_graphql.search_user_issues(discord_username=discord_username, state=state, limit=limit)
+        issues = await github_graphql.search_user_issues(
+            discord_username=discord_username, state=state or "open", limit=limit
+        )
         return {
             "issues": issues,
             "count": len(issues),
@@ -167,12 +182,10 @@ async def tool_github_issue(
         }
 
     elif action == "list_labels":
-        labels_list = await github_manager.list_labels()
-        return {"labels": labels_list, "count": len(labels_list)}
+        return await github_graphql._fetch_labels(limit=limit, after=cursor)
 
     elif action == "list_milestones":
-        milestones = await github_manager.list_milestones(state=state)
-        return {"milestones": milestones, "count": len(milestones), "state": state}
+        return await github_graphql._fetch_milestones(state=state or "open", limit=limit, after=cursor)
 
     # WRITE ACTIONS
     elif action == "create":
@@ -530,8 +543,10 @@ async def tool_github_custom(
     graphql_query: str = None,
     rest_endpoint: str = None,
     rest_url: str = None,
+    author: str | None = None,
     include_body: bool = False,
     limit: int = 50,
+    page: int = 1,
     _context: dict = None,
     **kwargs,
 ) -> dict:
@@ -548,9 +563,11 @@ async def tool_github_custom(
         request=request or "",
         include_body=include_body,
         limit=limit,
+        page=page,
         graphql_query=graphql_query,
         rest_endpoint=rest_endpoint,
         rest_url=rest_url,
+        author=author,
     )
 
 

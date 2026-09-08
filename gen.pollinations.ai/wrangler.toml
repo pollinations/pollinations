@@ -3,7 +3,14 @@ main = "src/index.ts"
 compatibility_date = "2025-11-01"
 # Managed-agent model and MCP calls loop through the public Gen routes so each
 # child request receives its own authentication, billing, and tracking.
-compatibility_flags = ["nodejs_compat", "nodejs_als", "global_fetch_strictly_public"]
+# Defer rejection reporting until all microtasks settle: AI SDK tracing creates
+# handled promise chains that older Workers semantics report as unhandled.
+compatibility_flags = [
+    "nodejs_compat",
+    "nodejs_als",
+    "global_fetch_strictly_public",
+    "unhandled_rejection_after_microtask_checkpoint"
+]
 account_id = "b6ec751c0862027ba269faf7029b2501"
 
 # Service binding to enter worker (zero latency - same V8 isolate)

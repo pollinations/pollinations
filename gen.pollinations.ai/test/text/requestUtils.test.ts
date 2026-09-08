@@ -5,6 +5,7 @@ import {
     getChatRequestData,
     getSimpleTextRequestData,
 } from "../../src/text/requestUtils.js";
+import { chatToResponsesRequest } from "../../src/text/responses/chatRequest.js";
 import { SENTINEL_SEED } from "../../src/util.js";
 
 afterEach(() => vi.restoreAllMocks());
@@ -12,7 +13,7 @@ afterEach(() => vi.restoreAllMocks());
 describe("getChatRequestData", () => {
     it("preserves validated OpenAI and provider fields", () => {
         const body = CreateChatCompletionRequestSchema.parse({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [
                 {
                     role: "user",
@@ -27,7 +28,7 @@ describe("getChatRequestData", () => {
         });
 
         expect(getChatRequestData(body)).toMatchObject({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             messages: [
                 {
                     role: "user",
@@ -45,7 +46,7 @@ describe("getChatRequestData", () => {
     it("applies aliases without forwarding SDK-owned controls", () => {
         const request = getChatRequestData(
             CreateChatCompletionRequestSchema.parse({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "hello" }],
                 safe: "privacy",
                 system: "Be concise",
@@ -78,7 +79,7 @@ describe("getChatRequestData", () => {
     it("prefers the standard response_format over the json alias", () => {
         const request = getChatRequestData(
             CreateChatCompletionRequestSchema.parse({
-                model: "openai-fast",
+                model: "openai/gpt-5-nano",
                 messages: [{ role: "user", content: "hello" }],
                 json: true,
                 response_format: { type: "text" },
@@ -91,7 +92,7 @@ describe("getChatRequestData", () => {
 describe("getSimpleTextRequestData", () => {
     it("uses the validated GET query without reparsing it", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({
-            model: "openai-fast",
+            model: "openai/gpt-5-nano",
             seed: "12",
             system: "Be concise",
             json: "true",
@@ -118,16 +119,38 @@ describe("getSimpleTextRequestData", () => {
         });
     });
 
-    it("keeps the established simple-text defaults", () => {
+    it("does not introduce a seed when the caller omits it", () => {
         const query = GenerateTextRequestQueryParamsSchema.parse({});
         expect(
             getSimpleTextRequestData("hello", "resolved-model", query),
         ).toEqual({
             model: "resolved-model",
             messages: [{ role: "user", content: "hello" }],
-            seed: 0,
             stream: false,
         });
+    });
+
+    it.each([0, 12, -1])("preserves an explicit seed %s", (seed) => {
+        const query = GenerateTextRequestQueryParamsSchema.parse({ seed });
+        expect(getSimpleTextRequestData("hello", "openai", query).seed).toBe(
+            seed === -1 ? SENTINEL_SEED : seed,
+        );
+    });
+
+    it("allows an ordinary simple-text request through the Responses adapter", () => {
+        const query = GenerateTextRequestQueryParamsSchema.parse({
+            model: "gpt-5.6-terra",
+        });
+        const request = getSimpleTextRequestData("hello", query.model, query);
+        expect(chatToResponsesRequest(request.messages, request)).toMatchObject(
+            {
+                model: "gpt-5.6-terra",
+                stream: false,
+            },
+        );
+        expect(() =>
+            chatToResponsesRequest(request.messages, { ...request, seed: 0 }),
+        ).toThrow("seed is not supported");
     });
 
     it("leaves numeric normalization to the provider pipeline", () => {

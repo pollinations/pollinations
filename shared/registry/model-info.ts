@@ -39,7 +39,9 @@ export const ModelInfoSchema = z.object({
     name: z.string(),
     aliases: z.array(z.string()),
     category: z.enum(MODEL_CATEGORIES),
-    brand: z.string(),
+    publisher: z
+        .string()
+        .describe("Human-readable model publisher, not the inference provider"),
     brand_url: z.string().url().optional(),
     community: z.boolean(),
     agent: z.boolean().optional(),
@@ -165,7 +167,7 @@ export function modelInfoFromDefinition(
         name,
         aliases: service.aliases,
         category: service.category,
-        brand: service.brand,
+        publisher: service.publisher,
         brand_url: service.brandUrl,
         community: options.community ?? false,
         agent: options.agent || undefined,

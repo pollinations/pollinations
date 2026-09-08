@@ -6,6 +6,7 @@ import {
     FalError,
     runFalJob,
 } from "../../src/model3d/models/falClient.ts";
+import { toUpstreamError } from "../../src/model3d/modelUtils.ts";
 
 beforeEach(() => {
     syncModel3dEnvironment({
@@ -20,6 +21,26 @@ afterEach(() => {
 });
 
 describe("runFalJob", () => {
+    it("retains the full provider body through the public error adapter", async () => {
+        const body = JSON.stringify({
+            detail: "x".repeat(20000),
+            token: "test-only",
+        });
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(
+            new Response(body, { status: 429 }),
+        );
+        const error = await runFalJob({
+            endpoint: "fal-ai/triposr",
+            input: {},
+        }).catch(toUpstreamError);
+        expect(error).toMatchObject({
+            status: 502,
+            upstreamStatus: 429,
+            responseBody: body,
+        });
+        expect(error.message).toContain(body);
+    });
+
     it("submits, polls status, and fetches the final result", async () => {
         vi.useFakeTimers();
         const fetchSpy = vi.spyOn(globalThis, "fetch");
@@ -82,6 +103,89 @@ describe("runFalJob", () => {
         const result = { model_glb: { url: "https://example.com/m.glb" } };
         const mesh = extractFalModelMesh(result);
         expect(mesh.url).toBe("https://example.com/m.glb");
+    });
+
+    it("waits before polling and accepts completion on the last allowed poll", async () => {
+        vi.useFakeTimers();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    request_id: "last_poll",
+                    status_url: "https://queue.fal.run/status",
+                    response_url: "https://queue.fal.run/result",
+                }),
+            )
+            .mockResolvedValueOnce(Response.json({ status: "IN_PROGRESS" }))
+            .mockResolvedValueOnce(Response.json({ status: "COMPLETED" }))
+            .mockResolvedValueOnce(
+                Response.json({ model_mesh: { url: "mesh.glb" } }),
+            );
+
+        const result = runFalJob(
+            { endpoint: "fal-ai/triposr", input: {}, pollMaxAttempts: 2 },
+            "fal_override_key",
+        );
+        await vi.advanceTimersByTimeAsync(4_999);
+        expect(fetchSpy).toHaveBeenCalledTimes(1);
+        await vi.advanceTimersByTimeAsync(1);
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+        await vi.advanceTimersByTimeAsync(4_999);
+        expect(fetchSpy).toHaveBeenCalledTimes(2);
+        await vi.advanceTimersByTimeAsync(1);
+
+        await expect(result).resolves.toEqual({
+            model_mesh: { url: "mesh.glb" },
+        });
+        expect(fetchSpy.mock.calls.map(([url]) => url)).toEqual([
+            "https://queue.fal.run/fal-ai/triposr",
+            "https://queue.fal.run/status",
+            "https://queue.fal.run/status",
+            "https://queue.fal.run/result",
+        ]);
+        for (const [, init] of fetchSpy.mock.calls) {
+            expect(new Headers(init?.headers).get("Authorization")).toBe(
+                "Key fal_override_key",
+            );
+        }
+    });
+
+    it.each([
+        0, 2,
+    ])("stops after exactly %i polls without fetching a result", async (pollMaxAttempts) => {
+        vi.useFakeTimers();
+        const fetchSpy = vi
+            .spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(
+                Response.json({
+                    request_id: "timeout",
+                    status_url: "https://queue.fal.run/status",
+                    response_url: "https://queue.fal.run/result",
+                }),
+            )
+            .mockImplementation(async () =>
+                Response.json({ status: "IN_PROGRESS" }),
+            );
+
+        const result = expect(
+            runFalJob({
+                endpoint: "fal-ai/triposr",
+                input: {},
+                pollMaxAttempts,
+            }),
+        ).rejects.toMatchObject({
+            name: "FalError",
+            status: 504,
+            message: `fal.ai request timeout timed out after ${pollMaxAttempts * 5}s`,
+        });
+        await vi.advanceTimersByTimeAsync(pollMaxAttempts * 5_000);
+        await result;
+        expect(fetchSpy).toHaveBeenCalledTimes(1 + pollMaxAttempts);
+        expect(
+            fetchSpy.mock.calls.some(
+                ([url]) => url === "https://queue.fal.run/result",
+            ),
+        ).toBe(false);
     });
 
     it("throws FalError when neither model_mesh nor model_glb is present", () => {

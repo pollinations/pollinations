@@ -7,8 +7,8 @@ the consent screen mints a budgeted `sk_` which Open WebUI forwards to
 paid from the signed-in user's own wallet.
 
 - Public: https://openwebui.pollinations.ai (origin https://openwebui.myceli.ai)
-- Staging: `openwebui-staging` on workers.dev
-- Login: OAuth 2.1 code + PKCE against `https://enter.pollinations.ai`. Public
+- Staging: https://openwebui-staging.elliot-b6e.workers.dev
+- Login: OAuth 2.1 code + PKCE against the environment's Enter URL. Public
   client, no secret. Discovery is the RFC 8414 document; Pollinations serves no
   `openid-configuration` alias.
 
@@ -28,7 +28,9 @@ Deploys then need no Docker, locally or in CI.
 
 ## State
 
-Container disk is wiped on every sleep. All state lives in Postgres (Neon):
+Container disk is wiped on every sleep. All state lives in Postgres (one
+instance on the `monitoring-agents` box, databases `openwebui` and
+`openwebui_staging`):
 `DATABASE_URL` holds users, chats, config, and the pgvector store. Uploaded
 files are still on local disk and do not survive a restart; switch to R2 via
 `STORAGE_PROVIDER=s3` when that matters.
@@ -42,9 +44,23 @@ cost is a ~90 MB model download onto the ephemeral disk after a restart.
 Secrets (per environment in `secrets/secrets.vars.json`):
 
 - `WEBUI_SECRET_KEY`: session signing key. Changing it logs everyone out.
-- `DATABASE_URL`: Neon connection string (staging uses a Neon branch).
+- `DATABASE_URL`: Postgres connection string (staging uses its own database).
 
 ## Config vars are seeded once, not on every boot
+
+Production uses Chat Completions; staging uses Responses with
+`ENABLE_RESPONSES_API_STATEFUL=false`. Staging connects only to staging Gen
+and staging Enter, and has no external MCP tool server. Its `MODEL_IDS`
+allowlist initially contains `openai` and `gemini`; add test agents there when
+needed. Managed agents' own configured MCP tools are independent of Open
+WebUI's external tool servers.
+
+On an existing staging database, also update `openai.api_base_urls`,
+`openai.api_configs` (`api_type` and `model_ids`), and
+`tool_server.connections` to match the staging configuration. Preserve
+users/chats and unrelated settings. Restart the staging container to apply
+the new OAuth environment. Its `OAUTH_CLIENT_ID` must be registered in staging
+Enter; production client registrations do not exist in staging automatically.
 
 Every setting in `DEFAULT_CONFIG` (`OPENAI_API_CONFIGS`, `TOOL_SERVER_CONNECTIONS`,
 ...) is written to the Postgres `config` table only when the key is *missing*:
@@ -65,7 +81,8 @@ ssh community-monitor "sudo docker exec openwebui-postgres \
 `envVars` on the Container class are applied when the container *starts*, and a
 `wrangler deploy` does not restart a running instance (nor does a shorter
 `sleepAfter`). To force a fresh container, delete the container application and
-deploy again — state is in Postgres, so nothing is lost:
+deploy again. Users, chats and configuration remain in Postgres; uploaded
+files on the ephemeral disk are lost, so check for files before restarting:
 
 ```bash
 npx wrangler containers list                     # find the app id
@@ -86,6 +103,19 @@ per-user consent key as the model connection, so a generation started from a
 tool call is billed to the signed-in user. Two fields are easy to miss:
 `config.enable` must be true, and `config.access_grants` must carry an explicit
 public read grant — an empty grant list means admin-only, not everyone.
+
+That MCP server is opt-in per chat. Open WebUI's *builtin* tools are not: it
+appends their specs to every request coming from its UI unless the model sets
+`meta.capabilities.builtin_tools` false (`utils/middleware.py`). Models fetched
+from a connection have no row in the `model` table, so the only lever is the
+global default, `DEFAULT_MODEL_METADATA` / `models.default_metadata`, which
+`utils/models.py` applies to them wholesale. We set it to
+`{"capabilities": {"builtin_tools": false}}` — without it, managed agents and
+community models that reject a `tools` field 400 on every UI chat.
+
+`models.base_models_cache` is false and `Config.get_many` reads the row per
+request, so changing that config row takes effect immediately, for existing
+chats and users too. No container restart, no per-chat migration.
 
 ## Update the image
 

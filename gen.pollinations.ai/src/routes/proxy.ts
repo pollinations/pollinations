@@ -61,6 +61,12 @@ import { createFactory } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import {
+    getModelHealthSummaries,
+    DEFAULT_MINUTES as HEALTH_WINDOW_MINUTES,
+    type ModelHealthSummary,
+    UNKNOWN_HEALTH,
+} from "@/model-health.ts";
+import {
     CreateEmbeddingRequestSchema,
     CreateEmbeddingResponseSchema,
 } from "@/schemas/embeddings.ts";
@@ -75,6 +81,7 @@ import {
 import {
     type ModelListQueryParams,
     ModelListQueryParamsSchema,
+    resolveModelListFilters,
 } from "@/schemas/models.ts";
 import { RealtimeRequestQueryParamsSchema } from "@/schemas/realtime.ts";
 import { GenerateTextRequestQueryParamsSchema } from "@/schemas/text.ts";
@@ -219,16 +226,71 @@ function hasPaidBalance(c: any): boolean | undefined {
     return (user.packBalance ?? 0) > 0;
 }
 
-// Optionally filter entries by the validated `?community` query parameter.
-function filterEntriesByCommunityParam(
+// Filter by who publishes the model. A community model is one served through a
+// community endpoint; everything else is Pollinations-operated.
+function filterEntriesBySource(
     entries: GenerationModelEntry[],
-    communityParam: string | undefined,
+    source: "all" | "official" | "community",
 ): GenerationModelEntry[] {
-    if (communityParam === undefined) return entries;
-    const wantCommunity = communityParam === "true" || communityParam === "1";
+    if (source === "all") return entries;
+    const wantCommunity = source === "community";
     return entries.filter(
         (entry) => (entry.communityEndpoint !== undefined) === wantCommunity,
     );
+}
+
+// Filter by observed health. A model with no data is unknown, and unknown is
+// not reliable -- `reliable` has to mean "we have seen this work".
+function filterEntriesByReliability(
+    entries: GenerationModelEntry[],
+    reliability: "all" | "reliable",
+    health: Map<string, ModelHealthSummary>,
+): GenerationModelEntry[] {
+    if (reliability === "all") return entries;
+    return entries.filter(
+        (entry) => health.get(entry.info.name)?.status === "reliable",
+    );
+}
+
+// Discovery filtering only. Health data must never widen or narrow what an
+// account is actually allowed to generate with, so this runs after the
+// permission and balance filters and never feeds back into them.
+async function applyCatalogFilters(
+    c: Context<Env>,
+    entries: GenerationModelEntry[],
+): Promise<{
+    entries: GenerationModelEntry[];
+    health: Map<string, ModelHealthSummary> | null;
+}> {
+    const query = c.req.valid("query" as never) as ModelListQueryParams;
+    const { source, reliability, health } = resolveModelListFilters(
+        query,
+        (name) => c.req.header(name),
+    );
+
+    const bySource = filterEntriesBySource(entries, source);
+    if (!health && reliability === "all") {
+        return { entries: bySource, health: null };
+    }
+
+    const summaries = await getModelHealthSummaries(HEALTH_WINDOW_MINUTES);
+    return {
+        entries: filterEntriesByReliability(bySource, reliability, summaries),
+        health: summaries,
+    };
+}
+
+// Attach the health summary to a model payload when the caller asked for it.
+function withHealth<T extends { name?: string; id?: string }>(
+    payload: T,
+    modelName: string,
+    health: Map<string, ModelHealthSummary> | null,
+): T | (T & { health: ModelHealthSummary }) {
+    if (!health) return payload;
+    return {
+        ...payload,
+        health: health.get(modelName) ?? UNKNOWN_HEALTH(HEALTH_WINDOW_MINUTES),
+    };
 }
 
 // Factory for model-list endpoints: validates the community query parameter,
@@ -242,20 +304,20 @@ const modelsListHandler = (
     [
         validator("query", ModelListQueryParamsSchema),
         async (c: Context<Env>) => {
-            const { community } = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
+            const { entries, health } = await applyCatalogFilters(
+                c,
+                filterEntriesByPermissions(
+                    await getEntries(c),
+                    allowedModels,
+                    paidBalance,
+                ),
+            );
             return c.json(
-                filterEntriesByCommunityParam(
-                    filterEntriesByPermissions(
-                        await getEntries(c),
-                        allowedModels,
-                        paidBalance,
-                    ),
-                    community,
-                ).map((entry) => entry.info),
+                entries.map((entry) =>
+                    withHealth(entry.info, entry.info.name, health),
+                ),
             );
         },
     ] as const;
@@ -373,7 +435,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models (OpenAI-compatible)",
             description:
-                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.',
+                'Returns available models in the OpenAI-compatible format (`{object: "list", data: [...]}`), with Pollinations pricing and capability extensions. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. Use `/models`, `/text/models`, `/image/models`, `/audio/models`, or `/embeddings/models` for richer metadata. When authenticated: the owner\'s private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.',
             responses: {
                 200: {
                     description: "Success",
@@ -388,22 +450,25 @@ export const proxyRoutes = new Hono<Env>()
         }),
         validator("query", ModelListQueryParamsSchema),
         async (c) => {
-            const { community } = c.req.valid(
-                "query" as never,
-            ) as ModelListQueryParams;
             const allowedModels = c.var.auth?.apiKey?.permissions?.models;
             const paidBalance = hasPaidBalance(c);
-            const modelEntries = filterEntriesByCommunityParam(
+            const { entries, health } = await applyCatalogFilters(
+                c,
                 filterEntriesByPermissions(
                     await getVisibleModelEntries(c),
                     allowedModels,
                     paidBalance,
                 ),
-                community,
             );
             return c.json({
                 object: "list" as const,
-                data: modelEntries.map(toOpenAIModelEntry),
+                data: entries.map((entry) =>
+                    withHealth(
+                        toOpenAIModelEntry(entry),
+                        entry.info.name,
+                        health,
+                    ),
+                ),
             });
         },
     )
@@ -457,7 +522,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Models",
             description:
-                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available models with pricing, capabilities, and metadata. Official models are ordered by modality (text, image, video, 3D, audio, realtime, embedding), with each configured default first, followed by stable and then alpha/preview models from newest to oldest. Community models follow from newest to oldest. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.",
             responses: {
                 200: {
                     description: "Success",
@@ -478,7 +543,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List 3D Models",
             description:
-                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available 3D model generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.",
             responses: {
                 200: {
                     description: "Success",
@@ -499,7 +564,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Image & Video Models",
             description:
-                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available image and video generation models with pricing, capabilities, and metadata. Video models are included here — check the `output_modalities` field to distinguish image vs video models. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.",
             responses: {
                 200: {
                     description: "Success",
@@ -520,7 +585,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Video Models",
             description:
-                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available video generation models with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.",
             responses: {
                 200: {
                     description: "Success",
@@ -541,7 +606,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Text Models (Detailed)",
             description:
-                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available text generation and community text models with pricing, capabilities, and metadata including context window size, supported modalities, and tool support. When authenticated: the owner's private community models are included, models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.",
             responses: {
                 200: {
                     description: "Success",
@@ -564,7 +629,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🤖 Models"],
             summary: "List Audio Models",
             description:
-                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns all available audio models (text-to-speech, music generation, and transcription) with pricing, capabilities, and metadata. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.",
             responses: {
                 200: {
                     description: "Success",
@@ -587,7 +652,7 @@ export const proxyRoutes = new Hono<Env>()
             tags: ["🔢 Embeddings"],
             summary: "List Embedding Models",
             description:
-                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?community=false` to exclude community models or `?community=true` to return only community models.",
+                "Returns available embedding models with pricing, capabilities, and supported input modalities. When authenticated: models are filtered by API key permissions, and `paid_only` models are hidden if the account has no paid balance. Pass `?source=official` to exclude community models or `?source=community` to return only community models. Pass `?health=true` for per-model health, or `?reliability=reliable` to return only models whose recent success rate and sample size clear the thresholds. Each filter is also readable from a header (`X-Pollinations-Model-Source`, `X-Pollinations-Model-Reliability`, `X-Pollinations-Model-Health`) for clients that append `/models` to a base URL. Filtering affects discovery only and never changes generation permissions. `?community=` is deprecated in favour of `?source=`.",
             responses: {
                 200: {
                     description: "Success",

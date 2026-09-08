@@ -1,9 +1,13 @@
 import { z } from "zod";
 
 export const ModelListQueryParamsSchema = z.object({
-    community: z.enum(["true", "false", "1", "0"]).optional().meta({
+    source: z.enum(["official", "community"]).optional().meta({
         description:
-            "Filter by community status: `true`/`1` for community-only, `false`/`0` for official-only. Omit for all models.",
+            "Filter by model source: `official` for Pollinations-operated models only, `community` for community models only. Omit for all models.",
+    }),
+    reliability: z.enum(["all", "reliable"]).optional().meta({
+        description:
+            "`reliable` keeps only models whose measured health is not poor: healthy or degraded (or unknown when there is no data). `all` (default) returns every model. Experimental status is separate from reliability.",
     }),
 });
 

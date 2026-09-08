@@ -746,6 +746,25 @@ export const OpenAIModelSchema = z
         reasoning: z.boolean().optional(),
         context_length: z.number().optional(),
         per_user_rpm: z.number().positive().nullable().optional(),
+        health: z
+            .object({
+                status: z.enum([
+                    "healthy",
+                    "degraded",
+                    "unavailable",
+                    "unknown",
+                ]),
+                success_rate: z.number().min(0).max(1),
+                sample_size: z.number().int().nonnegative(),
+                window_minutes: z.number().int().positive(),
+                checked_at: z.string().datetime(),
+                stale: z.boolean(),
+            })
+            .optional()
+            .meta({
+                description:
+                    "Measured reliability over a rolling window: `success_rate` is final-response 2xx / (2xx + 5xx), caller errors (4xx) are excluded, and fallback rescues count as successes. `status` is `unknown` when the sample is too small or no data exists.",
+            }),
     })
     .meta({
         description: "OpenAI-compatible model object with capability metadata",

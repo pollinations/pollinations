@@ -8,11 +8,7 @@ import {
 import { getModels } from "../utils/models.js";
 
 async function listModels(params, context) {
-    let models = await getModels(
-        params.type || "all",
-        context,
-        params.community,
-    );
+    let models = await getModels(params.type || "all", context, params.source);
     if (params.agent !== undefined) {
         models = models.filter(
             (model) => (model.agent === true) === params.agent,
@@ -47,11 +43,11 @@ export const discoveryTools = [
                 ])
                 .optional()
                 .describe("Model type (default: all)"),
-            community: z
-                .boolean()
+            source: z
+                .enum(["official", "community"])
                 .optional()
                 .describe(
-                    "True for community models only, false for official models only",
+                    "Filter by model source: official or community. Omit for all models",
                 ),
             agent: z
                 .boolean()

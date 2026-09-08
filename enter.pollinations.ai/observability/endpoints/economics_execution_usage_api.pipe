@@ -1,7 +1,7 @@
 DESCRIPTION >
     Execution accounting for one explicit UTC date. Includes unbilled attempts,
-    preserves unknown route/cost evidence, and deduplicates immutable event IDs
-    before summing. Reported cost is response evidence, not invoice settlement.
+    preserves unknown route/cost evidence, and aggregates recorded attempts.
+    Reported cost is response evidence, not invoice settlement.
     Raw provider names remain as recorded; account attribution is not inferred.
 
 TOKEN "operations_read" READ
@@ -10,28 +10,24 @@ NODE executions
 SQL >
     %
     SELECT
-        event_id,
-        request_id,
-        start_time,
-        model_used,
         is_final,
-        any(resolved_model_requested) AS model_requested,
-        any(model_provider_used) AS provider,
-        any(model_executed) AS model_executed,
-        any(execution_route_id) AS execution_route_id,
-        any(provider_model_reported) AS provider_model_reported,
-        any(provider_cost_source) AS provider_cost_source,
-        any(has_cost_estimate) AS has_cost_estimate,
-        any(total_cost) AS event_metered_cost_usd,
-        any(provider_reported_cost_usd) AS reported_cost_usd,
-        any(total_price) AS pollen_debited,
-        any(selected_meter_slug) AS meter,
-        any(response_status) AS response_status
+        resolved_model_requested AS model_requested,
+        model_provider_used AS provider,
+        model_executed,
+        execution_route_id,
+        provider_model_reported,
+        provider_upstream_reported,
+        provider_cost_source,
+        has_cost_estimate,
+        total_cost AS event_metered_cost_usd,
+        provider_reported_cost_usd AS reported_cost_usd,
+        total_price AS pollen_debited,
+        selected_meter_slug AS meter,
+        response_status
     FROM generation_event_v2
     WHERE start_time >= toDateTime({{Date(date, description="UTC usage date")}})
       AND start_time < toDateTime({{Date(date)}}) + INTERVAL 1 DAY
       AND startsWith(event_type, 'generate.')
-    GROUP BY event_id, request_id, start_time, model_used, is_final
 
 NODE endpoint
 SQL >
@@ -41,6 +37,7 @@ SQL >
         model_executed,
         execution_route_id,
         provider_model_reported,
+        provider_upstream_reported,
         provider_cost_source,
         count() AS attempts,
         countIf(is_final) AS final_outcomes,
@@ -56,10 +53,10 @@ SQL >
         countIf(isNull(reported_cost_usd)) AS unknown_reported_cost_attempts,
         if(countIf(isNotNull(reported_cost_usd)) = 0, NULL, sum(reported_cost_usd)) AS provider_reported_cost_usd,
         if(countIf(pollen_debited = 0 AND isNull(reported_cost_usd)) > 0 AND countIf(pollen_debited = 0 AND isNotNull(reported_cost_usd)) = 0, NULL, sumIf(reported_cost_usd, pollen_debited = 0)) AS unbilled_reported_cost_usd,
-        countIf(has_cost_estimate AND isNotNull(reported_cost_usd)) AS comparable_cost_attempts,
+        countIf(has_cost_estimate AND isNotNull(reported_cost_usd) AND provider != 'community') AS comparable_cost_attempts,
         if(countIf(has_cost_estimate AND isNotNull(reported_cost_usd) AND provider != 'community') = 0, NULL, sumIf(reported_cost_usd - event_metered_cost_usd, has_cost_estimate AND isNotNull(reported_cost_usd) AND provider != 'community')) AS comparable_cost_gap_usd
     FROM executions
-    GROUP BY model_requested, provider, model_executed, execution_route_id, provider_model_reported, provider_cost_source
+    GROUP BY model_requested, provider, model_executed, execution_route_id, provider_model_reported, provider_upstream_reported, provider_cost_source
     ORDER BY provider, model_requested, execution_route_id
 
 TYPE ENDPOINT

@@ -150,6 +150,42 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("keeps OpenRouter route suffixes consistent with configured upstream pins", () => {
+        for (const [id, definition] of Object.entries(TEXT_SERVICES)) {
+            if (definition.provider !== "openrouter") continue;
+            const config = findModelByName(id)?.config();
+            const routing = (
+                config?.defaultOptions as
+                    | {
+                          provider?: {
+                              only?: string[];
+                              allow_fallbacks?: boolean;
+                          };
+                      }
+                    | undefined
+            )?.provider;
+            const suffix = definition.routeId?.split(":openrouter")[1];
+            if (routing?.only) {
+                expect(routing.only, id).toHaveLength(1);
+                expect(routing.allow_fallbacks, id).toBe(false);
+                // Existing route IDs abbreviate Google's provider tags.
+                const pin = routing.only[0]
+                    .toLowerCase()
+                    .replace(/^google-/, "")
+                    .replaceAll("/", "-");
+                expect(suffix, id).toBe(`:${pin}`);
+            } else {
+                expect(suffix, id).toBe("");
+            }
+        }
+    });
+
+    it("preserves a route identity when the public catalog name changes", () => {
+        const model = TEXT_SERVICES["google/gemini-3.7-flash"];
+        const renamed = mergeFallbacks({ "renamed-public-model": model }, {});
+        expect(renamed["renamed-public-model"].routeId).toBe(model.routeId);
+    });
+
     it("assigns a distinct execution identity to every bundled route", () => {
         const routes = new Set<string>();
         for (const id of getModels()) {

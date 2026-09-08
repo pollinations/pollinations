@@ -439,6 +439,14 @@ export async function generateImageOrVideoResponse(
             result,
             result.mimeType || detectMimeType(result.buffer),
         );
+        if (
+            "providerEvidence" in result.trackingData &&
+            result.trackingData.providerEvidence
+        ) {
+            c.var.track?.setProviderUsageEvidence(
+                result.trackingData.providerEvidence,
+            );
+        }
         if (servedIndex > 0) {
             // Same shape text emits, so tracking has one fallback marker.
             headers.set(

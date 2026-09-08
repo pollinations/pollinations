@@ -991,17 +991,19 @@ export async function createAndReturnImageCached(
 
         // Prepare metadata
         const { buffer: _buffer, ...maturity } = result;
+        // Provider accounting evidence is internal; EXIF is downloadable by callers.
+        const { providerEvidence: _providerEvidence, ...publicTrackingData } =
+            result.trackingData;
         const metadataObj = prepareMetadata(prompt, originalPrompt, safeParams);
 
         // SVG must stay vector; raster formats retain the existing JPEG + EXIF path.
         const processedBuffer =
             result.mimeType === "image/svg+xml"
                 ? result.buffer
-                : await processImageBuffer(
-                      result.buffer,
-                      metadataObj,
-                      maturity,
-                  );
+                : await processImageBuffer(result.buffer, metadataObj, {
+                      ...maturity,
+                      trackingData: publicTrackingData,
+                  });
 
         return {
             buffer: processedBuffer,

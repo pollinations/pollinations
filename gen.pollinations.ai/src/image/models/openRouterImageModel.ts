@@ -1,6 +1,7 @@
 import { UpstreamError } from "@shared/error.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import debug from "debug";
+import { providerUsageEvidence } from "@/utils/provider-usage.ts";
 import type { ImageGenerationResult } from "../createAndReturnImages.ts";
 import { getImageEnv } from "../env.ts";
 import type { ImageParams } from "../params.ts";
@@ -412,6 +413,7 @@ export async function callOpenRouterSeedreamProAPI(
         isMature: false,
         isChild: false,
         trackingData: {
+            providerEvidence: providerUsageEvidence("openrouter", data),
             actualModel: "bytedance/seedream-4.5",
             usage: {
                 completionImageTokens: 1,
@@ -470,6 +472,7 @@ export async function callOpenRouterGrokImagineProAPI(
         isMature: false,
         isChild: false,
         trackingData: {
+            providerEvidence: providerUsageEvidence("openrouter", data),
             actualModel: "x-ai/grok-imagine-image-quality",
             usage: {
                 ...(referenceImage ? { promptImageTokens: 1 } : {}),
@@ -532,6 +535,7 @@ export async function callOpenRouterGrokImagineImage2API(
         isMature: false,
         isChild: false,
         trackingData: {
+            providerEvidence: providerUsageEvidence("openrouter", data),
             actualModel: "x-ai/grok-imagine-image-2.0",
             usage: {
                 ...(inputReferences.length > 0
@@ -637,6 +641,7 @@ export async function callOpenRouterGeminiImageAPI(
         isMature: false,
         isChild: false,
         trackingData: {
+            providerEvidence: providerUsageEvidence("openrouter", data),
             actualModel: safeParams.model,
             usage,
         },
@@ -718,6 +723,7 @@ export async function callOpenRouterRecraftVectorAPI(
         isMature: false,
         isChild: false,
         trackingData: {
+            providerEvidence: providerUsageEvidence("openrouter", data),
             actualModel: "recraft/recraft-v4.1-vector",
             // OpenRouter bills this endpoint a fixed $0.08 per output image.
             usage: { completionImageTokens: 1 },

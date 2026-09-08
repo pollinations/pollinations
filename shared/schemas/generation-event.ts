@@ -80,10 +80,12 @@ export type TinybirdEvent = {
     /** Provider response identity and model, preserved independently of our IDs. */
     providerResponseId?: string;
     providerModelReported?: string;
+    /** Actual upstream reported by the gateway; independent of configured route pins. */
+    providerUpstreamReported?: string;
     /** Absent means unknown; a reported zero is a measured zero. */
     providerReportedCostUsd?: number;
     providerCostSource?: string;
-    /** Whether totalCost was calculated from usage/fees, rather than defaulted. */
+    /** Whether totalCost uses validated usage; false for missing usage or fee-only estimates. */
     hasCostEstimate?: boolean;
     /** Named conditional pricing sheet selected for this billed request. */
     costVariant?: string;

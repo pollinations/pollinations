@@ -59,6 +59,7 @@ SCHEMA >
 `execution_route_id` Nullable(String) `json:$.executionRouteId` DEFAULT NULL,
 `provider_response_id` Nullable(String) `json:$.providerResponseId` DEFAULT NULL,
 `provider_model_reported` Nullable(String) `json:$.providerModelReported` DEFAULT NULL,
+`provider_upstream_reported` Nullable(String) `json:$.providerUpstreamReported` DEFAULT NULL,
 -- A measured zero is distinct from a missing report. total_cost remains our
 -- configured-rate estimate; provider-reported charges never set Pollen prices.
 `provider_reported_cost_usd` Nullable(Float64) `json:$.providerReportedCostUsd` DEFAULT NULL,

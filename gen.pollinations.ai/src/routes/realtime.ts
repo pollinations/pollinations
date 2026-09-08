@@ -780,7 +780,7 @@ function createRealtimeTrackingEvent(args: {
         modelUsed: args.tracking.resolvedModelRequested,
         modelExecuted: args.tracking.resolvedModelRequested,
         executionRouteId: args.tracking.modelDefinition.routeId,
-        hasCostEstimate: true,
+        hasCostEstimate: hasPositiveUsage(args.usage),
         modelProviderUsed: args.tracking.modelDefinition.provider,
         isBilledUsage: true,
         ...getPostDeductionBalances(args.payerBucket, args.balances),

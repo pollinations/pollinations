@@ -4,6 +4,7 @@ export type ProviderUsageEvidence = Pick<
     TinybirdEvent,
     | "providerResponseId"
     | "providerModelReported"
+    | "providerUpstreamReported"
     | "providerReportedCostUsd"
     | "providerCostSource"
 >;
@@ -33,6 +34,13 @@ export function providerUsageEvidence(
         if (typeof response.model === "string" && response.model) {
             evidence.providerModelReported = response.model;
         }
+        if (
+            provider === "openrouter" &&
+            typeof response.provider === "string" &&
+            response.provider
+        ) {
+            evidence.providerUpstreamReported = response.provider;
+        }
         const usage = response.usage;
         if (
             provider !== "openrouter" ||
@@ -45,14 +53,14 @@ export function providerUsageEvidence(
         // OpenRouter usage.cost is the account charge in USD credits, not
         // cost_details.upstream_inference_cost (a different supplier's cost).
         // https://openrouter.ai/docs/cookbook/administration/usage-accounting
-        // Streaming values are cumulative: retain the last report, never sum.
+        // Usage arrives in the terminal SSE message. Keep the last valid report, never sum.
         const cost = usage.cost;
         const valid =
             typeof cost === "number" && Number.isFinite(cost) && cost >= 0;
-        evidence.providerReportedCostUsd = valid ? cost : undefined;
-        evidence.providerCostSource = valid
-            ? "openrouter.usage.cost"
-            : undefined;
+        if (valid) {
+            evidence.providerReportedCostUsd = cost;
+            evidence.providerCostSource = "openrouter.usage.cost";
+        }
     }
     return evidence;
 }

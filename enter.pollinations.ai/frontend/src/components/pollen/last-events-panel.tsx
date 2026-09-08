@@ -1,4 +1,5 @@
 import {
+    ArrowRightIcon,
     Button,
     CardIcon,
     Chip,
@@ -15,6 +16,7 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
+import type { EarningsSource } from "../activity/use-earnings-data.ts";
 
 const PAGE_SIZE = 10;
 const RECENT_WINDOW_DAYS = 90;
@@ -32,6 +34,7 @@ type UsageEventRecord = {
 };
 
 type EarningsEventRecord = {
+    source?: EarningsSource;
     timestamp: string;
     cursor_event_id: string;
     entity_name: string;
@@ -42,6 +45,7 @@ type EarningsEventRecord = {
 
 type LastEvent = {
     kind: "usage" | "earnings";
+    earningsSource?: EarningsSource;
     id: string;
     timestamp: string;
     primary: string;
@@ -77,55 +81,74 @@ function formatTimestamp(value: string): string {
 }
 
 function formatSignedPollen(event: LastEvent): string {
+    if (event.pollen === 0) return "0";
     const sign = event.kind === "earnings" ? "+" : "-";
     return `${sign}${formatActivityPollenThreshold(event.pollen)}`;
 }
 
-function EventKindChip({ kind }: { kind: LastEvent["kind"] }) {
-    if (kind === "earnings") {
-        return (
-            <Chip intent="alpha" size="sm">
-                Earned
-            </Chip>
-        );
-    }
+function EventKindChip({ event }: { event: LastEvent }) {
+    const earned = event.kind === "earnings";
+    const label = !earned
+        ? "Spent"
+        : event.earningsSource === "byop_markup"
+          ? "App"
+          : event.earningsSource === "community_model"
+            ? "Model"
+            : "Earned";
     return (
-        <Chip intent="danger" size="sm">
-            Used
-        </Chip>
+        <span className="inline-flex items-center gap-1.5">
+            <Chip
+                intent={earned ? "neutral" : "danger"}
+                size="sm"
+                className={`polli:w-5 polli:px-0 ${earned ? "polli:bg-intent-info-bg-light polli:text-intent-info-text" : ""}`}
+                aria-hidden="true"
+            >
+                <ArrowRightIcon
+                    className={`h-3 w-3 ${earned ? "rotate-90" : "-rotate-90"}`}
+                />
+            </Chip>
+            {earned && label !== "Earned" && (
+                <span className="sr-only">Earned from </span>
+            )}
+            {label}
+        </span>
     );
 }
 
-function MeterSourceChip({ source }: { source: string | null }) {
-    if (source === "tier") {
+function EventPollenChip({ event }: { event: LastEvent }) {
+    const amount = formatSignedPollen(event);
+    if (event.meterSource !== "tier" && event.meterSource !== "pack") {
         return (
-            <TierChip
-                size="sm"
-                aria-label="quest"
-                title="quest"
-                className="justify-center"
-            >
-                <SproutIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            </TierChip>
+            <span className="whitespace-nowrap tabular-nums">
+                {amount}
+                <span className="sr-only"> Pollen</span>
+            </span>
         );
     }
-    if (source === "pack") {
-        return (
-            <PaidChip
-                size="sm"
-                aria-label="paid"
-                title="paid"
-                className="justify-center"
-            >
-                <CardIcon className="h-3.5 w-3.5" aria-hidden="true" />
-            </PaidChip>
-        );
-    }
-    return (
-        <Chip intent="neutral" size="sm">
-            unknown
-        </Chip>
+    const source = event.meterSource === "tier" ? "Quest" : "Paid";
+    const props = {
+        size: "sm" as const,
+        title: `${source} Pollen`,
+        "aria-label": `${amount} ${source} Pollen`,
+        className:
+            "inline-flex min-w-24 shrink-0 items-center justify-between gap-2 whitespace-nowrap tabular-nums",
+    };
+    const content = (
+        <>
+            {event.meterSource === "tier" ? (
+                <SproutIcon
+                    className="h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                />
+            ) : (
+                <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            )}
+            <span>{amount}</span>
+        </>
     );
+    if (event.meterSource === "tier")
+        return <TierChip {...props}>{content}</TierChip>;
+    return <PaidChip {...props}>{content}</PaidChip>;
 }
 
 function mergeLastEvents(
@@ -145,6 +168,7 @@ function mergeLastEvents(
     }));
     const earningsEvents: LastEvent[] = earningsRows.map((row) => ({
         kind: "earnings",
+        earningsSource: row.source,
         id: row.cursor_event_id,
         timestamp: row.timestamp,
         primary: row.entity_name,
@@ -250,35 +274,29 @@ export const LastEventsPanel: FC = () => {
                                 <span className="font-semibold text-ink-900 truncate">
                                     {event.primary}
                                 </span>
-                                <span
-                                    className={`tabular-nums font-semibold shrink-0 ${
-                                        event.kind === "earnings"
-                                            ? "text-intent-success-text"
-                                            : "text-intent-danger-text"
-                                    }`}
-                                >
-                                    {formatSignedPollen(event)}
-                                </span>
+                                <EventPollenChip event={event} />
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-ink-600 tabular-nums">
                                     {formatTimestamp(event.timestamp)}
                                 </span>
-                                <EventKindChip kind={event.kind} />
+                                <EventKindChip event={event} />
                             </div>
                             <div className="flex items-center justify-between gap-2 text-xs">
                                 <span className="text-ink-500 truncate">
                                     {event.secondary}
                                 </span>
-                                <MeterSourceChip source={event.meterSource} />
                             </div>
                         </li>
                     ))}
                 </ul>
 
                 <div className="hidden overflow-x-auto sm:block">
-                    <Table className="text-left text-xs">
-                        <TableHead>
+                    <Table
+                        aria-label="Last events"
+                        className="text-left text-xs"
+                    >
+                        <TableHead className="sr-only">
                             <TableRow className="hover:bg-transparent">
                                 <TableHeaderCell
                                     className={TABLE_HEADER_CELL_CLASS}
@@ -286,7 +304,6 @@ export const LastEventsPanel: FC = () => {
                                     Time
                                 </TableHeaderCell>
                                 <TableHeaderCell
-                                    align="center"
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
                                     Type
@@ -297,12 +314,6 @@ export const LastEventsPanel: FC = () => {
                                     Details
                                 </TableHeaderCell>
                                 <TableHeaderCell
-                                    align="center"
-                                    className={TABLE_HEADER_CELL_CLASS}
-                                >
-                                    Source
-                                </TableHeaderCell>
-                                <TableHeaderCell
                                     align="right"
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
@@ -310,7 +321,7 @@ export const LastEventsPanel: FC = () => {
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody className="divide-divider/70">
+                        <TableBody divider="neutral">
                             {state.rows.map((event) => (
                                 <TableRow key={`${event.kind}-${event.id}`}>
                                     <TableCell
@@ -319,11 +330,8 @@ export const LastEventsPanel: FC = () => {
                                     >
                                         {formatTimestamp(event.timestamp)}
                                     </TableCell>
-                                    <TableCell
-                                        align="center"
-                                        className={TABLE_CELL_CLASS}
-                                    >
-                                        <EventKindChip kind={event.kind} />
+                                    <TableCell className={TABLE_CELL_CLASS}>
+                                        <EventKindChip event={event} />
                                     </TableCell>
                                     <TableCell
                                         className={`${TABLE_CELL_CLASS} text-ink-900`}
@@ -338,23 +346,11 @@ export const LastEventsPanel: FC = () => {
                                         </div>
                                     </TableCell>
                                     <TableCell
-                                        align="center"
-                                        className={TABLE_CELL_CLASS}
-                                    >
-                                        <MeterSourceChip
-                                            source={event.meterSource}
-                                        />
-                                    </TableCell>
-                                    <TableCell
                                         align="right"
                                         numeric
-                                        className={`${TABLE_CELL_CLASS} font-semibold ${
-                                            event.kind === "earnings"
-                                                ? "text-intent-success-text"
-                                                : "text-intent-danger-text"
-                                        }`}
+                                        className={TABLE_CELL_CLASS}
                                     >
-                                        {formatSignedPollen(event)}
+                                        <EventPollenChip event={event} />
                                     </TableCell>
                                 </TableRow>
                             ))}

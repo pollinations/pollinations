@@ -1,0 +1,34 @@
+{
+  "pr_number": 14595,
+  "title": "fix: clarify community monitor stream errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14595",
+  "merged_at": "2026-09-08T21:42:09Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reports usage_missing as missing or invalid token usage instead of a missing choices array.\n- Identifies other error events without exposing private provider messages.\n- Extracts the existing parser for regression tests and includes it in monitor installation.\n- Leaves billing, stream acceptance, cadence, and hiding rules unchanged.\n\nTests: 3 parser tests pass; Biome, Node syntax checks, and updater shell syntax check pass.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The monitor reads the room",
+    "blurb": "The community monitor now tells a missing token-usage report from a missing choices array. Private provider chatter remains politely behind the curtain.",
+    "summary": "Extracted the community monitor chat-stream parser into chat-stream.mjs with regression tests, so usage_missing events report missing or invalid token usage and other stream errors are identified without exposing provider messages.",
+    "impact": "Monitor operators get clearer, safer stream diagnostics while billing, stream acceptance, polling cadence, and existing hiding rules continue unchanged.",
+    "keywords": [
+      "community-monitor",
+      "streaming",
+      "error-handling",
+      "usage",
+      "tests",
+      "privacy"
+    ],
+    "visual_concept": "A cozy community monitoring station: Polli watches a CRT terminal sort stream-event cards into clearly labeled trays for token usage and safe generic errors, while private notes remain tucked inside a locked little drawer. Small code-plants and flowers show that the monitor is being maintained rather than redesigned.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian visor, carefully sorting glowing stream-event cards beside a friendly CRT monitor robot in a garden-shed terminal station; a lime green (#ecf874) screen clearly labels \"TOKEN USAGE\" while a small locked drawer keeps private messages safely tucked away, with code-plants and flowers nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14595.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and a tiny librarian visor, carefully sorting glowing stream-event cards beside a friendly CRT monitor robot in a garden-shed terminal station; a lime green (#ecf874) screen clearly labels \"TOKEN USAGE\" while a small locked drawer keeps private messages safely tucked away, with code-plants and flowers nearby. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, dark purple (#110518) outlines, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-08T21:43:33.544234+00:00"
+}

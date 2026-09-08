@@ -33,8 +33,9 @@ export type EarningsFilterState = {
     selectedModelIds: string[];
 };
 
-type TopEarningEntity = {
+type EarningEntity = {
     id: string;
+    source: EarningsSource;
     label: string;
     requests: number;
     pollen: number;
@@ -68,7 +69,7 @@ type EarningsDataResult = {
         totalPaid: number;
         totalTier: number;
         entityCount: number;
-        topEntity: TopEarningEntity | null;
+        entityBreakdowns: EarningEntity[];
     };
 };
 
@@ -319,21 +320,15 @@ export function useEarningsData(
         );
         const entityCount = filteredPerEntity.length;
 
-        const topEntityRow = [...filteredPerEntity].sort((a, b) => {
-            const left =
-                filters.metric === "requests" ? a.requests : a.pollen_earned;
-            const right =
-                filters.metric === "requests" ? b.requests : b.pollen_earned;
-            return right - left;
-        })[0];
-        const topEntity: TopEarningEntity | null = topEntityRow
-            ? {
-                  id: topEntityRow.entity_id,
-                  label: topEntityRow.entity_name,
-                  requests: topEntityRow.requests,
-                  pollen: topEntityRow.pollen_earned,
-              }
-            : null;
+        const entityBreakdowns: EarningEntity[] = filteredPerEntity
+            .map((row) => ({
+                id: `${row.source}:${row.entity_id}`,
+                source: row.source,
+                label: row.entity_name,
+                requests: row.requests,
+                pollen: row.pollen_earned,
+            }))
+            .sort((a, b) => b.pollen - a.pollen);
 
         return {
             totalRequests,
@@ -341,9 +336,9 @@ export function useEarningsData(
             totalPaid,
             totalTier,
             entityCount,
-            topEntity,
+            entityBreakdowns,
         };
-    }, [filteredPerEntity, filters.metric]);
+    }, [filteredPerEntity]);
 
     return {
         loading,

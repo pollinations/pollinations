@@ -21,7 +21,6 @@ type UsageDataResult = {
         tierPollen: number;
         paidPollen: number;
         activeApiKeyCount: number | null;
-        topModel: ModelBreakdown | null;
         modelBreakdowns: ModelBreakdown[];
     };
 };
@@ -250,24 +249,10 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 (s: number, r: DailyUsageRecord) => s + (r.cost_usd || 0),
                 0,
             );
-        type ModelTotal = {
-            requests: number;
-            pollen: number;
-            tierPollen: number;
-            paidPollen: number;
-            inputTextTokens: number;
-            inputCachedTokens: number;
-            inputAudioTokens: number;
-            inputAudioSeconds: number;
-            inputImageTokens: number;
-            outputTextTokens: number;
-            outputReasoningTokens: number;
-            outputAudioTokens: number;
-            outputAudioSeconds: number;
-            outputImageTokens: number;
-            outputVideoSeconds: number;
-        };
-        const modelTotals = new Map<string, ModelTotal>();
+        const modelTotals = new Map<
+            string,
+            { requests: number; pollen: number }
+        >();
         const activeApiKeyIds = new Set<string>();
         for (const r of filtered) {
             if (r.api_key_id) activeApiKeyIds.add(r.api_key_id);
@@ -275,64 +260,16 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             const cur = modelTotals.get(r.model) || {
                 requests: 0,
                 pollen: 0,
-                tierPollen: 0,
-                paidPollen: 0,
-                inputTextTokens: 0,
-                inputCachedTokens: 0,
-                inputAudioTokens: 0,
-                inputAudioSeconds: 0,
-                inputImageTokens: 0,
-                outputTextTokens: 0,
-                outputReasoningTokens: 0,
-                outputAudioTokens: 0,
-                outputAudioSeconds: 0,
-                outputImageTokens: 0,
-                outputVideoSeconds: 0,
             };
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
-            if (r.meter_source === "tier") {
-                cur.tierPollen += r.cost_usd || 0;
-            } else {
-                cur.paidPollen += r.cost_usd || 0;
-            }
-            cur.inputTextTokens += r.input_text_tokens || 0;
-            cur.inputCachedTokens += r.input_cached_tokens || 0;
-            cur.inputAudioTokens += r.input_audio_tokens || 0;
-            cur.inputAudioSeconds += r.input_audio_seconds || 0;
-            cur.inputImageTokens += r.input_image_tokens || 0;
-            cur.outputTextTokens += r.output_text_tokens || 0;
-            cur.outputReasoningTokens += r.output_reasoning_tokens || 0;
-            cur.outputAudioTokens += r.output_audio_tokens || 0;
-            cur.outputAudioSeconds += r.output_audio_seconds || 0;
-            cur.outputImageTokens += r.output_image_tokens || 0;
-            cur.outputVideoSeconds += r.output_video_seconds || 0;
             modelTotals.set(r.model, cur);
         }
         const modelBreakdowns: ModelBreakdown[] = Array.from(
             modelTotals.entries(),
         )
-            .map(([id, s]) => ({
-                model: id,
-                label: id,
-                requests: s.requests,
-                pollen: s.pollen,
-                tierPollen: s.tierPollen,
-                paidPollen: s.paidPollen,
-                inputTextTokens: s.inputTextTokens,
-                inputCachedTokens: s.inputCachedTokens,
-                inputAudioTokens: s.inputAudioTokens,
-                inputAudioSeconds: s.inputAudioSeconds,
-                inputImageTokens: s.inputImageTokens,
-                outputTextTokens: s.outputTextTokens,
-                outputReasoningTokens: s.outputReasoningTokens,
-                outputAudioTokens: s.outputAudioTokens,
-                outputAudioSeconds: s.outputAudioSeconds,
-                outputImageTokens: s.outputImageTokens,
-                outputVideoSeconds: s.outputVideoSeconds,
-            }))
+            .map(([model, totals]) => ({ model, label: model, ...totals }))
             .sort((a, b) => b.pollen - a.pollen);
-        const topModel = modelBreakdowns[0] || null;
         return {
             chartData: sorted,
             stats: {
@@ -342,7 +279,6 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 paidPollen,
                 activeApiKeyCount:
                     activeApiKeyIds.size > 0 ? activeApiKeyIds.size : null,
-                topModel,
                 modelBreakdowns,
             },
         };

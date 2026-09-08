@@ -9,6 +9,12 @@ import {
     SproutIcon,
     StatCard,
     Surface,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
@@ -202,95 +208,144 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             ))}
                     </div>
 
-                    {hasEarnings && (
-                        <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
-                            <StatCard
-                                className="min-w-0"
-                                label="Pollen earned"
-                                value={formatActivityPollen(stats.totalPollen)}
-                                detail={
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <PaidChip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <CardIcon className="h-4 w-4" />
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.totalPaid,
-                                                )}
-                                            </span>
-                                        </PaidChip>
-                                        <TierChip
-                                            size="lg"
-                                            className="font-semibold"
-                                        >
-                                            <SproutIcon className="h-4 w-4" />
-                                            <span className="tabular-nums">
-                                                {formatActivityPollen(
-                                                    stats.totalTier,
-                                                )}
-                                            </span>
-                                        </TierChip>
-                                    </div>
-                                }
-                            />
-                            <StatCard
-                                className="min-w-0"
-                                label="Requests"
-                                value={stats.totalRequests.toLocaleString()}
-                                detail={
-                                    stats.entityCount > 0 ? (
-                                        <span className="text-theme-text-soft">
-                                            across {stats.entityCount} source
-                                            {stats.entityCount === 1 ? "" : "s"}
-                                        </span>
-                                    ) : null
-                                }
-                            />
-                            <StatCard
-                                className="min-w-0"
-                                label="Top earner"
-                                value={
-                                    <span className="text-xl leading-tight">
-                                        {stats.topEntity?.label || "None"}
-                                    </span>
-                                }
-                                detail={
-                                    stats.topEntity ? (
+                    {!loading && !error && hasEarnings && (
+                        <>
+                            <div className="min-w-0 max-w-full overflow-x-auto">
+                                <Table
+                                    aria-label="Earnings by source"
+                                    className="min-w-[520px]"
+                                >
+                                    <TableHead>
+                                        <TableRow>
+                                            <TableHeaderCell scope="col">
+                                                Name
+                                            </TableHeaderCell>
+                                            <TableHeaderCell scope="col">
+                                                Source
+                                            </TableHeaderCell>
+                                            <TableHeaderCell
+                                                scope="col"
+                                                align="right"
+                                            >
+                                                Share
+                                            </TableHeaderCell>
+                                            <TableHeaderCell
+                                                scope="col"
+                                                align="right"
+                                            >
+                                                Pollen
+                                            </TableHeaderCell>
+                                            <TableHeaderCell
+                                                scope="col"
+                                                align="right"
+                                            >
+                                                Requests
+                                            </TableHeaderCell>
+                                        </TableRow>
+                                    </TableHead>
+                                    <TableBody>
+                                        {stats.entityBreakdowns.map(
+                                            (entity) => (
+                                                <TableRow key={entity.id}>
+                                                    <TableCell className="max-w-64 break-words text-xs">
+                                                        {entity.label}
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <Chip size="sm">
+                                                            {entity.source ===
+                                                            "byop_markup"
+                                                                ? "Pollen Connect"
+                                                                : "Model"}
+                                                        </Chip>
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className="text-xs"
+                                                    >
+                                                        {stats.totalPollen > 0
+                                                            ? (
+                                                                  (entity.pollen /
+                                                                      stats.totalPollen) *
+                                                                  100
+                                                              ).toFixed(1)
+                                                            : "0.0"}
+                                                        %
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className="text-xs"
+                                                    >
+                                                        {formatActivityPollen(
+                                                            entity.pollen,
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell
+                                                        align="right"
+                                                        numeric
+                                                        className="text-xs"
+                                                    >
+                                                        {entity.requests.toLocaleString()}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ),
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4 border-t border-divider pt-4">
+                                <StatCard
+                                    className="min-w-0"
+                                    label="Pollen"
+                                    value={formatActivityPollen(
+                                        stats.totalPollen,
+                                    )}
+                                    detail={
                                         <div className="flex flex-wrap items-center gap-2">
-                                            <Chip
+                                            <PaidChip
                                                 size="lg"
                                                 className="font-semibold"
                                             >
-                                                <span className="tabular-nums">
-                                                    {stats.topEntity.requests.toLocaleString()}
-                                                </span>
-                                                <span className="font-medium opacity-70">
-                                                    {stats.topEntity
-                                                        .requests === 1
-                                                        ? "req"
-                                                        : "reqs"}
-                                                </span>
-                                            </Chip>
-                                            <Chip
-                                                size="lg"
-                                                className="font-semibold"
-                                            >
+                                                <CardIcon className="h-4 w-4" />
                                                 <span className="tabular-nums">
                                                     {formatActivityPollen(
-                                                        stats.topEntity.pollen,
+                                                        stats.totalPaid,
                                                     )}
                                                 </span>
-                                                <span className="font-medium opacity-70">
-                                                    pollen
+                                            </PaidChip>
+                                            <TierChip
+                                                size="lg"
+                                                className="font-semibold"
+                                            >
+                                                <SproutIcon className="h-4 w-4" />
+                                                <span className="tabular-nums">
+                                                    {formatActivityPollen(
+                                                        stats.totalTier,
+                                                    )}
                                                 </span>
-                                            </Chip>
+                                            </TierChip>
                                         </div>
-                                    ) : null
-                                }
-                            />
-                        </div>
+                                    }
+                                />
+                                <StatCard
+                                    className="min-w-0"
+                                    label="Requests"
+                                    value={stats.totalRequests.toLocaleString()}
+                                    detail={
+                                        stats.entityCount > 0 ? (
+                                            <span className="text-theme-text-soft">
+                                                across {stats.entityCount}{" "}
+                                                source
+                                                {stats.entityCount === 1
+                                                    ? ""
+                                                    : "s"}
+                                            </span>
+                                        ) : null
+                                    }
+                                />
+                            </div>
+                        </>
                     )}
                 </div>
             </Surface>

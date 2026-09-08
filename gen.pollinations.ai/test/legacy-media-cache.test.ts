@@ -69,6 +69,43 @@ async function request(path: string, init?: RequestInit) {
 afterEach(() => vi.restoreAllMocks());
 
 describe("temporary legacy media cache", () => {
+    it("promotes a legacy image through the real OpenAI route", async () => {
+        const url = new URL(
+            "https://gen.pollinations.ai/image/legacy-openai?model=black-forest-labs%2Fflux.1-schnell&quality=medium&seed=42&width=1024&height=1024",
+        );
+        const key = legacyMediaCacheKey(url);
+        await env.LEGACY_MEDIA_BUCKET.put(key, "image bytes", {
+            httpMetadata: { contentType: "image/png" },
+        });
+        const lookup = vi.spyOn(env.LEGACY_MEDIA_BUCKET, "get");
+        const ctx = createExecutionContext();
+        const response = await worker.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/generations", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    model: "flux",
+                    prompt: "legacy-openai",
+                    seed: 42,
+                    response_format: "url",
+                }),
+            }),
+            env,
+            ctx,
+        );
+        const body = await response.json();
+        await waitOnExecutionContext(ctx);
+        expect(lookup).toHaveBeenCalledWith(key);
+        expect(response.status).toBe(200);
+        expect(body).toMatchObject({
+            data: [
+                {
+                    url: `https://media.pollinations.ai/${await generateCacheKey(url)}`,
+                },
+            ],
+        });
+    });
+
     fixtureTest(
         "serves a migrated hit through the real worker without spending",
         async ({ budgetedApiKey }) => {

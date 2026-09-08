@@ -41,7 +41,7 @@ jobs:
     outputs:
       authorized: ${{ steps.authorization.outputs.authorized }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
@@ -79,7 +79,7 @@ jobs:
     outputs:
       answer: ${{ steps.review.outputs.answer }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false

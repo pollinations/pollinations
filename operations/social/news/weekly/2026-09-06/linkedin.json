@@ -1,0 +1,14 @@
+{
+  "platform": "linkedin",
+  "scope": "weekly",
+  "date": "2026-09-06",
+  "period_start": "2026-08-30",
+  "period_end": "2026-09-05",
+  "generated_at": "2026-09-08T22:07:03.474422+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-06/images/linkedin.jpg"
+    }
+  ],
+  "text": "·˚✿ POLLINATIONS WEEKLY ✿˚·\nvol. 42 — 140 merged PRs. Infrastructure did its usual trick: becoming interesting only when it prevents an afternoon from disappearing.\n\nThe Responses API is now a first-class stateless route across text models: streaming, structured managed-agent output, and request examples included.\n\n───\n\n1. COMMUNITY MEDIA\nCommunity models now cover embeddings, video, TTS, media categories, publishing, uptime in Play, and clearer health state. A model may now have ambitions beyond being a text box.\n\n2. AGENTS + MCP\nManaged agents gained tools and Responses output. Hosted MCP docs, Composio connectors, Pollinations MCP, and Open WebUI integration made existing toolchains less ceremonial to connect.\n\n3. CATALOG + FALLBACKS\nPopularity sorting, search filters, provider fallbacks, and additions including GPT-6 Astra, Gemini 3.8 Flash, DeepSeek V4 Flash, Qwen3.8, and FLUX.2.\n\n4. THE UNGLAMOROUS PART\nTimeouts, stream semantics, pricing, schemas, fallback routing, and faster CI. The plumbing blinked first.\n\nDocs: https://pollinations.ai/docs\nRepo: https://github.com/pollinations/pollinations\n\n140 PRs merged. The repo is public; useful contributions remain welcome.\n\n#OpenSource #AI #DevTools #MCP #BuildInPublic"
+}

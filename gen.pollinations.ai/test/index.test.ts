@@ -427,24 +427,24 @@ describe("gen worker routing", () => {
         }
     });
 
-    it.each([
-        "/models",
-        "/audio/models",
-    ] as const)("advertises transcription endpoints on %s", async (path) => {
-        const response = await fetchWorker(path, envWithEnter());
+    it.each(["/models", "/audio/models"] as const)(
+        "advertises transcription endpoints on %s",
+        async (path) => {
+            const response = await fetchWorker(path, envWithEnter());
 
-        expect(response.status).toBe(200);
-        const models = (await response.json()) as {
-            name: string;
-            supported_endpoints?: string[];
-        }[];
-        for (const name of TRANSCRIPTION_MODEL_IDS) {
-            expect(
-                models.find((model) => model.name === name)
-                    ?.supported_endpoints,
-            ).toEqual(["/v1/audio/transcriptions"]);
-        }
-    });
+            expect(response.status).toBe(200);
+            const models = (await response.json()) as {
+                name: string;
+                supported_endpoints?: string[];
+            }[];
+            for (const name of TRANSCRIPTION_MODEL_IDS) {
+                expect(
+                    models.find((model) => model.name === name)
+                        ?.supported_endpoints,
+                ).toEqual(["/v1/audio/transcriptions"]);
+            }
+        },
+    );
 
     it("serves fixed request pricing without auth", async () => {
         const response = await fetchWorker("/text/models", envWithEnter());
@@ -953,52 +953,61 @@ fixtureTest(
 
         // A URL response must work on the first generation, including when a
         // generic client supplies a stream flag this image endpoint ignores.
-        for (const stream of [false, true]) {
-            const body = {
-                model: "recraft-vector",
-                prompt: `cold stored URL ${stream}`,
-                response_format: "url",
-                seed: 910,
-                stream,
-            };
-            const countBefore = requests.length;
-            let storedUrl: string | undefined;
-            for (const authorization of [`Bearer ${paidApiKey}`, undefined]) {
-                const ctx = createExecutionContext();
-                const headers = new Headers({
-                    "Content-Type": "application/json",
-                });
-                if (authorization) headers.set("Authorization", authorization);
-                const response = await worker.fetch(
-                    new Request(
-                        "https://staging.gen.pollinations.ai/v1/images/generations",
-                        {
-                            method: "POST",
-                            headers,
-                            body: JSON.stringify(body),
-                        },
-                    ),
-                    bindings,
-                    ctx,
-                );
-                expect(response.status).toBe(200);
-                const result = await response.json<{
-                    data: Array<{ url: string }>;
-                }>();
-                const url = result.data[0].url;
-                expect(url).toMatch(
-                    /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
-                );
-                expect(url).toBe(response.headers.get("x-media-url"));
-                if (storedUrl) expect(url).toBe(storedUrl);
-                storedUrl = url;
-                const stored = await bindings.MEDIA.get(
-                    new URL(url).pathname.slice(1),
-                );
-                expect(await stored?.text()).toBe(svg);
-                await waitOnExecutionContext(ctx);
+        for (const endpoint of ["generations", "edits"]) {
+            for (const stream of [false, true]) {
+                const body = {
+                    model: "recraft-vector",
+                    prompt: `cold stored URL ${endpoint} ${stream}`,
+                    response_format: "url",
+                    seed: 910,
+                    stream,
+                    ...(endpoint === "edits" && {
+                        image: "https://example.com/source.svg",
+                    }),
+                };
+                const countBefore = requests.length;
+                let storedUrl: string | undefined;
+                for (const authorization of [
+                    `Bearer ${paidApiKey}`,
+                    undefined,
+                ]) {
+                    const ctx = createExecutionContext();
+                    const headers = new Headers({
+                        "Content-Type": "application/json",
+                    });
+                    if (authorization)
+                        headers.set("Authorization", authorization);
+                    const response = await worker.fetch(
+                        new Request(
+                            `https://staging.gen.pollinations.ai/v1/images/${endpoint}`,
+                            {
+                                method: "POST",
+                                headers,
+                                body: JSON.stringify(body),
+                            },
+                        ),
+                        bindings,
+                        ctx,
+                    );
+                    expect(response.status).toBe(200);
+                    const result = await response.json<{
+                        data: Array<{ url: string }>;
+                    }>();
+                    const url = result.data[0].url;
+                    expect(url).toMatch(
+                        /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
+                    );
+                    expect(url).toBe(response.headers.get("x-media-url"));
+                    if (storedUrl) expect(url).toBe(storedUrl);
+                    storedUrl = url;
+                    const stored = await bindings.MEDIA.get(
+                        new URL(url).pathname.slice(1),
+                    );
+                    expect(await stored?.text()).toBe(svg);
+                    await waitOnExecutionContext(ctx);
+                }
+                expect(requests).toHaveLength(countBefore + 1);
             }
-            expect(requests).toHaveLength(countBefore + 1);
         }
     },
 );

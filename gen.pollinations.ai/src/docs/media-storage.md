@@ -4,7 +4,7 @@ Upload images, audio, and video and get back an id and URL. By default, each upl
 
 Base URL: https://media.pollinations.ai
 
-Cached image, video, audio, and 3D responses include a stored file URL in `X-Media-URL`. The image-generation endpoint also returns it for `response_format: "url"`. Fetching these URLs never triggers generation; missing files return 404. A generated file's ID identifies its request, so a new generation after expiry may replace the file at the same URL.
+Cached image, video, audio, and 3D responses include a stored file URL in `X-Media-URL`. The image-generation and editing endpoints also return it for `response_format: "url"`. Fetching these URLs never triggers generation; missing files return 404. A generated file's ID identifies its request, so a new generation after expiry may replace the file at the same URL.
 
 | Endpoint | Description |
 |----------|-------------|

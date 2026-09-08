@@ -18,9 +18,9 @@ import { edgeRateLimit } from "@/middleware/rate-limit-edge.ts";
 import { textCache } from "@/middleware/text-cache.ts";
 import { track } from "@/middleware/track.ts";
 import {
-    formatOpenAIImageGeneration,
-    handleImageEdit,
+    formatOpenAIImageResponse,
     handleImageGeneration,
+    prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -1085,7 +1085,7 @@ export const proxyRoutes = new Hono<Env>()
         validator("json", CreateImageRequestSchema),
         resolveModel("generate.image"),
         track("generate.image"),
-        every(prepareOpenAIImageGeneration, formatOpenAIImageGeneration),
+        every(prepareOpenAIImageGeneration, formatOpenAIImageResponse),
         prepareGenerationRequest,
         imageCache,
         generationAccess,
@@ -1102,6 +1102,7 @@ export const proxyRoutes = new Hono<Env>()
                 "",
                 "Edit images using a text prompt and one or more source images.",
                 "Accepts JSON with image URLs or multipart/form-data with file uploads.",
+                'Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).',
                 "Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.",
                 "",
                 "**Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.",
@@ -1122,10 +1123,11 @@ export const proxyRoutes = new Hono<Env>()
             defaultModel: "black-forest-labs/flux.1-schnell",
         }),
         track("generate.image"),
+        every(prepareOpenAIImageEdit, formatOpenAIImageResponse),
         prepareGenerationRequest,
-        textCache,
+        imageCache,
         generationAccess,
         deduplicateGeneration,
         apiKeyBudgetReservation,
-        handleImageEdit,
+        handleImageGeneration,
     );

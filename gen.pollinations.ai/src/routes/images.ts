@@ -138,6 +138,7 @@ async function parseEditInput(c: Context): Promise<{
     quality?: string;
     seed?: number;
     safe?: SafeValue;
+    response_format: "url" | "b64_json";
     extra: Record<string, unknown>;
 }> {
     const contentType = c.req.header("content-type") || "";
@@ -176,12 +177,22 @@ async function parseEditInput(c: Context): Promise<{
                 message: "Missing required field: image",
             });
 
+        const format =
+            CreateImageEditRequestSchema.shape.response_format.safeParse(
+                formData.get("response_format") ?? undefined,
+            );
+        if (!format.success)
+            throw new UpstreamError(400 as ContentfulStatusCode, {
+                message: 'response_format must be "url" or "b64_json"',
+            });
+
         return {
             prompt,
             imageUrls,
             size: (formData.get("size") as string) || undefined,
             quality: (formData.get("quality") as string) || undefined,
             safe: formData.get("safe") as string | null,
+            response_format: format.data,
             extra: {
                 ...(formData.has("safe")
                     ? { safe: formData.get("safe") as string }
@@ -223,11 +234,38 @@ async function parseEditInput(c: Context): Promise<{
         quality: parsed.data.quality,
         seed,
         safe: body.safe as SafeValue,
+        response_format: parsed.data.response_format,
         extra: passthrough,
     };
 }
 
 // --- Exported handlers ---
+
+/** Normalize edit inputs once per request; only file-producing inputs identify the cache. */
+export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
+    const { imageUrls, extra, response_format, ...input } =
+        await parseEditInput(c);
+    const body = {
+        ...extra,
+        ...input,
+        model: c.var.model.resolved,
+        quality: input.quality || "medium",
+        safe: normalizeSafeValue(input.safe),
+        prompt: await applySafetyToInput(c, input.prompt, input.safe),
+        image: imageUrls.map((image_url) => ({ image_url })),
+    };
+    // Replay the JSON edits contract even when the caller uploaded multipart files.
+    // Leave random seed selection to execution so retries without a seed still join.
+    c.set("generationRequestBody", JSON.stringify(body));
+    c.set("generationRequestContentType", "application/json");
+    c.req.addValidatedData("json", {
+        ...body,
+        image: imageUrls,
+        response_format,
+    });
+    if (c.var.track) c.var.track.streamRequested = false;
+    await next();
+});
 
 /** Resolve the POST body to the equivalent public media URL used for caching. */
 export const prepareOpenAIImageGeneration = createMiddleware<Env>(
@@ -270,7 +308,7 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
 );
 
 /** Convert the cached binary media response to the OpenAI Images shape. */
-export const formatOpenAIImageGeneration = createMiddleware<Env>(
+export const formatOpenAIImageResponse = createMiddleware<Env>(
     async (c, next) => {
         await next();
         const response = c.res;
@@ -332,44 +370,10 @@ export async function handleImageGeneration(c: Context<Env>) {
 
     const response = await generateImageOrVideoResponse(c, body.prompt, {
         ...body,
+        ...resolveParams(body),
         ...collectPassthrough(body, "image"),
         model,
     });
     c.var.track.overrideResponseTracking(response.clone());
     return withSafetyHeaders(c, response);
-}
-
-export async function handleImageEdit(c: Context<Env>) {
-    const { prompt, imageUrls, size, quality, seed, safe, extra } =
-        await parseEditInput(c);
-    const safePrompt = await applySafetyToInput(c, prompt, safe);
-    const resolved = resolveParams({ size, quality, seed });
-
-    const response = await generateImageOrVideoResponse(c, safePrompt, {
-        prompt: safePrompt,
-        image: imageUrls,
-        ...extra,
-        ...resolved,
-        model: c.var.model.resolved,
-    });
-    c.var.track.overrideResponseTracking(response.clone());
-    const usage = responseImageUsage(c, response);
-    const mediaType = response.headers.get("content-type") || undefined;
-
-    const base64 = arrayBufferToBase64(await response.arrayBuffer());
-    return withSafetyHeaders(
-        c,
-        c.json(
-            imageResponse(
-                {
-                    b64_json: base64,
-                    ...(mediaType === "image/svg+xml"
-                        ? { media_type: mediaType }
-                        : {}),
-                },
-                safePrompt,
-                usage,
-            ),
-        ),
-    );
 }

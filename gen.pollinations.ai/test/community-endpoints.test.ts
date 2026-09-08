@@ -569,40 +569,40 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it.each([
-        null,
-        undefined,
-    ])("parses media payloads without a text API (%s)", (api) => {
-        const payload = parseListingPayload(
-            "proxy",
-            JSON.stringify({
+    it.each([null, undefined])(
+        "parses media payloads without a text API (%s)",
+        (api) => {
+            const payload = parseListingPayload(
+                "proxy",
+                JSON.stringify({
+                    bearerTokenCiphertext: "ciphertext",
+                    modality: "image",
+                    api,
+                    imagePricing: "request",
+                    inputModalities: ["image", "image"],
+                    perUserRpm: null,
+                    fallbacks: ["owner/model"],
+                    prices: { completionImagePrice: 0.2 },
+                }),
+            );
+
+            expect(payload).toMatchObject({
                 bearerTokenCiphertext: "ciphertext",
+                api: null,
+                paidOnly: false,
                 modality: "image",
-                api,
                 imagePricing: "request",
-                inputModalities: ["image", "image"],
+                inputModalities: ["image"],
                 perUserRpm: null,
                 fallbacks: ["owner/model"],
-                prices: { completionImagePrice: 0.2 },
-            }),
-        );
-
-        expect(payload).toMatchObject({
-            bearerTokenCiphertext: "ciphertext",
-            api: null,
-            paidOnly: false,
-            modality: "image",
-            imagePricing: "request",
-            inputModalities: ["image"],
-            perUserRpm: null,
-            fallbacks: ["owner/model"],
-            prices: {
-                promptTextPrice: 0,
-                completionImagePrice: 0.2,
-                completionVideoPrice: 0,
-            },
-        });
-    });
+                prices: {
+                    promptTextPrice: 0,
+                    completionImagePrice: 0.2,
+                    completionVideoPrice: 0,
+                },
+            });
+        },
+    );
 
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {
@@ -5295,6 +5295,33 @@ fixtureTest(
                 total_tokens: 1,
             },
         });
+
+        // Changing the response format does not create another edit, even
+        // for multipart requests without an explicit seed or authentication.
+        editFormData.set("response_format", "url");
+        const cachedEditResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                body: editFormData,
+            }),
+        );
+        expect(cachedEditResponse.status).toBe(200);
+        expect(cachedEditResponse.headers.get("x-cache")).toBe("HIT");
+        const cachedEdit = await cachedEditResponse.json<{
+            data: Array<{ url: string }>;
+            usage: { total_tokens: number };
+        }>();
+        expect(cachedEdit.usage.total_tokens).toBe(1);
+        expect(cachedEdit.data[0].url).toMatch(
+            /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
+        );
+        const storedEdit = await env.MEDIA.get(
+            new URL(cachedEdit.data[0].url).pathname.slice(1),
+        );
+        if (!storedEdit) throw new Error("Edited image was not stored");
+        expect(
+            Array.from(new Uint8Array(await storedEdit.arrayBuffer())),
+        ).toEqual(TEST_PNG_BYTES);
 
         const simpleEditResponse = await fetchGen(
             new Request(

@@ -40,6 +40,9 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EmbeddingContentPart,
+    EmbeddingOptions,
+    EmbeddingResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -347,6 +350,26 @@ export async function generateAudio(
 ): Promise<AudioResponseExt> {
     const response = await getClient().audio(text, options);
     return wrapAudioResponse(response);
+}
+
+// ============================================================================
+// Embeddings Functions
+// ============================================================================
+
+/**
+ * Create embeddings from text or multimodal input.
+ *
+ * @example
+ * ```ts
+ * const result = await createEmbeddings('Hello world');
+ * console.log(result.data[0].embedding); // number[]
+ * ```
+ */
+export async function createEmbeddings(
+    input: string | string[] | EmbeddingContentPart | EmbeddingContentPart[],
+    options?: EmbeddingOptions,
+): Promise<EmbeddingResponse> {
+    return getClient().embeddings(input, options);
 }
 
 // ============================================================================

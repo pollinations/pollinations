@@ -293,6 +293,16 @@ describe("media cache", () => {
                             "X-Model-Used": "qwen-tts",
                             "X-TTS-Voice": "Serena",
                             "X-Usage-Completion-Audio-Tokens": "10",
+                            "X-Generation-Id": "gen-fish-test",
+                            "Song-Id": "song-test",
+                            "X-ElevenLabs-Song-Id": "song-test",
+                            "X-Safety-Applied": "prompt",
+                            "Authorization": "Bearer must-not-be-stored",
+                            "Set-Cookie": "session=must-not-be-stored",
+                            "X-Request-Id": "original-request",
+                            "Access-Control-Allow-Origin":
+                                "https://caller.test",
+                            "Cache-Control": "private, no-store",
                         },
                     }),
             );
@@ -308,6 +318,34 @@ describe("media cache", () => {
         expect(
             hit.response.headers.get("X-Usage-Completion-Audio-Tokens"),
         ).toBe("10");
+        for (const [name, value] of Object.entries({
+            "X-Generation-Id": "gen-fish-test",
+            "Song-Id": "song-test",
+            "X-ElevenLabs-Song-Id": "song-test",
+            "X-Safety-Applied": "prompt",
+        })) {
+            expect(hit.response.headers.get(name)).toBe(value);
+        }
+        const stored = await env.MEDIA.get(
+            await generateCacheKey(
+                new URL("https://gen.pollinations.ai/media/metadata"),
+            ),
+        );
+        expect(stored).not.toBeNull();
+        for (const name of [
+            "Authorization",
+            "Set-Cookie",
+            "X-Request-Id",
+            "Access-Control-Allow-Origin",
+        ]) {
+            expect(warm.response.headers.has(name)).toBe(true);
+            expect(hit.response.headers.has(name)).toBe(false);
+            expect(stored?.headers.has(name)).toBe(false);
+        }
+        expect(stored?.headers.get("Cache-Control")).toBe(
+            "public, max-age=0, must-revalidate",
+        );
+        await stored?.arrayBuffer();
     });
 
     it("refreshes cached media TTL on aged cache hits", async () => {

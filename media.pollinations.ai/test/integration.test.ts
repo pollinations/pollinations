@@ -223,7 +223,7 @@ describe("media.pollinations.ai", () => {
                     "X-Model-Used": "test-model",
                     "X-Usage-Completion-Audio-Tokens": "10",
                     "Content-Security-Policy": "default-src 'none'; sandbox",
-                    "Authorization": "Bearer must-not-be-stored",
+                    "X-Custom-File-Metadata": "caller-selected",
                 },
             }),
         );
@@ -242,7 +242,9 @@ describe("media.pollinations.ai", () => {
         expect(response.headers.get("content-security-policy")).toBe(
             "default-src 'none'; sandbox",
         );
-        expect(response.headers.get("authorization")).toBeNull();
+        expect(response.headers.get("x-custom-file-metadata")).toBe(
+            "caller-selected",
+        );
         expect(new Uint8Array(await response.arrayBuffer())).toEqual(TINY_PNG);
         const cached = await storage.get(id);
         expect(cached?.headers.get("x-model-used")).toBe("test-model");

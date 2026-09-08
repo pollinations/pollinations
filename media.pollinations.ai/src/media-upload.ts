@@ -114,18 +114,6 @@ export async function readMedia(
     return new Response(body, { headers });
 }
 
-const GENERATED_HEADERS = new Set([
-    "content-disposition",
-    "content-security-policy",
-    "x-content-type-options",
-    "x-elevenlabs-reference-song-id",
-    "x-elevenlabs-song-id",
-    "x-fallback-target",
-    "x-model-used",
-    "x-tts-voice",
-    "x-voice-changer-voice",
-]);
-
 export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
     upload(
         body: ReadableStream<Uint8Array>,
@@ -142,7 +130,7 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
         return (await this.env.MEDIA_BUCKET.head(id)) !== null;
     }
 
-    /** Trusted generation write; public uploads keep their own ID contract. */
+    /** Trusted generation write; the caller selects headers safe for public replay. */
     async put(id: string, response: Response): Promise<void> {
         if (!/^[a-f0-9]{64}$/.test(id))
             throw new Error("Invalid generation ID");
@@ -154,11 +142,7 @@ export class MediaUpload extends WorkerEntrypoint<MediaStorageEnv> {
             keyType: "generation",
         };
         for (const [name, value] of response.headers) {
-            if (
-                GENERATED_HEADERS.has(name) ||
-                name.startsWith("x-safety-") ||
-                name.startsWith("x-usage-")
-            ) {
+            if (name !== "content-type") {
                 metadata[`header_${name}`] = value;
             }
         }

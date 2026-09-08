@@ -18,6 +18,22 @@ type MediaCacheConfig = {
     label: string;
 };
 
+// Preserve file/generation metadata, not headers tied to an individual request.
+const CACHED_HEADERS = new Set([
+    "content-type",
+    "content-disposition",
+    "content-security-policy",
+    "x-content-type-options",
+    "song-id",
+    "x-elevenlabs-reference-song-id",
+    "x-elevenlabs-song-id",
+    "x-generation-id",
+    "x-fallback-target",
+    "x-model-used",
+    "x-tts-voice",
+    "x-voice-changer-voice",
+]);
+
 function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
     return {
         storage: "media",
@@ -58,9 +74,19 @@ function mediaCacheAdapter(config: MediaCacheConfig): GenerationCacheAdapter {
             );
         },
         capture(c, cacheKey, response) {
+            const stored = new Response(response.clone().body, response);
+            for (const name of [...stored.headers.keys()]) {
+                if (
+                    !CACHED_HEADERS.has(name) &&
+                    !name.startsWith("x-safety-") &&
+                    !name.startsWith("x-usage-")
+                ) {
+                    stored.headers.delete(name);
+                }
+            }
             return {
                 response,
-                write: c.env.MEDIA.put(cacheKey, response.clone()),
+                write: c.env.MEDIA.put(cacheKey, stored),
             };
         },
     };

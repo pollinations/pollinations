@@ -73,65 +73,61 @@ describe("Fal fallback media models", () => {
         [0, "9:16", true, 1080, 720, 5, "3:2"],
         [99, "9:16", false, 1024, 1024, 15, "9:16"],
         [-1, undefined, true, 1024, 1024, 1, "1:1"],
-    ] as const)(
-        "routes Grok duration %s through Fal with unchanged parameters",
-        async (duration, aspectRatio, dimensionsExplicit, width, height, expectedDuration, expectedRatio) => {
-            const requests = mockFal({ video: { url: MEDIA_URL } });
-            const resultPromise = createAndReturnVideo(
+    ] as const)("routes Grok duration %s through Fal with unchanged parameters", async (duration, aspectRatio, dimensionsExplicit, width, height, expectedDuration, expectedRatio) => {
+        const requests = mockFal({ video: { url: MEDIA_URL } });
+        const resultPromise = createAndReturnVideo(
+            "move",
+            {
+                ...baseParams,
+                model: "x-ai/grok-imagine-video",
+                duration,
+                aspectRatio,
+                dimensionsExplicit,
+                width,
+                height,
+                image: ["https://example.com/start.png"],
+            },
+            "grok-test",
+        );
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
+        expect(requests[0]).toEqual({
+            url: "https://queue.fal.run/xai/grok-imagine-video/image-to-video",
+            body: {
+                prompt: "move",
+                duration: expectedDuration,
+                resolution: "720p",
+                aspect_ratio: expectedRatio,
+                image_url: "https://example.com/start.png",
+                seed: 42,
+            },
+        });
+        expect(result.trackingData).toEqual({
+            actualModel: "x-ai/grok-imagine-video",
+            usage: {
+                promptImageTokens: 1,
+                completionVideoSeconds: expectedDuration,
+            },
+        });
+    });
+
+    it.each([
+        0.5, 4.5, 15.5,
+    ])("rejects fractional Grok duration %s before Fal submission", async (duration) => {
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
+        await expect(
+            createAndReturnVideo(
                 "move",
                 {
                     ...baseParams,
                     model: "x-ai/grok-imagine-video",
                     duration,
-                    aspectRatio,
-                    dimensionsExplicit,
-                    width,
-                    height,
-                    image: ["https://example.com/start.png"],
                 },
                 "grok-test",
-            );
-            await vi.advanceTimersByTimeAsync(5_000);
-            const result = await resultPromise;
-            expect(requests[0]).toEqual({
-                url: "https://queue.fal.run/xai/grok-imagine-video/image-to-video",
-                body: {
-                    prompt: "move",
-                    duration: expectedDuration,
-                    resolution: "720p",
-                    aspect_ratio: expectedRatio,
-                    image_url: "https://example.com/start.png",
-                    seed: 42,
-                },
-            });
-            expect(result.trackingData).toEqual({
-                actualModel: "x-ai/grok-imagine-video",
-                usage: {
-                    promptImageTokens: 1,
-                    completionVideoSeconds: expectedDuration,
-                },
-            });
-        },
-    );
-
-    it.each([0.5, 4.5, 15.5])(
-        "rejects fractional Grok duration %s before Fal submission",
-        async (duration) => {
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
-            await expect(
-                createAndReturnVideo(
-                    "move",
-                    {
-                        ...baseParams,
-                        model: "x-ai/grok-imagine-video",
-                        duration,
-                    },
-                    "grok-test",
-                ),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
+            ),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
 
     it("sends Seedream 5 through the exact Fal endpoint", async () => {
         const requests = mockFal({
@@ -177,34 +173,31 @@ describe("Fal fallback media models", () => {
                 camera_fixed: false,
             },
         ],
-    ] as const)(
-        "sends %s through its exact Fal endpoint",
-        async (model, endpoint, input) => {
-            const requests = mockFal({
-                video: { url: MEDIA_URL, content_type: "video/mp4" },
-            });
-            const resultPromise = callFalFallbackVideo("a blue circle", {
-                ...baseParams,
-                model,
-                duration: input.duration,
-                resolution:
-                    model === "bytedance/seedance-1-pro-fast:fal"
-                        ? "480p"
-                        : undefined,
-            });
-            await vi.advanceTimersByTimeAsync(5_000);
-            const result = await resultPromise;
+    ] as const)("sends %s through its exact Fal endpoint", async (model, endpoint, input) => {
+        const requests = mockFal({
+            video: { url: MEDIA_URL, content_type: "video/mp4" },
+        });
+        const resultPromise = callFalFallbackVideo("a blue circle", {
+            ...baseParams,
+            model,
+            duration: input.duration,
+            resolution:
+                model === "bytedance/seedance-1-pro-fast:fal"
+                    ? "480p"
+                    : undefined,
+        });
+        await vi.advanceTimersByTimeAsync(5_000);
+        const result = await resultPromise;
 
-            expect(requests[0]).toEqual({
-                url: `https://queue.fal.run/${endpoint}`,
-                body: { prompt: "a blue circle", ...input, seed: 42 },
-            });
-            expect(result.durationSeconds).toBe(input.duration);
-            expect(result.trackingData.usage.completionVideoSeconds).toBe(
-                input.duration,
-            );
-        },
-    );
+        expect(requests[0]).toEqual({
+            url: `https://queue.fal.run/${endpoint}`,
+            body: { prompt: "a blue circle", ...input, seed: 42 },
+        });
+        expect(result.durationSeconds).toBe(input.duration);
+        expect(result.trackingData.usage.completionVideoSeconds).toBe(
+            input.duration,
+        );
+    });
 
     it("sends Wan 2.2 text-to-video through Fal Turbo", async () => {
         const requests = mockFal({

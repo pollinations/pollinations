@@ -363,31 +363,28 @@ describe("OpenRouter Grok Video Pro", () => {
         [undefined, "720p"],
         ["480p", "480p"],
         ["1080p", "1080p"],
-    ] as const)(
-        "routes 1.5 resolution %s as %s",
-        async (resolution, expectedResolution) => {
-            setOpenRouterEnv();
-            const requests: Record<string, unknown>[] = [];
-            mockGrokFetch(requests);
+    ] as const)("routes 1.5 resolution %s as %s", async (resolution, expectedResolution) => {
+        setOpenRouterEnv();
+        const requests: Record<string, unknown>[] = [];
+        mockGrokFetch(requests);
 
-            const result = await callOpenRouterGrokVideoAPI(
-                "a calm ocean at sunrise",
-                {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video-1.5",
-                    resolution,
-                },
-            );
-
-            expect(requests[0]).toMatchObject({
+        const result = await callOpenRouterGrokVideoAPI(
+            "a calm ocean at sunrise",
+            {
+                ...baseParams,
                 model: "x-ai/grok-imagine-video-1.5",
-                resolution: expectedResolution,
-            });
-            expect(result.trackingData?.actualModel).toBe(
-                "x-ai/grok-imagine-video-1.5",
-            );
-        },
-    );
+                resolution,
+            },
+        );
+
+        expect(requests[0]).toMatchObject({
+            model: "x-ai/grok-imagine-video-1.5",
+            resolution: expectedResolution,
+        });
+        expect(result.trackingData?.actualModel).toBe(
+            "x-ai/grok-imagine-video-1.5",
+        );
+    });
 
     it.each([
         ["x-ai/grok-imagine-video", "x-ai/grok-imagine-video"],
@@ -489,66 +486,62 @@ describe("OpenRouter Grok Video Pro", () => {
     it.each([
         ["x-ai/grok-imagine-video:openrouter", 5],
         ["x-ai/grok-imagine-video-1.5", 3],
-    ] as const)(
-        "enforces a %s timeout of %i minutes",
-        async (model, minutes) => {
-            vi.useFakeTimers();
-            setOpenRouterEnv();
+    ] as const)("enforces a %s timeout of %i minutes", async (model, minutes) => {
+        vi.useFakeTimers();
+        setOpenRouterEnv();
 
-            let pollAttempts = 0;
-            vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
-                const href = typeof url === "string" ? url : url.toString();
+        let pollAttempts = 0;
+        vi.spyOn(globalThis, "fetch").mockImplementation(async (url) => {
+            const href = typeof url === "string" ? url : url.toString();
 
-                if (href === SUBMIT_URL) {
-                    return new Response(
-                        JSON.stringify({
-                            id: "job-grok-test",
-                            polling_url: GROK_POLL_URL,
-                            status: "pending",
-                        }),
-                        { status: 200 },
-                    );
-                }
+            if (href === SUBMIT_URL) {
+                return new Response(
+                    JSON.stringify({
+                        id: "job-grok-test",
+                        polling_url: GROK_POLL_URL,
+                        status: "pending",
+                    }),
+                    { status: 200 },
+                );
+            }
 
-                if (href === GROK_POLL_URL) {
-                    pollAttempts++;
-                    return new Response("rate limited", {
-                        status: 429,
-                        headers: { "Retry-After": "30" },
-                    });
-                }
+            if (href === GROK_POLL_URL) {
+                pollAttempts++;
+                return new Response("rate limited", {
+                    status: 429,
+                    headers: { "Retry-After": "30" },
+                });
+            }
 
-                return new Response("unexpected URL", { status: 404 });
-            });
+            return new Response("unexpected URL", { status: 404 });
+        });
 
-            const resultPromise = callOpenRouterGrokVideoAPI(
-                "a calm ocean at sunrise",
-                { ...baseParams, model },
-            );
-            const rejection = expect(resultPromise).rejects.toMatchObject({
-                status: 504,
-            });
+        const resultPromise = callOpenRouterGrokVideoAPI(
+            "a calm ocean at sunrise",
+            { ...baseParams, model },
+        );
+        const rejection = expect(resultPromise).rejects.toMatchObject({
+            status: 504,
+        });
 
-            await vi.advanceTimersByTimeAsync(minutes * 60 * 1000);
-            await rejection;
-            expect(pollAttempts).toBe(minutes * 2);
-        },
-    );
+        await vi.advanceTimersByTimeAsync(minutes * 60 * 1000);
+        await rejection;
+        expect(pollAttempts).toBe(minutes * 2);
+    });
 
-    it.each([0.5, 4.5, 15.5])(
-        "rejects non-integer duration %s before submitting a job",
-        async (duration) => {
-            setOpenRouterEnv();
-            const fetchSpy = vi.spyOn(globalThis, "fetch");
+    it.each([
+        0.5, 4.5, 15.5,
+    ])("rejects non-integer duration %s before submitting a job", async (duration) => {
+        setOpenRouterEnv();
+        const fetchSpy = vi.spyOn(globalThis, "fetch");
 
-            await expect(
-                callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
-                    ...baseParams,
-                    model: "x-ai/grok-imagine-video",
-                    duration,
-                }),
-            ).rejects.toMatchObject({ status: 400 });
-            expect(fetchSpy).not.toHaveBeenCalled();
-        },
-    );
+        await expect(
+            callOpenRouterGrokVideoAPI("a calm ocean at sunrise", {
+                ...baseParams,
+                model: "x-ai/grok-imagine-video",
+                duration,
+            }),
+        ).rejects.toMatchObject({ status: 400 });
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
 });

@@ -637,7 +637,7 @@ https://gen.pollinations.ai/image/a%20cat%20in%20space?model=flux
 
 ### Community image models
 
-Community image models use an owner/model id and support generation through `/image/{prompt}` and `/v1/images/generations`. The registration test adds image input and `/v1/images/edits` metadata when the registrant's edit endpoint succeeds. OpenAI-compatible responses use `b64_json`; URL responses are not supported for community models. See `/image/models` for the live model list and supported endpoints.
+Community image models use an owner/model id and support generation through `/image/{prompt}` and `/v1/images/generations`. The registration test adds image input and `/v1/images/edits` metadata when the registrant's edit endpoint succeeds. OpenAI-compatible responses default to `b64_json`; set `response_format: "url"` for a stored media URL. See `/image/models` for the live model list and supported endpoints.
 
 #### `GET` `/image/{prompt}` — Generate Image
 
@@ -682,7 +682,7 @@ curl "https://gen.pollinations.ai/image/a%20beautiful%20sunset%20over%20mountain
 
 OpenAI-compatible image generation endpoint.
 
-Generate images from text prompts. Supports `response_format: "url"` (returns a pollinations.ai URL) or `"b64_json"` (returns base64-encoded image data, default).
+Generate images from text prompts. Supports `response_format: "url"` (returns the stored media URL; fetching it never generates an image) or `"b64_json"` (returns base64-encoded image data, default).
 
 **Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.
 
@@ -695,7 +695,7 @@ Generate images from text prompts. Supports `response_format: "url"` (returns a 
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
-| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
+| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `user` | `string` | End-user identifier for abuse tracking |
 | `image` | `string` \| `string`[] | Reference image URL(s) for image-to-image generation (Pollinations extension) |
 | `reference_images` | `any` | — |
@@ -727,9 +727,26 @@ OpenAI-compatible image editing endpoint.
 
 Edit images using a text prompt and one or more source images.
 Accepts JSON with image URLs or multipart/form-data with file uploads.
+Set response_format to "url" for a stored media URL, or "b64_json" for base64 image data (default).
 Community image models forward edits to the registrant's OpenAI-compatible endpoint as multipart form data.
 
 **Authentication:** Include your API key as `Authorization: Bearer YOUR_API_KEY`.
+
+📥 **Request body** · `application/json`
+
+| Field | Type | Description |
+|---|---|---|
+| `prompt` * | `string` | A text description of the desired edit · length: `1…32000` |
+| `image` * | `string` \| `object`[] | Source image(s). A URL string, or an array of {image_url} objects (OpenAI format) |
+| `model` | `string` | The model to use for image generation · default: `"black-forest-labs/flux.1-schnell"` |
+| `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
+| `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) |
+| `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
+| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
+| `resolution` | enum (8) — `"1k"`, `"2k"`, `"360p"`, … | Output resolution for resolution-priced image and video models (Pollinations extension) |
+| `safe` | `any` | Safety features: comma-separated list of privacy, secrets, sexual, violence, shield, true, nsfw. true enables privacy,secrets; nsfw enables sexual,violence. Also accepted in the Pollinations-Safe header. Defaults to off; false and 0 are accepted as off. |
+
+<sub>`*` = required field</sub>
 
 📤 **Response** · `200` · `application/json` — Success
 
@@ -1814,6 +1831,7 @@ Test an upstream model before registering it. Text tests call the selected Chat 
 | `usage` * | `object` | Raw provider usage, or `{ images: 1 }` when an image provider returns no token usage. |
 | `billableUsage` * | `object` | Normalized billable usage fields used to reveal applicable prices. |
 | `imagePricing` | `"request"` \| `"tokens"` | Image tests only: pricing mode detected from the provider response. |
+| `imageEditError` | `string` | Image tests only: edit-test failure details. Generation succeeded; this does not establish that editing is unsupported. |
 | `inputModalities` | `"text"` \| `"image"` \| `"audio"` \| `"video"`[] | Image tests only: input types detected from generation and edit probes. |
 
 <sub>`*` = required field</sub>
@@ -2251,6 +2269,8 @@ Upload images, audio, and video and get back an id and URL. By default, each upl
 
 Base URL: https://media.pollinations.ai
 
+Stored image, video, audio, and 3D files are linked through `Link: <https://media.pollinations.ai/{id}>; rel="enclosure"`. Image generation and editing preserve this header in both URL and base64 JSON responses; `response_format: "url"` also returns the URL in `data[].url`. Audio JSON responses, such as transcripts and timestamped speech, do not have a stored-file link. Fetching media URLs never triggers generation; missing files return 404. A generated file's ID identifies its request, so a new generation after expiry may replace the file at the same URL. Clients may continue using an older cached result after regeneration.
+
 | Endpoint | Description |
 |----------|-------------|
 | `POST /upload` | Upload a file, receive a unique media URL |
@@ -2396,7 +2416,7 @@ curl -X DELETE "https://media.pollinations.ai/media/550e8400-e29b-41d4-a716-4466
 
 #### `GET` `/{id}` — Retrieve media
 
-Get a file by its id. Access keeps files from expiring.
+Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -2416,9 +2436,9 @@ curl "https://media.pollinations.ai/550e8400-e29b-41d4-a716-446655440000"
 
 ---
 
-#### `HEAD` `/{id}` — Check if media exists
+#### `HEAD` `/{id}` — Retrieve media
 
-Check existence and metadata without downloading the file.
+Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.
 
 ⚙️ **Parameters**
 
@@ -2428,7 +2448,7 @@ Check existence and metadata without downloading the file.
 
 <sub>`*` = required parameter</sub>
 
-📤 **Response** · `200` — File exists (headers include Content-Type, Content-Length, X-Content-Id)
+📤 **Response** · `200` — File content with appropriate Content-Type
 
 💻 **Example**
 
@@ -3427,7 +3447,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `n` | `integer` | Number of images to generate (currently max 1) · default: `1` · range: `1…1` |
 | `size` | `string` | Image size as WIDTHxHEIGHT (e.g., 1024x1024, 512x512) · default: `"1024x1024"` |
 | `quality` | `"standard"` \| `"hd"` \| `"low"` \| `"medium"` \| `"high"` | Image quality. OpenAI 'standard'/'hd' mapped to Pollinations equivalents · default: `"medium"` |
-| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
+| `response_format` | `"url"` \| `"b64_json"` | Return format. "url" returns a stored media.pollinations.ai URL, "b64_json" returns base64-encoded image data · default: `"b64_json"` |
 | `user` | `string` | End-user identifier for abuse tracking |
 | `image` | `string` \| `string`[] | Reference image URL(s) for image-to-image generation (Pollinations extension) |
 | `reference_images` | `any` | — |
@@ -3446,7 +3466,7 @@ Marks the end of a static prompt prefix to cache (Gemini, Claude, and Nova model
 | `data` * | `object`[] | — |
 | `data[].url` | `string` | — |
 | `data[].b64_json` | `string` | — |
-| `data[].media_type` | `string` | MIME type for non-raster output such as image/svg+xml |
+| `data[].media_type` | `string` | MIME type, included for URL responses and non-raster output |
 | `data[].revised_prompt` | `string` | — |
 | `usage` * | `object` | — |
 | `usage.input_tokens` * | `integer` | — |

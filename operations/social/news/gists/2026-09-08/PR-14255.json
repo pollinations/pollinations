@@ -1,0 +1,35 @@
+{
+  "pr_number": 14255,
+  "title": "refactor: authorize admin dashboards at backend",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14255",
+  "merged_at": "2026-09-08T10:59:41Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds independent admin-only Pollinations OAuth sessions to KPI, Economics and Observability. Sign-out affects only the current app; requests identity only, with no API-key delegation.\n- Reuses the shared sign-in page, official provider button, Fraunces headings and account menu. Completes fresh GitHub sign-in and shows recoverable login errors. Registers both dashboard domain families.\n- Rechecks admin status and token validity within a 60-second signed-cookie window, coalesces concurrent checks, and treats Enter outages as retryable 503s without clearing sessions. Encrypts the identity token in the HttpOnly cookie. Protects Economics registry assets and Grafana through the app gateway without a separate Grafana login session.\n- Restores existing KPI GitHub credentials, Economics staging setup, deployment contract validation and secret synchronization paths. Verified 28 shared auth tests, 19 Enter integration tests, KPI/staging regressions, type checks, all dashboard builds, private-bundle isolation and Economics deployment dry run.\n- Before rollout: separately approve/provision production session secrets, verify data readers, deploy Enter first, then verify all apps. Existing app cookies require sign-in again. No production deployment performed; Grafana container image validation still requires Docker.\n\nReplaces #14089 and #14252. Consolidates #14565.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The dashboards got a gatekeeper",
+    "blurb": "KPI, Economics, and Observability now each keep their own tidy admin session. Polli checked the badge at the backend, then put the keys in an HttpOnly cookie where keys generally belong.",
+    "summary": "Added shared backend-enforced Pollinations OAuth sessions for the KPI, Economics, and Observability dashboards, with independent app sign-outs, 60-second admin/token revalidation, encrypted HttpOnly identity cookies, and gateway protection for Economics assets and Grafana.",
+    "impact": "Admins get a consistent Pollinations sign-in flow across all three dashboards, while protected tools verify current admin access without API-key delegation or a separate Grafana login.",
+    "keywords": [
+      "oauth",
+      "admin-auth",
+      "dashboards",
+      "kpi",
+      "economics",
+      "observability",
+      "grafana"
+    ],
+    "visual_concept": "Depict Polli as a careful dashboard caretaker using a small admin keycard to open three cozy garden-shed doors labelled KPI, Economics, and Observability. A friendly CRT Monitor Robot watches protected charts behind the doors, while a tiny lockbox represents encrypted HttpOnly sessions and flowering code-vines connect the three tools.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and a tiny security-guard cap, checking an admin keycard beside three little dashboard garden sheds labelled “KPI”, “ECONOMICS”, and “OBSERVABILITY”; a friendly CRT monitor robot peers excitedly at protected charts while code-plants and flowers grow around a glowing lockbox. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14255.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, and a tiny security-guard cap, checking an admin keycard beside three little dashboard garden sheds labelled “KPI”, “ECONOMICS”, and “OBSERVABILITY”; a friendly CRT monitor robot peers excitedly at protected charts while code-plants and flowers grow around a glowing lockbox. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T11:01:11.854856+00:00"
+}

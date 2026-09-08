@@ -248,7 +248,7 @@ export const prepareOpenAIImageEdit = createMiddleware<Env>(async (c, next) => {
     const body = {
         ...extra,
         ...input,
-        model: c.var.model.resolved,
+        model: c.var.model.requested,
         quality: input.quality || "medium",
         safe: normalizeSafeValue(input.safe),
         prompt: await applySafetyToInput(c, input.prompt, input.safe),
@@ -283,7 +283,10 @@ export const prepareOpenAIImageGeneration = createMiddleware<Env>(
             body.prompt,
             body.safe as SafeValue,
         );
-        Object.assign(body, resolved, { model, prompt: safePrompt });
+        Object.assign(body, resolved, {
+            model: c.var.model.requested,
+            prompt: safePrompt,
+        });
         c.set("generationRequestBody", JSON.stringify(body));
 
         const imageUrl = new URL(

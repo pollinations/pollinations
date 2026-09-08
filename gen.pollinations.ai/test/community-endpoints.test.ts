@@ -569,40 +569,40 @@ describe("community endpoint helpers", () => {
         });
     });
 
-    it.each([null, undefined])(
-        "parses media payloads without a text API (%s)",
-        (api) => {
-            const payload = parseListingPayload(
-                "proxy",
-                JSON.stringify({
-                    bearerTokenCiphertext: "ciphertext",
-                    modality: "image",
-                    api,
-                    imagePricing: "request",
-                    inputModalities: ["image", "image"],
-                    perUserRpm: null,
-                    fallbacks: ["owner/model"],
-                    prices: { completionImagePrice: 0.2 },
-                }),
-            );
-
-            expect(payload).toMatchObject({
+    it.each([
+        null,
+        undefined,
+    ])("parses media payloads without a text API (%s)", (api) => {
+        const payload = parseListingPayload(
+            "proxy",
+            JSON.stringify({
                 bearerTokenCiphertext: "ciphertext",
-                api: null,
-                paidOnly: false,
                 modality: "image",
+                api,
                 imagePricing: "request",
-                inputModalities: ["image"],
+                inputModalities: ["image", "image"],
                 perUserRpm: null,
                 fallbacks: ["owner/model"],
-                prices: {
-                    promptTextPrice: 0,
-                    completionImagePrice: 0.2,
-                    completionVideoPrice: 0,
-                },
-            });
-        },
-    );
+                prices: { completionImagePrice: 0.2 },
+            }),
+        );
+
+        expect(payload).toMatchObject({
+            bearerTokenCiphertext: "ciphertext",
+            api: null,
+            paidOnly: false,
+            modality: "image",
+            imagePricing: "request",
+            inputModalities: ["image"],
+            perUserRpm: null,
+            fallbacks: ["owner/model"],
+            prices: {
+                promptTextPrice: 0,
+                completionImagePrice: 0.2,
+                completionVideoPrice: 0,
+            },
+        });
+    });
 
     it("rejects stored payloads that do not match their listing schema", () => {
         const textPayload = {

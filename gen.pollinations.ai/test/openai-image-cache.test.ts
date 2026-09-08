@@ -29,158 +29,153 @@ const testLog = {
 } as unknown as Logger;
 
 describe("OpenAI image cache", () => {
-    it.each(["json", "multipart"])(
-        "rejects an invalid %s edit response format",
-        async (encoding) => {
-            const app = new Hono<Env>().post(
+    it.each([
+        "json",
+        "multipart",
+    ])("rejects an invalid %s edit response format", async (encoding) => {
+        const app = new Hono<Env>().post(
+            "/v1/images/edits",
+            prepareOpenAIImageEdit,
+            () => new Response("unexpected"),
+        );
+        const input = {
+            prompt: "edit",
+            image: "https://example.com/image.png",
+            response_format: "invalid",
+        };
+        const form = new FormData();
+        for (const [name, value] of Object.entries(input))
+            form.set(name, value);
+        const response = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                ...(encoding === "json"
+                    ? {
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify(input),
+                      }
+                    : { body: form }),
+            }),
+            {} as CloudflareBindings,
+        );
+        expect(response.status).toBe(400);
+    });
+    it.each([
+        "json",
+        "multipart",
+    ])("keeps %s edit identity stable across response formats and executor replay", async (encoding) => {
+        const app = new Hono<Env>()
+            .use("*", async (c, next) => {
+                c.set("model", {
+                    requested: "flux",
+                    resolved: "flux",
+                    definition: {} as Env["Variables"]["model"]["definition"],
+                });
+                await next();
+            })
+            .post(
                 "/v1/images/edits",
                 prepareOpenAIImageEdit,
-                () => new Response("unexpected"),
+                prepareGenerationRequest,
+                (c) =>
+                    c.json({
+                        body: c.var.generationRequestBody,
+                        identity: c.var.generationCacheBody,
+                        contentType: c.var.generationRequestContentType,
+                        input: c.req.valid("json" as never),
+                    }),
             );
-            const input = {
-                prompt: "edit",
-                image: "https://example.com/image.png",
-                response_format: "invalid",
-            };
+        const results = [];
+        for (const response_format of ["b64_json", "url"]) {
             const form = new FormData();
-            for (const [name, value] of Object.entries(input))
-                form.set(name, value);
-            const response = await app.fetch(
-                new Request("https://gen.pollinations.ai/v1/images/edits", {
+            form.set("prompt", "make it blue");
+            form.set("response_format", response_format);
+            form.append(
+                "image",
+                new Blob(["first"], { type: "image/png" }),
+                "one.png",
+            );
+            form.append(
+                "image[]",
+                new Blob(["second"], { type: "image/png" }),
+                "two.png",
+            );
+            const request = new Request(
+                "https://gen.pollinations.ai/v1/images/edits",
+                {
                     method: "POST",
                     ...(encoding === "json"
                         ? {
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify(input),
+                              headers: {
+                                  "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({
+                                  prompt: "make it blue",
+                                  image: [
+                                      {
+                                          image_url:
+                                              "https://example.com/one.png",
+                                      },
+                                      {
+                                          image_url:
+                                              "https://example.com/two.png",
+                                      },
+                                  ],
+                                  response_format,
+                              }),
                           }
                         : { body: form }),
-                }),
-                {} as CloudflareBindings,
+                },
             );
-            expect(response.status).toBe(400);
-        },
-    );
-    it.each(["json", "multipart"])(
-        "keeps %s edit identity stable across response formats and executor replay",
-        async (encoding) => {
-            const app = new Hono<Env>()
-                .use("*", async (c, next) => {
-                    c.set("model", {
-                        requested: "flux",
-                        resolved: "flux",
-                        definition:
-                            {} as Env["Variables"]["model"]["definition"],
-                    });
-                    await next();
-                })
-                .post(
-                    "/v1/images/edits",
-                    prepareOpenAIImageEdit,
-                    prepareGenerationRequest,
-                    (c) =>
-                        c.json({
-                            body: c.var.generationRequestBody,
-                            identity: c.var.generationCacheBody,
-                            contentType: c.var.generationRequestContentType,
-                            input: c.req.valid("json" as never),
-                        }),
-                );
-            const results = [];
-            for (const response_format of ["b64_json", "url"]) {
-                const form = new FormData();
-                form.set("prompt", "make it blue");
-                form.set("response_format", response_format);
-                form.append(
-                    "image",
-                    new Blob(["first"], { type: "image/png" }),
-                    "one.png",
-                );
-                form.append(
-                    "image[]",
-                    new Blob(["second"], { type: "image/png" }),
-                    "two.png",
-                );
-                const request = new Request(
-                    "https://gen.pollinations.ai/v1/images/edits",
-                    {
-                        method: "POST",
-                        ...(encoding === "json"
-                            ? {
-                                  headers: {
-                                      "Content-Type": "application/json",
-                                  },
-                                  body: JSON.stringify({
-                                      prompt: "make it blue",
-                                      image: [
-                                          {
-                                              image_url:
-                                                  "https://example.com/one.png",
-                                          },
-                                          {
-                                              image_url:
-                                                  "https://example.com/two.png",
-                                          },
-                                      ],
-                                      response_format,
-                                  }),
-                              }
-                            : { body: form }),
-                    },
-                );
-                const response = await app.fetch(
-                    request,
-                    {} as CloudflareBindings,
-                );
-                expect(response.status).toBe(200);
-                const result = await response.json<{
-                    body: string;
-                    identity: string;
-                    contentType: string;
-                    input: { image: string[]; response_format: string };
-                }>();
-                expect(result.input.response_format).toBe(response_format);
-                expect(result.input.image).toHaveLength(2);
-                expect(JSON.parse(result.body)).not.toHaveProperty("seed");
-                expect(JSON.parse(result.body)).not.toHaveProperty(
-                    "response_format",
-                );
-                if (encoding === "multipart") {
-                    expect(result.input.image).toEqual([
-                        `data:image/png;base64,${btoa("first")}`,
-                        `data:image/png;base64,${btoa("second")}`,
-                    ]);
-                }
-                const replay = await app.fetch(
-                    new Request(request.url, {
-                        method: "POST",
-                        headers: { "Content-Type": result.contentType },
-                        body: result.body,
-                    }),
-                    {} as CloudflareBindings,
-                );
-                expect(replay.status).toBe(200);
-                expect(
-                    (await replay.json<{ identity: string }>()).identity,
-                ).toBe(result.identity);
-                results.push(result);
+            const response = await app.fetch(request, {} as CloudflareBindings);
+            expect(response.status).toBe(200);
+            const result = await response.json<{
+                body: string;
+                identity: string;
+                contentType: string;
+                input: { image: string[]; response_format: string };
+            }>();
+            expect(result.input.response_format).toBe(response_format);
+            expect(result.input.image).toHaveLength(2);
+            expect(JSON.parse(result.body)).not.toHaveProperty("seed");
+            expect(JSON.parse(result.body)).not.toHaveProperty(
+                "response_format",
+            );
+            if (encoding === "multipart") {
+                expect(result.input.image).toEqual([
+                    `data:image/png;base64,${btoa("first")}`,
+                    `data:image/png;base64,${btoa("second")}`,
+                ]);
             }
-            expect(results[0].identity).toBe(results[1].identity);
-            const changedInput = JSON.parse(results[0].body);
-            changedInput.image[0].image_url =
-                "https://example.com/different.png";
-            const changed = await app.fetch(
-                new Request("https://gen.pollinations.ai/v1/images/edits", {
+            const replay = await app.fetch(
+                new Request(request.url, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify(changedInput),
+                    headers: { "Content-Type": result.contentType },
+                    body: result.body,
                 }),
                 {} as CloudflareBindings,
             );
-            expect(
-                (await changed.json<{ identity: string }>()).identity,
-            ).not.toBe(results[0].identity);
-        },
-    );
+            expect(replay.status).toBe(200);
+            expect((await replay.json<{ identity: string }>()).identity).toBe(
+                result.identity,
+            );
+            results.push(result);
+        }
+        expect(results[0].identity).toBe(results[1].identity);
+        const changedInput = JSON.parse(results[0].body);
+        changedInput.image[0].image_url = "https://example.com/different.png";
+        const changed = await app.fetch(
+            new Request("https://gen.pollinations.ai/v1/images/edits", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(changedInput),
+            }),
+            {} as CloudflareBindings,
+        );
+        expect((await changed.json<{ identity: string }>()).identity).not.toBe(
+            results[0].identity,
+        );
+    });
     it("labels base64 video responses with their media type", async () => {
         const app = new Hono<Env>()
             .use("*", async (c, next) => {

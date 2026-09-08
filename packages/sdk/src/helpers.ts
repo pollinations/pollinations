@@ -40,6 +40,9 @@ import type {
     DailyUsageOptions,
     DailyUsageResponse,
     DeviceAuthorization,
+    EmbeddingInput,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -320,6 +323,26 @@ export async function* chatStream(
  */
 export function conversation(options?: ChatOptions): Conversation {
     return new Conversation(options, getClient());
+}
+
+// ============================================================================
+// Embeddings Functions
+// ============================================================================
+
+/**
+ * Create vector embeddings (OpenAI-compatible)
+ *
+ * @example
+ * ```ts
+ * const response = await embeddings('Hello world');
+ * console.log(response.data[0].embedding);
+ * ```
+ */
+export async function embeddings(
+    input: EmbeddingInput,
+    options?: EmbeddingsOptions,
+): Promise<EmbeddingsResponse> {
+    return getClient().embeddings(input, options);
 }
 
 // ============================================================================

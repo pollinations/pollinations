@@ -21,6 +21,9 @@ import type {
     DeviceCodeResponse,
     DeviceTokenResponse,
     EarningsOptions,
+    EmbeddingInput,
+    EmbeddingsOptions,
+    EmbeddingsResponse,
     ImageEditOptions,
     ImageGenerateOptions,
     ImageGenerateV1Options,
@@ -877,6 +880,55 @@ export class Pollinations {
         }
 
         return response.json() as Promise<ChatResponse>;
+    }
+
+    /**
+     * Create vector embeddings (OpenAI-compatible POST /v1/embeddings).
+     *
+     * @example
+     * ```ts
+     * const response = await pollinations.embeddings('Hello world');
+     * console.log(response.data[0].embedding);
+     * ```
+     */
+    async embeddings(
+        input: EmbeddingInput,
+        options: EmbeddingsOptions = {},
+    ): Promise<EmbeddingsResponse> {
+        if (!input || (Array.isArray(input) && input.length === 0)) {
+            throw new PollinationsError(
+                "Input is required and cannot be empty",
+                "INVALID_INPUT",
+                400,
+            );
+        }
+
+        const body = this.stripUndefined({
+            input,
+            model: options.model,
+            dimensions: options.dimensions,
+            encoding_format: options.encodingFormat,
+            task_type: options.taskType,
+            input_type: options.inputType,
+            user: options.user,
+        });
+
+        const response = await fetchWithTimeout(
+            `${this.baseUrl}/v1/embeddings`,
+            {
+                method: "POST",
+                headers: this.getHeaders("application/json"),
+                body: JSON.stringify(body),
+            },
+            this.textTimeout,
+            options.signal,
+        );
+
+        if (!response.ok) {
+            await this.handleErrorResponse(response);
+        }
+
+        return response.json() as Promise<EmbeddingsResponse>;
     }
 
     /**

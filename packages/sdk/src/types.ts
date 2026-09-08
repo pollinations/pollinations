@@ -1037,6 +1037,48 @@ export interface ImageGenerateV1Options extends RequestOptions {
 }
 
 // ============================================================================
+// Embeddings (OpenAI-compatible POST /v1/embeddings)
+// ============================================================================
+
+/** Input for embeddings generation */
+export type EmbeddingInput =
+    | string
+    | string[]
+    | MessageContentPart
+    | MessageContentPart[];
+
+/** Options for POST /v1/embeddings */
+export interface EmbeddingsOptions extends RequestOptions {
+    /** Embedding model to use */
+    model?: string;
+    /** Output embedding dimensions (model-specific) */
+    dimensions?: number;
+    /** Output encoding format */
+    encodingFormat?: "float" | "base64";
+    /** Task type hint (for Gemini models) */
+    taskType?: string;
+    /** Input type (for Cohere models) */
+    inputType?: "query" | "document";
+    /** Unique identifier representing your end-user */
+    user?: string;
+}
+
+/** An individual embedding object */
+export interface EmbeddingObject {
+    object: "embedding";
+    embedding: number[] | string;
+    index: number;
+}
+
+/** Response from POST /v1/embeddings */
+export interface EmbeddingsResponse {
+    object: "list";
+    data: EmbeddingObject[];
+    model: string;
+    usage?: CompletionUsage;
+}
+
+// ============================================================================
 // Error Types
 // ============================================================================
 

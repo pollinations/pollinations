@@ -50,9 +50,8 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import {
-    formatOpenAIImageGeneration,
-    handleImageEdit,
     handleImageGeneration,
+    prepareOpenAIImageEdit,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
 
@@ -189,7 +188,6 @@ generationExecutorRoutes.post(
     resolveModel("generate.image"),
     track("generate.image"),
     prepareOpenAIImageGeneration,
-    formatOpenAIImageGeneration,
     prepareGenerationRequest,
     imageExecutionCache,
     apiKeyBudgetReservation,
@@ -200,10 +198,11 @@ generationExecutorRoutes.post(
     "/v1/images/edits",
     resolveModel("generate.image", { defaultModel: "flux" }),
     track("generate.image"),
+    prepareOpenAIImageEdit,
     prepareGenerationRequest,
-    textExecutionCache,
+    imageExecutionCache,
     apiKeyBudgetReservation,
-    handleImageEdit,
+    handleImageGeneration,
 );
 
 generationExecutorRoutes.post(

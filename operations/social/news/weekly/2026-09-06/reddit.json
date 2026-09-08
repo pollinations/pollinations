@@ -1,0 +1,15 @@
+{
+  "platform": "reddit",
+  "scope": "weekly",
+  "date": "2026-09-06",
+  "period_start": "2026-08-30",
+  "period_end": "2026-09-05",
+  "generated_at": "2026-09-08T22:07:03.474422+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-06/images/reddit.jpg"
+    }
+  ],
+  "title": "Weekly update: Responses, community media, and agent tooling",
+  "text": "140 PRs merged this week. The largest change is that the Responses API is now a first-class, stateless route across text models, including structured output and OpenAI-compatible streaming. That sounds mundane until you are trying to swap providers without rebuilding your client around a different dialect of streaming errors.\n\nCommunity models now cover embeddings, video, and TTS, with clearer modality rules, publishing behavior, uptime in Play, and less mysterious time between a change being queued and becoming visible. The catalog also gained popularity sorting, search-based filters, MCP server listings, Azure FLUX.2 Pro/Flex, Gemini 3.8 Flash, Qwen3.8, DeepSeek V4 Flash Vision, Claude Fable 5.1, GPT-6 Astra, and several fallback paths.\n\nAgents got hosted MCP guidance, Composio connectors, managed-agent Responses output, and more places to run: Polli CLI now has Pi, OpenCode, Prime Agent, and OpenClaw harness profiles. Open WebUI can also run with Pollinations login and MCP on a user key.\n\nA disproportionate amount of the week was reliability work: fallback routing, malformed streams, upstream timeouts/rate limits, usage accounting, content-policy status handling, and catalog schema cleanup. Software remains mostly edge cases arranged around a demo.\n\nCode: https://github.com/pollinations/pollinations\nDocs: https://pollinations.ai/docs\nAPI reference: https://pollinations.ai/APIDOCS.md"
+}

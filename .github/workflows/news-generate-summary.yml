@@ -14,12 +14,13 @@ on:
         required: false
         type: string
       mode:
-        description: 'Choose one generator, or auto-run the calendar schedule'
+        description: 'Choose a generator; daily-generation-only restores news files without staging posts to Buffer'
         required: false
         type: choice
         options:
           - auto
           - daily
+          - daily-generation-only
           - weekly
           - monthly
 
@@ -78,6 +79,8 @@ jobs:
           elif [ "$MODE" = "daily" ]; then
             RUN_DAILY=true
             RUN_DAILY_BUFFER=true
+          elif [ "$MODE" = "daily-generation-only" ]; then
+            RUN_DAILY=true
           elif [ "$MODE" = "weekly" ]; then
             RUN_WEEKLY=true
           elif [ "$MODE" = "monthly" ]; then

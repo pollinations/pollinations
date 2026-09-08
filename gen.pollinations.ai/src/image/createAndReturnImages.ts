@@ -392,6 +392,24 @@ const GPTIMAGE_CONFIGS: Record<string, GPTImageConfig[]> = {
             region: "direct",
         },
     ],
+    "openai/gpt-image-2.5-flare": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.5-flare",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
+    "openai/gpt-image-2.5-sunburst": [
+        {
+            provider: "openai",
+            baseUrl: "https://api.openai.com/v1",
+            modelName: "gpt-image-2.5-sunburst",
+            apiKeyEnv: "OPENAI_API_KEY",
+            region: "direct",
+        },
+    ],
 };
 
 const gptImageEndpointIndexes = new Map<string, number>();
@@ -434,7 +452,7 @@ const callGPTImageWithEndpoint = async (
     // gpt-image-2 supports arbitrary resolutions with constraints.
     // Older gpt-image-1 models (via Azure) only support 3 fixed sizes; snap via closest ratio.
     let size: string;
-    if (config.modelName === "gpt-image-2") {
+    if (config.modelName.startsWith("gpt-image-2")) {
         // gpt-image-2 constraints:
         //   Both edges multiples of 16px, long edge ≤ 3840px (4K)
         //   Aspect ratio ≤ 3:1, pixel count 655,360–8,294,400
@@ -543,8 +561,11 @@ const callGPTImageWithEndpoint = async (
                     // Resize large input images to reduce token costs
                     // GPT Image 1.5 calculates input tokens as: (width × height) / 750
                     // gpt-image-2 supports larger inputs up to 3840px
-                    const inputMaxDimension =
-                        config.modelName === "gpt-image-2" ? 3840 : 1536;
+                    const inputMaxDimension = config.modelName.startsWith(
+                        "gpt-image-2",
+                    )
+                        ? 3840
+                        : 1536;
                     const buffer = await resizeInputImageForGptImage(
                         originalBuffer,
                         inputMaxDimension,
@@ -595,6 +616,8 @@ const callGPTImageWithEndpoint = async (
         if (config.provider === "openai") {
             formData.append("model", config.modelName);
         }
+        formData.append("size", size);
+        formData.append("output_format", outputFormat);
         formData.append("quality", quality);
         formData.append("n", "1");
 
@@ -713,6 +736,8 @@ const generateImage = async (
         case "openai/gpt-image-1-mini":
         case "openai/gpt-image-1.5":
         case "openai/gpt-image-2":
+        case "openai/gpt-image-2.5-flare":
+        case "openai/gpt-image-2.5-sunburst":
         case "openai/gpt-image-1-mini:openai":
         case "openai/gpt-image-1.5:openai":
         case "openai/gpt-image-2:openai": {

@@ -217,7 +217,7 @@ export const PeriodPicker: FC<PeriodPickerProps> = ({
             <Dropdown
                 open={open}
                 onOpenChange={setOpen}
-                className="polli:w-[320px] polli:max-w-[calc(100vw-2rem)] polli:rounded-xl polli:p-3.5"
+                className="polli:w-[320px] polli:max-w-[calc(100vw-2rem)] polli:rounded-xl polli:border polli:border-divider polli:bg-surface-opaque polli:p-3.5 polli:shadow-container"
                 trigger={
                     trigger ??
                     ((isOpen) => (

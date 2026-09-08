@@ -249,7 +249,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             modelTotals.entries(),
         )
             .map(([model, totals]) => ({ model, label: model, ...totals }))
-            .sort((a, b) => b.pollen - a.pollen);
+            .sort((a, b) => b[filters.metric] - a[filters.metric]);
         return {
             chartData: sorted,
             hasData: filtered.length > 0,

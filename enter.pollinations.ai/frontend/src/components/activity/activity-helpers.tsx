@@ -9,6 +9,7 @@ import {
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { formatActivityPollen } from "./format-activity-pollen";
+import type { Metric } from "./types";
 
 type ActivityFilterProps = {
     label: string;
@@ -142,52 +143,42 @@ export function formatActivityChartDate(
 }
 
 export function PollenUsageBadges(usage: {
+    metric: Metric;
     paidPollen: number;
     tierPollen: number;
     paidRequests: number;
     tierRequests: number;
 }) {
+    const isPollen = usage.metric === "pollen";
+    const paid = isPollen
+        ? formatActivityPollen(usage.paidPollen)
+        : usage.paidRequests.toLocaleString();
+    const quest = isPollen
+        ? formatActivityPollen(usage.tierPollen)
+        : usage.tierRequests.toLocaleString();
+    const unit = isPollen ? "Pollen" : "requests";
     return (
-        <div className="grid min-w-80 grid-cols-2 gap-2">
+        <div className="grid min-w-44 grid-cols-2 gap-2">
             <PaidChip
                 size="sm"
-                className="grid grid-cols-2 gap-0 whitespace-nowrap tabular-nums"
-                title="Paid Pollen and requests"
-                aria-label={`${formatActivityPollen(usage.paidPollen)} Paid Pollen, ${usage.paidRequests.toLocaleString()} requests`}
+                className="flex items-center justify-between gap-2 whitespace-nowrap tabular-nums"
+                title={`Paid ${unit}`}
+                aria-label={`${paid} Paid ${unit}`}
             >
-                <span className="inline-flex items-center gap-1 pr-2">
-                    <CardIcon
-                        className="h-3.5 w-3.5 shrink-0"
-                        aria-hidden="true"
-                    />
-                    {formatActivityPollen(usage.paidPollen)}
-                </span>
-                <span className="inline-flex items-center justify-end gap-1 border-l border-current/20 pl-2">
-                    <span aria-hidden="true" className="opacity-60">
-                        #
-                    </span>
-                    {usage.paidRequests.toLocaleString()}
-                </span>
+                <CardIcon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                {paid}
             </PaidChip>
             <TierChip
                 size="sm"
-                className="grid grid-cols-2 gap-0 whitespace-nowrap tabular-nums"
-                title="Quest Pollen and requests"
-                aria-label={`${formatActivityPollen(usage.tierPollen)} Quest Pollen, ${usage.tierRequests.toLocaleString()} requests`}
+                className="flex items-center justify-between gap-2 whitespace-nowrap tabular-nums"
+                title={`Quest ${unit}`}
+                aria-label={`${quest} Quest ${unit}`}
             >
-                <span className="inline-flex items-center gap-1 pr-2">
-                    <SproutIcon
-                        className="h-3.5 w-3.5 shrink-0"
-                        aria-hidden="true"
-                    />
-                    {formatActivityPollen(usage.tierPollen)}
-                </span>
-                <span className="inline-flex items-center justify-end gap-1 border-l border-current/20 pl-2">
-                    <span aria-hidden="true" className="opacity-60">
-                        #
-                    </span>
-                    {usage.tierRequests.toLocaleString()}
-                </span>
+                <SproutIcon
+                    className="h-3.5 w-3.5 shrink-0"
+                    aria-hidden="true"
+                />
+                {quest}
             </TierChip>
         </div>
     );

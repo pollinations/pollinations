@@ -17,7 +17,7 @@ export const MetricTabs: FC<{
         <span className="px-1 text-xs font-medium text-theme-text-muted">
             Show
         </span>
-        <div className="flex min-w-0 gap-1 @[36rem]:flex-col">
+        <div className="flex min-w-0 gap-1">
             {METRIC_OPTIONS.map((metric) => (
                 <TabButton
                     key={metric}

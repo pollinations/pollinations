@@ -232,7 +232,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
             </div>
 
             {!loading && !error && hasUsage && (
-                <ModelBreakdownTable stats={stats} />
+                <ModelBreakdownTable stats={stats} metric={metric} />
             )}
         </>
     );
@@ -250,57 +250,69 @@ const UsageEmptyState: FC = () => (
 );
 
 type ModelBreakdownTableProps = {
+    metric: Metric;
     stats: ReturnType<typeof useUsageData>["stats"];
 };
 
-const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({ stats }) => (
-    <div className="min-w-0 max-w-full overflow-x-auto">
-        <Table
-            aria-label="Usage by model"
-            className="min-w-[420px] [&_tr:hover]:bg-transparent"
-        >
-            <TableHead className="sr-only">
-                <TableRow>
-                    <TableHeaderCell scope="col">Model</TableHeaderCell>
-                    <TableHeaderCell scope="col" align="right">
-                        Share
-                    </TableHeaderCell>
-                    <TableHeaderCell scope="col" align="right">
-                        Pollen
-                    </TableHeaderCell>
-                </TableRow>
-            </TableHead>
-            <TableBody className="[&>tr]:border-divider!">
-                {stats.modelBreakdowns.map((model) => (
-                    <TableRow key={model.model}>
-                        <TableCell className="max-w-64 break-words text-xs">
-                            {model.label}
-                        </TableCell>
+const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
+    stats,
+    metric,
+}) => {
+    const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
+    return (
+        <div className="min-w-0 max-w-full overflow-x-auto">
+            <Table
+                aria-label="Usage by model"
+                className="min-w-[340px] [&_tr:hover]:bg-transparent"
+            >
+                <TableHead className="sr-only">
+                    <TableRow>
+                        <TableHeaderCell scope="col">Model</TableHeaderCell>
+                        <TableHeaderCell scope="col" align="right">
+                            Share
+                        </TableHeaderCell>
+                        <TableHeaderCell scope="col" align="right">
+                            {metric === "pollen" ? "Pollen" : "Requests"}
+                        </TableHeaderCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody className="[&>tr]:border-divider!">
+                    {stats.modelBreakdowns.map((model) => (
+                        <TableRow key={model.model}>
+                            <TableCell className="max-w-64 break-words text-xs">
+                                {model.label}
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className="text-xs"
+                            >
+                                {total > 0
+                                    ? ((model[metric] / total) * 100).toFixed(1)
+                                    : "0.0"}
+                                %
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className="text-xs"
+                            >
+                                <PollenUsageBadges {...model} metric={metric} />
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <tfoot className="border-t border-divider font-semibold">
+                    <TableRow>
+                        <TableHeaderCell scope="row" colSpan={2}>
+                            Total
+                        </TableHeaderCell>
                         <TableCell align="right" numeric className="text-xs">
-                            {stats.totalPollen > 0
-                                ? (
-                                      (model.pollen / stats.totalPollen) *
-                                      100
-                                  ).toFixed(1)
-                                : "0.0"}
-                            %
-                        </TableCell>
-                        <TableCell align="right" numeric className="text-xs">
-                            <PollenUsageBadges {...model} />
+                            <PollenUsageBadges {...stats} metric={metric} />
                         </TableCell>
                     </TableRow>
-                ))}
-            </TableBody>
-            <tfoot className="border-t border-divider font-semibold">
-                <TableRow>
-                    <TableHeaderCell scope="row" colSpan={2}>
-                        Total
-                    </TableHeaderCell>
-                    <TableCell align="right" numeric className="text-xs">
-                        <PollenUsageBadges {...stats} />
-                    </TableCell>
-                </TableRow>
-            </tfoot>
-        </Table>
-    </div>
-);
+                </tfoot>
+            </Table>
+        </div>
+    );
+};

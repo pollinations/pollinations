@@ -288,7 +288,7 @@ export function useEarningsData(
                 paidRequests: row.paid_requests,
                 tierRequests: row.tier_requests,
             }))
-            .sort((a, b) => b.pollen - a.pollen);
+            .sort((a, b) => b[filters.metric] - a[filters.metric]);
 
         return {
             totalRequests,
@@ -305,7 +305,7 @@ export function useEarningsData(
             ),
             entityBreakdowns,
         };
-    }, [filteredPerEntity]);
+    }, [filteredPerEntity, filters.metric]);
 
     return {
         loading,

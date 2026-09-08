@@ -3,6 +3,7 @@ import {
     ChevronIcon,
     PeriodPicker,
     periodToWindow,
+    TabButton,
 } from "@pollinations/ui";
 import type { FC } from "react";
 import {
@@ -34,9 +35,6 @@ function dateLabel(value: ActivityPeriod, compact = false): string {
     });
 }
 
-const CONTROL =
-    "inline-flex min-h-9 shrink-0 items-center justify-center rounded-full px-1 sm:px-2 text-xs font-medium text-theme-text-base hover:bg-theme-bg-subtle focus-visible:outline focus-visible:outline-2 disabled:opacity-30 disabled:cursor-not-allowed";
-
 export const ActivityPeriodNavigation: FC<{
     label: string;
     value: ActivityPeriod;
@@ -65,7 +63,7 @@ export const ActivityPeriodNavigation: FC<{
                     value={value}
                     minDate={ACTIVITY_MIN_DATE}
                     header={
-                        <div className="mb-3 flex shrink-0 items-center gap-0.5">
+                        <div className="mb-3 grid w-full grid-cols-3 items-center gap-2 sm:grid-cols-2">
                             {(["day", "week", "month"] as const).map(
                                 (granularity) => (
                                     <div
@@ -76,10 +74,10 @@ export const ActivityPeriodNavigation: FC<{
                                                 : "contents"
                                         }
                                     >
-                                        <button
-                                            type="button"
-                                            aria-label={`Show ${label.toLowerCase()} by ${granularity}`}
-                                            aria-pressed={
+                                        <TabButton
+                                            size="lg"
+                                            ariaLabel={`Show ${label.toLowerCase()} by ${granularity}`}
+                                            active={
                                                 value.granularity ===
                                                 granularity
                                             }
@@ -91,14 +89,14 @@ export const ActivityPeriodNavigation: FC<{
                                                     ),
                                                 )
                                             }
-                                            className={`${CONTROL} ${value.granularity === granularity ? "bg-theme-bg-active text-theme-text-strong" : ""}`}
+                                            className="min-h-12 w-full px-3!"
                                         >
                                             {granularity === "day"
                                                 ? "Days"
                                                 : granularity === "week"
                                                   ? "Weeks"
                                                   : "Months"}
-                                        </button>
+                                        </TabButton>
                                     </div>
                                 ),
                             )}

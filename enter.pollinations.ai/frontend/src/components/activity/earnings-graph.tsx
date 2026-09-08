@@ -68,6 +68,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         label: model.label,
     }));
 
+    const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
     const hasEarnings = hasData;
     const downloadDisabled =
         loading || (stats.totalRequests === 0 && stats.totalPollen === 0);
@@ -188,7 +189,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 <div className="min-w-0 max-w-full overflow-x-auto">
                     <Table
                         aria-label="Earnings by source"
-                        className="min-w-[520px] [&_tr:hover]:bg-transparent"
+                        className="min-w-[440px] [&_tr:hover]:bg-transparent"
                     >
                         <TableHead className="sr-only">
                             <TableRow>
@@ -202,7 +203,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                     Share
                                 </TableHeaderCell>
                                 <TableHeaderCell scope="col" align="right">
-                                    Pollen
+                                    {metric === "pollen"
+                                        ? "Pollen"
+                                        : "Requests"}
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
@@ -224,10 +227,9 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                         numeric
                                         className="text-xs"
                                     >
-                                        {stats.totalPollen > 0
+                                        {total > 0
                                             ? (
-                                                  (entity.pollen /
-                                                      stats.totalPollen) *
+                                                  (entity[metric] / total) *
                                                   100
                                               ).toFixed(1)
                                             : "0.0"}
@@ -238,7 +240,10 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                         numeric
                                         className="text-xs"
                                     >
-                                        <PollenUsageBadges {...entity} />
+                                        <PollenUsageBadges
+                                            {...entity}
+                                            metric={metric}
+                                        />
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -254,6 +259,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                     className="text-xs"
                                 >
                                     <PollenUsageBadges
+                                        metric={metric}
                                         paidPollen={stats.totalPaid}
                                         tierPollen={stats.totalTier}
                                         paidRequests={stats.paidRequests}

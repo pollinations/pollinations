@@ -34,9 +34,9 @@ export const ActivityToolbar: FC<{
                 {download}
             </div>
         </div>
-        <div className="grid min-w-0 grid-cols-2 items-start gap-3 @[36rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7.5rem]">
+        <div className="grid min-w-0 grid-cols-1 items-start gap-3 @[36rem]:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_14rem]">
             {children}
-            <div className="col-span-2 @[36rem]:col-span-1">
+            <div className="min-w-0">
                 <MetricTabs value={metric} onChange={onMetricChange} />
             </div>
         </div>

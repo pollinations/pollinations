@@ -33,6 +33,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, economics, and infrastructure
 - `operations/social/` — Discord/Reddit/GitHub automation
+- `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
 ## API Gateway
 

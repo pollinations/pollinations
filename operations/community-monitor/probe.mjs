@@ -2,6 +2,7 @@
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
 import { parseChatStream } from "./chat-stream.mjs";
+import { imageProbeRequest, nextImageOperation } from "./image-probe.mjs";
 
 // One probe sweep across listed community text and image models via
 // gen.pollinations.ai. Text models get one request every cycle; image models
@@ -56,6 +57,17 @@ function readState() {
     } catch {
         return {};
     }
+}
+
+const operationArgIndex = process.argv.indexOf("--operation");
+const onlyOperation =
+    operationArgIndex === -1 ? null : process.argv[operationArgIndex + 1];
+if (
+    operationArgIndex !== -1 &&
+    (!onlyModel || !["generate", "edit"].includes(onlyOperation))
+) {
+    console.error("--operation requires --model and must be generate or edit");
+    process.exit(1);
 }
 
 // Pricing is public, no auth needed: https://gen.pollinations.ai/models
@@ -172,6 +184,7 @@ function finalCompletionContent(content) {
 
 async function probeText(model) {
     const started = Date.now();
+    const requestPath = "/v1/chat/completions";
     const marker = `ok-${randomUUID().slice(0, 8)}`;
     const prompt = `Reply with exactly: ${marker}`;
     // The abort timer must stay armed through the BODY read, not just until
@@ -181,7 +194,7 @@ async function probeText(model) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), TEXT_TIMEOUT_MS);
     try {
-        const res = await fetch(`${GEN}/v1/chat/completions`, {
+        const res = await fetch(`${GEN}${requestPath}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${TOKEN}`,
@@ -212,6 +225,10 @@ async function probeText(model) {
         const result = {
             model: model.name,
             category: model.category,
+            requestPath,
+            requestId: res.headers.get("x-request-id"),
+            httpStatus: res.status,
+            timestamp: new Date(started).toISOString(),
             ok,
             status: protocolError
                 ? "PROTOCOL"
@@ -238,6 +255,8 @@ async function probeText(model) {
         return {
             model: model.name,
             category: model.category,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ok: false,
             status: "ERR",
             ms: Date.now() - started,
@@ -248,24 +267,24 @@ async function probeText(model) {
     }
 }
 
-async function probeImage(model) {
+async function probeImage(model, operation) {
     const started = Date.now();
     const marker = `image-${randomUUID().slice(0, 8)}`;
+    const { requestPath, body: requestBody } = imageProbeRequest(
+        model,
+        marker,
+        operation,
+    );
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), IMAGE_TIMEOUT_MS);
     try {
-        const res = await fetch(`${GEN}/v1/images/generations`, {
+        const res = await fetch(`${GEN}${requestPath}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${TOKEN}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                model: model.name,
-                prompt: `A plain test card labeled ${marker}`,
-                n: 1,
-                response_format: "b64_json",
-            }),
+            body: JSON.stringify(requestBody),
             signal: ctrl.signal,
         });
         const body = await res.text();
@@ -283,6 +302,11 @@ async function probeImage(model) {
         const result = {
             model: model.name,
             category: model.category,
+            operation,
+            requestPath,
+            requestId: res.headers.get("x-request-id"),
+            httpStatus: res.status,
+            timestamp: new Date(started).toISOString(),
             ok,
             status: res.ok && !hasImage ? "INVALID" : res.status,
             ms: Date.now() - started,
@@ -302,6 +326,9 @@ async function probeImage(model) {
         return {
             model: model.name,
             category: model.category,
+            operation,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ok: false,
             status: "ERR",
             ms: Date.now() - started,
@@ -313,7 +340,17 @@ async function probeImage(model) {
 }
 
 function probe(model) {
-    return model.category === "image" ? probeImage(model) : probeText(model);
+    return model.category === "image"
+        ? probeImage(
+              model,
+              onlyModel
+                  ? (onlyOperation ?? "generate")
+                  : nextImageOperation(
+                        model,
+                        state.spend?.lastImageProbeOperation?.[model.name],
+                    ),
+          )
+        : probeText(model);
 }
 
 function actualCost(result, priceByModel) {
@@ -339,6 +376,19 @@ function actualCost(result, priceByModel) {
 }
 
 const models = await fetchCommunityModels();
+const listedTarget = models.find((model) => model.name === onlyModel);
+if (
+    onlyOperation &&
+    ((listedTarget?.category ?? onlyCategory) !== "image" ||
+        (onlyOperation === "edit" &&
+            listedTarget &&
+            !listedTarget.input_modalities?.includes("image")))
+) {
+    console.error(
+        "--operation requires an image model; listed edit targets must advertise image input",
+    );
+    process.exit(1);
+}
 if (onlyModel && !models.some((model) => model.name === onlyModel)) {
     if (!onlyCategory) {
         console.error(
@@ -428,6 +478,14 @@ const nextState = {
         lastActualPollen: actualSpend,
         lastRequestCount: jobs.length,
         lastRunAt: new Date().toISOString(),
+        lastImageProbeOperation: {
+            ...currentState.spend?.lastImageProbeOperation,
+            ...Object.fromEntries(
+                results
+                    .filter((result) => result.category === "image")
+                    .map((result) => [result.model, result.operation]),
+            ),
+        },
         lastImageProbeAt: {
             ...currentState.spend?.lastImageProbeAt,
             ...Object.fromEntries(
@@ -483,7 +541,7 @@ for (const r of [...byModel.values()].sort(
     (a, b) => Number(a.ok) - Number(b.ok),
 )) {
     console.log(
-        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model}`,
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}`,
     );
 }
 console.log(

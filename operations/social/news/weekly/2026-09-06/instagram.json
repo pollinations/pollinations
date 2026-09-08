@@ -1,0 +1,23 @@
+{
+  "platform": "instagram",
+  "scope": "weekly",
+  "date": "2026-09-06",
+  "period_start": "2026-08-30",
+  "period_end": "2026-09-05",
+  "generated_at": "2026-09-08T22:07:03.474422+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-06/images/instagram-1.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-06/images/instagram-2.jpg"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/weekly/2026-09-06/images/instagram-3.jpg"
+    }
+  ],
+  "text": "140 PRs merged this week. The Responses API is now a proper route; community models grew roots across embeddings, images, video, speech, and audio; agents got tools, harnesses, and MCP connections; and the catalog got clearer while the plumbing got less interested in surprising anyone. Also: more models, more fallbacks, fewer mysterious stream-shaped objects. 🌱🐝\n\nEverything is in the open: github.com/pollinations\n\n#pollinations #opensource #aitools #pixelart #creativecoding #buildinpublic #indiedev #generativeai #aiagents #mcp #api #communitymodels",
+  "metadata": {
+    "post_type": "carousel"
+  }
+}

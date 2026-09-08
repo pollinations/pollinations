@@ -1,0 +1,51 @@
+{
+  "date": "2026-09-07",
+  "period_start": "2026-09-07",
+  "period_end": "2026-09-07",
+  "title": "The model catalog got canonical names without breaking old code",
+  "summary": "A compatibility-heavy day: cleaner model names, steadier generation recovery, memorable upload URLs, and the docs catching up with reality.\n\nPublic model IDs now use a consistent canonical catalog naming scheme with publisher metadata, while legacy aliases, routing, stored keys, and existing permissions keep working. Scoped-key reads and the Enter migration were updated alongside it, so old and renamed model identifiers resolve consistently through the rollout.\n\nCoordinator failures now check for an already-cached generation before trying again, returning completed work without a duplicate provider call. Production deployments also preserve Klein's intended VPC route, with CI checking that the correct deployment tooling is actually in charge.\n\nPOST /upload accepts optional account-scoped custom IDs for multipart and JSON uploads, making stable media URLs possible without coordinating random identifiers. Create-only writes safely reject collisions from existing files or gallery entries.",
+  "pr_count": 10,
+  "prs": [
+    {
+      "number": 13076,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14478,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14526,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14530,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14537,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14544,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14545,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14550,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14552,
+      "date": "2026-09-07"
+    },
+    {
+      "number": 14555,
+      "date": "2026-09-07"
+    }
+  ],
+  "generated_at": "2026-09-08T21:47:31.987788+00:00"
+}

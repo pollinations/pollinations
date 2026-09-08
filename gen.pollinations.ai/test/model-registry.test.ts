@@ -5,7 +5,7 @@ import {
     statusForRow,
     unknownModelHealth,
 } from "@shared/registry/model-health.ts";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CommunityModelEnv } from "../src/community-models.ts";
 import {
     getGenerationModelRegistry,
@@ -13,9 +13,14 @@ import {
 } from "../src/model-registry.ts";
 import { availableModels } from "../src/text/availableModels.ts";
 
-vi.mock("../src/routes/model-status.ts", () => ({
-    getModelHealthSnapshot: async () => null,
-}));
+beforeEach(() => {
+    // The registry enriches entries with model health by querying Tinybird.
+    // Disable network access so tests assert the graceful "unknown" fallback
+    // deterministically instead of depending on live upstream data.
+    vi.spyOn(globalThis, "fetch").mockRejectedValue(
+        new Error("network disabled in tests"),
+    );
+});
 
 afterEach(() => {
     resetGenerationModelRegistryCache();

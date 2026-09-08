@@ -104,9 +104,7 @@ async function fetchModelHealth(minutes: number): Promise<FetchResult | null> {
             throw new Error(`Tinybird responded with ${response.status}`);
         }
 
-        const tinybirdData = ModelHealthResponseSchema.parse(
-            await response.json(),
-        );
+        const tinybirdData = (await response.json()) as ModelHealthResponse;
         const timestamp = Date.now();
         setCacheEntry(minutes, { data: tinybirdData, timestamp });
         return { data: tinybirdData, timestamp, stale: false };

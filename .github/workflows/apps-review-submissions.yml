@@ -30,7 +30,7 @@ jobs:
     steps:
       - name: Generate app token
         id: token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v3
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
@@ -55,15 +55,16 @@ jobs:
           BOT_ID=$(gh api "/users/${{ steps.token.outputs.app-slug }}[bot]" --jq .id)
           echo "bot-id=$BOT_ID" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: main
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: "22"
+          package-manager-cache: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 

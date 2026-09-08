@@ -30,7 +30,7 @@ jobs:
     outputs:
       authorized: ${{ steps.authorize.outputs.authorized }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ github.workflow_sha }}
           persist-credentials: false
@@ -61,7 +61,7 @@ jobs:
     env:
       POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_POLLY_KEY }}
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: token
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
@@ -190,7 +190,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.token.outputs.token }}
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         if: needs.authorize-write.outputs.authorized == 'true'
         with:
           fetch-depth: 0

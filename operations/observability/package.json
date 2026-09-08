@@ -1,25 +1,38 @@
 {
-    "name": "observability-grafana",
-    "private": true,
-    "version": "1.0.0",
-    "type": "module",
-    "scripts": {
-        "check": "wrangler deploy --dry-run",
-        "decrypt-vars": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} local'",
-        "dev": "wrangler dev",
-        "deploy": "wrangler deploy",
-        "deploy:production": "npm run deploy && npm run push-secrets",
-        "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
-        "containers:list": "wrangler containers list",
-        "containers:images": "wrangler containers images list"
-    },
-    "dependencies": {
-        "@cloudflare/containers": "^0.3.7"
-    },
-    "devDependencies": {
-        "wrangler": "^4.110.0"
-    },
-    "engines": {
-        "node": ">=22"
-    }
+  "name": "observability-grafana",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "check": "npm run build && wrangler deploy --dry-run",
+    "decrypt-vars": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {} local'",
+    "dev": "OBSERVABILITY_LOCAL=true vite dev",
+    "deploy": "wrangler deploy",
+    "deploy:production": "npm run deploy && npm run push-secrets",
+    "push-secrets": "sops exec-file --no-fifo secrets/secrets.vars.json 'node scripts/push-secrets.mjs {}'",
+    "containers:list": "wrangler containers list",
+    "containers:images": "wrangler containers images list",
+    "build": "npm run build --prefix ../../packages/ui && vite build"
+  },
+  "dependencies": {
+    "@cloudflare/containers": "^0.3.7",
+    "@pollinations/auth": "file:../../packages/auth",
+    "@pollinations/ui": "file:../../packages/ui",
+    "hono": "^4.10.6",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.110.0",
+    "@cloudflare/vite-plugin": "^1.15.2",
+    "@vitejs/plugin-react": "^5.1.1",
+    "@tailwindcss/vite": "^4.0.0",
+    "vite": "^7.0.0",
+    "typescript": "^5.7.2",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
 }

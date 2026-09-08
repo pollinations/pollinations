@@ -142,8 +142,8 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
   directly into the local `.dev.vars` file.
 - After switching, merging, or rebasing an Economics branch, rerun
   `npm run decrypt-vars` before trusting the local dashboard. The generated
-  `.dev.vars` must combine the shared password with the staging-only read
-  token via `scripts/write-dev-vars.mjs`.
+  `.dev.vars` must preserve the separately approved app session signing secret
+  and load the staging-only read token via `scripts/write-dev-vars.mjs`.
 - A local dashboard showing production-only or stale provider rows is an
   environment-routing failure; fix the local reader before changing ledger
   data or publishing another correction.

@@ -2,6 +2,7 @@ import type {
     EconomicsPrivateConfig,
     EconomicsPrivateConfigRow,
 } from "../types";
+import { canonicalProvider } from "./providerRegistry";
 
 export type RevenueShareSource = {
     type: "app" | "model";
@@ -200,7 +201,20 @@ export function parsePrivateConfig(
     ) {
         throw new Error("economics_private_config_api.config: invalid shape");
     }
-    return config as EconomicsPrivateConfig;
+    // Stored rules can predate a vendor rename, just like ledger rows.
+    const forecastRules: EconomicsPrivateConfig["forecastRules"] = {};
+    for (const [line, rule] of Object.entries(config.forecastRules)) {
+        const [vendor, category, extra] = line.split("|");
+        if (!vendor.trim() || !category?.trim() || extra !== undefined) {
+            throw new Error(`Invalid forecast rule key: ${line}`);
+        }
+        const key = `${canonicalProvider(vendor)}|${category.trim().toLowerCase()}`;
+        if (Object.hasOwn(forecastRules, key)) {
+            throw new Error(`Duplicate forecast rule for ${key}`);
+        }
+        forecastRules[key] = rule;
+    }
+    return { ...config, forecastRules } as EconomicsPrivateConfig;
 }
 
 export function parseRevenueShareSources(value: string): RevenueShareSource[] {

@@ -4,12 +4,12 @@
   "sops": "economics",
   "install": "npm ci --prefix ../..",
   "build": "npm run build --prefix web",
-  "deploy": "sops exec-file --no-fifo secrets/web.json 'node web/scripts/check-tinybird-contract.mjs --secrets-file {} && cd web && npx wrangler deploy --secrets-file {}'",
+  "deploy": "sops exec-file --no-fifo secrets/web.json 'node web/scripts/check-tinybird-contract.mjs --secrets-file {} && npm exec --prefix web -- wrangler deploy --config web/dist/myceli_economics/wrangler.json --secrets-file {}'",
   "verify": [
-    "https://economics.myceli.ai/api/auth/session",
-    "https://economics.pollinations.ai/api/auth/session"
+    "https://economics.pollinations.ai/"
   ],
   "watch": [
+    "packages/auth/",
     "packages/ui/",
     "packages/sdk/",
     "package.json",

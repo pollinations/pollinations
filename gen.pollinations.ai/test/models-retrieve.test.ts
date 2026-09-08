@@ -85,10 +85,12 @@ test("reports health consistently across list, retrieve, and /models", async () 
     const list = (await listResponse.json()) as {
         data: Record<string, unknown>[];
     };
-    const listed = list.data.find((m) => m.id === "openai-fast");
+    const listed = list.data.find((m) => m.id === "openai/gpt-5-nano");
     expect(listed?.health).toBeDefined();
 
-    const retrieveResponse = await fetchWorker("/v1/models/openai-fast");
+    const retrieveResponse = await fetchWorker(
+        `/v1/models/${encodeURIComponent("openai/gpt-5-nano")}`,
+    );
     const retrieved = (await retrieveResponse.json()) as Record<
         string,
         unknown
@@ -97,7 +99,7 @@ test("reports health consistently across list, retrieve, and /models", async () 
 
     const modelsResponse = await fetchWorker("/models");
     const models = (await modelsResponse.json()) as Record<string, unknown>[];
-    const model = models.find((m) => m.name === "openai-fast");
+    const model = models.find((m) => m.name === "openai/gpt-5-nano");
     expect(model?.health).toEqual(listed?.health);
 });
 

@@ -52,6 +52,72 @@ function authorizedTarget(
 }
 
 describe("direct Responses transport", () => {
+    it.each([
+        false,
+        true,
+    ])("filters sampling without applying Chat conversions (stream=%s)", (stream) => {
+        const directRequest = request({
+            model: "openai/gpt-6-astra",
+            stream,
+            temperature: 0.7,
+            top_p: 0.9,
+            frequency_penalty: 0.5,
+            presence_penalty: 0.5,
+            reasoning: { effort: "high" },
+            max_output_tokens: 128,
+            stream_options: { include_obfuscation: false },
+            text: { format: { type: "json_object" } },
+            tools: [
+                {
+                    type: "function",
+                    name: "lookup",
+                    parameters: { type: "object" },
+                },
+            ],
+            tool_choice: "required",
+        });
+        const target = resolveDirectResponsesTarget(
+            directRequest.model,
+            directRequest,
+        );
+        if (!target) throw new Error("expected Astra Responses target");
+        const body = buildDirectResponsesRequestBody(directRequest, target);
+        for (const key of [
+            "temperature",
+            "top_p",
+            "frequency_penalty",
+            "presence_penalty",
+            "max_tokens",
+            "max_completion_tokens",
+            "messages",
+        ]) {
+            expect(body).not.toHaveProperty(key);
+        }
+        expect(body).toMatchObject({
+            model: "gpt-6-astra",
+            max_output_tokens: 128,
+            reasoning: directRequest.reasoning,
+            text: directRequest.text,
+            tools: directRequest.tools,
+            tool_choice: "required",
+            stream,
+        });
+        expect(body.stream_options).toEqual(
+            stream ? { include_obfuscation: false } : undefined,
+        );
+        expect(directRequest.temperature).toBe(0.7);
+    });
+
+    it("preserves sampling on other Responses targets", () => {
+        const directRequest = request({ temperature: 0.7, top_p: 0.9 });
+        expect(
+            buildDirectResponsesRequestBody(
+                directRequest,
+                authorizedTarget(directRequest),
+            ),
+        ).toMatchObject({ temperature: 0.7, top_p: 0.9 });
+    });
+
     it("preserves the complete raw provider error envelope", async () => {
         const directRequest = request();
         const body = JSON.stringify(

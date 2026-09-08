@@ -7,6 +7,47 @@ import type {
 
 const log = debug("pollinations:transforms:parameters");
 
+/** Shared by Chat and Responses; model is the resolved upstream ID. */
+export function stripSamplingParameters<T extends Record<string, unknown>>(
+    model: string,
+    options: T,
+): T {
+    const result = { ...options };
+
+    // Keep one policy per family, even when some reasoning modes accept sampling.
+    if (/^(?:openai\/)?(?:o[134]|gpt-5|gpt-6-astra)\b/i.test(model)) {
+        for (const param of [
+            "temperature",
+            "top_p",
+            "top_k",
+            "frequency_penalty",
+            "presence_penalty",
+            "repetition_penalty",
+            "seed",
+        ]) {
+            delete result[param];
+        }
+    }
+
+    // Newer Claude models reject non-default sampling parameters.
+    if (/claude-(opus-(4[.-][78]|5)|sonnet-5|fable-5)/i.test(model)) {
+        for (const param of ["temperature", "top_p", "top_k"]) {
+            delete result[param];
+        }
+    }
+
+    // Bedrock Claude rejects temperature and top_p together.
+    if (
+        /anthropic\.claude/i.test(model) &&
+        result.temperature !== undefined &&
+        result.top_p !== undefined
+    ) {
+        delete result.top_p;
+    }
+
+    return result;
+}
+
 /**
  * Transform that applies streaming options and provider-specific parameter
  * conversions.
@@ -20,11 +61,16 @@ export function processParameters(
     }
 
     const config = options.modelConfig as Record<string, unknown>;
-    const updatedOptions = { ...options };
+    const updatedOptions = stripSamplingParameters(
+        options.model || "",
+        options,
+    );
 
     if (updatedOptions.stream) {
         log("Adding stream_options to include usage data in stream");
         updatedOptions.stream_options = { include_usage: true };
+    } else {
+        delete updatedOptions.stream_options;
     }
 
     // Newer OpenAI models (gpt-4o, gpt-5, o1, o3, etc.) require max_completion_tokens
@@ -61,46 +107,6 @@ export function processParameters(
             updatedOptions.max_tokens = updatedOptions.max_completion_tokens;
         }
         delete updatedOptions.max_completion_tokens;
-    }
-
-    // Reasoning models (o1, o3, o4) and GPT-5 series only support
-    // temperature=1 and reject other sampling parameters.
-    const model = updatedOptions.model || "";
-    if (/^(o[134](-mini|-preview)?|gpt-5)/i.test(model)) {
-        log(`Forcing temperature=1 for reasoning/GPT-5 model: ${model}`);
-        updatedOptions.temperature = 1;
-        for (const param of [
-            "top_p",
-            "frequency_penalty",
-            "presence_penalty",
-        ] as const) {
-            if (updatedOptions[param] !== undefined) {
-                log(`Stripping unsupported ${param} for ${model}`);
-                delete updatedOptions[param];
-            }
-        }
-    }
-
-    // Claude Opus 4.7+, and Fable 5+ reject non-default sampling params.
-    // Strip them entirely.
-    if (/claude-(opus-(4-[78]|5)|fable-5)/i.test(model)) {
-        for (const param of ["temperature", "top_p", "top_k"] as const) {
-            if (updatedOptions[param] !== undefined) {
-                log(`Stripping ${param} for ${model}`);
-                delete updatedOptions[param];
-            }
-        }
-    }
-
-    // Bedrock Claude models return 400 when both temperature and top_p are
-    // set. Drop top_p when temperature is also present.
-    if (
-        /anthropic\.claude/i.test(model) &&
-        updatedOptions.temperature !== undefined &&
-        updatedOptions.top_p !== undefined
-    ) {
-        log(`Dropping top_p (temperature is set) for ${model}`);
-        delete updatedOptions.top_p;
     }
 
     return { messages, options: updatedOptions };

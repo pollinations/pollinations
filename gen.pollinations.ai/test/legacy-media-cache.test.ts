@@ -187,8 +187,8 @@ describe("temporary legacy media cache", () => {
         expect(first.response.headers.get("x-safety-applied")).toBe("privacy");
         expect(first.response.headers.get("set-cookie")).toBeNull();
         const key = await generateCacheKey(url);
-        expect(first.response.headers.get("x-media-url")).toBe(
-            `https://media.pollinations.ai/${key}`,
+        expect(first.response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${key}>; rel="enclosure"`,
         );
         const stored = await env.MEDIA.get(key);
         expect(await stored?.text()).toBe("original bytes");
@@ -236,8 +236,8 @@ describe("temporary legacy media cache", () => {
         });
         expect(result.response.status).toBe(200);
         expect(result.body).toBe("image bytes");
-        expect(result.response.headers.get("x-media-url")).toBe(
-            `https://media.pollinations.ai/${await generateCacheKey(url)}`,
+        expect(result.response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${await generateCacheKey(url)}>; rel="enclosure"`,
         );
     });
 

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14607,
+  "title": "fix: report monitor fallback rescues accurately",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14607",
+  "merged_at": "2026-09-08T23:32:23Z",
+  "labels": [],
+  "pr_body_excerpt": "- Records the served model on text/image probes so fallback success is not mistaken for primary recovery.\n- Preserves image error details and surfaces unclassified upstream 4xx for diagnosis, without changing hiding thresholds, health denominators, or probe frequency.\n- Updates monitor instructions and runs its regression tests in CI; follows up #14602.\n- Verified: 11 tests, Biome, syntax checks, and a read-only analytics check of the three incident requests.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The monitor learned who answered",
+    "blurb": "The hive’s health monitor can now tell a real recovery from a fallback quietly doing the work. Error clues are also staying attached to the trail, which is unusually considerate for software.",
+    "summary": "Updated the community monitor’s text and image probes to record the model that actually served each request, preserve image error details, and report previously unclassified upstream 4xx responses without changing probe frequency or health thresholds.",
+    "impact": "Operators get more accurate incident attribution: successful fallback responses no longer appear as primary-model recoveries, while image failures and upstream 4xx diagnostics remain visible for investigation.",
+    "keywords": [
+      "monitoring",
+      "fallback",
+      "probes",
+      "incident-attribution",
+      "health-checks",
+      "CI"
+    ],
+    "visual_concept": "A cozy garden monitoring station represents the community health monitor: Polli, wearing a tiny detective hat, compares two labeled response jars from a primary flower and a helpful fallback flower. A CRT monitor robot holds a diagnostic printout while code-plants and small error-tagged leaves make the tracing work visible.",
+    "image_prompt": "Cozy pixel art scene in a warm garden operations shed: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light-blue translucent wings wears a tiny detective hat while tracing a response from a primary code-flower to a helpful fallback flower; a chunky CRT-monitor robot holds a small diagnostic printout beside preserved error-tagged leaves. Lime green (#ecf874) glows prominently from the monitor and flower pots amid mint, lavender, peach, and warm-cream pastels, with subtle pixel-font text “SERVED BY”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and nostalgic."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14607.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden operations shed: the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae, black oval eyes, bright pink rectangular cheek blush, a small smile, and rounded light-blue translucent wings wears a tiny detective hat while tracing a response from a primary code-flower to a helpful fallback flower; a chunky CRT-monitor robot holds a small diagnostic printout beside preserved error-tagged leaves. Lime green (#ecf874) glows prominently from the monitor and flower pots amid mint, lavender, peach, and warm-cream pastels, with subtle pixel-font text “SERVED BY”; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, emotionally warm and nostalgic."
+  },
+  "generated_at": "2026-09-08T23:33:27.627922+00:00"
+}

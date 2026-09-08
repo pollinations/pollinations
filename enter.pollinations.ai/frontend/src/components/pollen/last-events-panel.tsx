@@ -131,7 +131,7 @@ function EventPollenChip({ event }: { event: LastEvent }) {
         title: `${source} Pollen`,
         "aria-label": `${amount} ${source} Pollen`,
         className:
-            "inline-flex min-w-24 shrink-0 items-center justify-between gap-2 whitespace-nowrap tabular-nums",
+            "inline-flex shrink-0 items-center gap-2 whitespace-nowrap tabular-nums",
     };
     const content = (
         <>
@@ -314,7 +314,6 @@ export const LastEventsPanel: FC = () => {
                                     Details
                                 </TableHeaderCell>
                                 <TableHeaderCell
-                                    align="right"
                                     className={TABLE_HEADER_CELL_CLASS}
                                 >
                                     Pollen
@@ -346,7 +345,6 @@ export const LastEventsPanel: FC = () => {
                                         </div>
                                     </TableCell>
                                     <TableCell
-                                        align="right"
                                         numeric
                                         className={TABLE_CELL_CLASS}
                                     >

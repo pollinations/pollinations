@@ -181,10 +181,10 @@ export function PollenUsageBadges(usage: {
         : usage.tierRequests.toLocaleString();
     const unit = isPollen ? "Pollen" : "requests";
     return (
-        <div className="grid min-w-44 grid-cols-2 gap-2">
+        <div className="grid min-w-44 grid-cols-2 items-center justify-items-start gap-2">
             <PaidChip
                 size="sm"
-                className="flex items-center justify-between gap-2 whitespace-nowrap tabular-nums"
+                className="gap-2 whitespace-nowrap tabular-nums"
                 title={`Paid ${unit}`}
                 aria-label={`${paid} Paid ${unit}`}
             >
@@ -193,7 +193,7 @@ export function PollenUsageBadges(usage: {
             </PaidChip>
             <TierChip
                 size="sm"
-                className="flex items-center justify-between gap-2 whitespace-nowrap tabular-nums"
+                className="gap-2 whitespace-nowrap tabular-nums"
                 title={`Quest ${unit}`}
                 aria-label={`${quest} Quest ${unit}`}
             >

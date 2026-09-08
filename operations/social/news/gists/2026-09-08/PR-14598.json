@@ -1,0 +1,34 @@
+{
+  "pr_number": 14598,
+  "title": "fix: migrate GitHub Actions off Node 20",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14598",
+  "merged_at": "2026-09-08T22:20:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fix Node 20 action-runtime warnings across 28 workflows: upgrade checkout, Node/Python setup, GitHub Script/App token, CodeQL, Docker, paths-filter, and SOPS actions to Node 24-compatible releases; move all six remaining Node 20 job settings to Node 24.\n- Fix the privileged Polli startup checkout flagged by CodeQL: start from the trusted default branch, then let the assistant action handle the target PR and restore base-branch configuration. Preserve maintainer authorization and PR editing.\n- Validate all 111 action steps and inputs; 473 original tests passed under Node 24. All 18 assistant workflow/authorization tests pass after adding the checkout regression. Reviewer additionally reports 17 Gen and 518 Enter Workers-pool tests passing on Node 24.\n- Workflow validation adds no diagnostics; actionlint still flags two existing `concurrency.queue` fields. Deployment/publishing workflows and a live Polli invocation were not dispatched.\n\nAddresses the remaining workflow migration discussed in #12145. Trusted checkout follows the [assistant action’s security guidance](https://github.com/anthropics/claude-code-action/blob/v1/docs/security.md).\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The workflows molt safely",
+    "blurb": "Twenty-eight GitHub workflows traded their Node 20 shells for Node 24. Polli now begins privileged PR work from the trusted default branch, because even helpful bees should check where they landed.",
+    "summary": "Migrated 28 GitHub Actions workflows and six remaining job runtime settings from Node 20 to Node 24-compatible actions, while updating Polli’s privileged startup checkout to begin on the trusted default branch before handling a target PR.",
+    "impact": "Automation, deployments, and repository helpers now run on supported Node 24 action runtimes, with Polli preserving maintainer authorization and PR-editing behavior from a safer trusted checkout.",
+    "keywords": [
+      "github-actions",
+      "node-24",
+      "workflows",
+      "polli",
+      "automation",
+      "codeql"
+    ],
+    "visual_concept": "A cozy repository garden where Polli, wearing a tiny maintainer hard hat, carefully moves workflow scrolls from an old Node 20 crate to a sturdy Node 24 crate. A friendly CRT monitor robot checks a trusted default-branch map while small code-plants and flowers show the automation continuing to grow safely.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny maintainer hard hat, moving glowing workflow scrolls from a small crate labeled \"NODE 20\" to a lime green (#ecf874) crate labeled \"NODE 24\" in a warm garden-hackerspace; a cute CRT monitor robot holds a trusted branch map beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14598.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny maintainer hard hat, moving glowing workflow scrolls from a small crate labeled \"NODE 20\" to a lime green (#ecf874) crate labeled \"NODE 24\" in a warm garden-hackerspace; a cute CRT monitor robot holds a trusted branch map beside sprouting code-plants and flowers. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes like Stardew Valley, with dark purple (#110518) outlines and subtle CRT glow."
+  },
+  "generated_at": "2026-09-08T22:21:25.749867+00:00"
+}

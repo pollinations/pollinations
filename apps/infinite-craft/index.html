@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinite Craft — AI Element Generator</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0f;--card:#16161d;--border:#2a2a3a;--text:#e8e8f0;--accent:#6F5DFF;--accent2:#27D4CD;--glow:rgba(111,93,255,.3)}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+.header{text-align:center;padding:20px 16px 10px;background:linear-gradient(180deg,rgba(111,93,255,.12) 0%,transparent 100%)}
+.header h1{font-size:26px;background:linear-gradient(95deg,#6F5DFF,#27D4CD,#74FF7E);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px}
+.header p{color:#888;font-size:13px}
+.stats{display:flex;gap:12px;justify-content:center;margin-top:8px;font-size:12px;color:#666}
+.stats span{background:var(--card);padding:4px 12px;border-radius:20px;border:1px solid var(--border)}
+.stats .num{color:var(--accent2);font-weight:700}
+.workspace{display:flex;gap:16px;padding:16px;height:calc(100vh - 110px)}
+.sidebar{width:260px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;overflow:hidden}
+.sidebar h2{font-size:13px;color:#666;padding:0 4px;text-transform:uppercase;letter-spacing:1px}
+.search-box{width:100%;padding:8px 12px;background:var(--card);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;outline:none}
+.search-box:focus{border-color:var(--accent)}
+.element-list{flex:1;overflow-y:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:6px;padding:4px}
+.element-list::-webkit-scrollbar{width:6px}
+.element-list::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+.canvas-area{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0}
+.combine-zone{background:var(--card);border:2px dashed var(--border);border-radius:16px;display:flex;align-items:center;justify-content:center;gap:20px;padding:20px;transition:border-color .3s}
+.combine-zone.active{border-color:var(--accent);box-shadow:0 0 30px var(--glow)}
+.combine-slot{width:130px;height:150px;background:rgba(255,255,255,.03);border:2px dashed #333;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;transition:all .3s;cursor:pointer}
+.combine-slot.filled{border-style:solid;border-color:var(--accent);background:rgba(111,93,255,.08)}
+.combine-slot .icon{font-size:42px}
+.combine-slot .name{font-size:12px;color:#aaa;text-align:center;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plus{font-size:28px;color:#444;font-weight:300}
+.result-zone{flex:1;min-height:140px;background:var(--card);border-radius:16px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;overflow-y:auto;align-content:flex-start}
+.result-zone::-webkit-scrollbar{width:6px}
+.result-zone::-webkit-scrollbar-thumb{background:#333;border-radius:3px}
+.result-label{font-size:12px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.element{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:8px;cursor:grab;font-size:13px;transition:all .2s;user-select:none;white-space:nowrap}
+.element:hover{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3)}
+.element:active{cursor:grabbing;transform:scale(.95)}
+.element .ico{font-size:16px}
+.element.new{animation:pulse 1s ease}
+.element.rare{border-color:#ffd700;box-shadow:0 0 8px rgba(255,215,0,.3)}
+@keyframes pulse{0%{transform:scale(1.15);box-shadow:0 0 20px var(--glow)}100%{transform:scale(1);box-shadow:none}}
+.loading{display:flex;align-items:center;gap:8px;color:#888;font-size:13px;padding:4px 0}
+.spinner{width:18px;height:18px;border:2px solid #333;border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 24px;border-radius:24px;font-size:13px;z-index:100;animation:slideUp .3s ease;pointer-events:none}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(20px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;max-width:340px;width:90%;text-align:center}
+.modal img{width:200px;height:200px;border-radius:12px;object-fit:cover;margin:12px 0;border:2px solid var(--accent);background:#111}
+.modal h3{font-size:20px;margin-bottom:4px}
+.modal p{color:#888;font-size:13px;margin-bottom:16px;line-height:1.4}
+.modal button{padding:10px 28px;border:none;border-radius:8px;color:#fff;font-weight:600;cursor:pointer;font-size:14px}
+.modal .ok-btn{background:linear-gradient(95deg,#6F5DFF,#27D4CD)}
+.modal .close-btn{background:transparent;border:1px solid var(--border);margin-right:8px}
+.first-badge{display:inline-block;background:linear-gradient(95deg,#ffd700,#ff8c00);color:#000;font-size:9px;padding:1px 6px;border-radius:8px;font-weight:700;margin-left:4px}
+.toast-anim{animation:slideUp .3s ease}
+.footer{text-align:center;padding:8px;color:#444;font-size:11px}
+.footer a{color:var(--accent);text-decoration:none}
+@media(max-width:768px){.workspace{flex-direction:column;height:auto}.sidebar{width:100%;max-height:180px}.combine-zone{min-height:160px}.combine-slot{width:100px;height:120px}.combine-slot .icon{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>⚡ Infinite Craft</h1>
+  <p>Combine elements, AI creates new ones. Powered by <a href="https://pollinations.ai" target="_blank" style="color:var(--accent2)">Pollinations</a>.</p>
+  <div class="stats">
+    <span>Elements: <span class="num" id="elemCount">4</span></span>
+    <span>Discoveries: <span class="num" id="discCount">0</span></span>
+    <span>Combos: <span class="num" id="comboCount">0</span></span>
+  </div>
+</div>
+<div class="workspace">
+  <div class="sidebar">
+    <input class="search-box" placeholder="🔍 Search elements..." id="searchBox" oninput="renderList()">
+    <div class="element-list" id="elementList"></div>
+  </div>
+  <div class="canvas-area">
+    <div class="combine-zone" id="combineZone">
+      <div class="combine-slot" id="slot1" onclick="clearSlot(0)">
+        <div class="icon">?</div><div class="name">Drop element</div>
+      </div>
+      <div class="plus">+</div>
+      <div class="combine-slot" id="slot2" onclick="clearSlot(1)">
+        <div class="icon">?</div><div class="name">Drop element</div>
+      </div>
+    </div>
+    <div>
+      <div class="result-label">✨ Discoveries</div>
+      <div class="result-zone" id="resultZone"></div>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <img id="modalImg" src="" alt="" onerror="this.style.display='none'">
+    <h3 id="modalName"></h3>
+    <p id="modalDesc"></p>
+    <button class="close-btn" onclick="closeModal()">Close</button>
+    <button class="ok-btn" onclick="closeModal()">OK</button>
+  </div>
+</div>
+<div class="footer">Built with <a href="https://gen.pollinations.ai" target="_blank">Pollinations API</a> — <a href="https://github.com/pollinations/pollinations/issues/10973" target="_blank">Quest #10973</a></div>
+<script>
+const BASE=[
+  {name:'Fire',emoji:'🔥',desc:'The burning element'},
+  {name:'Water',emoji:'💧',desc:'The flowing element'},
+  {name:'Earth',emoji:'🌍',desc:'The solid element'},
+  {name:'Air',emoji:'💨',desc:'The invisible element'}
+];
+let elems=[],combos={},firsts=new Set(),slots=[null,null],loading=false,totalCombo=0;
+function load(){
+  try{const s=JSON.parse(localStorage.getItem('ic-state'));
+    if(s){elems=s.e||[];combos=s.c||{};firsts=new Set(s.f||[]);totalCombo=s.t||0;}
+  }catch(e){}
+  if(!elems.length)elems=BASE.map(e=>({...e}));
+}
+function save(){localStorage.setItem('ic-state',JSON.stringify({e:elems,c:combos,f:[...firsts],t:totalCombo}));}
+function find(n){return elems.find(e=>e.name.toLowerCase()===n.toLowerCase());}
+function addElem(el){const ex=find(el.name);if(!ex){elems.push(el);if([5,10,25,50,100].includes(elems.length))toast('🎉 '+elems.length+' elements!');}return ex||el;}
+function imgUrl(n){return 'https://gen.pollinations.ai/image/'+encodeURIComponent('fantasy game icon, '+n+', magical, glowing, dark background, centered, digital art')+'?width=256&height=256&nologo=true';}
+async function genCombo(a,b){
+  const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'openai',messages:[{role:'user',content:
+      'Combine "'+a+'" and "'+b+'" into ONE new element. Return ONLY JSON: {"name":"...","emoji":"single emoji","description":"one sentence","isRare":false}. Be creative.'}],
+      temperature:0.9})
+  });
+  const d=await r.json();
+  try{return JSON.parse(d.choices[0].message.content||'{}');}catch(e){return{name:a+' '+b,emoji:'✨',description:'A fusion of '+a+' and '+b};}
+}
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function updateStats(){
+  document.getElementById('elemCount').textContent=elems.length;
+  document.getElementById('discCount').textContent=firsts.size;
+  document.getElementById('comboCount').textContent=totalCombo;
+}
+function renderList(){
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  const list=document.getElementById('elementList');
+  list.innerHTML='';
+  elems.filter(e=>!q||e.name.toLowerCase().includes(q)).forEach(e=>{
+    const d=document.createElement('div');
+    d.className='element'+(e.isRare?' rare':'');
+    d.innerHTML='<span class="ico">'+esc(e.emoji)+'</span>'+esc(e.name)+(firsts.has(e.name)?'<span class="first-badge">FIRST</span>':'');
+    d.draggable=true;
+    d.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',JSON.stringify(e));};
+    d.onclick=()=>showModal(e);
+    list.appendChild(d);
+  });
+}
+function setSlot(i,el){
+  slots[i]=el;
+  const s=document.getElementById('slot'+(i+1));
+  s.classList.add('filled');
+  s.innerHTML='<div class="icon">'+esc(el.emoji)+'</div><div class="name">'+esc(el.name)+'</div>';
+  if(slots[0]&&slots[1])doCombine();
+}
+function clearSlot(i){
+  slots[i]=null;
+  const s=document.getElementById('slot'+(i+1));
+  s.classList.remove('filled');
+  s.innerHTML='<div class="icon">?</div><div class="name">Drop element</div>';
+}
+async function doCombine(){
+  if(!slots[0]||!slots[1]||loading)return;
+  loading=true;
+  const zone=document.getElementById('combineZone');
+  const rz=document.getElementById('resultZone');
+  zone.classList.add('active');
+  const ld=document.createElement('div');ld.className='loading';ld.innerHTML='<div class="spinner"></div>Creating...';
+  rz.prepend(ld);
+  try{
+    totalCombo++;
+    const key=[slots[0].name,slots[1].name].sort().join('+');
+    let ne;
+    if(combos[key]){ne={...combos[key]};}
+    else{const r=await genCombo(slots[0].name,slots[1].name);
+      ne={name:r.name||'Unknown',emoji:r.emoji||'✨',desc:r.description||'',isRare:!!r.isRare};
+      const existed=!!find(ne.name);
+      combos[key]=ne;
+      addElem(ne);
+      if(!existed)firsts.add(ne.name);
+      save();
+    }
+    ld.remove();
+    const card=document.createElement('div');
+    card.className='element new'+(ne.isRare?' rare':'');
+    card.innerHTML='<span class="ico">'+esc(ne.emoji)+'</span>'+esc(ne.name)+(firsts.has(ne.name)?'<span class="first-badge">FIRST</span>':'');
+    card.onclick=()=>showModal(ne);
+    card.draggable=true;
+    card.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',JSON.stringify(ne));};
+    rz.prepend(card);
+    clearSlot(0);clearSlot(1);
+  }catch(e){ld.innerHTML='❌ Error — try again';setTimeout(()=>ld.remove(),2000);}
+  loading=false;zone.classList.remove('active');updateStats();renderList();
+}
+function showModal(el){
+  document.getElementById('modalImg').src=imgUrl(el.name);
+  document.getElementById('modalName').textContent=el.emoji+' '+el.name;
+  document.getElementById('modalDesc').textContent=el.desc||'A mysterious element...';
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3000);}
+// Drop handlers
+const cz=document.getElementById('combineZone');
+cz.ondragover=e=>{e.preventDefault();cz.classList.add('active');};
+cz.ondragleave=()=>cz.classList.remove('active');
+cz.ondrop=e=>{e.preventDefault();cz.classList.remove('active');
+  try{const el=JSON.parse(e.dataTransfer.getData('text/plain'));
+    if(!slots[0])setSlot(0,el);else if(!slots[1])setSlot(1,el);
+  }catch(x){}
+};
+// Init
+load();renderList();updateStats();
+// Add some starter elements to results
+const rz=document.getElementById('resultZone');
+['🔥 Fire','💧 Water','🌍 Earth','💨 Air'].forEach((s,i)=>{
+  const [emoji,...name]=s.split(' ');
+  const d=document.createElement('div');d.className='element';
+  d.innerHTML='<span class="ico">'+emoji+'</span>'+name.join(' ');
+  d.draggable=true;
+  d.ondragstart=ev=>{ev.dataTransfer.setData('text/plain',JSON.stringify({name:name.join(' '),emoji,desc:''}));};
+  rz.appendChild(d);
+});
+</script>
+</body>
+</html>

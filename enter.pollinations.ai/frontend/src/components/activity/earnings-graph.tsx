@@ -158,7 +158,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                         <div className="min-w-0 max-w-full overflow-x-auto">
                             <Table
                                 aria-label="Earnings by source"
-                                className="min-w-[520px]"
+                                className="min-w-[520px] [&_tr:hover]:bg-transparent"
                             >
                                 <TableHead className="sr-only">
                                     <TableRow>

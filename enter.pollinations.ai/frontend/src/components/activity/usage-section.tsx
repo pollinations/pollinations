@@ -230,7 +230,10 @@ type ModelBreakdownTableProps = {
 
 const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({ stats }) => (
     <div className="min-w-0 max-w-full overflow-x-auto">
-        <Table aria-label="Usage by model" className="min-w-[420px]">
+        <Table
+            aria-label="Usage by model"
+            className="min-w-[420px] [&_tr:hover]:bg-transparent"
+        >
             <TableHead className="sr-only">
                 <TableRow>
                     <TableHeaderCell scope="col">Model</TableHeaderCell>

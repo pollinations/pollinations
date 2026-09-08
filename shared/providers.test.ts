@@ -28,8 +28,8 @@ describe("API provider identities", () => {
         [" BedRock ", "aws"],
         ["aws-bedrock", "aws"],
         ["azure-2", "azure"],
-        ["vast", "vast.ai"],
-        ["vastai", "vast.ai"],
+        ["vast.ai", "vast"],
+        ["vastai", "vast"],
         ["openrouter", "openrouter"],
     ])("resolves %s to its reviewed vendor %s", (name, expected) => {
         expect(resolveProvider(name)?.id).toBe(expected);
@@ -51,9 +51,9 @@ describe("API provider identities", () => {
         const { provider } = getRegistryModelDefinition(model);
         expect(provider).toBe(provider.trim().toLowerCase());
         expect(
-            resolveProvider(provider),
+            resolveProvider(provider)?.id,
             `${model}: register provider "${provider}" in operations/economics/provider-registry.json`,
-        ).toBeDefined();
+        ).toBe(provider);
     });
 });
 

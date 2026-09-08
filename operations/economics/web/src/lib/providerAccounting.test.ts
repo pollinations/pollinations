@@ -521,7 +521,7 @@ describe("data quality status", () => {
             opTransactions: [
                 opTxn({
                     date: "2026-02-13",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     category: "cloud",
                     amount: -10,
                 }),
@@ -529,7 +529,7 @@ describe("data quality status", () => {
             vendorLedger: [
                 vendorLedger({
                     start: "2026-02-01 00:00:00",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     paid: -10,
                 }),
             ],
@@ -579,7 +579,7 @@ describe("data quality status", () => {
             opTransactions: [
                 opTxn({
                     date: "2026-04-02",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     category: "cloud",
                     amount: -500,
                 }),
@@ -587,14 +587,14 @@ describe("data quality status", () => {
             vendorLedger: [
                 vendorLedger({
                     start: "2026-06-01 00:00:00",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     paid: -66,
                 }),
             ],
             opPollen: [
                 opPollen({
                     month: "2026-06",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     cost_paid: 66,
                 }),
             ],
@@ -644,7 +644,7 @@ describe("data quality status", () => {
             vendorLedger: [
                 vendorLedger({
                     start: "2026-06-01 00:00:00",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     paid: -200,
                 }),
             ],
@@ -1367,39 +1367,39 @@ describe("providerBalanceRows", () => {
                 opTxn({
                     entry_id: "vast-opening",
                     date: "2025-12-10",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     amount: -100,
                 }),
                 opTxn({
                     entry_id: "vast-january-topup",
                     date: "2026-01-10",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     amount: -400,
                 }),
             ],
             vendorLedger: [
                 grant({
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     granted: 1000,
                     start_date: "2026-01-01",
                 }),
                 opCreditBurn({
                     month: "2026-01",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     paid: 200,
                     credit: 100,
                 }),
                 opCreditBurn({
                     month: "2026-02",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     paid: 50,
                     credit: 200,
                 }),
             ],
         });
 
-        const row = rowFor(data, NOW, "vast.ai");
-        expect(row.vendor).toBe("vast.ai");
+        const row = rowFor(data, NOW, "vast");
+        expect(row.vendor).toBe("vast");
         expect(row.cashBalanceUsd).toBeNull();
         expect(row.creditBalanceUsd).toBeNull();
         expect(row.balanceStatus).toBe("not_checked");
@@ -1448,7 +1448,7 @@ describe("providerBalanceRows", () => {
                 opTxn({
                     entry_id: "vast-topup",
                     date: "2026-01-01",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     amount: -100,
                 }),
             ],
@@ -1456,13 +1456,13 @@ describe("providerBalanceRows", () => {
                 vendorLedger({
                     entry_id: "vast-usage",
                     start: "2026-01-02 00:00:00",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     type: "gpu",
                     paid: -150,
                 }),
             ],
         });
-        const row = rowFor(data, NOW, "vast.ai");
+        const row = rowFor(data, NOW, "vast");
 
         expect(row.cashBalanceUsd).toBeNull();
         expect(row.finished).toBe(false);
@@ -1475,14 +1475,14 @@ describe("providerBalanceRows", () => {
                 opTxn({
                     entry_id: "vast-topup",
                     date: "2026-07-01",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     amount: -500,
                 }),
             ],
             vendorLedger: [
                 vendorLedger({
                     entry_id: "vast-usage",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     type: "gpu",
                     start: "2026-07-01 00:00:00",
                     paid: -200,
@@ -1490,7 +1490,7 @@ describe("providerBalanceRows", () => {
                 vendorLedger({
                     entry_id: "vast-balance-2026-08-22",
                     source: "dashboard",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     type: "balance",
                     start: "2026-08-22 10:00:00",
                     end: "2027-01-01 00:00:00",
@@ -1500,10 +1500,10 @@ describe("providerBalanceRows", () => {
                 }),
             ],
         });
-        const row = rowFor(data, now, "vast.ai");
+        const row = rowFor(data, now, "vast");
 
         expect(row).toMatchObject({
-            vendor: "vast.ai",
+            vendor: "vast",
             cashBalanceUsd: 3_925.11,
             creditBalanceUsd: 8.95,
             balanceAsOf: "2026-08-22",
@@ -1520,7 +1520,7 @@ describe("providerBalanceRows", () => {
                 emptyData({
                     vendorLedger: [
                         vendorLedger({
-                            vendor: "vast.ai",
+                            vendor: "vast",
                             type: "balance",
                             start: "2026-08-22 10:00:00",
                             paid: 3_925.11,
@@ -1566,27 +1566,27 @@ describe("providerBalanceRows", () => {
                 opTxn({
                     entry_id: "vast-before",
                     date: "2026-08-20",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     amount: -100,
                 }),
                 opTxn({
                     entry_id: "vast-after",
                     date: "2026-08-23",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     amount: -500,
                 }),
             ],
             vendorLedger: [
                 vendorLedger({
                     entry_id: "vast-before-usage",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     type: "gpu",
                     start: "2026-08-21 00:00:00",
                     paid: -20,
                 }),
                 vendorLedger({
                     entry_id: "vast-after-usage",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     type: "gpu",
                     start: "2026-08-23 00:00:00",
                     paid: -50,
@@ -1594,7 +1594,7 @@ describe("providerBalanceRows", () => {
                 vendorLedger({
                     entry_id: "vast-balance",
                     source: "dashboard",
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     type: "balance",
                     start: "2026-08-22 10:00:00",
                     paid: 400,
@@ -1602,7 +1602,7 @@ describe("providerBalanceRows", () => {
                 }),
             ],
         });
-        const row = rowFor(data, now, "vast.ai");
+        const row = rowFor(data, now, "vast");
         const august = row.history.find((month) => month.month === "2026-08");
 
         expect(row.cashBalanceUsd).toBe(400);
@@ -1705,14 +1705,14 @@ describe("providerBalanceRows", () => {
         const data = emptyData({
             vendorLedger: [
                 vendorLedger({
-                    vendor: "vast.ai",
+                    vendor: "vast",
                     type: "balance",
                     start: "2026-08-01 10:00:00",
                     paid: 500,
                 }),
             ],
         });
-        const row = rowFor(data, new Date("2026-08-23T12:00:00Z"), "vast.ai");
+        const row = rowFor(data, new Date("2026-08-23T12:00:00Z"), "vast");
 
         expect(row).toMatchObject({
             balanceAsOf: "2026-08-01",

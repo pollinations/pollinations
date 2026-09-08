@@ -43,6 +43,20 @@ test("read execution and publication have separate permissions", () => {
     );
 });
 
+test("write assistant starts on trusted code before handling the target PR", () => {
+    const checkouts = full
+        .split(/^ {6}- /m)
+        .filter((step) => step.includes("uses: actions/checkout@"));
+    assert.equal(checkouts.length, 2);
+    assert.match(checkouts[0], /ref: \$\{\{ github\.workflow_sha \}\}/);
+    assert.match(
+        checkouts[1],
+        /ref: \$\{\{ github\.event\.repository\.default_branch \}\}/,
+    );
+    assert.doesNotMatch(checkouts[1], /pull_request\.head|refs\/pull\//);
+    assert.match(full, /uses: anthropics\/claude-code-action@v1/);
+});
+
 test("both first jobs whitelist callers before allocating a runner", () => {
     for (const source of [full, workflow]) {
         const gate = source

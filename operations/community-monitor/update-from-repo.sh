@@ -39,6 +39,7 @@ install_from_main() {
 
 install_from_main CYCLE.md 0644
 install_from_main chat-stream.mjs 0644
+install_from_main image-probe.mjs 0644
 install_from_main probe.mjs 0755
 install_from_main seven-day-health.mjs 0755
 install_from_main loop.sh 0755

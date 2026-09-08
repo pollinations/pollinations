@@ -111,9 +111,12 @@ updater knows only the legacy path and cannot migrate itself.
 ## Deploying runtime changes
 
 Run from the merged `main` revision. Never deploy an unmerged prompt snapshot.
+When a change adds an imported helper, install that helper before `probe.mjs`
+and refresh `update-from-repo.sh` before restarting the service so the next
+cycle knows the complete file set.
 
 ```bash
-scp operations/community-monitor/{CYCLE.md,probe.mjs,chat-stream.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
+scp operations/community-monitor/{CYCLE.md,chat-stream.mjs,image-probe.mjs,probe.mjs,loop.sh,healthcheck.sh,update-from-repo.sh} \
   community-monitor:/home/ubuntu/monitor/
 ssh community-monitor "mkdir -p /home/ubuntu/monitor/.claude"
 scp operations/community-monitor/.claude/settings.json \
@@ -146,14 +149,27 @@ D1/wrangler access needed on the box):
   additional requests can consume a meaningful share of low-capacity provider
   quotas and make a sweep outlive the monitor cycle.
 - Community image models use a separate low-load schedule: exactly one
-  `POST /v1/images/generations` probe per model every four hours, with a
-  cache-busted prompt, the model's default image dimensions, and `b64_json`
-  validation. A newly listed model is tested immediately. Use
+  image request per model every four hours. Models advertising `image` in
+  `input_modalities` alternate `/v1/images/edits` and `/v1/images/generations`,
+  starting with edits; the others test generation only. Edits send an embedded
+  512px PNG, avoiding external fixture hosts. Both use a cache-busted prompt,
+  default output dimensions, and `b64_json` validation. A newly listed model
+  is tested immediately. Use
   `node probe.mjs --model '<owner/name>'` for an explicit freshness check; this
   bypasses the cadence but still sends only one request. Targeted checks print
   JSON without replacing the latest full sweep or changing its cadence state.
+  Image freshness checks default to generation; add `--operation edit` to test
+  edits (and `--category image` for a hidden exact ID). Results include the
+  public `requestPath`, timestamp, and request ID when returned. Match the
+  failing operation when confirming a hide or recovery; generation success
+  cannot clear an edit failure. Image output alone does not prove edit quality.
 - Actual spend is reconciled from each response's real `usage` tokens (not
   the pre-flight estimate) and written to `state.json`'s `spend` key.
+
+Provider feedback stays request-driven: use public examples and aggregate
+metrics, reproduce the reported operation, and verify tool/caching claims
+with bounded tests. Never disclose private prompts or upstream URLs. Existing
+message limits, health thresholds, and cooldowns remain unchanged.
 
 ## Model/effort
 

@@ -17,4 +17,4 @@ https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftr
 `nvidia/asset-harvester` (alias: `asset-harvester`) generates 3D Gaussian Splat
 models in PLY format. Unlike other 3D models that return GLB, Asset Harvester
 returns raw PLY binary suitable for real-time rendering in Gaussian Splat
-viewers (e.g. Gaussian Splattings, Three.js with PLY loader).
+viewers (e.g. SuperSplat, Three.js with Gaussian PLY loader).

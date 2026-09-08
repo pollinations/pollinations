@@ -73,6 +73,18 @@ export type TinybirdEvent = {
     resolvedModelRequested?: string;
     modelUsed?: string;
     modelProviderUsed?: string;
+    /** Serving catalog ID; distinct from provider-reported modelUsed values. */
+    modelExecuted?: string;
+    /** Stable configured route, or the immutable community endpoint ID. */
+    executionRouteId?: string;
+    /** Provider response identity and model, preserved independently of our IDs. */
+    providerResponseId?: string;
+    providerModelReported?: string;
+    /** Absent means unknown; a reported zero is a measured zero. */
+    providerReportedCostUsd?: number;
+    providerCostSource?: string;
+    /** Whether totalCost was calculated from usage/fees, rather than defaulted. */
+    hasCostEstimate?: boolean;
     /** Named conditional pricing sheet selected for this billed request. */
     costVariant?: string;
     /** True when Portkey served from a non-primary fallback target. */

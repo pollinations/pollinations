@@ -6,6 +6,8 @@ import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
     calculateUsageBilling,
+    getModels,
+    getRegistryModelDefinition,
     getVisibleAudioModels,
     getVisibleImageModels,
     getVisibleTextModels,
@@ -148,6 +150,32 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("assigns a distinct execution identity to every bundled route", () => {
+        const routes = new Set<string>();
+        for (const id of getModels()) {
+            const definition = getRegistryModelDefinition(id);
+            expect(definition.routeId, id).toBeTruthy();
+            const routeId = definition.routeId as string;
+            expect(routes.has(routeId), `${id}: duplicate ${routeId}`).toBe(
+                false,
+            );
+            routes.add(routeId);
+            if (definition.fallbackOnly) expect(routeId).toBe(id);
+        }
+    });
+
+    it("preserves execution identities when a provider route becomes primary", () => {
+        const id = "x-ai/grok-imagine-video";
+        const primary = IMAGE_SERVICES[id];
+        const secondary = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];
+        const reordered = mergeFallbacks(
+            { [id]: { ...secondary, fallbackOnly: false, hidden: false } },
+            { [id]: { [primary.routeId]: { provider: primary.provider } } },
+        );
+        expect(reordered[id].routeId).toBe(secondary.routeId);
+        expect(reordered[primary.routeId].routeId).toBe(primary.routeId);
+    });
+
     it("preserves the Astra quote while recording Data Zone costs", () => {
         const primary = TEXT_SERVICES["openai/gpt-6-astra"];
         const fallback = TEXT_SERVICES["openai/gpt-6-astra:azure:datazone"];
@@ -245,6 +273,7 @@ describe("static provider fallbacks", () => {
         for (const routeId of [studioId, vertexId] as const) {
             expectInheritedRoute(services, parentId, routeId);
             expect(services[routeId].provider).toBe("openrouter");
+            expect(services[routeId].routeId).toBe(routeId);
             expect(services[routeId].cost).toEqual(parent.cost);
         }
         expect(parent.fallbacks).toBeUndefined();

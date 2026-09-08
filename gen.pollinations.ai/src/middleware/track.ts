@@ -93,6 +93,10 @@ import type { LoggerVariables } from "@/middleware/logger.ts";
 import type { ModelVariables } from "@/middleware/model.ts";
 import type { FrontendKeyRateLimitVariables } from "@/middleware/rate-limit-durable.ts";
 import {
+    type ProviderUsageEvidence,
+    providerUsageEvidence,
+} from "@/text/provider-usage.ts";
+import {
     getResponsesEventUsage,
     isResponsesFailure,
     normalizeResponsesTerminalEvent,
@@ -123,7 +127,7 @@ type RequestTrackingData = {
     referrerData: ReferrerData;
 };
 
-type ResponseTrackingData = {
+type ResponseTrackingData = ProviderUsageEvidence & {
     responseStatus: number;
     cacheHit: boolean;
     isBilledUsage: boolean;
@@ -132,6 +136,8 @@ type ResponseTrackingData = {
     isFinal?: boolean;
     modelUsed?: string;
     modelProviderUsed?: string;
+    modelExecuted?: string;
+    executionRouteId?: string;
     usage?: Usage;
     cost?: UsageCost;
     price?: UsagePrice;
@@ -336,6 +342,10 @@ export const track = (eventType: EventType) =>
                                 model !==
                                 requestTracking.resolvedModelRequested,
                             modelUsed: model,
+                            modelExecuted: model,
+                            executionRouteId:
+                                attempt.candidate.definition?.routeId ??
+                                attempt.candidate.communityEndpoint?.id,
                             modelProviderUsed:
                                 attempt.candidate.definition?.provider ??
                                 requestTracking.modelProvider,
@@ -668,6 +678,15 @@ export async function trackResponse(
     const cacheHit = response.headers.get("x-cache") === "HIT";
     const fallbackUsed =
         modelCalled !== resolvedModelRequested || parseFallbackUsed(response);
+    const execution = cacheHit
+        ? {}
+        : {
+              modelExecuted: modelCalled,
+              executionRouteId:
+                  candidate.definition?.routeId ??
+                  candidate.communityEndpoint?.id,
+          };
+    let providerEvidence: ProviderUsageEvidence = {};
     const notBilled = (
         extra?: Partial<ResponseTrackingData>,
     ): ResponseTrackingData => ({
@@ -676,6 +695,8 @@ export async function trackResponse(
         isBilledUsage: false,
         fallbackUsed,
         modelProviderUsed,
+        ...execution,
+        ...providerEvidence,
         ...extra,
     });
 
@@ -728,6 +749,9 @@ export async function trackResponse(
     const billingInput = modelUsage?.pricingInput
         ? { ...pricingInput, ...modelUsage.pricingInput }
         : pricingInput;
+    if (eventType === "generate.text") {
+        providerEvidence = providerUsageEvidence(modelProviderUsed, output);
+    }
     const finishError =
         eventType === "generate.text" ? finishReasonError(output) : undefined;
     if (finishError) {
@@ -750,6 +774,8 @@ export async function trackResponse(
             }),
             modelUsed: modelUsage?.model ?? modelCalled,
             modelProviderUsed,
+            ...execution,
+            ...providerEvidence,
             usage,
             contentFilterResults,
             errorTracking: {
@@ -811,6 +837,9 @@ export async function trackResponse(
                 fallbackUsed,
                 ...adjustmentOnlyBilling,
                 modelUsed: modelCalled,
+                modelProviderUsed,
+                ...execution,
+                ...providerEvidence,
                 usage: {},
                 contentFilterResults,
             };
@@ -850,6 +879,8 @@ export async function trackResponse(
         costVariant,
         modelUsed: modelUsage.model,
         modelProviderUsed,
+        ...execution,
+        ...providerEvidence,
         usage: modelUsage.usage,
         contentFilterResults,
     };
@@ -1147,6 +1178,13 @@ function createTrackingEvent({
         modelRequested: requestTracking.modelRequested,
         resolvedModelRequested: requestTracking.resolvedModelRequested,
         modelUsed: responseTracking.modelUsed,
+        modelExecuted: responseTracking.modelExecuted,
+        executionRouteId: responseTracking.executionRouteId,
+        providerResponseId: responseTracking.providerResponseId,
+        providerModelReported: responseTracking.providerModelReported,
+        providerReportedCostUsd: responseTracking.providerReportedCostUsd,
+        providerCostSource: responseTracking.providerCostSource,
+        hasCostEstimate: responseTracking.cost !== undefined,
         modelProviderUsed:
             responseTracking.modelProviderUsed ?? requestTracking.modelProvider,
         costVariant: responseTracking.costVariant,

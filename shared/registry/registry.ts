@@ -154,6 +154,8 @@ export type ModelDefinition = {
      * Must resolve in the Economics vendor registry; CI checks all bundled routes.
      */
     provider: string;
+    /** Stable execution identity, independent of the public ID and route priority. */
+    routeId?: string;
     /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
     perUserRpm?: number | null;
     /** Ordered model ids to try when this model's upstream fails. */

@@ -53,6 +53,17 @@ SCHEMA >
 `resolved_model_requested`  LowCardinality(String) `json:$.resolvedModelRequested` DEFAULT 'undefined',
 `model_used`                LowCardinality(String) `json:$.modelUsed` DEFAULT 'undefined',
 `model_provider_used`       LowCardinality(String) `json:$.modelProviderUsed` DEFAULT 'undefined',
+-- Additive execution evidence. Historical rows remain unknown, never remapped
+-- through today's registry. No change to model_used or public response headers.
+`model_executed` Nullable(String) `json:$.modelExecuted` DEFAULT NULL,
+`execution_route_id` Nullable(String) `json:$.executionRouteId` DEFAULT NULL,
+`provider_response_id` Nullable(String) `json:$.providerResponseId` DEFAULT NULL,
+`provider_model_reported` Nullable(String) `json:$.providerModelReported` DEFAULT NULL,
+-- A measured zero is distinct from a missing report. total_cost remains our
+-- configured-rate estimate; provider-reported charges never set Pollen prices.
+`provider_reported_cost_usd` Nullable(Float64) `json:$.providerReportedCostUsd` DEFAULT NULL,
+`provider_cost_source` Nullable(String) `json:$.providerCostSource` DEFAULT NULL,
+`has_cost_estimate` Nullable(Bool) `json:$.hasCostEstimate` DEFAULT NULL,
 `cost_variant`              LowCardinality(String) `json:$.costVariant` DEFAULT 'undefined',
 `fallback_used`             Bool                   `json:$.fallbackUsed` DEFAULT false,
 -- This row says how the request ENDED, rather than recording one upstream call

@@ -1,0 +1,14 @@
+{
+  "platform": "twitter",
+  "scope": "daily",
+  "date": "2026-09-07",
+  "period_start": "2026-09-07",
+  "period_end": "2026-09-07",
+  "generated_at": "2026-09-08T21:47:31.987788+00:00",
+  "images": [
+    {
+      "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/daily/2026-09-07/images/twitter.jpg"
+    }
+  ],
+  "text": "shipped: canonical model names now work across the catalog without breaking old aliases. generation jobs preserve coordinator errors and recover cached results. media uploads can use account-scoped IDs humans can remember. README + API docs caught up too."
+}

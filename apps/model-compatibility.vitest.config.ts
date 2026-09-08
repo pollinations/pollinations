@@ -18,6 +18,7 @@ export default defineConfig({
             "operations/economics/web/src/lib/modelReconcile.test.ts",
             "operations/economics/web/src/lib/modelIdentity.test.ts",
             "operations/economics/web/src/lib/providerRegistry.test.ts",
+            "operations/economics/web/src/lib/forecastTerms.test.ts",
         ],
     },
 });

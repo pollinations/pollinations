@@ -14,13 +14,11 @@ const SYNTHETIC_LINES = new Set([
 
 describe("forecast terms", () => {
     it.each([
-        ["vast.ai", "vast"],
-        ["bedrock", "aws"],
-        ["fx revaluation", "fx revaluation"],
-        ["pre-window movements", "pre-window movements"],
-    ])("applies a saved %s override to %s", (savedVendor, vendor) => {
-        const category =
-            vendor === "vast" || vendor === "aws" ? "compute" : "balance_sheet";
+        ["vast.ai", "vast", "compute"],
+        ["bedrock", "aws", "compute"],
+        ["fx revaluation", "fx revaluation", "balance_sheet"],
+        ["pre-window movements", "pre-window movements", "balance_sheet"],
+    ])("applies a saved %s override to %s (%s)", (savedVendor, vendor, category) => {
         const override = { activeThrough: "2026-09" };
         const { forecastRules } = parsePrivateConfig({
             config: JSON.stringify({

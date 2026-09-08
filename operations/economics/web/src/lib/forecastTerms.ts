@@ -307,6 +307,7 @@ const FORECAST_RULE_BY_LINE: Record<string, ForecastLineRule> = {
 };
 
 function key(vendor: string, category: string): string {
+    // Callers supply canonical vendors or synthetic lines; parsePrivateConfig normalizes saved keys.
     return `${vendor.trim().toLowerCase()}|${category.trim().toLowerCase()}`;
 }
 

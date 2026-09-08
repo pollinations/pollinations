@@ -150,6 +150,9 @@ export type BillingAdjustment = {
 
 export type ModelDefinition = {
     aliases: string[];
+    /** Supplier attributed to this route's cost, not its publisher or API protocol.
+     * Must resolve in the Economics vendor registry; CI checks all bundled routes.
+     */
     provider: string;
     /** Exact gateway-side request cap per Pollinations user. Null/unset means uncapped. */
     perUserRpm?: number | null;

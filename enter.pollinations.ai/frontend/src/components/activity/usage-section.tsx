@@ -1,22 +1,23 @@
 import {
-    CardIcon,
-    Chip,
     InlineLink,
-    SproutIcon,
-    StatCard,
     Surface,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeaderCell,
+    TableRow,
     UsageIcon,
 } from "@pollinations/ui";
-import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import type { FC } from "react";
 import { useMemo } from "react";
 import {
     ActivityFilter,
     CsvDownloadButton,
     downloadFile,
+    PollenUsageBadges,
 } from "./activity-helpers";
 import { Chart } from "./chart";
-import { formatActivityPollen } from "./format-activity-pollen";
 import { MetricTabs } from "./metric-tabs";
 import type { FilterState, Metric, UsagePeriodSelection } from "./types";
 import { useUsageData } from "./use-usage-data";
@@ -205,77 +206,8 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                 )}
                 {!loading && !error && !hasUsage && <UsageEmptyState />}
             </div>
-
             {!loading && !error && hasUsage && (
-                <div className="grid gap-4 border-t border-divider pt-4 sm:grid-cols-3">
-                    <StatCard
-                        className="min-w-0"
-                        label="Pollen spent"
-                        value={formatActivityPollen(stats.totalPollen)}
-                        detail={
-                            <div className="flex flex-wrap items-center gap-2">
-                                <PaidChip size="lg" className="font-semibold">
-                                    <CardIcon className="h-4 w-4" />
-                                    {formatActivityPollen(stats.paidPollen)}
-                                </PaidChip>
-                                <TierChip size="lg" className="font-semibold">
-                                    <SproutIcon className="h-4 w-4" />
-                                    {formatActivityPollen(stats.tierPollen)}
-                                </TierChip>
-                            </div>
-                        }
-                    />
-                    <StatCard
-                        className="min-w-0"
-                        label="Requests"
-                        value={stats.totalRequests.toLocaleString()}
-                        detail={
-                            stats.activeApiKeyCount === null ? null : (
-                                <span className="text-theme-text-soft">
-                                    across {stats.activeApiKeyCount} API key
-                                    {stats.activeApiKeyCount === 1 ? "" : "s"}
-                                </span>
-                            )
-                        }
-                    />
-                    <StatCard
-                        className="min-w-0"
-                        label="Top model"
-                        value={
-                            <span className="text-xl leading-tight">
-                                {stats.topModel?.label || "None"}
-                            </span>
-                        }
-                        detail={
-                            stats.topModel ? (
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Chip size="lg" className="font-semibold">
-                                        <span className="tabular-nums">
-                                            {stats.topModel.requests.toLocaleString()}
-                                        </span>
-                                        <span className="font-medium opacity-70">
-                                            {stats.topModel.requests === 1
-                                                ? "req"
-                                                : "reqs"}
-                                        </span>
-                                    </Chip>
-                                    <Chip size="lg" className="font-semibold">
-                                        <span className="tabular-nums">
-                                            {formatActivityPollen(
-                                                stats.topModel.pollen,
-                                            )}
-                                        </span>
-                                        <span className="font-medium opacity-70">
-                                            pollen
-                                        </span>
-                                    </Chip>
-                                </div>
-                            ) : (
-                                "No model usage yet"
-                            )
-                        }
-                    />
-                </div>
+                <ModelBreakdownTable stats={stats} />
             )}
         </>
     );
@@ -290,4 +222,60 @@ const UsageEmptyState: FC = () => (
         </InlineLink>
         .
     </p>
+);
+
+type ModelBreakdownTableProps = {
+    stats: ReturnType<typeof useUsageData>["stats"];
+};
+
+const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({ stats }) => (
+    <div className="min-w-0 max-w-full overflow-x-auto">
+        <Table
+            aria-label="Usage by model"
+            className="min-w-[420px] [&_tr:hover]:bg-transparent"
+        >
+            <TableHead className="sr-only">
+                <TableRow>
+                    <TableHeaderCell scope="col">Model</TableHeaderCell>
+                    <TableHeaderCell scope="col" align="right">
+                        Share
+                    </TableHeaderCell>
+                    <TableHeaderCell scope="col" align="right">
+                        Pollen
+                    </TableHeaderCell>
+                </TableRow>
+            </TableHead>
+            <TableBody>
+                {stats.modelBreakdowns.map((model) => (
+                    <TableRow key={model.model}>
+                        <TableCell className="max-w-64 break-words text-xs">
+                            {model.label}
+                        </TableCell>
+                        <TableCell align="right" numeric className="text-xs">
+                            {stats.totalPollen > 0
+                                ? (
+                                      (model.pollen / stats.totalPollen) *
+                                      100
+                                  ).toFixed(1)
+                                : "0.0"}
+                            %
+                        </TableCell>
+                        <TableCell align="right" numeric className="text-xs">
+                            <PollenUsageBadges {...model} />
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+            <tfoot className="border-t border-divider font-semibold">
+                <TableRow>
+                    <TableHeaderCell scope="row" colSpan={2}>
+                        Total
+                    </TableHeaderCell>
+                    <TableCell align="right" numeric className="text-xs">
+                        <PollenUsageBadges {...stats} />
+                    </TableCell>
+                </TableRow>
+            </tfoot>
+        </Table>
+    </div>
 );

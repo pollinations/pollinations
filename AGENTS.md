@@ -33,6 +33,7 @@ Guild ID `885844321461485618` (https://discord.gg/pollinations-ai-88584432146148
 - `operations/app-management/` — Community app catalog and automation
 - `operations/` — Internal dashboards, monitoring, economics, and infrastructure
 - `operations/social/` — Discord/Reddit/GitHub automation
+- `operations/community-monitor/` — Community model monitor agent; runs with the Discord bots on the `monitoring-agents` EC2 box (see `operations/infrastructure/gpu/GPU_INSTANCES.md`)
 
 ## API Gateway
 
@@ -142,8 +143,8 @@ curl "http://localhost:8788/v1/chat/completions" -H "Authorization: Bearer $TOKE
   directly into the local `.dev.vars` file.
 - After switching, merging, or rebasing an Economics branch, rerun
   `npm run decrypt-vars` before trusting the local dashboard. The generated
-  `.dev.vars` must combine the shared password with the staging-only read
-  token via `scripts/write-dev-vars.mjs`.
+  `.dev.vars` must preserve the separately approved app session signing secret
+  and load the staging-only read token via `scripts/write-dev-vars.mjs`.
 - A local dashboard showing production-only or stale provider rows is an
   environment-routing failure; fix the local reader before changing ledger
   data or publishing another correction.

@@ -23,8 +23,8 @@ export const MetricTabs: FC<{
                     key={metric}
                     active={value === metric}
                     onClick={() => onChange(metric)}
-                    size="sm"
-                    className="min-h-8 flex-1 polli:text-xs"
+                    size="xs"
+                    className="min-h-8 flex-1"
                 >
                     {METRIC_LABELS[metric]}
                 </TabButton>

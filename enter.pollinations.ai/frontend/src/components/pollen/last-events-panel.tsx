@@ -16,7 +16,6 @@ import { PaidChip, TierChip } from "@pollinations/ui/wallet";
 import { type FC, useEffect, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityPollenThreshold } from "../activity/format-activity-pollen.ts";
-import type { EarningsSource } from "../activity/use-earnings-data.ts";
 
 const PAGE_SIZE = 15;
 const RECENT_WINDOW_DAYS = 90;
@@ -34,7 +33,6 @@ type UsageEventRecord = {
 };
 
 type EarningsEventRecord = {
-    source?: EarningsSource;
     timestamp: string;
     cursor_event_id: string;
     entity_name: string;
@@ -45,7 +43,6 @@ type EarningsEventRecord = {
 
 type LastEvent = {
     kind: "usage" | "earnings";
-    earningsSource?: EarningsSource;
     id: string;
     timestamp: string;
     primary: string;
@@ -88,28 +85,18 @@ function formatSignedPollen(event: LastEvent): string {
 
 function EventKindChip({ event }: { event: LastEvent }) {
     const earned = event.kind === "earnings";
-    const label = !earned
-        ? "Spent"
-        : event.earningsSource === "byop_markup"
-          ? "App"
-          : event.earningsSource === "community_model"
-            ? "Model"
-            : "Earned";
+    const label = earned ? "Earned" : "Spent";
     return (
         <span className="inline-flex items-center gap-1.5">
             <Chip
-                intent={earned ? "neutral" : "danger"}
-                size="sm"
-                className={`polli:w-5 polli:px-0 ${earned ? "polli:bg-intent-info-bg-light polli:text-intent-info-text" : ""}`}
+                intent={earned ? "info" : "danger"}
+                size="icon"
                 aria-hidden="true"
             >
                 <ArrowRightIcon
                     className={`h-3 w-3 ${earned ? "rotate-90" : "-rotate-90"}`}
                 />
             </Chip>
-            {earned && label !== "Earned" && (
-                <span className="sr-only">Earned from </span>
-            )}
             {label}
         </span>
     );
@@ -168,7 +155,6 @@ function mergeLastEvents(
     }));
     const earningsEvents: LastEvent[] = earningsRows.map((row) => ({
         kind: "earnings",
-        earningsSource: row.source,
         id: row.cursor_event_id,
         timestamp: row.timestamp,
         primary: row.entity_name,

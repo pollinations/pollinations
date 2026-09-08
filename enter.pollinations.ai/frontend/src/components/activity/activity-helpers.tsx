@@ -71,12 +71,12 @@ export function clearActivitySelectionOnEscape(
     event: KeyboardEvent<HTMLElement>,
     clear: () => void,
 ): void {
-    // Let an open calendar/filter handle Escape without clearing the chart behind it.
+    // Portalled calendars/filters own Escape; React still bubbles their events here.
     if (
         event.key !== "Escape" ||
         event.defaultPrevented ||
         !(event.target instanceof Element) ||
-        event.target.closest('[data-scope="popover"][data-part="content"]')
+        !event.currentTarget.contains(event.target)
     )
         return;
     event.preventDefault();

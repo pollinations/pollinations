@@ -192,6 +192,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
 
     return {
         name,
+        aliases: model.aliases,
         type: getCatalogCategory(model),
         community: model.community,
         agent: model.agent,
@@ -199,7 +200,7 @@ function baseModelPrice(model: ApiModelInfo): ModelPrice | null {
         perUserRpm: model.per_user_rpm,
         displayName: getCatalogDisplayName(model, name),
         description: getCatalogDescriptionWithoutName(model),
-        brand: model.brand,
+        publisher: model.publisher,
         brandUrl: model.brand_url,
         inputModalities: model.input_modalities,
         outputModalities: model.output_modalities,

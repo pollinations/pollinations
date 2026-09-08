@@ -35,6 +35,25 @@ describe("Tinybird pipe contracts", () => {
 });
 
 describe("loadAll", () => {
+    it("loads only the sources a view needs and does not invent absent datasets", async () => {
+        const fetch = vi.fn(() =>
+            Promise.resolve(
+                Response.json({ data: FIXTURES.economics_bank_ledger_api }),
+            ),
+        );
+        vi.stubGlobal("fetch", fetch);
+        const controller = new AbortController();
+        const result = await loadAll(["opTransactions"], controller.signal);
+        expect(fetch).toHaveBeenCalledExactlyOnceWith(
+            "/api/pipes/economics_bank_ledger_api",
+            { signal: controller.signal },
+        );
+        expect(result.opTransactions).toHaveLength(
+            FIXTURES.economics_bank_ledger_api.length,
+        );
+        expect(result.revenueShare).toBeUndefined();
+        expect(result.privateConfig).toBeUndefined();
+    });
     it("requires and parses the authenticated private configuration", async () => {
         vi.stubGlobal(
             "fetch",
@@ -49,6 +68,9 @@ describe("loadAll", () => {
         const result = await loadAll();
 
         expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
+        expect(result.userBalances).toEqual(
+            FIXTURES.economics_user_balances_api,
+        );
     });
 
     it("fails closed when the private configuration is absent", async () => {
@@ -71,6 +93,38 @@ describe("loadAll", () => {
 
         await expect(loadAll()).rejects.toThrow(
             "economics_private_config_api: expected one row, received 0",
+        );
+    });
+
+    it("fails closed when the D1 user snapshot is empty", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn((input: RequestInfo | URL) => {
+                const pipe = decodeURIComponent(
+                    String(input).split("/").at(-1) ?? "",
+                );
+                return Promise.resolve(
+                    Response.json({
+                        data:
+                            pipe === "economics_user_balances_api"
+                                ? [
+                                      {
+                                          users: 0,
+                                          paid_users: 0,
+                                          quest_users: 0,
+                                          paid_balance: 0,
+                                          quest_balance: 0,
+                                          synced_at: "1970-01-01 00:00:00",
+                                      },
+                                  ]
+                                : FIXTURES[pipe],
+                    }),
+                );
+            }),
+        );
+
+        await expect(loadAll()).rejects.toThrow(
+            "economics_user_balances_api: expected one populated D1 snapshot row",
         );
     });
 });
@@ -130,6 +184,24 @@ describe("canonicalPollenRows", () => {
             requests_paid: 25,
             requests_quests: 12,
         });
+    });
+
+    it("re-attributes reviewed Pollen rows to the vendor whose bill carried them", () => {
+        // gptimage was tagged azure-2 (Pointflyer) through April 2026 while its
+        // gpt-image-1-mini deployments were billed on our own subscription.
+        const rows = canonicalPollenRows([
+            pollen("pointsflyer", { month: "2026-02", model: "gptimage" }),
+            pollen("pointsflyer", { month: "2026-02", model: "openai" }),
+            pollen("pointsflyer", { month: "2026-05", model: "gptimage" }),
+        ]);
+
+        expect(
+            rows.map((row) => `${row.month}|${row.vendor}|${row.model}`),
+        ).toEqual([
+            "2026-05|pointsflyer|gptimage",
+            "2026-02|azure|gptimage",
+            "2026-02|pointsflyer|openai",
+        ]);
     });
 
     it("removes rows with no values or requests", () => {

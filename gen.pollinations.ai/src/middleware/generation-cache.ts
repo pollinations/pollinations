@@ -228,6 +228,7 @@ export function createGenerationCache(adapter: GenerationCacheAdapter) {
             if (coordinate) {
                 throw new HTTPException(503, {
                     message: "Generation cache is temporarily unavailable",
+                    cause: error,
                 });
             }
         }
@@ -264,6 +265,7 @@ export function createGenerationExecutionCache(
             log.error("Error retrieving cached response: {error}", { error });
             throw new HTTPException(503, {
                 message: "Generation cache is temporarily unavailable",
+                cause: error,
             });
         }
 

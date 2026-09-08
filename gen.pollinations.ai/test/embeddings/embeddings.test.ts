@@ -20,15 +20,15 @@ import { resetGenerationModelRegistryCache } from "../../src/model-registry.ts";
 import googleCloudAuth from "../../src/text/auth/googleCloudAuth.ts";
 import { withInlineGenerationCoordinator } from "../helpers/inline-generation-coordinator.ts";
 
-const TEST_EMBEDDING_MODEL = "gemini-2";
+const TEST_EMBEDDING_MODEL = "google/gemini-embedding-2";
 const TEST_PROVIDER_MODEL = "gemini-embedding-2";
-const TEST_OPENAI_SMALL_MODEL = "openai-3-small";
-const TEST_OPENAI_LARGE_MODEL = "openai-3-large";
+const TEST_OPENAI_SMALL_MODEL = "openai/text-embedding-3-small";
+const TEST_OPENAI_LARGE_MODEL = "openai/text-embedding-3-large";
 const TEST_OPENAI_SMALL_PROVIDER_MODEL = "text-embedding-3-small";
 const TEST_OPENAI_LARGE_PROVIDER_MODEL = "text-embedding-3-large";
-const TEST_COHERE_MODEL = "cohere-embed-v4";
+const TEST_COHERE_MODEL = "cohere/embed-v4.0";
 const TEST_COHERE_PROVIDER_MODEL = "embed-v-4-0";
-const TEST_QWEN_MODEL = "qwen3-embedding-8b";
+const TEST_QWEN_MODEL = "qwen/qwen3-embedding-8b";
 const TEST_QWEN_PROVIDER_MODEL = "accounts/fireworks/models/qwen3-embedding-8b";
 const TEST_EMBEDDING_INPUT = "Hello world";
 const VERTEX_HOST = "aiplatform.us.rep.googleapis.com";
@@ -811,81 +811,80 @@ describe("POST /v1/embeddings", () => {
         });
     });
 
-    test.for([
-        "text",
-        "image",
-    ])("rescues Cohere %s embeddings through Sweden without changing the quote", async (modality, {
-        apiKey,
-        mocks,
-    }) => {
-        await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
-        mocks.cohereAzure.state.failPrimary = true;
-        const input =
-            modality === "image"
-                ? [
-                      {
-                          type: "image_url",
-                          image_url: {
-                              url: "data:image/png;base64,aGVsbG8=",
-                          },
-                      },
-                  ]
-                : ["Hello", "World"];
-        const { response, wait } = await fetchWorker("/v1/embeddings", {
-            method: "POST",
-            headers: {
-                "content-type": "application/json",
-                authorization: `Bearer ${apiKey}`,
-            },
-            body: buildEmbeddingsBody({
-                model: TEST_COHERE_MODEL,
-                input,
-                dimensions: 256,
-                input_type: "query",
-            }),
-        });
-        expect(response.status).toBe(200);
-        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
-            "config.targets[1]",
-        );
-        const body = (await response.json()) as {
-            model: string;
-            data: { embedding: number[] }[];
-        };
-        expect(body.data[0].embedding).toHaveLength(256);
-        expect(
-            mocks.cohereAzure.state.urls.map((url) => new URL(url).hostname),
-        ).toEqual([AZURE_HOST, AZURE_SWEDEN_HOST]);
-        expect(mocks.cohereAzure.state.apiKeys).toEqual([
-            "test-azure-api-key",
-            "test-azure-sweden-api-key",
-        ]);
-        expect(mocks.cohereAzure.state.requests).toEqual([
-            expect.objectContaining({
-                model: TEST_COHERE_PROVIDER_MODEL,
-                input_type: "query",
-                dimensions: 256,
-            }),
-            expect.objectContaining({
-                model: TEST_COHERE_PROVIDER_MODEL,
-                input_type: "query",
-                dimensions: 256,
-            }),
-        ]);
-        await wait();
-        const events = mocks.tinybird.state.events;
-        const billed = events.filter((event) => event.isBilledUsage);
-        expect(billed).toHaveLength(1);
-        expect(billed[0]).toMatchObject({
-            modelRequested: TEST_COHERE_MODEL,
-            modelUsed: "cohere-embed-v4-azure-sweden",
-            totalCost:
+    test.for(["text", "image"])(
+        "rescues Cohere %s embeddings through Sweden without changing the quote",
+        async (modality, { apiKey, mocks }) => {
+            await mocks.enable("tinybird", "tinybirdStats", "cohereAzure");
+            mocks.cohereAzure.state.failPrimary = true;
+            const input =
                 modality === "image"
-                    ? (4 * 0.47) / 1_000_000
-                    : (8 * 0.12) / 1_000_000,
-            totalPrice: modality === "image" ? 0.00000141 : 0.00000072,
-        });
-    });
+                    ? [
+                          {
+                              type: "image_url",
+                              image_url: {
+                                  url: "data:image/png;base64,aGVsbG8=",
+                              },
+                          },
+                      ]
+                    : ["Hello", "World"];
+            const { response, wait } = await fetchWorker("/v1/embeddings", {
+                method: "POST",
+                headers: {
+                    "content-type": "application/json",
+                    authorization: `Bearer ${apiKey}`,
+                },
+                body: buildEmbeddingsBody({
+                    model: TEST_COHERE_MODEL,
+                    input,
+                    dimensions: 256,
+                    input_type: "query",
+                }),
+            });
+            expect(response.status).toBe(200);
+            expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+                "config.targets[1]",
+            );
+            const body = (await response.json()) as {
+                model: string;
+                data: { embedding: number[] }[];
+            };
+            expect(body.data[0].embedding).toHaveLength(256);
+            expect(
+                mocks.cohereAzure.state.urls.map(
+                    (url) => new URL(url).hostname,
+                ),
+            ).toEqual([AZURE_HOST, AZURE_SWEDEN_HOST]);
+            expect(mocks.cohereAzure.state.apiKeys).toEqual([
+                "test-azure-api-key",
+                "test-azure-sweden-api-key",
+            ]);
+            expect(mocks.cohereAzure.state.requests).toEqual([
+                expect.objectContaining({
+                    model: TEST_COHERE_PROVIDER_MODEL,
+                    input_type: "query",
+                    dimensions: 256,
+                }),
+                expect.objectContaining({
+                    model: TEST_COHERE_PROVIDER_MODEL,
+                    input_type: "query",
+                    dimensions: 256,
+                }),
+            ]);
+            await wait();
+            const events = mocks.tinybird.state.events;
+            const billed = events.filter((event) => event.isBilledUsage);
+            expect(billed).toHaveLength(1);
+            expect(billed[0]).toMatchObject({
+                modelRequested: TEST_COHERE_MODEL,
+                modelUsed: "cohere/embed-v4.0:azure:sweden",
+                totalCost:
+                    modality === "image"
+                        ? (4 * 0.47) / 1_000_000
+                        : (8 * 0.12) / 1_000_000,
+                totalPrice: modality === "image" ? 0.00000141 : 0.00000072,
+            });
+        },
+    );
 
     test("passes Cohere query input_type through Azure", async ({
         apiKey,
@@ -1327,7 +1326,7 @@ describe("embedding models", () => {
             context_length?: number;
         }[];
         expect(data.map((model) => model.name)).not.toContain(
-            "cohere-embed-v4-azure-sweden",
+            "cohere/embed-v4.0:azure:sweden",
         );
         expect(data).toEqual(
             expect.arrayContaining([
@@ -1367,7 +1366,7 @@ describe("embedding models", () => {
         };
         expect(data.object).toBe("list");
         expect(data.data.map((model) => model.id)).not.toContain(
-            "cohere-embed-v4-azure-sweden",
+            "cohere/embed-v4.0:azure:sweden",
         );
         expect(data.data).toEqual(
             expect.arrayContaining([

@@ -5,7 +5,7 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, StringConstraints, model_validator
 
-from floret.registry import fetch_model_catalog
+from floret.registry import fetch_model_catalog, find_model_meta
 
 ModelPreference = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1)]
 
@@ -214,7 +214,7 @@ async def validate_routing(value: RoutingInput | None) -> RoutingPreferences:
         raise RoutingRegistryUnavailable("Model registry is unavailable") from exc
 
     for field, model in explicit.items():
-        meta = catalog.get(model)
+        meta = find_model_meta(catalog, model)
         if meta is None:
             raise RoutingValidationError(field, model, "unknown model")
         reason = _validation_reason(meta, _REQUIREMENTS[field])

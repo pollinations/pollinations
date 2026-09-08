@@ -1,21 +1,24 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { PRIVATE_CONFIG_FIXTURE } from "../fixtures";
-import { automaticForecastRule } from "../lib/forecastTerms";
+import { automaticForecastRule, forecastLineRule } from "../lib/forecastTerms";
 import type { Data } from "../types";
 import {
+    ForecastBadge,
     fmtRunwayTableValue,
     fmtRunwayUsd,
-    forecastMethodHint,
     forecastMethodLabel,
-    paymentTimingHint,
     paymentTimingLabel,
     RunwayTab,
     runwayMonthLabel,
     runwayPeriodText,
     runwayValueClass,
 } from "./RunwayTab";
+
+afterEach(() => {
+    vi.useRealTimers();
+});
 
 describe("RunwayTab labels", () => {
     it("shows full rounded runway amounts without compact suffixes", () => {
@@ -55,39 +58,45 @@ describe("RunwayTab labels", () => {
         expect(forecastMethodLabel("funded")).toBe("FUNDED");
         expect(forecastMethodLabel("last")).toBe("RUN RATE");
         expect(forecastMethodLabel("one_off")).toBe("ONE-TIME");
+        expect(forecastMethodLabel("mixed")).toBe("MIXED");
         expect(forecastMethodLabel(null)).toBeNull();
     });
 
-    it("explains forecast methods on vendor hover", () => {
-        expect(forecastMethodHint("fixed")).toBe(
-            "Uses a fixed monthly amount.",
-        );
-        expect(forecastMethodHint("funded")).toBe(
-            "Covered by verified vendor credits or prepaid balance.",
-        );
-        expect(forecastMethodHint("last")).toBe(
-            "Uses the latest reviewed monthly run rate.",
-        );
-        expect(forecastMethodHint("one_off")).toBe(
-            "Included only in this month.",
-        );
-        expect(forecastMethodHint(null)).toBeNull();
-    });
-
-    it("explains when forecast cash moves", () => {
+    it("uses plain labels for the payment timing", () => {
         expect(paymentTimingLabel("direct")).toBe("DIRECT");
         expect(paymentTimingLabel("prepaid")).toBe("PREPAID");
         expect(paymentTimingLabel("postpaid")).toBe("POSTPAID");
         expect(paymentTimingLabel(null)).toBeNull();
-        expect(paymentTimingHint("direct")).toBe(
-            "Cash moves in the projected month.",
+    });
+
+    it.each([
+        ["FIXED", "free"],
+        ["FUNDED", "news"],
+        ["RUN RATE", "free"],
+        ["ONE-TIME", "alpha"],
+        ["DIRECT", "news"],
+        ["PREPAID", "alpha"],
+        ["POSTPAID", "warning"],
+    ])("colors %s with the shared %s badge palette", (label, intent) => {
+        const html = renderToStaticMarkup(
+            createElement(ForecastBadge, { label }),
         );
-        expect(paymentTimingHint("prepaid")).toContain(
-            "existing balance is consumed first",
+        expect(html).toContain(`polli:bg-intent-${intent}-bg-light`);
+        expect(html).toContain(`polli:text-intent-${intent}-text`);
+        expect(html).toContain(`>${label}</span>`);
+        expect(html).not.toContain("polli:bg-ink-100/80");
+    });
+
+    it.each([
+        "MIXED",
+        "bank",
+        "vendor",
+    ])("keeps %s metadata neutral", (label) => {
+        const html = renderToStaticMarkup(
+            createElement(ForecastBadge, { label }),
         );
-        expect(paymentTimingHint("postpaid")).toBe(
-            "Usage is paid after the service period.",
-        );
+        expect(html).toContain("polli:bg-ink-100/80");
+        expect(html).toContain(`>${label}</span>`);
     });
 
     it("uses the same projection rules for labels and calculations", () => {
@@ -97,6 +106,40 @@ describe("RunwayTab labels", () => {
                 paymentTiming: "prepaid",
             });
         }
+        expect(automaticForecastRule("llm7.io", "revenue_share")).toBeNull();
+        expect(forecastLineRule("llm7.io", "revenue_share")).toEqual({
+            method: "one_off",
+            paymentTiming: "direct",
+        });
+    });
+
+    it("shows D1 balances as non-cashable usage exposure", () => {
+        const html = renderToStaticMarkup(
+            createElement(RunwayTab, {
+                data: {
+                    privateConfig: PRIVATE_CONFIG_FIXTURE,
+                    userBalances: [
+                        {
+                            users: 100,
+                            paid_users: 10,
+                            quest_users: 80,
+                            paid_balance: 1_234,
+                            quest_balance: 5_678,
+                            synced_at: "2026-09-03 03:00:00",
+                        },
+                    ],
+                },
+                year: "2026",
+            }),
+        );
+
+        expect(html).toContain("Unspent Pollen");
+        expect(html).toContain("Paid Pollen");
+        expect(html).toContain("Quest Pollen");
+        expect(html).toContain("1,234");
+        expect(html).toContain("5,678");
+        expect(html).toContain("full catalog");
+        expect(html).toContain("restricted catalog");
     });
 
     it("colors cash values without overemphasizing zeroes", () => {
@@ -150,6 +193,21 @@ describe("RunwayTab labels", () => {
                     recorded_at: "2026-07-03 00:00:00",
                 },
             ],
+            stripeSales: [
+                {
+                    revenue_stream: "pollen",
+                    reversals: 0,
+                    month: "2026-08",
+                    currency: "USD",
+                    gross_sales: 120,
+                    refunds: 20,
+                    net_sales: 100,
+                    stripe_fees: 5,
+                    net_after_fees: 95,
+                    payments: 3,
+                    refund_count: 1,
+                },
+            ],
         };
 
         const html = renderToStaticMarkup(
@@ -161,7 +219,9 @@ describe("RunwayTab labels", () => {
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain(">stripe<");
         expect(html).not.toContain(">aws<");
-        expect(html).toContain("Cash change");
+        expect(html).toContain(">Expenses</td>");
+        expect(html.match(/>Cash change<\/td>/g)).toHaveLength(1);
+        expect(html).not.toContain("Revenue less expenses");
         expect(html).toContain("Cash balance");
         expect(html).toContain('class="sr-only">Line item</span>');
         expect(html).not.toContain(">Actual</span>");
@@ -169,6 +229,8 @@ describe("RunwayTab labels", () => {
     });
 
     it("derives the next-month plan without a forecast feed", () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(new Date("2026-08-25T12:00:00.000Z"));
         const html = renderToStaticMarkup(
             createElement(RunwayTab, {
                 year: "2026",

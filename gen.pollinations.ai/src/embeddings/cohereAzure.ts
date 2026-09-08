@@ -3,11 +3,11 @@ import type { Usage } from "@shared/registry/registry.ts";
 import type { OpenAIEmbeddingResponse } from "./openai.ts";
 
 const COHERE_AZURE_ROUTES = {
-    "cohere-embed-v4": {
+    "cohere/embed-v4.0": {
         host: "https://myceli-prod-eastus.cognitiveservices.azure.com",
         key: "AZURE_MYCELI_PROD_API_KEY",
     },
-    "cohere-embed-v4-azure-sweden": {
+    "cohere/embed-v4.0:azure:sweden": {
         host: "https://myceli-prod-swedencentral.cognitiveservices.azure.com",
         key: "AZURE_MYCELI_PROD_SWEDEN_API_KEY",
     },

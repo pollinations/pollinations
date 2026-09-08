@@ -1,8 +1,8 @@
 import {
     Alert,
     Button,
+    ChevronIcon,
     Chip,
-    ClockIcon,
     ColorModeToggle,
     cn,
     DatabaseIcon,
@@ -11,7 +11,6 @@ import {
     GlobeIcon,
     Heading,
     IconButton,
-    InfoTip,
     Input,
     MenuIcon,
     NavItem,
@@ -19,6 +18,7 @@ import {
     ScrollArea,
     SproutIcon,
     Text,
+    Tooltip,
     UsageIcon,
     WalletIcon,
     XIcon,
@@ -47,33 +47,63 @@ import {
     ledgerFacets,
 } from "./lib/filterFacets";
 import {
-    collectMonths,
+    isMonthKey,
     latestClosedMonth,
+    reportingMonths,
     WINDOW_START,
     yearsOf,
 } from "./lib/months";
 import type { ProvenanceCode } from "./lib/provenance";
-import { fixturesMode, loadAll, TbError } from "./lib/tb";
+import { providerAccountBalanceRows } from "./lib/providerBalances";
+import { type DataSource, fixturesMode, loadAll, TbError } from "./lib/tb";
 import type { Data } from "./types";
-import { CommunityTab } from "./views/CommunityTab";
 import { BalancesTab } from "./views/CreditsTab";
 import { GpuTab } from "./views/GpuTab";
-import { OpCloudTab } from "./views/OpCloudTab";
 import { OpPollenTab } from "./views/OpPollenTab";
 import { OpTransactionsTab } from "./views/OpTransactionsTab";
 import { ProviderCloseTab } from "./views/ProviderCloseTab";
+import { RevenueShareLedgerTab } from "./views/RevenueShareLedgerTab";
+import { RevenueShareTab } from "./views/RevenueShareTab";
 import { RunwayTab } from "./views/RunwayTab";
 import { ManagedInferenceTab, VendorsTab } from "./views/UnitEconomicsTab";
+import { VendorLedgerTab } from "./views/VendorLedgerTab";
 
 type InsightTab =
     | "close"
     | "runway"
     | "vendors"
     | "inference"
-    | "community"
+    | "revenue-share"
     | "balances"
     | "gpu";
 type ActiveView = InsightTab | LedgerTab;
+
+const VIEW_SOURCES: Record<ActiveView, readonly DataSource[]> = {
+    "op-transactions": ["opTransactions"],
+    "vendor-ledger": ["vendorLedger"],
+    "op-pollen": ["opPollen"],
+    "revenue-share-ledger": ["revenueShare"],
+    "revenue-share": ["revenueShare", "opTransactions"],
+    balances: ["vendorLedger", "opTransactions"],
+    runway: [
+        "opTransactions",
+        "vendorLedger",
+        "stripeSales",
+        "userBalances",
+        "privateConfig",
+    ],
+    close: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    vendors: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    inference: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+    gpu: ["opTransactions", "vendorLedger", "opPollen", "privateConfig"],
+};
+
+function initialView(): ActiveView {
+    const requested = new URLSearchParams(window.location.search).get("view");
+    return requested && Object.hasOwn(VIEW_SOURCES, requested)
+        ? (requested as ActiveView)
+        : "runway";
+}
 
 const logoMask: CSSProperties = {
     WebkitMask: `url(${logoUrl}) center / contain no-repeat`,
@@ -85,18 +115,21 @@ type DrawerItem<Id extends string> = {
     label: string;
     note: string;
     icon: ComponentType<{ className?: string }>;
+    // Ledger-like insight views show their row count once `source` is loaded.
+    source?: DataSource;
+    rows?: (data: Data) => number;
 };
 
 const INSIGHT_TABS = [
     {
         id: "runway",
         label: "Runway",
-        note: "Cash runway from the Wise-derived bank ledger plus explicit OP Forecast assumptions.",
+        note: "Stripe sales, Wise bank cash, and forecasts derived from reviewed rules, provider usage, and checked funding.",
         icon: WalletIcon,
     },
     {
         id: "vendors",
-        label: "Vendors",
+        label: "Providers",
         note: "Direct AI-delivery economics by vendor-month across managed inference and GPU capacity; shared infrastructure is excluded.",
         icon: GlobeIcon,
     },
@@ -113,9 +146,9 @@ const INSIGHT_TABS = [
         icon: RocketIcon,
     },
     {
-        id: "community",
-        label: "Community",
-        note: "Community-model economics: cash-backed Paid Pollen, owner and BYOP shares, retained value, Quest rewards, and activity without a Pollinations vendor cost.",
+        id: "revenue-share",
+        label: "Rev share",
+        note: "Community-model and BYOP economics by creator, with Paid and Quest rewards kept separate.",
         icon: SproutIcon,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
@@ -130,8 +163,10 @@ const LEDGER_INSIGHT_TABS = [
     {
         id: "balances",
         label: "Balances",
-        note: "Current cash-prepaid and free-credit vendor balances, with an expandable monthly roll-forward.",
-        icon: ClockIcon,
+        note: "Checked prepaid and promotional-credit snapshots, one row per account, with access and collection status.",
+        icon: DatabaseIcon,
+        source: "vendorLedger",
+        rows: (data) => providerAccountBalanceRows(data, new Date()).length,
     },
 ] satisfies readonly DrawerItem<InsightTab>[];
 
@@ -143,6 +178,7 @@ const ALL_INSIGHT_TABS = [
 // note + pipe surface as a hover tooltip on the tab button — the tab body
 // itself stays table-only.
 type LedgerDrawerItem = DrawerItem<LedgerTab> & {
+    source: DataSource;
     codes: ProvenanceCode[];
     pipe: string;
     rows: (data: Data) => number;
@@ -151,6 +187,7 @@ type LedgerDrawerItem = DrawerItem<LedgerTab> & {
 const TABS = [
     {
         id: "op-transactions",
+        source: "opTransactions",
         label: "Bank",
         codes: ["WISE"],
         pipe: "economics_bank_ledger_api",
@@ -162,19 +199,21 @@ const TABS = [
             ).length,
     },
     {
-        id: "op-cloud",
-        label: "Compute & Infra",
+        id: "vendor-ledger",
+        source: "vendorLedger",
+        label: "Vendor",
         codes: ["API", "CLI", "BQ", "HC", "INV", "EXP", "ING", "AGT"],
-        pipe: "economics_compute_ledger_api",
+        pipe: "economics_vendor_ledger_api",
         note: "Compute and infrastructure usage facts, including inference, GPUs, grants, and credit burn. Paid and burn values are signed; positive credit is a grant award.",
         icon: DatabaseIcon,
         rows: (data) =>
-            (data.opCloud ?? []).filter(
+            (data.vendorLedger ?? []).filter(
                 (row) => row.start.slice(0, 7) >= WINDOW_START,
             ).length,
     },
     {
         id: "op-pollen",
+        source: "opPollen",
         label: "Pollen",
         codes: ["TB"],
         pipe: "economics_pollen_usage_api",
@@ -184,32 +223,78 @@ const TABS = [
             (data.opPollen ?? []).filter((row) => row.month >= WINDOW_START)
                 .length,
     },
+    {
+        id: "revenue-share-ledger",
+        source: "revenueShare",
+        label: "Rev share",
+        codes: ["TB"],
+        pipe: "economics_revenue_share_api",
+        note: "Monthly creator-earning ledger by creator and App or Community Model. Paid and Quest earnings remain separate; associated usage can overlap when one request has both source types.",
+        icon: DatabaseIcon,
+        rows: (data) =>
+            (data.revenueShare ?? []).filter(
+                (row) => row.row_type === "source" && row.month >= WINDOW_START,
+            ).length,
+    },
 ] satisfies readonly LedgerDrawerItem[];
+
+const LEDGER_SOURCES = TABS.map((item) => item.source);
+
+// Fill the ledger sources missing from `target` with the ones `donor` holds.
+function withLedgerSources(target: Data, donor: Data | null): Data {
+    if (!donor) return target;
+    const filled = { ...target };
+    for (const source of LEDGER_SOURCES) {
+        if (filled[source] == null && donor[source] != null) {
+            (filled as Record<DataSource, unknown>)[source] = donor[source];
+        }
+    }
+    return filled;
+}
 
 function isLedgerTab(value: ActiveView): value is LedgerTab {
     return TABS.some((item) => item.id === value);
 }
 
-function codesLabel(codes: readonly ProvenanceCode[]) {
-    return codes.length ? `${codes.join(", ")} · ` : "";
+const NAV_COLLAPSED_KEY = "economics.nav.collapsed";
+
+function readNavCollapsed() {
+    try {
+        return window.localStorage.getItem(NAV_COLLAPSED_KEY) === "1";
+    } catch {
+        return false;
+    }
 }
 
-function MobileMenuButton({
+function writeNavCollapsed(collapsed: boolean) {
+    try {
+        window.localStorage.setItem(NAV_COLLAPSED_KEY, collapsed ? "1" : "0");
+    } catch {
+        // Storage can be unavailable; the fold then lasts for the session.
+    }
+}
+
+function NavMenuButton({
     buttonRef,
+    desktopVisible,
     onOpen,
 }: {
     buttonRef: RefObject<HTMLButtonElement | null>;
+    desktopVisible: boolean;
     onOpen: () => void;
 }) {
     return (
         <IconButton
             ref={buttonRef}
             size="md"
-            className="fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque md:hidden"
+            className={cn(
+                "fixed left-3 top-3 z-30 bg-surface-opaque text-theme-text-strong shadow-md ring-1 ring-theme-text-strong/10 hover:bg-surface-opaque",
+                !desktopVisible && "md:hidden",
+            )}
             onClick={onOpen}
-            title="Open navigation"
         >
             <MenuIcon className="h-5 w-5" />
+            <span className="sr-only">Open navigation</span>
         </IconButton>
     );
 }
@@ -245,22 +330,36 @@ function EconomicsNav({
     data: Data | null;
     onViewChange: (value: ActiveView) => void;
 }) {
-    const insightItem = (item: DrawerItem<InsightTab>) => (
-        <NavItem
-            key={item.id}
-            type="button"
-            data-theme="accent"
-            icon={item.icon}
-            active={activeView === item.id}
-            title={item.note}
-            onClick={() => onViewChange(item.id)}
-        >
-            {item.label}
-        </NavItem>
-    );
+    const insightItem = (item: DrawerItem<InsightTab>) => {
+        const count =
+            item.rows && item.source && data?.[item.source] != null
+                ? item.rows(data)
+                : null;
+        return (
+            <NavItem
+                key={item.id}
+                type="button"
+                data-theme="accent"
+                icon={item.icon}
+                active={activeView === item.id}
+                onClick={() => onViewChange(item.id)}
+            >
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                {count == null ? null : (
+                    <Chip
+                        data-theme="neutral"
+                        intent="neutral"
+                        size="sm"
+                        className="ml-auto bg-transparent text-theme-text-soft"
+                    >
+                        {count}
+                    </Chip>
+                )}
+            </NavItem>
+        );
+    };
     const rawItem = (item: (typeof TABS)[number]) => {
-        const count = data ? item.rows(data) : null;
-        const title = `${codesLabel(item.codes)}${item.pipe}${data ? ` · ${count} rows` : ""}\n${item.note}`;
+        const count = data?.[item.source] != null ? item.rows(data) : null;
 
         return (
             <NavItem
@@ -269,7 +368,6 @@ function EconomicsNav({
                 data-theme="accent"
                 icon={item.icon}
                 active={activeView === item.id}
-                title={title}
                 onClick={() => onViewChange(item.id)}
             >
                 <span className="min-w-0 flex-1 truncate">{item.label}</span>
@@ -304,11 +402,13 @@ function EconomicsDrawer({
     activeView,
     data,
     footer,
+    onCollapse,
     onViewChange,
 }: {
     activeView: ActiveView;
     data: Data | null;
     footer: ReactNode;
+    onCollapse?: () => void;
     onViewChange: (value: ActiveView) => void;
 }) {
     return (
@@ -317,8 +417,18 @@ function EconomicsDrawer({
             className="flex min-h-0 flex-1 flex-col px-2 py-4 md:fixed md:inset-y-0 md:left-0 md:z-30 md:w-60 md:border-r md:border-theme-text-strong/10"
             aria-label="Economics navigation"
         >
-            <div className="hidden shrink-0 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:block">
+            <div className="hidden shrink-0 items-center justify-between gap-2 border-b border-theme-text-strong/10 px-1 pb-4 text-theme-text-strong md:flex">
                 <EconomicsBrand size="desktop" />
+                {onCollapse && (
+                    <IconButton
+                        size="sm"
+                        className="shrink-0 text-theme-text-soft hover:text-theme-text-strong"
+                        onClick={onCollapse}
+                    >
+                        <ChevronIcon className="h-4 w-4 rotate-90" />
+                        <span className="sr-only">Hide navigation</span>
+                    </IconButton>
+                )}
             </div>
             <ScrollArea className="-mr-2 min-h-0 flex-1 pt-3">
                 <EconomicsNav
@@ -348,7 +458,23 @@ function EconomicsShell({
     onViewChange: (value: ActiveView) => void;
 }) {
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [collapsed, setCollapsed] = useState(readNavCollapsed);
     const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+    const setNavCollapsed = (value: boolean) => {
+        setCollapsed(value);
+        writeNavCollapsed(value);
+    };
+
+    const openNav = () => {
+        // On desktop the floating button unfolds the sidebar; on mobile it
+        // opens the overlay drawer.
+        if (collapsed && window.matchMedia("(min-width: 768px)").matches) {
+            setNavCollapsed(false);
+            return;
+        }
+        setIsDrawerOpen(true);
+    };
 
     const closeDrawer = () => {
         setIsDrawerOpen(false);
@@ -374,7 +500,15 @@ function EconomicsShell({
             data-theme="amber"
             className="flex h-dvh min-h-0 overflow-hidden bg-app-bg font-body text-theme-text-strong"
         >
-            <div className="hidden md:block">{drawer}</div>
+            <div className={collapsed ? "hidden" : "hidden md:block"}>
+                <EconomicsDrawer
+                    activeView={activeView}
+                    data={data}
+                    footer={footer}
+                    onCollapse={() => setNavCollapsed(true)}
+                    onViewChange={handleViewChange}
+                />
+            </div>
             <Drawer
                 open={isDrawerOpen}
                 onOpenChange={(open) => {
@@ -390,21 +524,30 @@ function EconomicsShell({
                         size="md"
                         className="shrink-0 bg-surface-opaque/70 text-theme-text-strong hover:bg-surface-opaque"
                         onClick={closeDrawer}
-                        title="Close navigation"
                     >
                         <XIcon className="h-5 w-5" />
+                        <span className="sr-only">Close navigation</span>
                     </IconButton>
                 </div>
                 <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
                     {drawer}
                 </div>
             </Drawer>
-            <div className="flex min-w-0 flex-1 flex-col md:ml-60">
-                <MobileMenuButton
+            <div
+                className={cn(
+                    "flex min-w-0 flex-1 flex-col",
+                    !collapsed && "md:ml-60",
+                )}
+            >
+                <NavMenuButton
                     buttonRef={menuButtonRef}
-                    onOpen={() => setIsDrawerOpen(true)}
+                    desktopVisible={collapsed}
+                    onOpen={openNav}
                 />
-                <ScrollArea axis="y" className="min-h-0 flex-1">
+                <ScrollArea
+                    axis="y"
+                    className={cn("min-h-0 flex-1", collapsed && "md:pt-10")}
+                >
                     {children}
                 </ScrollArea>
             </div>
@@ -449,8 +592,33 @@ function activeViewTitle(activeView: ActiveView) {
     return ALL_INSIGHT_TABS.find((item) => item.id === activeView)?.label ?? "";
 }
 
-function InfoLine({ children }: { children: ReactNode }) {
-    return <span className="block">• {children}</span>;
+function InfoItem({ lead, children }: { lead: string; children: ReactNode }) {
+    return (
+        <span className="block leading-snug">
+            <strong className="font-semibold">{lead}.</strong> {children}
+        </span>
+    );
+}
+
+function ViewInfo({ children }: { children: ReactNode }) {
+    return (
+        <span className="block max-w-full space-y-2.5 text-left">
+            {children}
+        </span>
+    );
+}
+
+// The one explanatory hover per page: the "i" next to the title. Wider than
+// the default tooltip and clamped to the viewport, since it sits at the
+// right edge of the page.
+function PageTip({ content, label }: { content: ReactNode; label: string }) {
+    return (
+        <Tooltip content={content} ariaLabel={label} maxWidth={380}>
+            <span className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-theme-border bg-theme-bg-active font-bold text-[10px] text-theme-text-strong leading-none transition-colors hover:bg-theme-bg-hover">
+                i
+            </span>
+        </Tooltip>
+    );
 }
 
 function viewInfoContent(activeView: ActiveView) {
@@ -458,174 +626,171 @@ function viewInfoContent(activeView: ActiveView) {
         const active = TABS.find((item) => item.id === activeView);
         if (!active) return null;
         return (
-            <span className="block max-w-72">
-                <strong>{active.label}</strong>
-                <InfoLine>{active.note}</InfoLine>
-                <InfoLine>
-                    Source: <strong>{active.pipe}</strong>
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Rows">{active.note}</InfoItem>
+                <InfoItem lead="Source">{active.pipe}</InfoItem>
+            </ViewInfo>
         );
     }
-
     if (activeView === "vendors") {
         return (
-            <span className="block max-w-72">
-                <strong>Vendors</strong>
-                <InfoLine>
+            <ViewInfo>
+                <InfoItem lead="Scope">
                     One vendor-month across managed inference and GPU capacity.
-                    Shared infrastructure is excluded from unit economics.
-                </InfoLine>
-                <InfoLine>
-                    Paid shows retained cash-backed value; Quest stays separate
-                    as free usage. Gross Paid remains in the usage-mix tooltip.
-                </InfoLine>
-                <InfoLine>
-                    Total vendor economics remain valid when a vendor supplies
-                    both modes. The mode split stays unallocated until Pollen
-                    records delivery mode per request.
-                </InfoLine>
-                <InfoLine>
-                    Result and Performance use full vendor cost, including
-                    consumed credits.
-                </InfoLine>
-            </span>
+                    Shared infrastructure is excluded.
+                </InfoItem>
+                <InfoItem lead="Paid and Quest">
+                    Paid is retained cash-backed value; Quest is free usage and
+                    stays separate. Gross Paid is in the usage-mix hover.
+                </InfoItem>
+                <InfoItem lead="Mixed modes">
+                    Vendor totals hold when a vendor serves both modes; the
+                    split stays unallocated until Pollen records delivery mode
+                    per request.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Result and Performance use full vendor cost, consumed
+                    credits included.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "inference") {
         return (
-            <span className="block max-w-72">
-                <strong>Inference</strong>
-                <InfoLine>
-                    Managed-inference vendor-months only; current-month rows
-                    remain partial and mixed inference/GPU months stay
-                    unallocated.
-                </InfoLine>
-                <InfoLine>
-                    Paid shows retained cash-backed value; Quest stays separate
-                    as free usage. Gross Paid remains in the usage-mix tooltip.
-                </InfoLine>
-                <InfoLine>
-                    Vendor-month totals are authoritative. Model values are
-                    allocations by monthly Pollen metered-cost share, not
-                    independent vendor evidence.
-                </InfoLine>
-                <InfoLine>
-                    Result is retained Paid minus cash and consumed credits.
-                    Performance divides that result by retained Paid; cost
-                    checks remain at vendor level.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Scope">
+                    Managed-inference vendor-months only. The current month is
+                    partial; mixed inference and GPU months stay unallocated.
+                </InfoItem>
+                <InfoItem lead="Paid and Quest">
+                    Paid is retained cash-backed value; Quest is free usage and
+                    stays separate. Gross Paid is in the usage-mix hover.
+                </InfoItem>
+                <InfoItem lead="Model costs">
+                    Vendor-month totals are authoritative. Models use exact
+                    matched provider evidence; unmatched cost stays unallocated.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Retained Paid minus cash and consumed credits. Performance
+                    divides that by retained Paid; cost checks stay at vendor
+                    level.
+                </InfoItem>
+            </ViewInfo>
         );
     }
-    if (activeView === "community") {
+    if (activeView === "revenue-share") {
         return (
-            <span className="block max-w-72">
-                <strong>Community Models</strong>
-                <InfoLine>
-                    Paid Pollen is cash-backed value consumed, not Stripe or
-                    Wise cash collected in this month. Quest Pollen is free
-                    usage and never fiat revenue.
-                </InfoLine>
-                <InfoLine>
-                    Paid shows only the value retained after owner and BYOP
-                    payouts. Hover it for the payout breakdown.
-                </InfoLine>
-                <InfoLine>
-                    Community authors supply the model and infrastructure, so no
-                    Pollinations vendor cost is reconciled here.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Rows">
+                    One per creator, combining their BYOP apps and Community
+                    models. A request counts for every creator whose app or
+                    model took part.
+                </InfoItem>
+                <InfoItem lead="Profit">
+                    Paid usage minus every creator earning and the external
+                    model cost. The cards count each request once even when two
+                    creators took part.
+                </InfoItem>
+                <InfoItem lead="Quest and settlements">
+                    Quest earnings are not cashable. Settlements appear only
+                    after a Bank movement is classified as a creator payout.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "close") {
         return (
-            <span className="block max-w-72">
-                <strong>Close</strong>
-                <InfoLine>
-                    Vendor rows check archived source coverage, active accounts,
-                    and whether usage was cash- or credit-funded.
-                </InfoLine>
-                <InfoLine>
-                    The month-level result also includes transaction-document,
-                    vendor-mapping, row-integrity, duplicate, and FX checks
-                    shown in the year-wide integrity history below.
-                </InfoLine>
-                <InfoLine>
-                    Invoices and bank entries remain in Bank. e-MTA filing
-                    confirmation is not tracked yet, so Ready means the books
-                    are ready to file—not legally filed.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Vendor rows">
+                    Archived source coverage, active accounts, and whether usage
+                    was cash- or credit-funded.
+                </InfoItem>
+                <InfoItem lead="Month result">
+                    Adds the transaction-document, vendor-mapping,
+                    row-integrity, duplicate and FX checks shown in the
+                    integrity history below.
+                </InfoItem>
+                <InfoItem lead="Ready">
+                    Means the books are ready to file, not legally filed; e-MTA
+                    confirmation is not tracked. Invoices and bank entries stay
+                    in Bank.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "balances") {
         return (
-            <span className="block max-w-72">
-                <strong>Balances</strong>
-                <InfoLine>
+            <ViewInfo>
+                <InfoItem lead="Scope">
                     Current vendor balances; the selected period does not limit
                     this page. Open a vendor for its monthly history.
-                </InfoLine>
-                <InfoLine>
-                    Cash prepaid is payments minus cash-funded usage. Free
-                    credit is recorded grants minus credit-funded usage and
-                    expired capacity.
-                </InfoLine>
-                <InfoLine>
-                    Cash prepaid is a ledger estimate, not a live vendor wallet.
-                    Individual payments and documents stay in Bank.
-                </InfoLine>
-            </span>
+                </InfoItem>
+                <InfoItem lead="Cash prepaid">
+                    Payments minus cash-funded usage: a ledger estimate, not a
+                    live vendor wallet. Payments and documents stay in Bank.
+                </InfoItem>
+                <InfoItem lead="Free credit">
+                    Recorded grants minus credit-funded usage and expired
+                    capacity.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "runway") {
         return (
-            <span className="block max-w-72">
-                <strong>Runway</strong>
-                <InfoLine>
-                    Actual cash comes from OP Transactions; future cash comes
-                    from explicit OP Forecast assumptions.
-                </InfoLine>
-                <InfoLine>
-                    The current month keeps bank movements and the authored
-                    full-month plan in separate columns.
-                </InfoLine>
-                <InfoLine>
-                    Revenue and expense-category rows are cash P&amp;L totals;
-                    expand a category to see its vendor detail.
-                </InfoLine>
-                <InfoLine>
-                    Compute &amp; Infra usage can inform the forecast, but
-                    running cash remains cash-based; missing assumptions stay
-                    visible as flags.
-                </InfoLine>
-            </span>
+            <ViewInfo>
+                <InfoItem lead="Cash">
+                    Cash change and Cash balance are the Wise bank ledger. The
+                    forecast columns and running cash stay cash-based.
+                </InfoItem>
+                <InfoItem lead="Revenue">
+                    What entered Stripe in the month, net of Stripe fees, with
+                    refunds and reversals on one line. Wise payouts are cash
+                    only and are not reconciled against it.
+                </InfoItem>
+                <InfoItem lead="Expenses">
+                    Compute and Infrastructure come from the vendor ledger by
+                    service month; every other category is bank cash. Expand a
+                    category for its vendors.
+                </InfoItem>
+                <InfoItem lead="Gray figures">
+                    Usage paid with provider credits, shown in parentheses
+                    beside the cash figure. Not cash, never in the sums.
+                </InfoItem>
+                <InfoItem lead="Not reconciled">
+                    Unpaid bills, prepaid balances and the Stripe float stay out
+                    of the table, so the lines do not add up to Cash change. A
+                    paid vendor without ledger rows is a warning, never a cash
+                    fallback.
+                </InfoItem>
+                <InfoItem lead="Current month">
+                    Bank movements to date and the full-month plan sit in
+                    separate columns.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     if (activeView === "gpu") {
         return (
-            <span className="block max-w-72">
-                <strong>GPU Economics</strong>
-                <InfoLine>
-                    Cards show the selected month at vendor-pool level: retained
-                    Paid, Quest usage, cash, consumed credits, and full-cost
-                    result.
-                </InfoLine>
-                <InfoLine>
-                    The table has one row per verified workload. Expand one to
-                    see every billed GPU resource and its direct usage and cost.
-                </InfoLine>
-                <InfoLine>
-                    Result is retained Paid minus the full mapped workload cost.
+            <ViewInfo>
+                <InfoItem lead="Cards">
+                    The selected month at vendor-pool level: retained Paid,
+                    Quest usage, cash, consumed credits, full-cost result.
+                </InfoItem>
+                <InfoItem lead="Table">
+                    One row per verified workload. Expand one for every billed
+                    GPU resource with its usage and cost.
+                </InfoItem>
+                <InfoItem lead="Result">
+                    Retained Paid minus the full mapped workload cost.
                     Efficiency is that result divided by retained Paid.
-                </InfoLine>
-                <InfoLine>
+                </InfoItem>
+                <InfoItem lead="Limits">
                     Pollen does not identify the serving replica, so efficiency
                     stays at workload level. Unknown short-lived resources and
-                    shared overhead remain visible instead of being guessed.
-                </InfoLine>
-            </span>
+                    shared overhead stay visible instead of being guessed.
+                </InfoItem>
+            </ViewInfo>
         );
     }
     return null;
@@ -696,8 +861,14 @@ export default function App() {
     const [authError, setAuthError] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [data, setData] = useState<Data | null>(null);
-    const [activeView, setActiveView] = useState<ActiveView>("runway");
-    const [selectedMonth, setSelectedMonth] = useState("");
+    const [activeView, setActiveView] = useState<ActiveView>(initialView);
+    const [loadedView, setLoadedView] = useState<ActiveView | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [selectedMonth, setSelectedMonth] = useState(() => {
+        const month =
+            new URLSearchParams(window.location.search).get("month") ?? "";
+        return isMonthKey(month) ? month : "";
+    });
     const [runwayYear, setRunwayYear] = useState("2026");
     const [selectedVendors, setSelectedVendors] = useState<string[]>([]);
     const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
@@ -732,23 +903,66 @@ export default function App() {
 
         const retryKey = attempt;
         let cancelled = false;
+        const controller = new AbortController();
         setError(null);
-        loadAll()
+        setLoading(true);
+        setLoadedView(null);
+        loadAll(VIEW_SOURCES[activeView], controller.signal)
             .then((loaded) => {
-                if (!cancelled && retryKey === attempt) setData(loaded);
+                if (cancelled || retryKey !== attempt) return;
+                // Keep the ledger sources already in memory so the row-count
+                // chips stay populated across view switches.
+                let merged = loaded;
+                setData((current) => {
+                    merged = withLedgerSources(loaded, current);
+                    return merged;
+                });
+                setLoadedView(activeView);
+                setLoading(false);
+                const missing = LEDGER_SOURCES.filter(
+                    (source) => merged[source] == null,
+                );
+                if (missing.length === 0) return;
+                loadAll(missing, controller.signal)
+                    .then((extra) => {
+                        if (cancelled || retryKey !== attempt) return;
+                        setData((current) =>
+                            current
+                                ? withLedgerSources(current, extra)
+                                : current,
+                        );
+                    })
+                    .catch(() => {
+                        // Counts stay hidden for the sources that failed; the
+                        // active view is unaffected.
+                    });
             })
             .catch((caught: unknown) => {
                 if (cancelled || retryKey !== attempt) return;
+                setLoading(false);
 
-                if (
-                    caught instanceof TbError &&
-                    (caught.status === 401 || caught.status === 403)
-                ) {
-                    setAuthenticated(false);
-                    setSessionChecked(true);
-                    setAuthError(
-                        `Session rejected (${caught.message}) - enter the password again.`,
-                    );
+                if (caught instanceof TbError && caught.status === 401) {
+                    checkSession()
+                        .then((valid) => {
+                            if (cancelled) return;
+                            if (valid)
+                                setError(
+                                    `${caught.message}. Tinybird access failed; the Economics session is still valid.`,
+                                );
+                            else {
+                                setAuthenticated(false);
+                                setSessionChecked(true);
+                                setAuthError(
+                                    "Your Economics session expired. Sign in again.",
+                                );
+                            }
+                        })
+                        .catch(() => {
+                            if (!cancelled)
+                                setError(
+                                    "Unable to verify the Economics session. Retry when the connection is available.",
+                                );
+                        });
                 } else {
                     setError(
                         caught instanceof Error
@@ -760,10 +974,21 @@ export default function App() {
 
         return () => {
             cancelled = true;
+            controller.abort();
         };
-    }, [ready, attempt]);
+    }, [ready, attempt, activeView]);
 
-    const months = useMemo(() => (data ? collectMonths(data) : []), [data]);
+    useEffect(() => {
+        const url = new URL(window.location.href);
+        url.searchParams.set("view", activeView);
+        if (selectedMonth) url.searchParams.set("month", selectedMonth);
+        window.history.replaceState(null, "", url);
+    }, [activeView, selectedMonth]);
+
+    const viewData =
+        !error && loadedView === activeView && !loading ? data : null;
+
+    const months = reportingMonths();
     const reportingYears = useMemo(() => yearsOf(months), [months]);
     const monthFilter = months.includes(selectedMonth)
         ? selectedMonth
@@ -850,8 +1075,7 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-2">
                 {fixtures && <Chip intent="alpha">fixtures</Chip>}
             </div>
-            <div className="flex items-center justify-between gap-2">
-                <span />
+            <div className="flex items-center justify-end gap-2">
                 <ColorModeToggle />
             </div>
         </>
@@ -927,58 +1151,64 @@ export default function App() {
                     </div>
                 </Alert>
             )}
-            {!error && !data && <Text tone="soft">Loading pipes...</Text>}
+            {!error && !viewData && <Text tone="soft">Loading this view…</Text>}
             <ErrorBoundary
                 resetKey={`${activeView}:${selectedYear}:${monthFilter}:${runwayYear}:${selectedVendors.join(",")}:${selectedCategories.join(",")}`}
             >
-                {data && activeView === "op-transactions" && (
+                {viewData && activeView === "op-transactions" && (
                     <OpTransactionsTab
                         category={selectedCategories}
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && activeView === "op-pollen" && (
+                {viewData && activeView === "op-pollen" && (
                     <OpPollenTab
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && activeView === "op-cloud" && (
-                    <OpCloudTab
-                        data={data}
+                {viewData && activeView === "vendor-ledger" && (
+                    <VendorLedgerTab
+                        data={viewData}
                         month={monthFilter}
                         vendor={selectedVendors}
                     />
                 )}
-                {data && activeView === "close" && (
+                {viewData && activeView === "revenue-share-ledger" && (
+                    <RevenueShareLedgerTab
+                        data={viewData}
+                        month={monthFilter}
+                    />
+                )}
+                {viewData && activeView === "close" && (
                     <ProviderCloseTab
-                        data={data}
+                        data={viewData}
                         month={monthFilter}
                         months={months}
                         year={selectedYear}
                         onMonthChange={setSelectedMonth}
                     />
                 )}
-                {data && activeView === "runway" && (
-                    <RunwayTab data={data} year={runwayYear} />
+                {viewData && activeView === "runway" && (
+                    <RunwayTab data={viewData} year={runwayYear} />
                 )}
-                {data && activeView === "vendors" && (
-                    <VendorsTab data={data} month={monthFilter} />
+                {viewData && activeView === "vendors" && (
+                    <VendorsTab data={viewData} month={monthFilter} />
                 )}
-                {data && activeView === "inference" && (
-                    <ManagedInferenceTab data={data} month={monthFilter} />
+                {viewData && activeView === "inference" && (
+                    <ManagedInferenceTab data={viewData} month={monthFilter} />
                 )}
-                {data && activeView === "balances" && (
-                    <BalancesTab data={data} />
+                {viewData && activeView === "balances" && (
+                    <BalancesTab data={viewData} />
                 )}
-                {data && activeView === "community" && (
-                    <CommunityTab data={data} month={monthFilter} />
+                {viewData && activeView === "revenue-share" && (
+                    <RevenueShareTab data={viewData} month={monthFilter} />
                 )}
-                {data && activeView === "gpu" && (
-                    <GpuTab data={data} month={monthFilter} />
+                {viewData && activeView === "gpu" && (
+                    <GpuTab data={viewData} month={monthFilter} />
                 )}
             </ErrorBoundary>
         </>
@@ -1010,7 +1240,7 @@ export default function App() {
                                     {viewTitle}
                                 </Heading>
                                 {viewInfo && (
-                                    <InfoTip
+                                    <PageTip
                                         content={viewInfo}
                                         label={`${viewTitle} info`}
                                     />

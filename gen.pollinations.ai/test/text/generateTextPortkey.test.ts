@@ -62,10 +62,12 @@ describe("generateTextPortkey", () => {
             },
         );
         const { result, index } = await withModelFallback(
-            ["grok-4.6", ...TEXT_SERVICES["grok-4.6"].fallbacks].map((id) => ({
-                id,
-                definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
-            })),
+            ["x-ai/grok-4.6", ...TEXT_SERVICES["x-ai/grok-4.6"].fallbacks].map(
+                (id) => ({
+                    id,
+                    definition: TEXT_SERVICES[id as keyof typeof TEXT_SERVICES],
+                }),
+            ),
             ({ id }) =>
                 generateTextPortkey(
                     [{ role: "user", content: "Read the image." }],
@@ -87,10 +89,10 @@ describe("generateTextPortkey", () => {
             completionReasoningTokens: 240,
         });
         const billing = calculateUsageBilling({
-            model: "grok-4.6",
+            model: "x-ai/grok-4.6",
             usage,
-            servedBy: TEXT_SERVICES["grok-4.6-azure-sweden"],
-            quotedBy: TEXT_SERVICES["grok-4.6"],
+            servedBy: TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"],
+            quotedBy: TEXT_SERVICES["x-ai/grok-4.6"],
         });
         expect(billing.cost.totalCost).toBeCloseTo(0.001754, 12);
         expect(billing.price.totalPrice).toBe(0.0013155);

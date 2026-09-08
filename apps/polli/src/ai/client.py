@@ -2,7 +2,6 @@ import asyncio
 import codecs
 import json
 import logging
-import random
 import time
 from collections.abc import AsyncIterator, Awaitable, Callable
 
@@ -12,7 +11,6 @@ from ..utils.json import loads as _json_loads
 
 MAX_RETRIES = 3
 RETRY_DELAY = 5
-MAX_SEED = 2**31 - 1
 
 
 def _recent_queries(all_tool_calls: list[dict], tool_names: list[str], limit: int = 8) -> str:
@@ -139,7 +137,7 @@ class PollinationsClient:
 
         headers = {
             "Content-Type": "application/json",
-            "Authorization": authorization_or(config.ai.token),
+            "Authorization": _auth_override.get() or authorization_or(config.ai.token),
         }
 
         url = f"{config.ai.api_base}/v1/chat/completions"
@@ -150,7 +148,6 @@ class PollinationsClient:
             "messages": messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
-            "seed": random.randint(0, MAX_SEED),
         }
 
         try:
@@ -163,19 +160,25 @@ class PollinationsClient:
             ) as response:
                 if response.status == 200:
                     data = await response.json()
-                    return data["choices"][0]["message"].get("content", "")
+                    choice = data["choices"][0]
+                    content = choice["message"].get("content", "")
+                    if not content:
+                        finish_reason = choice.get("finish_reason")
+                        if finish_reason not in {"stop", "length", "content_filter", "tool_calls"}:
+                            finish_reason = "unknown"
+                        logger.warning("generate_text returned empty content (finish_reason=%s)", finish_reason)
+                    return content
                 else:
-                    error_text = await response.text()
                     if response.status == 402:
                         logger.warning("generate_text: insufficient balance (402), bailing")
                         return None
-                    logger.error(f"generate_text error: HTTP {response.status}: {error_text[:200]}")
+                    logger.error("generate_text error: HTTP %s", response.status)
                     return None
-        except Exception as e:
-            logger.error(f"generate_text error: {e}")
+        except Exception as exc:
+            logger.error("generate_text failed (exception=%s)", type(exc).__name__)
             return None
 
-    def register_tool_handler(self, name: str, handler: callable):
+    def register_tool_handler(self, name: str, handler: Callable):
         self._tool_handlers[name] = handler
 
     async def process_with_tools(
@@ -205,9 +208,9 @@ class PollinationsClient:
         # API callers supply an OpenAI conversation verbatim. Polli adds only its
         # private system prompt; Discord keeps its richer thread framing below.
         if raw_messages is not None:
-            messages = [{"role": "system", "content": system_content}, *raw_messages]
+            api_messages = [{"role": "system", "content": system_content}, *raw_messages]
             return await self._call_with_tools(
-                messages,
+                api_messages,
                 discord_username,
                 is_admin=is_admin,
                 user_message=user_message,
@@ -218,7 +221,7 @@ class PollinationsClient:
             )
 
         # Build Discord messages
-        messages = [{"role": "system", "content": system_content}]
+        messages: list[dict[str, object]] = [{"role": "system", "content": system_content}]
         if mode == "discord":
             location_context = tool_context or {}
             source_channel_id = location_context.get("source_channel_id")
@@ -317,7 +320,7 @@ class PollinationsClient:
         file_notice = "\n\n" + "\n\n".join(notices) if notices else ""
 
         if image_urls:
-            content = [
+            content: list[dict[str, object]] = [
                 {
                     "type": "text",
                     "text": f"[{discord_username}]: {user_message}{file_notice}",
@@ -702,16 +705,16 @@ class PollinationsClient:
                 result = await handler(**args)
                 # Log result summary
                 if result.get("error"):
-                    logger.warning(f"Tool {func_name} returned error: {result.get('error')[:200]}")
+                    logger.warning("Tool %s returned an error", func_name)
                 else:
-                    logger.info(f"Tool {func_name} succeeded")
+                    logger.info("Tool %s succeeded", func_name)
                 # Cache successful read-only results
                 if cache_key and not result.get("error"):
                     self._cache.set(cache_key, result)
                 return result
-            except Exception as e:
-                logger.error(f"Tool {func_name} failed: {e}")
-                return {"error": str(e)}
+            except Exception as exc:
+                logger.error("Tool %s failed (exception=%s)", func_name, type(exc).__name__)
+                return {"error": str(exc)}
 
         # Run all tool calls in parallel
         tasks = [execute_single(tc) for tc in tool_calls]
@@ -733,10 +736,11 @@ class PollinationsClient:
             return None
         headers = {
             "Content-Type": "application/json",
-            "Authorization": authorization_or(config.ai.token),
+            "Authorization": override if mode == "api" else authorization_or(config.ai.token),
         }
+        model = (api_params or {}).get("model", config.ai.model)
         payload = {
-            "model": config.ai.model,
+            "model": model,
             "messages": messages,
             "stream": True,
             "stream_options": {"include_usage": True},
@@ -745,7 +749,7 @@ class PollinationsClient:
         if explicit_seed is not None:
             payload["seed"] = explicit_seed
         for key, value in (api_params or {}).items():
-            if key not in {"seed", "stream", "stream_options"} and value is not None:
+            if key not in {"model", "_explicit_model", "seed", "stream", "stream_options"} and value is not None:
                 payload[key] = value
         if tools:
             payload["tools"] = tools
@@ -761,7 +765,7 @@ class PollinationsClient:
             if response.status in (401, 403) and mode == "api":
                 raise UpstreamAuthError(response.status, await response.text())
             if response.status != 200:
-                logger.warning("Streaming API error: HTTP %s: %s", response.status, (await response.text())[:100])
+                logger.warning("Streaming API error: HTTP %s", response.status)
                 return None
             decoder = codecs.getincrementaldecoder("utf-8")()
             buffer = ""
@@ -870,7 +874,9 @@ class PollinationsClient:
         url = f"{config.ai.api_base}/v1/chat/completions"
         last_error = None
 
-        current_model = config.ai.model
+        requested_model = (api_params or {}).get("model", config.ai.model)
+        explicit_model = bool((api_params or {}).get("_explicit_model"))
+        current_model = requested_model
         for attempt in range(MAX_RETRIES):
             payload = {
                 "model": current_model,
@@ -880,7 +886,7 @@ class PollinationsClient:
             # Merge caller-provided OpenAI params (temperature, max_tokens, etc.)
             if api_params:
                 for k, v in api_params.items():
-                    if v is not None:
+                    if k not in {"model", "_explicit_model"} and v is not None:
                         payload[k] = v
 
             if tools:
@@ -915,29 +921,32 @@ class PollinationsClient:
                             "usage": data.get("usage"),
                         }
                     else:
-                        error_text = await response.text()
-                        last_error = f"HTTP {response.status}: {error_text[:100]}"
-                        logger.warning(f"Pollinations API error (attempt {attempt + 1}): {last_error}")
+                        last_error = f"HTTP {response.status}"
+                        logger.warning("Pollinations API error (attempt %s): HTTP %s", attempt + 1, response.status)
                         # 402 = global balance exhausted -- bail immediately, no retry
                         if response.status == 402:
                             break
                         # Other errors: switch to fallback model on next attempt
-                        if config.ai.fallback_model and current_model != config.ai.fallback_model:
+                        if (
+                            not explicit_model
+                            and config.ai.fallback_model
+                            and current_model != config.ai.fallback_model
+                        ):
                             logger.info(f"Switching to fallback model {config.ai.fallback_model!r} after error")
                             current_model = config.ai.fallback_model
                         # In API mode, propagate auth errors immediately — don't retry
                         if mode == "api" and response.status in (401, 403):
-                            raise UpstreamAuthError(response.status, error_text)
+                            raise UpstreamAuthError(response.status, "HTTP authentication error")
 
             except TimeoutError:
                 last_error = f"Timeout after {timeout}s"
                 logger.warning(f"API timeout (attempt {attempt + 1})")
-            except aiohttp.ClientError as e:
-                last_error = f"Network error: {e}"
-                logger.warning(f"Network error (attempt {attempt + 1}): {e}")
-            except Exception as e:
-                last_error = f"Error: {e}"
-                logger.warning(f"API error (attempt {attempt + 1}): {e}")
+            except aiohttp.ClientError as exc:
+                last_error = f"Network error ({type(exc).__name__})"
+                logger.warning("Network error (attempt %s, exception=%s)", attempt + 1, type(exc).__name__)
+            except Exception as exc:
+                last_error = f"Error ({type(exc).__name__})"
+                logger.warning("API error (attempt %s, exception=%s)", attempt + 1, type(exc).__name__)
 
             # Wait before retry (except on last attempt)
             if attempt < MAX_RETRIES - 1:
@@ -945,7 +954,7 @@ class PollinationsClient:
                 await asyncio.sleep(RETRY_DELAY)
 
         # All retries failed
-        logger.error(f"All {MAX_RETRIES} API attempts failed. Last error: {last_error}")
+        logger.error("All %s API attempts failed. Last error category: %s", MAX_RETRIES, last_error)
         return None
 
     def get_topic_summary_fast(self, message: str) -> str:
@@ -1022,8 +1031,8 @@ Output ONLY the formatted message, nothing else."""
             response = await self._call_api_with_tools(messages, tools=None, timeout=30)
             if response and response.get("content"):
                 return response["content"].strip()
-        except Exception as e:
-            logger.error(f"Failed to format notification with AI: {e}")
+        except Exception as exc:
+            logger.error("Failed to format notification with AI (exception=%s)", type(exc).__name__)
 
         # Fallback to simple format if AI fails
         return self._format_notification_fallback(issue, changes, issue_url)
@@ -1072,7 +1081,7 @@ pollinations_client = PollinationsClient()
 # =============================================================================
 
 
-async def web_search_handler(query: str, **kwargs) -> dict:
+async def web_search_handler(query: str, **_kwargs) -> dict:
     """
     Handle web_search tool calls via Perplexity (sonar-pro) through Pollinations.
 
@@ -1098,7 +1107,7 @@ async def web_search_handler(query: str, **kwargs) -> dict:
 
     headers = {
         "Content-Type": "application/json",
-        "Authorization": authorization_or(config.ai.token),
+        "Authorization": _auth_override.get() or authorization_or(config.ai.token),
     }
 
     payload = {
@@ -1115,16 +1124,39 @@ async def web_search_handler(query: str, **kwargs) -> dict:
         ) as response:
             if response.status == 200:
                 data = await response.json()
-                content = data["choices"][0]["message"].get("content", "")
-                return {"result": content, "model": model, "query": query}
+                message = data["choices"][0]["message"]
+                content = message.get("content", "")
+                sources = []
+                citations = data.get("citations") or message.get("citations") or []
+                for index, citation in enumerate(citations, start=1):
+                    source_url = (
+                        citation
+                        if isinstance(citation, str)
+                        else citation.get("url") if isinstance(citation, dict) else None
+                    )
+                    if isinstance(source_url, str) and source_url.startswith(("https://", "http://")):
+                        sources.append({"index": index, "url": source_url})
+                if not sources:
+                    for annotation in message.get("annotations") or []:
+                        citation = annotation.get("url_citation", {}) if isinstance(annotation, dict) else {}
+                        if not isinstance(citation, dict):
+                            continue
+                        source_url = citation.get("url")
+                        if isinstance(source_url, str) and source_url.startswith(("https://", "http://")):
+                            sources.append({"url": source_url, "title": citation.get("title", "")})
+                if sources:
+                    content += "\n\nSources:\n" + "\n".join(
+                        f"[{source['index']}] {source['url']}" if "index" in source else source["url"]
+                        for source in sources
+                    )
+                return {"result": content, "sources": sources, "model": model, "query": query}
             else:
-                error_text = await response.text()
-                logger.error(f"Web search API error: {response.status} - {error_text[:200]}")
+                logger.error("Web search API error: HTTP %s", response.status)
                 return {"error": f"Search failed: HTTP {response.status}"}
 
     except TimeoutError:
         logger.error("Web search timeout")
         return {"error": "Search timed out. Try a simpler query."}
-    except Exception as e:
-        logger.error(f"Web search error: {e}")
-        return {"error": f"Search failed: {str(e)}"}
+    except Exception as exc:
+        logger.error("Web search error (exception=%s)", type(exc).__name__)
+        return {"error": f"Search failed: {str(exc)}"}

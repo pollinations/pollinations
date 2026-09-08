@@ -76,7 +76,7 @@ export async function callFalFallbackImage(
     prompt: string,
     params: ImageParams,
 ): Promise<ImageGenerationResult> {
-    if (params.model !== "seedream5-fal") {
+    if (params.model !== "bytedance/seedream-5.0-lite:fal") {
         throw UpstreamError.fromProvider(400, {
             message: `Unsupported Fal image fallback: ${params.model}`,
         });
@@ -150,7 +150,7 @@ type FalVideoConfig = {
 };
 
 const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
-    "grok-video-pro": {
+    "x-ai/grok-imagine-video": {
         textEndpoint: "xai/grok-imagine-video/text-to-video",
         imageEndpoint: "xai/grok-imagine-video/image-to-video",
         duration: (params) => resolveGrokDuration(params.duration),
@@ -160,7 +160,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             aspect_ratio: resolveGrokAspectRatio(params),
         }),
     },
-    "grok-imagine-video-1.5-fal": {
+    "x-ai/grok-imagine-video-1.5:fal": {
         textEndpoint: "xai/grok-imagine-video/v1.5/text-to-video",
         imageEndpoint: "xai/grok-imagine-video/v1.5/image-to-video",
         duration: (params) =>
@@ -171,7 +171,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             ...(!hasImage ? { aspect_ratio: aspectRatio(params) } : {}),
         }),
     },
-    "wan-fal": {
+    "alibaba/wan-2.6:fal": {
         textEndpoint: "wan/v2.6/text-to-video",
         imageEndpoint: "wan/v2.6/image-to-video",
         duration: (params) => snapDuration(params.duration, [5, 10, 15]),
@@ -183,7 +183,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
                 : {}),
         }),
     },
-    "wan-fast-fal": {
+    "alibaba/wan-2.2-fast:fal": {
         textEndpoint: "fal-ai/wan/v2.2-a14b/text-to-video/turbo",
         imageEndpoint: "fal-ai/wan/v2.2-a14b/image-to-video/turbo",
         duration: () => 5,
@@ -195,7 +195,7 @@ const VIDEO_CONFIGS: Record<string, FalVideoConfig> = {
             ...(params.image[1] ? { end_image_url: params.image[1] } : {}),
         }),
     },
-    "seedance-pro-fal": {
+    "bytedance/seedance-1-pro-fast:fal": {
         textEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/text-to-video",
         imageEndpoint: "fal-ai/bytedance/seedance/v1/pro/fast/image-to-video",
         duration: (params) =>

@@ -5,7 +5,10 @@ import {
     getVisibleImageModels,
     type ModelDefinition,
 } from "@shared/registry/registry.ts";
-import { FALLBACK_TARGET_HEADER } from "@shared/registry/usage-headers.ts";
+import {
+    FALLBACK_TARGET_HEADER,
+    MODEL_USED_HEADER,
+} from "@shared/registry/usage-headers.ts";
 import { describe, expect, it, vi } from "vitest";
 import {
     attachFallbackTarget,
@@ -29,7 +32,7 @@ function registryEntry(
         aliases: [],
         provider: "test",
         fallbacks,
-        brand: "Test",
+        publisher: "Test",
         category: "text",
         cost: { completionTextTokens: rate },
         priceMultiplier: 1,
@@ -77,21 +80,25 @@ function communityEntry(
 
 describe("registry fallback linking", () => {
     it("marks provider routes as hidden, fallback-only registry entries", () => {
-        expect(IMAGE_SERVICES.zimage.fallbacks).toContain("zimage-fal");
-        expect(IMAGE_SERVICES["zimage-fal"]).toMatchObject({
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo"].fallbacks).toContain(
+            "tongyi-mai/z-image-turbo:fal",
+        );
+        expect(IMAGE_SERVICES["tongyi-mai/z-image-turbo:fal"]).toMatchObject({
             aliases: [],
             hidden: true,
             fallbackOnly: true,
             provider: "fal",
         });
-        expect(getVisibleImageModels()).not.toContain("zimage-fal");
+        expect(getVisibleImageModels()).not.toContain(
+            "tongyi-mai/z-image-turbo:fal",
+        );
     });
 
     it("declares direct OpenAI fallbacks for every GPT Image model", () => {
         const pairs = [
-            ["gptimage", "gptimage-openai"],
-            ["gptimage-large", "gptimage-large-openai"],
-            ["gpt-image-2", "gpt-image-2-openai"],
+            ["openai/gpt-image-1-mini", "openai/gpt-image-1-mini:openai"],
+            ["openai/gpt-image-1.5", "openai/gpt-image-1.5:openai"],
+            ["openai/gpt-image-2", "openai/gpt-image-2:openai"],
         ] as const;
 
         for (const [primary, fallback] of pairs) {
@@ -315,6 +322,56 @@ describe("formatFallbackTarget", () => {
         expect(formatFallbackTarget(1)).toBe("config.targets[1]");
         expect(formatFallbackTarget(2)).toBe("config.targets[2]");
         expect(formatFallbackTarget(10)).toBe("config.targets[10]");
+    });
+});
+
+describe("fallback response model attribution", () => {
+    const publicId = "qwen/qwen-image-3";
+    const backupId = "qwen/qwen-image-3:replicate";
+    const model = {
+        resolved: publicId,
+        definition: IMAGE_SERVICES[publicId],
+        fallbackEntries: [
+            {
+                ...registryEntry(backupId),
+                definition: IMAGE_SERVICES[backupId],
+            },
+        ],
+    };
+
+    it("preserves the primary handler's model header without adding a provider suffix", async () => {
+        const response = await withModelFallbackResponse(
+            model,
+            async () =>
+                new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: publicId },
+                }),
+        );
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(publicId);
+        expect(response.headers.has(FALLBACK_TARGET_HEADER)).toBe(false);
+    });
+
+    it("keeps provider-qualified fallback IDs and per-attempt dispatch attribution", async () => {
+        const attempts: FallbackAttempt[] = [];
+        const response = await withModelFallbackResponse(
+            model,
+            async (candidate) => {
+                if (candidate.id === publicId)
+                    throw Object.assign(new Error("busy"), { status: 429 });
+                return new Response("ok", {
+                    headers: { [MODEL_USED_HEADER]: candidate.id },
+                });
+            },
+            attempts,
+        );
+        expect(attempts.map((attempt) => attempt.candidate.id)).toEqual([
+            publicId,
+            backupId,
+        ]);
+        expect(response.headers.get(MODEL_USED_HEADER)).toBe(backupId);
+        expect(response.headers.get(FALLBACK_TARGET_HEADER)).toBe(
+            formatFallbackTarget(1),
+        );
     });
 });
 

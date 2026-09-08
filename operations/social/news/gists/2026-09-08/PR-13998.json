@@ -1,0 +1,34 @@
+{
+  "pr_number": 13998,
+  "title": "fix: update EC2 monitor setup and failure reporting",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13998",
+  "merged_at": "2026-09-08T15:20:14Z",
+  "labels": [],
+  "pr_body_excerpt": "- Documents the monitoring-agents EC2 migration and existing Discord bot launchers/systemd units.\n- Hides community models below 50% success across at least 10 requests in four hours only after a fresh provider-failing probe; passing, client/auth/payment, or inconclusive probes veto hiding.\n- Treats terminal usage errors as failed requests, distinct from informational billing flags; checks provider versus shared gateway causes before attributing failures.\n- Makes the committed prompt authoritative over old memories and documents removing frozen prompt overrides while preserving counters and cooldowns.\n- Updates from main and corrects the live host inventory to 200 GB disk / 30 GB swap. Gateway validation and billing are unchanged.\n\nValidation: reviewed the complete diff; Biome, JavaScript syntax, shell syntax, and PR whitespace checks passed. EC2 activation and prompt verification will run after merge. No credential changes or Discord bot restarts are included.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The garden checks twice",
+    "blurb": "The community-model gardener got stricter about evidence before putting a wilting model behind the hedge. Fresh provider checks now separate real outages from billing notes, bad requests, and gateway weather.",
+    "summary": "Community monitoring now hides a model only when it falls below 50% success across at least 10 requests in four hours and a fresh probe confirms a provider-side failure, while passing, client/auth/payment, and inconclusive probes veto hiding.",
+    "impact": "Users get a more reliable community-model list: genuine provider failures are filtered sooner, while models are kept visible when errors come from client requests, authentication, payment, or uncertain gateway causes.",
+    "keywords": [
+      "community-models",
+      "monitoring",
+      "provider-health",
+      "failure-reporting",
+      "discord-bots",
+      "ec2"
+    ],
+    "visual_concept": "A cozy model-health garden where Polli acts as a careful gardener, checking a drooping code-flower with a fresh diagnostic probe before moving it behind a small hedge. A helpful CRT monitor robot displays distinct provider, gateway, billing, and client-error signals, making it clear that only confirmed provider failures trigger the garden's protective filtering.",
+    "image_prompt": "A cozy pixel art garden-monitoring scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener hat and carefully tests a drooping code-flower with a probe; beside her, a chunky CRT monitor robot shows separate pixel indicators for PROVIDER, GATEWAY, BILLING, and CLIENT while healthy code-plants bloom behind a small hedge. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"CHECK TWICE\"; nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-13998.jpg",
+    "prompt": "A cozy pixel art garden-monitoring scene where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears a tiny gardener hat and carefully tests a drooping code-flower with a probe; beside her, a chunky CRT monitor robot shows separate pixel indicators for PROVIDER, GATEWAY, BILLING, and CLIENT while healthy code-plants bloom behind a small hedge. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle scanlines, pixel-font text: \"CHECK TWICE\"; nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-08T15:21:28.343634+00:00"
+}

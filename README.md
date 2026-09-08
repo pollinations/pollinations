@@ -14,6 +14,9 @@
 
 </div>
 
+> [!TIP]
+> Need the current source without downloading repository history? See [Keeping local clones small](docs/REPOSITORY_SIZE.md) for shallow and partial-clone commands.
+
 > [!IMPORTANT]
 > **Model IDs are now standardized**
 >

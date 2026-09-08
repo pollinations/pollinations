@@ -1,0 +1,34 @@
+{
+  "pr_number": 14575,
+  "title": "fix: provision production dashboard session secrets",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14575",
+  "merged_at": "2026-09-08T13:52:21Z",
+  "labels": [],
+  "pr_body_excerpt": "- Fixes production KPI, Economics, and Observability failing to check sessions because `POLLINATIONS_AUTH_SESSION_SECRET` was never provisioned.\n- Adds distinct, explicitly approved session secrets to the three encrypted production stores; existing credentials and ciphertext are unchanged.\n- Includes the session secret in Observability’s required Worker upload list and rejects missing configuration.\n- Validation: SOPS integrity and secret isolation checks, Biome, deployment discovery tests, and the real Observability provisioning regression test pass.\n- Rollout: merge to main, promote through a separate main → production PR, then verify production session endpoints and independent login/logout. No secrets have been uploaded from this branch.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Three doors, proper keys",
+    "blurb": "The production dashboards have received their missing session keys. KPI, Economics, and Observability can now recognize a returning visitor instead of staring politely into the void.",
+    "summary": "Provisioned distinct POLLINATIONS_AUTH_SESSION_SECRET values for the KPI, Economics, and Observability production secret stores, and made Observability reject uploads missing its session-secret configuration.",
+    "impact": "Production KPI, Economics, and Observability dashboards can now validate sessions reliably, including independent login and logout flows after rollout.",
+    "keywords": [
+      "session-secrets",
+      "production",
+      "dashboards",
+      "observability",
+      "authentication",
+      "deployment"
+    ],
+    "visual_concept": "A cozy garden-shed dashboard with three labeled little doors for KPI, Economics, and Observability, each receiving its own glowing key. Polli, wearing a tiny locksmith tool belt, checks the keys while code-plants grow around the secure session terminal.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular cheek blush, light blue translucent wings, black antennae, oval eyes, and a tiny locksmith tool belt, placing three distinct glowing keys into small garden-shed doors labeled KPI, ECONOMICS, and OBSERVABILITY. Lime green (#ecf874) is prominent in the softly glowing terminal and code-plants, with pastel flowers and warm cream shadows; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14575.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-dark-brown striped bee mascot with pink rectangular cheek blush, light blue translucent wings, black antennae, oval eyes, and a tiny locksmith tool belt, placing three distinct glowing keys into small garden-shed doors labeled KPI, ECONOMICS, and OBSERVABILITY. Lime green (#ecf874) is prominent in the softly glowing terminal and code-plants, with pastel flowers and warm cream shadows; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T13:53:34.567878+00:00"
+}

@@ -16,7 +16,7 @@ export function DashboardSignIn({
                 <ColorModeToggle />
             </AppHeader>
             <main className="polli:mx-auto polli:flex polli:w-full polli:max-w-md polli:flex-col polli:gap-12 polli:px-6 polli:py-24 polli:text-center polli:sm:py-32">
-                <Heading as="h1" size="title">
+                <Heading as="h1" size="section" className="polli:text-4xl">
                     {appName}
                 </Heading>
                 <div className="polli:flex polli:flex-col polli:gap-4">

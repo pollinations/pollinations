@@ -1,0 +1,34 @@
+{
+  "pr_number": 14602,
+  "title": "fix: probe community image edits and improve provider feedback",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14602",
+  "merged_at": "2026-09-08T22:30:35Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds targeted image-edit probes and alternates edits/generation for advertised image-input models without increasing routine request volume.\n- Records operation, timestamp, HTTP status, and request ID; rejects stream error events even when they include choices.\n- Gives providers evidence-based tool/caching feedback and requires matching-operation recovery checks, with existing thresholds and message limits preserved.\n- Updates the EC2 installation file list; no secrets, billing, catalog schema, or gateway changes.\n- Verified: 8 focused tests, Biome, Node/shell syntax, and diff checks. Follow-up to #14595; EC2 rollout and one live edit smoke test after merge.",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The garden checks its edits",
+    "blurb": "The community monitor now alternates image-generation and image-edit probes, so providers get clearer evidence when a model’s advertised tools need tending.",
+    "summary": "Added targeted image-edit probing for advertised image-input models, alternating edit and generation checks while recording operation, timestamps, HTTP status, and request IDs for provider feedback and matching-operation recovery validation.",
+    "impact": "Provider diagnostics can now distinguish image-edit behavior from generation behavior without increasing routine probe volume, helping maintain more accurate capability and caching feedback.",
+    "keywords": [
+      "community-monitor",
+      "image-edits",
+      "provider-feedback",
+      "probes",
+      "monitoring",
+      "stream-errors"
+    ],
+    "visual_concept": "Polli is a careful garden inspector testing two neighboring code-plants: one produces a fresh pixel flower and the other gently edits an existing flower. A CRT monitor robot holds a tiny diagnostic clipboard with checkmarks, request IDs, and status lights, representing evidence-based provider feedback and operation-specific checks.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny inspector glasses, alternating between watering a fresh code-flower and carefully trimming an existing pixel flower labeled \"EDIT\"; a friendly CRT monitor robot records little checkmarks beside them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and garden vines, warm lighting, retro gaming vibes, subtle pixel-font text: \"CHECK BOTH\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14602.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny inspector glasses, alternating between watering a fresh code-flower and carefully trimming an existing pixel flower labeled \"EDIT\"; a friendly CRT monitor robot records little checkmarks beside them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and garden vines, warm lighting, retro gaming vibes, subtle pixel-font text: \"CHECK BOTH\"."
+  },
+  "generated_at": "2026-09-08T22:31:29.307605+00:00"
+}

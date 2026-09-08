@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { spawnSync } from "node:child_process";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import vm from "node:vm";
 
 const workflow = await readFile(
@@ -65,6 +69,83 @@ test("both first jobs whitelist callers before allocating a runner", () => {
         /34513273|204561696|182555207|189873015|228371309/,
     );
 });
+
+// Preserve the block scalar's relative indentation, including heredoc delimiters.
+function runScripts(source) {
+    return [
+        ...source.matchAll(
+            /^ {8}run: \|\r?\n((?: {10}[^\r\n]*(?:\r?\n|$)|\r?\n)+)/gm,
+        ),
+    ].map((match) => match[1].replace(/^ {10}/gm, "").replace(/\r\n/g, "\n"));
+}
+
+const bash =
+    process.platform === "win32" ? "C:/Program Files/Git/bin/bash.exe" : "bash";
+const repository = fileURLToPath(new URL("../../", import.meta.url));
+
+for (const [name, source, command, ids] of [
+    ["askpolli", workflow, "!askpolli", [189873015, 1]],
+    ["polli", full, "!polli", [158852059, 189873015]],
+]) {
+    test(`${name} actual run blocks parse in Bash`, () => {
+        const scripts = runScripts(source);
+        assert.ok(scripts.length >= 2);
+        for (const script of scripts) {
+            const result = spawnSync(bash, ["-n"], {
+                input: script,
+                encoding: "utf8",
+            });
+            assert.equal(
+                result.status,
+                0,
+                result.error?.message || result.stderr,
+            );
+            assert.equal(result.stderr, "");
+        }
+    });
+
+    test(`${name} actual authorization shell emits allowed and denied results`, async () => {
+        const directory = await mkdtemp(join(tmpdir(), "polli-shell-"));
+        try {
+            for (const [index, id] of ids.entries()) {
+                const output = join(directory, `output-${index}`).replaceAll(
+                    "\\",
+                    "/",
+                );
+                const event = JSON.stringify({
+                    sender: { id, login: "fixture" },
+                    issue: { number: 42, pull_request: {} },
+                    comment: { body: command },
+                });
+                const result = spawnSync(bash, ["-e"], {
+                    cwd: repository,
+                    input: runScripts(source)[0],
+                    encoding: "utf8",
+                    env: {
+                        ...process.env,
+                        EVENT: event,
+                        EVENT_JSON: event,
+                        EVENT_NAME: "issue_comment",
+                        ACTOR: "fixture",
+                        TRIGGERING_ACTOR: "fixture",
+                        GITHUB_OUTPUT: output,
+                    },
+                });
+                assert.equal(
+                    result.status,
+                    0,
+                    result.error?.message || result.stderr,
+                );
+                assert.equal(
+                    await readFile(output, "utf8"),
+                    `authorized=${index === 0}\n`,
+                );
+            }
+        } finally {
+            await rm(directory, { recursive: true, force: true });
+        }
+    });
+}
 
 const publisher = workflow
     .split("  publish:")[1]

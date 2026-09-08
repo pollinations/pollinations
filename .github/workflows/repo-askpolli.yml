@@ -53,20 +53,18 @@ jobs:
           ACTOR: ${{ github.actor }}
           TRIGGERING_ACTOR: ${{ github.triggering_actor }}
         run: |
-          {
-            node --input-type=module <<'NODE'
-            import { authorizePolli } from "./.github/scripts/polli-authorization.mjs";
-            const event = JSON.parse(process.env.EVENT_JSON);
-            const authorized = authorizePolli({
-              eventName: process.env.EVENT_NAME,
-              event,
-              actor: process.env.ACTOR,
-              triggeringActor: process.env.TRIGGERING_ACTOR,
-              mode: "read",
-            });
-            process.stdout.write(`authorized=${authorized}\n`);
-            NODE
-          } >> "$GITHUB_OUTPUT"
+          node --input-type=module <<'NODE' >> "$GITHUB_OUTPUT"
+          import { authorizePolli } from "./.github/scripts/polli-authorization.mjs";
+          const event = JSON.parse(process.env.EVENT_JSON);
+          const authorized = authorizePolli({
+            eventName: process.env.EVENT_NAME,
+            event,
+            actor: process.env.ACTOR,
+            triggeringActor: process.env.TRIGGERING_ACTOR,
+            mode: "read",
+          });
+          process.stdout.write(`authorized=${authorized}\n`);
+          NODE
 
   answer:
     needs: authorize

@@ -1,0 +1,33 @@
+{
+  "pr_number": 14594,
+  "title": "docs: regenerate APIDOCS.md",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14594",
+  "merged_at": "2026-09-08T20:47:30Z",
+  "labels": [],
+  "pr_body_excerpt": "Auto-generated from OpenAPI spec changes after a successful production deploy.",
+  "gist": {
+    "category": "docs",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "minor",
+    "headline": "The map got fresh ink",
+    "blurb": "The API field guide has been regenerated from the latest production OpenAPI spec. Fewer mysterious footnotes in the garden shed.",
+    "summary": "Regenerated APIDOCS.md from the production OpenAPI specification so the published API reference matches the deployed service.",
+    "impact": "Developers get documentation aligned with the current production API behavior and fields.",
+    "keywords": [
+      "documentation",
+      "api",
+      "openapi",
+      "reference",
+      "developer-experience"
+    ],
+    "visual_concept": "A cozy API field guide being updated beside a retro terminal: Polli, wearing tiny librarian glasses, carefully stamps fresh pages while code-plants grow from the documentation. The prominent lime-green screen represents the production spec now matching the guide.",
+    "image_prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot, wearing tiny librarian glasses, updating a chunky API field guide beside a retro terminal glowing lime green (#ecf874), while little code-plants and flowers sprout around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with small pixel-font text: 'API DOCS'."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14594.jpg",
+    "prompt": "Cozy pixel art scene of Polli the cute yellow-and-brown striped bee mascot, wearing tiny librarian glasses, updating a chunky API field guide beside a retro terminal glowing lime green (#ecf874), while little code-plants and flowers sprout around the desk. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, with small pixel-font text: 'API DOCS'."
+  },
+  "generated_at": "2026-09-08T20:48:51.572140+00:00"
+}

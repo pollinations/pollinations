@@ -115,3 +115,88 @@ test("health counts final fallback successes, excludes 4xx, and matches event ty
         ).success_rate,
     ).toBeNull();
 });
+
+test("image health counts provider 4xx but excludes caller 4xx and rescued attempts", () => {
+    const now = Date.parse("2026-09-08T12:00:00Z");
+    const row = {
+        model: "example",
+        event_type: "generate.image",
+        status_2xx: 96,
+        errors_5xx: 4,
+        errors_4xx: 100,
+        provider_errors_4xx: 40,
+        fallback_rescues: 16,
+        primary_5xx: 20,
+        last_request_at: "2026-09-08 11:59:00",
+    };
+    // Raw status responses may contain only the fields required by a consumer.
+    const snapshot = {
+        data: { data: [row] },
+        timestamp: now,
+        stale: false,
+    } as Awaited<ReturnType<typeof getModelHealthSnapshot>>;
+    const entry = { id: "example", eventType: "generate.image" as const };
+    expect(catalogHealth(entry, snapshot, now)).toMatchObject({
+        success_rate: 96 / 140,
+        sample_count: 140,
+        stale: false,
+    });
+    row.provider_errors_4xx = 0;
+    expect(catalogHealth(entry, snapshot, now)).toMatchObject({
+        success_rate: 0.96,
+        sample_count: 100,
+    });
+});
+
+test("image reliability is unknown when the feed cannot attribute provider 4xx", () => {
+    const now = Date.parse("2026-09-08T12:00:00Z");
+    const snapshot = {
+        data: {
+            data: [
+                {
+                    model: "example",
+                    event_type: "generate.image",
+                    status_2xx: 100,
+                    errors_5xx: 0,
+                    last_request_at: "2026-09-08 11:59:00",
+                },
+            ],
+        },
+        timestamp: now,
+        stale: false,
+    } as Awaited<ReturnType<typeof getModelHealthSnapshot>>;
+    expect(
+        catalogHealth(
+            { id: "example", eventType: "generate.image" },
+            snapshot,
+            now,
+        ),
+    ).toMatchObject({
+        success_rate: null,
+        sample_count: 0,
+    });
+});
+
+test("incomplete raw health responses remain unknown at the catalog boundary", () => {
+    for (const data of [
+        { data: [{ model: "example" }] },
+        { data: null },
+        null,
+    ]) {
+        const snapshot = {
+            data,
+            timestamp: Date.now(),
+            stale: false,
+        } as Awaited<ReturnType<typeof getModelHealthSnapshot>>;
+        expect(
+            catalogHealth(
+                { id: "example", eventType: "generate.text" },
+                snapshot,
+            ),
+        ).toMatchObject({
+            success_rate: null,
+            sample_count: 0,
+            stale: true,
+        });
+    }
+});

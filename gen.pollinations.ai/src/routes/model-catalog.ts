@@ -1,9 +1,20 @@
 import { HTTPException } from "hono/http-exception";
 import type { GenerationModelEntry } from "../model-registry.ts";
 import { ModelListQueryParamsSchema } from "../schemas/models.ts";
-import { getModelHealthSnapshot } from "./model-status.ts";
+import {
+    getModelHealthSnapshot,
+    ModelHealthRowSchema,
+} from "./model-status.ts";
 
 const WINDOW_MINUTES = 60;
+const CatalogHealthRowsSchema = ModelHealthRowSchema.pick({
+    model: true,
+    event_type: true,
+    status_2xx: true,
+    errors_5xx: true,
+    provider_errors_4xx: true,
+    last_request_at: true,
+}).array();
 
 export function parseCatalogFilters(
     query: Record<string, string | undefined>,
@@ -47,14 +58,31 @@ export function catalogHealth(
     snapshot: Snapshot,
     now = Date.now(),
 ) {
-    const rows =
-        snapshot?.data.data.filter(
-            (row) =>
-                row.model === entry.id && row.event_type === entry.eventType,
-        ) ?? [];
+    const candidates = Array.isArray(snapshot?.data?.data)
+        ? snapshot.data.data.filter(
+              (row) =>
+                  row?.model === entry.id &&
+                  row?.event_type === entry.eventType,
+          )
+        : [];
+    const parsed = CatalogHealthRowsSchema.safeParse(candidates);
+    const rows = parsed.success ? parsed.data : [];
+    const image = entry.eventType === "generate.image";
+    // Until the updated pipe is deployed, image 4xx attribution is unknown.
+    // Never interpret an absent counter as zero and advertise false reliability.
+    const complete =
+        !image || rows.every((row) => row.provider_errors_4xx !== undefined);
     const successes = rows.reduce((sum, row) => sum + row.status_2xx, 0);
-    const samples =
-        successes + rows.reduce((sum, row) => sum + row.errors_5xx, 0);
+    const samples = complete
+        ? successes +
+          rows.reduce(
+              (sum, row) =>
+                  sum +
+                  row.errors_5xx +
+                  (image ? (row.provider_errors_4xx ?? 0) : 0),
+              0,
+          )
+        : 0;
     const lastRequest = Math.max(
         0,
         ...rows.map((row) => {

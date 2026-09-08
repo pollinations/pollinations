@@ -18,7 +18,7 @@ const MAX_MINUTES = 7 * 24 * 60;
 const DATA_TIMESTAMP_HEADER = "X-Model-Status-Timestamp";
 const STALE_HEADER = "X-Model-Status-Stale";
 
-const ModelHealthRowSchema = z.object({
+export const ModelHealthRowSchema = z.object({
     model: z.string(),
     event_type: z.string(),
     provider: z.string(),
@@ -27,6 +27,7 @@ const ModelHealthRowSchema = z.object({
     status_2xx: z.number().int().nonnegative(),
     errors_4xx: z.number().int().nonnegative(),
     errors_5xx: z.number().int().nonnegative(),
+    provider_errors_4xx: z.number().int().nonnegative().optional(),
     own_calls: z.number().int().nonnegative(),
     own_calls_ok: z.number().int().nonnegative(),
     primary_5xx: z.number().int().nonnegative(),
@@ -93,7 +94,9 @@ export async function getModelHealthSnapshot(minutes = DEFAULT_MINUTES) {
         });
         if (!response.ok)
             throw new Error(`Tinybird responded with ${response.status}`);
-        const data = ModelHealthResponseSchema.parse(await response.json());
+        // This endpoint promises the raw Tinybird response. Validate only at
+        // the catalog calculation boundary, without changing this passthrough.
+        const data = (await response.json()) as ModelHealthResponse;
         const entry = { data, timestamp: Date.now() };
         setCacheEntry(minutes, entry);
         return { ...entry, stale: false };

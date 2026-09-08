@@ -7,7 +7,7 @@ export const ModelListQueryParamsSchema = z.object({
     }),
     reliability: z.enum(["all", "reliable"]).optional().meta({
         description:
-            "Include health metadata (all) or return only fresh models with less than 5% final server errors (reliable). Overrides X-Pollinations-Model-Reliability. Does not restrict generation.",
+            "Include health metadata (all) or return only fresh models with less than 5% final provider failures (reliable). Overrides X-Pollinations-Model-Reliability. Does not restrict generation.",
     }),
     community: z.enum(["true", "false", "1", "0"]).optional().meta({
         description:

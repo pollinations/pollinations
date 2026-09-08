@@ -33,20 +33,24 @@ Filters do not change which known model IDs can be used for generation.
 
 `reliability=all` includes a `health` object without excluding models.
 `reliability=reliable` additionally requires fresh observations and a final
-server-error rate below 5%, matching the model monitor's healthy threshold.
+provider-failure rate below 5%, matching the model monitor's healthy threshold.
 Experimental/alpha status is independent: an experimental model can be reliable.
 
 | Health field | Meaning |
 |--------------|---------|
-| `success_rate` | Final 2xx / (final 2xx + final 5xx), between 0 and 1; null when no eligible traffic was observed |
-| `sample_count` | Number of final 2xx and 5xx responses in the window |
+| `success_rate` | Final 2xx / (final 2xx + final 5xx + image-provider 4xx), between 0 and 1; null when eligible counts are unknown |
+| `sample_count` | Number of final 2xx, 5xx and image-provider 4xx responses in the window (zero if eligible counts are unknown) |
 | `window_minutes` | Rolling observation window, 60 minutes |
 | `checked_at` | UTC timestamp of the health-feed fetch, or null when unavailable |
 | `last_request_at` | Latest observed final request timestamp, or null when unknown |
 | `stale` | True when the feed cannot refresh, is at least 60 seconds old, or the model has no request in the window |
 
 Successful fallback rescues count once as successes; intermediate failed
-attempts and caller-side 4xx are excluded from the ratio. One eligible request
+attempts and caller-side 4xx are excluded from the ratio. For image events,
+final 4xx marked `Image provider error:` also count as provider failures,
+matching the community monitor's distinction between upstream failures and
+caller errors. Image feeds without this attribution produce an unknown rate,
+so they cannot incorrectly qualify as reliable. One eligible request
 is sufficient to calculate a rate; inspect `sample_count` when assessing how
 representative it is. Missing observations are unknown, never implicitly
 healthy. During a health-feed outage, `all` retains models with stale/unknown

@@ -11,5 +11,5 @@ export const ModelHealthSchema = z
     })
     .meta({
         description:
-            "Final 2xx / (2xx + 5xx), including successful fallback rescues and excluding caller 4xx. Null means unknown. Freshness refers to the health feed and last observed request; experimental status is independent.",
+            "Final successes / eligible final responses, including successful fallback rescues and excluding caller 4xx. Image-provider 4xx failures are included alongside 5xx. Null means unknown, including image feeds without provider-failure attribution. Freshness refers to the health feed and last observed request; experimental status is independent.",
     });

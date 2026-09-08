@@ -23,6 +23,13 @@ SQL >
         countIf(is_final AND response_status >= 200 AND response_status < 300) as status_2xx,
         countIf(is_final AND response_status >= 400 AND response_status < 500) as errors_4xx,
         countIf(is_final AND response_status >= 500) as errors_5xx,
+        -- Some image providers expose quota/auth/backend failures as 4xx.
+        -- Exclude gateway/client errors and non-final attempts rescued later.
+        countIf(
+            is_final AND event_type = 'generate.image'
+            AND response_status >= 400 AND response_status < 500
+            AND startsWith(error_message, 'Image provider error:')
+        ) as provider_errors_4xx,
         -- Whether this model's OWN upstream works, which the columns above
         -- cannot show: a model rescued on every request reads 100% healthy up
         -- there and 0% here. Keyed on fallback_used so a primary's group never

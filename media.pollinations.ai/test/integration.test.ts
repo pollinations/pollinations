@@ -233,8 +233,12 @@ describe("media.pollinations.ai", () => {
         );
         expect(response.status).toBe(200);
         expect(response.headers.get("content-type")).toBe(contentType);
-        expect(response.headers.get("x-media-url")).toBe(
-            `https://media.pollinations.ai/${id}`,
+        expect(response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
+        );
+        expect(response.headers.has("X-Media-URL")).toBe(false);
+        expect(response.headers.get("Access-Control-Expose-Headers")).toContain(
+            "Link",
         );
         expect(response.headers.get("cache-control")).toBe(
             "public, max-age=31536000, immutable",
@@ -344,6 +348,9 @@ describe("media.pollinations.ai", () => {
         );
         expect(response.headers.get("content-length")).toBe(
             String(TINY_PNG.byteLength),
+        );
+        expect(response.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
         );
         expect(await response.text()).toBe("");
         await waitOnExecutionContext(ctx);

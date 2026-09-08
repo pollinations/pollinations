@@ -454,3 +454,60 @@ test("requires paid balance for Recraft vector", async ({
     );
     expect(generation.status).toBe(402);
 });
+
+test("source header and query filter the same permission-scoped catalog", async ({
+    restrictedApiKey,
+}) => {
+    for (const path of [
+        "/models",
+        "/v1/models",
+        "/text/models",
+        "/image/models",
+        "/video/models",
+        "/audio/models",
+        "/3d/models",
+        "/embeddings/models",
+    ]) {
+        const query = await fetchWorker(`${path}?source=official`, {
+            headers: { Authorization: `Bearer ${restrictedApiKey}` },
+        });
+        const header = await fetchWorker(path, {
+            headers: {
+                Authorization: `Bearer ${restrictedApiKey}`,
+                "X-Pollinations-Model-Source": "official",
+            },
+        });
+        expect(query.status).toBe(200);
+        expect(header.status).toBe(200);
+        const body = await query.json();
+        expect(await header.json()).toEqual(body);
+        const entries = Array.isArray(body)
+            ? body
+            : (body as { data: Record<string, unknown>[] }).data;
+        for (const model of entries) {
+            expect(model.community).toBe(false);
+            expect(RESTRICTED_TEST_MODELS).toContain(model.name ?? model.id);
+            expect(model).not.toHaveProperty("health");
+        }
+    }
+});
+
+test("catalog filters reject invalid headers and conflicts", async () => {
+    expect(
+        (
+            await fetchWorker("/models", {
+                headers: { "X-Pollinations-Model-Reliability": "typo" },
+            })
+        ).status,
+    ).toBe(400);
+    expect(
+        (await fetchWorker("/v1/models?source=official&community=true")).status,
+    ).toBe(400);
+    expect(
+        (
+            await fetchWorker("/models?source=official", {
+                headers: { "X-Pollinations-Model-Source": "typo" },
+            })
+        ).status,
+    ).toBe(200);
+});

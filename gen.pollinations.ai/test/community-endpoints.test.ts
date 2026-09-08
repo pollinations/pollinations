@@ -4,6 +4,7 @@ import {
     SELF,
     waitOnExecutionContext,
 } from "cloudflare:test";
+import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 import type { Logger } from "@logtape/logtape";
 import { verifyAgentRunToken } from "@shared/auth/agent-run-token.ts";
 import { COMMUNITY_MODEL_ALLOWED_GITHUB_IDS } from "@shared/auth/github-id-list.ts";
@@ -84,9 +85,11 @@ import {
     createTestUser,
     test as fixtureTest,
 } from "@shared/test/fixtures/index.ts";
+import { generateText } from "ai";
 import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
 import { Hono } from "hono";
+import OpenAI from "openai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Env } from "@/env.ts";
 import {
@@ -8669,5 +8672,204 @@ fixtureTest(
             }),
         );
         expect(direct.status).toBe(403);
+    },
+);
+
+fixtureTest(
+    "catalog filters support OpenAI and AI SDK discovery and generation",
+    async ({ paidApiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = "catalog-client";
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            visibility: "public",
+            name: modelName,
+            title: "Catalog client test",
+            description: "Catalog client test",
+            baseUrl: "https://api.example.com/v1",
+            upstreamModel: "test-model",
+            bearerTokenCiphertext: await encryptSecret(
+                "sk_test_upstream",
+                env.BETTER_AUTH_SECRET,
+            ),
+            promptTextPrice: 0.1 / 1_000_000,
+            completionTextPrice: 0.2 / 1_000_000,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+        let healthUnavailable = false;
+        let healthCalls = 0;
+        let generationCalls = 0;
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+                const request = new Request(input, init);
+                if (request.url.includes("/pipes/model_health.json")) {
+                    healthCalls++;
+                    if (healthUnavailable)
+                        return new Response("Unavailable", { status: 503 });
+                    return Response.json({
+                        data: [
+                            {
+                                model: modelId,
+                                event_type: "generate.text",
+                                provider: "test",
+                                model_used: "test-model",
+                                total_requests: 200,
+                                status_2xx: 96,
+                                errors_4xx: 100,
+                                errors_5xx: 4,
+                                own_calls: 100,
+                                own_calls_ok: 80,
+                                primary_5xx: 20,
+                                primary_retried_503s: 16,
+                                fallback_rescues: 16,
+                                last_error_at: "",
+                                latency_p50_ms: null,
+                                latency_p95_ms: null,
+                                avg_latency_ms: null,
+                                last_request_at: new Date().toISOString(),
+                                tokens_per_second: null,
+                            },
+                        ],
+                    });
+                }
+                if (
+                    request.url ===
+                    "https://api.example.com/v1/chat/completions"
+                ) {
+                    generationCalls++;
+                    expect(request.headers.get("authorization")).toBe(
+                        "Bearer sk_test_upstream",
+                    );
+                    return Response.json({
+                        id: `chatcmpl-${generationCalls}`,
+                        object: "chat.completion",
+                        created: Math.floor(Date.now() / 1000),
+                        model: "test-model",
+                        choices: [
+                            {
+                                index: 0,
+                                message: {
+                                    role: "assistant",
+                                    content: "catalog client ok",
+                                },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 3,
+                            completion_tokens: 3,
+                            total_tokens: 6,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+        const headers = {
+            "X-Pollinations-Model-Source": "community",
+            "X-Pollinations-Model-Reliability": "reliable",
+        };
+        const openai = new OpenAI({
+            apiKey: paidApiKey,
+            baseURL: "https://gen.pollinations.ai/v1",
+            defaultHeaders: headers,
+            fetch: fetchGen,
+            maxRetries: 0,
+        });
+        const listed = await openai.models.list();
+        expect(listed.data.map((model) => model.id)).toEqual([modelId]);
+        expect(listed.data[0]).toMatchObject({
+            health: { success_rate: 0.96, sample_count: 100, stale: false },
+        });
+        expect(
+            (
+                await openai.chat.completions.create({
+                    model: modelId,
+                    messages: [{ role: "user", content: "OpenAI client" }],
+                })
+            ).choices[0].message.content,
+        ).toBe("catalog client ok");
+
+        // AI SDK providers generate; the application's discovery request uses the
+        // same base URL and headers before handing the selected ID to the provider.
+        const discovery = await fetchGen(
+            "https://gen.pollinations.ai/v1/models",
+            { headers: { ...headers, Authorization: `Bearer ${paidApiKey}` } },
+        );
+        const catalog = (await discovery.json()) as { data: { id: string }[] };
+        expect(catalog.data.map((model) => model.id)).toEqual([modelId]);
+        const provider = createOpenAICompatible({
+            name: "pollinations",
+            baseURL: "https://gen.pollinations.ai/v1",
+            apiKey: paidApiKey,
+            headers,
+            fetch: fetchGen,
+        });
+        expect(
+            (
+                await generateText({
+                    model: provider.chatModel(catalog.data[0].id),
+                    prompt: "AI SDK client",
+                    maxRetries: 0,
+                })
+            ).text,
+        ).toBe("catalog client ok");
+        expect(generationCalls).toBe(2);
+        expect(healthCalls).toBe(1);
+
+        // A persistent discovery header cannot prohibit generation of a known ID.
+        const officialClient = new OpenAI({
+            apiKey: paidApiKey,
+            baseURL: "https://gen.pollinations.ai/v1",
+            defaultHeaders: { "X-Pollinations-Model-Source": "official" },
+            fetch: fetchGen,
+            maxRetries: 0,
+        });
+        expect(
+            (await officialClient.models.list()).data.some(
+                (model) => model.id === modelId,
+            ),
+        ).toBe(false);
+        expect(
+            (
+                await officialClient.chat.completions.create({
+                    model: modelId,
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Known model outside discovery",
+                        },
+                    ],
+                })
+            ).choices[0].message.content,
+        ).toBe("catalog client ok");
+        healthUnavailable = true;
+        const now = Date.now();
+        const clock = vi.spyOn(Date, "now").mockReturnValue(now + 61_000);
+        try {
+            const all = await fetchGen(
+                "https://gen.pollinations.ai/models?source=community&reliability=all",
+            );
+            expect(await all.json()).toEqual(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        name: modelId,
+                        health: expect.objectContaining({ stale: true }),
+                    }),
+                ]),
+            );
+            expect((await openai.models.list()).data).toEqual([]);
+        } finally {
+            clock.mockRestore();
+        }
     },
 );

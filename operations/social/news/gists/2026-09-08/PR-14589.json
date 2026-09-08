@@ -1,0 +1,35 @@
+{
+  "pr_number": 14589,
+  "title": "feat: add paid-only GPT Image 2.5 models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14589",
+  "merged_at": "2026-09-08T20:29:15Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst` through direct OpenAI, with `paidOnly: true`, `priceMultiplier: 1`, no aliases, and no fallback. No equivalent route found on Azure, Fireworks, OpenRouter, or DeepInfra.\n- Uses [official rates](https://developers.openai.com/api/docs/models/gpt-image-2.5-flare): $5/M text input, $1.25/M cached text, $8/M image input, $30/M image output. Reuses existing credentials, endpoints, and quality options.\n- Forwards custom edit dimensions and preserves PNG transparency instead of flattening alpha to JPEG.\n- Verified: 82 focused tests, pricing snapshot, Gen typecheck, build, catalog; authenticated local generation, multipart edits, native images, paid-only 402, disconnect/rejoin, and byte-identical cache reuse. Wallet/staging Tinybird reconcile: four unique requests per model, four billed events, $0.043726 cost = 0.043726 Pollen. Cache repeats incur no extra debit; Quest balance stays unchanged. Transparent outputs are PNGs with alpha.\n- Draft gates: cached-image accounting at $2/M remains unverified because provider probes emitted no cached-input usage; production-load burst testing remains outstanding. No secret or production deployment changes.\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Two new suns in the garden",
+    "blurb": "GPT Image 2.5 Flare and Sunburst have landed for paid generation. They keep their PNG alpha, respect custom edit dimensions, and decline to turn transparent pixels into accidental JPEG wallpaper.",
+    "summary": "Added paid-only `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst` through direct OpenAI with native quality options, custom edit dimensions, PNG transparency preservation, and byte-identical cached-image reuse.",
+    "impact": "Paid users can generate and edit with GPT Image 2.5 Flare or Sunburst at a 1× price multiplier, receive transparent outputs as PNGs, and avoid extra Pollen debits when an identical image request is served from cache.",
+    "keywords": [
+      "gpt-image-2.5",
+      "openai",
+      "image-generation",
+      "paid-only",
+      "png-transparency",
+      "image-editing",
+      "cache"
+    ],
+    "visual_concept": "A cozy digital garden has two new glowing image flowers, one flare-shaped and one sunburst-shaped, representing the two direct OpenAI models. Polli wears a tiny painter's beret and carefully carries a transparent PNG canvas with a checkerboard background, while a retro terminal shows two neatly labeled model seeds and a cache jar stays full.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny painter's beret as she tends two glowing code-flowers labeled “FLARE” and “SUNBURST” beside a transparent PNG canvas; lime green (#ecf874) garden pots, soft mint, lavender, peach, and warm cream gradients, with a retro monitor showing a small cache jar. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14589.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny painter's beret as she tends two glowing code-flowers labeled “FLARE” and “SUNBURST” beside a transparent PNG canvas; lime green (#ecf874) garden pots, soft mint, lavender, peach, and warm cream gradients, with a retro monitor showing a small cache jar. Cozy 8-bit pixel art aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, chunky sprites, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T20:30:15.840809+00:00"
+}

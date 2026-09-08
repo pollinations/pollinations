@@ -731,7 +731,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
                         input.modality === "image"
                             ? result.inputModalities?.includes("image")
                                 ? "Generation and editing endpoints responded with image data"
-                                : "Generation endpoint responded; editing is not supported"
+                                : `Generation endpoint responded; editing test failed: ${result.imageEditError}`
                             : input.modality === "video"
                               ? "Endpoint responded with playable video"
                               : input.modality === "transcription"

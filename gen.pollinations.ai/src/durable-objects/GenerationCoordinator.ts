@@ -28,9 +28,9 @@ async function cacheExists(
     env: CloudflareBindings,
     cache: GenerationCacheIdentity,
 ): Promise<boolean> {
-    const bucket =
-        cache.storage === "media" ? env.IMAGE_BUCKET : env.TEXT_BUCKET;
-    return (await bucket.head(cache.key)) !== null;
+    return cache.storage === "media"
+        ? env.MEDIA.has(cache.key)
+        : (await env.TEXT_BUCKET.head(cache.key)) !== null;
 }
 
 function unavailable(message: string): GenerationOutcome {

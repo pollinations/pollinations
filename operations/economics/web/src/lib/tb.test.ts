@@ -5,6 +5,7 @@ import {
     canonicalPollenRows,
     canonicalVendor,
     loadAll,
+    TbError,
     validatePipeRows,
 } from "./tb";
 
@@ -45,8 +46,8 @@ describe("loadAll", () => {
         const controller = new AbortController();
         const result = await loadAll(["opTransactions"], controller.signal);
         expect(fetch).toHaveBeenCalledExactlyOnceWith(
-            "/api/pipes/economics_bank_ledger_api",
-            { signal: controller.signal },
+            "/api/economics/pipes/economics_bank_ledger_api",
+            { credentials: "same-origin", signal: controller.signal },
         );
         expect(result.opTransactions).toHaveLength(
             FIXTURES.economics_bank_ledger_api.length,
@@ -98,6 +99,22 @@ describe("loadAll", () => {
         await expect(loadAll()).rejects.toThrow(
             "economics_private_config_api: expected one row, received 0",
         );
+    });
+
+    it("preserves dashboard authentication status", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(() =>
+                Promise.resolve(
+                    Response.json({ error: "Unauthorized" }, { status: 401 }),
+                ),
+            ),
+        );
+
+        const error = await loadAll().catch((caught: unknown) => caught);
+
+        expect(error).toBeInstanceOf(TbError);
+        expect((error as TbError).status).toBe(401);
     });
 
     it("fails closed when the D1 user snapshot is empty", async () => {

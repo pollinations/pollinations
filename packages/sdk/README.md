@@ -494,7 +494,7 @@ console.log(batch.data.length, batch.usage.total_tokens);
 
 | Option | Type | Description |
 |--------|------|-------------|
-| `model` | string | Embedding model (server default: `gemini-2`) |
+| `model` | string | Embedding model; uses the server default when omitted |
 | `dimensions` | number | Output dimensions, 128-4096 (model-specific limits apply) |
 | `encodingFormat` | string | `'float'` (default) or `'base64'` |
 | `taskType` | string | Gemini task hint, e.g. `'RETRIEVAL_QUERY'` |

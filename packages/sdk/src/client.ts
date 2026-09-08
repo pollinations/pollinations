@@ -695,8 +695,7 @@ export class Pollinations {
         }
 
         const buffer = await response.arrayBuffer();
-        const contentType =
-            response.headers.get("content-type") || "video/mp4";
+        const contentType = response.headers.get("content-type") || "video/mp4";
 
         return { buffer, contentType, url: stripKeyFromUrl(url) };
     }
@@ -1218,13 +1217,9 @@ export class Pollinations {
         input: EmbeddingInput,
         options: EmbeddingsOptions = {},
     ): Promise<EmbeddingsResponse> {
-        if (
-            !input ||
-            (typeof input === "string" && input.length === 0) ||
-            (Array.isArray(input) && input.length === 0)
-        ) {
+        if (!input || (Array.isArray(input) && input.length === 0)) {
             throw new PollinationsError(
-                "Input is required and must be a non-empty string or array",
+                "Input is required and cannot be empty",
                 "INVALID_INPUT",
                 400,
             );

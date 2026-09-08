@@ -559,7 +559,7 @@ export type EmbeddingModel = string;
 export type EmbeddingContentPart =
     | TextContentPart
     | ImageContentPart
-    | AudioContentPart
+    | { type: "input_audio"; input_audio: { data: string; format: string } }
     | VideoContentPart;
 
 /**
@@ -585,7 +585,7 @@ export type EmbeddingTaskType =
 
 /** Options for embeddings (POST /v1/embeddings) */
 export interface EmbeddingsOptions extends RequestOptions {
-    /** Embedding model to use (server default: 'gemini-2') */
+    /** Embedding model to use; uses the server default when omitted */
     model?: EmbeddingModel;
     /** Output embedding dimensions, 128-4096 (model-specific limits apply) */
     dimensions?: number;

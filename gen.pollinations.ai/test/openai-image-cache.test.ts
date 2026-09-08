@@ -263,7 +263,10 @@ describe("OpenAI image cache", () => {
         expect(originHits).toBe(0);
     });
 
-    it("serves objects cached before model metadata was stored", async () => {
+    it.each([
+        "url",
+        "b64_json",
+    ])("serves %s and a file link for objects cached before model metadata was stored", async (response_format) => {
         const bucket = createTestR2Bucket();
         const cacheUrl = new URL(
             "https://gen.pollinations.ai/image/a%20cat?model=flux&width=1024&height=1024&quality=medium&seed=7",
@@ -304,7 +307,7 @@ describe("OpenAI image cache", () => {
                     size: "1024x1024",
                     quality: "standard",
                     seed: 7,
-                    response_format: "url",
+                    response_format,
                 }),
             }),
             {
@@ -316,7 +319,11 @@ describe("OpenAI image cache", () => {
             ctx,
         );
         const result = await response.json<{
-            data: Array<{ url: string; media_type: string }>;
+            data: Array<{
+                url?: string;
+                b64_json?: string;
+                media_type?: string;
+            }>;
             usage: { total_tokens: number };
         }>();
         await waitOnExecutionContext(ctx);
@@ -324,10 +331,16 @@ describe("OpenAI image cache", () => {
         expect(response.status).toBe(200);
         expect(response.headers.get("x-cache")).toBe("HIT");
         expect(response.headers.get("x-model-used")).toBe("flux");
-        expect(result.data[0]?.url).toBe(
-            `https://media.pollinations.ai/${await generateCacheKey(cacheUrl)}`,
-        );
-        expect(result.data[0]?.media_type).toBe("image/jpeg");
+        const url = `https://media.pollinations.ai/${await generateCacheKey(cacheUrl)}`;
+        expect(response.headers.get("Link")).toBe(`<${url}>; rel="enclosure"`);
+        expect(response.headers.has("X-Media-URL")).toBe(false);
+        if (response_format === "url") {
+            expect(result.data[0]?.url).toBe(url);
+            expect(result.data[0]?.media_type).toBe("image/jpeg");
+        } else {
+            expect(result.data[0]?.b64_json).toBe(btoa("legacy-image"));
+            expect(result.data[0]?.url).toBeUndefined();
+        }
         expect(result.usage.total_tokens).toBe(0);
     });
 });

@@ -876,7 +876,7 @@ app.use(
         origin: "*",
         allowMethods: ["GET", "POST", "DELETE", "HEAD", "OPTIONS"],
         allowHeaders: ["Content-Type", "Authorization"],
-        exposeHeaders: ["X-Content-Id", "X-Content-Size"],
+        exposeHeaders: ["X-Content-Id", "X-Content-Size", "Link"],
     }),
 );
 

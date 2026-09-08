@@ -85,7 +85,7 @@ export async function readMedia(
             object.httpMetadata?.cacheControl || IMMUTABLE_CACHE_CONTROL,
         "X-Content-Id": id,
         "X-Content-Size": object.size.toString(),
-        "X-Media-URL": `https://media.pollinations.ai/${id}`,
+        Link: `<https://media.pollinations.ai/${id}>; rel="enclosure"`,
     });
     for (const [key, value] of Object.entries(object.customMetadata ?? {})) {
         if (key.startsWith("header_")) headers.set(key.slice(7), value);

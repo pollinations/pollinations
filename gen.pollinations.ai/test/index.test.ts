@@ -997,7 +997,9 @@ fixtureTest(
                     expect(url).toMatch(
                         /^https:\/\/media\.pollinations\.ai\/[a-f0-9]{64}$/,
                     );
-                    expect(url).toBe(response.headers.get("x-media-url"));
+                    expect(response.headers.get("Link")).toBe(
+                        `<${url}>; rel="enclosure"`,
+                    );
                     if (storedUrl) expect(url).toBe(storedUrl);
                     storedUrl = url;
                     const stored = await bindings.MEDIA.get(

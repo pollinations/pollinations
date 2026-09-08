@@ -317,6 +317,8 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
         }
 
         const body = c.req.valid("json" as never) as CreateImageRequest;
+        const mediaLink = response.headers.get("Link");
+        if (mediaLink) c.header("Link", mediaLink);
         const usage = responseImageUsage(c, response);
         const mediaData =
             mediaType === "image/svg+xml" || mediaType.startsWith("video/")
@@ -324,7 +326,8 @@ export const formatOpenAIImageResponse = createMiddleware<Env>(
                 : {};
 
         if (body.response_format === "url") {
-            const url = response.headers.get("X-Media-URL");
+            // Media emits one enclosure link for the stored file.
+            const url = mediaLink?.match(/^<([^>]+)>; rel="enclosure"$/)?.[1];
             if (!url) throw new Error("Generated media was not stored");
             await response.body?.pipeTo(new WritableStream());
             c.res = withSafetyHeaders(

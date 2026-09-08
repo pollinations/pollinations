@@ -59,8 +59,8 @@ describe("GenerationCoordinator", () => {
             ),
         ).toEqual({ status: "cached" });
         const response = await env.MEDIA.get(key);
-        expect(response?.headers.get("x-media-url")).toBe(
-            `https://media.pollinations.ai/${key}`,
+        expect(response?.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${key}>; rel="enclosure"`,
         );
         expect(await response?.text()).toBe("generated-image");
     });

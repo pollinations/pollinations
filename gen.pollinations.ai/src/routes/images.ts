@@ -25,7 +25,6 @@ import {
 } from "@shared/schemas/safety.ts";
 import type { Context } from "hono";
 import { createMiddleware } from "hono/factory";
-import type { ContentfulStatusCode } from "hono/utils/http-status";
 import type { Env } from "@/env.ts";
 import { generateImageOrVideoResponse } from "@/image/handler.ts";
 import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
@@ -148,20 +147,20 @@ async function parseEditInput(c: Context): Promise<{
         try {
             formData = c.get("formData") || (await c.req.formData());
         } catch {
-            throw new UpstreamError(400 as ContentfulStatusCode, {
+            throw new UpstreamError(400, {
                 message: "Invalid multipart form data",
             });
         }
         const prompt = formData.get("prompt") as string;
         if (!prompt)
-            throw new UpstreamError(400 as ContentfulStatusCode, {
+            throw new UpstreamError(400, {
                 message: "Missing required field: prompt",
             });
 
         const imageUrls: string[] = [];
         for (const entry of [
-            ...(formData.getAll("image") as (File | string)[]),
-            ...(formData.getAll("image[]") as (File | string)[]),
+            ...formData.getAll("image"),
+            ...formData.getAll("image[]"),
         ]) {
             if (typeof entry === "string") {
                 imageUrls.push(entry);
@@ -173,7 +172,7 @@ async function parseEditInput(c: Context): Promise<{
             }
         }
         if (!imageUrls.length)
-            throw new UpstreamError(400 as ContentfulStatusCode, {
+            throw new UpstreamError(400, {
                 message: "Missing required field: image",
             });
 
@@ -182,7 +181,7 @@ async function parseEditInput(c: Context): Promise<{
                 formData.get("response_format") ?? undefined,
             );
         if (!format.success)
-            throw new UpstreamError(400 as ContentfulStatusCode, {
+            throw new UpstreamError(400, {
                 message: 'response_format must be "url" or "b64_json"',
             });
 
@@ -194,9 +193,6 @@ async function parseEditInput(c: Context): Promise<{
             safe: formData.get("safe") as string | null,
             response_format: format.data,
             extra: {
-                ...(formData.has("safe")
-                    ? { safe: formData.get("safe") as string }
-                    : {}),
                 ...(formData.has("resolution")
                     ? { resolution: formData.get("resolution") as string }
                     : {}),
@@ -209,7 +205,7 @@ async function parseEditInput(c: Context): Promise<{
         Record<string, unknown>;
     const parsed = CreateImageEditRequestSchema.safeParse(body);
     if (!parsed.success)
-        throw new UpstreamError(400 as ContentfulStatusCode, {
+        throw new UpstreamError(400, {
             message: parsed.error.issues.map((i) => i.message).join(", "),
         });
 
@@ -218,24 +214,19 @@ async function parseEditInput(c: Context): Promise<{
             ? [parsed.data.image]
             : parsed.data.image.map((i) => i.image_url);
     if (!imageUrls.length)
-        throw new UpstreamError(400 as ContentfulStatusCode, {
+        throw new UpstreamError(400, {
             message: "Missing required field: image",
         });
 
-    const extra = collectPassthrough(body, "seed", "resolution");
-    const { seed, ...passthrough } = extra as { seed?: number } & Record<
-        string,
-        unknown
-    >;
     return {
         prompt: parsed.data.prompt,
         imageUrls,
         size: parsed.data.size,
         quality: parsed.data.quality,
-        seed,
+        seed: body.seed as number | undefined,
         safe: body.safe as SafeValue,
         response_format: parsed.data.response_format,
-        extra: passthrough,
+        extra: collectPassthrough(body, "resolution"),
     };
 }
 

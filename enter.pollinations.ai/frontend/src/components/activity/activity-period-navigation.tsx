@@ -52,7 +52,7 @@ export const ActivityPeriodNavigation: FC<{
                 <Button
                     type="button"
                     size="lg"
-                    className="h-12! w-12 shrink-0 p-0!"
+                    className="polli:h-12 polli:w-12 shrink-0 polli:p-0"
                     aria-label={`Previous ${value.granularity}`}
                     disabled={!isActivitySelectable(previous, now)}
                     onClick={() => onChange(previous)}
@@ -92,7 +92,7 @@ export const ActivityPeriodNavigation: FC<{
                                                     ),
                                                 )
                                             }
-                                            className="min-h-12 w-full px-3!"
+                                            className="min-h-12 w-full polli:px-3"
                                         >
                                             {granularity === "day"
                                                 ? "Days"
@@ -113,7 +113,7 @@ export const ActivityPeriodNavigation: FC<{
                             type="button"
                             size="lg"
                             aria-label={`Choose ${label.toLowerCase()} ${value.granularity}`}
-                            className="w-24 whitespace-nowrap px-0! text-center tabular-nums sm:w-40"
+                            className="w-24 whitespace-nowrap polli:px-0 text-center tabular-nums sm:w-40"
                         >
                             <span aria-live="polite">
                                 <span className="sm:hidden">
@@ -129,7 +129,7 @@ export const ActivityPeriodNavigation: FC<{
                 <Button
                     type="button"
                     size="lg"
-                    className="h-12! w-12 shrink-0 p-0!"
+                    className="polli:h-12 polli:w-12 shrink-0 polli:p-0"
                     aria-label={`Next ${value.granularity}`}
                     disabled={!isActivitySelectable(next, now)}
                     onClick={() => onChange(next)}

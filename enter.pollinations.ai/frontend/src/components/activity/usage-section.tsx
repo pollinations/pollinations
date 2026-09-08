@@ -20,13 +20,13 @@ import {
 import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
 import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
-import type { FilterState, Metric, UsagePeriodSelection } from "./types";
+import type { FilterState, Metric } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
 type UsageSectionProps = {
-    period: UsagePeriodSelection;
+    period: ActivityPeriod;
     onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
     selectedKeyIds: string[];
@@ -64,9 +64,6 @@ export const UsageSection: FC<UsageSectionProps> = ({
         stats,
         exportRows,
     } = useUsageData(filters);
-
-    const effectiveKeyIds = selectedKeyIds;
-    const effectiveModels = selectedModels;
 
     const keySelectOptions = usedApiKeys.map((k) => ({
         value: k.id,
@@ -114,11 +111,11 @@ export const UsageSection: FC<UsageSectionProps> = ({
             period: period.period,
             limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
         });
-        if (effectiveKeyIds.length > 0) {
-            params.set("api_key_ids", effectiveKeyIds.join(","));
+        if (selectedKeyIds.length > 0) {
+            params.set("api_key_ids", selectedKeyIds.join(","));
         }
-        if (effectiveModels.length > 0) {
-            params.set("models", effectiveModels.join(","));
+        if (selectedModels.length > 0) {
+            params.set("models", selectedModels.join(","));
         }
 
         downloadFile(`/api/account/usage?${params.toString()}`);
@@ -203,8 +200,6 @@ const UsageChartView: FC<UsageChartViewProps> = ({
     period,
     onPeriodChange,
 }) => {
-    const hasUsage = hasData;
-
     return (
         <>
             <div className="min-h-[180px]">
@@ -231,7 +226,7 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                         </div>
                     </div>
                 )}
-                {!loading && !error && hasUsage && (
+                {!loading && !error && hasData && (
                     <Chart
                         key={`${period.granularity}:${period.period}`}
                         period={period}
@@ -245,10 +240,10 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                         metric={metric}
                     />
                 )}
-                {!loading && !error && !hasUsage && <UsageEmptyState />}
+                {!loading && !error && !hasData && <UsageEmptyState />}
             </div>
 
-            {!loading && !error && hasUsage && (
+            {!loading && !error && hasData && (
                 <ModelBreakdownTable stats={stats} metric={metric} />
             )}
         </>
@@ -293,7 +288,7 @@ const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
                         </TableHeaderCell>
                     </TableRow>
                 </TableHead>
-                <TableBody className="[&>tr]:border-divider!">
+                <TableBody divider="neutral">
                     {stats.modelBreakdowns.map((model) => (
                         <TableRow key={model.model}>
                             <TableCell className="max-w-64 break-words text-xs">

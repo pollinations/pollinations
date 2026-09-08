@@ -286,161 +286,138 @@ export const Chart: FC<ChartProps> = ({
                 )}
 
                 {/* Bars - stacked wallet split: Quest at bottom, paid on top */}
-                {bars.map((bar, index) => (
-                    <g key={bar.label}>
-                        {/* Quest segment (bottom) */}
-                        {bar.tierHeight > 0 && (
-                            <rect
-                                x={bar.x}
-                                y={
-                                    bar.tierY -
-                                    (bar.tierHeight * animationProgress -
-                                        bar.tierHeight)
-                                }
-                                width={bar.width}
-                                height={Math.max(
-                                    0,
-                                    bar.tierHeight * animationProgress,
-                                )}
-                                rx={bar.paidHeight > 0 ? 0 : 2}
-                                style={{
-                                    fill:
-                                        period.bucket &&
-                                        period.bucket !==
-                                            activityBucketKey(
-                                                bar.timestamp,
-                                                period,
-                                            )
+                {bars.map((bar, index) => {
+                    const selected =
+                        period.bucket ===
+                        activityBucketKey(bar.timestamp, period);
+                    const dimmed = Boolean(period.bucket) && !selected;
+                    return (
+                        <g key={bar.label}>
+                            {/* Quest segment (bottom) */}
+                            {bar.tierHeight > 0 && (
+                                <rect
+                                    x={bar.x}
+                                    y={
+                                        bar.tierY -
+                                        (bar.tierHeight * animationProgress -
+                                            bar.tierHeight)
+                                    }
+                                    width={bar.width}
+                                    height={Math.max(
+                                        0,
+                                        bar.tierHeight * animationProgress,
+                                    )}
+                                    rx={bar.paidHeight > 0 ? 0 : 2}
+                                    style={{
+                                        fill: dimmed
                                             ? "var(--polli-color-text-muted)"
                                             : TIER_BALANCE_CHART_COLOR,
-                                    opacity:
-                                        period.bucket &&
-                                        period.bucket !==
-                                            activityBucketKey(
-                                                bar.timestamp,
-                                                period,
-                                            )
-                                            ? 0.3
-                                            : 1,
-                                    transition: "opacity 0.15s ease-out",
-                                }}
-                            />
-                        )}
-                        {/* Paid segment (top) */}
-                        {bar.paidHeight > 0 && (
-                            <rect
-                                x={bar.x}
-                                y={
-                                    bar.paidY -
-                                    (bar.height * animationProgress -
-                                        bar.height)
-                                }
-                                width={bar.width}
-                                height={Math.max(
-                                    0,
-                                    bar.paidHeight * animationProgress,
-                                )}
-                                rx={2}
-                                style={{
-                                    fill:
-                                        period.bucket &&
-                                        period.bucket !==
-                                            activityBucketKey(
-                                                bar.timestamp,
-                                                period,
-                                            )
+                                        opacity: dimmed ? 0.3 : 1,
+                                        transition: "opacity 0.15s ease-out",
+                                    }}
+                                />
+                            )}
+                            {/* Paid segment (top) */}
+                            {bar.paidHeight > 0 && (
+                                <rect
+                                    x={bar.x}
+                                    y={
+                                        bar.paidY -
+                                        (bar.height * animationProgress -
+                                            bar.height)
+                                    }
+                                    width={bar.width}
+                                    height={Math.max(
+                                        0,
+                                        bar.paidHeight * animationProgress,
+                                    )}
+                                    rx={2}
+                                    style={{
+                                        fill: dimmed
                                             ? "var(--polli-color-text-muted)"
                                             : PAID_BALANCE_CHART_COLOR,
-                                    opacity:
-                                        period.bucket &&
-                                        period.bucket !==
-                                            activityBucketKey(
-                                                bar.timestamp,
-                                                period,
-                                            )
-                                            ? 0.3
-                                            : 1,
-                                    transition: "opacity 0.15s ease-out",
+                                        opacity: dimmed ? 0.3 : 1,
+                                        transition: "opacity 0.15s ease-out",
+                                    }}
+                                />
+                            )}
+                            {/* Full-height targets let touch and keyboard users select small or empty buckets. */}
+                            {/* biome-ignore lint/a11y/useSemanticElements: SVG rect provides the chart bar hit target; supports button keyboard interactions. */}
+                            <rect
+                                x={bar.x - (cw / bars.length - bar.width) / 2}
+                                y={pad.top}
+                                width={cw / bars.length}
+                                height={ch}
+                                fill="transparent"
+                                role="button"
+                                aria-pressed={selected}
+                                ref={(node) => {
+                                    barRefs.current[index] = node;
+                                }}
+                                tabIndex={index === activeIndex ? 0 : -1}
+                                onFocus={() => setFocusedIndex(index)}
+                                aria-disabled={!canSelect(bar)}
+                                aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)} ${metric}. ${selected ? "Show full period" : "Filter table"}`}
+                                className="outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-theme-text-muted"
+                                style={{
+                                    cursor: canSelect(bar)
+                                        ? "pointer"
+                                        : "default",
+                                }}
+                                onClick={(event) => {
+                                    if (!canSelect(bar)) return;
+                                    event.currentTarget.focus({
+                                        preventScroll: true,
+                                    });
+                                    onSelect(bar);
+                                }}
+                                onKeyDown={(event) => {
+                                    const position =
+                                        selectableIndices.indexOf(index);
+                                    let nextPosition: number;
+                                    switch (event.key) {
+                                        case "ArrowLeft":
+                                        case "ArrowUp":
+                                            nextPosition = Math.max(
+                                                0,
+                                                position - 1,
+                                            );
+                                            break;
+                                        case "ArrowRight":
+                                        case "ArrowDown":
+                                            nextPosition = Math.min(
+                                                selectableIndices.length - 1,
+                                                position + 1,
+                                            );
+                                            break;
+                                        case "Home":
+                                            nextPosition = 0;
+                                            break;
+                                        case "End":
+                                            nextPosition =
+                                                selectableIndices.length - 1;
+                                            break;
+                                        default:
+                                            nextPosition = -1;
+                                    }
+                                    if (nextPosition >= 0) {
+                                        event.preventDefault();
+                                        barRefs.current[
+                                            selectableIndices[nextPosition]
+                                        ]?.focus({ preventScroll: true });
+                                    }
+                                    if (
+                                        event.key === "Enter" ||
+                                        event.key === " "
+                                    ) {
+                                        event.preventDefault();
+                                        if (canSelect(bar)) onSelect(bar);
+                                    }
                                 }}
                             />
-                        )}
-                        {/* Full-height targets let touch and keyboard users select small or empty buckets. */}
-                        {/* biome-ignore lint/a11y/useSemanticElements: SVG rect provides the chart bar hit target; supports button keyboard interactions. */}
-                        <rect
-                            x={bar.x - (cw / bars.length - bar.width) / 2}
-                            y={pad.top}
-                            width={cw / bars.length}
-                            height={ch}
-                            fill="transparent"
-                            role="button"
-                            aria-pressed={
-                                period.bucket ===
-                                activityBucketKey(bar.timestamp, period)
-                            }
-                            ref={(node) => {
-                                barRefs.current[index] = node;
-                            }}
-                            tabIndex={index === activeIndex ? 0 : -1}
-                            onFocus={() => setFocusedIndex(index)}
-                            aria-disabled={!canSelect(bar)}
-                            aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)} ${metric}. ${period.bucket === activityBucketKey(bar.timestamp, period) ? "Show full period" : "Filter table"}`}
-                            className="outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-theme-text-muted"
-                            style={{
-                                cursor: canSelect(bar) ? "pointer" : "default",
-                            }}
-                            onClick={(event) => {
-                                if (!canSelect(bar)) return;
-                                event.currentTarget.focus({
-                                    preventScroll: true,
-                                });
-                                onSelect(bar);
-                            }}
-                            onKeyDown={(event) => {
-                                const position =
-                                    selectableIndices.indexOf(index);
-                                let nextPosition: number;
-                                switch (event.key) {
-                                    case "ArrowLeft":
-                                    case "ArrowUp":
-                                        nextPosition = Math.max(
-                                            0,
-                                            position - 1,
-                                        );
-                                        break;
-                                    case "ArrowRight":
-                                    case "ArrowDown":
-                                        nextPosition = Math.min(
-                                            selectableIndices.length - 1,
-                                            position + 1,
-                                        );
-                                        break;
-                                    case "Home":
-                                        nextPosition = 0;
-                                        break;
-                                    case "End":
-                                        nextPosition =
-                                            selectableIndices.length - 1;
-                                        break;
-                                    default:
-                                        nextPosition = -1;
-                                }
-                                if (nextPosition >= 0) {
-                                    event.preventDefault();
-                                    barRefs.current[
-                                        selectableIndices[nextPosition]
-                                    ]?.focus({ preventScroll: true });
-                                }
-                                if (
-                                    event.key === "Enter" ||
-                                    event.key === " "
-                                ) {
-                                    event.preventDefault();
-                                    if (canSelect(bar)) onSelect(bar);
-                                }
-                            }}
-                        />
-                    </g>
-                ))}
+                        </g>
+                    );
+                })}
             </svg>
         </div>
     );

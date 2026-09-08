@@ -20,11 +20,11 @@ import {
 import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
 import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
-import type { Metric, UsagePeriodSelection } from "./types";
+import type { Metric } from "./types";
 import { useEarningsData } from "./use-earnings-data";
 
 type EarningsGraphProps = {
-    period: UsagePeriodSelection;
+    period: ActivityPeriod;
     onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
     selectedAppKeyIds: string[];
@@ -80,7 +80,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     }));
 
     const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
-    const hasEarnings = hasData;
     const downloadDisabled =
         loading || (stats.totalRequests === 0 && stats.totalPollen === 0);
     const downloadDisabledReason = loading
@@ -178,7 +177,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                 )}
                 {!loading &&
                     !error &&
-                    (hasEarnings ? (
+                    (hasData ? (
                         <Chart
                             key={`${period.granularity}:${period.period}`}
                             period={period}
@@ -199,7 +198,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                     ))}
             </div>
 
-            {!loading && !error && hasEarnings && (
+            {!loading && !error && hasData && (
                 <div className="min-w-0 max-w-full overflow-x-auto">
                     <Table
                         aria-label="Earnings by source"
@@ -223,7 +222,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                                 </TableHeaderCell>
                             </TableRow>
                         </TableHead>
-                        <TableBody className="[&>tr]:border-divider!">
+                        <TableBody divider="neutral">
                             {stats.entityBreakdowns.map((entity) => (
                                 <TableRow key={entity.id}>
                                     <TableCell className="max-w-64 break-words text-xs">

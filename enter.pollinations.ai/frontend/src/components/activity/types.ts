@@ -10,14 +10,10 @@ export type DailyUsageRecord = {
     cost_usd: number;
 };
 
-export type { PeriodGranularity } from "@pollinations/ui";
-
-export type UsagePeriodSelection = ActivityPeriod;
-
 export type Metric = "requests" | "pollen";
 
 export type FilterState = {
-    period: UsagePeriodSelection;
+    period: ActivityPeriod;
     metric: Metric;
     selectedKeyIds: string[];
     selectedModels: string[];

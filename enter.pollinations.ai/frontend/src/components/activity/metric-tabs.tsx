@@ -24,7 +24,7 @@ export const MetricTabs: FC<{
                     active={value === metric}
                     onClick={() => onChange(metric)}
                     size="sm"
-                    className="min-h-8 flex-1 text-xs!"
+                    className="min-h-8 flex-1 polli:text-xs"
                 >
                     {METRIC_LABELS[metric]}
                 </TabButton>

@@ -2,8 +2,8 @@ import { getPeriodBucketKeys, periodBucketKeyToDate } from "@pollinations/ui";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { apiClient } from "../../api.ts";
 import { formatActivityChartDate } from "./activity-helpers";
-import { isInActivityBucket } from "./activity-period";
-import type { DataPoint, Metric, UsagePeriodSelection } from "./types";
+import { type ActivityPeriod, isInActivityBucket } from "./activity-period";
+import type { DataPoint, Metric } from "./types";
 
 export type EarningsSource = "byop_markup" | "community_model";
 
@@ -24,7 +24,7 @@ export type DeveloperEarningsRow = {
 };
 
 export type EarningsFilterState = {
-    period: UsagePeriodSelection;
+    period: ActivityPeriod;
     metric: Metric;
     selectedAppKeyIds: string[];
     selectedModelIds: string[];
@@ -83,7 +83,6 @@ export function useEarningsData(
     const [dailyEarnings, setDailyEarnings] = useState<DeveloperEarningsRow[]>(
         [],
     );
-    const [perEntity, setPerEntity] = useState<DeveloperEarningsRow[]>([]);
     const [loading, setLoading] = useState(true);
     const request = useRef<AbortController | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -97,7 +96,6 @@ export function useEarningsData(
         setLoading(true);
         setError(null);
         setDailyEarnings([]);
-        setPerEntity([]);
 
         const query = { granularity, period };
 
@@ -110,20 +108,17 @@ export function useEarningsData(
                     );
                 return r.json() as Promise<{
                     daily: DeveloperEarningsRow[];
-                    perEntity: DeveloperEarningsRow[];
                 }>;
             })
             .then((data) => {
                 if (controller.signal.aborted) return;
                 setDailyEarnings(data.daily);
-                setPerEntity(data.perEntity);
             })
             .catch((err) => {
                 if (controller.signal.aborted) return;
                 console.error("Earnings fetch error:", err);
                 setError(err.message || "Failed to load earnings data");
                 setDailyEarnings([]);
-                setPerEntity([]);
             })
             .finally(() => {
                 if (!controller.signal.aborted) setLoading(false);
@@ -137,7 +132,7 @@ export function useEarningsData(
 
     const usedApps = useMemo(() => {
         const appLabels = new Map<string, string>();
-        for (const row of perEntity) {
+        for (const row of dailyEarnings) {
             if (row.source !== "byop_markup" || !row.entity_id) continue;
             if (appLabels.has(row.entity_id)) continue;
             appLabels.set(row.entity_id, row.entity_name);
@@ -146,11 +141,11 @@ export function useEarningsData(
         return Array.from(appLabels.entries())
             .map(([id, label]) => ({ id, label }))
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [perEntity]);
+    }, [dailyEarnings]);
 
     const usedModels = useMemo(() => {
         const modelLabels = new Map<string, string>();
-        for (const row of perEntity) {
+        for (const row of dailyEarnings) {
             if (row.source !== "community_model" || !row.entity_id) continue;
             if (modelLabels.has(row.entity_id)) continue;
             modelLabels.set(row.entity_id, row.entity_name);
@@ -159,7 +154,7 @@ export function useEarningsData(
         return Array.from(modelLabels.entries())
             .map(([id, label]) => ({ id, label }))
             .sort((a, b) => a.label.localeCompare(b.label));
-    }, [perEntity]);
+    }, [dailyEarnings]);
 
     const filteredDailyEarnings = useMemo(
         () =>

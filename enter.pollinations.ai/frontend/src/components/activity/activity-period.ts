@@ -91,10 +91,7 @@ export function parseActivityPeriod(
 }
 
 // The anchor keeps the preferred day even while viewing a shorter month.
-export function rememberedActivityDate(
-    value: ActivityPeriod,
-    now = new Date(),
-): Date {
+function rememberedActivityDate(value: ActivityPeriod, now = new Date()): Date {
     const start = activityDate(value);
     const anchor = new Date(
         `${value.bucket?.slice(0, 10) ?? value.anchor ?? start.toISOString().slice(0, 10)}T00:00:00Z`,

@@ -34,7 +34,7 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
         </span>
         <div
             data-theme={selected.length ? undefined : "neutral"}
-            className="min-w-0 [&_button]:w-full [&_button]:min-w-0!"
+            className="min-w-0"
         >
             {options.length === 0 && selected.length === 0 ? (
                 <span className="inline-flex min-h-8 items-center text-xs text-theme-text-muted">
@@ -42,6 +42,7 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
                 </span>
             ) : (
                 <MultiSelect
+                    fullWidth
                     options={[
                         ...options,
                         ...selected

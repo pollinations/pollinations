@@ -719,6 +719,32 @@ describe("media.pollinations.ai", () => {
         ]);
     });
 
+    it("documents the stored-file Link header for GET and HEAD", async () => {
+        const response = await SELF.fetch(
+            "https://media.pollinations.ai/openapi.json",
+        );
+        const schema = await response.json();
+        for (const method of ["get", "head"]) {
+            expect(schema).toHaveProperty(
+                [
+                    "paths",
+                    "/{id}",
+                    method,
+                    "responses",
+                    "200",
+                    "headers",
+                    "Link",
+                ],
+                expect.objectContaining({
+                    schema: { type: "string" },
+                    example: expect.stringMatching(
+                        /^<https:\/\/media\.pollinations\.ai\/[^>]+>; rel="enclosure"$/,
+                    ),
+                }),
+            );
+        }
+    });
+
     it("validates the documented JSON upload shape", async () => {
         for (const body of [null, { data: "AAAA", tags: [42] }]) {
             const res = await SELF.fetch(

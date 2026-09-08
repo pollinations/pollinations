@@ -14,7 +14,7 @@ on:
         required: false
         type: string
       mode:
-        description: 'Choose a generator; daily-generation-only restores news files without staging posts to Buffer'
+        description: 'Choose a generator; generation-only modes restore news files without staging posts to Buffer'
         required: false
         type: choice
         options:
@@ -22,6 +22,7 @@ on:
           - daily
           - daily-generation-only
           - weekly
+          - weekly-generation-only
           - monthly
 
 jobs:
@@ -81,7 +82,7 @@ jobs:
             RUN_DAILY_BUFFER=true
           elif [ "$MODE" = "daily-generation-only" ]; then
             RUN_DAILY=true
-          elif [ "$MODE" = "weekly" ]; then
+          elif [ "$MODE" = "weekly" ] || [ "$MODE" = "weekly-generation-only" ]; then
             RUN_WEEKLY=true
           elif [ "$MODE" = "monthly" ]; then
             RUN_MONTHLY=true
@@ -125,7 +126,7 @@ jobs:
         run: python operations/social/scripts/generate_weekly.py
 
       - name: Stage weekly posts to Buffer
-        if: steps.mode.outputs.weekly == 'true'
+        if: steps.mode.outputs.weekly == 'true' && github.event.inputs.mode != 'weekly-generation-only'
         env:
           GITHUB_TOKEN: ${{ steps.pollinations-ai.outputs.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}

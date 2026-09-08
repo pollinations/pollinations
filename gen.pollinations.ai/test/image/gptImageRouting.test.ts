@@ -23,7 +23,7 @@ const EXPECTED_HOSTS = new Set([
 ]);
 
 const params: ImageParams = {
-    model: "gpt-image-2",
+    model: "openai/gpt-image-2",
     width: 1024,
     height: 1024,
     dimensionsExplicit: true,
@@ -61,7 +61,7 @@ afterEach(() => {
     vi.restoreAllMocks();
 });
 
-describe("gpt-image-2 Azure routing", () => {
+describe("openai/gpt-image-2 Azure routing", () => {
     it("round robins across all Azure endpoints", async () => {
         const urls: string[] = [];
         vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
@@ -70,7 +70,7 @@ describe("gpt-image-2 Azure routing", () => {
         });
 
         for (let index = 0; index < EXPECTED_HOSTS.size; index++) {
-            await callGPTImage("test", params, userInfo, "gpt-image-2");
+            await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
         }
 
         expect(new Set(urls.map((url) => new URL(url).host))).toEqual(
@@ -90,7 +90,7 @@ describe("gpt-image-2 Azure routing", () => {
                 );
 
             await expect(
-                callGPTImage("test", params, userInfo, "gpt-image-2"),
+                callGPTImage("test", params, userInfo, "openai/gpt-image-2"),
             ).rejects.toMatchObject({
                 status: remapUpstreamStatus(status),
                 upstreamStatus: status,
@@ -102,9 +102,9 @@ describe("gpt-image-2 Azure routing", () => {
 
 describe("GPT Image OpenAI fallback routing", () => {
     const routes = [
-        ["gptimage-openai", "gpt-image-1-mini"],
-        ["gptimage-large-openai", "gpt-image-1.5"],
-        ["gpt-image-2-openai", "gpt-image-2"],
+        ["openai/gpt-image-1-mini:openai", "gpt-image-1-mini"],
+        ["openai/gpt-image-1.5:openai", "gpt-image-1.5"],
+        ["openai/gpt-image-2:openai", "gpt-image-2"],
     ] as const;
 
     for (const [route, upstreamModel] of routes) {
@@ -138,14 +138,14 @@ describe("GPT Image OpenAI fallback routing", () => {
             return successResponse();
         });
 
-        await callGPTImage("test", params, userInfo, "gpt-image-2");
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
         await callGPTImage(
             "test",
-            { ...params, model: "gpt-image-2-openai" },
+            { ...params, model: "openai/gpt-image-2:openai" },
             userInfo,
-            "gpt-image-2-openai",
+            "openai/gpt-image-2:openai",
         );
-        await callGPTImage("test", params, userInfo, "gpt-image-2");
+        await callGPTImage("test", params, userInfo, "openai/gpt-image-2");
 
         const azureHosts = urls
             .map((url) => new URL(url).host)

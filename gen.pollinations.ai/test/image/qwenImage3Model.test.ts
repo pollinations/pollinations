@@ -9,7 +9,7 @@ const OUTPUT_URL = "https://fal.media/qwen-image-3.png";
 const INPUT_IMAGE = "data:image/png;base64,AQID";
 
 const baseParams: ImageParams = {
-    model: "qwen-image-3",
+    model: "qwen/qwen-image-3",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -93,7 +93,7 @@ describe("qwenImage3Model", () => {
         );
         expect(result.buffer).toEqual(Buffer.from([1, 2, 3]));
         expect(result.trackingData).toEqual({
-            actualModel: "qwen-image-3",
+            actualModel: "qwen/qwen-image-3",
             usage: { completionImageTokens: 1 },
         });
     });

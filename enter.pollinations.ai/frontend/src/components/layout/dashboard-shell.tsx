@@ -1,16 +1,15 @@
 import {
     AccountIcon,
+    AccountMenu,
     BookIcon,
     BugIcon,
     CheckIcon,
-    ChevronIcon,
     Chip,
     ClipboardIcon,
     ColorModeToggle,
     CopyButton,
     cn,
     DiscordIcon,
-    Dropdown,
     ExternalLinkIcon,
     GenApiIcon,
     GitHubIcon,
@@ -612,33 +611,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
     links = [],
     className,
 }) => (
-    <Dropdown
-        align="end"
-        className="w-[var(--reference-width)] min-w-0 p-1"
-        trigger={(open) => (
-            <button
-                type="button"
-                data-theme="accent"
-                className={cn(
-                    "flex min-w-0 flex-row items-center gap-2 self-center whitespace-nowrap rounded-full bg-theme-bg-active p-1 pr-3 transition-colors hover:bg-theme-bg-hover",
-                    className,
-                )}
-            >
-                <img
-                    src={avatarUrl}
-                    alt={`${username} avatar`}
-                    className="h-8 shrink-0 rounded-full"
-                />
-                <span className="min-w-0 flex-1 truncate text-left font-medium text-theme-text-strong">
-                    {username}
-                </span>
-                <ChevronIcon
-                    expanded={open}
-                    className="ml-auto h-4 w-4 shrink-0 text-theme-text-strong transition-transform duration-200 ease-out"
-                />
-            </button>
-        )}
-    >
+    <AccountMenu name={username} avatarUrl={avatarUrl} className={className}>
         {(close) => (
             <>
                 {links.map((link) => (
@@ -677,7 +650,7 @@ const AccountMenuButton: FC<AccountMenuButtonProps> = ({
                 </button>
             </>
         )}
-    </Dropdown>
+    </AccountMenu>
 );
 
 const AccountMenuLinkRow: FC<AccountMenuLink> = ({

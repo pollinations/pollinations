@@ -108,6 +108,7 @@ export type PollenVendorOverride = {
 
 type ProviderRegistryFile = {
     version: number;
+    canonicalModelRenames: Record<string, string>;
     pollenVendorOverrides: PollenVendorOverride[];
     // Pollen model ids that no longer exist in the shared registry but still
     // identify historical costs. Removing a model from the product does not
@@ -122,6 +123,9 @@ export type ProviderReconciliationExplanation =
 
 export const PROVIDER_REGISTRY = (registryJson as ProviderRegistryFile)
     .providers;
+// Frozen public-ID promotions from #13076, not today's mutable alias table.
+export const CANONICAL_MODEL_RENAMES: Readonly<Record<string, string>> =
+    registryJson.canonicalModelRenames;
 export const RETIRED_MODELS: readonly string[] = (
     registryJson as ProviderRegistryFile
 ).retiredModels;

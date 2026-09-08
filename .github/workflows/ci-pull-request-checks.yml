@@ -81,6 +81,9 @@ jobs:
           operations/app-management/ingestion/*.test.js
           operations/deployment/*.test.cjs
 
+      - name: Test model catalog and accounting compatibility
+        run: npx vitest run --config apps/model-compatibility.vitest.config.ts
+
       - name: Get changed files that affect the enter frontend build
         id: enter-frontend
         run: |

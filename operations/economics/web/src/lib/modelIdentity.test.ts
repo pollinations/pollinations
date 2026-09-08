@@ -30,12 +30,18 @@ describe("resolveLedgerLabel", () => {
         ).toEqual({ kind: "model", model: "gpt-realtime-2" });
     });
 
-    it("joins a label that is a current registry model id without a table entry", () => {
+    it("preserves a release's former canonical id without a table entry", () => {
         // Identity is not an alias: the id names the same accounting identity
         // on every vendor, whether or not Pollen metered it that month.
         expect(resolveLedgerLabel("ovhcloud", "mistral")).toEqual({
             kind: "model",
             model: "mistral",
+        });
+        expect(
+            resolveLedgerLabel("ovhcloud", "mistralai/mistral-small-4"),
+        ).toEqual({
+            kind: "model",
+            model: "mistralai/mistral-small-4",
         });
     });
 

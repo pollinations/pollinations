@@ -1,5 +1,9 @@
 import { getModels } from "../../../../../shared/registry/registry";
-import { canonicalProvider, resolveProvider } from "./providerRegistry";
+import {
+    CANONICAL_MODEL_RENAMES,
+    canonicalProvider,
+    resolveProvider,
+} from "./providerRegistry";
 
 export type LabelResolution =
     | { kind: "blank" }
@@ -38,9 +42,12 @@ export function isDatedRules(
     );
 }
 
-// Current registry ids only. Aliases are deliberately excluded: today's alias
-// of a model must not rewrite which model a historical cost belonged to.
-const MODEL_IDS = new Set<string>(getModels());
+// Preserve the release's former canonical IDs as accounting identities.
+// Arbitrary live aliases remain excluded: they can change meaning over time.
+const MODEL_IDS = new Set<string>([
+    ...getModels(),
+    ...Object.keys(CANONICAL_MODEL_RENAMES),
+]);
 
 // Resolves a provider ledger label through that provider's reviewed label
 // table, or as itself when it is a registry model id. Pollen model ids are

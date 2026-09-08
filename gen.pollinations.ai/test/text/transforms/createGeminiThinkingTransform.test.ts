@@ -41,7 +41,9 @@ describe("createGeminiThinkingTransform", () => {
 
 describe("Gemini reasoning_effort model wiring", () => {
     it("wires Gemini 2.5 thinking on gemini-fast", async () => {
-        const transform = findModelByName("gemini-fast")?.transform;
+        const transform = findModelByName(
+            "google/gemini-2.5-flash-lite",
+        )?.transform;
         if (!transform) throw new Error("gemini-fast transform missing");
 
         const { options } = await transform([{ role: "user", content: "hi" }], {

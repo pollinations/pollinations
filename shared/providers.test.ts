@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
+import { availableModels } from "../gen.pollinations.ai/src/text/availableModels.ts";
 import registry from "../operations/economics/provider-registry.json";
-import { resolveProviderId } from "./providers";
-import { getModels, getRegistryModelDefinition } from "./registry/registry";
+import { createProviderResolver } from "./providers";
+import {
+    getModels,
+    getRegistryModelDefinition,
+    resolveModelName,
+} from "./registry/registry";
+import { TEXT_SERVICES } from "./registry/text";
+
+const resolveProvider = createProviderResolver(registry.providers);
 
 describe("API provider identities", () => {
     it("keeps vendor IDs and aliases normalized and unambiguous", () => {
@@ -24,7 +32,7 @@ describe("API provider identities", () => {
         ["vastai", "vast.ai"],
         ["openrouter", "openrouter"],
     ])("resolves %s to its reviewed vendor %s", (name, expected) => {
-        expect(resolveProviderId(name)).toBe(expected);
+        expect(resolveProvider(name)?.id).toBe(expected);
     });
 
     it.each([
@@ -33,7 +41,7 @@ describe("API provider identities", () => {
         "open-router",
         "aws-bedrok",
     ])("leaves the unregistered name %s unresolved", (name) =>
-        expect(resolveProviderId(name)).toBeUndefined());
+        expect(resolveProvider(name)?.id).toBeUndefined());
 
     // getModels includes every bundled modality and hidden fallback route.
     // MCP billing and arbitrary community endpoints are outside this contract.
@@ -43,8 +51,73 @@ describe("API provider identities", () => {
         const { provider } = getRegistryModelDefinition(model);
         expect(provider).toBe(provider.trim().toLowerCase());
         expect(
-            resolveProviderId(provider),
+            resolveProvider(provider),
             `${model}: register provider "${provider}" in operations/economics/provider-registry.json`,
         ).toBeDefined();
+    });
+});
+
+// These are routing expectations, not another provider catalog. Compare the
+// actual connection configuration with the vendor attributed by the registry.
+const PROTOCOL_VENDORS: Record<string, string> = {
+    "azure-openai": "azure",
+    bedrock: "aws",
+    "vertex-ai": "google",
+    "perplexity-ai": "perplexity",
+    openrouter: "openrouter",
+};
+const HOST_VENDORS: Record<string, string> = {
+    "api.fireworks.ai": "fireworks",
+    "api.deepinfra.com": "deepinfra",
+    "openrouter.ai": "openrouter",
+    "dashscope-intl.aliyuncs.com": "alibaba",
+    "ai-gateway.vercel.sh": "vercel",
+    "qwen-3-coder-30b-a3b-instruct.endpoints.kepler.ai.cloud.ovh.net":
+        "ovhcloud",
+    "oai.endpoints.kepler.ai.cloud.ovh.net": "ovhcloud",
+};
+
+describe("text API provider attribution", () => {
+    it("configures every registered text route, including hidden fallbacks, exactly once", () => {
+        expect(availableModels.map((model) => model.name).sort()).toEqual(
+            Object.keys(TEXT_SERVICES).sort(),
+        );
+    });
+
+    it.each(
+        availableModels.map((model) => [model.name, model] as const),
+    )("%s attributes cost to its configured API supplier", (name, model) => {
+        const vendor = resolveProvider(
+            getRegistryModelDefinition(resolveModelName(name)).provider,
+        )?.id;
+        expect(vendor).toBeDefined();
+        const config = model.config();
+        const protocol = String(config.provider);
+        const endpoints = [
+            config.directEndpoint,
+            config["custom-host"],
+            config.responsesEndpoint,
+        ].filter((value): value is string => typeof value === "string");
+
+        // "openai" is a wire protocol for several unrelated suppliers.
+        // OpenRouter's nested provider.only selects its own upstream; we
+        // still buy that request from OpenRouter, not that nested provider.
+        if (protocol !== "openai") {
+            expect(PROTOCOL_VENDORS[protocol], protocol).toBeDefined();
+            expect(vendor).toBe(PROTOCOL_VENDORS[protocol]);
+        } else {
+            expect(endpoints.length).toBeGreaterThan(0);
+        }
+        for (const endpoint of endpoints) {
+            const host = new URL(endpoint).hostname;
+            const expectedVendor = host.endsWith(".azure.com")
+                ? "azure"
+                : HOST_VENDORS[host];
+            expect(
+                expectedVendor,
+                `Unreviewed API host: ${host}`,
+            ).toBeDefined();
+            expect(vendor, `${name} connects to ${host}`).toBe(expectedVendor);
+        }
     });
 });

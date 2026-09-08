@@ -12,7 +12,6 @@ export default defineConfig({
     test: {
         include: [
             "shared/providers.test.ts",
-            "gen.pollinations.ai/test/provider-attribution.test.ts",
             "apps/catgpt/ai.test.js",
             "apps/chat/src/**/*.test.{js,jsx}",
             "apps/playground/src/model-selection.test.ts",

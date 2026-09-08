@@ -848,12 +848,7 @@ export async function trackResponse(
         adjustments,
         priceDefinition,
         costVariant,
-        // The selected fallback owns both model and provider attribution. A
-        // stale primary/upstream label must not split those accounting facts.
-        modelUsed:
-            modelCalled !== resolvedModelRequested
-                ? modelCalled
-                : modelUsage.model,
+        modelUsed: modelUsage.model,
         modelProviderUsed,
         usage: modelUsage.usage,
         contentFilterResults,

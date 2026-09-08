@@ -1,4 +1,4 @@
-import { resolveProviderId } from "../../../../../shared/providers";
+import { createProviderResolver } from "../../../../../shared/providers";
 import registryJson from "../../../provider-registry.json";
 import type {
     Data,
@@ -147,17 +147,10 @@ export function pollenVendorOverride(
             month <= override.until,
     )?.to;
 }
-const providerById = new Map(
-    PROVIDER_REGISTRY.map((provider) => [provider.id, provider]),
-);
+export const resolveProvider = createProviderResolver(PROVIDER_REGISTRY);
 
 export function normalizeProviderName(value: string): string {
     return value.trim().toLowerCase();
-}
-
-export function resolveProvider(value: string): ProviderDefinition | undefined {
-    const id = resolveProviderId(value);
-    return id === undefined ? undefined : providerById.get(id);
 }
 
 function cashRuleMatches(

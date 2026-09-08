@@ -1,15 +1,13 @@
-import registry from "../operations/economics/provider-registry.json";
-
-// Economics owns vendor identities. Model-provider validation uses the same
-// explicit aliases without changing the provider tags written to usage events.
-const providerIds = new Map<string, string>();
-for (const provider of registry.providers) {
-    for (const name of [provider.id, ...provider.aliases]) {
-        providerIds.set(name, provider.id);
+/** Resolve explicit vendor IDs and aliases; unknown names stay unresolved. */
+export function createProviderResolver<
+    T extends { id: string; aliases: readonly string[] },
+>(providers: readonly T[]) {
+    const byName = new Map<string, T>();
+    for (const provider of providers) {
+        for (const name of [provider.id, ...provider.aliases]) {
+            byName.set(name, provider);
+        }
     }
-}
-
-/** Unknown names stay unresolved so callers can reject or report mapping gaps. */
-export function resolveProviderId(value: string): string | undefined {
-    return providerIds.get(value.trim().toLowerCase());
+    return (value: string): T | undefined =>
+        byName.get(value.trim().toLowerCase());
 }

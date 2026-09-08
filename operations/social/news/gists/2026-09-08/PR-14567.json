@@ -1,0 +1,34 @@
+{
+  "pr_number": 14567,
+  "title": "fix: repair Polli agent registration",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14567",
+  "merged_at": "2026-09-08T11:08:53Z",
+  "labels": [],
+  "pr_body_excerpt": "- Addresses the [Polli workflow failure](https://github.com/pollinations/pollinations/actions/runs/34139320216): its API requires delegated `ag_` credentials, while its production `proxy` listing sends the saved upstream bearer. Adds a guarded manual SQL repair to convert that exact listing to `endpoint_agent`.\n- Preserves `pollinations-router/polli`, alias `community/pollinations-router/polli`, provider `community`, and `https://polli.pollinations.ai/v1/chat/completions` with upstream model `polli`. No Pollinations GPU; no equivalent fallback identified in the registry, so the existing absence of a gateway fallback is preserved.\n- Changes billing from wrapper rates of 1.40/4.40 Pollen per million input/output tokens to downstream usage only, with wrapper multiplier `1` and `paidOnly: false`. Applying the repair removes the obsolete encrypted upstream bearer from the listing.\n- Keeps production application behind explicit billing/credential-removal approval. Includes backup, rollback, and live verification instructions; preserves hidden state until recovery is verified. Merging this PR does not run the repair.\n- Validation: SQLite conversion, idempotence, timestamp units, rate/hidden-state preservation, and 11 mismatch/pending-state guards passed. Biome skips SQL; whitespace check passed. Existing authentication tests could not start because the installed Workers runtime rejects a compatibility flag. Production remains unchanged.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Polli Gets Her Badge Back",
+    "blurb": "A guarded repair script is ready for Polli’s registration paperwork: the agent listing can be switched to delegated credentials without disturbing its model, aliases, or hidden state. The old upstream bearer gets composted once recovery is approved.",
+    "summary": "Added an idempotent, approval-gated SQL repair that converts the production pollinations-router/polli listing from proxy to endpoint_agent so Polli can use delegated ag_ credentials, sets downstream-only billing with multiplier 1 and paidOnly false, and removes the obsolete encrypted upstream bearer.",
+    "impact": "Once explicitly applied and verified, Polli’s existing https://polli.pollinations.ai/v1/chat/completions endpoint and polli upstream model can register with the credential type its API expects while preserving its community aliases, rates, and hidden state.",
+    "keywords": [
+      "polli",
+      "agent-registration",
+      "delegated-credentials",
+      "sql-repair",
+      "billing",
+      "community-router"
+    ],
+    "visual_concept": "Polli is restoring her agent-registration badge at a cozy community router desk: a guarded repair checklist converts a little proxy sign into an endpoint_agent sign, while an old sealed bearer-token envelope is safely placed in a compost bin. Include a retro terminal showing a small ag_ credential badge, plus flowers and code-vines to represent careful recovery; Polli should wear a tiny mechanic tool belt and look quietly satisfied.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she carefully replaces a \"proxy\" desk badge with an \"endpoint_agent\" badge beside a retro terminal showing \"ag_\"; an old sealed token envelope goes into a flower-lined compost bin, with code-plants sprouting nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-08/PR-14567.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks, a small happy smile, and small rounded light blue translucent wings, wearing a tiny mechanic tool belt as she carefully replaces a \"proxy\" desk badge with an \"endpoint_agent\" badge beside a retro terminal showing \"ag_\"; an old sealed token envelope goes into a flower-lined compost bin, with code-plants sprouting nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-08T11:09:56.231227+00:00"
+}

@@ -8,11 +8,13 @@ import {
     TableHeaderCell,
     TableRow,
 } from "@pollinations/ui";
+import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
 import { downloadActivityCsv } from "./activity-csv";
 import {
     ActivityFilter,
     CsvDownloadButton,
+    clearActivitySelectionOnEscape,
     PollenUsageBadges,
 } from "./activity-helpers";
 import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
@@ -42,6 +44,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     onSelectedAppKeyIdsChange,
     onSelectedModelIdsChange,
 }) => {
+    const { apiKeys } = useLoaderData({ from: "/_dashboard" });
     const {
         loading,
         error,
@@ -63,6 +66,14 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
         value: app.id,
         label: app.label,
     }));
+    for (const id of selectedAppKeyIds) {
+        const key = apiKeys.find((key) => key.id === id);
+        if (key && !appSelectOptions.some((option) => option.value === id))
+            appSelectOptions.push({
+                value: id,
+                label: key.name || "Unnamed app",
+            });
+    }
     const modelSelectOptions = usedModels.map((model) => ({
         value: model.id,
         label: model.label,
@@ -101,7 +112,15 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
     }
 
     return (
-        <div className="@container flex min-w-0 flex-col gap-4">
+        // biome-ignore lint/a11y/noStaticElementInteractions: Handles Escape from keyboard-operable controls within this activity card.
+        <div
+            className="@container flex min-w-0 flex-col gap-4"
+            onKeyDown={(event) =>
+                clearActivitySelectionOnEscape(event, () =>
+                    onPeriodChange({ ...period, bucket: undefined }),
+                )
+            }
+        >
             <ActivityToolbar
                 label="Earnings"
                 period={period}
@@ -118,6 +137,7 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
             >
                 <ActivityFilter
                     label="Apps"
+                    missingLabel="Unavailable app"
                     options={appSelectOptions}
                     selected={selectedAppKeyIds}
                     onChange={onSelectedAppKeyIdsChange}
@@ -163,12 +183,6 @@ export const EarningsGraph: FC<EarningsGraphProps> = ({
                             key={`${period.granularity}:${period.period}`}
                             period={period}
                             label="Earnings"
-                            onClearSelection={() =>
-                                onPeriodChange({
-                                    ...period,
-                                    bucket: undefined,
-                                })
-                            }
                             onSelect={(point) =>
                                 onPeriodChange(
                                     toggleActivityBucket(

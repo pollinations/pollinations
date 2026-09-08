@@ -101,7 +101,7 @@ export function useUsageData(filters: FilterState): UsageDataResult {
         const apiKeyLabels = new Map<string, string>();
         for (const r of dailyUsage) {
             if (apiKeyLabels.has(r.api_key_id)) continue;
-            apiKeyLabels.set(r.api_key_id, r.api_key || r.api_key_id);
+            apiKeyLabels.set(r.api_key_id, r.api_key || "Unnamed key");
         }
 
         return Array.from(apiKeyLabels.entries())

@@ -24,7 +24,6 @@ type ChartProps = {
     label: string;
     period: ActivityPeriod;
     onSelect: (point: DataPoint) => void;
-    onClearSelection: () => void;
 };
 
 function getYAxisPadding({
@@ -43,12 +42,24 @@ export const Chart: FC<ChartProps> = ({
     metric,
     label,
     onSelect,
-    onClearSelection,
     period,
 }) => {
     const now = new Date();
     const canSelect = (point: DataPoint) =>
         point.timestamp >= ACTIVITY_MIN_DATE && point.timestamp <= now;
+    const selectableIndices = data.flatMap((point, index) =>
+        canSelect(point) ? [index] : [],
+    );
+    const [focusedIndex, setFocusedIndex] = useState(() =>
+        data.findIndex(
+            (point) =>
+                activityBucketKey(point.timestamp, period) === period.bucket,
+        ),
+    );
+    const activeIndex = selectableIndices.includes(focusedIndex)
+        ? focusedIndex
+        : (selectableIndices[0] ?? -1);
+    const barRefs = useRef<Array<SVGRectElement | null>>([]);
     const [animationProgress, setAnimationProgress] = useState(0);
     const containerRef = useRef<HTMLDivElement>(null);
     const [width, setWidth] = useState(600);
@@ -211,7 +222,7 @@ export const Chart: FC<ChartProps> = ({
                 viewBox={`0 0 ${width} ${height}`}
                 className="overflow-visible"
                 role="group"
-                aria-label={`${label} chart. Select a bar to filter the table; select it again or press Escape to show the full period.`}
+                aria-label={`${label} chart. Use arrow keys to move between bars and Enter or Space to filter the table. Select again, press Escape within this card, or use Show full period to clear selection.`}
             >
                 {/* Grid lines */}
                 {yTicks.map((t) => (
@@ -275,7 +286,7 @@ export const Chart: FC<ChartProps> = ({
                 )}
 
                 {/* Bars - stacked wallet split: Quest at bottom, paid on top */}
-                {bars.map((bar) => (
+                {bars.map((bar, index) => (
                     <g key={bar.label}>
                         {/* Quest segment (bottom) */}
                         {bar.tierHeight > 0 && (
@@ -366,21 +377,58 @@ export const Chart: FC<ChartProps> = ({
                                 period.bucket ===
                                 activityBucketKey(bar.timestamp, period)
                             }
-                            tabIndex={canSelect(bar) ? 0 : -1}
+                            ref={(node) => {
+                                barRefs.current[index] = node;
+                            }}
+                            tabIndex={index === activeIndex ? 0 : -1}
+                            onFocus={() => setFocusedIndex(index)}
                             aria-disabled={!canSelect(bar)}
                             aria-label={`${bar.fullDate}: ${formatAccessibleValue(bar.value)} ${metric}. ${period.bucket === activityBucketKey(bar.timestamp, period) ? "Show full period" : "Filter table"}`}
                             className="outline-none focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-theme-text-muted"
                             style={{
                                 cursor: canSelect(bar) ? "pointer" : "default",
                             }}
-                            onClick={() => {
-                                if (canSelect(bar)) onSelect(bar);
+                            onClick={(event) => {
+                                if (!canSelect(bar)) return;
+                                event.currentTarget.focus({
+                                    preventScroll: true,
+                                });
+                                onSelect(bar);
                             }}
                             onKeyDown={(event) => {
-                                if (event.key === "Escape") {
+                                const position =
+                                    selectableIndices.indexOf(index);
+                                let nextPosition: number;
+                                switch (event.key) {
+                                    case "ArrowLeft":
+                                    case "ArrowUp":
+                                        nextPosition = Math.max(
+                                            0,
+                                            position - 1,
+                                        );
+                                        break;
+                                    case "ArrowRight":
+                                    case "ArrowDown":
+                                        nextPosition = Math.min(
+                                            selectableIndices.length - 1,
+                                            position + 1,
+                                        );
+                                        break;
+                                    case "Home":
+                                        nextPosition = 0;
+                                        break;
+                                    case "End":
+                                        nextPosition =
+                                            selectableIndices.length - 1;
+                                        break;
+                                    default:
+                                        nextPosition = -1;
+                                }
+                                if (nextPosition >= 0) {
                                     event.preventDefault();
-                                    if (period.bucket) onClearSelection();
-                                    event.currentTarget.blur();
+                                    barRefs.current[
+                                        selectableIndices[nextPosition]
+                                    ]?.focus({ preventScroll: true });
                                 }
                                 if (
                                     event.key === "Enter" ||

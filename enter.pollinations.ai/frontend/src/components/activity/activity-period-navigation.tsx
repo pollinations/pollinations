@@ -63,13 +63,16 @@ export const ActivityPeriodNavigation: FC<{
                     value={value}
                     minDate={ACTIVITY_MIN_DATE}
                     header={
-                        <div className="mb-3 grid w-full grid-cols-3 items-center gap-2 sm:grid-cols-2">
+                        <div
+                            className={`mb-3 grid w-full grid-cols-3 items-center gap-2 ${value.granularity === "week" ? "" : "sm:grid-cols-2"}`}
+                        >
                             {(["day", "week", "month"] as const).map(
                                 (granularity) => (
                                     <div
                                         key={granularity}
                                         className={
-                                            granularity === "week"
+                                            granularity === "week" &&
+                                            value.granularity !== "week"
                                                 ? "sm:hidden"
                                                 : "contents"
                                         }

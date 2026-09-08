@@ -7,7 +7,7 @@ import {
     Tooltip,
 } from "@pollinations/ui";
 import { PaidChip, TierChip } from "@pollinations/ui/wallet";
-import type { FC } from "react";
+import type { FC, KeyboardEvent } from "react";
 import { formatActivityPollen } from "./format-activity-pollen";
 import type { Metric } from "./types";
 
@@ -17,6 +17,7 @@ type ActivityFilterProps = {
     selected: string[];
     onChange: (selected: string[]) => void;
     emptyMessage: string;
+    missingLabel?: string;
 };
 
 export const ActivityFilter: FC<ActivityFilterProps> = ({
@@ -25,6 +26,7 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
     selected,
     onChange,
     emptyMessage,
+    missingLabel,
 }) => (
     <div className="flex min-w-0 flex-col gap-1.5">
         <span className="px-1 text-xs font-medium text-theme-text-muted">
@@ -49,7 +51,10 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
                                         (option) => option.value === id,
                                     ),
                             )
-                            .map((id) => ({ value: id, label: id })),
+                            .map((id) => ({
+                                value: id,
+                                label: missingLabel ?? id,
+                            })),
                     ]}
                     selected={selected}
                     onChange={onChange}
@@ -60,6 +65,23 @@ export const ActivityFilter: FC<ActivityFilterProps> = ({
         </div>
     </div>
 );
+
+export function clearActivitySelectionOnEscape(
+    event: KeyboardEvent<HTMLElement>,
+    clear: () => void,
+): void {
+    // Let an open calendar/filter handle Escape without clearing the chart behind it.
+    if (
+        event.key !== "Escape" ||
+        event.defaultPrevented ||
+        !(event.target instanceof Element) ||
+        event.target.closest('[data-scope="popover"][data-part="content"]')
+    )
+        return;
+    event.preventDefault();
+    clear();
+    if (event.target instanceof SVGElement) event.target.blur();
+}
 
 type CsvDownloadButtonProps = {
     label?: string;

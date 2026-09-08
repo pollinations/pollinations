@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { activityCsv } from "../frontend/src/components/activity/activity-csv";
 import {
     activityDate,
@@ -12,6 +12,25 @@ import {
 } from "../frontend/src/components/activity/activity-period";
 
 describe("activity period and bar selection", () => {
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ["Date"] });
+        vi.setSystemTime(new Date("2026-09-08T12:15:00Z"));
+    });
+    afterEach(() => vi.useRealTimers());
+    it("clamps the remembered day to today and rejects future URL periods", () => {
+        const month = {
+            granularity: "month" as const,
+            period: "2026-09",
+            anchor: "2026-08-31",
+        };
+        expect(switchActivityView(month, "day").period).toBe("2026-09-08");
+        expect(parseActivityPeriod("day", "2026-09-09", undefined).period).toBe(
+            "2026-09-08",
+        );
+        expect(
+            parseActivityPeriod("day", "2026-09-08", "2026-09-08 13").bucket,
+        ).toBeUndefined();
+    });
     it("selects an hour without changing the day and toggles it off", () => {
         const day = { granularity: "day" as const, period: "2026-08-31" };
         const date = new Date("2026-08-31T23:00:00Z");

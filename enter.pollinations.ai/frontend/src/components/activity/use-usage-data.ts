@@ -9,6 +9,13 @@ import type {
     ModelBreakdown,
 } from "./types";
 
+type UsageModelBreakdown = ModelBreakdown & {
+    paidPollen: number;
+    tierPollen: number;
+    paidRequests: number;
+    tierRequests: number;
+};
+
 type UsageDataResult = {
     loading: boolean;
     error: string | null;
@@ -21,13 +28,9 @@ type UsageDataResult = {
         totalPollen: number;
         tierPollen: number;
         paidPollen: number;
-        activeApiKeyCount: number | null;
-        topModel: {
-            id: string;
-            label: string;
-            requests: number;
-            pollen: number;
-        } | null;
+        paidRequests: number;
+        tierRequests: number;
+        modelBreakdowns: UsageModelBreakdown[];
     };
 };
 
@@ -234,44 +237,41 @@ export function useUsageData(filters: FilterState): UsageDataResult {
             );
         const modelTotals = new Map<
             string,
-            { requests: number; pollen: number }
+            {
+                requests: number;
+                pollen: number;
+                paidPollen: number;
+                tierPollen: number;
+                paidRequests: number;
+                tierRequests: number;
+            }
         >();
-        const activeApiKeyIds = new Set<string>();
         for (const r of filtered) {
-            if (r.api_key_id) activeApiKeyIds.add(r.api_key_id);
             if (!r.model) continue;
             const cur = modelTotals.get(r.model) || {
                 requests: 0,
                 pollen: 0,
+                paidPollen: 0,
+                tierPollen: 0,
+                paidRequests: 0,
+                tierRequests: 0,
             };
             cur.requests += r.requests || 0;
             cur.pollen += r.cost_usd || 0;
+            if (r.meter_source === "tier") {
+                cur.tierPollen += r.cost_usd || 0;
+                cur.tierRequests += r.requests || 0;
+            } else {
+                cur.paidPollen += r.cost_usd || 0;
+                cur.paidRequests += r.requests || 0;
+            }
             modelTotals.set(r.model, cur);
         }
-        const topModelEntry = Array.from(modelTotals.entries()).sort(
-            (left, right) => {
-                const leftValue =
-                    filters.metric === "requests"
-                        ? left[1].requests
-                        : left[1].pollen;
-                const rightValue =
-                    filters.metric === "requests"
-                        ? right[1].requests
-                        : right[1].pollen;
-                return rightValue - leftValue;
-            },
-        )[0];
-        const topModel = topModelEntry
-            ? (() => {
-                  const [id, modelStats] = topModelEntry;
-                  return {
-                      id,
-                      label: id,
-                      requests: modelStats.requests,
-                      pollen: modelStats.pollen,
-                  };
-              })()
-            : null;
+        const modelBreakdowns: UsageModelBreakdown[] = Array.from(
+            modelTotals.entries(),
+        )
+            .map(([model, totals]) => ({ model, label: model, ...totals }))
+            .sort((a, b) => b.pollen - a.pollen);
         return {
             chartData: sorted,
             stats: {
@@ -279,9 +279,17 @@ export function useUsageData(filters: FilterState): UsageDataResult {
                 totalPollen,
                 tierPollen,
                 paidPollen,
-                activeApiKeyCount:
-                    activeApiKeyIds.size > 0 ? activeApiKeyIds.size : null,
-                topModel,
+                paidRequests: filtered.reduce(
+                    (sum, row) =>
+                        sum + (row.meter_source !== "tier" ? row.requests : 0),
+                    0,
+                ),
+                tierRequests: filtered.reduce(
+                    (sum, row) =>
+                        sum + (row.meter_source === "tier" ? row.requests : 0),
+                    0,
+                ),
+                modelBreakdowns,
             },
         };
     }, [

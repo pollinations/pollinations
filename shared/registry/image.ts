@@ -1107,7 +1107,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "x-ai/grok-imagine-video": {
         aliases: ["grok-imagine-video", "grok-video-pro"],
-        provider: "openrouter",
+        provider: "fal",
         publisher: "xAI",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),
@@ -1444,7 +1444,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "amazon/nova-canvas-v1": {
         aliases: ["amazon-nova-canvas", "nova-canvas"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Amazon",
         category: "image",
         addedDate: new Date("2026-03-23").getTime(),
@@ -1478,7 +1478,7 @@ const IMAGE_BASE_SERVICES = {
     },
     "amazon/nova-reel-v1": {
         aliases: ["amazon-nova-reel", "nova-reel"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Amazon",
         category: "video",
         addedDate: new Date("2026-03-23").getTime(),

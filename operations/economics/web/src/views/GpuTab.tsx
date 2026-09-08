@@ -129,7 +129,7 @@ function cleanResourceName(
     resourceId: string,
     names: readonly string[],
 ): string {
-    if (vendor === "vast.ai" && resourceId) return `#${resourceId}`;
+    if (vendor === "vast" && resourceId) return `#${resourceId}`;
     const candidate =
         names.find((name) => name.trim() && name.trim() !== resourceId) ??
         resourceId;

@@ -67,6 +67,10 @@ describe("loadAll", () => {
 
         const result = await loadAll();
 
+        for (const rows of [result.vendorLedger, result.opPollen]) {
+            expect(rows?.some((row) => row.vendor === "vast")).toBe(true);
+            expect(rows?.some((row) => row.vendor === "vast.ai")).toBe(false);
+        }
         expect(result.privateConfig).toEqual(PRIVATE_CONFIG_FIXTURE);
         expect(result.userBalances).toEqual(
             FIXTURES.economics_user_balances_api,
@@ -131,7 +135,7 @@ describe("loadAll", () => {
 
 describe("canonicalVendor", () => {
     it("normalizes the Vast Pollen alias", () => {
-        expect(canonicalVendor("vast")).toBe("vast.ai");
+        expect(canonicalVendor("vast.ai")).toBe("vast");
     });
 
     it("joins Bedrock usage to AWS billing", () => {
@@ -141,7 +145,7 @@ describe("canonicalVendor", () => {
 
     it("joins account-specific aliases to their provider", () => {
         expect(canonicalVendor("azure-2")).toBe("azure");
-        expect(canonicalVendor("vastai")).toBe("vast.ai");
+        expect(canonicalVendor("vastai")).toBe("vast");
     });
 
     it("leaves canonical vendors unchanged", () => {
@@ -171,14 +175,17 @@ describe("canonicalPollenRows", () => {
         ...overrides,
     });
 
-    it("aggregates aliases after canonicalization", () => {
+    it.each([
+        ["aws", "bedrock"],
+        ["vast", "vast.ai"],
+    ])("aggregates %s and historical %s usage together", (canonical, historical) => {
         const [row] = canonicalPollenRows([
-            pollen("aws"),
-            pollen("bedrock", { cost_paid: 10, requests_paid: 20 }),
+            pollen(canonical),
+            pollen(historical, { cost_paid: 10, requests_paid: 20 }),
         ]);
 
         expect(row).toMatchObject({
-            vendor: "aws",
+            vendor: canonical,
             cost_paid: 11,
             cost_quests: 4,
             requests_paid: 25,

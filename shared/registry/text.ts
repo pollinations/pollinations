@@ -1104,7 +1104,7 @@ const TEXT_BASE_SERVICES = {
     },
     "anthropic/claude-haiku-4.5": {
         aliases: ["claude-haiku-4.5", "claude-haiku", "claude-fast"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-12-01").getTime(),
@@ -1129,7 +1129,7 @@ const TEXT_BASE_SERVICES = {
     },
     "anthropic/claude-sonnet-4.6": {
         aliases: ["claude-sonnet-4.6", "claude-sonnet", "claude"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-11-05").getTime(),
@@ -1154,7 +1154,7 @@ const TEXT_BASE_SERVICES = {
     },
     "anthropic/claude-sonnet-5": {
         aliases: ["sonnet-5", "claude-sonnet-5"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-06-30").getTime(),
@@ -1179,7 +1179,7 @@ const TEXT_BASE_SERVICES = {
     },
     "anthropic/claude-opus-4.6": {
         aliases: ["claude-opus-4.5", "claude-opus-4.6"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2025-11-10").getTime(),
@@ -1204,7 +1204,7 @@ const TEXT_BASE_SERVICES = {
     },
     "anthropic/claude-opus-4.7": {
         aliases: ["claude-opus-4.7"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-04-22").getTime(),
@@ -1234,7 +1234,7 @@ const TEXT_BASE_SERVICES = {
             "claude-opus",
             "claude-large",
         ],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-05-29").getTime(),
@@ -1259,7 +1259,7 @@ const TEXT_BASE_SERVICES = {
     },
     "anthropic/claude-fable-5": {
         aliases: ["claude-fable-5"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-06-11").getTime(),
@@ -1284,7 +1284,7 @@ const TEXT_BASE_SERVICES = {
     },
     "anthropic/claude-fable-5.1": {
         aliases: [],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Anthropic",
         category: "text",
         addedDate: new Date("2026-09-01").getTime(),
@@ -1740,7 +1740,7 @@ const TEXT_BASE_SERVICES = {
     },
     "amazon/nova-micro-v1": {
         aliases: ["amazon-nova-micro", "nova-micro", "nova-fast"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Amazon",
         category: "text",
         addedDate: new Date("2025-10-07").getTime(),
@@ -1764,7 +1764,7 @@ const TEXT_BASE_SERVICES = {
     },
     "amazon/nova-2-lite-v1": {
         aliases: ["nova-2-lite", "amazon-nova-2-lite", "nova-2", "nova"],
-        provider: "bedrock",
+        provider: "aws",
         publisher: "Amazon",
         category: "text",
         addedDate: new Date("2026-03-23").getTime(),

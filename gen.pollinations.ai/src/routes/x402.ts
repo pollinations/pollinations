@@ -109,6 +109,16 @@ const CHARACTER_BILLED_SPEECH = new Set([
     "kokoro",
 ]);
 
+function isCharacterBilledSpeech(entry: {
+    id: string;
+    aliases: string[];
+}): boolean {
+    return (
+        CHARACTER_BILLED_SPEECH.has(entry.id) ||
+        entry.aliases.some((alias) => CHARACTER_BILLED_SPEECH.has(alias))
+    );
+}
+
 function normalizedUsd(amount: number): number {
     if (!Number.isFinite(amount) || amount < 0)
         throw new Error("Invalid x402 price");
@@ -208,7 +218,7 @@ export async function quoteX402Request(
         } else if (
             entry.eventType === "generate.audio" &&
             definition.outputModalities?.includes("audio") &&
-            CHARACTER_BILLED_SPEECH.has(entry.id)
+            isCharacterBilledSpeech(entry)
         ) {
             const body = CreateSpeechRequestSchema.strict().parse(request.body);
             if (

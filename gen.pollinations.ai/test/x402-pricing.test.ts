@@ -379,7 +379,7 @@ test("anonymous callers get an upto challenge on the existing route", async () =
     expect(accepts[0].maxTimeoutSeconds).toBe(960);
     expect(accepts[0].extra.assetTransferMethod).toBe("permit2");
     expect(extensions["weft.request"].info).toEqual({
-        model: "gpt-oss",
+        model: "openai/gpt-oss-20b",
         max_tokens: 100,
     });
 });
@@ -392,7 +392,7 @@ test("the existing default model gets an upto challenge", async () => {
 
     expect(accepts[0].scheme).toBe("upto");
     expect(extensions["weft.request"].info).toEqual({
-        model: "openai",
+        model: "openai/gpt-5.4-nano",
         max_tokens: 100,
     });
 });

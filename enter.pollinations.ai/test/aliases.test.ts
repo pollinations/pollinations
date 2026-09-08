@@ -82,26 +82,24 @@ test.for(
     expect(resolved).toBe(shouldResolveTo);
 });
 
-test("every public model has one publisher-qualified ID", () => {
+test("every public model has a publisher-qualified canonical ID", () => {
     for (const model of getModels()) {
         const definition = getRegistryModelDefinition(model);
         if (definition.hidden) continue;
 
-        const publisherQualifiedIds = [model, ...definition.aliases].filter(
-            (id) => id.includes("/"),
-        );
-
-        expect(publisherQualifiedIds, model).toHaveLength(1);
+        expect(model, model).toContain("/");
     }
 });
 
-test("gemini-search applies grounding cost on top of shared token rates", () => {
+test("gemini-search resolves to the dedicated search variant", () => {
     const usage = {
         promptTextTokens: 1_000_000,
         completionTextTokens: 1_000_000,
     };
-    const geminiFastCost = calculateCost("gemini-fast", usage);
-    const geminiSearchCost = calculateCost("gemini-search", usage, {
+    const geminiFastCost = calculateCost("google/gemini-2.5-flash-lite", usage);
+    const canonicalSearchModel = resolveModelName("gemini-search");
+    expect(canonicalSearchModel).toBe("google/gemini-2.5-flash-lite:search");
+    const geminiSearchCost = calculateCost(canonicalSearchModel, usage, {
         choices: [
             {
                 groundingMetadata: {
@@ -139,24 +137,23 @@ test("calculatePrice derives the total from cost via priceMultiplier", () => {
     // cost × priceMultiplier. Assert the runtime aggregation honours that for a
     // single-field model, at whatever multiplier the model currently uses.
     const usage = { completionImageTokens: 1 };
-    const { priceMultiplier } = getRegistryModelDefinition("flux");
-    const cost = calculateCost("flux", usage);
-    const price = calculatePrice("flux", usage);
+    const model = "black-forest-labs/flux.1-schnell";
+    const { priceMultiplier } = getRegistryModelDefinition(model);
+    const cost = calculateCost(model, usage);
+    const price = calculatePrice(model, usage);
 
     expect(price.totalPrice).toBeCloseTo(cost.totalCost * priceMultiplier, 8);
 });
 
 test("GPT-5.5 is available without paid-only gating", () => {
-    // GPT-5.5 is the flagship behind the `openai-large` clean slug; `gpt-5.5`
-    // remains a back-compat alias. Resolve before the direct registry lookup.
-    const definition = getRegistryModelDefinition(resolveModelName("gpt-5.5"));
+    const definition = getRegistryModelDefinition("openai/gpt-5.5");
 
     expect(definition.paidOnly).toBeUndefined();
 });
 
 test("Azure models use the approved public-price multipliers", () => {
     const azureMultiplierOverrides = new Map<string, number>([
-        ["gpt-5.6-sol", 1 / 3],
+        ["openai/gpt-5.6-sol", 1 / 3],
     ]);
 
     for (const model of getModels()) {
@@ -171,9 +168,9 @@ test("Azure models use the approved public-price multipliers", () => {
 
 test("GPT-5.6 models remain available without paid-only gating", () => {
     for (const model of [
-        "gpt-5.6-sol",
-        "gpt-5.6-terra",
-        "gpt-5.6-luna",
+        "openai/gpt-5.6-sol",
+        "openai/gpt-5.6-terra",
+        "openai/gpt-5.6-luna",
     ] as const) {
         expect(
             getRegistryModelDefinition(model).paidOnly,
@@ -183,7 +180,7 @@ test("GPT-5.6 models remain available without paid-only gating", () => {
 });
 
 test("Grok 4.6 uses the public Azure route contract", () => {
-    const definition = getRegistryModelDefinition("grok-4.6");
+    const definition = getRegistryModelDefinition("x-ai/grok-4.6");
 
     expect(definition.provider).toBe("azure");
     expect(definition.paidOnly).toBe(false);
@@ -198,7 +195,7 @@ test("Grok 4.6 uses the public Azure route contract", () => {
 });
 
 test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {
-    expect(getCostDefinition("openai-audio-large")).toEqual({
+    expect(getCostDefinition("openai/gpt-audio-1.5")).toEqual({
         promptTextTokens: 2.5 / 1e6,
         completionTextTokens: 10 / 1e6,
         promptAudioTokens: 32 / 1e6,
@@ -207,7 +204,7 @@ test("GPT Audio 1.5 uses the exact Azure Global meter sheet", () => {
 });
 
 test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost", () => {
-    const definition = getRegistryModelDefinition("seedream5-pro");
+    const definition = getRegistryModelDefinition("bytedance/seedream-5.0-pro");
 
     expect(definition.provider).toBe("replicate");
     expect(definition.paidOnly).toBe(true);
@@ -215,7 +212,10 @@ test("Seedream 5 Pro uses Replicate and requires paid balance at provider cost",
 });
 
 test("Amazon Nova media models use the Bedrock registry provider", () => {
-    for (const model of ["nova-canvas", "nova-reel"] as const) {
+    for (const model of [
+        "amazon/nova-canvas-v1",
+        "amazon/nova-reel-v1",
+    ] as const) {
         expect(getRegistryModelDefinition(model).provider).toBe("bedrock");
     }
 });
@@ -228,15 +228,18 @@ test("DeepSeek V4 models are billed at provider cost", () => {
     };
 
     const expectedProviders = {
-        deepseek: "fireworks",
-        "deepseek-pro": "fireworks",
+        "deepseek/deepseek-v4-flash": "fireworks",
+        "deepseek/deepseek-v4-pro": "fireworks",
     } as const;
     const expectedPaidOnly = {
-        deepseek: undefined,
-        "deepseek-pro": undefined,
+        "deepseek/deepseek-v4-flash": undefined,
+        "deepseek/deepseek-v4-pro": undefined,
     } as const;
 
-    for (const model of ["deepseek", "deepseek-pro"] as const) {
+    for (const model of [
+        "deepseek/deepseek-v4-flash",
+        "deepseek/deepseek-v4-pro",
+    ] as const) {
         const definition = getRegistryModelDefinition(model);
         const cost = calculateCost(model, usage);
         const price = calculatePrice(model, usage);

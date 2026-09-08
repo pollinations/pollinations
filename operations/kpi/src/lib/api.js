@@ -1,8 +1,6 @@
-import { dashboard } from "../auth";
-
-// All private reads use Enter’s existing session.
+// Private reads use only this app's session, never Enter's cookie.
 async function getRows(path) {
-    const res = await dashboard.fetch(path);
+    const res = await fetch(`/api${path}`, { credentials: "same-origin" });
     if (!res.ok) return null;
     const body = await res.json();
     return body.data ?? null;
@@ -17,7 +15,7 @@ export const weekly = (pipe, weeks) =>
     getRows(`/kpi/${pipe}?weeks_back=${weeks}`);
 
 export async function github() {
-    const res = await dashboard.fetch("/kpi/github");
+    const res = await fetch("/api/kpi/github", { credentials: "same-origin" });
     if (!res.ok) return { stars: 0, forks: 0 };
     return res.json();
 }

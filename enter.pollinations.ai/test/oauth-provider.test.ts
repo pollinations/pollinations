@@ -6,8 +6,7 @@ import { test } from "./fixtures.ts";
 
 const BASE = "http://localhost:3000";
 const CLIENT_ID = "pk_vVa38CFt1R1gGScW";
-const REDIRECT_URI =
-    "https://observability.pollinations.ai/login/generic_oauth";
+const REDIRECT_URI = "https://observability.pollinations.ai/auth/callback";
 const VERIFIER = "test-verifier-that-is-at-least-forty-three-characters";
 
 function base64Url(bytes: Uint8Array) {
@@ -138,7 +137,11 @@ describe("Better Auth OAuth Provider", () => {
         expect(response.status).toBe(302);
 
         const location = new URL(response.headers.get("Location") || "", BASE);
-        expect(location.pathname).toBe("/sign-in");
+        expect(location.pathname).toBe("/app/sign-in");
+        expect(location.searchParams.get("redirect_uri")).toBe(REDIRECT_URI);
+        expect(location.searchParams.get("code_challenge")).toBe(
+            await challenge(),
+        );
         expect(location.searchParams.get("client_id")).toBe(CLIENT_ID);
         expect(location.searchParams.get("sig")).toBeTruthy();
     });

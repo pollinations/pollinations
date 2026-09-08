@@ -116,9 +116,6 @@ const TabCount: FC<{ value: number }> = ({ value }) => (
     </span>
 );
 
-const MODEL_SLUG_LIST_URL =
-    "https://github.com/pollinations/pollinations/blob/main/MODEL_SLUGS.md";
-
 const SORT_OPTIONS: Array<{
     value: ModelSort;
     label: string;
@@ -151,12 +148,12 @@ const SORT_OPTIONS: Array<{
         accessibleLabel: "Name: Z to A",
     },
     {
-        value: "brand",
+        value: "publisher",
         label: "Publisher: A–Z",
         accessibleLabel: "Publisher: A to Z",
     },
     {
-        value: "brand-desc",
+        value: "publisher-desc",
         label: "Publisher: Z–A",
         accessibleLabel: "Publisher: Z to A",
     },
@@ -679,31 +676,6 @@ export const Models: FC = () => {
                     </div>
                 }
             >
-                <Alert className="mb-4 shadow-well !bg-surface-opaque !text-theme-text-base">
-                    <div className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-theme-text-soft">
-                        Upcoming change
-                    </div>
-                    <div className="mb-1.5 flex items-center gap-2 text-base font-bold text-theme-text-strong">
-                        <BeakerIcon className="h-4 w-4 shrink-0" />
-                        <span>
-                            We're standardizing model IDs on September 7
-                        </span>
-                    </div>
-                    Model IDs will use the publisher and official model name—for
-                    example, <code className="font-semibold">flux</code> →{" "}
-                    <code className="font-semibold">
-                        black-forest-labs/flux.1-schnell
-                    </code>
-                    . You can use the new IDs now. Existing IDs will keep
-                    working.
-                    <a
-                        href={MODEL_SLUG_LIST_URL}
-                        className="mt-2 flex w-fit items-center gap-1.5 font-semibold text-theme-text-soft hover:text-theme-text-strong hover:underline"
-                    >
-                        <GitHubIcon className="h-4 w-4 shrink-0" />
-                        <span>View all model ID changes →</span>
-                    </a>
-                </Alert>
                 <div className="mb-4 flex flex-col items-start gap-3">
                     <div className="flex w-full flex-col gap-2">
                         <div className="flex flex-wrap gap-1.5">

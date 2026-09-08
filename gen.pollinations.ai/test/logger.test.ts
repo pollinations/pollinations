@@ -50,9 +50,9 @@ describe.each([
         "test",
         "staging",
         "production",
-    ])("preserves raw URLs, context and log ordering in %s", async (environment) => {
+    ])("redacts credential query parameters in %s", async (environment) => {
         const publicUrl =
-            "https://gen.pollinations.ai/log?key=test-value&token=test-token&key=second&text=a%20b";
+            "https://gen.pollinations.ai/log?key=%5Bredacted%5D&token=%5Bredacted%5D&text=a+b";
         const app = new Hono<{
             Variables: LoggerVariables & { requestId: string };
         }>();

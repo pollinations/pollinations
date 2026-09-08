@@ -3,7 +3,6 @@ import { createAuth } from "./auth.ts";
 import type { Env } from "./env.ts";
 import { frontendApi } from "./frontend-api.ts";
 import { adminRoutes } from "./routes/admin.ts";
-import { dashboardRoutes } from "./routes/dashboards/index.ts";
 import { questLeaderboardRoutes } from "./routes/quest-leaderboard.ts";
 import { stripeWebhooksRoutes } from "./routes/stripe-webhooks.ts";
 
@@ -32,7 +31,6 @@ const authRoutes = new Hono<Env>()
 
 export const api = new Hono<Env>()
     .route("/auth", authRoutes)
-    .route("/dashboards", dashboardRoutes)
     .route("/quests", questLeaderboardRoutes)
     .route("/", frontendApi)
     .route("/webhooks", stripeWebhooksRoutes)

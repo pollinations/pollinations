@@ -74,8 +74,8 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
     const adminPlugin = admin({ adminUserIds: ADMIN_USER_IDS });
 
     const oauthProviderPlugin = oauthProvider({
-        loginPage: "/sign-in",
-        // Only the trusted Grafana client is registered, so
+        loginPage: "/app/sign-in",
+        // Only trusted internal dashboard clients are registered, so
         // consent is skipped. Explicit consent requests fail closed here.
         consentPage: "/error",
         // Clients are seeded by migrations, not managed through the public API.
@@ -204,7 +204,11 @@ export function createAuth(env: Cloudflare.Env, ctx?: ExecutionContext) {
             "http://127.0.0.1:3000",
             ...(env.ENVIRONMENT === "production"
                 ? []
-                : ["http://127.0.0.1:3456", "http://127.0.0.1:4180"]),
+                : [
+                      "http://localhost:3457",
+                      "http://localhost:4180",
+                      "http://localhost:4000",
+                  ]),
         ],
         user: {
             additionalFields: authAdditionalFields.user,

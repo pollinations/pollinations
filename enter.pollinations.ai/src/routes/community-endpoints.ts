@@ -15,6 +15,7 @@ import {
 } from "@shared/community-endpoints.ts";
 import * as schema from "@shared/db/better-auth.ts";
 import { validator } from "@shared/middleware/validator.ts";
+import { resolveModelName } from "@shared/registry/registry.ts";
 import { encryptSecret } from "@shared/secret-encryption.ts";
 import { and, desc, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/d1";
@@ -156,9 +157,24 @@ async function requireOwnedEndpoint(db: Db, id: string, ownerUserId: string) {
 async function ensureModelNameAvailable(
     db: Db,
     ownerUserId: string,
+    ownerGithubUsername: string,
     name: string,
     currentId?: string,
 ): Promise<void> {
+    const modelId = communityModelId(ownerGithubUsername, name);
+    let bundledModelExists = false;
+    try {
+        resolveModelName(modelId);
+        bundledModelExists = true;
+    } catch {
+        // Unknown IDs remain available within the owner's namespace.
+    }
+    if (bundledModelExists) {
+        throw new HTTPException(400, {
+            message:
+                "Community model ID conflicts with a bundled model or alias",
+        });
+    }
     const existing = await db.query.communityEndpoint.findFirst({
         columns: { id: true },
         where: and(
@@ -455,7 +471,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
             await enforcePublishingAccess(db, user.id, input.visibility);
             const queuesPublication = input.visibility === "public";
             const payload: EndpointAgentListingPayload = {
@@ -520,7 +541,12 @@ export const communityEndpointsRoutes = new Hono<Env>()
                 db,
                 user.id,
             );
-            await ensureModelNameAvailable(db, user.id, input.name);
+            await ensureModelNameAvailable(
+                db,
+                user.id,
+                ownerGithubUsername,
+                input.name,
+            );
             const targetPolicy = deriveCreateProxyPolicy(input);
             const queuesPublication = input.visibility === "public";
             const policy = queuesPublication
@@ -763,6 +789,7 @@ export const communityEndpointsRoutes = new Hono<Env>()
             await ensureModelNameAvailable(
                 db,
                 user.id,
+                ownerGithubUsername,
                 input.name ?? endpoint.name,
                 id,
             );

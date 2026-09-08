@@ -38,7 +38,6 @@ function getCurrentGenOrigin(c: Context<Env>): string {
 }
 
 const app = new Hono<Env>()
-    // Only the two dashboard origins receive credentialed session access.
     .use("*", apiCors)
     .use("*", requestId())
     .use("*", logger)

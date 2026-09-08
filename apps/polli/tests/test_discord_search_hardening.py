@@ -15,6 +15,8 @@ class FakePermissions:
 
 class FakeThread:
     def __init__(self, *, private=True, members=(), permissions=None, guild=None):
+        self.id: int = 0
+        self.name: str = ""
         self.type = "private_thread" if private else "public_thread"
         self.members = list(members)
         self.guild = guild
@@ -94,6 +96,25 @@ class HandlerValidationAndScopeTests(unittest.IsolatedAsyncioTestCase):
             result = await tool_discord_search("thread_history", 5, thread_id=55, _context=context)
         self.assertIn("permission", result["error"])
 
+    async def test_cached_thread_resolves_as_context_channel(self):
+        thread = FakeThread(private=False)
+        thread.id = 55
+        thread.name = "cached"
+        guild = self.guild(threads=[thread])
+        guild.me = object()
+        guild.get_member = lambda _id: object()
+        guild.get_channel = lambda _id: None
+        with patch("src.discord.search.discord.Thread", FakeThread):
+            with patch(
+                "src.discord.search.discord_search_client.get_message_context",
+                AsyncMock(return_value={"success": True}),
+            ) as context:
+                result = await tool_discord_search(
+                    "context", 5, channel_id=55, message_id=10, _context={"discord_guild": guild, "user_id": 1}
+                )
+        self.assertTrue(result["success"])
+        self.assertIs(context.await_args.kwargs["channel"], thread)
+
     async def test_history_requires_read_message_history(self):
         channel = SimpleNamespace(
             id=10, name="private", permissions_for=lambda _member: FakePermissions(read_message_history=False)
@@ -131,6 +152,97 @@ class SearchClientTests(unittest.IsolatedAsyncioTestCase):
             with self.assertRaises(asyncio.CancelledError):
                 await client.search_messages(1, "hello")
         sleep.assert_awaited_once_with(11.0)
+
+
+class ThreadHistoryRegressionTests(unittest.IsolatedAsyncioTestCase):
+    async def test_oldest_first_history_does_not_advertise_an_older_page(self):
+        client = DiscordSearchClient()
+        first = SimpleNamespace(
+            id=10,
+            content="first",
+            author=SimpleNamespace(id=1, name="one"),
+            created_at=SimpleNamespace(isoformat=lambda: "first"),
+            attachments=[],
+            jump_url="first-url",
+        )
+        second = SimpleNamespace(
+            id=20,
+            content="second",
+            author=SimpleNamespace(id=2, name="two"),
+            created_at=SimpleNamespace(isoformat=lambda: "second"),
+            attachments=[],
+            jump_url="second-url",
+        )
+        history_calls = []
+
+        async def history(**kwargs):
+            history_calls.append(kwargs)
+            for message in (first, second):
+                yield message
+
+        thread = SimpleNamespace(
+            id=55,
+            name="thread",
+            parent=SimpleNamespace(name="parent"),
+            owner_id=None,
+            created_at=None,
+            archived=False,
+            locked=False,
+            message_count=999,
+            history=history,
+        )
+        result = await client.get_thread_history(thread, limit=2, before=99, oldest_first=True)
+
+        self.assertTrue(history_calls[0]["oldest_first"])
+        self.assertEqual(history_calls[0]["before"].id, 99)
+        self.assertEqual([message["id"] for message in result["messages"]], ["10", "20"])
+        self.assertIsNone(result["oldest_id"])
+        self.assertEqual(result["reported_message_count"], 999)
+        self.assertEqual(result["retrieved_message_count"], 2)
+        self.assertNotIn("total_messages", result)
+        self.assertIsNone(result["has_more"])
+        self.assertNotIn("before=", result["note"])
+
+    async def test_history_desc_and_asc_use_truthful_pagination(self):
+        client = DiscordSearchClient()
+        messages = [
+            SimpleNamespace(
+                id=message_id,
+                content=str(message_id),
+                author=SimpleNamespace(id=message_id, name=str(message_id)),
+                created_at=SimpleNamespace(isoformat=lambda: "time"),
+                attachments=[],
+                jump_url="url",
+            )
+            for message_id in (30, 20)
+        ]
+        calls = []
+
+        async def history(**kwargs):
+            calls.append(kwargs)
+            for message in messages:
+                yield message
+
+        thread = SimpleNamespace(
+            id=55,
+            name="thread",
+            parent=None,
+            owner_id=None,
+            created_at=None,
+            archived=False,
+            locked=False,
+            message_count=2,
+            history=history,
+        )
+        descending = await client.get_thread_history(thread, limit=2)
+        ascending = await client.get_thread_history(thread, limit=2, oldest_first=True)
+
+        self.assertFalse(calls[0]["oldest_first"])
+        self.assertTrue(calls[1]["oldest_first"])
+        self.assertTrue(descending["has_more"])
+        self.assertIn("before=20", descending["note"])
+        self.assertIsNone(ascending["has_more"])
+        self.assertNotIn("before=", ascending["note"])
 
 
 class RegressionCoverageTests(unittest.IsolatedAsyncioTestCase):
@@ -221,7 +333,10 @@ class RegressionCoverageTests(unittest.IsolatedAsyncioTestCase):
                 channel_id=10,
                 _context={"discord_guild": guild, "discord_bot": bot, "user_id": 1},
             )
-        self.assertIn(10, search.await_args.kwargs["accessible_channel_ids"])
+        call = search.await_args
+        self.assertIsNotNone(call)
+        assert call is not None
+        self.assertIn(10, call.kwargs["accessible_channel_ids"])
 
     async def test_missing_requester_denies_public_thread_and_roles_before_helpers(self):
         thread = FakeThread(private=False)
@@ -249,6 +364,30 @@ class RegressionCoverageTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(role_result["error"], "Unable to verify your Discord membership for this server.")
         history.assert_not_awaited()
         roles.assert_not_awaited()
+
+    async def test_role_name_filters_roles_without_query(self):
+        role = SimpleNamespace(
+            id=9,
+            name="Moderator",
+            color="blue",
+            position=1,
+            mentionable=True,
+            members=[],
+            mention="<@&9>",
+        )
+        guild = SimpleNamespace(
+            id=1,
+            me=object(),
+            channels=[],
+            threads=[],
+            roles=[SimpleNamespace(name="@everyone"), role],
+            default_role=object(),
+            chunked=True,
+            members=[],
+            get_member=lambda _id: object(),
+        )
+        result = await tool_discord_search("roles", 5, role_name="mod", _context={"discord_guild": guild, "user_id": 1})
+        self.assertEqual([item["id"] for item in result["roles"]], ["9"])
 
     async def test_missing_bot_member_fails_closed_before_search(self):
         channel = SimpleNamespace(id=10, name="public", permissions_for=lambda _member: FakePermissions())

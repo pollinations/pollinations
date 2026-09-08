@@ -9,9 +9,10 @@ Grafana OSS dashboard for Pollinations platform observability.
 ## Architecture
 
 ```
-Local:   Browser -> localhost:3000 -> Grafana -> Tinybird
+Local:   Browser -> localhost:4000 -> Pollinations session gateway
+         -> private Grafana at 127.0.0.1:4001
 Prod:    Browser -> observability.pollinations.ai -> Cloudflare Worker
-         -> Grafana container (Enter OAuth login) -> Tinybird
+         -> private Grafana container (Auth Proxy) -> Tinybird
 ```
 
 The Cloudflare Worker attaches both hostnames directly in the Myceli Cloudflare
@@ -24,14 +25,15 @@ ephemeral, so dashboards and alerting must stay provisioned from git.
 ```bash
 cd operations/observability
 
-# 1. Create .env with local secrets
-cp /path/to/shared/.env .env
+# 1. Install and build the shared UI
+npm install
+npm run build --prefix ../../packages/ui
 
-# 2. Start Grafana locally
-docker compose up -d
+# 2. Configure private Grafana and the approved app session secret
+#    as described in the local-preview instructions below.
 
-# 3. Access Grafana
-open http://localhost:3000
+# 3. Start the shared login and Observability app
+npm run dev
 ```
 
 ## Data Sources
@@ -62,27 +64,47 @@ staging read token against the staging workspace.
 
 ## Secrets
 
-Secrets are stored in `.env` locally and as Worker secrets in production.
+The local app signing secret is stored in ignored `.dev.vars`;
+production uses Worker secrets. Legacy Docker Compose reads `.env`.
 The public OAuth client ID is configured in `wrangler.toml`.
 
 | Variable | Purpose |
 | --- | --- |
-| `GF_ADMIN_PASSWORD` | Grafana admin password |
+| `POLLINATIONS_AUTH_SESSION_SECRET` | Signs the independent app session |
+| `GF_ADMIN_PASSWORD` | Grafana bootstrap admin password (interactive login disabled) |
 | `TINYBIRD_READ_TOKEN` | Read token for the `pollinations_enter` Tinybird workspace |
 | `TINYBIRD_LEGACY_READ_TOKEN` | Read token for the legacy `pollinations_ai` workspace |
 | `DISCORD_WEBHOOK_URL` | Discord webhook for alerts |
 
-Grafana's built-in Generic OAuth client signs in through Enter's official Better
-Auth provider. Its callback is
-`https://observability.pollinations.ai/login/generic_oauth`.
-PKCE is required; no client secret or custom Worker session is used. Grafana maps
-Pollinations `admin` to its `Editor` role and rejects other users with strict role
-mapping. Anonymous, Basic Auth and auth-proxy access are disabled.
-Grafana keeps its own session for up to 12 hours; signing out of Enter or removing
-the admin role does not immediately revoke an existing Grafana session.
+Observability uses the same Pollinations OAuth client/session implementation and
+shared sign-in page as KPI and Economics. Its callback is
+`https://observability.pollinations.ai/auth/callback`. The trusted internal
+client requests `openid profile email`, uses PKCE and skips consent. Only
+Pollinations admins receive an app session, valid for 12 hours. Admin status
+is checked at sign-in; role changes take effect after the current session expires.
 
-Deploy Enter's OAuth migration/provider before changing the Grafana deployment.
-Verify real admin/non-admin login and logout on the Pollinations hostname.
+The Worker checks the app session on every `/grafana/*` request, including
+WebSocket handshakes. It removes incoming identity headers, authorization and
+cookies, then sets the verified user ID and fixed Grafana `Editor` role.
+Grafana is a private container behind this Worker, with Auth Proxy enabled and
+`enable_login_token=false`. Basic, anonymous and Generic OAuth login are disabled.
+Grafana stores user preferences, but issues no separate login cookie. The shared
+Pollinations account menu owns sign-out; other apps and Enter stay signed in.
+The dashboard is embedded same-origin under `/grafana/`, with external framing
+blocked. Do not expose the container's port directly to the internet.
+
+The Worker also requires its own `POLLINATIONS_AUTH_SESSION_SECRET`. Provisioning
+it requires separate approval. Deploy Enter's updated callback registration first,
+then the app through GitHub Actions. Verify admin/non-admin access, forged-header
+rejection, iframe/WebSocket loading and independent logout before production.
+
+For the local preview, run Grafana on `127.0.0.1:4001` with
+`root_url=http://localhost:4000/grafana/` and `serve_from_sub_path=true`, using the
+same Auth Proxy settings above. `npm run dev` serves the app at localhost:4000
+using `wrangler.local.jsonc`; the proxy uses the same authentication handler as
+production. Configure the approved signing secret in `.dev.vars` and
+register `http://localhost:4000/auth/callback` in the local Enter database.
+Never enable production data sources or alerts just to test local login.
 
 `CLOUDFLARE_TUNNEL_TOKEN` is only used by the legacy DigitalOcean deployment.
 

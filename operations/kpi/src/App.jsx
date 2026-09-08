@@ -12,8 +12,9 @@ import {
     Surface,
     Text,
 } from "@pollinations/ui";
+import { DashboardSignIn } from "@pollinations/ui/auth";
 import { useState } from "react";
-import { authClient } from "./auth";
+import { signIn, signOut, useDashboardSession } from "./auth";
 import { FunnelBars } from "./components/FunnelBars";
 import { KPITrendTable } from "./components/KPITrendTable";
 import { KpiExplorer } from "./components/KpiExplorer";
@@ -67,17 +68,30 @@ function Tile({ label, value, format, current, previous }) {
 }
 
 function AccountControls({ accountUser }) {
+    const [error, setError] = useState(null);
     return (
         <>
+            {error && <Alert>{error}</Alert>}
             <ColorModeToggle />
             {accountUser && (
                 <AccountMenu
                     name={accountName(accountUser)}
-                    avatarUrl={accountUser.image}
+                    avatarUrl={accountUser.picture}
+                    menuClassName="polli:w-max polli:min-w-0"
                 >
-                    <DropdownItem onClick={() => authClient.signOut()}>
-                        <SignOutIcon aria-hidden="true" />
-                        Sign out of Pollinations
+                    <DropdownItem
+                        onClick={() => {
+                            setError(null);
+                            void signOut().catch((error) =>
+                                setError(error.message),
+                            );
+                        }}
+                    >
+                        <SignOutIcon
+                            aria-hidden="true"
+                            className="h-4 w-4 shrink-0"
+                        />
+                        Sign out
                     </DropdownItem>
                 </AccountMenu>
             )}
@@ -140,7 +154,7 @@ function accountName(user) {
 }
 
 export default function App() {
-    const { data: session, isPending, error } = authClient.useSession();
+    const { user, isPending, error } = useDashboardSession();
     if (isPending)
         return (
             <main>
@@ -153,24 +167,8 @@ export default function App() {
                 <Alert>Could not check your session. Please reload.</Alert>
             </main>
         );
-    if (!session?.user)
-        return (
-            <main className="p-8">
-                <Heading>KPI dashboard</Heading>
-                <Text>Sign in with your Pollinations admin account.</Text>
-                <Button
-                    onClick={() =>
-                        authClient.signIn.social({
-                            provider: "github",
-                            callbackURL: window.location.href,
-                        })
-                    }
-                >
-                    Sign in
-                </Button>
-            </main>
-        );
-    return <Dashboard accountUser={session.user} />;
+    if (!user) return <DashboardSignIn appName="KPI" onSignIn={signIn} />;
+    return <Dashboard accountUser={user} />;
 }
 
 function Dashboard({ accountUser }) {
@@ -270,7 +268,7 @@ function Dashboard({ accountUser }) {
                 <div className="flex flex-wrap items-end justify-between gap-3">
                     <div className="flex flex-col gap-1">
                         <Heading as="h1" size="title">
-                            KPI Dashboard
+                            KPI
                         </Heading>
                         <Text as="p" tone="base">
                             Weekly KPIs for pollinations.ai. Figures are the

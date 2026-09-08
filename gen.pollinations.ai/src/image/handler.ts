@@ -292,7 +292,7 @@ async function generateMediaWithFallback(
     const shouldFallback = (error: unknown, candidate: FallbackCandidate) => {
         if (
             candidate.definition?.provider === "azure" &&
-            candidate.definition.brand === "OpenAI"
+            candidate.definition.publisher === "OpenAI"
         ) {
             return (
                 error instanceof UpstreamError && error.upstreamStatus === 429
@@ -412,7 +412,7 @@ export async function generateImageOrVideoResponse(
             ? await resolveEditDimensionsForImage(parsedParams)
             : parsedParams;
     const pricingDimensions =
-        c.var.model.resolved === "nova-canvas"
+        c.var.model.resolved === "amazon/nova-canvas-v1"
             ? clampNovaCanvasDimensions(safeParams.width, safeParams.height)
             : safeParams;
     c.var.track.setPricingInput({

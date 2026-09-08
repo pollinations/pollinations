@@ -48,6 +48,7 @@ import {
 import {
     CreateChatCompletionRequestSchema,
     CreateChatCompletionResponseSchema,
+    CreateImageEditRequestSchema,
     CreateImageRequestSchema,
     CreateImageResponseSchema,
     CreateResponseRequestSchema,
@@ -103,6 +104,25 @@ import { handleRealtimeWebSocket } from "./realtime.ts";
 const ModelInfoListSchema = z.array(ModelInfoSchema).meta({
     description: "List of models with pricing and metadata",
 });
+
+// Multipart edits are parsed manually; describe only the fields that parser reads.
+const ImageEditUploadSchema = z.union([
+    z.file(),
+    z.string(),
+    z.array(z.union([z.file(), z.string()])).min(1),
+]);
+const ImageEditMultipartSchema = z
+    .intersection(
+        CreateImageEditRequestSchema.omit({ image: true, n: true }),
+        z.union([
+            z.object({ image: ImageEditUploadSchema }).passthrough(),
+            z.object({ "image[]": ImageEditUploadSchema }).passthrough(),
+        ]),
+    )
+    .meta({
+        description:
+            "Provide source files or URLs using image or image[]. Repeat either field for multiple images.",
+    });
 
 // Build dynamic model lists from registry for use in API descriptions
 const imageModelNames = getImageModelIds()
@@ -1097,6 +1117,23 @@ export const proxyRoutes = new Hono<Env>()
         describeRoute({
             tags: ["🖼️ Image"],
             summary: "Edit Image (OpenAI-compatible)",
+            requestBody: {
+                required: true,
+                content: {
+                    "application/json": {
+                        // @ts-expect-error hono-openapi's request-body types lag JSON Schema 2020-12.
+                        schema: z.toJSONSchema(CreateImageEditRequestSchema, {
+                            io: "input",
+                        }),
+                    },
+                    "multipart/form-data": {
+                        // @ts-expect-error hono-openapi's request-body types lag JSON Schema 2020-12.
+                        schema: z.toJSONSchema(ImageEditMultipartSchema, {
+                            io: "input",
+                        }),
+                    },
+                },
+            },
             description: [
                 "OpenAI-compatible image editing endpoint.",
                 "",

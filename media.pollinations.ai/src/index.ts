@@ -778,7 +778,8 @@ api.on(
     describeRoute({
         tags: ["media.pollinations.ai"],
         summary: "Retrieve media",
-        description: "Get a file by its id. Access keeps files from expiring.",
+        description:
+            "Get a file by its id. Retrieving the body refreshes its 30-day retention once the file is at least 15 days old. HEAD requests do not refresh retention.",
         security: [],
         responses: {
             200: { description: "File content with appropriate Content-Type" },

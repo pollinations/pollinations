@@ -240,108 +240,108 @@ describe("applySafetyToInput text", { timeout: 30000 }, () => {
         expect(response.headers.get("X-Safety-Redacted")).toBe("EMAIL");
     });
 
-    it.each(["generations", "edits"])(
-        "keeps the original %s cache identity when replay redacts again",
-        async (operation) => {
-            const path = `/v1/images/${operation}`;
-            let originalKey: string | undefined;
-            let cacheWrite: Promise<void> | undefined;
-            const app = safetyApp()
-                .use("*", async (c, next) => {
-                    c.req.addValidatedData("json", await c.req.json());
-                    if (originalKey) {
-                        c.set("generationExecution", {
-                            cacheKey: originalKey,
-                            registerCacheWrite: (write) => {
-                                cacheWrite = write;
-                            },
-                        });
-                    }
-                    await next();
-                })
-                .post(
-                    path,
-                    operation === "edits"
-                        ? prepareOpenAIImageEdit
-                        : prepareOpenAIImageGeneration,
-                    prepareGenerationRequest,
-                    (c, next) => {
-                        const cache = (originalKey
-                            ? imageExecutionCache
-                            : imageCache) as unknown as MiddlewareHandler<Env>;
-                        return cache(c, next);
-                    },
-                    (c) =>
-                        originalKey
-                            ? new Response(
-                                  (
-                                      c.req.valid("json" as never) as {
-                                          prompt: string;
-                                      }
-                                  ).prompt,
-                                  {
-                                      headers: { "Content-Type": "image/png" },
-                                  },
-                              )
-                            : c.json({
-                                  key: c.var.generationCache?.key,
-                                  body: c.var.generationRequestBody,
-                              }),
-                );
-            const bindings = { ...env, ...configuredEnv };
-            const ctx = createExecutionContext();
-            const prompt = `portrait ${crypto.randomUUID()}`;
-            guardrailResponse = intervened({}, [
-                { text: `${prompt} first redaction` },
-            ]);
-            const prepared = await app.request(
+    it.each([
+        "generations",
+        "edits",
+    ])("keeps the original %s cache identity when replay redacts again", async (operation) => {
+        const path = `/v1/images/${operation}`;
+        let originalKey: string | undefined;
+        let cacheWrite: Promise<void> | undefined;
+        const app = safetyApp()
+            .use("*", async (c, next) => {
+                c.req.addValidatedData("json", await c.req.json());
+                if (originalKey) {
+                    c.set("generationExecution", {
+                        cacheKey: originalKey,
+                        registerCacheWrite: (write) => {
+                            cacheWrite = write;
+                        },
+                    });
+                }
+                await next();
+            })
+            .post(
                 path,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        prompt,
-                        safe: true,
-                        seed: 7,
-                        image: "https://example.com/reference.png",
-                    }),
+                operation === "edits"
+                    ? prepareOpenAIImageEdit
+                    : prepareOpenAIImageGeneration,
+                prepareGenerationRequest,
+                (c, next) => {
+                    const cache = (originalKey
+                        ? imageExecutionCache
+                        : imageCache) as unknown as MiddlewareHandler<Env>;
+                    return cache(c, next);
                 },
-                bindings,
-                ctx,
+                (c) =>
+                    originalKey
+                        ? new Response(
+                              (
+                                  c.req.valid("json" as never) as {
+                                      prompt: string;
+                                  }
+                              ).prompt,
+                              {
+                                  headers: { "Content-Type": "image/png" },
+                              },
+                          )
+                        : c.json({
+                              key: c.var.generationCache?.key,
+                              body: c.var.generationRequestBody,
+                          }),
             );
-            expect(prepared.status).toBe(200);
-            const snapshot = await prepared.json<{
-                key: string;
-                body: string;
-            }>();
-            originalKey = snapshot.key;
-            expect(originalKey).toMatch(/^[a-f0-9]{64}$/);
+        const bindings = { ...env, ...configuredEnv };
+        const ctx = createExecutionContext();
+        const prompt = `portrait ${crypto.randomUUID()}`;
+        guardrailResponse = intervened({}, [
+            { text: `${prompt} first redaction` },
+        ]);
+        const prepared = await app.request(
+            path,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    prompt,
+                    safe: true,
+                    seed: 7,
+                    image: "https://example.com/reference.png",
+                }),
+            },
+            bindings,
+            ctx,
+        );
+        expect(prepared.status).toBe(200);
+        const snapshot = await prepared.json<{
+            key: string;
+            body: string;
+        }>();
+        originalKey = snapshot.key;
+        expect(originalKey).toMatch(/^[a-f0-9]{64}$/);
 
-            const secondPrompt = `${prompt} second redaction`;
-            guardrailResponse = intervened({}, [{ text: secondPrompt }]);
-            const replay = await app.request(
-                path,
-                {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: snapshot.body,
-                },
-                bindings,
-                ctx,
-            );
-            expect(replay.status).toBe(200);
-            expect(await replay.text()).toBe(secondPrompt);
-            expect(cacheWrite).toBeDefined();
-            await cacheWrite;
-            await waitOnExecutionContext(ctx);
-            expect(fetchMock).toHaveBeenCalledTimes(2);
-            const stored = await env.MEDIA.get(originalKey);
-            expect(stored?.headers.get("Link")).toBe(
-                `<https://media.pollinations.ai/${originalKey}>; rel="enclosure"`,
-            );
-            expect(await stored?.text()).toBe(secondPrompt);
-        },
-    );
+        const secondPrompt = `${prompt} second redaction`;
+        guardrailResponse = intervened({}, [{ text: secondPrompt }]);
+        const replay = await app.request(
+            path,
+            {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: snapshot.body,
+            },
+            bindings,
+            ctx,
+        );
+        expect(replay.status).toBe(200);
+        expect(await replay.text()).toBe(secondPrompt);
+        expect(cacheWrite).toBeDefined();
+        await cacheWrite;
+        await waitOnExecutionContext(ctx);
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        const stored = await env.MEDIA.get(originalKey);
+        expect(stored?.headers.get("Link")).toBe(
+            `<https://media.pollinations.ai/${originalKey}>; rel="enclosure"`,
+        );
+        expect(await stored?.text()).toBe(secondPrompt);
+    });
 
     it("uses the redacted prompt for OpenAI image cache URLs", async () => {
         guardrailResponse = intervened(

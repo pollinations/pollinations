@@ -28,6 +28,7 @@
 
 | Name | Description | Author |
 |------|-------------|--------|
+| [🖼️ PolliArena](https://polli-arena.cloudbr.eu.org) | Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models | [@samucastudent](https://github.com/samucastudent) |
 | [🖼️ Nectar MCP](https://github.com/pinkpixel-dev/nectar-mcp) | Nectar is a stdio MCP server for Pollinations image, video, and audio generation. It gives MCP clients a focused set of creative media tools. Generate and edit images, create videos, and generate spee | [@sizzlebop](https://github.com/sizzlebop) |
 | [🛠️ Pollin Uptime (HA Gateway)](https://brhost.eu.org) | Zero-downtime serverless AI gateway and multimodal playground with automatic 4-layer fallback cascade. Never hit 500 errors or rate limits again — seamlessly route Chat, Vision, Images, Video, and Voi | [@samucamg](https://github.com/samucamg) |
 | [💬 Open WebUI for Pollinations](https://openwebui.pollinations.ai) | Open WebUI chat frontend with Pollinations login. All Pollinations text models in the picker, plus the Pollinations MCP server as a tool server for image, video and audio. | [@voodoohop](https://github.com/voodoohop) |
@@ -37,7 +38,6 @@
 | [🖼️ AI Story & Image Studio](https://adventuretreehouse.com) | A minimal interactive studio that generates short stories and matching illustrations simultaneously using Pollinations text and image APIs with seamless PKCE OAuth authentication. | [@tlandcoder](https://github.com/tlandcoder) |
 | [🎬 Automated Video App](https://automatedvideoapp.com) | Turn any topic or script into a narrated, captioned video, then edit it scene by scene or drive the whole thing from Claude. AI stills and AI video are generated through Pollinations on the user's own key. | [@ackhmez](https://github.com/ackhmez) |
 | [🖼️ Pixel Forge](https://b3b41020.github.io/pixel-forge) | AI image generation studio powered by Pollinations. Users enter a prompt, select a model (Flux, Dreamshaper, Klein, GPT Image 2, Zimage, Nanobanana) and image size, then generate. Built with the Polli | [@b3b41020](https://github.com/b3b41020) |
-| [🛠️ DemoWeaver](https://mebularts.github.io/DemoWeaver) | DemoWeaver is an open-source AI-powered product walkthrough generator that turns a running web application into a browser-verified, professionally narrated product video. Instead of manually recording | [@mebularts](https://github.com/mebularts) |
 
 [Browse all apps →](https://pollinations.ai/apps)
 <!-- recent-apps:end -->
@@ -58,16 +58,16 @@ We've launched **https://gen.pollinations.ai** — a single endpoint for all you
 
 ## 🆕 Latest News
 
+- **2026-09-08** – **🎨 GPT Image 2.5 arrives** Paid users can generate and edit with `openai/gpt-image-2.5-flare` and `openai/gpt-image-2.5-sunburst`, including native quality controls and PNG transparency. [Try it](https://pollinations.ai/play)
+- **2026-09-08** – **✨ Generated media gets permanent-ish homes** Images, video, audio, edits, and 3D outputs now return stable Media links instead of accidentally starting another generation when revisited. Old cached creations can be recovered too. [API Docs](https://gen.pollinations.ai/docs)
+- **2026-09-08** – **📱 Activity charts grew little handles** Usage and Earnings now have independent date ranges, filters, CSV exports, and clickable chart bars that drill into the matching table. The Pollen ledger is becoming legible.
+- **2026-09-08** – **🚀 More routes around broken things** Expanded fallbacks keep text, embeddings, Veo, and Grok video generation moving when a provider takes an unplanned nap—without changing model IDs or prices.
+- **2026-09-07** – **✨ Cleaner model catalog** Model listings now use consistent canonical names and `publisher` metadata, while legacy model IDs keep working. [Browse models](https://gen.pollinations.ai/v1/models)
+- **2026-09-07** – **📱 Name your own uploads** Give media uploads stable custom IDs via `POST /upload`—useful URLs, no random-ID archaeology, and duplicate names safely return `409`. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-06** – **🤖 Polli found her tools** Polli’s generation, visual, and repository tools are back after the model update, with sharper Discord search, thread-aware results, correct source links, and better chart, table, and Mermaid renders.
 - **2026-09-06** – **💡 Provider errors keep their receipts** Image, video, 3D, embedding, and text requests now preserve full upstream diagnostics while capacity fallback can still route generations through another provider. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-05** – **🤖 Managed agents, neatly arranged** The Responses API now returns replayable agent runs with ordered assistant and MCP results, lifecycle SSE events, media links, usage, and per-child billing—without making you invent another wrapper. [API Docs](https://gen.pollinations.ai/docs)
 - **2026-09-05** – **🎵 Community TTS has arrived** Publishers can register OpenAI-compatible speech models, and users can receive streamed audio in its native format through the same platform auth, caching, and billing systems. [API Docs](https://gen.pollinations.ai/docs)
-- **2026-09-05** – **🚀 Qwen3.8 Flash** Call `qwen/qwen3.8-flash` for streaming chat, structured output, tool use, image/video input, and prompt caching—with an automatic Alibaba fallback when the first route gets lost. [Available models](https://gen.pollinations.ai/v1/models)
-- **2026-09-05** – **🎨 MAI Image 2.5 Flash** Generate images or edit a JPEG/PNG with one reference image using `microsoft/mai-image-2.5-flash` via `/image` or the OpenAI-compatible Images API. [Image models](https://gen.pollinations.ai/image/models)
-- **2026-09-04** – **🚀 GPT-6 Astra** Call `openai/gpt-6-astra` for tool use, structured output, vision, streaming, and prompt caching through one predictable model ID. [API docs](https://gen.pollinations.ai/docs)
-- **2026-09-04** – **🎨 MiniMax H3 Max Turbo** Generate guided video with synchronized audio, first/last-frame inputs, 480p or 768p output, and clips up to 15 seconds. [Try the API](https://gen.pollinations.ai/docs)
-- **2026-09-04** – **✨ Responses API for more models** Use OpenAI-compatible `/v1/responses` across built-in, community, and agent-backed text models—with tools, structured output, streaming, and reasoning intact. [API docs](https://gen.pollinations.ai/docs)
-- **2026-09-04** – **🔗 Pollinations MCP in Open WebUI** Run Pollinations MCP tools from Open WebUI using your own consent key and Pollen balance. Your wallet, your tool calls. [MCP docs](https://gen.pollinations.ai/docs#tag/mcp-servers)
 ---
 
 ## 🌱 Introduction

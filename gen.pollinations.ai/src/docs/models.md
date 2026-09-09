@@ -63,6 +63,9 @@ Responses route, community text models and endpoint agents whose owner supplied
 the Responses API and one exact URL, and managed prompt agents. These community
 models and agents also accept `/v1/chat/completions` through the shared adapter.
 Built-in models may use separate upstream routes for Chat and Responses.
+Supported media models also advertise both endpoints and return generated-file
+links as assistant text. Reference-required models return their normal missing-input
+error; use their native endpoint until attachments are supported here.
 
 ## Community Models
 

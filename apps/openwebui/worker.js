@@ -64,6 +64,8 @@ export class OpenWebUIContainer extends Container {
         // Without this the model picker defaults to the alphabetically first
         // community model.
         DEFAULT_MODELS: "openai",
+        // Titles, tags and follow-ups need text, even when the chat model generates media.
+        TASK_MODEL_EXTERNAL: "openai/gpt-5-nano",
 
         // Model backend: gen.pollinations.ai, bearer = the user's OAuth sk_.
         ENABLE_OLLAMA_API: "false",

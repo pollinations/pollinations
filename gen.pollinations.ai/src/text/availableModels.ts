@@ -13,6 +13,10 @@ import { createMessageTransform } from "./transforms/createMessageTransform.js";
 import { createReasoningEffortTransform } from "./transforms/createReasoningEffortTransform.ts";
 import { createSystemPromptTransform } from "./transforms/createSystemPromptTransform.js";
 import { inputAudioToFireworks } from "./transforms/inputAudioToFireworks.js";
+import {
+    omitParameters,
+    preferTemperature,
+} from "./transforms/parameterTransforms.js";
 import { pipe } from "./transforms/pipe.js";
 import { sanitizeToolSchemas } from "./transforms/sanitizeToolSchemas.js";
 import type { TransformFn, TransformOptions } from "./types.js";
@@ -28,6 +32,17 @@ const stripReasoning = createReasoningEffortTransform("strip");
 const claudeManualThinking = createClaudeThinkingTransform("budget");
 const claudeAdaptiveThinking = createClaudeThinkingTransform("adaptive");
 const claudeOpus5Thinking = createClaudeThinkingTransform("adaptive", true);
+
+const omitOpenAISampling = omitParameters(
+    "temperature",
+    "top_p",
+    "top_k",
+    "frequency_penalty",
+    "presence_penalty",
+    "repetition_penalty",
+    "seed",
+);
+const omitClaudeSampling = omitParameters("temperature", "top_p", "top_k");
 
 interface ModelDefinition {
     name: string;
@@ -73,10 +88,12 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4-nano",
         config: portkeyConfig["gpt-5.4-nano"],
+        transform: omitOpenAISampling,
     },
     {
         name: "openai/gpt-5-nano",
         config: portkeyConfig["gpt-5-nano-2025-08-07"],
+        transform: omitOpenAISampling,
     },
     {
         name: "openai/gpt-oss-20b",
@@ -85,33 +102,46 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-5.4",
         config: portkeyConfig["gpt-5.4"],
+        transform: omitOpenAISampling,
     },
     {
         name: "openai/gpt-5.4-mini",
         config: portkeyConfig["gpt-5.4-mini"],
+        transform: omitOpenAISampling,
     },
     {
         name: "openai/gpt-5.5",
         config: portkeyConfig["gpt-5.5"],
+        transform: omitOpenAISampling,
     },
     {
         name: "openai/gpt-5.6-sol",
         config: portkeyConfig["gpt-5.6-sol"],
+        transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-terra",
         config: portkeyConfig["gpt-5.6-terra"],
+        transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-5.6-luna",
         config: portkeyConfig["gpt-5.6-luna"],
+        transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
         name: "openai/gpt-6-astra",
         config: portkeyConfig["gpt-6-astra"],
+        transform: omitOpenAISampling,
+        useResponsesApi: true,
+    },
+    {
+        name: "openai/gpt-6-astra:azure:datazone",
+        config: portkeyConfig["gpt-6-astra-azure-datazone"],
+        transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {
@@ -317,6 +347,10 @@ const models: ModelDefinition[] = [
         config: portkeyConfig["grok-4.6"],
     },
     {
+        name: "x-ai/grok-4.6:azure:sweden",
+        config: portkeyConfig["grok-4.6-azure-sweden"],
+    },
+    {
         name: "openai/gpt-audio-mini",
         config: portkeyConfig["gpt-audio-mini-2025-12-15"],
         // Audio models don't support reasoning_effort.
@@ -330,7 +364,7 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-haiku-4.5",
         config: portkeyConfig["claude-haiku-4-5"],
-        transform: claudeManualThinking,
+        transform: pipe(claudeManualThinking, preferTemperature),
     },
     {
         name: "anthropic/claude-haiku-4.5:openrouter:vertex-global",
@@ -340,48 +374,48 @@ const models: ModelDefinition[] = [
     {
         name: "anthropic/claude-sonnet-4.6",
         config: portkeyConfig["claude-sonnet-4-6"],
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, preferTemperature),
     },
     {
         name: "anthropic/claude-sonnet-5",
         config: portkeyConfig["claude-sonnet-5"],
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-opus-4.6",
         config: portkeyConfig["claude-opus-4-6"],
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, preferTemperature),
     },
     {
         name: "anthropic/claude-opus-4.7",
         config: portkeyConfig["claude-opus-4-7"],
         // Opus 4.7/4.8 require adaptive thinking + output_config.effort.
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-opus-4.7:openrouter:vertex-global",
         config: portkeyConfig["claude-opus-4.7-openrouter-vertex"],
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-opus-5",
         config: portkeyConfig["claude-opus-5"],
-        transform: claudeOpus5Thinking,
+        transform: pipe(claudeOpus5Thinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-fable-5",
         config: portkeyConfig["claude-fable-5"],
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-fable-5:openrouter:vertex-global",
         config: portkeyConfig["claude-fable-5-openrouter-vertex"],
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "anthropic/claude-fable-5.1",
         config: portkeyConfig["anthropic/claude-fable-5.1"],
-        transform: claudeAdaptiveThinking,
+        transform: pipe(claudeAdaptiveThinking, omitClaudeSampling),
     },
     {
         name: "google/gemini-3-flash-preview",
@@ -464,12 +498,18 @@ const models: ModelDefinition[] = [
     {
         name: "pollinations/midijourney",
         config: portkeyConfig["gpt-5.4-mini-chat"],
-        transform: createMessageTransform(midijourneyPrompt),
+        transform: pipe(
+            createMessageTransform(midijourneyPrompt),
+            omitOpenAISampling,
+        ),
     },
     {
         name: "pollinations/midijourney-large",
         config: portkeyConfig["gpt-5.5-chat"],
-        transform: createMessageTransform(midijourneyPrompt),
+        transform: pipe(
+            createMessageTransform(midijourneyPrompt),
+            omitOpenAISampling,
+        ),
     },
     {
         name: "perplexity/sonar",

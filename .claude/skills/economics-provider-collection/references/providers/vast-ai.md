@@ -1,6 +1,6 @@
 # Vast.ai Connector Guide
 
-Canonical vendor: `vast.ai`
+Canonical vendor: `vast` (historical alias: `vast.ai`)
 
 ## Verified — 2026-07-10
 
@@ -13,7 +13,7 @@ Primary evidence sources:
 - Invoice/payment: Vast.ai invoice PDF or billing receipt, often a transfer/top-up.
 - Dashboard/usage: Vast.ai console billing and instance usage views.
 - CLI: `vastai show invoices --raw -s <YYYY-MM-DD> -e <YYYY-MM-DD>`
-- Transaction context: `economics_bank_ledger` vendor `vast.ai`, usually Wise EUR card charge.
+- Transaction context: `economics_bank_ledger` vendor `vast` (historically `vast.ai`), usually Wise EUR card charge.
 
 Required credential: `VAST_API_KEY`.
 

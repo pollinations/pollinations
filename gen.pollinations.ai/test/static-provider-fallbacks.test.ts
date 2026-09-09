@@ -5,6 +5,7 @@ import { IMAGE_FALLBACKS } from "@shared/registry/image-fallbacks.ts";
 import { mergeFallbacks } from "@shared/registry/merge-fallbacks.ts";
 import { MODEL3D_SERVICES } from "@shared/registry/model3d.ts";
 import {
+    calculateUsageBilling,
     getVisibleAudioModels,
     getVisibleImageModels,
     getVisibleTextModels,
@@ -147,6 +148,80 @@ function expectInheritedRoute(
 }
 
 describe("static provider fallbacks", () => {
+    it("preserves the Astra quote while recording Data Zone costs", () => {
+        const primary = TEXT_SERVICES["openai/gpt-6-astra"];
+        const fallback = TEXT_SERVICES["openai/gpt-6-astra:azure:datazone"];
+        expect(primary.cost).toEqual({
+            promptTextTokens: 10 / 1_000_000,
+            promptCachedTokens: 1 / 1_000_000,
+            promptCacheWriteTokens: 12.5 / 1_000_000,
+            completionTextTokens: 50 / 1_000_000,
+        });
+        expect(fallback.cost).toEqual({
+            promptTextTokens: 11 / 1_000_000,
+            promptCachedTokens: 1.1 / 1_000_000,
+            promptCacheWriteTokens: 13.75 / 1_000_000,
+            completionTextTokens: 55 / 1_000_000,
+        });
+        expect(fallback.costVariants?.long_context).toEqual({
+            promptTextTokens: 22 / 1_000_000,
+            promptCachedTokens: 2.2 / 1_000_000,
+            promptCacheWriteTokens: 27.5 / 1_000_000,
+            completionTextTokens: 82.5 / 1_000_000,
+        });
+        expect(fallback.selectCostVariant).toBe(primary.selectCostVariant);
+        expect(
+            fallback.selectCostVariant?.({
+                usage: { promptTextTokens: 272_000 },
+            }),
+        ).toBeUndefined();
+        expect(
+            fallback.selectCostVariant?.({
+                usage: { promptTextTokens: 272_000, promptCachedTokens: 1 },
+            }),
+        ).toBe("long_context");
+        expect(fallback.priceMultiplier).toBe(0.75);
+        expect(fallback.paidOnly).not.toBe(true);
+        const billing = calculateUsageBilling({
+            model: "openai/gpt-6-astra",
+            usage: { promptTextTokens: 11, completionTextTokens: 5 },
+            servedBy: fallback,
+            quotedBy: primary,
+        });
+        expect(billing.cost.totalCost).toBeCloseTo(0.000396, 12);
+        expect(billing.price.totalPrice).toBe(0.00027);
+        const model = findModelByName("openai/gpt-6-astra:azure:datazone");
+        expect(model?.useResponsesApi).toBe(true);
+        expect(model?.config()).toMatchObject({
+            "azure-deployment-id": "gpt-6-astra-datazone",
+            "azure-resource-name": "myceli-prod-eastus",
+            responsesEndpoint:
+                "https://myceli-prod-eastus.openai.azure.com/openai/v1/responses",
+        });
+    });
+
+    it("uses Fal first for Grok Video Pro without changing prices or access", () => {
+        const primary = IMAGE_SERVICES["x-ai/grok-imagine-video"];
+        const fallback = IMAGE_SERVICES["x-ai/grok-imagine-video:openrouter"];
+        expect(primary).toMatchObject({
+            provider: "fal",
+            paidOnly: true,
+            priceMultiplier: 1,
+            aliases: ["grok-imagine-video", "grok-video-pro"],
+            fallbacks: ["x-ai/grok-imagine-video:openrouter"],
+            cost: { promptImageTokens: 0.002, completionVideoSeconds: 0.07 },
+        });
+        expect(fallback.provider).toBe("openrouter");
+        expect(fallback.cost).toEqual(primary.cost);
+        expect(IMAGE_SERVICES).not.toHaveProperty(
+            "x-ai/grok-imagine-video:fal",
+        );
+        expect(IMAGE_SERVICES["x-ai/grok-imagine-video-1.5"]).toMatchObject({
+            provider: "openrouter",
+            fallbacks: ["x-ai/grok-imagine-video-1.5:fal"],
+        });
+    });
+
     it("keeps same-provider routes distinct and ordered under a suffixed public ID", () => {
         const parentId = "google/gemini-2.5-flash-lite:search";
         const parent: ModelDefinition = TEXT_SERVICES[parentId];
@@ -231,6 +306,12 @@ describe("static provider fallbacks", () => {
     });
 
     it("keeps provider-specific fallback costs", () => {
+        expect(TEXT_SERVICES["x-ai/grok-4.6"].fallbacks).toEqual([
+            "x-ai/grok-4.6:azure:sweden",
+        ]);
+        expect(TEXT_SERVICES["x-ai/grok-4.6:azure:sweden"].cost).toEqual(
+            TEXT_SERVICES["x-ai/grok-4.6"].cost,
+        );
         expect(
             TEXT_SERVICES["deepseek/deepseek-v4-flash:deepinfra"].cost,
         ).toMatchObject({
@@ -328,6 +409,18 @@ describe("static provider fallbacks", () => {
     });
 
     it("binds fallback-only text ids to their exact provider routes", () => {
+        expect(
+            findModelByName("x-ai/grok-4.6:azure:sweden")?.config(),
+        ).toMatchObject({
+            provider: "openai",
+            model: "grok-4.6",
+            directAuthHeader: "api-key",
+            directEndpoint:
+                "https://myceli-prod-swedencentral.cognitiveservices.azure.com/openai/deployments/grok-4.6/chat/completions?api-version=2024-12-01-preview",
+            responsesEndpoint:
+                "https://myceli-prod-swedencentral.openai.azure.com/openai/v1/responses",
+            responsesAuthHeader: "api-key",
+        });
         expect(
             findModelByName("deepseek/deepseek-v4-flash:deepinfra")?.config(),
         ).toMatchObject({

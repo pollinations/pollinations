@@ -19,13 +19,15 @@ Committed (source of truth — edit here, then deploy):
   or better in the freshest 24h/48h window with at least 20 requests are
   protected from a delayed hide after a fix or new fallback.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
-  cycle gets a fresh Claude process and systemd starts the next one 60 minutes
-  after completion. Headless cycles cannot be remote-controlled; a separate
+  cycle gets a fresh Fable 5.1 process (`claude-fable-5-1`, medium effort), and
+  systemd starts the next one 60 minutes after completion. Headless cycles
+  cannot be remote-controlled; a separate
   persistent `claude --remote-control community-monitor` session runs alongside
   as a phone-accessible console.
 - `.claude/settings.json` — project-scoped Claude Code settings. It fixes the
   auto-compaction calculation window at 300,000 tokens for both headless cycles
-  and the remote-control session launched from the monitor directory.
+  and the remote-control session launched from the monitor directory. Claude
+  compacts before that window fills to reserve room for output and the summary.
 - `update-from-repo.sh` — before each cycle, fetches `origin/main` and atomically
   refreshes only the committed prompt/runtime files. It does not activate until
   the updater itself exists on `main`, so deploying an open PR cannot downgrade
@@ -54,8 +56,9 @@ Every new instance gets a persisted swapfile at least the size of RAM.
 
 Use a monitor-specific SSH key and the infrastructure secret manager; do not
 commit private keys or host credentials to this repository, even encrypted.
-Install Node and the `claude` CLI, clone/copy this directory, populate `.env`
-(see `.env.example`), install `community-monitor.service`, then run
+Install Node and Claude Code 2.1.257 or newer (required for Fable 5.1),
+clone/copy this directory, populate `.env` (see `.env.example`),
+install `community-monitor.service`, then run
 `systemctl enable --now community-monitor`.
 
 Moving credentials requires the separate, scoped approval in AGENTS.md's

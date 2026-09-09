@@ -63,6 +63,8 @@ export function createAzureModelConfig(
         "azure-deployment-id": deploymentId,
         "azure-api-version": apiVersion,
         "azure-model-name": deploymentId,
+        // Non-OpenAI Azure deployments reject stream_options; OpenAI entries opt in.
+        supportsStreamOptions: false,
         authKey: apiKey,
         ...overrides,
     };
@@ -87,6 +89,7 @@ export function createBedrockNativeConfig(
 ): ProviderConfig {
     return {
         provider: "bedrock",
+        requiresBase64ImageUrls: true,
         "aws-access-key-id": process.env.AWS_ACCESS_KEY_ID,
         "aws-secret-access-key": process.env.AWS_SECRET_ACCESS_KEY,
         "aws-region": process.env.AWS_REGION || "us-east-1",

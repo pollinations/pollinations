@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { findModelByName } from "../../../src/text/availableModels.js";
+import { portkeyConfig } from "../../../src/text/configs/modelConfigs.js";
 import { processParameters } from "../../../src/text/transforms/parameterProcessor.js";
 import {
     omitParameters,
@@ -16,10 +17,7 @@ describe("processParameters", () => {
         const result = processParameters(messages, {
             model: "gpt-5-nano",
             max_tokens: 128,
-            modelConfig: {
-                provider: "azure-openai",
-                "azure-deployment-id": "gpt-5-nano",
-            },
+            modelConfig: portkeyConfig["gpt-5-nano-2025-08-07"](),
             modelDef,
         });
 
@@ -34,6 +32,7 @@ describe("processParameters", () => {
             modelConfig: {
                 provider: "azure-openai",
                 "azure-deployment-id": "Mistral-Small-3.2-24B-Instruct-2506",
+                supportsStreamOptions: false,
             },
             modelDef,
         });
@@ -46,10 +45,7 @@ describe("processParameters", () => {
         const result = processParameters(messages, {
             model: "grok-4.3",
             stream: true,
-            modelConfig: {
-                provider: "azure-openai",
-                "azure-deployment-id": "grok-4.3",
-            },
+            modelConfig: portkeyConfig["grok-4.3"](),
             modelDef,
         });
 
@@ -63,6 +59,7 @@ describe("processParameters", () => {
             modelConfig: {
                 provider: "azure-openai",
                 "azure-deployment-id": "Mistral-Large-3",
+                supportsStreamOptions: false,
             },
             modelDef,
         });
@@ -74,10 +71,7 @@ describe("processParameters", () => {
         const result = processParameters(messages, {
             model: "gpt-5-nano",
             stream: true,
-            modelConfig: {
-                provider: "azure-openai",
-                "azure-deployment-id": "gpt-5-nano",
-            },
+            modelConfig: portkeyConfig["gpt-5-nano-2025-08-07"](),
             modelDef,
         });
 
@@ -93,6 +87,58 @@ describe("processParameters", () => {
             modelDef,
         });
         expect(result.options).not.toHaveProperty("stream_options");
+    });
+
+    it("uses declared transport settings regardless of provider or deployment name", () => {
+        const result = processParameters(messages, {
+            model: "custom-deployment",
+            stream: true,
+            max_tokens: 128,
+            modelConfig: {
+                provider: "custom-provider",
+                supportsMaxCompletionTokens: true,
+                supportsStreamOptions: false,
+            },
+            modelDef,
+        });
+        expect(result.options.max_completion_tokens).toBe(128);
+        expect(result.options).not.toHaveProperty("max_tokens");
+        expect(result.options).not.toHaveProperty("stream_options");
+    });
+
+    it("does not infer transport settings from an Azure deployment name", () => {
+        const result = processParameters(messages, {
+            model: "gpt-custom",
+            max_completion_tokens: 128,
+            modelConfig: {
+                provider: "azure-openai",
+                "azure-deployment-id": "gpt-custom",
+            },
+            modelDef,
+        });
+        expect(result.options.max_tokens).toBe(128);
+        expect(result.options).not.toHaveProperty("max_completion_tokens");
+    });
+
+    it.each([
+        true,
+        false,
+    ])("applies transport settings after config defaults (stream=%s)", (stream) => {
+        const options = {
+            model: "openai/gpt-5-nano",
+            stream,
+            modelConfig: {
+                ...portkeyConfig["gpt-5-nano-2025-08-07"](),
+                defaultOptions: { max_tokens: 128 },
+            },
+        };
+        const resolved = resolveModelConfig(messages, options);
+        const result = processParameters(resolved.messages, resolved.options);
+        expect(result.options.max_completion_tokens).toBe(128);
+        expect(result.options).not.toHaveProperty("max_tokens");
+        expect(result.options.stream_options).toEqual(
+            stream ? { include_usage: true } : undefined,
+        );
     });
 
     it("composes immutable parameter transforms without inspecting model names", async () => {
@@ -129,6 +175,7 @@ describe("processParameters", () => {
         "openai/gpt-5.6-terra",
         "openai/gpt-5.6-luna",
         "openai/gpt-6-astra",
+        "openai/gpt-6-astra:azure:datazone",
         "pollinations/midijourney",
         "pollinations/midijourney-large",
     ])("removes sampling without changing reasoning or reintroducing defaults for %s", async (model) => {

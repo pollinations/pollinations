@@ -141,6 +141,7 @@ const models: ModelDefinition[] = [
     {
         name: "openai/gpt-6-astra:azure:datazone",
         config: portkeyConfig["gpt-6-astra-azure-datazone"],
+        transform: omitOpenAISampling,
         useResponsesApi: true,
     },
     {

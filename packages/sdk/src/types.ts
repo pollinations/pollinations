@@ -913,6 +913,31 @@ export type ModelCapability =
     | "code_execution"
     | "pollinations_models";
 
+/** Value types a Chat completion parameter can take. */
+export type ChatParameterType =
+    | "string"
+    | "number"
+    | "integer"
+    | "boolean"
+    | "enum"
+    | "array"
+    | "object";
+
+/**
+ * A Chat completion parameter a model accepts through Pollinations, after
+ * gateway transforms. `condition` documents provider restrictions (e.g. mutual
+ * exclusion, gateway overrides).
+ */
+export interface ChatParameter {
+    name: string;
+    type: ChatParameterType;
+    description?: string;
+    min?: number;
+    max?: number;
+    enum?: Array<string | number>;
+    condition?: string;
+}
+
 /** Model information */
 export interface ModelInfo {
     /** Fields added by the model registry pass through without an SDK release. */
@@ -933,6 +958,8 @@ export interface ModelInfo {
     output_modalities?: ModelOutputModality[];
     video_capabilities?: VideoCapability[];
     resolutions?: string[];
+    supported_parameters?: ChatParameter[];
+    default_parameters?: Record<string, string | number | boolean | null>;
     min_duration?: number;
     max_duration?: number;
     default_duration?: number;

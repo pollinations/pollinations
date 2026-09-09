@@ -2,6 +2,7 @@ import { z } from "zod";
 import { SAFETY_FEATURES } from "../schemas/safety.ts";
 import { publicPriceInfo, toFixedPoint } from "./public-pricing";
 import {
+    CHAT_PARAMETER_TYPES,
     type BillingAdjustmentRule,
     getPriceDefinitionForModel,
     getRegistryModelDefinition,
@@ -19,6 +20,23 @@ import {
     type PriceDefinition,
     VIDEO_CAPABILITIES,
 } from "./registry";
+
+export const ChatParameterSchema = z.object({
+    name: z.string(),
+    type: z.enum(CHAT_PARAMETER_TYPES),
+    description: z.string().optional(),
+    min: z.number().optional(),
+    max: z.number().optional(),
+    enum: z.array(z.union([z.string(), z.number()])).optional(),
+    condition: z.string().optional(),
+});
+
+export type ChatParameterInfo = z.infer<typeof ChatParameterSchema>;
+
+export const ChatDefaultParametersSchema = z.record(
+    z.string(),
+    z.union([z.string(), z.number(), z.boolean(), z.null()]),
+);
 
 export const ModelCapabilitySchema = z.enum([
     "tool_calling",
@@ -92,6 +110,8 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
     required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
+    supported_parameters: z.array(ChatParameterSchema).optional(),
+    default_parameters: ChatDefaultParametersSchema.optional(),
     video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
     max_duration: z.number().positive().optional(),
@@ -207,6 +227,8 @@ export function modelInfoFromDefinition(
         output_modalities: service.outputModalities,
         required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,
+        supported_parameters: service.supportedParameters,
+        default_parameters: service.defaultParameters,
         video_capabilities: service.videoCapabilities,
         min_duration: service.minDuration,
         max_duration: service.maxDuration,

@@ -61,6 +61,84 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 400000,
         isSpecialized: false,
+        supportedParameters: [
+            {
+                name: "stream",
+                type: "boolean",
+                description: "Whether to stream partial message deltas",
+            },
+            {
+                name: "temperature",
+                type: "number",
+                min: 0,
+                max: 1,
+                description: "Sampling temperature",
+                condition:
+                    "Locked to 1 for the GPT-5 series; the gateway overrides any value sent",
+            },
+            {
+                name: "max_completion_tokens",
+                type: "integer",
+                description: "Maximum number of tokens to generate",
+            },
+            {
+                name: "max_tokens",
+                type: "integer",
+                description: "Alias for max_completion_tokens",
+                condition: "Converted to max_completion_tokens by the gateway",
+            },
+            {
+                name: "stop",
+                type: "array",
+                description: "Up to 4 sequences where the API stops generating",
+            },
+            {
+                name: "response_format",
+                type: "object",
+                description: "Output format: text, json_object, or json_schema",
+            },
+            {
+                name: "tools",
+                type: "array",
+                description: "List of tools the model may call",
+            },
+            {
+                name: "tool_choice",
+                type: "enum",
+                enum: ["none", "auto", "required"],
+                description: "Controls tool-call selection",
+            },
+            {
+                name: "reasoning_effort",
+                type: "enum",
+                enum: ["none", "minimal", "low", "medium", "high"],
+                description: "Reasoning effort for the response",
+            },
+            {
+                name: "seed",
+                type: "integer",
+                description: "Best-effort determinism seed",
+            },
+            {
+                name: "logprobs",
+                type: "boolean",
+                description: "Whether to return log probabilities of output tokens",
+            },
+            {
+                name: "top_logprobs",
+                type: "integer",
+                min: 0,
+                max: 20,
+                description:
+                    "Number of most likely tokens to return at each output position",
+            },
+            {
+                name: "user",
+                type: "string",
+                description: "End-user identifier for abuse monitoring",
+            },
+        ],
+        defaultParameters: { stream: false, temperature: 1 },
     },
     "openai/gpt-5-nano": {
         aliases: ["gpt-5-nano", "gpt-5-nano-2025-08-07", "openai-fast"],
@@ -640,6 +718,57 @@ const TEXT_BASE_SERVICES = {
         search: true,
         contextLength: 1048576,
         isSpecialized: false,
+        supportedParameters: [
+            {
+                name: "stream",
+                type: "boolean",
+                description: "Whether to stream partial message deltas",
+            },
+            {
+                name: "temperature",
+                type: "number",
+                description: "Sampling temperature",
+            },
+            {
+                name: "top_p",
+                type: "number",
+                min: 0,
+                max: 1,
+                description: "Nucleus sampling probability mass",
+            },
+            {
+                name: "max_tokens",
+                type: "integer",
+                description: "Maximum number of tokens to generate",
+                condition:
+                    "max_completion_tokens is accepted and converted to max_tokens by the gateway",
+            },
+            {
+                name: "stop",
+                type: "array",
+                description: "Sequences where the API stops generating",
+            },
+            {
+                name: "tools",
+                type: "array",
+                description:
+                    "List of tools the model may call; include a google_search tool to enable web search",
+            },
+            {
+                name: "tool_choice",
+                type: "enum",
+                enum: ["none", "auto", "required"],
+                description: "Controls tool-call selection",
+            },
+            {
+                name: "reasoning_effort",
+                type: "enum",
+                enum: ["none", "minimal", "low", "medium", "high"],
+                description:
+                    "Reasoning effort; none minimizes Gemini 3 Flash thinking",
+            },
+        ],
+        defaultParameters: { stream: false, temperature: 1 },
     },
     "google/gemini-3.7-flash": {
         aliases: ["gemini-3.6-flash", "gemini-3.5-flash", "gemini"],
@@ -1151,6 +1280,59 @@ const TEXT_BASE_SERVICES = {
         tools: true,
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
+        supportedParameters: [
+            {
+                name: "stream",
+                type: "boolean",
+                description: "Whether to stream partial message deltas",
+            },
+            {
+                name: "max_tokens",
+                type: "integer",
+                description: "Maximum number of tokens to generate",
+            },
+            {
+                name: "temperature",
+                type: "number",
+                min: 0,
+                max: 1,
+                description: "Sampling temperature",
+                condition:
+                    "Ignored when thinking is enabled (reasoning_effort not none); top_p is dropped when both are set",
+            },
+            {
+                name: "top_p",
+                type: "number",
+                min: 0,
+                max: 1,
+                description: "Nucleus sampling probability mass",
+                condition:
+                    "Dropped by the gateway when temperature is also set, or when thinking is enabled",
+            },
+            {
+                name: "stop",
+                type: "array",
+                description: "Sequences where the API stops generating",
+            },
+            {
+                name: "tools",
+                type: "array",
+                description: "List of tools the model may call",
+            },
+            {
+                name: "tool_choice",
+                type: "enum",
+                enum: ["none", "auto", "required"],
+                description: "Controls tool-call selection",
+            },
+            {
+                name: "reasoning_effort",
+                type: "enum",
+                enum: ["none", "minimal", "low", "medium", "high"],
+                description: "Maps to Claude extended (adaptive) thinking",
+            },
+        ],
+        defaultParameters: { stream: false, temperature: 1 },
     },
     "anthropic/claude-sonnet-5": {
         aliases: ["sonnet-5", "claude-sonnet-5"],
@@ -1337,6 +1519,43 @@ const TEXT_BASE_SERVICES = {
         searchContextSizes: ["low", "high"],
         contextLength: 128000,
         isSpecialized: false,
+        supportedParameters: [
+            {
+                name: "web_search_options",
+                type: "object",
+                description: "Controls web search behavior",
+                condition:
+                    "search_context_size accepts \"low\" or \"high\"; other values are rejected by the gateway",
+            },
+            {
+                name: "stream",
+                type: "boolean",
+                description: "Whether to stream partial message deltas",
+            },
+            {
+                name: "temperature",
+                type: "number",
+                description: "Sampling temperature",
+            },
+            {
+                name: "top_p",
+                type: "number",
+                min: 0,
+                max: 1,
+                description: "Nucleus sampling probability mass",
+            },
+            {
+                name: "top_k",
+                type: "integer",
+                description: "Limits candidate tokens to the top K",
+            },
+            {
+                name: "max_tokens",
+                type: "integer",
+                description: "Maximum number of tokens to generate",
+            },
+        ],
+        defaultParameters: { stream: false, temperature: 0.2, top_p: 0.9 },
     },
     "perplexity/sonar-pro": {
         aliases: ["sonar-pro", "perplexity-pro", "perplexity"],

@@ -148,6 +148,34 @@ export type BillingAdjustment = {
     price: number;
 };
 
+export const CHAT_PARAMETER_TYPES = [
+    "string",
+    "number",
+    "integer",
+    "boolean",
+    "enum",
+    "array",
+    "object",
+] as const;
+
+export type ChatParameterType = (typeof CHAT_PARAMETER_TYPES)[number];
+
+// A Chat completion parameter a model accepts through Pollinations, after the
+// gateway's provider transforms are applied. Only describe what actually works
+// — omit parameters the gateway strips or the provider silently ignores (e.g.
+// top_p on the GPT-5 series, which is dropped before it reaches the provider).
+// `condition` documents provider-specific restrictions (mutual exclusion,
+// gateway overrides) so consumers know when a listed parameter is honored.
+export type ChatParameter = {
+    name: string;
+    type: ChatParameterType;
+    description?: string;
+    min?: number;
+    max?: number;
+    enum?: Array<string | number>;
+    condition?: string;
+};
+
 export type ModelDefinition = {
     aliases: string[];
     /** Supplier attributed to this route's cost, not its publisher or API protocol.
@@ -228,6 +256,13 @@ export type ModelDefinition = {
     durationStep?: number; // Video-only: duration must be a multiple of this value
     maxReferenceImages?: number; // Models with image input: effective accepted reference images
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
+    // Chat completion parameters the model accepts through Pollinations after
+    // gateway transforms. Only describes what works — parameters the gateway
+    // strips or the provider silently ignores must NOT be listed.
+    supportedParameters?: ChatParameter[];
+    // Default values applied when the caller omits the parameter (gateway or
+    // provider defaults). Keys match `supportedParameters` names.
+    defaultParameters?: Record<string, string | number | boolean | null>;
     /** Internal provider-route output-token cap used for fallback compatibility. */
     maxCompletionTokens?: number;
 };

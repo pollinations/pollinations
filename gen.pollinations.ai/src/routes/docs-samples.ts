@@ -587,6 +587,18 @@ export const RESPONSE_EXAMPLES: Record<string, unknown> = {
                 category: "text",
                 community: false,
                 title: "OpenAI",
+                supported_parameters: [
+                    {
+                        name: "temperature",
+                        type: "number",
+                        condition: "Locked to 1 for the GPT-5 series",
+                    },
+                    {
+                        name: "max_completion_tokens",
+                        type: "integer",
+                    },
+                ],
+                default_parameters: { temperature: 1, stream: false },
             },
             {
                 id: "anthropic/claude-sonnet-4.6",

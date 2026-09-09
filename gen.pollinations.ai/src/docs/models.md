@@ -32,6 +32,18 @@ Rich model endpoints include `capabilities` for agentic/model traits:
 Modalities, video frame controls, voices, and context length remain separate
 structured fields.
 
+For Chat models, `supported_parameters` lists the parameters the model accepts
+through Pollinations (after gateway transforms) and `default_parameters`
+records the values applied when the caller omits them. Only parameters that
+actually work are listed — parameters the gateway strips or the provider
+silently ignores are omitted, and `condition` documents provider-specific
+restrictions (e.g. mutual exclusion, gateway overrides). For example,
+`openai/gpt-5.4-nano` locks `temperature` to `1`, and
+`anthropic/claude-sonnet-4.6` drops `top_p` whenever `temperature` is also set.
+These fields describe Chat-completion behavior; they do not describe the native
+Responses API (see `supported_endpoints` to find models with a direct
+`/v1/responses` route).
+
 Use `supported_endpoints` to discover which public API routes accept each
 model. `/v1/responses` identifies built-in models with a configured native
 Responses route, community text models and endpoint agents whose owner supplied

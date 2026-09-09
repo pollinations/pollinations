@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { MODEL_CATEGORIES } from "../registry/registry.ts";
+import { ChatParameterSchema, ChatDefaultParametersSchema } from "../registry/model-info.ts";
 import { AUDIO_VOICES, DEFAULT_TEXT_MODEL } from "../registry/text.ts";
 import { SafeSchema } from "./safety.ts";
 
@@ -350,15 +351,7 @@ export const CreateChatCompletionRequestSchema = z
                 "Controls Perplexity Sonar search context. Pollinations currently supports low and high.",
             )
             .optional(),
-        temperature: z
-            .number()
-            .min(0)
-            .max(2)
-            .nullable()
-            .optional()
-            .describe(
-                "Sampling controls are ignored for model families that do not consistently support them, regardless of reasoning mode.",
-            ),
+        temperature: z.number().min(0).max(2).nullable().optional(),
         top_p: z.number().min(0).max(1).nullable().optional(),
         tools: z.array(ChatCompletionToolSchema).optional(),
         tool_choice: ChatCompletionToolChoiceOptionSchema.optional(),
@@ -738,6 +731,8 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        supported_parameters: z.array(ChatParameterSchema).optional(),
+        default_parameters: ChatDefaultParametersSchema.optional(),
         agent: z.boolean().optional(),
         base_model: z.string().optional(),
         pricing: z.record(z.string(), z.string()).optional(),

@@ -410,6 +410,12 @@ export const CommunityEndpointTestResponseSchema = z
         imagePricing: ImagePricingSchema.optional().describe(
             "Image tests only: pricing mode detected from the provider response.",
         ),
+        imageEditError: z
+            .string()
+            .optional()
+            .describe(
+                "Image tests only: edit-test failure details. Generation succeeded; this does not establish that editing is unsupported.",
+            ),
         inputModalities: z
             .array(InputModalitySchema)
             .optional()

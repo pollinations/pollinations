@@ -2,9 +2,9 @@
 
 ## Design Principles
 
-1. **Thin proxy.** API calls go through `gen.pollinations.ai`; generated binary outputs are uploaded unlisted to `media.pollinations.ai` and returned as resource links. Do not call other service hosts directly — use the gateway's rewrites (`/account/*`, `/image/*`, `/text/*`, `/audio/*`, `/v1/*`).
+1. **Thin proxy.** API calls go through `gen.pollinations.ai`; return generated media's existing public URL as a resource link without downloading or re-uploading it. Use the image API's JSON URL or the binary response's enclosure `Link` header. Do not call other service hosts directly — use the gateway's rewrites (`/account/*`, `/image/*`, `/text/*`, `/audio/*`, `/v1/*`).
 2. **No hardcoded model or voice enums.** Validate against the live registry via `utils/models.js`. Tool param schemas should be `z.string()` with a "use listX for the live list" hint.
-3. **Don't transform response data.** Pass through API responses; only reshape when an MCP content block is required (for example, upload generated binary output and return a resource link).
+3. **Don't transform response data.** Pass through API responses; only reshape when an MCP content block is required (for example, return a generated media URL as a resource link).
 4. **Minimal tool surface.** Every tool is extra context for the LLM to reason over and a chance to pick the wrong one. Add only what's genuinely useful inside a host (Claude Desktop, Cursor, etc.).
 5. **Stateless HTTP only.** Read the bearer token from the request context. Do not add process-local state, authentication tools, sessions, or stdio entrypoints.
 

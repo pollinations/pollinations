@@ -8,6 +8,18 @@ import type { FallbackMap } from "./merge-fallbacks";
  * `FallbackDefinition`.
  */
 export const IMAGE_FALLBACKS = {
+    "google/veo-3.1-fast": {
+        "google/veo-3.1-fast:replicate": {
+            provider: "replicate",
+            // https://replicate.com/google/veo-3.1-fast: $0.10/s silent,
+            // $0.15/s with audio at either resolution. Keep the caller's
+            // Google quote; absorb the approved $0–$0.05/s fallback difference.
+            cost: {
+                completionVideoSeconds: 0.1,
+                completionAudioSeconds: 0.05,
+            },
+        },
+    },
     "openai/gpt-image-1-mini": {
         "openai/gpt-image-1-mini:openai": {
             provider: "openai",
@@ -111,8 +123,8 @@ export const IMAGE_FALLBACKS = {
         },
     },
     "x-ai/grok-imagine-video": {
-        "x-ai/grok-imagine-video:fal": {
-            provider: "fal",
+        "x-ai/grok-imagine-video:openrouter": {
+            provider: "openrouter",
             addedDate: new Date("2026-09-01").getTime(),
         },
     },

@@ -65,6 +65,8 @@ function generationExecutor(
         .use("*", async (c, next) => {
             c.set("generationExecution", {
                 cacheKey: job.cache.key,
+                originalPath: job.request.originalPath,
+                originalModel: job.request.originalModel,
                 registerCacheWrite,
             });
             await next();

@@ -1,0 +1,35 @@
+{
+  "pr_number": 14626,
+  "title": "fix: retry InferencePort status checks on server errors",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14626",
+  "merged_at": "2026-09-09T16:02:03Z",
+  "labels": [],
+  "pr_body_excerpt": "- Retry HTTP 5xx status checks, including 524, against the same provider job ID using the existing five-second interval and 300-second deadline.\n- Never retry generation submissions. Explicitly failed jobs, HTTP 4xx responses and network exceptions still terminate normally. No price, billing, cache or public API changes.\n- Seven runtime lines; covers both Asset Harvester and Trellis through the shared client. Follow-up to #14556.\n- Verified: 28 focused 3D tests, Gen typecheck and Biome pass. The regression test simulates 524 followed by completion and proves one submission; the reported live incidents remain unverified.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The 524s Get Another Knock",
+    "blurb": "Some 3D jobs were briefly hiding behind server-error curtains. The shared InferencePort client now checks back in on the same job instead of making everyone start the garden over.",
+    "summary": "InferencePort status polling now retries HTTP 5xx responses, including 524, against the existing provider job ID every five seconds for up to 300 seconds, covering both Asset Harvester and Trellis without resubmitting generation.",
+    "impact": "Transient provider-side server errors can now resolve into completed 3D results while preserving a single generation submission, whereas explicit job failures, 4xx responses, and network exceptions still finish normally.",
+    "keywords": [
+      "3d-generation",
+      "InferencePort",
+      "Asset Harvester",
+      "Trellis",
+      "retries",
+      "reliability",
+      "524"
+    ],
+    "visual_concept": "A cozy 3D-generation workshop: Polli watches a retro terminal patiently poll a provider job card while a tiny clay-like 3D sprout finishes forming after a pixel sign reading “524” fades away. A CRT monitor robot can hold the same single job ticket to make the no-resubmission behavior visible, surrounded by code-plants and flowers.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny mechanic goggles and patiently watches a retro terminal recheck one glowing job ticket as a little 3D clay sprout completes beside it; a chunky CRT monitor robot holds the same ticket, with code-plants and flowers nearby and a small fading pixel sign reading “524”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14626.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop where Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wears tiny mechanic goggles and patiently watches a retro terminal recheck one glowing job ticket as a little 3D clay sprout completes beside it; a chunky CRT monitor robot holds the same ticket, with code-plants and flowers nearby and a small fading pixel sign reading “524”. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-09T16:03:05.873671+00:00"
+}

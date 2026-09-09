@@ -6,6 +6,7 @@ import {
     type EndpointAgentListingPayload,
     effectiveCommunityEndpointVisibility,
     isCommunityEndpointOwnerAllowed,
+    legacyCommunityModelId,
     normalizeCommunityEndpointBearerToken,
     normalizeCommunityProviderUrl,
     type ProxyListingPayload,
@@ -161,14 +162,18 @@ async function ensureModelNameAvailable(
     name: string,
     currentId?: string,
 ): Promise<void> {
-    const modelId = communityModelId(ownerGithubUsername, name);
-    let bundledModelExists = false;
-    try {
-        resolveModelName(modelId);
-        bundledModelExists = true;
-    } catch {
-        // Unknown IDs remain available within the owner's namespace.
-    }
+    const bundledModelExists = [
+        communityModelId(ownerGithubUsername, name),
+        legacyCommunityModelId(ownerGithubUsername, name),
+    ].some((modelId) => {
+        try {
+            resolveModelName(modelId);
+            return true;
+        } catch {
+            // Both the canonical ID and its generation alias must be available.
+            return false;
+        }
+    });
     if (bundledModelExists) {
         throw new HTTPException(400, {
             message:

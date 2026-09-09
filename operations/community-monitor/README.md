@@ -19,15 +19,13 @@ Committed (source of truth — edit here, then deploy):
   or better in the freshest 24h/48h window with at least 20 requests are
   protected from a delayed hide after a fix or new fallback.
 - `community-monitor.service` + `loop.sh` — the deployed systemd path. Each
-  cycle gets a fresh Fable 5.1 process (`claude-fable-5-1`, medium effort), and
-  systemd starts the next one 60 minutes after completion. Headless cycles
-  cannot be remote-controlled; a separate
+  cycle gets a fresh Claude process and systemd starts the next one 60 minutes
+  after completion. Headless cycles cannot be remote-controlled; a separate
   persistent `claude --remote-control community-monitor` session runs alongside
   as a phone-accessible console.
 - `.claude/settings.json` — project-scoped Claude Code settings. It fixes the
   auto-compaction calculation window at 300,000 tokens for both headless cycles
-  and the remote-control session launched from the monitor directory. Claude
-  compacts before that window fills to reserve room for output and the summary.
+  and the remote-control session launched from the monitor directory.
 - `update-from-repo.sh` — before each cycle, fetches `origin/main` and atomically
   refreshes only the committed prompt/runtime files. It does not activate until
   the updater itself exists on `main`, so deploying an open PR cannot downgrade
@@ -183,7 +181,7 @@ message limits, health thresholds, and cooldowns remain unchanged.
 
 ## Model/effort
 
-The deployed agent is pinned to `claude-opus-4-8` at medium effort in
+The deployed agent is pinned to `claude-fable-5-1` at medium effort in
 `loop.sh`. Every cycle starts with a fresh context containing the complete
 current `CYCLE.md`. Medium effort is intentional: routine checks are
 mechanical, but owner replies and billing diagnostics require controlled
@@ -191,14 +189,15 @@ comparisons and careful interpretation.
 
 `CLAUDE_CODE_AUTO_COMPACT_WINDOW=300000` is committed in
 `.claude/settings.json`. This is Claude Code's effective context capacity for
-auto-compaction calculations, not a model output-token limit. Project scope is
+auto-compaction calculations, not a model output-token limit. Claude compacts
+before that window fills to reserve room for output and the summary. Project scope is
 intentional: it applies reproducibly to the headless service and the persistent
 remote-control session without modifying the machine's personal settings.
 
 Codex 5.6 Sol at medium effort is the preferred replacement once the EC2 box
 has its own non-personal Codex authentication. Do not copy a maintainer's local
 Codex credentials onto the shared server. Until that service credential is
-available, keep the Opus medium-effort runtime rather than silently leaving the
+available, keep the Fable medium-effort runtime rather than silently leaving the
 monitor offline.
 
 ## Authority split

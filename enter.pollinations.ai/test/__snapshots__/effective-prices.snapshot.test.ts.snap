@@ -1579,6 +1579,14 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptTextTokens": 0.000003,
     },
   },
+  "nvidia/asset-harvester": {
+    "cost": {
+      "completionImageTokens": 0.07,
+    },
+    "price": {
+      "completionImageTokens": 0.07,
+    },
+  },
   "nvidia/nemotron-3-ultra": {
     "cost": {
       "completionTextTokens": 0.0000022,
@@ -1899,6 +1907,34 @@ exports[`effective cost and price per model — snapshot 1`] = `
       "promptCachedTokens": 0.0000009375,
       "promptImageTokens": 0.000006,
       "promptTextTokens": 0.00000375,
+    },
+  },
+  "openai/gpt-image-2.5-flare": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+  },
+  "openai/gpt-image-2.5-sunburst": {
+    "cost": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
+    },
+    "price": {
+      "completionImageTokens": 0.00003,
+      "promptCachedTokens": 0.00000125,
+      "promptImageTokens": 0.000008,
+      "promptTextTokens": 0.000005,
     },
   },
   "openai/gpt-image-2:openai": {

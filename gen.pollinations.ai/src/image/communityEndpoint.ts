@@ -10,6 +10,7 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import {
+    communityVideoSeconds,
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
@@ -113,11 +114,6 @@ export async function callCommunityVideoEndpoint(
         endpoint.bearerTokenCiphertext,
         secret,
     );
-    if (safeParams.duration === undefined) {
-        throw UpstreamError.fromProvider(400, {
-            message: "duration is required for community video models",
-        });
-    }
     const body = await fetchCommunityMediaJson(
         endpoint.baseUrl,
         bearerToken,
@@ -137,6 +133,7 @@ export async function callCommunityVideoEndpoint(
         }),
         "video",
     );
+    const durationSeconds = communityVideoSeconds(body, safeParams.duration);
     const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
     const mimeType = bytes && detectVideoMimeType(bytes);
     if (!bytes || !mimeType) {
@@ -148,10 +145,10 @@ export async function callCommunityVideoEndpoint(
     return {
         buffer: Buffer.from(bytes),
         mimeType,
-        durationSeconds: safeParams.duration,
+        durationSeconds,
         trackingData: {
             actualModel: endpoint.modelId,
-            usage: { completionVideoSeconds: safeParams.duration },
+            usage: { completionVideoSeconds: durationSeconds },
         },
     };
 }

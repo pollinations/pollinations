@@ -6,8 +6,18 @@ import {
     type EventSourceMessage,
     EventSourceParserStream,
 } from "eventsource-parser/stream";
-import { formatMcpCall, McpCallSchema } from "../agents/mcp.ts";
+import {
+    formatFunctionCall,
+    formatMcpCall,
+    McpCallSchema,
+} from "../agents/mcp.ts";
 import type { ChatCompletion, ChatMessage, ServiceError } from "../types.js";
+import {
+    completedFunctionCalls,
+    type ResponseFunctionCall,
+    ResponseFunctionCallOutputSchema,
+    ResponseFunctionCallSchema,
+} from "./functionItems.ts";
 
 type JsonObject = Record<string, unknown>;
 type TextDeltaKind = "content" | "refusal" | "reasoning_content";
@@ -80,7 +90,7 @@ function chatUsage(usage: ResponseUsage): JsonObject {
     };
 }
 
-function finishReason(data: ResponsesData): string {
+function finishReason(data: ResponsesData, hasToolCalls: boolean): string {
     if (data.status === "incomplete") {
         if (data.incomplete_details?.reason === "max_output_tokens") {
             return "length";
@@ -90,10 +100,7 @@ function finishReason(data: ResponsesData): string {
         }
         return "length";
     }
-    if (data.output?.some((item) => item.type === "function_call")) {
-        return "tool_calls";
-    }
-    return "stop";
+    return hasToolCalls ? "tool_calls" : "stop";
 }
 
 function responseMessage(output: ResponseItem[], requestUrl: URL): ChatMessage {
@@ -102,6 +109,16 @@ function responseMessage(output: ResponseItem[], requestUrl: URL): ChatMessage {
     const reasoning: string[] = [];
     const toolCalls: JsonObject[] = [];
     const seenUrls = new Set<string>();
+    let functions: ReturnType<typeof completedFunctionCalls>;
+    try {
+        functions = completedFunctionCalls(output);
+    } catch (error) {
+        throw serviceError(
+            "Responses provider returned malformed function items",
+            requestUrl,
+            error,
+        );
+    }
 
     for (const item of output) {
         if (item.type === "mcp_call") {
@@ -145,27 +162,21 @@ function responseMessage(output: ResponseItem[], requestUrl: URL): ChatMessage {
             continue;
         }
         if (item.type === "function_call") {
-            if (
-                typeof item.call_id !== "string" ||
-                !item.call_id ||
-                typeof item.name !== "string" ||
-                !item.name ||
-                typeof item.arguments !== "string"
-            ) {
-                throw serviceError(
-                    "Responses provider returned a malformed function call",
-                    requestUrl,
-                    item,
-                );
-            }
+            const call = functions.calls.get(item.call_id ?? "");
+            if (!call || functions.results.has(call.call_id)) continue;
             toolCalls.push({
-                id: item.call_id,
+                id: call.call_id,
                 type: "function",
                 function: {
-                    name: item.name,
-                    arguments: item.arguments,
+                    name: call.name,
+                    arguments: call.arguments,
                 },
             });
+        } else if (item.type === "function_call_output") {
+            const call = functions.calls.get(item.call_id ?? "");
+            const result = functions.results.get(item.call_id ?? "");
+            if (call && result)
+                text.push(formatFunctionCall(call, result, seenUrls));
         }
     }
 
@@ -217,6 +228,7 @@ export function responsesToChatCompletion(
         );
     }
 
+    const message = responseMessage(data.output, requestUrl);
     return withUpstreamRequestUrl(
         {
             id: data.id ?? `chatcmpl-${crypto.randomUUID()}`,
@@ -226,8 +238,11 @@ export function responsesToChatCompletion(
             choices: [
                 {
                     index: 0,
-                    message: responseMessage(data.output, requestUrl),
-                    finish_reason: finishReason(data),
+                    message,
+                    finish_reason: finishReason(
+                        data,
+                        Boolean(message.tool_calls?.length),
+                    ),
                 },
             ],
             usage: chatUsage(usage.data),
@@ -264,9 +279,8 @@ export function responsesToChatStream(
     let model = requestedModel;
     let roleSent = false;
     let terminal = false;
-    let nextToolIndex = 0;
-    const toolIndexes = new Map<string, number>();
-    const toolArgumentsSent = new Map<number, string>();
+    const functionCalls = new Map<string, ResponseFunctionCall>();
+    const functionResultsSent = new Set<string>();
     const mcpCallsSent = new Set<string>();
     const seenUrls = new Set<string>();
     const textSent: Record<TextDeltaKind, Map<string, string>> = {
@@ -325,69 +339,46 @@ export function responsesToChatStream(
             emitTextDelta(controller, kind, key, full.slice(sent.length));
         }
     };
-    const addToolCall = (
+    const recordToolCall = (
         controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>,
         item: ResponseItem,
-        requireArguments = false,
-    ): number | undefined => {
-        if (
-            typeof item.call_id !== "string" ||
-            !item.call_id ||
-            typeof item.name !== "string" ||
-            !item.name ||
-            ((requireArguments || item.arguments !== undefined) &&
-                typeof item.arguments !== "string")
-        ) {
+    ) => {
+        const call = ResponseFunctionCallSchema.safeParse(item);
+        if (!call.success) {
             fail(
                 controller,
                 "Responses provider returned a malformed function call",
             );
-            return undefined;
+            return;
         }
-        const known = [item.id, item.call_id]
-            .filter((key): key is string => typeof key === "string")
-            .map((key) => toolIndexes.get(key))
-            .find((index) => index !== undefined);
-        if (known !== undefined) return known;
-        ensureRole(controller);
-        const index = nextToolIndex++;
-        if (item.id) toolIndexes.set(item.id, index);
-        toolIndexes.set(item.call_id, index);
-        const argumentsSent = item.arguments ?? "";
-        toolArgumentsSent.set(index, argumentsSent);
-        controller.enqueue(
-            chunk({
-                tool_calls: [
-                    {
-                        index,
-                        id: item.call_id,
-                        type: "function",
-                        function: {
-                            name: item.name,
-                            arguments: argumentsSent,
-                        },
-                    },
-                ],
-            }),
-        );
-        return index;
+        functionCalls.set(call.data.call_id, call.data);
     };
-    const emitToolArgumentsDone = (
+    const emitFunctionResult = (
         controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>,
-        index: number | undefined,
-        full: unknown,
+        item: ResponseItem,
     ) => {
-        if (index === undefined || typeof full !== "string") return;
-        const sent = toolArgumentsSent.get(index) ?? "";
-        if (!full.startsWith(sent)) return;
-        const delta = full.slice(sent.length);
-        if (!delta) return;
+        const result = ResponseFunctionCallOutputSchema.safeParse(item);
+        const call = result.success
+            ? functionCalls.get(result.data.call_id)
+            : undefined;
+        if (
+            !result.success ||
+            !call ||
+            (result.data.status && result.data.status !== "completed") ||
+            (call.status && call.status !== "completed")
+        ) {
+            fail(
+                controller,
+                "Responses provider returned an invalid or unmatched function result",
+            );
+            return;
+        }
+        if (functionResultsSent.has(result.data.call_id)) return;
+        functionResultsSent.add(result.data.call_id);
+        ensureRole(controller);
         controller.enqueue(
-            chunk({
-                tool_calls: [{ index, function: { arguments: delta } }],
-            }),
+            chunk({ content: formatFunctionCall(call, result.data, seenUrls) }),
         );
-        toolArgumentsSent.set(index, full);
     };
     const emitMcpCall = (
         controller: TransformStreamDefaultController<Uint8Array<ArrayBuffer>>,
@@ -523,23 +514,14 @@ export function responsesToChatStream(
                         );
                         return;
                     }
-                    if (type === "response.output_item.added") {
-                        const item = (payload.item ?? {}) as ResponseItem;
-                        if (item.type !== "function_call") return;
-                        addToolCall(controller, item);
-                        return;
-                    }
                     if (type === "response.output_item.done") {
                         const item = (payload.item ?? {}) as ResponseItem;
                         if (item.type === "mcp_call") {
                             emitMcpCall(controller, item);
                         } else if (item.type === "function_call") {
-                            const index = addToolCall(controller, item, true);
-                            emitToolArgumentsDone(
-                                controller,
-                                index,
-                                item.arguments,
-                            );
+                            recordToolCall(controller, item);
+                        } else if (item.type === "function_call_output") {
+                            emitFunctionResult(controller, item);
                         } else if (item.type === "message") {
                             for (const [index, part] of (
                                 item.content ?? []
@@ -561,40 +543,6 @@ export function responsesToChatStream(
                                 }
                             }
                         }
-                        return;
-                    }
-                    if (type === "response.function_call_arguments.delta") {
-                        if (typeof payload.delta !== "string") return;
-                        const index = toolIndexes.get(
-                            String(payload.item_id ?? payload.call_id ?? ""),
-                        );
-                        if (index === undefined) return;
-                        toolArgumentsSent.set(
-                            index,
-                            (toolArgumentsSent.get(index) ?? "") +
-                                payload.delta,
-                        );
-                        controller.enqueue(
-                            chunk({
-                                tool_calls: [
-                                    {
-                                        index,
-                                        function: { arguments: payload.delta },
-                                    },
-                                ],
-                            }),
-                        );
-                        return;
-                    }
-                    if (type === "response.function_call_arguments.done") {
-                        const index = toolIndexes.get(
-                            String(payload.item_id ?? payload.call_id ?? ""),
-                        );
-                        emitToolArgumentsDone(
-                            controller,
-                            index,
-                            payload.arguments,
-                        );
                         return;
                     }
                     if (type === "response.failed" || type === "error") {
@@ -633,6 +581,21 @@ export function responsesToChatStream(
                     id = response.id ?? id;
                     created = response.created_at ?? created;
                     model = response.model ?? model;
+                    let functions: ReturnType<typeof completedFunctionCalls>;
+                    try {
+                        functions = completedFunctionCalls(
+                            response.output ?? [],
+                        );
+                    } catch {
+                        fail(
+                            controller,
+                            "Responses provider returned malformed function items",
+                        );
+                        return;
+                    }
+                    for (const call of functions.calls.values()) {
+                        functionCalls.set(call.call_id, call);
+                    }
                     for (const item of response.output ?? []) {
                         if (!item || typeof item !== "object") continue;
                         if (item.type === "mcp_call") {
@@ -640,13 +603,8 @@ export function responsesToChatStream(
                             if (terminal) return;
                             continue;
                         }
-                        if (item.type === "function_call") {
-                            const index = addToolCall(controller, item, true);
-                            emitToolArgumentsDone(
-                                controller,
-                                index,
-                                item.arguments,
-                            );
+                        if (item.type === "function_call_output") {
+                            emitFunctionResult(controller, item);
                             if (terminal) return;
                             continue;
                         }
@@ -696,7 +654,30 @@ export function responsesToChatStream(
                         }
                     }
                     ensureRole(controller);
-                    controller.enqueue(chunk({}, finishReason(response)));
+                    // A later result turns a function call into server-executed
+                    // history. Do not expose it to a client before we know.
+                    let toolIndex = 0;
+                    for (const call of functions.calls.values()) {
+                        if (functionResultsSent.has(call.call_id)) continue;
+                        controller.enqueue(
+                            chunk({
+                                tool_calls: [
+                                    {
+                                        index: toolIndex++,
+                                        id: call.call_id,
+                                        type: "function",
+                                        function: {
+                                            name: call.name,
+                                            arguments: call.arguments,
+                                        },
+                                    },
+                                ],
+                            }),
+                        );
+                    }
+                    controller.enqueue(
+                        chunk({}, finishReason(response, toolIndex > 0)),
+                    );
                     controller.enqueue(
                         dataEvent({
                             id,

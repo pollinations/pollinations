@@ -13,7 +13,7 @@ import {
     resolveModelName,
 } from "./registry.ts";
 
-/** Key permissions store canonical IDs; aliases belong to generation requests. */
+/** Key writes validate canonical-ID membership without resolving names. */
 export async function validateModelPermissionIds(
     dbBinding: D1Database,
     modelIds: readonly string[],
@@ -40,7 +40,7 @@ export async function validateModelPermissionIds(
     for (const id of modelIds) {
         if (!canonicalIds.has(id)) {
             throw new HTTPException(400, {
-                message: `Model permission '${id}' is not a canonical model ID. Use IDs from /models; aliases are only accepted in generation requests.`,
+                message: `Model permission '${id}' is not a canonical model ID. Use IDs from /models.`,
             });
         }
     }

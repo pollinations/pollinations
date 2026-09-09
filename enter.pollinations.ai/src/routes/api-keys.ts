@@ -127,7 +127,7 @@ const UpdateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Canonical model IDs from /models; aliases are rejected. null = all models allowed",
+            "Canonical model IDs from /models. null = all models allowed",
         ),
     pollenBudget: z
         .number()
@@ -169,7 +169,7 @@ const CreateApiKeySchema = z.object({
         .nullable()
         .optional()
         .describe(
-            "Canonical model IDs from /models; aliases are rejected. null = all models allowed",
+            "Canonical model IDs from /models. null = all models allowed",
         ),
     pollenBudget: z
         .number()

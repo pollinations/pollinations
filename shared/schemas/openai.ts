@@ -738,6 +738,11 @@ export const OpenAIModelSchema = z
         input_modalities: z.array(z.string()).optional(),
         output_modalities: z.array(z.string()).optional(),
         supported_endpoints: z.array(z.string()).optional(),
+        supported_parameters: z.array(z.string()).optional(),
+        default_parameters: z
+            .record(z.string(), z.unknown())
+            .nullable()
+            .optional(),
         agent: z.boolean().optional(),
         base_model: z.string().optional(),
         pricing: z.record(z.string(), z.string()).optional(),

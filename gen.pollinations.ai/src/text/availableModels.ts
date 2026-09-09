@@ -139,6 +139,11 @@ const models: ModelDefinition[] = [
         useResponsesApi: true,
     },
     {
+        name: "openai/gpt-6-astra:azure:datazone",
+        config: portkeyConfig["gpt-6-astra-azure-datazone"],
+        useResponsesApi: true,
+    },
+    {
         name: "inception/mercury-2",
         config: portkeyConfig["mercury-2"],
         transform: stripReasoning,
@@ -339,6 +344,10 @@ const models: ModelDefinition[] = [
     {
         name: "x-ai/grok-4.6",
         config: portkeyConfig["grok-4.6"],
+    },
+    {
+        name: "x-ai/grok-4.6:azure:sweden",
+        config: portkeyConfig["grok-4.6-azure-sweden"],
     },
     {
         name: "openai/gpt-audio-mini",

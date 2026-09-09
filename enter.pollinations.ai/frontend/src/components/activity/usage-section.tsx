@@ -1,31 +1,32 @@
 import {
     InlineLink,
-    Surface,
     Table,
     TableBody,
     TableCell,
     TableHead,
     TableHeaderCell,
     TableRow,
-    UsageIcon,
 } from "@pollinations/ui";
+import { useLoaderData } from "@tanstack/react-router";
 import type { FC } from "react";
-import { useMemo } from "react";
 import {
     ActivityFilter,
     CsvDownloadButton,
+    clearActivitySelectionOnEscape,
     downloadFile,
     PollenUsageBadges,
 } from "./activity-helpers";
+import { type ActivityPeriod, toggleActivityBucket } from "./activity-period";
+import { ActivityToolbar } from "./activity-toolbar";
 import { Chart } from "./chart";
-import { MetricTabs } from "./metric-tabs";
-import type { FilterState, Metric, UsagePeriodSelection } from "./types";
+import type { FilterState, Metric } from "./types";
 import { useUsageData } from "./use-usage-data";
 
 const DETAILED_USAGE_DOWNLOAD_LIMIT = 50_000;
 
 type UsageSectionProps = {
-    period: UsagePeriodSelection;
+    period: ActivityPeriod;
+    onPeriodChange: (period: ActivityPeriod) => void;
     metric: Metric;
     selectedKeyIds: string[];
     selectedModels: string[];
@@ -36,6 +37,7 @@ type UsageSectionProps = {
 
 export const UsageSection: FC<UsageSectionProps> = ({
     period,
+    onPeriodChange,
     metric,
     selectedKeyIds,
     selectedModels,
@@ -43,6 +45,7 @@ export const UsageSection: FC<UsageSectionProps> = ({
     onSelectedKeyIdsChange,
     onSelectedModelsChange,
 }) => {
+    const { apiKeys } = useLoaderData({ from: "/_dashboard" });
     const filters: FilterState = {
         period,
         metric,
@@ -56,31 +59,28 @@ export const UsageSection: FC<UsageSectionProps> = ({
         usedModels,
         usedApiKeys,
         chartData,
+        hasData,
         stats,
+        hasPeriodData,
     } = useUsageData(filters);
-
-    const effectiveKeyIds = useMemo(() => {
-        const valid = new Set(usedApiKeys.map((k) => k.id));
-        return filters.selectedKeyIds.filter((id) => valid.has(id));
-    }, [usedApiKeys, filters.selectedKeyIds]);
-
-    const effectiveModels = useMemo(() => {
-        const valid = new Set(usedModels.map((m) => m.id));
-        return filters.selectedModels.filter((id) => valid.has(id));
-    }, [usedModels, filters.selectedModels]);
 
     const keySelectOptions = usedApiKeys.map((k) => ({
         value: k.id,
         label: k.label,
     }));
+    for (const id of selectedKeyIds) {
+        const key = apiKeys.find((key) => key.id === id);
+        if (key && !keySelectOptions.some((option) => option.value === id))
+            keySelectOptions.push({
+                value: id,
+                label: key.name || "Unnamed key",
+            });
+    }
     const modelSelectOptions = usedModels.map((m) => ({
         value: m.id,
         label: m.label,
     }));
-    const showModelBreakdown =
-        effectiveModels.length === 0 || effectiveModels.length > 1;
-    const hasUsageData = stats.totalRequests > 0;
-    const downloadDisabled = loading || !hasUsageData;
+    const downloadDisabled = loading || !hasPeriodData;
     const downloadDisabledReason = loading
         ? "Loading usage data"
         : "No transactions to download for this selected period";
@@ -94,70 +94,72 @@ export const UsageSection: FC<UsageSectionProps> = ({
             period: period.period,
             limit: DETAILED_USAGE_DOWNLOAD_LIMIT.toString(),
         });
-        if (effectiveKeyIds.length > 0) {
-            params.set("api_key_ids", effectiveKeyIds.join(","));
-        }
-        if (effectiveModels.length > 0) {
-            params.set("models", effectiveModels.join(","));
-        }
-
         downloadFile(`/api/account/usage?${params.toString()}`);
     }
 
     return (
-        <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-                <div className="flex items-center gap-2 font-body text-base font-semibold text-theme-text-strong">
-                    <UsageIcon className="h-4 w-4 shrink-0" />
-                    Usage
-                </div>
-                <CsvDownloadButton
-                    disabled={downloadDisabled}
-                    disabledReason={downloadDisabledReason}
-                    onClick={downloadDetailedUsage}
-                />
-            </div>
-            <Surface className="flex flex-col gap-4">
-                <div className="flex flex-col gap-4">
-                    <div className="flex flex-col items-start gap-2">
-                        <ActivityFilter
-                            label="Keys"
-                            options={keySelectOptions}
-                            selected={selectedKeyIds}
-                            onChange={onSelectedKeyIdsChange}
-                            emptyMessage="No API key usage in this period"
-                        />
-                        <ActivityFilter
-                            label="Models"
-                            options={modelSelectOptions}
-                            selected={selectedModels}
-                            onChange={onSelectedModelsChange}
-                            emptyMessage="No model usage in this period"
-                        />
-                        <MetricTabs value={metric} onChange={onMetricChange} />
-                    </div>
-
-                    <UsageChartView
-                        loading={loading}
-                        error={error}
-                        fetchUsage={fetchUsage}
-                        chartData={chartData}
-                        metric={metric}
-                        showModelBreakdown={showModelBreakdown}
-                        stats={stats}
+        // biome-ignore lint/a11y/noStaticElementInteractions: Handles Escape from keyboard-operable controls within this activity card.
+        <div
+            className="@container flex min-w-0 flex-col gap-4"
+            onKeyDown={(event) =>
+                clearActivitySelectionOnEscape(event, () =>
+                    onPeriodChange({ ...period, bucket: undefined }),
+                )
+            }
+        >
+            <ActivityToolbar
+                label="Usage"
+                period={period}
+                onPeriodChange={onPeriodChange}
+                metric={metric}
+                onMetricChange={onMetricChange}
+                download={
+                    <CsvDownloadButton
+                        disabled={downloadDisabled}
+                        disabledReason={downloadDisabledReason}
+                        onClick={downloadDetailedUsage}
                     />
-                </div>
-            </Surface>
+                }
+            >
+                <ActivityFilter
+                    label="Keys"
+                    missingLabel="Unavailable key"
+                    options={keySelectOptions}
+                    selected={selectedKeyIds}
+                    onChange={onSelectedKeyIdsChange}
+                    emptyMessage="No API key usage in this period"
+                />
+                <ActivityFilter
+                    label="Models"
+                    options={modelSelectOptions}
+                    selected={selectedModels}
+                    onChange={onSelectedModelsChange}
+                    emptyMessage="No model usage in this period"
+                />
+            </ActivityToolbar>
+
+            <UsageChartView
+                loading={loading}
+                error={error}
+                fetchUsage={fetchUsage}
+                chartData={chartData}
+                metric={metric}
+                hasData={hasData}
+                stats={stats}
+                period={period}
+                onPeriodChange={onPeriodChange}
+            />
         </div>
     );
 };
 
 type UsageChartViewProps = Pick<
     ReturnType<typeof useUsageData>,
-    "loading" | "error" | "fetchUsage" | "chartData" | "stats"
+    "loading" | "error" | "fetchUsage" | "chartData" | "stats" | "hasData"
 > & {
     metric: Metric;
-    showModelBreakdown: boolean;
+    period: ActivityPeriod;
+    onPeriodChange: (period: ActivityPeriod) => void;
 };
 
 const UsageChartView: FC<UsageChartViewProps> = ({
@@ -166,11 +168,11 @@ const UsageChartView: FC<UsageChartViewProps> = ({
     fetchUsage,
     chartData,
     metric,
-    showModelBreakdown,
+    hasData,
     stats,
+    period,
+    onPeriodChange,
 }) => {
-    const hasUsage = stats.totalRequests > 0;
-
     return (
         <>
             <div className="min-h-[180px]">
@@ -197,17 +199,25 @@ const UsageChartView: FC<UsageChartViewProps> = ({
                         </div>
                     </div>
                 )}
-                {!loading && !error && hasUsage && (
+                {!loading && !error && hasData && (
                     <Chart
+                        key={`${period.granularity}:${period.period}`}
+                        period={period}
+                        label="Usage"
+                        onSelect={(point) =>
+                            onPeriodChange(
+                                toggleActivityBucket(period, point.timestamp),
+                            )
+                        }
                         data={chartData}
                         metric={metric}
-                        showModelBreakdown={showModelBreakdown}
                     />
                 )}
-                {!loading && !error && !hasUsage && <UsageEmptyState />}
+                {!loading && !error && !hasData && <UsageEmptyState />}
             </div>
-            {!loading && !error && hasUsage && (
-                <ModelBreakdownTable stats={stats} />
+
+            {!loading && !error && hasData && (
+                <ModelBreakdownTable stats={stats} metric={metric} />
             )}
         </>
     );
@@ -225,57 +235,69 @@ const UsageEmptyState: FC = () => (
 );
 
 type ModelBreakdownTableProps = {
+    metric: Metric;
     stats: ReturnType<typeof useUsageData>["stats"];
 };
 
-const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({ stats }) => (
-    <div className="min-w-0 max-w-full overflow-x-auto">
-        <Table
-            aria-label="Usage by model"
-            className="min-w-[420px] [&_tr:hover]:bg-transparent"
-        >
-            <TableHead className="sr-only">
-                <TableRow>
-                    <TableHeaderCell scope="col">Model</TableHeaderCell>
-                    <TableHeaderCell scope="col" align="right">
-                        Share
-                    </TableHeaderCell>
-                    <TableHeaderCell scope="col" align="right">
-                        Pollen
-                    </TableHeaderCell>
-                </TableRow>
-            </TableHead>
-            <TableBody>
-                {stats.modelBreakdowns.map((model) => (
-                    <TableRow key={model.model}>
-                        <TableCell className="max-w-64 break-words text-xs">
-                            {model.label}
-                        </TableCell>
+const ModelBreakdownTable: FC<ModelBreakdownTableProps> = ({
+    stats,
+    metric,
+}) => {
+    const total = metric === "pollen" ? stats.totalPollen : stats.totalRequests;
+    return (
+        <div className="min-w-0 max-w-full overflow-x-auto">
+            <Table
+                aria-label="Usage by model"
+                className="min-w-[340px] [&_tr:hover]:bg-transparent"
+            >
+                <TableHead className="sr-only">
+                    <TableRow>
+                        <TableHeaderCell scope="col">Model</TableHeaderCell>
+                        <TableHeaderCell scope="col" align="right">
+                            Share
+                        </TableHeaderCell>
+                        <TableHeaderCell scope="col" align="right">
+                            {metric === "pollen" ? "Pollen" : "Requests"}
+                        </TableHeaderCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody divider="neutral">
+                    {stats.modelBreakdowns.map((model) => (
+                        <TableRow key={model.model}>
+                            <TableCell className="max-w-64 break-words text-xs">
+                                {model.label}
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className="text-xs"
+                            >
+                                {total > 0
+                                    ? ((model[metric] / total) * 100).toFixed(1)
+                                    : "0.0"}
+                                %
+                            </TableCell>
+                            <TableCell
+                                align="right"
+                                numeric
+                                className="text-xs"
+                            >
+                                <PollenUsageBadges {...model} metric={metric} />
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+                <tfoot className="border-t border-divider font-semibold">
+                    <TableRow>
+                        <TableHeaderCell scope="row" colSpan={2}>
+                            Total
+                        </TableHeaderCell>
                         <TableCell align="right" numeric className="text-xs">
-                            {stats.totalPollen > 0
-                                ? (
-                                      (model.pollen / stats.totalPollen) *
-                                      100
-                                  ).toFixed(1)
-                                : "0.0"}
-                            %
-                        </TableCell>
-                        <TableCell align="right" numeric className="text-xs">
-                            <PollenUsageBadges {...model} />
+                            <PollenUsageBadges {...stats} metric={metric} />
                         </TableCell>
                     </TableRow>
-                ))}
-            </TableBody>
-            <tfoot className="border-t border-divider font-semibold">
-                <TableRow>
-                    <TableHeaderCell scope="row" colSpan={2}>
-                        Total
-                    </TableHeaderCell>
-                    <TableCell align="right" numeric className="text-xs">
-                        <PollenUsageBadges {...stats} />
-                    </TableCell>
-                </TableRow>
-            </tfoot>
-        </Table>
-    </div>
-);
+                </tfoot>
+            </Table>
+        </div>
+    );
+};

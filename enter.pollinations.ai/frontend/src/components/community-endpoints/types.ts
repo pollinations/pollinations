@@ -248,6 +248,7 @@ export type CommunityEndpointTestResponse = {
     billableUsage?: Usage;
     imagePricing?: CommunityEndpointImagePricing;
     inputModalities?: ModelInputModality[];
+    imageEditError?: string;
 };
 
 export type ActionState = {

@@ -1,14 +1,11 @@
-import type { BalanceCheckResult } from "@shared/billing/balance.ts";
 import { handleError } from "@shared/error.ts";
 import { Hono } from "hono";
 import type { Env } from "@/env.ts";
-import {
-    authFromSnapshot,
-    type GenerationAuthSnapshot,
-} from "@/middleware/auth.ts";
+import { authFromSnapshot } from "@/middleware/auth.ts";
 import { balance } from "@/middleware/balance.ts";
 import type {
     GenerationErrorSnapshot,
+    GenerationJob,
     GenerationOutcome,
 } from "@/middleware/generation-deduplication.ts";
 import { logger } from "@/middleware/logger.ts";
@@ -54,29 +51,29 @@ export type DetachedGeneration = {
 };
 
 function generationExecutor(
-    auth: GenerationAuthSnapshot,
-    requestId: string,
-    balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
-    registerGenerationCacheWrite: (promise: Promise<void>) => void,
+    job: GenerationJob,
+    registerCacheWrite: (promise: Promise<void>) => void,
 ): Hono<Env> {
     const executor = new Hono<Env>()
         .use("*", async (c, next) => {
-            c.set("requestId", requestId);
-            c.header("X-Request-Id", requestId);
+            c.set("requestId", job.requestId);
+            c.header("X-Request-Id", job.requestId);
             await next();
         })
         .use("*", logger)
-        .use("*", authFromSnapshot(auth))
+        .use("*", authFromSnapshot(job.auth))
         .use("*", async (c, next) => {
-            c.set("registerGenerationCacheWrite", registerGenerationCacheWrite);
+            c.set("generationExecution", {
+                cacheKey: job.cache.key,
+                registerCacheWrite,
+            });
             await next();
         })
         .use("*", frontendKeyBilling)
         .use("*", balance)
         .use("*", async (c, next) => {
-            c.var.balance.balanceCheckResult = balanceCheckResult;
-            c.var.balance.apiKeyBudgetEstimate = apiKeyBudgetEstimate;
+            c.var.balance.balanceCheckResult = job.balanceCheckResult;
+            c.var.balance.apiKeyBudgetEstimate = job.apiKeyBudgetEstimate;
             await next();
         })
         .route("/", generationExecutorRoutes);
@@ -86,11 +83,7 @@ function generationExecutor(
 
 /** Runs a provider handler under the Durable Object alarm's lifetime. */
 export async function executeGeneration(
-    request: Request,
-    auth: GenerationAuthSnapshot,
-    requestId: string,
-    balanceCheckResult: BalanceCheckResult,
-    apiKeyBudgetEstimate: number | undefined,
+    job: GenerationJob,
     env: CloudflareBindings,
 ): Promise<DetachedGeneration> {
     const promises: Promise<unknown>[] = [];
@@ -102,15 +95,14 @@ export async function executeGeneration(
         passThroughOnException() {},
     } as ExecutionContext;
 
-    const response = await generationExecutor(
-        auth,
-        requestId,
-        balanceCheckResult,
-        apiKeyBudgetEstimate,
-        (promise) => {
-            cacheWrite = promise;
-        },
-    ).fetch(request, env, executionCtx);
+    const request = new Request(job.request.url, {
+        method: job.request.method,
+        headers: job.request.headers,
+        body: job.request.body?.slice().buffer,
+    });
+    const response = await generationExecutor(job, (promise) => {
+        cacheWrite = promise;
+    }).fetch(request, env, executionCtx);
     const settlement = Promise.allSettled(promises).then(() => {});
 
     try {

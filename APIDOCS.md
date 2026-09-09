@@ -3228,24 +3228,31 @@ curl "https://gen.pollinations.ai/v1/models/status?minutes=60&format=raw" \
 ### 3D
 
 Generate 3D models from text prompts and images via a simple GET request.
-Returns glTF Binary in GLB format. Depending on the model, certain models
-ignore text inputs — any text prompt passed to the Trellis 2 family will be
-ignored; only the image URL is used.
+Returns glTF Binary in GLB format by default. Depending on the model, certain
+models ignore text inputs — any text prompt passed to the Trellis 2/Asset Harvester family will
+be ignored; only the image URL is used.
 
 https://gen.pollinations.ai/3d/no_prompt_for_trellis_needed?model=microsoft%2Ftrellis-2&resolution=low&key=YOUR_KEY_HERE&image=IMAGE_URL_HERE
 
-**Available models:** microsoft/trellis-2, hyper3d/rodin-2.5
+**Available models:** microsoft/trellis-2, nvidia/asset-harvester, hyper3d/rodin-2.5
 
 > **Note:** `hyper3d/rodin-2.5` requires Paid Pollen. `microsoft/trellis-2` (the default)
 > supports `low`, `medium`, and `high` resolution and works with Quest Pollen.
 
+### NVIDIA Asset Harvester
+
+`nvidia/asset-harvester` (alias: `asset-harvester`) generates 3D Gaussian Splat
+models in PLY format. Unlike other 3D models that return GLB, Asset Harvester
+returns raw PLY binary suitable for real-time rendering in Gaussian Splat
+viewers (e.g. SuperSplat, Three.js with Gaussian PLY loader).
+
 #### `GET` `/3d/{prompt}` — Generate 3D Model
 
-Generate a 3D model from a text prompt or reference image(s). Returns GLB by default.
+Generate a 3D model from a text prompt or reference image(s). Returns GLB by default. `nvidia/asset-harvester` returns PLY.
 
-**Available models:** `microsoft/trellis-2`, `microsoft/trellis-2:fal`, `hyper3d/rodin-2.5`. `microsoft/trellis-2` is the default.
+**Available models:** `microsoft/trellis-2`, `microsoft/trellis-2:fal`, `nvidia/asset-harvester`, `hyper3d/rodin-2.5`. `microsoft/trellis-2` is the default.
 
-Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.
+Pass reference image URL(s) via the `image` parameter for image-to-3D models (`microsoft/trellis-2`, `nvidia/asset-harvester`). Separate multiple URLs with `|` or `,`. `hyper3d/rodin-2.5` accepts both images and a text prompt.
 
 Browse all available models and their input requirements at [`/3d/models`](https://gen.pollinations.ai/3d/models).
 
@@ -3254,7 +3261,7 @@ Browse all available models and their input requirements at [`/3d/models`](https
 | Param | In | Type | Description |
 |---|---|---|---|
 | `prompt` * | `path` | `string` | Text description of the 3D model to generate (required for text-to-3D models such as Hyper3D Rodin; ignored by image-only models such as Trellis 2) |
-| `model` | `query` | enum (9) — `"microsoft/trellis-2"`, `"microsoft/trellis-2:fal"`, `"hyper3d/rodin-2.5"`, … | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"microsoft/trellis-2"` |
+| `model` | `query` | enum (11) — `"microsoft/trellis-2"`, `"microsoft/trellis-2:fal"`, `"nvidia/asset-harvester"`, … | Model to use. See /3d/models for the full list and per-model input requirements. · default: `"microsoft/trellis-2"` |
 | `resolution` | `query` | `"low"` \| `"medium"` \| `"high"` | Output detail for `microsoft/trellis-2`. Defaults to `low`. |
 | `image` | `query` | `string` | Reference image URL(s) for image-to-3D generation. Separate multiple URLs with `\|` or `,`. Required for image-only models (e.g. `trellis`, `triposr`, `sf3d`). |
 | `seed` | `query` | `integer` | Seed for varied generations. Passed through to models that support it (`hyper3d/rodin-2.5`); otherwise only affects the media-cache key, so a new seed forces a fresh generation for the same prompt/image. |
@@ -3275,7 +3282,7 @@ curl "https://gen.pollinations.ai/3d/a%20low-poly%20treasure%20chest?model=micro
 
 #### `POST` `/3d/{prompt}` — Generate 3D Model With JSON
 
-Generate a 3D model from a text prompt or reference image using JSON parameters. `microsoft/trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing.
+Generate a 3D model from a text prompt or reference image using JSON parameters. `microsoft/trellis-2` supports `low`, `medium`, and `high` resolution with variable pricing. `nvidia/asset-harvester` returns PLY.
 
 ⚙️ **Parameters**
 
@@ -3291,7 +3298,7 @@ Generate a 3D model from a text prompt or reference image using JSON parameters.
 
 | Field | Type | Description |
 |---|---|---|
-| `model` | enum (9) — `"microsoft/trellis-2"`, `"microsoft/trellis-2:fal"`, `"hyper3d/rodin-2.5"`, … | Model to use for 3D generation. See /3d/models for the full list and per-model input requirements. · default: `"microsoft/trellis-2"` |
+| `model` | enum (11) — `"microsoft/trellis-2"`, `"microsoft/trellis-2:fal"`, `"nvidia/asset-harvester"`, … | Model to use for 3D generation. See /3d/models for the full list and per-model input requirements. · default: `"microsoft/trellis-2"` |
 | `image` | `string` \| `string`[] | Reference image URL or array of URLs for image-to-3D generation, optionally guided by the path prompt on supported models. A string is treated as one complete URL. |
 | `resolution` | `"low"` \| `"medium"` \| `"high"` | Output voxel-grid resolution for `microsoft/trellis-2`: `low` (512³), `medium` (1024³), or `high` (1536³). Higher resolutions add detail, take longer, and cost more. · default: `"low"` |
 | `seed` | `integer` | Seed for varied generations. Passed to models that support it. |

@@ -82,6 +82,9 @@ function createGenerationMocks() {
     const deepInfraState: { requests: Record<string, unknown>[] } = {
         requests: [],
     };
+    const elevenLabsState: { requests: Record<string, unknown>[] } = {
+        requests: [],
+    };
     const responsesHandler = async (request: Request) => {
         const body = (await request.clone().json()) as Record<string, unknown>;
         responsesState.requests.push({
@@ -169,6 +172,20 @@ function createGenerationMocks() {
     };
     return createFetchMock({
         tinybird: createMockTinybird(),
+        elevenLabs: {
+            state: elevenLabsState,
+            handlerMap: {
+                "api.elevenlabs.io": async (request: Request) => {
+                    elevenLabsState.requests.push(await request.json());
+                    return new Response("audio bytes", {
+                        headers: { "content-type": "audio/mpeg" },
+                    });
+                },
+            },
+            reset: () => {
+                elevenLabsState.requests = [];
+            },
+        },
         portkeyDirect: {
             state: portkeyState,
             handlerMap: {
@@ -675,11 +692,15 @@ function usageHeaders(headers: Record<string, string>) {
     };
 }
 
-async function fetchWorker(path: string, init: RequestInit) {
+async function fetchWorker(
+    path: string,
+    init: RequestInit,
+    bindings = withInlineGenerationCoordinator(env),
+) {
     const ctx = createExecutionContext();
     const response = await worker.fetch(
         new Request(`https://gen.pollinations.ai${path}`, init),
-        withInlineGenerationCoordinator(env),
+        bindings,
         ctx,
     );
 
@@ -688,6 +709,282 @@ async function fetchWorker(path: string, init: RequestInit) {
         wait: () => waitOnExecutionContext(ctx),
     };
 }
+
+test("media Responses and Chat share native generation, cache and one debit", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key, userId } = await createTestApiKey({
+        user: { tierBalance: 100 },
+    });
+    const before = await getUserBalance(drizzle(env.DB), userId);
+    const prompt = `media wrapper 100% literal %2F ${crypto.randomUUID()}`;
+    const bindings = withInlineGenerationCoordinator(env);
+    const results = await Promise.all(
+        ["responses", "chat/completions"].map((protocol) =>
+            fetchWorker(
+                `/v1/${protocol}`,
+                {
+                    method: "POST",
+                    headers: {
+                        authorization: `Bearer ${key}`,
+                        "content-type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: "flux",
+                        stream: protocol === "chat/completions",
+                        ...(protocol === "responses"
+                            ? { input: prompt }
+                            : {
+                                  messages: [
+                                      { role: "system", content: "ignored" },
+                                      { role: "user", content: prompt },
+                                  ],
+                              }),
+                    }),
+                },
+                bindings,
+            ),
+        ),
+    );
+    for (const { response } of results)
+        expect(response.status, await response.clone().text()).toBe(200);
+    const responseJson = (await results[0].response.json()) as {
+        usage: unknown;
+        output: { content: { text: string }[] }[];
+    };
+    const markdown = responseJson.output[0].content[0].text;
+    expect(responseJson.usage).toBeNull();
+    expect(markdown).toMatch(/^!\[Image\]\(https:\/\/media\./);
+    const chatStream = await results[1].response.text();
+    expect(results[0].response.headers.get("content-type")).toContain(
+        "application/json",
+    );
+    expect(results[1].response.headers.get("content-type")).toContain(
+        "text/event-stream",
+    );
+    expect(chatStream).toContain(JSON.stringify(markdown));
+    expect(chatStream).toContain("data: [DONE]");
+    expect(chatStream).not.toContain("usage_missing");
+    await Promise.all(results.map(({ wait }) => wait()));
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+    expect(mocks.deepInfra.state.requests[0]).toMatchObject({ prompt });
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
+    expect(
+        mocks.tinybird.state.events.find((event) => event.isBilledUsage),
+    ).toMatchObject({
+        modelRequested: "flux",
+        resolvedModelRequested: "black-forest-labs/flux.1-schnell",
+    });
+    const after = await getUserBalance(drizzle(env.DB), userId);
+    expect(after.tierBalance).toBeLessThan(before.tierBalance);
+    for (const protocol of ["responses", "chat/completions"]) {
+        const repeated = await fetchWorker(
+            `/v1/${protocol}`,
+            {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "black-forest-labs/flux.1-schnell",
+                    ...(protocol === "responses"
+                        ? { input: prompt }
+                        : { messages: [{ role: "user", content: prompt }] }),
+                }),
+            },
+            bindings,
+        );
+        expect(repeated.response.status).toBe(200);
+        expect(repeated.response.headers.get("X-Cache")).toBe("HIT");
+        expect(repeated.response.headers.get("Link")).toBe(
+            results[0].response.headers.get("Link"),
+        );
+        await repeated.response.text();
+        await repeated.wait();
+    }
+    const cached = await fetchWorker(
+        `/image/${encodeURIComponent(prompt)}?model=black-forest-labs/flux.1-schnell`,
+        { headers: { authorization: `Bearer ${key}` } },
+        bindings,
+    );
+    expect(cached.response.status).toBe(200);
+    expect(cached.response.headers.get("Link")).toBe(
+        results[0].response.headers.get("Link"),
+    );
+    await cached.response.arrayBuffer();
+    await cached.wait();
+    expect(mocks.deepInfra.state.requests).toHaveLength(1);
+    expect((await getUserBalance(drizzle(env.DB), userId)).tierBalance).toBe(
+        after.tierBalance,
+    );
+    expect(
+        mocks.tinybird.state.events.filter((event) => event.isBilledUsage),
+    ).toHaveLength(1);
+});
+
+test("media text protocols reject invalid prompts and attachments before generation", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    for (const protocol of ["responses", "chat/completions"]) {
+        for (const messages of [
+            [{ role: "assistant", content: "no user prompt" }],
+            ...[".", "..", "\ud800", "\udc00"].map((content) => [
+                { role: "user", content },
+            ]),
+            [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type:
+                                protocol === "responses"
+                                    ? "input_image"
+                                    : "image_url",
+                            image_url:
+                                protocol === "responses"
+                                    ? "https://example.com/image.png"
+                                    : { url: "https://example.com/image.png" },
+                        },
+                    ],
+                },
+            ],
+        ]) {
+            const { response, wait } = await fetchWorker(`/v1/${protocol}`, {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "flux",
+                    [protocol === "responses" ? "input" : "messages"]: messages,
+                }),
+            });
+            expect(response.status, await response.clone().text()).toBe(400);
+            await response.text();
+            await wait();
+        }
+    }
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
+    expect(
+        mocks.tinybird.state.events.some((event) => event.isBilledUsage),
+    ).toBe(false);
+});
+
+test("media Responses rejects invalid string input before generation", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({ user: { tierBalance: 100 } });
+    for (const input of [".", "..", "\ud800", "\udc00"]) {
+        const { response, wait } = await fetchWorker("/v1/responses", {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({ model: "flux", input }),
+        });
+        expect(response.status, await response.clone().text()).toBe(400);
+        expect(await response.text()).toContain("Media prompt");
+        await wait();
+    }
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
+    expect(
+        mocks.tinybird.state.events.some((event) => event.isBilledUsage),
+    ).toBe(false);
+});
+
+test("media model permissions apply on both text protocols", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "deepInfra");
+    const { key } = await createTestApiKey({
+        allowedModels: ["openai/gpt-5-nano"],
+        user: { tierBalance: 100 },
+    });
+    for (const path of ["/v1/responses", "/v1/chat/completions"]) {
+        const { response, wait } = await fetchWorker(path, {
+            method: "POST",
+            headers: {
+                authorization: `Bearer ${key}`,
+                "content-type": "application/json",
+            },
+            body: JSON.stringify({
+                model: "flux",
+                ...(path === "/v1/responses"
+                    ? { input: "denied" }
+                    : { messages: [{ role: "user", content: "denied" }] }),
+            }),
+        });
+        expect(response.status).toBe(403);
+        await response.text();
+        await wait();
+    }
+    expect(mocks.deepInfra.state.requests).toHaveLength(0);
+});
+
+test("media audio uses native speech billing and preserves literal text", async ({
+    mocks,
+}) => {
+    await mocks.enable("tinybird", "elevenLabs");
+    const bindings = withInlineGenerationCoordinator({
+        ...env,
+        ELEVENLABS_API_KEY: "elevenlabs-test-key",
+    });
+    const { key, userId } = await createTestApiKey({
+        user: { packBalance: 100 },
+    });
+    const prompt = `100% literal %2F ${crypto.randomUUID()}`;
+    const before = await getUserBalance(drizzle(env.DB), userId);
+    let link: string | null = null;
+    for (const protocol of ["responses", "chat/completions"]) {
+        const { response, wait } = await fetchWorker(
+            `/v1/${protocol}`,
+            {
+                method: "POST",
+                headers: {
+                    authorization: `Bearer ${key}`,
+                    "content-type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "elevenlabs/eleven-v3",
+                    ...(protocol === "responses"
+                        ? { input: prompt, stream: true }
+                        : { messages: [{ role: "user", content: prompt }] }),
+                }),
+            },
+            bindings,
+        );
+        expect(response.status, await response.clone().text()).toBe(200);
+        const body = await response.text();
+        expect(body).toContain("[Audio](https://media.");
+        expect(body).not.toContain("![Audio]");
+        if (link) expect(response.headers.get("Link")).toBe(link);
+        link = response.headers.get("Link");
+        await wait();
+    }
+    expect(mocks.elevenLabs.state.requests).toHaveLength(1);
+    expect(mocks.elevenLabs.state.requests[0]).toMatchObject({ text: prompt });
+    const billed = mocks.tinybird.state.events.filter(
+        (event) => event.isBilledUsage,
+    );
+    expect(billed).toHaveLength(1);
+    expect(billed[0]).toMatchObject({
+        eventType: "generate.audio",
+        requestPath: "/v1/responses",
+        tokenCountCompletionAudio: prompt.length,
+    });
+    expect(
+        (await getUserBalance(drizzle(env.DB), userId)).packBalance,
+    ).toBeLessThan(before.packBalance);
+});
 
 test("chat completions use local text generation with VCR-backed Portkey", async ({
     paidApiKey,
@@ -1946,12 +2243,14 @@ test("simple text forwards options through provider transforms once", async ({
     expect(mocks.portkeyDirect.state.requests).toHaveLength(1);
     expect(mocks.portkeyDirect.state.requests[0]).toMatchObject({
         model: "gpt-5-nano",
-        seed: 42,
-        temperature: 1,
         max_completion_tokens: 16,
         reasoning_effort: "medium",
         messages: [{ role: "user", content: "vcr simple text" }],
     });
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("seed");
+    expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
+        "temperature",
+    );
     expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty("top_p");
     expect(mocks.portkeyDirect.state.requests[0]).not.toHaveProperty(
         "presence_penalty",

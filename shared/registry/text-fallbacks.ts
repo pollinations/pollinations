@@ -9,6 +9,48 @@ import { perMillion } from "./price-helpers";
 
 /** Exact-checkpoint provider routes used when a text model's primary fails. */
 export const TEXT_FALLBACKS = {
+    "perplexity/sonar": {
+        "perplexity/sonar:openrouter:perplexity": {
+            provider: "openrouter",
+        },
+    },
+    "perplexity/sonar-pro": {
+        "perplexity/sonar-pro:openrouter:perplexity": {
+            provider: "openrouter",
+        },
+    },
+    "perplexity/sonar-reasoning-pro": {
+        "perplexity/sonar-reasoning-pro:openrouter:perplexity": {
+            provider: "openrouter",
+        },
+    },
+    "openai/gpt-6-astra": {
+        "openai/gpt-6-astra:azure:datazone": {
+            provider: "azure",
+            // Same checkpoint, separate US Data Zone quota pool. The caller
+            // keeps the Global quote; Pollinations absorbs the 10% premium.
+            cost: {
+                promptTextTokens: perMillion(11),
+                promptCachedTokens: perMillion(1.1),
+                promptCacheWriteTokens: perMillion(13.75),
+                completionTextTokens: perMillion(55),
+            },
+            costVariants: {
+                long_context: {
+                    promptTextTokens: perMillion(22),
+                    promptCachedTokens: perMillion(2.2),
+                    promptCacheWriteTokens: perMillion(27.5),
+                    completionTextTokens: perMillion(82.5),
+                },
+            },
+        },
+    },
+    "x-ai/grok-4.6": {
+        "x-ai/grok-4.6:azure:sweden": {
+            provider: "azure",
+            addedDate: new Date("2026-09-06").getTime(),
+        },
+    },
     "deepseek/deepseek-v4-flash": {
         "deepseek/deepseek-v4-flash:deepinfra": {
             provider: "deepinfra",

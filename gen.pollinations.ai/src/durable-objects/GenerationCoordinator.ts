@@ -89,9 +89,9 @@ async function cacheExists(
     env: CloudflareBindings,
     cache: GenerationCacheIdentity,
 ): Promise<boolean> {
-    const bucket =
-        cache.storage === "media" ? env.IMAGE_BUCKET : env.TEXT_BUCKET;
-    return (await bucket.head(cache.key)) !== null;
+    return cache.storage === "media"
+        ? env.MEDIA.has(cache.key)
+        : (await env.TEXT_BUCKET.head(cache.key)) !== null;
 }
 
 function unavailable(message: string): GenerationOutcome {
@@ -408,7 +408,8 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
         operation: Omit<PaymentOperation, "response">,
     ): Promise<void> {
         const bodyKey = `x402/${this.ctx.id.toString()}/response`;
-        await this.env.IMAGE_BUCKET.put(bodyKey, response.body);
+        // Payment replays stay private, outside the public media service.
+        await this.env.TEXT_BUCKET.put(bodyKey, response.body);
         await this.ctx.storage.put(PAYMENT_OPERATION_KEY, {
             ...operation,
             response: {
@@ -423,7 +424,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
     private async restorePaymentResponse(
         response: NonNullable<PaymentOperation["response"]>,
     ): Promise<PaymentResponseSnapshot> {
-        const object = await this.env.IMAGE_BUCKET.get(response.bodyKey);
+        const object = await this.env.TEXT_BUCKET.get(response.bodyKey);
         if (!object) {
             throw new Error("Persisted payment response is incomplete");
         }
@@ -484,7 +485,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
             await this.ctx.storage.deleteAlarm();
             if (payment.response?.bodyKey)
-                await this.env.IMAGE_BUCKET.delete(payment.response.bodyKey);
+                await this.env.TEXT_BUCKET.delete(payment.response.bodyKey);
             // Payment operations occupy their own named coordinator. This
             // also clears expired chunks from the earlier staging prototype.
             await this.ctx.storage.deleteAll();
@@ -526,18 +527,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
 
             const job = await this.restore(stored);
-            const execution = await executeGeneration(
-                new Request(job.request.url, {
-                    method: job.request.method,
-                    headers: job.request.headers,
-                    body: job.request.body?.slice().buffer,
-                }),
-                job.auth,
-                job.requestId,
-                job.balanceCheckResult,
-                job.apiKeyBudgetEstimate,
-                this.env,
-            );
+            const execution = await executeGeneration(job, this.env);
             settlement = execution.settlement;
             await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {

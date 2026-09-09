@@ -94,9 +94,8 @@ export function createClaudeThinkingTransform(
         }
 
         // Anthropic rejects non-default sampling params when thinking is on
-        // ("`temperature` may only be set to 1 when thinking is enabled"). Strip
-        // them so an enabled toggle never 400s. (Opus 4.7+ already get this in
-        // parameterProcessor, but Sonnet/Haiku do not.)
+        // ("`temperature` may only be set to 1 when thinking is enabled").
+        // Remove those parameters when enabling thinking.
         for (const param of ["temperature", "top_p", "top_k"] as const) {
             if (updated[param] !== undefined) {
                 log("Stripping %s for Claude thinking", param);

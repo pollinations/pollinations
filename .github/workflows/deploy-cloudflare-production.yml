@@ -60,7 +60,7 @@ jobs:
       canonical_permissions: ${{ inputs.finalize_canonical_permissions || steps.filter.outputs.canonical_permissions == 'true' }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -84,7 +84,7 @@ jobs:
       - name: Detect changed services
         id: filter
         if: github.event_name == 'push'
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@v4
         with:
           # Required for long-lived branches. Without `base`, the action falls
           # back to the repository default branch and diffs
@@ -152,10 +152,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -203,10 +203,10 @@ jobs:
             exit 1
           fi
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -231,10 +231,10 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -243,7 +243,7 @@ jobs:
 
       - name: Setup SOPS
         if: github.event_name == 'workflow_dispatch' && inputs.sync_discord_secrets
-        uses: nhedger/setup-sops@v2
+        uses: nhedger/setup-sops@v3
 
       - name: Build and deploy to Cloudflare
         env:
@@ -262,11 +262,13 @@ jobs:
           --config enter.pollinations.ai/wrangler.toml'
 
   deploy-gen:
-    needs: [changes, migrate, deploy-mcp-apps]
+    needs: [changes, migrate, deploy-media, deploy-mcp-apps]
     if: >-
       always() &&
       needs.changes.outputs.gen == 'true' &&
       needs.migrate.result == 'success' &&
+      (needs.deploy-media.result == 'success' ||
+       needs.deploy-media.result == 'skipped') &&
       (needs.deploy-mcp-apps.result == 'success' ||
        needs.deploy-mcp-apps.result == 'skipped')
     runs-on: ubuntu-latest
@@ -274,14 +276,14 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       # Only this job sits on the post-migration critical path, so it is the
       # one place the npm cache is worth having: every second between `migrate`
       # finishing and gen deploying is a second the live worker queries a schema
       # its code predates.
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
           cache: 'npm'
@@ -290,7 +292,7 @@ jobs:
         run: npm ci
 
       - name: Setup SOPS
-        uses: nhedger/setup-sops@v2
+        uses: nhedger/setup-sops@v3
 
       # Deploy BEFORE pushing secrets: a fresh `wrangler deploy` makes the
       # latest worker version the deployed one. `wrangler secret bulk` edits
@@ -354,9 +356,9 @@ jobs:
       CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID_MYCELI }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
       - name: Install dependencies
@@ -373,10 +375,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '24'
 
@@ -424,15 +426,15 @@ jobs:
       group: deploy-${{ matrix.app.path }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: '24'
 
       - name: Setup SOPS
         if: matrix.app.sops != 'none'
-        uses: nhedger/setup-sops@v2
+        uses: nhedger/setup-sops@v3
 
       - name: Verify Docker
         if: matrix.app.docker

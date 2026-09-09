@@ -19,7 +19,8 @@ services = [
     { binding = "POLLINATIONS_MCP", service = "pollinations-mcp" },
     { binding = "FFMPEG_MCP", service = "pollinations-ffmpeg-mcp" },
     { binding = "EXA_MCP", service = "pollinations-exa-mcp" },
-    { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" }
+    { binding = "COMPOSIO_MCP", service = "pollinations-composio-mcp" },
+    { binding = "MEDIA", service = "pollinations-media", entrypoint = "MediaUpload" }
 ]
 
 [images]
@@ -36,12 +37,13 @@ binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
 [[r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
-
-[[r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
 
 [[durable_objects.bindings]]
 name = "POLLEN_RATE_LIMITER"
@@ -137,13 +139,19 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "a621f17ad3e34000971cffa616675c5b"
 
-[[env.production.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
+[[env.production.services]]
+binding = "MEDIA"
+service = "pollinations-media-prod"
+entrypoint = "MediaUpload"
 
 [[env.production.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[env.production.r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
 
 [[env.production.ratelimits]]
 name = "EDGE_RATE_LIMITER"
@@ -229,13 +237,19 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "ba22195551794751b9792e4e67eb074a"
 
-[[env.staging.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
+[[env.staging.services]]
+binding = "MEDIA"
+service = "pollinations-media-staging"
+entrypoint = "MediaUpload"
 
 [[env.staging.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[env.staging.r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
 
 [[env.staging.ratelimits]]
 name = "EDGE_RATE_LIMITER"
@@ -317,13 +331,19 @@ migrations_dir = "../enter.pollinations.ai/drizzle"
 binding = "KV"
 id = "84512601e2a44679a4d3b0f7415d90ec"
 
-[[env.test.r2_buckets]]
-binding = "IMAGE_BUCKET"
-bucket_name = "pollinations-images"
+[[env.test.services]]
+binding = "MEDIA"
+service = "pollinations-media-dev"
+entrypoint = "MediaUpload"
 
 [[env.test.r2_buckets]]
 binding = "TEXT_BUCKET"
 bucket_name = "pollinations-text-enter"
+
+# Temporary read-through source; remove with legacy-media-cache.ts.
+[[env.test.r2_buckets]]
+binding = "LEGACY_MEDIA_BUCKET"
+bucket_name = "pollinations-images"
 
 [[env.test.ratelimits]]
 name = "EDGE_RATE_LIMITER"

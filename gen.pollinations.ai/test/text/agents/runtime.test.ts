@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { AgentOutputItem } from "../../../src/text/agents/output.ts";
 import {
     handlePromptAgentResponsesRequest,
     PromptAgentResponsesRequestSchema,
@@ -63,6 +64,8 @@ function chatOutputText(body: unknown): string {
     );
     const content = completion.choices?.[0]?.message?.content;
     if (typeof content !== "string") throw new Error("Missing Chat content");
+    expect(completion.choices?.[0]?.message?.tool_calls).toBeUndefined();
+    expect(completion.choices?.[0]?.finish_reason).not.toBe("tool_calls");
     return content;
 }
 
@@ -222,7 +225,7 @@ describe("prompt-agent runtime", () => {
         const responseText = await res.text();
         expect(res.status, responseText).toBe(200);
         const json = JSON.parse(responseText) as {
-            output: { type: string; content: { text: string }[] }[];
+            output: AgentOutputItem[];
             status: string;
             usage: {
                 input_tokens: number;
@@ -232,20 +235,26 @@ describe("prompt-agent runtime", () => {
         expect(responseOutputText(json)).toBe("checking done");
         expect(json.output.map((item) => item.type)).toEqual([
             "message",
-            "mcp_call",
+            "function_call",
+            "function_call_output",
             "message",
         ]);
-        expect(json.output[1]).toMatchObject({
-            id: "c1",
-            type: "mcp_call",
-            server_label: "exa",
-            name: "listModels",
+        expect(json.output[1]).toEqual({
+            id: expect.stringMatching(/^fc_/),
+            type: "function_call",
+            call_id: "c1",
+            name: "mcp__exa__listModels",
             arguments: "{}",
+            status: "completed",
+        });
+        expect(json.output[2]).toEqual({
+            id: expect.stringMatching(/^fco_/),
+            type: "function_call_output",
+            call_id: "c1",
             status: "completed",
             output: JSON.stringify({
                 content: [{ type: "text", text: "found" }],
             }),
-            error: null,
         });
         expect(chatOutputText(json)).toBe(
             "checking \n\n" +
@@ -259,6 +268,7 @@ describe("prompt-agent runtime", () => {
         expect(json.usage.tool_call_counts).toEqual({ mcp_call: 1 });
         // Usage from both model rounds is summed into the total.
         expect(json.usage.input_tokens).toBe(14);
+        expect(modelCalls).toBe(2);
         expect(
             mcpRequests
                 .filter((request) => request.method === "DELETE")
@@ -704,6 +714,7 @@ describe("prompt-agent runtime", () => {
         true,
     ])("returns generated image links when stream:%s", async (stream) => {
         let modelCalls = 0;
+        let toolCalls = 0;
         const modelResponse = (
             message: Record<string, unknown>,
             finishReason: "stop" | "tool_calls",
@@ -803,6 +814,8 @@ describe("prompt-agent runtime", () => {
                     expect(body.params?.arguments).toMatchObject({
                         prompt: "a pirate",
                     });
+                    expect(body.method).toBe("tools/call");
+                    toolCalls++;
                     return Response.json({
                         jsonrpc: "2.0",
                         id: body.id,
@@ -912,9 +925,10 @@ describe("prompt-agent runtime", () => {
             expect(events.map((event) => event.type)).toEqual([
                 "response.created",
                 "response.output_item.added",
-                "response.mcp_call.in_progress",
-                "response.mcp_call_arguments.done",
-                "response.mcp_call.completed",
+                "response.function_call_arguments.delta",
+                "response.function_call_arguments.done",
+                "response.output_item.done",
+                "response.output_item.added",
                 "response.output_item.done",
                 "response.output_item.added",
                 "response.content_part.added",
@@ -925,17 +939,52 @@ describe("prompt-agent runtime", () => {
                 "response.completed",
             ]);
             body = events.at(-1)?.response;
+            // The SDK also adds parsed/parsed_arguments metadata.
             expect((await aggregated).output).toMatchObject(
                 (body as { output: unknown[] }).output,
             );
+            const output = (body as { output: AgentOutputItem[] }).output;
+            expect(
+                events
+                    .filter(
+                        (event) => event.type === "response.output_item.done",
+                    )
+                    .map((event) => ({
+                        output_index: event.output_index,
+                        item: event.item,
+                    })),
+            ).toEqual(
+                output.map((item, output_index) => ({ output_index, item })),
+            );
+            expect(events[1]).toMatchObject({
+                output_index: 0,
+                item: { ...output[0], arguments: "", status: "in_progress" },
+            });
+            expect(events[2]).toMatchObject({
+                item_id: output[0].id,
+                output_index: 0,
+                delta: '{"prompt":"a pirate"}',
+            });
+            expect(events[3]).toMatchObject({
+                item_id: output[0].id,
+                output_index: 0,
+                arguments: '{"prompt":"a pirate"}',
+            });
+            expect(events[5]).toMatchObject({
+                output_index: 1,
+                item: { ...output[1], output: "", status: "in_progress" },
+            });
             const chunks = responseStreamEvents(
                 await new Response(chatStream).text(),
             );
             content = chunks
                 .map((chunk) => {
                     const choices = chunk.choices as {
-                        delta: { content?: string };
+                        delta: { content?: string; tool_calls?: unknown };
+                        finish_reason?: string;
                     }[];
+                    expect(choices?.[0]?.delta.tool_calls).toBeUndefined();
+                    expect(choices?.[0]?.finish_reason).not.toBe("tool_calls");
                     return choices?.[0]?.delta.content ?? "";
                 })
                 .join("");
@@ -947,16 +996,35 @@ describe("prompt-agent runtime", () => {
         expect(body).toMatchObject({
             output: [
                 {
-                    type: "mcp_call",
-                    id: "c1",
-                    server_label: "pollinations",
-                    name: "generateImage",
+                    type: "function_call",
+                    id: expect.stringMatching(/^fc_/),
+                    call_id: "c1",
+                    name: "mcp__pollinations__generateImage",
                     arguments: '{"prompt":"a pirate"}',
                     status: "completed",
-                    output: expect.stringContaining(
-                        "https://images.example/pirate.png",
-                    ),
-                    error: null,
+                },
+                {
+                    type: "function_call_output",
+                    id: expect.stringMatching(/^fco_/),
+                    call_id: "c1",
+                    status: "completed",
+                    output: JSON.stringify({
+                        content: [
+                            {
+                                type: "text",
+                                text: "[image output omitted; use an HTTPS resource link]",
+                            },
+                            {
+                                type: "resource_link",
+                                uri: "https://images.example/pirate.png",
+                                name: "Generated image",
+                            },
+                            {
+                                type: "text",
+                                text: '{"data":[{"url":"https://images.example/pirate.png"}]}',
+                            },
+                        ],
+                    }),
                 },
                 {
                     type: "message",
@@ -977,6 +1045,8 @@ describe("prompt-agent runtime", () => {
         );
         expect(content.startsWith('\n\n<details type="tool_calls"')).toBe(true);
         expect(content.endsWith("Finished")).toBe(true);
+        expect(modelCalls).toBe(2);
+        expect(toolCalls).toBe(1);
     });
 
     it("streams SSE with usage on the final chunk when stream:true", async () => {
@@ -1583,41 +1653,26 @@ describe("prompt-agent runtime", () => {
             ? events.at(-1)?.response
             : JSON.parse(responseText);
         expect(responseOutputText(json)).toBe("sorry, lookup failed");
-        const error =
-            kind === "http" || kind === "protocol"
-                ? {
-                      type:
-                          kind === "http" ? "http_error" : "mcp_protocol_error",
-                      code: kind === "http" ? 500 : -32603,
-                      message: expect.stringContaining(failureMessage),
-                  }
-                : {
-                      type: "mcp_tool_execution_error",
-                      content:
-                          kind === "network"
-                              ? expect.stringContaining(failureMessage)
-                              : {
-                                    isError: true,
-                                    content: expect.arrayContaining([
-                                        {
-                                            type: "text",
-                                            text: expect.stringContaining(
-                                                failureMessage,
-                                            ),
-                                        },
-                                    ]),
-                                },
-                  };
-        const failedCall = {
-            type: "mcp_call",
-            id: "c1",
-            status: "failed",
-            error,
+        const call = {
+            type: "function_call",
+            id: expect.stringMatching(/^fc_/),
+            call_id: "c1",
+            name: "mcp__pollinations__listModels",
+            arguments: "{}",
+            status: "completed",
+        };
+        const result = {
+            type: "function_call_output",
+            id: expect.stringMatching(/^fco_/),
+            call_id: "c1",
+            status: "completed",
+            output: expect.any(String),
         };
         expect(json).toMatchObject({
             status: "completed",
             output: [
-                expect.objectContaining(failedCall),
+                call,
+                result,
                 expect.objectContaining({ type: "message" }),
             ],
             usage: {
@@ -1627,21 +1682,69 @@ describe("prompt-agent runtime", () => {
                 tool_call_counts: { mcp_call: 1 },
             },
         });
+        const output = (json as { output: AgentOutputItem[] }).output;
+        const toolResult = output[1];
+        if (toolResult.type !== "function_call_output") {
+            throw new Error("Missing completed tool result");
+        }
+        expect(JSON.parse(toolResult.output)).toEqual({
+            isError: true,
+            content: [
+                { type: "text", text: expect.stringContaining(failureMessage) },
+                ...(kind === "execution"
+                    ? [
+                          {
+                              type: "text",
+                              text: "[image output omitted; use an HTTPS resource link]",
+                          },
+                      ]
+                    : []),
+            ],
+        });
         expect(JSON.stringify(json)).not.toContain(binaryData);
         if (stream) {
             expect(events.map((event) => event.sequence_number)).toEqual(
                 events.map((_, index) => index),
             );
             expect(
-                events.filter(
-                    (event) => event.type === "response.mcp_call.failed",
-                ),
-            ).toHaveLength(1);
+                events
+                    .filter(
+                        (event) => event.type === "response.output_item.done",
+                    )
+                    .map((event) => ({
+                        output_index: event.output_index,
+                        item: event.item,
+                    })),
+            ).toEqual(
+                output.map((item, output_index) => ({ output_index, item })),
+            );
             expect(
-                events.find(
-                    (event) => event.type === "response.output_item.done",
+                events.filter(
+                    (event) =>
+                        event.type === "response.function_call_arguments.delta",
                 ),
-            ).toMatchObject({ item: failedCall });
+            ).toEqual([
+                expect.objectContaining({
+                    item_id: output[0].id,
+                    output_index: 0,
+                    delta: "{}",
+                }),
+            ]);
+            expect(
+                events.filter(
+                    (event) =>
+                        event.type === "response.function_call_arguments.done",
+                ),
+            ).toEqual([
+                expect.objectContaining({
+                    item_id: output[0].id,
+                    output_index: 0,
+                    arguments: "{}",
+                }),
+            ]);
+            expect(
+                events.filter((event) => event.type === "response.completed"),
+            ).toHaveLength(1);
             expect(events.at(-1)?.type).toBe("response.completed");
         }
         const content = stream
@@ -1650,14 +1753,17 @@ describe("prompt-agent runtime", () => {
                       responsesToChatStream(chatSource, "test-agent"),
                   ).text(),
               )
-                  .map(
-                      (chunk) =>
-                          (
-                              chunk.choices as {
-                                  delta: { content?: string };
-                              }[]
-                          )?.[0]?.delta.content ?? "",
-                  )
+                  .map((chunk) => {
+                      const choices = chunk.choices as {
+                          delta: { content?: string; tool_calls?: unknown };
+                          finish_reason?: string;
+                      }[];
+                      expect(choices?.[0]?.delta.tool_calls).toBeUndefined();
+                      expect(choices?.[0]?.finish_reason).not.toBe(
+                          "tool_calls",
+                      );
+                      return choices?.[0]?.delta.content ?? "";
+                  })
                   .join("")
             : chatOutputText(json);
         expect(content).toContain(

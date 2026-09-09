@@ -565,6 +565,29 @@ describe("resolveModelConfig", () => {
     });
 
     it.each([
+        ["perplexity/sonar", "low"],
+        ["perplexity/sonar", "high"],
+        ["perplexity/sonar-pro", "high"],
+        ["perplexity/sonar-reasoning-pro", "high"],
+    ] as const)("preserves %s %s search context on OpenRouter", (model, searchContextSize) => {
+        const result = resolveModelConfig(messages, {
+            model: `${model}:openrouter:perplexity`,
+            web_search_options: { search_context_size: searchContextSize },
+        });
+        expect(result.options.model).toBe(model);
+        expect(result.options.web_search_options).toEqual({
+            search_context_size: searchContextSize,
+        });
+        expect(result.options.modelConfig).toMatchObject({
+            directEndpoint: "https://openrouter.ai/api/v1/chat/completions",
+        });
+        expect(result.options.provider).toEqual({
+            only: ["perplexity"],
+            allow_fallbacks: false,
+        });
+    });
+
+    it.each([
         "perplexity-high",
         "perplexity-deep",
         "sonar-deep",

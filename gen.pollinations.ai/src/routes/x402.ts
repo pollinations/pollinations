@@ -61,7 +61,7 @@ import {
     textBodyLimit,
 } from "./generation-handlers.ts";
 import {
-    formatOpenAIImageGeneration,
+    formatOpenAIImageResponse,
     handleImageGeneration,
     prepareOpenAIImageGeneration,
 } from "./images.ts";
@@ -895,7 +895,7 @@ export function createAnonymousX402Routes(
     app.post(
         "/v1/images/generations",
         prepareOpenAIImageGeneration,
-        formatOpenAIImageGeneration,
+        formatOpenAIImageResponse,
         prepareGenerationRequest,
         handleImageGeneration,
     );

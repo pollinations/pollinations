@@ -2872,16 +2872,7 @@ async function generateAudioFromSpeechRequest(
 export async function handleSimpleAudio(c: AudioContext): Promise<Response> {
     const log = c.get("log").getChild("generate");
 
-    const rawText = c.req.param("text");
-    let text: string;
-    try {
-        text = decodeURIComponent(rawText);
-    } catch {
-        throw new UpstreamError(400 as ContentfulStatusCode, {
-            message:
-                "Invalid percent-encoding in URL path. Make sure the text is properly URL-encoded (e.g. with encodeURIComponent), and that any literal '%' characters are written as '%25'.",
-        });
-    }
+    const text = c.req.param("text");
 
     const query = c.req.valid("query" as never) as SimpleAudioQuery;
     return await generateAudioFromSpeechRequest(

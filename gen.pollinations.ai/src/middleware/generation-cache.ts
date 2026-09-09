@@ -24,6 +24,9 @@ export type GenerationCacheVariables = {
     };
     /** Alternate request identity for routes which wrap a media response. */
     generationCacheUrl?: URL;
+    /** Native route replayed when a public endpoint only formats its result. */
+    generationRequestUrl?: URL;
+    generationRequestMethod?: string;
     /** Normalized POST body passed to the generation executor. */
     generationRequestBody?: string | Uint8Array;
     /** Multipart body parsed during model resolution and reused downstream. */
@@ -35,6 +38,8 @@ export type GenerationCacheVariables = {
     /** The detached executor writes to the identity chosen by its caller. */
     generationExecution?: {
         cacheKey: string;
+        originalPath?: string;
+        originalModel?: string;
         registerCacheWrite: (promise: Promise<void>) => void;
     };
 };

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14644,
+  "title": "feat: compare daily revenue week over week",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14644",
+  "merged_at": "2026-09-09T15:05:43Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds a standalone daily revenue pulse chart outside the KPI catalogue and table\n- Compares this week with the same weekdays last week\n- Uses paid Stripe checkout revenue from the existing Tinybird source\n- Marks the current day as partial and adds focused comparison coverage",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "Revenue Gets a Memory",
+    "blurb": "The KPI hive now gives today’s Stripe pollen a proper side-by-side with the same weekdays last week. Even the partial day gets a little flag instead of pretending it has finished photosynthesizing.",
+    "summary": "Added a standalone daily revenue pulse chart to the operations KPI dashboard, comparing paid Stripe checkout revenue for this week against the matching weekdays last week and marking the current day as partial.",
+    "impact": "Operators can now spot week-over-week checkout-revenue movement at a glance without digging through the KPI catalogue or table, with incomplete current-day totals clearly identified.",
+    "keywords": [
+      "kpi",
+      "revenue",
+      "stripe",
+      "tinybird",
+      "analytics",
+      "dashboard"
+    ],
+    "visual_concept": "A cozy operations garden dashboard: Polli, wearing tiny analyst glasses, compares two growing lines of honey jars or flower stems labeled this week and last week on a CRT chart. The current-day jar is still filling, represented by a small partial-day marker, while code-plants and lime-green dashboard glow connect the scene to internal analytics.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wearing tiny analyst glasses while comparing two neat rows of honey jars on a glowing CRT revenue chart: “THIS WEEK” and “LAST WEEK”; today’s jar is visibly half-filled with a small pixel label “PARTIAL.” Lime green (#ecf874) glows prominently around code-plants and tiny flowers in a warm cream, mint, lavender, and peach garden-office, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14644.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, black antennae and oval eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wearing tiny analyst glasses while comparing two neat rows of honey jars on a glowing CRT revenue chart: “THIS WEEK” and “LAST WEEK”; today’s jar is visibly half-filled with a small pixel label “PARTIAL.” Lime green (#ecf874) glows prominently around code-plants and tiny flowers in a warm cream, mint, lavender, and peach garden-office, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T15:06:44.768697+00:00"
+}

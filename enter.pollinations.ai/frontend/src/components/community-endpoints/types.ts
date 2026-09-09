@@ -25,32 +25,25 @@ import type { SafetyFeature } from "@shared/schemas/safety.ts";
 
 type EndpointFormPrices = Record<CommunityEndpointPriceKey, string>;
 
-export type ManagedPromptAgent = {
+type ManagedAgentBase = {
     id: string;
-    type: "prompt_agent";
     name: string;
     title: string;
     description: string | null;
     visibility: CommunityEndpointVisibility;
-    systemPrompt: string;
-    baseModel: string;
     requiredSafetyFeatures: SafetyFeature[];
-    mcpServers: McpServerId[];
     createdAt: string;
     updatedAt: string;
 };
 
-export type ManagedCodeAgent = Pick<
-    ManagedPromptAgent,
-    | "id"
-    | "name"
-    | "title"
-    | "description"
-    | "visibility"
-    | "requiredSafetyFeatures"
-    | "createdAt"
-    | "updatedAt"
-> & {
+export type ManagedPromptAgent = ManagedAgentBase & {
+    type: "prompt_agent";
+    systemPrompt: string;
+    baseModel: string;
+    mcpServers: McpServerId[];
+};
+
+export type ManagedCodeAgent = ManagedAgentBase & {
     type: "code_agent";
     repository: string;
     directory: string;

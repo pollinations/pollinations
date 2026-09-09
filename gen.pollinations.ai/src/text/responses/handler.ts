@@ -122,19 +122,14 @@ async function responsesClientForAttempt(
         parentRequestId: c.get("requestId"),
         parentApiKeyId: c.var.auth?.apiKey?.id,
     });
-    if (endpoint.type === "prompt_agent") {
+    if (endpoint.type === "prompt_agent" || endpoint.type === "code_agent") {
         const apiKey = config.authKey;
         if (typeof apiKey !== "string" || !apiKey) {
             throw new Error("Managed agent request has no agent run token");
         }
-        return createPromptAgentResponsesClient(c, endpoint, apiKey);
-    }
-    if (endpoint.type === "code_agent") {
-        const apiKey = config.authKey;
-        if (typeof apiKey !== "string" || !apiKey) {
-            throw new Error("Managed agent request has no agent run token");
-        }
-        return createCodeAgentResponsesClient(c, endpoint, apiKey);
+        return endpoint.type === "prompt_agent"
+            ? createPromptAgentResponsesClient(c, endpoint, apiKey)
+            : createCodeAgentResponsesClient(c, endpoint, apiKey);
     }
     const target = responsesTargetFromConfig(endpoint.upstreamModel, config);
     if (!target) {

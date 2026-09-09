@@ -12,7 +12,7 @@ Self-service endpoints for the authenticated user. Endpoints require authenticat
 | `GET /account/usage` | Per-request usage history with costs (account-wide) |
 | `GET /account/usage/daily` | Daily aggregated usage for dashboards |
 | `GET /account/key/usage` | Usage history for the calling API key only |
-| `/account/agents` | Managed prompt-agent configuration |
+| `/account/agents` | Managed agent configuration |
 | `/account/my-models` | Private community model registration and allowlisted public publishing |
 | `GET /account/key` | API key validity, type, and permissions |
 

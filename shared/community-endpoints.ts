@@ -669,7 +669,7 @@ const CodeAgentDirectorySchema = z
     .refine(
         (value) =>
             value === "" ||
-            (value
+            value
                 .split("/")
                 .every(
                     (part) =>
@@ -677,8 +677,7 @@ const CodeAgentDirectorySchema = z
                         part !== "." &&
                         part !== ".." &&
                         /^[A-Za-z0-9._-]+$/.test(part),
-                ) &&
-                !value.startsWith("/")),
+                ),
         "Directory must be a relative GitHub repository path",
     );
 

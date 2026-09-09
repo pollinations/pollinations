@@ -6,12 +6,12 @@ import {
     Dialog,
     DialogTitle,
     FieldStack,
-    Input,
     ScrollArea,
     TabButton,
 } from "@pollinations/ui";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
+import { CodeAgentFields } from "./code-agent-fields.tsx";
 import { ModelListingFields } from "./model-listing-fields.tsx";
 import { PromptAgentFields } from "./prompt-agent-fields.tsx";
 import { SafetyFeatureSelector } from "./safety-feature-selector.tsx";
@@ -215,52 +215,16 @@ export function AgentDialog({
 
                     <div className="space-y-4 border-t border-divider pt-4">
                         {form.type === "code_agent" ? (
-                            <>
-                                <FieldStack
-                                    label="GitHub repository"
-                                    helper="Public repository containing agent.js."
-                                    alignLabelRow
-                                >
-                                    <Input
-                                        name="code-agent-repository"
-                                        type="url"
-                                        value={form.repository}
-                                        placeholder="https://github.com/your-name/your-agents"
-                                        autoComplete="off"
-                                        autoCapitalize="none"
-                                        spellCheck={false}
-                                        required
-                                        disabled={isSubmitting}
-                                        onChange={(event) =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                repository: event.target.value,
-                                            }))
-                                        }
-                                    />
-                                </FieldStack>
-                                <FieldStack
-                                    label="Directory"
-                                    helper="Optional folder containing agent.js. Leave empty for the repository root."
-                                    alignLabelRow
-                                >
-                                    <Input
-                                        name="code-agent-directory"
-                                        value={form.directory}
-                                        placeholder="agents/research"
-                                        autoComplete="off"
-                                        autoCapitalize="none"
-                                        spellCheck={false}
-                                        disabled={isSubmitting}
-                                        onChange={(event) =>
-                                            setForm((current) => ({
-                                                ...current,
-                                                directory: event.target.value,
-                                            }))
-                                        }
-                                    />
-                                </FieldStack>
-                            </>
+                            <CodeAgentFields
+                                form={form}
+                                disabled={isSubmitting}
+                                onChange={(field, value) =>
+                                    setForm((current) => ({
+                                        ...current,
+                                        [field]: value,
+                                    }))
+                                }
+                            />
                         ) : (
                             <PromptAgentFields
                                 form={form}

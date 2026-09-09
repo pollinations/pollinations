@@ -48,6 +48,8 @@ export function CommunityEndpointCard({
 }: CommunityEndpointCardProps) {
     const isPublic = endpoint.visibility === "public";
     const isAgent = endpoint.type !== "proxy";
+    const hasUpstreamEndpoint =
+        endpoint.type === "proxy" || endpoint.type === "endpoint_agent";
     const priceGroups =
         endpoint.type === "proxy" ? communityPriceGroups(endpoint) : [];
     const testableModelId = openWebUiTestableModelId(endpoint);
@@ -142,8 +144,7 @@ export function CommunityEndpointCard({
                     value={endpoint.modelId}
                     copyLabel="Copy model id"
                 />
-                {(endpoint.type === "proxy" ||
-                    endpoint.type === "endpoint_agent") && (
+                {hasUpstreamEndpoint && (
                     <CommunityDetailRow
                         icon={<ExternalLinkIcon className="h-3.5 w-3.5" />}
                         label="Endpoint"
@@ -156,8 +157,7 @@ export function CommunityEndpointCard({
                         copyLabel="Copy endpoint"
                     />
                 )}
-                {(endpoint.type === "proxy" ||
-                    endpoint.type === "endpoint_agent") && (
+                {hasUpstreamEndpoint && (
                     <>
                         {endpoint.type === "proxy" && (
                             <CommunityDetailRow

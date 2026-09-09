@@ -9,8 +9,8 @@ type CodeAgentDeploymentEnv = {
 };
 
 const MAIN_MODULE = `
-function jsonError(message, status = 500) {
-  return Response.json({ error: { message } }, { status });
+function jsonError(message) {
+  return Response.json({ error: { message } }, { status: 500 });
 }
 
 export default {
@@ -71,6 +71,11 @@ export default {
 const GITHUB_API = "https://api.github.com";
 const GITHUB_RAW = "https://raw.githubusercontent.com";
 const MAX_SOURCE_BYTES = 65_536;
+const GITHUB_HEADERS = {
+    Accept: "application/vnd.github+json",
+    "User-Agent": "pollinations-enter",
+    "X-GitHub-Api-Version": "2022-11-28",
+};
 const GitHubCommitSchema = z.object({
     sha: z.string().regex(/^[0-9a-f]{40}$/),
 });
@@ -78,14 +83,6 @@ const GitHubCommitSchema = z.object({
 function githubRepositoryParts(repository: string) {
     const [, owner, name] = new URL(repository).pathname.split("/");
     return { owner, name };
-}
-
-function githubHeaders() {
-    return {
-        Accept: "application/vnd.github+json",
-        "User-Agent": "pollinations-enter",
-        "X-GitHub-Api-Version": "2022-11-28",
-    };
 }
 
 /** Resolve and load the fixed agent.js entrypoint from a public GitHub repo. */
@@ -96,7 +93,7 @@ export async function loadCodeAgentSource(
     const { owner, name } = githubRepositoryParts(repository);
     const commitResponse = await fetch(
         `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits/HEAD`,
-        { headers: githubHeaders() },
+        { headers: GITHUB_HEADERS },
     );
     if (commitResponse.status === 404 || commitResponse.status === 409) {
         throw new HTTPException(400, {

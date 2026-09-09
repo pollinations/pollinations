@@ -1,0 +1,33 @@
+{
+  "pr_number": 14611,
+  "title": "fix: avoid duplicate image edit safety checks",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14611",
+  "merged_at": "2026-09-09T00:49:30Z",
+  "labels": [],
+  "pr_body_excerpt": "- Applies image-edit input safety only on the public request; detached replay parses the already-safe normalized body.\n- Preserves cache identity, edit parameters, and executor input without flags or new state.\n- Tests: `npm run typecheck --workspace pollinations-gen`; `npx vitest run test/openai-image-cache.test.ts`",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Safety Check, Once",
+    "blurb": "Image edits now pass through the safety garden once, then carry their clean little passport through replay. Same cache identity, same edit settings, fewer unnecessary laps around the hive.",
+    "summary": "Fixed the OpenAI-compatible image-edit route so input safety runs on the public request only, while detached cache replays parse the already-safe normalized body without rechecking it.",
+    "impact": "Image-edit requests now retain their cache identity, edit parameters, and executor input across detached replays while avoiding duplicate safety processing.",
+    "keywords": [
+      "image-editing",
+      "safety",
+      "openai-api",
+      "cache",
+      "generation"
+    ],
+    "visual_concept": "A cozy image-edit workshop where Polli stamps a single green safety approval onto a picture before it travels along a cached replay conveyor; a retro CRT robot receives the already-approved image without asking for another stamp. The single passport/stamp and looping-but-skipped conveyor make the one-time safety check and preserved replay identity visible, with code-plants and flowers grounding it in the pollinations garden.",
+    "image_prompt": "Cozy pixel art scene in a warm garden workshop: The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny inspector cap and stamps one lime green (#ecf874) \"SAFE\" pixel passport onto an image-edit card, while a cute chunky CRT-monitor robot happily receives the already-stamped card from a short replay conveyor with no second checkpoint. Code-plants, pixel flowers, and a softly glowing terminal surround them; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14611.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden workshop: The main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny inspector cap and stamps one lime green (#ecf874) \"SAFE\" pixel passport onto an image-edit card, while a cute chunky CRT-monitor robot happily receives the already-stamped card from a short replay conveyor with no second checkpoint. Code-plants, pixel flowers, and a softly glowing terminal surround them; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T00:50:31.034116+00:00"
+}

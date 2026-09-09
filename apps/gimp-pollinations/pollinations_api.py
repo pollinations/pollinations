@@ -82,12 +82,15 @@ class ImageModel:
 
     @property
     def supports_quality(self) -> bool:
-        # Native Pollinations schema currently advertises quality for these families.
+        # Prefer live capability metadata and keep native GPT image aliases/canonical IDs
+        # working while Pollinations migrates its catalog to publisher/model names.
+        name = self.name.lower()
         return (
-            self.name.startswith("gptimage")
-            or self.name == "gpt-image-2"
-            or self.name == "grok-imagine-image-2.0"
-            or "quality" in self.capabilities
+            "quality" in {cap.lower() for cap in self.capabilities}
+            or name.startswith("gptimage")
+            or name == "gpt-image-2"
+            or name.startswith("openai/gpt-image-")
+            or name == "grok-imagine-image-2.0"
         )
 
     @property
@@ -104,9 +107,20 @@ class ImageModel:
 
     @property
     def supports_transparency(self) -> bool:
-        # Current Pollinations image schema explicitly supports this on the
-        # gptimage family; gpt-image-2 currently rejects transparent=true.
-        return self.name in {"gptimage", "gptimage-large"}
+        # Prefer capability metadata when Pollinations advertises it. Keep the
+        # known native-alpha GPT Image families as compatibility fallbacks.
+        # Do not enable legacy gpt-image-2 here: Pollinations may still reject
+        # transparent=true on that route even though newer OpenAI API revisions
+        # support it. GPT Image 2.5 is explicitly advertised with PNG alpha.
+        caps = {cap.lower().replace("_", "-") for cap in self.capabilities}
+        if caps.intersection({"alpha", "transparent", "transparency", "transparent-background"}):
+            return True
+        name = self.name.lower()
+        return (
+            name in {"gptimage", "gptimage-large"}
+            or name.startswith("openai/gpt-image-1")
+            or name.startswith("openai/gpt-image-2.5-")
+        )
 
     @property
     def estimated_cost(self) -> float | None:
@@ -204,6 +218,14 @@ class GeneratedImage:
             "image/gif": ".gif",
             "image/svg+xml": ".svg",
         }.get(self.media_type, ".png")
+
+    @property
+    def has_alpha_channel(self) -> bool:
+        if self.media_type == "image/png":
+            return _png_has_alpha_channel(self.data)
+        if self.media_type == "image/webp":
+            return _webp_has_alpha_channel(self.data)
+        return False
 
 
 def _kind_for_status(status: int) -> str:
@@ -438,6 +460,59 @@ def _sniff_media_type(data: bytes) -> str:
     return "image/png"
 
 
+def _png_has_alpha_channel(data: bytes) -> bool:
+    """Check PNG structure for an alpha-bearing color type or tRNS chunk."""
+    if len(data) < 26 or not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        return False
+    # The first PNG chunk is IHDR; color type is byte 9 of its 13-byte payload.
+    if data[12:16] == b"IHDR" and data[25] in (4, 6):
+        return True
+    pos = 8
+    while pos + 12 <= len(data):
+        length = int.from_bytes(data[pos:pos + 4], "big")
+        chunk_type = data[pos + 4:pos + 8]
+        end = pos + 12 + length
+        if end > len(data):
+            break
+        if chunk_type == b"tRNS":
+            return True
+        if chunk_type == b"IEND":
+            break
+        pos = end
+    return False
+
+
+def _webp_has_alpha_channel(data: bytes) -> bool:
+    """Check WebP container metadata for alpha without decoding pixels."""
+    if len(data) < 20 or not (data.startswith(b"RIFF") and data[8:12] == b"WEBP"):
+        return False
+    pos = 12
+    while pos + 8 <= len(data):
+        chunk_type = data[pos:pos + 4]
+        length = int.from_bytes(data[pos + 4:pos + 8], "little")
+        payload = data[pos + 8:pos + 8 + length]
+        if len(payload) < length:
+            break
+        if chunk_type == b"ALPH":
+            return True
+        if chunk_type == b"VP8X" and payload:
+            return bool(payload[0] & 0x10)
+        if chunk_type == b"VP8L" and len(payload) >= 5 and payload[0] == 0x2F:
+            bits = int.from_bytes(payload[1:5], "little")
+            return bool((bits >> 28) & 1)
+        pos += 8 + length + (length & 1)
+    return False
+
+
+def _require_alpha_result(result: GeneratedImage) -> GeneratedImage:
+    if not result.has_alpha_channel:
+        raise PollinationsError(
+            "upstream",
+            "Transparent output was requested, but the model returned an image without an alpha channel.",
+        )
+    return result
+
+
 def fetch_advisor_models(token: str) -> list[AdvisorModel]:
     raw = _request_json(f"{GEN_BASE}/v1/models", token=token, timeout=30)
     items = raw if isinstance(raw, list) else raw.get("data", []) if isinstance(raw, dict) else []
@@ -582,7 +657,7 @@ def generate_image(
         body["quality"] = quality
     if transparent and model.supports_transparency:
         body["transparent"] = True
-    return _decode_image_response(
+    result = _decode_image_response(
         _request_json(
             f"{GEN_BASE}/v1/images/generations",
             method="POST",
@@ -591,6 +666,9 @@ def generate_image(
             timeout=600,
         )
     )
+    if transparent and model.supports_transparency:
+        return _require_alpha_result(result)
+    return result
 
 
 def edit_image(
@@ -623,7 +701,7 @@ def edit_image(
         body["quality"] = quality
     if transparent and model.supports_transparency:
         body["transparent"] = True
-    return _decode_image_response(
+    result = _decode_image_response(
         _request_json(
             f"{GEN_BASE}/v1/images/edits",
             method="POST",
@@ -632,6 +710,9 @@ def edit_image(
             timeout=600,
         )
     )
+    if transparent and model.supports_transparency:
+        return _require_alpha_result(result)
+    return result
 
 
 def _health_status(status_2xx: int, errors_5xx: int) -> tuple[str, float]:

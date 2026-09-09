@@ -12,6 +12,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import pollinations_api as api
 
 
+ALPHA_PNG = base64.b64decode(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAHnOcQAAAAABJRU5ErkJggg=="
+)
+
+
 class PollinationsApiTests(unittest.TestCase):
     def test_catalog_maps_live_shape_and_community_ids(self):
         models = api.parse_image_models([
@@ -128,7 +133,7 @@ class PollinationsApiPlusTests(unittest.TestCase):
             resolutions=("1k","2k"), paid_only=False, pricing={}, max_reference_images=16,
             supported_endpoints=("/v1/images/generations","/v1/images/edits"),
         )
-        response = {"data": [{"b64_json": "iVBORw0KGgo="}]}
+        response = {"data": [{"b64_json": base64.b64encode(ALPHA_PNG).decode()}]}
         with mock.patch.object(api, "_request_json", return_value=response) as request:
             api.generate_image(
                 "sk_test", model, "a bee", size="768x768", resolution="2k",
@@ -234,10 +239,46 @@ class FullPlusCapabilityTests(unittest.TestCase):
     def test_grok_image_2_quality_is_supported(self):
         self.assertTrue(self._model('grok-imagine-image-2.0').supports_quality)
 
+class CanonicalAlphaTests(unittest.TestCase):
+    def _model(self, name, capabilities=()):
+        return api.ImageModel(
+            name=name, title=name, description='', input_modalities=('text','image'),
+            output_modalities=('image',), resolutions=(), paid_only=False, pricing={},
+            max_reference_images=1, supported_endpoints=('/v1/images/generations','/v1/images/edits'),
+            capabilities=capabilities,
+        )
+
+    def test_canonical_gpt_image_ids_keep_quality_and_transparency(self):
+        for name in (
+            'openai/gpt-image-1-mini',
+            'openai/gpt-image-1.5',
+            'openai/gpt-image-2.5-flare',
+            'openai/gpt-image-2.5-sunburst',
+        ):
+            model = self._model(name)
+            self.assertTrue(model.supports_quality, name)
+            self.assertTrue(model.supports_transparency, name)
+        self.assertFalse(self._model('gpt-image-2').supports_transparency)
+        self.assertTrue(self._model('owner/future-alpha', ('alpha',)).supports_transparency)
+
+    def test_alpha_detection_uses_real_bytes(self):
+        self.assertTrue(api.GeneratedImage(ALPHA_PNG, 'image/png').has_alpha_channel)
+        self.assertFalse(api.GeneratedImage(b'\xff\xd8\xff\x00', 'image/jpeg').has_alpha_channel)
+
+    def test_transparent_request_rejects_jpeg_response(self):
+        model = self._model('openai/gpt-image-2.5-flare')
+        response = {'data': [{'b64_json': '/9j/AA=='}]}
+        with mock.patch.object(api, '_request_json', return_value=response):
+            with self.assertRaises(api.PollinationsError) as ctx:
+                api.generate_image('sk_test', model, 'transparent logo', transparent=True)
+        self.assertEqual(ctx.exception.kind, 'upstream')
+        self.assertIn('alpha channel', str(ctx.exception))
+
+
 class AlphaEditTests(unittest.TestCase):
     def test_edit_sends_transparent_only_for_alpha_model(self):
         model=api.ImageModel(name='gptimage-large',title='x',description='',input_modalities=('text','image'),output_modalities=('image',),resolutions=(),paid_only=False,pricing={},max_reference_images=1,supported_endpoints=('/v1/images/edits',))
-        with mock.patch.object(api,'_request_json',return_value={'data':[{'b64_json':base64.b64encode(b'abc').decode()}]}) as request:
+        with mock.patch.object(api,'_request_json',return_value={'data':[{'b64_json':base64.b64encode(ALPHA_PNG).decode()}]}) as request:
             api.edit_image('sk_test',model,'isolate',b'png',transparent=True)
         self.assertTrue(request.call_args.kwargs['body']['transparent'])
 

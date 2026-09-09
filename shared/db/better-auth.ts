@@ -448,24 +448,6 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
 ]);
 
-export const stripeGiftCardFingerprintAttempt = sqliteTable(
-  "stripe_gift_card_fingerprint_attempt",
-  {
-    eventId: text("event_id").primaryKey(),
-    buyerKey: text("buyer_key").notNull(),
-    cardFingerprint: text("card_fingerprint").notNull(),
-    createdAt: integer("created_at", { mode: "timestamp_ms" })
-      .defaultNow()
-      .notNull(),
-  },
-  (table) => [
-    index("idx_stripe_gift_card_attempt_buyer_created").on(
-      table.buyerKey,
-      table.createdAt,
-    ),
-  ],
-);
-
 export const pollenGiftRateLimit = sqliteTable("pollen_gift_rate_limit", {
   key: text("key").primaryKey(),
   windowStartedAt: integer("window_started_at", { mode: "timestamp_ms" })

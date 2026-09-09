@@ -13,10 +13,6 @@ import {
     voidPendingPollenGiftCheckout,
     voidRefundedPollenGift,
 } from "../services/pollen-gifts.ts";
-import {
-    POLLEN_GIFT_BUYER_KEY_METADATA,
-    recordStripeGiftCardFingerprintAttempt,
-} from "../utils/pollen-gift-security.ts";
 import { createStripeClient, verifyWebhookSignature } from "../utils/stripe.ts";
 import {
     creditAutoTopUpInvoice,
@@ -34,7 +30,6 @@ type SanitizedStripeEvent = Pick<
             reason?: string | null;
             metadata?: {
                 purpose: string;
-                pollenAmount?: string;
             };
         };
     };
@@ -90,9 +85,6 @@ function stripePayloadForTinybird(
             object: {
                 metadata: {
                     purpose: POLLEN_GIFT_PURPOSE,
-                    ...(metadata?.pollenAmount
-                        ? { pollenAmount: metadata.pollenAmount }
-                        : {}),
                 },
             },
         };
@@ -169,31 +161,17 @@ async function recordFailedCardFingerprintFromCharge({
     charge,
     snapshot,
     fallbackUserId = "",
-    fallbackGiftBuyerKey = "",
 }: {
     env: CloudflareBindings;
     event: Stripe.Event;
     charge: Stripe.Charge | null | undefined;
     snapshot: ChargeSnapshot;
     fallbackUserId?: string;
-    fallbackGiftBuyerKey?: string;
 }): Promise<void> {
     if (!charge || !snapshot.cardFingerprint) return;
-    const giftBuyerKey =
-        charge.metadata?.[POLLEN_GIFT_BUYER_KEY_METADATA] ||
-        fallbackGiftBuyerKey;
     const userId = readUserIdFromMetadata(charge.metadata) || fallbackUserId;
 
     try {
-        if (giftBuyerKey) {
-            await recordStripeGiftCardFingerprintAttempt(env.DB, {
-                eventId: event.id,
-                buyerKey: giftBuyerKey,
-                cardFingerprint: snapshot.cardFingerprint,
-                createdAt: event.created ? event.created * 1000 : Date.now(),
-            });
-            return;
-        }
         await recordStripeCardFingerprintAttempt(env.DB, {
             eventId: event.id,
             userId,
@@ -504,10 +482,6 @@ function emitPaymentIntentAnalytics(
                     charge,
                     snapshot,
                     fallbackUserId: paymentIntent.metadata?.userId || "",
-                    fallbackGiftBuyerKey:
-                        paymentIntent.metadata?.[
-                            POLLEN_GIFT_BUYER_KEY_METADATA
-                        ] || "",
                 });
             }
             await sendStripeEventToTinybird(c.env, {

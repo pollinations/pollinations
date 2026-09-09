@@ -1,6 +1,5 @@
 import { env, SELF } from "cloudflare:test";
 import { createHmac } from "node:crypto";
-import { hashIp } from "@shared/client-ip.ts";
 import {
     normalizePollenGiftCode,
     POLLEN_GIFT_AMOUNTS,
@@ -11,7 +10,6 @@ import {
     SERVICE_FEE_NAME,
 } from "@shared/pollen-packs.ts";
 import { expect } from "vitest";
-import { POLLEN_GIFT_BUYER_KEY_METADATA } from "../../src/utils/pollen-gift-security.ts";
 import { STRIPE_NEW_CARD_GATE_METADATA } from "../../src/utils/stripe-card-gate.ts";
 import { test } from "../fixtures.ts";
 
@@ -107,17 +105,13 @@ test("anonymous gift checkout preserves the Stripe purchase contract", async ({
 
     expect(body.client_reference_id).toBe(giftId);
     expect(body["metadata[purpose]"]).toBe(POLLEN_GIFT_PURPOSE);
-    expect(body["metadata[pollenAmount]"]).toBe(String(amount));
+    expect(body["metadata[pollenAmount]"]).toBeUndefined();
     expect(body["metadata[giftCode]"]).toBe(code);
     expect(body["metadata[packPollenGrant]"]).toBeUndefined();
-    expect(body[`metadata[${POLLEN_GIFT_BUYER_KEY_METADATA}]`]).toBeTruthy();
-    expect(body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`]).toBe("ok");
-    expect(body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.count24h}]`]).toBe(
-        "0",
-    );
-    expect(body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.limit24h}]`]).toBe(
-        "4",
-    );
+    expect(body["metadata[app_gift_buyer_key]"]).toBeUndefined();
+    expect(
+        body[`metadata[${STRIPE_NEW_CARD_GATE_METADATA.gate}]`],
+    ).toBeUndefined();
     expect(body["payment_intent_data[metadata][purpose]"]).toBe(
         POLLEN_GIFT_PURPOSE,
     );
@@ -217,14 +211,11 @@ test("gift receipt throttling ignores spoofed forwarding headers", async () => {
     expect(blocked.headers.get("Retry-After")).toBeTruthy();
 });
 
-test("gift checkout blocks a buyer after four distinct failed cards", async ({
+test("anonymous checkout is rate-limited before creating another Stripe session", async ({
     mocks,
 }) => {
     await mocks.enable("stripe");
     const buyerIp = "203.0.113.19";
-    const buyerKey = await hashIp(buyerIp, env.BETTER_AUTH_SECRET);
-    expect(buyerKey).toBeTruthy();
-    if (!buyerKey) throw new Error("Expected hashed buyer key");
 
     await env.DB.prepare(
         `INSERT INTO pollen_gift_rate_limit (
@@ -234,20 +225,18 @@ test("gift checkout blocks a buyer after four distinct failed cards", async ({
         .bind("stale-gift-limit", Date.now() - 11 * 60 * 1000, 1)
         .run();
 
-    await env.DB.batch(
-        Array.from({ length: 5 }, (_, index) =>
-            env.DB.prepare(
-                `INSERT INTO stripe_gift_card_fingerprint_attempt (
-                    event_id, buyer_key, card_fingerprint, created_at
-                 ) VALUES (?, ?, ?, ?)`,
-            ).bind(
-                `evt_failed_${index}`,
-                buyerKey,
-                `fingerprint_${index}`,
-                index === 4 ? Date.now() - 25 * 60 * 60 * 1000 : Date.now(),
-            ),
-        ),
-    );
+    const options = {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "CF-Connecting-IP": buyerIp,
+        },
+        body: JSON.stringify({ amount: 20 }),
+    };
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const response = await SELF.fetch(`${giftBase}/checkout`, options);
+        expect(response.status).toBe(200);
+    }
 
     const response = await SELF.fetch(`${giftBase}/checkout`, {
         method: "POST",
@@ -258,35 +247,24 @@ test("gift checkout blocks a buyer after four distinct failed cards", async ({
         body: JSON.stringify({ amount: 20 }),
     });
     expect(response.status).toBe(429);
-    expect(response.headers.get("Retry-After")).toBe("86400");
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThan(0);
     expect(
-        mocks.stripe.state.requests.some(
+        mocks.stripe.state.requests.filter(
             (request) => request.path === "/v1/checkout/sessions",
         ),
-    ).toBe(false);
-    const expiredRows = await env.DB.batch([
-        env.DB.prepare(
-            `SELECT COUNT(*) AS count
-             FROM stripe_gift_card_fingerprint_attempt
-             WHERE event_id = 'evt_failed_4'`,
-        ),
-        env.DB.prepare(
-            `SELECT COUNT(*) AS count
+    ).toHaveLength(5);
+    const expiredRows = await env.DB.prepare(
+        `SELECT COUNT(*) AS count
              FROM pollen_gift_rate_limit
              WHERE key = 'stale-gift-limit'`,
-        ),
-    ]);
-    expect(expiredRows.map((result) => result.results[0])).toEqual([
-        { count: 0 },
-        { count: 0 },
-    ]);
+    ).first();
+    expect(expiredRows).toEqual({ count: 0 });
 });
 
-test("failed gift card fingerprints are recorded against the anonymous buyer", async ({
+test("failed gift payments retain risk analytics without storing guest card fingerprints", async ({
     mocks,
 }) => {
     await mocks.enable("stripe", "tinybird");
-    const buyerKey = "hashed-anonymous-buyer";
     const paymentIntent = {
         id: "pi_failed_gift_card",
         object: "payment_intent" as const,
@@ -296,7 +274,6 @@ test("failed gift card fingerprints are recorded against the anonymous buyer", a
         metadata: {
             purpose: POLLEN_GIFT_PURPOSE,
             giftId: "gift_failed_card",
-            [POLLEN_GIFT_BUYER_KEY_METADATA]: buyerKey,
         },
         payment_method_types: ["card"],
         latest_charge: {
@@ -327,16 +304,21 @@ test("failed gift card fingerprints are recorded against the anonymous buyer", a
     expect(response.status).toBe(200);
 
     const attempt = await env.DB.prepare(
-        `SELECT buyer_key AS buyerKey, card_fingerprint AS cardFingerprint
-         FROM stripe_gift_card_fingerprint_attempt
+        `SELECT event_id
+         FROM stripe_card_fingerprint_attempt
          WHERE event_id = ?`,
     )
         .bind("evt_failed_gift_card")
-        .first<{ buyerKey: string; cardFingerprint: string }>();
-    expect(attempt).toEqual({
-        buyerKey,
-        cardFingerprint: "fp_failed_gift_card",
+        .first();
+    expect(attempt).toBeNull();
+    expect(mocks.tinybird.state.stripeEvents).toHaveLength(1);
+    expect(mocks.tinybird.state.stripeEvents[0]).toMatchObject({
+        risk_level: "elevated",
+        risk_score: 72,
     });
+    expect(JSON.stringify(mocks.tinybird.state.stripeEvents)).not.toContain(
+        "fp_failed_gift_card",
+    );
 });
 
 test("paid gift lifecycle is authenticated, single-use, and idempotent", async ({
@@ -405,7 +387,6 @@ test("paid gift lifecycle is authenticated, single-use, and idempotent", async (
                 metadata: {
                     purpose: POLLEN_GIFT_PURPOSE,
                     giftId,
-                    pollenAmount: String(amount),
                     giftCode: code,
                 },
                 payment_status: "paid",
@@ -455,7 +436,6 @@ test("paid gift lifecycle is authenticated, single-use, and idempotent", async (
             object: {
                 metadata: {
                     purpose: POLLEN_GIFT_PURPOSE,
-                    pollenAmount: String(amount),
                 },
             },
         },

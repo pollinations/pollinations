@@ -4,7 +4,6 @@ import {
     hashPollenGiftCode,
     POLLEN_GIFT_PURPOSE,
 } from "@shared/pollen-gifts.ts";
-import { calculateServiceFeeCents } from "@shared/pollen-packs.ts";
 import type Stripe from "stripe";
 import { getStripeId } from "../utils/stripe.ts";
 
@@ -35,12 +34,7 @@ export async function createPendingPollenGift(
 ): Promise<{
     id: string;
     code: string;
-    faceValueCents: number;
-    serviceFeeCents: number;
 }> {
-    const faceValueCents = pollenAmount * 100;
-    const serviceFeeCents = calculateServiceFeeCents(faceValueCents);
-
     const id = crypto.randomUUID();
     const code = generatePollenGiftCode();
     const codeHash = await hashPollenGiftCode(code);
@@ -59,7 +53,7 @@ export async function createPendingPollenGift(
         .bind(id, codeHash, pollenAmount, Date.now())
         .run();
 
-    return { id, code, faceValueCents, serviceFeeCents };
+    return { id, code };
 }
 
 export async function attachPollenGiftCheckoutSession(

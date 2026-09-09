@@ -2,13 +2,9 @@ import { hashIp } from "@shared/client-ip.ts";
 import {
     isValidPollenGiftAmount,
     POLLEN_GIFT_AMOUNTS,
+    POLLEN_GIFT_PACKS,
     POLLEN_GIFT_PURPOSE,
 } from "@shared/pollen-gifts.ts";
-import {
-    createServiceFeeLineItem,
-    POLLEN_CHECKOUT_IMAGE_URL,
-    POLLEN_TAX_CODE,
-} from "@shared/pollen-packs.ts";
 import { PUBLIC_URLS } from "@shared/public-urls.ts";
 import { Hono } from "hono";
 import type { Env } from "../env.ts";
@@ -22,12 +18,10 @@ import {
 } from "../services/pollen-gifts.ts";
 import {
     consumePollenGiftRateLimit,
-    getStripeGiftCardGateStatus,
     MAX_POLLEN_GIFT_RATE_LIMIT_WINDOW_MS,
-    POLLEN_GIFT_BUYER_KEY_METADATA,
 } from "../utils/pollen-gift-security.ts";
 import { createStripeClient } from "../utils/stripe.ts";
-import { stripeNewCardGateMetadata } from "../utils/stripe-card-gate.ts";
+import { pollenCheckoutParameters } from "../utils/stripe-checkout.ts";
 
 type PollenGiftEnv = {
     Bindings: Env["Bindings"];
@@ -57,6 +51,10 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
                 400,
             );
         }
+        const pack = POLLEN_GIFT_PACKS.find(
+            (pack) => pack.amountUsd === amount,
+        );
+        if (!pack) return c.json({ error: "Gift pack unavailable" }, 400);
 
         const ipHash = await hashIp(
             c.req.header("cf-connecting-ip") || "unknown",
@@ -75,17 +73,6 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
                 },
                 429,
                 { "Retry-After": String(checkoutLimit.retryAfterSeconds) },
-            );
-        }
-
-        const cardGate = await getStripeGiftCardGateStatus(c.env.DB, buyerKey);
-        if (cardGate.gate === "locked") {
-            return c.json(
-                {
-                    error: "Too many failed payment methods. Please try again later.",
-                },
-                429,
-                { "Retry-After": "86400" },
             );
         }
 
@@ -122,63 +109,24 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
             const paymentMetadata = {
                 purpose: POLLEN_GIFT_PURPOSE,
                 giftId: gift.id,
-                pollenAmount: String(amount),
-                [POLLEN_GIFT_BUYER_KEY_METADATA]: buyerKey,
-                ...stripeNewCardGateMetadata(cardGate),
             };
             const checkoutSession = await stripe.checkout.sessions.create(
                 {
-                    mode: "payment",
-                    payment_method_configuration: pmcId,
+                    ...pollenCheckoutParameters(pack, pmcId, paymentMetadata, {
+                        code: gift.code,
+                        redeemUrl,
+                    }),
                     client_reference_id: gift.id,
                     customer_creation: "always",
-                    line_items: [
-                        {
-                            price_data: {
-                                currency: "usd",
-                                unit_amount: gift.faceValueCents,
-                                tax_behavior: "exclusive",
-                                product_data: {
-                                    name: `🎁 ${amount} Pollen gift`,
-                                    description: `Redeem at ${redeemUrl}`,
-                                    images: [POLLEN_CHECKOUT_IMAGE_URL],
-                                    tax_code: POLLEN_TAX_CODE,
-                                },
-                            },
-                            quantity: 1,
-                        },
-                        createServiceFeeLineItem(gift.serviceFeeCents),
-                    ],
-                    adaptive_pricing: { enabled: true },
-                    automatic_tax: { enabled: true },
                     billing_address_collection: "required",
                     name_collection: {
                         individual: { enabled: true, optional: false },
-                    },
-                    tax_id_collection: { enabled: true },
-                    payment_intent_data: { metadata: paymentMetadata },
-                    invoice_creation: {
-                        enabled: true,
-                        invoice_data: {
-                            description: `${amount} Pollen gift code`,
-                            custom_fields: [
-                                { name: "Gift code", value: gift.code },
-                            ],
-                            footer: `Redeem at ${redeemUrl}`,
-                            rendering_options: {
-                                amount_tax_display: "exclude_tax",
-                            },
-                        },
                     },
                     custom_text: {
                         submit: {
                             message:
                                 "Your single-use gift code will be shown after payment and included in your Stripe invoice email.",
                         },
-                    },
-                    metadata: {
-                        ...paymentMetadata,
-                        giftCode: gift.code,
                     },
                     success_url: successUrlWithSession,
                     cancel_url: cancelUrl.toString(),

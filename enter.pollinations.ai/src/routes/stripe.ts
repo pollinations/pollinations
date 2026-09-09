@@ -1,6 +1,4 @@
 import {
-    calculateServiceFeeCents,
-    createServiceFeeLineItem,
     describePollenPack,
     getPollenPackByKey,
     POLLEN_PACKS,
@@ -24,6 +22,7 @@ import {
     getStripeNewCardGateStatus,
     stripeNewCardGateMetadata,
 } from "../utils/stripe-card-gate.ts";
+import { pollenCheckoutParameters } from "../utils/stripe-checkout.ts";
 
 /**
  * Stripe pack configuration
@@ -108,57 +107,17 @@ export const stripeRoutes = new Hono<Env>()
                 cohort,
                 ...stripeNewCardGateMetadata(newCardGate),
             };
-            const serviceFeeCents = calculateServiceFeeCents(
-                pack.amountUsd * 100,
-            );
-
             const checkoutSession = await stripe.checkout.sessions.create({
-                mode: "payment",
-                payment_method_configuration: pmcId,
-                line_items: [
-                    {
-                        price_data: {
-                            currency: "usd",
-                            unit_amount: pack.amountUsd * 100,
-                            tax_behavior: "exclusive",
-                            product_data: {
-                                name: pack.checkoutName,
-                                description: pack.checkoutDescription,
-                                images: [pack.checkoutImageUrl],
-                                tax_code: pack.taxCode,
-                            },
-                        },
-                        quantity: 1,
-                    },
-                    createServiceFeeLineItem(serviceFeeCents),
-                ],
-                adaptive_pricing: { enabled: true },
+                ...pollenCheckoutParameters(pack, pmcId, packMetadata),
                 // Enable discount/promotion codes
                 allow_promotion_codes: true,
-                // Automatic tax & VAT
-                automatic_tax: { enabled: true },
                 // Auto billing address - collects only what's needed (country for tax)
                 billing_address_collection: "auto",
-                // Optional VAT/Tax ID collection for businesses (not enforced)
-                tax_id_collection: { enabled: true },
                 customer: stripeCustomerId,
                 customer_update: {
                     address: "auto",
                     name: "auto",
                 },
-                payment_intent_data: {
-                    metadata: packMetadata,
-                },
-                // Invoice creation after payment
-                invoice_creation: {
-                    enabled: true,
-                    invoice_data: {
-                        rendering_options: {
-                            amount_tax_display: "exclude_tax",
-                        },
-                    },
-                },
-                metadata: packMetadata,
                 success_url: `${pollenReturnUrl}&stripe_success=true&session_id={CHECKOUT_SESSION_ID}`,
                 cancel_url: `${pollenReturnUrl}&stripe_canceled=true`,
             });

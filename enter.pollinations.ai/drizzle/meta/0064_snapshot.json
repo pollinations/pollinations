@@ -2002,54 +2002,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "stripe_gift_card_fingerprint_attempt": {
-      "name": "stripe_gift_card_fingerprint_attempt",
-      "columns": {
-        "event_id": {
-          "name": "event_id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "buyer_key": {
-          "name": "buyer_key",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "card_fingerprint": {
-          "name": "card_fingerprint",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(cast((julianday('now') - 2440587.5)*86400000 as integer))"
-        }
-      },
-      "indexes": {
-        "idx_stripe_gift_card_attempt_buyer_created": {
-          "name": "idx_stripe_gift_card_attempt_buyer_created",
-          "columns": [
-            "buyer_key",
-            "created_at"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "user": {
       "name": "user",
       "columns": {

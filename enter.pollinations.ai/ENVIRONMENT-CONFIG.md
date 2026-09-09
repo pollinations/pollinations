@@ -20,6 +20,20 @@ Overview of which external services each environment connects to.
 | Staging | Sandbox | `staging.enter.pollinations.ai/api/webhooks/stripe` |
 | Production | Live | `enter.pollinations.ai/api/webhooks/stripe` |
 
+## Gift Request Limits
+
+Gift checkout, receipt, and redemption use Cloudflare rate-limit bindings defined
+in `wrangler.toml` for every environment, with separate namespace IDs to keep
+their counters isolated. Checkout allows 5 requests per minute per hashed IP;
+receipts allow 10 per minute per hashed IP; redemption allows 10 per minute per
+signed-in user (previously 10 per 10 minutes). These are approximate,
+per-Cloudflare-location abuse limits, not global financial controls. Single-use
+redemption and balance updates remain atomic in D1.
+
+Deploy the Worker with all three bindings before exercising gifts. The consolidated
+`0064_pollen_gift_codes.sql` migration creates only the gift table; staging databases
+that already applied an earlier version need schema reconciliation before rollout.
+
 ## Notes
 
 - **Tinybird**: Two workspaces in the same region. Prod traffic lands in `pollinations_enter`; staging + local-dev traffic lands in `pollinations_enter_staging`. The `environment` column is still populated on each row but is no longer used by pipes for filtering — token-scoped routing handles environment separation. Pipes and datasources must be deployed to **both** workspaces (manually for now — no CI auto-deploy).

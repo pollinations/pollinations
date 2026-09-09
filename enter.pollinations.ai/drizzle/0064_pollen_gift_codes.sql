@@ -14,9 +14,4 @@ CREATE TABLE `pollen_gift_code` (
 CREATE UNIQUE INDEX `pollen_gift_code_code_hash_unique` ON `pollen_gift_code` (`code_hash`);--> statement-breakpoint
 CREATE UNIQUE INDEX `pollen_gift_code_stripe_checkout_session_id_unique` ON `pollen_gift_code` (`stripe_checkout_session_id`);--> statement-breakpoint
 CREATE UNIQUE INDEX `pollen_gift_code_stripe_payment_intent_id_unique` ON `pollen_gift_code` (`stripe_payment_intent_id`);--> statement-breakpoint
-CREATE INDEX `idx_pollen_gift_code_redeemer_user_id` ON `pollen_gift_code` (`redeemer_user_id`);--> statement-breakpoint
-CREATE TABLE `pollen_gift_rate_limit` (
-	`key` text PRIMARY KEY NOT NULL,
-	`window_started_at` integer NOT NULL,
-	`attempts` integer NOT NULL
-);
+CREATE INDEX `idx_pollen_gift_code_redeemer_user_id` ON `pollen_gift_code` (`redeemer_user_id`);

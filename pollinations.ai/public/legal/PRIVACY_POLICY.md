@@ -77,7 +77,7 @@ Community providers may process data in other countries. Before sending personal
 * **Account and profile data:** while the account is active. When an account is deleted, access is revoked immediately and its profile, credentials, connected-app access, balances, and user-owned resources are deleted or de-identified from active systems within 30 days.
 * **Reward-protection records:** an immutable linked GitHub user ID and reward ledger records are retained while needed to prevent the same identity from receiving the same one-time reward more than once. We review this retention while the reward programmes remain available.
 * **Billing, wallet, gift-code, and tax records:** account term or purchase date + 7 years where needed for accounting, tax, fraud, disputes, and legal proof.
-* **Gift-purchase abuse-prevention identifiers:** hashed IP identifiers and rate-limit counters are used within windows of up to 10 minutes; expired entries are pruned when gift endpoints are used.
+* **Gift abuse-prevention identifiers:** Cloudflare processes hashed IP identifiers for checkout and receipt limits and account identifiers for redemption limits, using 60-second rate-limit windows. We do not store these counters in our application database.
 * **API usage metadata:** typically 24 months (billing, fraud, capacity, developer-earnings attribution).
 * **Quest and reward records:** reward ledger records follow wallet/accounting retention where needed for balance, audit, fraud, and dispute purposes. Synced public GitHub quest issue records are retained while needed to display, process, and audit quest rewards.
 * **Generated response caches (text, image, audio, video):** typically up to 30 days, plus any downstream public/browser caches.

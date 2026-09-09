@@ -193,6 +193,7 @@ test("gift receipt throttling ignores spoofed forwarding headers", async () => {
             `${giftBase}/receipt/cs_missing_${attempt}`,
             {
                 headers: {
+                    "CF-Connecting-IP": "203.0.113.18",
                     "x-forwarded-host": "enter.pollinations.ai",
                     "x-original-client-ip": `spoofed-${attempt}`,
                 },
@@ -203,6 +204,7 @@ test("gift receipt throttling ignores spoofed forwarding headers", async () => {
 
     const blocked = await SELF.fetch(`${giftBase}/receipt/cs_missing_blocked`, {
         headers: {
+            "CF-Connecting-IP": "203.0.113.18",
             "x-forwarded-host": "enter.pollinations.ai",
             "x-original-client-ip": "another-spoofed-value",
         },
@@ -216,14 +218,6 @@ test("anonymous checkout is rate-limited before creating another Stripe session"
 }) => {
     await mocks.enable("stripe");
     const buyerIp = "203.0.113.19";
-
-    await env.DB.prepare(
-        `INSERT INTO pollen_gift_rate_limit (
-            key, window_started_at, attempts
-         ) VALUES (?, ?, ?)`,
-    )
-        .bind("stale-gift-limit", Date.now() - 11 * 60 * 1000, 1)
-        .run();
 
     const options = {
         method: "POST",
@@ -253,12 +247,36 @@ test("anonymous checkout is rate-limited before creating another Stripe session"
             (request) => request.path === "/v1/checkout/sessions",
         ),
     ).toHaveLength(5);
-    const expiredRows = await env.DB.prepare(
-        `SELECT COUNT(*) AS count
-             FROM pollen_gift_rate_limit
-             WHERE key = 'stale-gift-limit'`,
+    const orders = await env.DB.prepare(
+        "SELECT COUNT(*) AS count FROM pollen_gift_code",
     ).first();
-    expect(expiredRows).toEqual({ count: 0 });
+    expect(orders).toEqual({ count: 5 });
+
+    // Checkout throttling must not prevent viewing an already-paid receipt.
+    const receipt = await SELF.fetch(`${giftBase}/receipt/not-a-session`, {
+        headers: { "CF-Connecting-IP": buyerIp },
+    });
+    expect(receipt.status).toBe(404);
+});
+
+test("gift redemption is rate-limited per signed-in user, not caller-supplied IP", async ({
+    sessionToken,
+}) => {
+    for (let attempt = 0; attempt <= 10; attempt++) {
+        const response = await SELF.fetch(`${giftBase}/redeem`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                cookie: `better-auth.session_token=${sessionToken}`,
+                "CF-Connecting-IP": `203.0.113.${attempt + 50}`,
+            },
+            body: JSON.stringify({ code: "invalid" }),
+        });
+        expect(response.status).toBe(attempt < 10 ? 400 : 429);
+        if (attempt === 10) {
+            expect(response.headers.get("Retry-After")).toBe("60");
+        }
+    }
 });
 
 test("failed gift payments retain risk analytics without storing guest card fingerprints", async ({

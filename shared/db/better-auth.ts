@@ -448,13 +448,6 @@ export const pollenGiftCode = sqliteTable("pollen_gift_code", {
   index("idx_pollen_gift_code_redeemer_user_id").on(table.redeemerUserId),
 ]);
 
-export const pollenGiftRateLimit = sqliteTable("pollen_gift_rate_limit", {
-  key: text("key").primaryKey(),
-  windowStartedAt: integer("window_started_at", { mode: "timestamp_ms" })
-    .notNull(),
-  attempts: integer("attempts").notNull(),
-});
-
 export const stripeCheckoutCredits = sqliteTable("stripe_checkout_credits", {
   sessionId: text("session_id").primaryKey(),
   eventId: text("event_id").notNull(),

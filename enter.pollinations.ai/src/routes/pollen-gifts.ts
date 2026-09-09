@@ -16,10 +16,6 @@ import {
     redeemPollenGift,
     voidPendingPollenGift,
 } from "../services/pollen-gifts.ts";
-import {
-    consumePollenGiftRateLimit,
-    MAX_POLLEN_GIFT_RATE_LIMIT_WINDOW_MS,
-} from "../utils/pollen-gift-security.ts";
 import { createStripeClient } from "../utils/stripe.ts";
 import { pollenCheckoutParameters } from "../utils/stripe-checkout.ts";
 
@@ -28,12 +24,6 @@ type PollenGiftEnv = {
     Variables: Env["Variables"] & AuthVariables;
 };
 
-const CHECKOUT_RATE_LIMIT = 5;
-const CHECKOUT_RATE_WINDOW_MS = 60 * 1000;
-const RECEIPT_RATE_LIMIT = 10;
-const RECEIPT_RATE_WINDOW_MS = 60 * 1000;
-const REDEEM_RATE_LIMIT = 10;
-const REDEEM_RATE_WINDOW_MS = MAX_POLLEN_GIFT_RATE_LIMIT_WINDOW_MS;
 const INVALID_GIFT_MESSAGE = "This gift code is invalid or unavailable.";
 
 export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
@@ -60,19 +50,16 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
             c.req.header("cf-connecting-ip") || "unknown",
             c.env.BETTER_AUTH_SECRET,
         );
-        const buyerKey = ipHash ?? "unknown";
-        const checkoutLimit = await consumePollenGiftRateLimit(c.env.DB, {
-            key: `checkout:${buyerKey}`,
-            limit: CHECKOUT_RATE_LIMIT,
-            windowMs: CHECKOUT_RATE_WINDOW_MS,
+        const checkoutLimit = await c.env.GIFT_CHECKOUT_LIMITER.limit({
+            key: ipHash ?? "unknown",
         });
-        if (!checkoutLimit.allowed) {
+        if (!checkoutLimit.success) {
             return c.json(
                 {
                     error: "Too many checkout attempts. Please try again later.",
                 },
                 429,
-                { "Retry-After": String(checkoutLimit.retryAfterSeconds) },
+                { "Retry-After": "60" },
             );
         }
 
@@ -172,16 +159,14 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
             c.req.header("cf-connecting-ip") || "unknown",
             c.env.BETTER_AUTH_SECRET,
         );
-        const receiptLimit = await consumePollenGiftRateLimit(c.env.DB, {
-            key: `receipt:${ipHash ?? "unknown"}`,
-            limit: RECEIPT_RATE_LIMIT,
-            windowMs: RECEIPT_RATE_WINDOW_MS,
+        const receiptLimit = await c.env.GIFT_RECEIPT_LIMITER.limit({
+            key: ipHash ?? "unknown",
         });
-        if (!receiptLimit.allowed) {
+        if (!receiptLimit.success) {
             return c.json(
                 { error: "Too many receipt requests. Please try again later." },
                 429,
-                { "Retry-After": String(receiptLimit.retryAfterSeconds) },
+                { "Retry-After": "60" },
             );
         }
 
@@ -220,16 +205,14 @@ export const pollenGiftRoutes = new Hono<PollenGiftEnv>()
         async (c) => {
             c.header("Cache-Control", "no-store");
             const user = c.var.auth.requireUser();
-            const redeemLimit = await consumePollenGiftRateLimit(c.env.DB, {
-                key: `redeem-user:${user.id}`,
-                limit: REDEEM_RATE_LIMIT,
-                windowMs: REDEEM_RATE_WINDOW_MS,
+            const redeemLimit = await c.env.GIFT_REDEEM_LIMITER.limit({
+                key: user.id,
             });
-            if (!redeemLimit.allowed) {
+            if (!redeemLimit.success) {
                 return c.json(
                     { error: "Too many attempts. Please try again later." },
                     429,
-                    { "Retry-After": String(redeemLimit.retryAfterSeconds) },
+                    { "Retry-After": "60" },
                 );
             }
 

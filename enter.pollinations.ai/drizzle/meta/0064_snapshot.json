@@ -1502,37 +1502,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "pollen_gift_rate_limit": {
-      "name": "pollen_gift_rate_limit",
-      "columns": {
-        "key": {
-          "name": "key",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "window_started_at": {
-          "name": "window_started_at",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "attempts": {
-          "name": "attempts",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "rewards": {
       "name": "rewards",
       "columns": {

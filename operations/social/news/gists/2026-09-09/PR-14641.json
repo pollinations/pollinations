@@ -1,0 +1,34 @@
+{
+  "pr_number": 14641,
+  "title": "chore: sync OpenRouter key to staging and dev",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14641",
+  "merged_at": "2026-09-09T13:53:45Z",
+  "labels": [],
+  "pr_body_excerpt": "- Replaces only `OPENROUTER_API_KEY` in Gen's encrypted staging and dev files with the verified production value, following explicit scoped approval.\n- Keeps production and every other decrypted secret unchanged; keeps this rotation separate from the Perplexity fallback changes.\n- Validates the production credential with seven successful Sonar requests covering all three models, streaming, terminal usage, and low/high search tiers.\n- Verifies the decrypted diffs contain only the approved key; Biome and `git diff --check` pass. Staging synchronization and local dev verification follow this merge.\n",
+  "gist": {
+    "category": "infrastructure",
+    "user_facing": false,
+    "publish_tier": "discord_only",
+    "importance": "minor",
+    "headline": "The staging hive gets nectar",
+    "blurb": "Gen's staging and dev hives now carry the same verified OpenRouter access as production. A small key rotation, carefully kept inside its own flowerbed.",
+    "summary": "Synchronized Gen's encrypted staging and development OPENROUTER_API_KEY configuration with the verified production credential while leaving production and all other secrets unchanged.",
+    "impact": "Non-production Gen environments gain consistent OpenRouter model access for development and staging verification, including streaming and search-tier workflows.",
+    "keywords": [
+      "OpenRouter",
+      "Gen",
+      "staging",
+      "development",
+      "secrets",
+      "configuration"
+    ],
+    "visual_concept": "A carefully labeled staging-and-dev garden shed represents non-production environments receiving a single approved API key from a secure production hive. Polli, wearing a tiny locksmith apron, tends two code-plants beside a retro terminal while ensuring the larger production flower remains untouched.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny locksmith apron, carefully carrying one glowing key to two small code-plants labeled “DEV” and “STAGING,” while a larger untouched flower pot labeled “PROD” sits nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, subtle CRT terminal glow, warm lighting, retro gaming vibes, with flowers and vines around the garden shed."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14641.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink cheek blush, light blue wings, and a tiny locksmith apron, carefully carrying one glowing key to two small code-plants labeled “DEV” and “STAGING,” while a larger untouched flower pot labeled “PROD” sits nearby. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, subtle CRT terminal glow, warm lighting, retro gaming vibes, with flowers and vines around the garden shed."
+  },
+  "generated_at": "2026-09-09T13:54:45.517219+00:00"
+}

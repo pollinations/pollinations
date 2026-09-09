@@ -1581,10 +1581,10 @@ exports[`effective cost and price per model — snapshot 1`] = `
   },
   "nvidia/asset-harvester": {
     "cost": {
-      "completionImageTokens": 0.25,
+      "completionImageTokens": 0.07,
     },
     "price": {
-      "completionImageTokens": 0.25,
+      "completionImageTokens": 0.07,
     },
   },
   "nvidia/nemotron-3-ultra": {

@@ -304,7 +304,7 @@ test("Trellis 2 prices selectable resolution tiers", () => {
 test("NVIDIA Asset Harvester flat rate pricing", () => {
     const usage = { completionImageTokens: 1 };
 
-    expect(calculateCost("nvidia/asset-harvester", usage).totalCost).toBe(0.25);
+    expect(calculateCost("nvidia/asset-harvester", usage).totalCost).toBe(0.07);
 });
 
 test("catalog models resolve brand logo SVG assets", () => {

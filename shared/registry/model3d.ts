@@ -63,7 +63,7 @@ const MODEL3D_BASE_SERVICES = {
         priceMultiplier: 1,
         flatRate: true,
         cost: {
-            completionImageTokens: 0.25,
+            completionImageTokens: 0.07,
         },
         title: "NVIDIA Asset Harvester",
         description: "Image-to-3D Gaussian Splat (PLY)",

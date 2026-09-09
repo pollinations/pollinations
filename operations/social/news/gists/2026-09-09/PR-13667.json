@@ -1,0 +1,35 @@
+{
+  "pr_number": 13667,
+  "title": "fix: reuse generated media URLs in MCP",
+  "author": "karanray06",
+  "url": "https://github.com/pollinations/pollinations/pull/13667",
+  "merged_at": "2026-09-09T15:36:12Z",
+  "labels": [],
+  "pr_body_excerpt": "Fixes #14646\nFixes #13422\n\n- Reuses public Media URLs directly: image JSON URLs and enclosure Link headers for audio, video and 3D.\n- Removes binary downloads, duplicate uploads and the obsolete cache-pointer implementation; no Gen or Media service changes.\n- Updates MCP documentation and tests body cancellation, missing links and all four media types.\n- Verified: 10 tests, Worker dry-run build, and live MCP calls against staging, including repeats and public file checks.\n\nCo-authored-by: karanray06 <209505273+karanray06@users.noreply.github.com>",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "No more media relay race",
+    "blurb": "The MCP now keeps generated media on its public URLs instead of carrying the same pixels through an unnecessary second trip. Images, audio, video, and 3D files can head straight from the garden to your tools.",
+    "summary": "MCP media handling now reuses generated public URLs directly—image JSON URLs plus audio, video, and 3D enclosure Link headers—removing binary downloads, duplicate uploads, and the obsolete cache-pointer path.",
+    "impact": "MCP clients can receive repeatable public links for all four media types without the extra download-and-reupload hop, making generated media handoffs simpler and more reliable.",
+    "keywords": [
+      "mcp",
+      "media-urls",
+      "images",
+      "audio",
+      "video",
+      "3d",
+      "bug-fix"
+    ],
+    "visual_concept": "Depict the MCP as a cozy retro terminal handing Polli four clearly labeled media parcels—an image frame, music note, video reel, and tiny 3D cube—via direct glowing URL vines rather than a cluttered relay conveyor. Polli, wearing a tiny mail-carrier cap, notices the clean shortcut while code-plants and flowers grow around the terminal; the Monitor Robot can happily display a chain-link icon to reinforce direct public links.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears a tiny mail-carrier cap and guides four direct glowing URL vines from a retro MCP terminal to an image frame, music note, video reel, and small 3D cube; a chunky CRT Monitor Robot displays a happy chain-link icon beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"DIRECT LINKS\", nostalgic but beautiful, emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-13667.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace where the cute pixel art bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings wears a tiny mail-carrier cap and guides four direct glowing URL vines from a retro MCP terminal to an image frame, music note, video reel, and small 3D cube; a chunky CRT Monitor Robot displays a happy chain-link icon beside blooming code-plants. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, subtle CRT glow, pixel-font text: \"DIRECT LINKS\", nostalgic but beautiful, emotionally warm."
+  },
+  "generated_at": "2026-09-09T15:37:55.310138+00:00"
+}

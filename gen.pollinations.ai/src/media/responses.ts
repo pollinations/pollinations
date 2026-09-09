@@ -109,7 +109,8 @@ export function mediaResponses(protocol: MediaProtocol) {
             throw new HTTPException(502, {
                 message: "Media generation returned no public file URL",
             });
-        await media.body?.pipeTo(new WritableStream());
+        // The file is already stored; this response only needs its URL.
+        await media.body?.cancel();
         const response = createMediaResponse(
             entry.id,
             mediaUrl,

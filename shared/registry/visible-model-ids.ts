@@ -4,7 +4,6 @@ import { HTTPException } from "hono/http-exception";
 import {
     communityModelId,
     effectiveCommunityEndpointVisibility,
-    legacyCommunityModelId,
 } from "../community-endpoints.ts";
 import * as schema from "../db/better-auth.ts";
 import {
@@ -14,8 +13,8 @@ import {
     resolveModelName,
 } from "./registry.ts";
 
-/** Resolve known aliases on write; never silently drop a restriction. */
-export async function normalizeModelPermissionIds(
+/** Key permissions store canonical IDs; aliases belong to generation requests. */
+export async function validateModelPermissionIds(
     dbBinding: D1Database,
     modelIds: readonly string[],
 ): Promise<string[]> {
@@ -35,26 +34,17 @@ export async function normalizeModelPermissionIds(
             schema.user,
             eq(schema.communityEndpoint.ownerUserId, schema.user.id),
         );
-    const communityAliases = new Map<string, string>();
     for (const row of rows) {
-        if (!row.owner) continue;
-        const canonical = communityModelId(row.owner, row.name);
-        canonicalIds.add(canonical);
-        communityAliases.set(
-            legacyCommunityModelId(row.owner, row.name),
-            canonical,
-        );
+        if (row.owner) canonicalIds.add(communityModelId(row.owner, row.name));
     }
-    const normalized = canonicalizeModelPermissionIds(modelIds).map((id) => {
-        const canonical = canonicalIds.has(id) ? id : communityAliases.get(id);
-        if (!canonical) {
+    for (const id of modelIds) {
+        if (!canonicalIds.has(id)) {
             throw new HTTPException(400, {
-                message: `Unknown model permission '${id}'. Use model IDs or aliases from /models.`,
+                message: `Model permission '${id}' is not a canonical model ID. Use IDs from /models; aliases are only accepted in generation requests.`,
             });
         }
-        return canonical;
-    });
-    return [...new Set(normalized)];
+    }
+    return [...new Set(modelIds)];
 }
 
 export function canonicalizeModelPermissionIds(

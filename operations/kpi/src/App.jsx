@@ -179,6 +179,7 @@ function Dashboard({ accountUser }) {
         weeklyData,
         fullWeeks,
         historyWeeks,
+        dailyRevenue,
         retentionData,
         github,
         currentWeek,
@@ -345,6 +346,29 @@ function Dashboard({ accountUser }) {
                         format="compact"
                     />
                 </div>
+
+                <LineChart
+                    title="Daily revenue · this week vs last week"
+                    data={dailyRevenue}
+                    series={[
+                        {
+                            key: "currentRevenue",
+                            label: "This week",
+                        },
+                        {
+                            key: "previousRevenue",
+                            label: "Last week",
+                        },
+                    ]}
+                    format="currency"
+                    xLabel={(row) => row.day}
+                    xAxisUnit="day"
+                    action={
+                        <Text as="span" size="micro" tone="muted">
+                            Today is partial
+                        </Text>
+                    }
+                />
 
                 <KPITrendTable
                     weeklyData={weeklyData}

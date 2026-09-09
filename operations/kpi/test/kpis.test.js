@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { buildDailyRevenueComparison } from "../src/lib/dailyRevenue";
 import { formatValue } from "../src/lib/format";
 import {
     KPI_VIEWS,
@@ -24,6 +25,41 @@ describe("dashboard time range", () => {
     it("ignores unsupported or malformed URL values", () => {
         expect(weeksFromSearch("?weeks=52")).toBe(12);
         expect(weeksFromSearch("?weeks=nope")).toBe(12);
+    });
+});
+
+describe("daily revenue comparison", () => {
+    it("aligns this week to the same weekdays last week", () => {
+        const rows = [
+            { date: "2026-08-31", revenue: 289.15 },
+            { date: "2026-09-01", revenue: 364.94 },
+            { date: "2026-09-02", revenue: 215.24 },
+            { date: "2026-09-07", revenue: 342.63 },
+            { date: "2026-09-08", revenue: 356.27 },
+        ];
+
+        expect(
+            buildDailyRevenueComparison(rows, new Date("2026-09-09T12:00:00Z")),
+        ).toEqual([
+            {
+                week: "2026-09-07",
+                day: "Mon",
+                currentRevenue: 342.63,
+                previousRevenue: 289.15,
+            },
+            {
+                week: "2026-09-08",
+                day: "Tue",
+                currentRevenue: 356.27,
+                previousRevenue: 364.94,
+            },
+            {
+                week: "2026-09-09",
+                day: "Wed",
+                currentRevenue: 0,
+                previousRevenue: 215.24,
+            },
+        ]);
     });
 });
 

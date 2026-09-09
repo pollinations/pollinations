@@ -113,18 +113,7 @@ export class GenerationCoordinator extends DurableObject<CloudflareBindings> {
             }
 
             const job = await this.restore(stored);
-            const execution = await executeGeneration(
-                new Request(job.request.url, {
-                    method: job.request.method,
-                    headers: job.request.headers,
-                    body: job.request.body?.slice().buffer,
-                }),
-                job.auth,
-                job.requestId,
-                job.balanceCheckResult,
-                job.apiKeyBudgetEstimate,
-                this.env,
-            );
+            const execution = await executeGeneration(job, this.env);
             settlement = execution.settlement;
             await this.finish(execution.result, stored.bodyChunks);
         } catch (error) {

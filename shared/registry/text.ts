@@ -102,6 +102,19 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         tools: true,
         reasoning: true,
+        supportedParameters: [
+            "max_completion_tokens",
+            "max_tokens",
+            "reasoning_effort",
+            "response_format",
+            "stop",
+            "stream",
+            "temperature",
+            "tool_choice",
+            "tools",
+            "top_p",
+        ],
+        defaultParameters: { stream: false },
         contextLength: 131072,
         isSpecialized: false,
     },
@@ -152,6 +165,18 @@ const TEXT_BASE_SERVICES = {
         maxReferenceImages: 10, // Azure OpenAI vision limit: 10 images/chat request (provider cap).
         tools: true,
         reasoning: true,
+        // omitOpenAISampling removes sampling controls on this Chat route.
+        supportedParameters: [
+            "max_completion_tokens",
+            "max_tokens",
+            "reasoning_effort",
+            "response_format",
+            "stop",
+            "stream",
+            "tool_choice",
+            "tools",
+        ],
+        defaultParameters: { stream: false },
         contextLength: 1050000,
         isSpecialized: false,
     },
@@ -1149,6 +1174,19 @@ const TEXT_BASE_SERVICES = {
         outputModalities: ["text"],
         maxReferenceImages: 20, // Bedrock Converse image limit.
         tools: true,
+        // Sampling is disabled while reasoning is enabled; otherwise
+        // temperature and top_p are mutually exclusive (temperature wins).
+        supportedParameters: [
+            "max_completion_tokens",
+            "max_tokens",
+            "reasoning_effort",
+            "stream",
+            "temperature",
+            "tool_choice",
+            "tools",
+            "top_p",
+        ],
+        defaultParameters: { max_tokens: 64000, stream: false },
         contextLength: 1000000, // Bedrock global Claude Sonnet 4.6 context window.
         isSpecialized: false,
     },

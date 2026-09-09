@@ -101,6 +101,18 @@ export const ModelInfoSchema = z.object({
     max_reference_images: z.number().int().positive().optional(),
     max_reference_videos: z.number().int().positive().optional(),
     capabilities: z.array(ModelCapabilitySchema),
+    supported_parameters: z
+        .array(z.string())
+        .optional()
+        .describe(
+            "Controls honored by this model through `/v1/chat/completions`; omitted when unverified and not applicable to `/v1/responses`.",
+        ),
+    default_parameters: z
+        .record(z.string(), z.union([z.string(), z.number(), z.boolean()]))
+        .optional()
+        .describe(
+            "Values Pollinations supplies when Chat callers omit a control; not upstream defaults and not applicable to `/v1/responses`.",
+        ),
     tools: z.boolean().optional(),
     reasoning: z.boolean().optional(),
     context_length: z.number().optional(),
@@ -218,6 +230,8 @@ export function modelInfoFromDefinition(
         max_reference_images: service.maxReferenceImages,
         max_reference_videos: service.maxReferenceVideos,
         capabilities: getCapabilities(service),
+        supported_parameters: service.supportedParameters,
+        default_parameters: service.defaultParameters,
         tools: service.tools,
         reasoning: service.reasoning,
         context_length: service.contextLength,

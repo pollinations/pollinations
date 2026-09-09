@@ -42,6 +42,20 @@ Supported media models also advertise both endpoints and return generated-file
 links as assistant text. Reference-required models return their normal missing-input
 error; use their native endpoint until attachments are supported here.
 
+### Chat parameters
+
+Verified official Chat models may include:
+
+- `supported_parameters`: controls honored through `/v1/chat/completions`.
+- `default_parameters`: values Pollinations supplies when callers omit them.
+
+These fields describe Pollinations' Chat behavior, not upstream defaults or the
+native `/v1/responses` API. Unverified models omit both fields. For example,
+`openai/gpt-5.4` omits sampling controls because its Chat transform removes
+them, while `openai/gpt-oss-20b` forwards `temperature` and `top_p`.
+On `anthropic/claude-sonnet-4.6`, those two controls are mutually exclusive
+(`temperature` wins), and both are disabled when `reasoning_effort` is enabled.
+
 ## Community Models
 
 Community models use an `owner/model` id and appear in the same discovery responses as Pollinations-operated models. Use `community=true` to return only community models or `community=false` to exclude them.

@@ -1,0 +1,34 @@
+{
+  "pr_number": 14612,
+  "title": "fix: reuse durable generation cache identity",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14612",
+  "merged_at": "2026-09-09T01:02:12Z",
+  "labels": [],
+  "pr_body_excerpt": "- Reuse the original cache key during background generation, so prompt changes during replay cannot leave callers looking for the wrong file.\n- Pass the existing job directly to the executor, removing duplicated argument plumbing.\n- Add regression tests for image generations and edits; both fail with the old key calculation.\n\nValidation: 185 tests, TypeScript and Biome pass. Independent Fable review found no blockers.",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The cache remembers",
+    "blurb": "Background image jobs now keep hold of their original cache key, even when a replayed prompt has wandered off to inspect another flower. Image generations and edits can reliably find the pixels they made.",
+    "summary": "Fixed durable background generation to reuse each job’s original cache key instead of recalculating it from a replayed prompt, with regression coverage for both image generation and image edits.",
+    "impact": "Users get reliable cached image and edit results: callers now look up the same output file created by the background job even when prompts change during replay.",
+    "keywords": [
+      "generation-cache",
+      "durable-objects",
+      "image-generation",
+      "image-edits",
+      "bug-fix",
+      "replay"
+    ],
+    "visual_concept": "Depict a cozy garden archive where Polli carefully carries a labeled seed packet—the original cache key—between a retro terminal and a finished pixel-art image plant. The stable label connects the job to its exact output, while a nearby alternate prompt note drifts harmlessly past; use vines and file drawers as a memory/cache metaphor.",
+    "image_prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she carries a glowing original-key seed packet from a retro terminal to its matching blooming image-file plant; a changed prompt note floats safely away, with code-vines and warm file drawers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"SAME KEY\"."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14612.jpg",
+    "prompt": "Cozy pixel art scene of Polli, a cute bee mascot with a yellow body, dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and small rounded light blue translucent wings, wearing tiny librarian glasses as she carries a glowing original-key seed packet from a retro terminal to its matching blooming image-file plant; a changed prompt note floats safely away, with code-vines and warm file drawers around them. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, chunky retro sprites, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, with subtle pixel-font text: \"SAME KEY\"."
+  },
+  "generated_at": "2026-09-09T01:03:14.418563+00:00"
+}

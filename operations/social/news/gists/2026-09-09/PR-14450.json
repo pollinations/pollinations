@@ -1,0 +1,34 @@
+{
+  "pr_number": 14450,
+  "title": "feat(sdk): add embeddings() method for /v1/embeddings",
+  "author": "afanasevmylife",
+  "url": "https://github.com/pollinations/pollinations/pull/14450",
+  "merged_at": "2026-09-09T14:58:28Z",
+  "labels": [],
+  "pr_body_excerpt": "## Summary\n- Adds typed embeddings() methods to the SDK client and top-level API using the existing authentication, timeout, and error handling.\n- Passes text, batches, and multimodal inputs to /v1/embeddings; preserves float or base64 responses and server-selected defaults.\n- Adds a short usage example and focused coverage in the existing client tests. No backend changes or new dependencies.\n\n## Verification\n- SDK: 80 tests passed on rerun; the first run hit the pre-existing OAuth callback test flake.\n- Typecheck, build, Biome, and built-SDK local HTTP smoke test passed.\n\nFixes #14366",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Vectors join the hive",
+    "blurb": "The SDK can now turn text, batches, and multimodal inputs into embeddings without anyone having to hand-roll an HTTP request. Polli has put the vectors in neat little jars.",
+    "summary": "Added typed `embeddings()` methods to the Pollinations SDK client and top-level API, forwarding text, batch, and multimodal inputs to `/v1/embeddings` with existing auth, timeout, error handling, server defaults, and float or base64 response formats preserved.",
+    "impact": "JavaScript and TypeScript developers can now generate embeddings through the SDK's normal API surface instead of calling `/v1/embeddings` manually, including for batched and multimodal requests.",
+    "keywords": [
+      "sdk",
+      "embeddings",
+      "vectors",
+      "api",
+      "typescript",
+      "multimodal"
+    ],
+    "visual_concept": "A cozy vector garden: Polli, wearing tiny librarian glasses, carefully labels glowing seed jars representing embedding vectors beside a retro terminal displaying simple floating-point and base64 symbols. Small code-plants grow from the terminal while a helpful CRT monitor robot organizes a batch of seeds, making the new typed SDK method feel tidy and native.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, labeling glowing embedding-vector seed jars beside a retro terminal that displays `/v1/embeddings`, with code-plants sprouting from lime green (#ecf874) pots and a cheerful CRT monitor robot sorting a batch of seeds. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14450.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with pink blush, light blue wings, and tiny librarian glasses, labeling glowing embedding-vector seed jars beside a retro terminal that displays `/v1/embeddings`, with code-plants sprouting from lime green (#ecf874) pots and a cheerful CRT monitor robot sorting a batch of seeds. Cozy 8-bit pixel art aesthetic, soft lime green and pastel gradient background, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, dark purple (#110518) pixel outlines, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T14:59:37.404753+00:00"
+}

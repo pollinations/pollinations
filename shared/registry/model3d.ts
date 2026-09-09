@@ -61,6 +61,7 @@ const MODEL3D_BASE_SERVICES = {
         category: "3d",
         addedDate: new Date("2026-09-07").getTime(),
         priceMultiplier: 1,
+        paidOnly: true,
         flatRate: true,
         cost: {
             completionImageTokens: 0.07,

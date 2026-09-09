@@ -1,0 +1,35 @@
+{
+  "pr_number": 14642,
+  "title": "feat: add OpenRouter fallbacks for Perplexity Sonar models",
+  "author": "ElliotEtag",
+  "url": "https://github.com/pollinations/pollinations/pull/14642",
+  "merged_at": "2026-09-09T14:09:16Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds hidden, exact-model OpenRouter fallbacks for `perplexity/sonar`, `perplexity/sonar-pro`, and `perplexity/sonar-reasoning-pro`. Direct Perplexity stays primary through Portkey, using the unprefixed upstream IDs. Fallbacks use OpenRouter `/api/v1/chat/completions`, the canonical upstream IDs, and `provider.only=[\"perplexity\"]` with provider fallback disabled. Azure, Fireworks, and DeepInfra lack equivalent Sonar routes; both configured routes ultimately depend on Perplexity.\n- Preserves multiplier **1**, Quest Pollen access, text/search capabilities, reasoning support, and aliases: `sonar`, `perplexity-high`, `perplexity-deep`, `sonar-deep`, `perplexity-fast`; `sonar-pro`, `perplexity-pro`, `perplexity`; `sonar-reasoning`, `sonar-reasoning-pro`, `perplexity-reasoning`. No Pollinations GPU or public API changes.\n- Handles OpenRouter's numeric total cost separately from the search fee, preserving existing token and search-tier rates. Sources: [OpenRouter search billing](https://openrouter.ai/docs/guides/features/plugins/web-search), [Perplexity pricing](https://docs.perplexity.ai/docs/getting-started/pricing).\n- Updates equivalent-route preference to Azure, then Fireworks. Secret synchronization shipped separately in #14641; Agent API migration remains separate.\n- Validation: **151 focused tests**, including the updated fallback pricing snapshot, Gen/Enter type checks, Biome, and diff checks pass. **11 live OpenRouter requests** pass across all three models, streaming, terminal usage, and search tiers. **Draft gate:** forced-fallback gateway, billing/Tinybird reconciliation, cache, permissions, and burst verification remain; the available staging gateway credential returns **401**.\n",
+  "gist": {
+    "category": "improvement",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Sonar grows a spare wing",
+    "blurb": "Perplexity Sonar now has a carefully fenced-in second route when the first one needs a minute. Same models, same aliases, same search and reasoning pollen—just more ways for the signal to find its way home.",
+    "summary": "Added hidden exact-model OpenRouter fallbacks for perplexity/sonar, perplexity/sonar-pro, and perplexity/sonar-reasoning-pro, while keeping direct Perplexity through Portkey as primary and preserving existing aliases, multiplier 1, Quest Pollen access, search tiers, and reasoning support.",
+    "impact": "Sonar users keep the same model names and billing behavior, with an additional Perplexity-only route available for more resilient chat, streaming, terminal, search, and reasoning requests.",
+    "keywords": [
+      "Perplexity",
+      "Sonar",
+      "OpenRouter",
+      "fallbacks",
+      "routing",
+      "search",
+      "billing"
+    ],
+    "visual_concept": "Depict the three Sonar model routes as cozy signal paths through a flower garden: Polli is a careful mail carrier guiding glowing search-query envelopes from a primary Perplexity terminal to a small OpenRouter backup terminal, both marked with the same Perplexity constellation. The visual metaphor is resilient routing rather than a new public feature; include sprouting code-plants, a subtle duplicate path, and perhaps the eager CRT Monitor Robot checking that both paths lead to the same destination.",
+    "image_prompt": "A cozy pixel-art garden hackerspace where Polli, a cute pixel bee with a yellow body, dark brown stripes, black antennae, oval black eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wears a tiny courier cap while carrying a glowing search envelope between a primary retro Perplexity terminal and a smaller backup OpenRouter terminal; both terminals connect to the same starry signal flower, while a chunky CRT monitor robot happily checks the routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradients, code-plants and tiny flowers, warm lighting, retro gaming vibes, subtle pixel-font text: \"SONAR ROUTES\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14642.jpg",
+    "prompt": "A cozy pixel-art garden hackerspace where Polli, a cute pixel bee with a yellow body, dark brown stripes, black antennae, oval black eyes, bright pink rectangular cheek blush, a small happy smile, and rounded light-blue translucent wings, wears a tiny courier cap while carrying a glowing search envelope between a primary retro Perplexity terminal and a smaller backup OpenRouter terminal; both terminals connect to the same starry signal flower, while a chunky CRT monitor robot happily checks the routes. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel lavender-to-cream gradients, code-plants and tiny flowers, warm lighting, retro gaming vibes, subtle pixel-font text: \"SONAR ROUTES\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-09T14:10:22.984541+00:00"
+}

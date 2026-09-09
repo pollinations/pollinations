@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoryCraft AI - Interactive Storybook & Scene Illustrator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-wrapper">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <span class="logo-icon">✨</span>
+                    <div>
+                        <h1>StoryCraft <span class="gradient-text">AI</span></h1>
+                        <p class="subtitle">Interactive Storybook & Scene Illustrator</p>
+                    </div>
+                </div>
+                <div class="header-badge">
+                    <a href="https://pollinations.ai" target="_blank" rel="noopener noreferrer" class="pollinations-badge">
+                        <span class="pulse-dot"></span>
+                        Powered by <strong>Pollinations.ai</strong>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-container">
+            <!-- Left Panel: Story Creation Controls -->
+            <section class="control-panel glass-card">
+                <div class="panel-header">
+                    <h2>📖 Create Your Story</h2>
+                    <p>Enter a prompt or concept and watch the story unfold with custom illustrations.</p>
+                </div>
+
+                <form id="story-form" class="story-form">
+                    <div class="form-group">
+                        <label for="story-prompt">Story Concept / Prompt</label>
+                        <textarea id="story-prompt" rows="3" placeholder="e.g., A brave young astronomer discovers a hidden celestial garden on an uncharted asteroid..." required></textarea>
+                        <div class="prompt-chips">
+                            <span class="chip" data-prompt="A cyberpunk detective solves the mystery of the vanishing neon shadows in Neo-Kyoto.">Cyberpunk Mystery</span>
+                            <span class="chip" data-prompt="A curious baby dragon learns to fly across the floating crystal islands of Elyria.">Fantasy Dragon</span>
+                            <span class="chip" data-prompt="An underwater explorer uncovers an ancient bioluminescent civilization beneath Europa's ice.">Sci-Fi Ocean</span>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="art-style">Visual Art Style</label>
+                            <select id="art-style">
+                                <option value="cinematic fantasy illustration, vivid lighting, highly detailed, octane render, 8k">Cinematic Fantasy</option>
+                                <option value="studio ghibli anime style, warm atmospheric lighting, lush scenery, hand-drawn digital art">Studio Ghibli Anime</option>
+                                <option value="classic watercolor painting, dreamy pastel palette, soft edges, storybook illustration">Watercolor Storybook</option>
+                                <option value="cyberpunk sci-fi concept art, neon glow, intricate details, futuristic lighting">Cyberpunk / Sci-Fi</option>
+                                <option value="vintage comic book style, bold ink lines, halftone dot shading, retro colors">Retro Comic Book</option>
+                                <option value="3D Pixar animation style, soft volumetric lighting, vibrant colors, expressive character">3D Animation</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group half">
+                            <label for="chapter-count">Number of Chapters</label>
+                            <select id="chapter-count">
+                                <option value="3">3 Chapters (Short Tale)</option>
+                                <option value="4" selected>4 Chapters (Standard Story)</option>
+                                <option value="5">5 Chapters (Epic Journey)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group half">
+                            <label for="text-model">LLM Text Model</label>
+                            <select id="text-model">
+                                <option value="openai">OpenAI (GPT-4o mini)</option>
+                                <option value="mistral">Mistral Small</option>
+                                <option value="qwen">Qwen 2.5</option>
+                                <option value="deepseek">DeepSeek Chat</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group half">
+                            <label for="image-model">Image Model</label>
+                            <select id="image-model">
+                                <option value="flux">FLUX.1 Schnell</option>
+                                <option value="turbo">SDXL Turbo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="generate-btn" class="primary-btn">
+                        <span class="btn-text">🚀 Generate Story & Illustrations</span>
+                        <div class="loader" style="display: none;"></div>
+                    </button>
+                </form>
+
+                <!-- Status Banner -->
+                <div id="status-card" class="status-card" style="display: none;">
+                    <div class="status-icon" id="status-icon">⏳</div>
+                    <div class="status-info">
+                        <h4 id="status-title">Crafting Narrative...</h4>
+                        <p id="status-desc">Connecting to Pollinations Text API...</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Panel: Storybook Reader -->
+            <section class="story-display glass-card" id="story-display">
+                <div class="empty-state" id="empty-state">
+                    <div class="empty-illustration">📚</div>
+                    <h3>Your Storybook Awaits</h3>
+                    <p>Enter a story idea on the left and click <strong>Generate</strong>. Pollinations AI will write the chapters and paint full-color scene artwork for each page.</p>
+                </div>
+
+                <!-- Story Reader Container -->
+                <div id="story-content" class="story-content" style="display: none;">
+                    <div class="story-header-bar">
+                        <div>
+                            <h2 id="story-title" class="story-main-title">The Legend of the Asteroid Garden</h2>
+                            <p id="story-genre" class="story-genre-tag">Fantasy / Sci-Fi</p>
+                        </div>
+                        <div class="action-buttons">
+                            <button type="button" id="copy-story-btn" class="secondary-btn" title="Copy text to clipboard">📋 Copy Text</button>
+                            <button type="button" id="regenerate-img-btn" class="secondary-btn" title="Regenerate artwork for current chapter">🎨 Redraw Scene</button>
+                        </div>
+                    </div>
+
+                    <!-- Chapter Reader Slides -->
+                    <div class="chapter-carousel">
+                        <div class="chapter-card" id="active-chapter-card">
+                            <div class="chapter-image-container">
+                                <img id="chapter-image" src="" alt="Story Scene Illustration" class="chapter-artwork">
+                                <div class="image-overlay-loader" id="image-loader">
+                                    <div class="spinner"></div>
+                                    <span>Rendering artwork with Pollinations...</span>
+                                </div>
+                            </div>
+                            <div class="chapter-text-container">
+                                <div class="chapter-badge" id="chapter-number-badge">Chapter 1 of 4</div>
+                                <h3 id="chapter-heading" class="chapter-title">Chapter Title</h3>
+                                <div id="chapter-body" class="chapter-paragraphs">
+                                    <p>Story chapter text will appear here...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reader Navigation -->
+                    <div class="reader-nav">
+                        <button type="button" id="prev-chapter-btn" class="nav-btn" disabled>← Previous Chapter</button>
+                        <div class="nav-dots" id="nav-dots">
+                            <!-- Injected dynamically -->
+                        </div>
+                        <button type="button" id="next-chapter-btn" class="nav-btn">Next Chapter →</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>StoryCraft AI is built with ❤️ using <a href="https://pollinations.ai" target="_blank">Pollinations.ai</a> Text & Image Generation APIs.</p>
+            <p class="api-links">
+                API Endpoints: 
+                <a href="https://text.pollinations.ai" target="_blank"><code>text.pollinations.ai</code></a> • 
+                <a href="https://image.pollinations.ai" target="_blank"><code>image.pollinations.ai</code></a>
+            </p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

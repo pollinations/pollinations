@@ -30,7 +30,9 @@ Example: `GET /models?community=false`
 Rich model endpoints include `capabilities` for agentic/model traits:
 `tool_calling`, `reasoning`, `web_search`, and `code_execution`.
 Modalities, video frame controls, voices, and context length remain separate
-structured fields.
+structured fields. Model objects also expose `supported_parameters` and `default_parameters`
+backed by the model registry to disclose accepted request options and defaults for Chat
+Completions (`/v1/chat/completions`).
 
 Use `supported_endpoints` to discover which public API routes accept each
 model. `/v1/responses` identifies built-in models with a configured native

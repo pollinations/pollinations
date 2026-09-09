@@ -230,6 +230,8 @@ export type ModelDefinition = {
     maxReferenceVideos?: number; // Models with video input: effective accepted reference videos
     /** Internal provider-route output-token cap used for fallback compatibility. */
     maxCompletionTokens?: number;
+    supportedParameters?: string[];
+    defaultParameters?: Record<string, unknown>;
 };
 
 // Helper: Convert usage counts to rated USD-equivalent cost or Pollen charge.

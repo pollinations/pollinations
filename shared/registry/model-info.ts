@@ -92,6 +92,8 @@ export const ModelInfoSchema = z.object({
     output_modalities: z.array(z.enum(MODEL_OUTPUT_MODALITIES)).optional(),
     required_safety: z.array(z.enum(SAFETY_FEATURES)).optional(),
     supported_endpoints: z.array(z.string()).optional(),
+    supported_parameters: z.array(z.string()).optional(),
+    default_parameters: z.record(z.string(), z.unknown()).nullable().optional(),
     video_capabilities: z.array(z.enum(VIDEO_CAPABILITIES)).optional(),
     min_duration: z.number().positive().optional(),
     max_duration: z.number().positive().optional(),
@@ -158,11 +160,153 @@ function pricingAdjustmentInfoFromRule(
     return publicPriceInfo(rule, service.priceMultiplier);
 }
 
+function deriveSupportedAndDefaultParameters(service: ModelDefinition): {
+    supportedParameters?: string[];
+    defaultParameters?: Record<string, unknown>;
+} {
+    if (service.supportedParameters) {
+        return {
+            supportedParameters: service.supportedParameters,
+            defaultParameters: service.defaultParameters,
+        };
+    }
+
+    let supported: string[] = [];
+    const defaults: Record<string, unknown> = service.defaultParameters
+        ? { ...service.defaultParameters }
+        : {};
+
+    if (service.category === "text") {
+        if (service.search) {
+            supported = ["search_context_size", "max_tokens", "stream"];
+            if (
+                service.searchContextSizes &&
+                service.searchContextSizes.length > 0
+            ) {
+                defaults.search_context_size = service.searchContextSizes[0];
+            } else {
+                defaults.search_context_size = "low";
+            }
+            defaults.stream = false;
+        } else if (service.voices && service.voices.length > 0) {
+            supported = [
+                "modalities",
+                "audio",
+                "temperature",
+                "top_p",
+                "max_tokens",
+                "seed",
+                "tools",
+                "tool_choice",
+                "stream",
+            ];
+            defaults.modalities = ["text"];
+            defaults.audio = {
+                voice: service.voices[0],
+                format: "mp3",
+            };
+            defaults.temperature = 1;
+            defaults.top_p = 1;
+            defaults.stream = false;
+        } else if (service.reasoning) {
+            supported = [
+                "reasoning_effort",
+                "max_tokens",
+                "seed",
+                "stop",
+                "response_format",
+                "tools",
+                "tool_choice",
+                "parallel_tool_calls",
+                "stream",
+            ];
+            defaults.stream = false;
+        } else {
+            supported = [
+                "temperature",
+                "top_p",
+                "max_tokens",
+                "presence_penalty",
+                "frequency_penalty",
+                "seed",
+                "stop",
+                "response_format",
+                "tools",
+                "tool_choice",
+                "parallel_tool_calls",
+                "stream",
+            ];
+            defaults.temperature = 1;
+            defaults.top_p = 1;
+            defaults.stream = false;
+        }
+    } else if (service.category === "image") {
+        supported = [
+            "prompt",
+            "width",
+            "height",
+            "seed",
+            "n",
+            "quality",
+            "response_format",
+            "safe",
+        ];
+        if (service.resolutions && service.resolutions.length > 0) {
+            supported.push("resolution");
+            defaults.resolution = service.resolutions[0];
+        }
+        defaults.width = 1024;
+        defaults.height = 1024;
+        defaults.n = 1;
+        defaults.quality = "medium";
+        defaults.response_format = "b64_json";
+    } else if (service.category === "video") {
+        supported = ["prompt", "duration", "aspectRatio", "seed", "audio"];
+        if (service.videoCapabilities) {
+            for (const cap of service.videoCapabilities) {
+                if (!supported.includes(cap)) {
+                    supported.push(cap);
+                }
+            }
+        }
+        if (service.defaultDuration !== undefined) {
+            defaults.duration = service.defaultDuration;
+        }
+    } else if (service.category === "audio") {
+        supported = ["text", "voice", "format"];
+        if (
+            service.minDuration !== undefined ||
+            service.maxDuration !== undefined ||
+            service.defaultDuration !== undefined
+        ) {
+            supported.push("duration");
+        }
+        defaults.format = "mp3";
+        if (service.voices && service.voices.length > 0) {
+            defaults.voice = service.voices[0];
+        }
+        if (service.defaultDuration !== undefined) {
+            defaults.duration = service.defaultDuration;
+        }
+    } else if (service.category === "3d") {
+        supported = ["prompt", "image", "resolution", "quality", "safe"];
+    } else if (service.category === "embedding") {
+        supported = ["input", "dimensions"];
+    }
+
+    return {
+        supportedParameters: supported.length > 0 ? supported : undefined,
+        defaultParameters:
+            Object.keys(defaults).length > 0 ? defaults : undefined,
+    };
+}
+
 export function modelInfoFromDefinition(
     name: string,
     service: ModelDefinition,
     options: ModelInfoOptions = {},
 ): ModelInfo {
+    const paramsInfo = deriveSupportedAndDefaultParameters(service);
     return {
         name,
         aliases: service.aliases,
@@ -207,6 +351,8 @@ export function modelInfoFromDefinition(
         output_modalities: service.outputModalities,
         required_safety: service.requiredSafetyFeatures,
         supported_endpoints: service.supportedEndpoints,
+        supported_parameters: paramsInfo.supportedParameters,
+        default_parameters: paramsInfo.defaultParameters,
         video_capabilities: service.videoCapabilities,
         min_duration: service.minDuration,
         max_duration: service.maxDuration,

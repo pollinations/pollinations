@@ -310,6 +310,10 @@ export const CreateChatCompletionRequestSchema = z
             description:
                 "AI model for text generation. See /v1/models for full list.",
         }),
+        agent_model: z.string().trim().min(1).max(128).optional().meta({
+            description:
+                "Pollinations extension: inner model requested from an endpoint agent.",
+        }),
         modalities: z.array(z.enum(["text", "audio"])).optional(),
         audio: z
             .object({

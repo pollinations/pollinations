@@ -2417,6 +2417,7 @@ describe("community endpoint helpers", () => {
             endpoint,
             modelDefinition,
             requestData: {
+                agent_model: "openai/gpt-5.6-terra",
                 messages: [{ role: "user", content: "hello" }],
                 max_tokens: 5,
             },
@@ -2439,6 +2440,8 @@ describe("community endpoint helpers", () => {
             },
         });
         expect(context.modelDef).toBe(modelDefinition);
+        expect(context.modelConfig?.model).toBe(endpoint.upstreamModel);
+        expect(context).not.toHaveProperty("agent_model");
         expect(context).not.toHaveProperty("messages");
     });
 
@@ -2508,6 +2511,39 @@ describe("community endpoint helpers", () => {
 
             const claims = await verifyAgentRunToken(token, secret);
             expect(claims).toMatchObject({ parentApiKeyId: "parent-key-id" });
+        });
+
+        it("maps agent_model to the endpoint request model only", async () => {
+            const endpoint = endpointAgent();
+            const context = await communityEndpointGatewayContext({
+                endpoint,
+                modelDefinition: communityModelDefinition(endpoint),
+                requestData: {
+                    model: endpoint.modelId,
+                    agent_model: "openai/gpt-5.6-terra",
+                    messages: [{ role: "user", content: "review this" }],
+                },
+                secret,
+                portkeyGatewayUrl: "https://portkey.test",
+                userApiKey: "sk_user_key",
+                parentRequestId: "parent-request-id",
+                parentApiKeyId: "parent-key-id",
+            });
+
+            expect(context.requestedModel).toBe(endpoint.modelId);
+            expect(context.modelConfig?.model).toBe("openai/gpt-5.6-terra");
+            expect(context).not.toHaveProperty("agent_model");
+            const token = String(context.modelConfig?.authKey);
+            expect(token).toMatch(/^ag_/);
+            expect(token).not.toContain("sk_user_key");
+        });
+
+        it("keeps the registered endpoint model without an override", async () => {
+            const endpoint = endpointAgent();
+            const context = await contextFor(endpoint, "parent-key-id");
+
+            expect(context.modelConfig?.model).toBe(endpoint.upstreamModel);
+            expect(context).not.toHaveProperty("agent_model");
         });
 
         it("carries the parent request id so a run's generations can be grouped", async () => {
@@ -2592,6 +2628,97 @@ describe("community endpoint helpers", () => {
         });
     });
 });
+
+fixtureTest(
+    "forwards an endpoint-agent model override with a run token",
+    async ({ apiKey }) => {
+        const ownerGithubUsername = `owner-${crypto.randomUUID().slice(0, 8)}`;
+        const modelName = `agent-${crypto.randomUUID().slice(0, 8)}`;
+        const modelId = communityModelId(ownerGithubUsername, modelName);
+        const agentUrl = "https://agent.example.com/v1/chat/completions";
+        const ownerUserId = await createTestUser({
+            githubId: nextAllowedGithubId(),
+            githubUsername: ownerGithubUsername,
+        });
+        await insertCommunityEndpoints({
+            id: `endpoint-${crypto.randomUUID()}`,
+            ownerUserId,
+            type: "endpoint_agent",
+            visibility: "public",
+            name: modelName,
+            baseUrl: agentUrl,
+            upstreamModel: "polli",
+            promptTextPrice: 0,
+            completionTextPrice: 0,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        });
+
+        const upstreamModels: string[] = [];
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async (input, init) => {
+                const request = new Request(input, init);
+                if (request.url === agentUrl) {
+                    const token =
+                        request.headers
+                            .get("authorization")
+                            ?.replace(/^Bearer\s+/i, "") ?? "";
+                    expect(token).toMatch(/^ag_/);
+                    const body = (await request.json()) as Record<
+                        string,
+                        unknown
+                    >;
+                    expect(body).not.toHaveProperty("agent_model");
+                    upstreamModels.push(String(body.model));
+                    return Response.json({
+                        id: `chatcmpl_${upstreamModels.length}`,
+                        object: "chat.completion",
+                        model: body.model,
+                        choices: [
+                            {
+                                index: 0,
+                                message: { role: "assistant", content: "ok" },
+                                finish_reason: "stop",
+                            },
+                        ],
+                        usage: {
+                            prompt_tokens: 2,
+                            completion_tokens: 3,
+                            total_tokens: 5,
+                        },
+                    });
+                }
+                if (isBillingFetch(request)) return Response.json({ data: [] });
+                throw new Error(`Unexpected fetch: ${request.url}`);
+            }),
+        );
+
+        const callAgent = (agentModel?: string) =>
+            fetchGen(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        ...(agentModel ? { agent_model: agentModel } : {}),
+                        messages: [{ role: "user", content: "hello" }],
+                    }),
+                }),
+            );
+
+        const overrideResponse = await callAgent("openai/gpt-5.6-terra");
+        expect(overrideResponse.status).toBe(200);
+        expect(overrideResponse.headers.get("x-model-used")).toBe(modelId);
+        const defaultResponse = await callAgent();
+        expect(defaultResponse.status).toBe(200);
+        expect(defaultResponse.headers.get("x-model-used")).toBe(modelId);
+        expect(upstreamModels).toEqual(["openai/gpt-5.6-terra", "polli"]);
+    },
+);
 
 fixtureTest(
     "routes Chat through an exact community URL with its saved token and rejects Responses",
@@ -2722,6 +2849,43 @@ fixtureTest(
             model: "gpt-4.1-mini",
             choices: [{ message: { content: "ok" } }],
         });
+
+        const overrideResponse = await fetchGen(
+            new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: modelId,
+                    agent_model: "openai/gpt-5.6-terra",
+                    messages: [{ role: "user", content: "hello" }],
+                }),
+            }),
+        );
+        expect(overrideResponse.status).toBe(400);
+        expect(await overrideResponse.text()).toContain(
+            "agent_model is supported only by endpoint agents",
+        );
+
+        for (const agentModel of ["   ", "x".repeat(129)]) {
+            const invalidOverrideResponse = await fetchGen(
+                new Request("https://gen.pollinations.ai/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${apiKey}`,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        agent_model: agentModel,
+                        messages: [{ role: "user", content: "hello" }],
+                    }),
+                }),
+            );
+            expect(invalidOverrideResponse.status).toBe(400);
+        }
 
         const responses = await fetchGen(
             new Request("https://gen.pollinations.ai/v1/responses", {

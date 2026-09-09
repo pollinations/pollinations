@@ -1,0 +1,35 @@
+{
+  "pr_number": 14648,
+  "title": "feat: accept image parts for media models on Chat and Responses",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14648",
+  "merged_at": "2026-09-09T20:07:24Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds image input to media models on `/v1/chat/completions` and `/v1/responses`: `image_url` (Chat) and `input_image` (Responses) parts in the last user message, as URLs or data URIs.\n- Routes prompts with images through the existing `/v1/images/edits` replay contract via a shared `prepareImageEditRequest`, so native edits, Chat and Responses hash one normalized body (quality default, safe, model) and share one cache key, one generation and one billed event. Text-only prompts keep the `GET /image/{prompt}` path unchanged.\n- Image models take the parts as source images; video models take them as the start frame (same edits executor). 3D models and models without `image` in `input_modalities` return 400, as does any other attachment type.\n- Motivation: since #14618, every media error from Open WebUI users (7/7 in the first 6.5 h, 4 users) was a photo attached to an image-edit model (kontext-pro, nova-canvas, mai-image-2.5-flash). Open WebUI sends attachments exactly as `image_url` data URIs.\n- Tests: part extraction and rejection cases in `media-responses.test.ts`; VCR test proves a native edit followed by both text protocols shares one mocked generation and one billed event, and that a text-input-only model rejects images before generation. Staging-verified for image edits (chat 200, responses and streaming cache hits, billing once); video start frames not live-tested.\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nhttps://claude.ai/code/session_015mNrP6DkRQmm3YStNjfFv3\n",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Bring Your Own Pixels",
+    "blurb": "Chat and Responses can now hand media models an actual picture instead of trying to describe every leaf. One image edit, one shared result, one tidy bit of hive bookkeeping.",
+    "summary": "Added image_url parts to /v1/chat/completions and input_image parts to /v1/responses, accepting URLs and data URIs in the last user message and normalizing them through the existing /v1/images/edits flow with shared caching and billing.",
+    "impact": "Open WebUI and API users can now attach photos directly to compatible image-edit models such as kontext-pro, nova-canvas, and mai-image-2.5-flash, while video models can use the attachment as a start frame and equivalent edit requests generate and bill only once.",
+    "keywords": [
+      "chat completions",
+      "responses API",
+      "image input",
+      "Open WebUI",
+      "image edits",
+      "caching",
+      "video start frames"
+    ],
+    "visual_concept": "Depict Polli helping a friendly CRT monitor robot place a photo card into a shared image-editing garden machine, with the same photo branching into Chat and Responses paths before rejoining at one glowing edited flower. The single shared blossom and one small receipt symbolize normalized requests, a shared cache key, one generation, and one billed event; use image frames and a tiny video-film sprout to suggest both image sources and video start frames.",
+    "image_prompt": "A cozy pixel art garden-hackerspace where the cute bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings; wearing tiny editor glasses, she warmly helps a chunky CRT-monitor robot slide a photo card into a lime green (#ecf874) image-editing planter, where two labeled pixel paths, “CHAT” and “RESPONSES,” join into one glowing edited flower and one tiny receipt. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-vines and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14648.jpg",
+    "prompt": "A cozy pixel art garden-hackerspace where the cute bee mascot has a yellow body with dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular cheek blushes, a small happy smile, and rounded light-blue translucent wings; wearing tiny editor glasses, she warmly helps a chunky CRT-monitor robot slide a photo card into a lime green (#ecf874) image-editing planter, where two labeled pixel paths, “CHAT” and “RESPONSES,” join into one glowing edited flower and one tiny receipt. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-vines and flowers, chunky retro sprites, warm lighting, lo-fi vibes like Stardew Valley or A Short Hike, cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-09T20:08:34.850005+00:00"
+}

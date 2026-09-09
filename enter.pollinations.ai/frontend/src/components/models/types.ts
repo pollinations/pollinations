@@ -55,6 +55,7 @@ export type ModelPriceAdjustment = PublicPriceInfo;
 
 export type ModelPrice = {
     name: string;
+    aliases?: string[];
     type: ModelCategory;
     community?: boolean;
     agent?: boolean;
@@ -62,10 +63,11 @@ export type ModelPrice = {
     perUserRpm?: number | null;
     displayName?: string;
     description?: string;
-    brand?: string;
+    publisher?: string;
     brandUrl?: string;
     inputModalities?: string[];
     outputModalities?: string[];
+    supportedEndpoints?: string[];
     capabilities: ModelCapability[];
     paidOnly?: boolean;
     free?: boolean;

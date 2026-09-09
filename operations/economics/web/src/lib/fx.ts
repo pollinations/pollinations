@@ -1,9 +1,10 @@
 import type { Data } from "../types";
 
-// Monthly average EUR→USD (ECB rates via frankfurter.dev, pulled 2026-07-06;
-// 2025 backfill pulled 2026-07-13). Append one line when a new month starts —
-// the only maintenance this needs. 2025 months are needed because the credit
-// and prepaid-coverage lenses read pre-window rows.
+// Monthly average EUR→USD (ECB reference rates). Append one line when a new
+// month starts. 2025 months are needed because the credit and prepaid-coverage
+// lenses read pre-window rows.
+// Source: https://data-api.ecb.europa.eu/service/data/EXR/M.USD.EUR.SP00.A
+// Verified through August 2026; rounded to four decimal places.
 const FX_EUR_USD: Record<string, number> = {
     "2025-01": 1.0354,
     "2025-02": 1.0413,
@@ -23,11 +24,13 @@ const FX_EUR_USD: Record<string, number> = {
     "2026-04": 1.1706,
     "2026-05": 1.1673,
     "2026-06": 1.1518,
-    "2026-07": 1.1411,
+    "2026-07": 1.1417,
+    "2026-08": 1.1593,
 };
 
-// Monthly average CAD→USD. Only two CAD facts exist (the 2025 VLAS MIKROPULO
-// payments and their conversion out); append here if CAD ever reappears.
+// CAD→USD cross-rate: ECB monthly USD/EUR divided by monthly CAD/EUR,
+// rounded to four decimals. Append a reviewed rate when another month is needed.
+// CAD source: https://data-api.ecb.europa.eu/service/data/EXR/M.CAD.EUR.SP00.A
 const FX_CAD_USD: Record<string, number> = {
     "2025-05": 0.7208,
     "2025-06": 0.731,
@@ -69,8 +72,9 @@ export function fxEstimatedMonths(data: Data): string[] {
         if (table[month] == null) months.add(month);
     };
     for (const row of data.opTransactions ?? []) check(row.currency, row.date);
-    for (const row of data.opCloud ?? []) check(row.currency, row.start);
+    for (const row of data.vendorLedger ?? []) check(row.currency, row.start);
     for (const row of data.opPollen ?? []) check(row.currency, row.month);
+    for (const row of data.stripeSales ?? []) check(row.currency, row.month);
     return [...months].sort();
 }
 

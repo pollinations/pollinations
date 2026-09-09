@@ -10,11 +10,12 @@ import {
     normalizeCommunityEndpointBearerToken,
 } from "@shared/community-endpoints.ts";
 import {
+    communityVideoSeconds,
     firstCommunityImageBytes,
     firstCommunityVideoBytes,
     MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
 } from "@shared/community-media.ts";
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import { detectImageMimeType } from "@shared/image-mime.ts";
 import type { Usage } from "@shared/registry/registry.ts";
 import {
@@ -75,10 +76,10 @@ export async function callCommunityImageEndpoint(
 
     const bytes = await firstCommunityImageBytes(body, endpoint.baseUrl);
     if (!bytes || !detectImageMimeType(bytes)) {
-        throw new HttpError(
-            "Community image endpoint did not return a supported image",
-            502,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message:
+                "Community image endpoint did not return a supported image",
+        });
     }
     return {
         buffer: Buffer.from(bytes),
@@ -113,12 +114,6 @@ export async function callCommunityVideoEndpoint(
         endpoint.bearerTokenCiphertext,
         secret,
     );
-    if (safeParams.duration === undefined) {
-        throw new HttpError(
-            "duration is required for community video models",
-            400,
-        );
-    }
     const body = await fetchCommunityMediaJson(
         endpoint.baseUrl,
         bearerToken,
@@ -138,21 +133,22 @@ export async function callCommunityVideoEndpoint(
         }),
         "video",
     );
+    const durationSeconds = communityVideoSeconds(body, safeParams.duration);
     const bytes = await firstCommunityVideoBytes(body, endpoint.baseUrl);
     const mimeType = bytes && detectVideoMimeType(bytes);
     if (!bytes || !mimeType) {
-        throw new HttpError(
-            "Community video endpoint did not return a supported video",
-            502,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message:
+                "Community video endpoint did not return a supported video",
+        });
     }
     return {
         buffer: Buffer.from(bytes),
         mimeType,
-        durationSeconds: safeParams.duration,
+        durationSeconds,
         trackingData: {
             actualModel: endpoint.modelId,
-            usage: { completionVideoSeconds: safeParams.duration },
+            usage: { completionVideoSeconds: durationSeconds },
         },
     };
 }
@@ -206,17 +202,17 @@ function communityImageUsage(
     }
     const openaiUsage = getOpenAIImageUsage(body);
     if (!openaiUsage) {
-        throw new HttpError(
-            "Community image endpoint did not return OpenAI image token usage",
-            502,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message:
+                "Community image endpoint did not return OpenAI image token usage",
+        });
     }
     const usage = openaiImageUsageToUsage(openaiUsage);
     if ((usage.completionImageTokens ?? 0) <= 0) {
-        throw new HttpError(
-            "Community image endpoint did not return billable image output tokens",
-            502,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message:
+                "Community image endpoint did not return billable image output tokens",
+        });
     }
     return usage;
 }
@@ -242,17 +238,19 @@ async function fetchCommunityMediaJson(
     const text = await readResponseText(
         response,
         MAX_COMMUNITY_MEDIA_RESPONSE_BYTES,
-        () => new HttpError("Community endpoint response is too large", 502),
+        () =>
+            UpstreamError.fromProvider(502, {
+                message: "Community endpoint response is too large",
+            }),
     );
     const parsed = parseJson(text);
 
     if (!response.ok) {
-        throw new HttpError(
-            endpointErrorMessage(modality, response.status, parsed),
-            response.status,
-            { body: text },
-            url,
-        );
+        throw UpstreamError.fromProvider(response.status, {
+            message: endpointErrorMessage(modality, response.status, parsed),
+            responseBody: text,
+            requestUrl: new URL(url),
+        });
     }
     return parsed;
 }
@@ -269,12 +267,13 @@ async function fetchWithTimeout(
             signal: AbortSignal.timeout(COMMUNITY_ENDPOINT_TIMEOUT_MS),
         });
     } catch (error) {
-        throw new HttpError(
-            `Community ${modality} endpoint timed out or could not connect`,
-            502,
-            { error: error instanceof Error ? error.message : String(error) },
-            input,
-        );
+        throw UpstreamError.fromProvider(502, {
+            message: `Community ${modality} endpoint timed out or could not connect`,
+            responseBody: JSON.stringify({
+                error: error instanceof Error ? error.message : String(error),
+            }),
+            requestUrl: new URL(input),
+        });
     }
 }
 

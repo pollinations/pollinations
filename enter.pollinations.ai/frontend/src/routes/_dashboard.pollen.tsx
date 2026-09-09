@@ -7,11 +7,13 @@ import {
     type PollenPackKey,
 } from "@shared/pollen-packs.ts";
 import {
+    Await,
     createFileRoute,
     Link,
     redirect,
     useNavigate,
 } from "@tanstack/react-router";
+import { apiClient } from "../api.ts";
 import {
     BuyPollenPanel,
     GiftPollenPanel,
@@ -56,14 +58,27 @@ export const Route = createFileRoute("/_dashboard/pollen")({
             });
         }
     },
+    loader: ({ context }) =>
+        context.user
+            ? apiClient.stripe.billing
+                  .$get()
+                  .then((r) => (r.ok ? r.json() : null))
+            : null,
+    pendingComponent: () => (
+        <output className="text-theme-text-muted">
+            Loading billing details…
+        </output>
+    ),
     component: PollenPage,
 });
 
 function PollenPage() {
     const { pack, mode, success, canceled, session_id } = Route.useSearch();
     const navigate = useNavigate({ from: "/pollen" });
-    const { user, tierBalance, packBalance, paidWeek, tierWeek, billingState } =
+    const { user, tierBalance, packBalance, earnings } =
         DashboardRoute.useLoaderData();
+    const billingState = Route.useLoaderData();
+    const balances = { tierBalance, packBalance };
     const selectedPack = getPollenPackByKey(pack ?? "p5") ?? POLLEN_PACKS[0];
     const isGiftMode = !user || mode === "gift";
 
@@ -85,12 +100,14 @@ function PollenPage() {
         <div className="flex flex-col gap-6">
             {user && (
                 <Section title="Wallet" framed>
-                    <PollenBalance
-                        tierBalance={tierBalance}
-                        packBalance={packBalance}
-                        paidWeek={paidWeek}
-                        tierWeek={tierWeek}
-                    />
+                    <Await
+                        promise={earnings}
+                        fallback={<PollenBalance {...balances} />}
+                    >
+                        {(earnings) => (
+                            <PollenBalance {...balances} {...earnings} />
+                        )}
+                    </Await>
                 </Section>
             )}
             <Section

@@ -70,6 +70,25 @@
     box-shadow: 0 0 0 1px var(--polli-color-border);
 }
 
+.polli-input-shell {
+    background-color: var(--polli-color-bg-pale);
+    border-color: var(--polli-color-border);
+    outline: none;
+    box-shadow: none;
+}
+
+.polli-input-shell:focus-within {
+    box-shadow: 0 0 0 1px var(--polli-color-border);
+}
+
+.polli-input-shell > .polli-input,
+.polli-input-shell > .polli-input:focus,
+.polli-input-shell > .polli-input:focus-visible {
+    background-color: transparent;
+    border-color: transparent;
+    box-shadow: none;
+}
+
 .polli-input[data-error="true"],
 .polli-textarea[data-error="true"] {
     border-color: var(--polli-color-danger-border);

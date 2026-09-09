@@ -2,8 +2,6 @@
 
 import logging
 
-from ...core.config import config
-
 logger = logging.getLogger(__name__)
 
 
@@ -224,11 +222,14 @@ class ProjectsMixin:
             org = self.owner
 
         all_projects = []
+        org_has_next_page = False
+        repo_has_next_page = False
 
         org_query = """
         query ListOrgProjects($org: String!, $limit: Int!) {
             organization(login: $org) {
                 projectsV2(first: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                    pageInfo { hasNextPage }
                     nodes {
                         id
                         number
@@ -246,7 +247,9 @@ class ProjectsMixin:
         if not result.get("error"):
             org_data = result.get("data", {}).get("organization")
             if org_data:
-                projects_data = org_data.get("projectsV2", {}).get("nodes", [])
+                projects_connection = org_data.get("projectsV2", {})
+                org_has_next_page = bool(projects_connection.get("pageInfo", {}).get("hasNextPage"))
+                projects_data = projects_connection.get("nodes", [])
                 for p in projects_data:
                     if p:
                         all_projects.append(
@@ -265,6 +268,7 @@ class ProjectsMixin:
         query ListRepoProjects($owner: String!, $repo: String!, $limit: Int!) {
             repository(owner: $owner, name: $repo) {
                 projectsV2(first: $limit, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                    pageInfo { hasNextPage }
                     nodes {
                         id
                         number
@@ -286,7 +290,9 @@ class ProjectsMixin:
         if not result.get("error"):
             repo_data = result.get("data", {}).get("repository")
             if repo_data:
-                for p in repo_data.get("projectsV2", {}).get("nodes", []):
+                projects_connection = repo_data.get("projectsV2", {})
+                repo_has_next_page = bool(projects_connection.get("pageInfo", {}).get("hasNextPage"))
+                for p in projects_connection.get("nodes", []):
                     if p:
                         if not any(ep["number"] == p["number"] for ep in all_projects):
                             all_projects.append(
@@ -308,7 +314,13 @@ class ProjectsMixin:
                 "message": "No projects found. Either GITHUB_PROJECT_PAT is not set, or the organization has no ProjectV2 boards.",
             }
 
-        return {"projects": all_projects, "count": len(all_projects)}
+        return {
+            "projects": all_projects,
+            "count": len(all_projects),
+            "requested_per_scope": limit,
+            "truncated": org_has_next_page or repo_has_next_page,
+            "truncation_note": "Organization and repository project lists are each bounded by the requested limit.",
+        }
 
     async def get_project_view(self, project_number: int, org: str | None = None) -> dict:
         if org is None:

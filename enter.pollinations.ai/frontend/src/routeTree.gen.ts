@@ -18,6 +18,7 @@ import { Route as DeviceRouteImport } from './routes/device'
 import { Route as AuthorizeRouteImport } from './routes/authorize'
 import { Route as DashboardRouteImport } from './routes/_dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppSignInRouteImport } from './routes/app.sign-in'
 import { Route as DashboardRedeemRouteImport } from './routes/_dashboard.redeem'
 import { Route as DashboardQuestsRouteImport } from './routes/_dashboard.quests'
 import { Route as DashboardPollenRouteImport } from './routes/_dashboard.pollen'
@@ -70,6 +71,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppSignInRoute = AppSignInRouteImport.update({
+  id: '/app/sign-in',
+  path: '/app/sign-in',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRedeemRoute = DashboardRedeemRouteImport.update({
@@ -136,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
   '/redeem': typeof DashboardRedeemRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -155,6 +162,7 @@ export interface FileRoutesByTo {
   '/pollen': typeof DashboardPollenRoute
   '/quests': typeof DashboardQuestsRoute
   '/redeem': typeof DashboardRedeemRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/_dashboard/pollen': typeof DashboardPollenRoute
   '/_dashboard/quests': typeof DashboardQuestsRoute
   '/_dashboard/redeem': typeof DashboardRedeemRoute
+  '/app/sign-in': typeof AppSignInRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -197,6 +206,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/quests'
     | '/redeem'
+    | '/app/sign-in'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -216,6 +226,7 @@ export interface FileRouteTypes {
     | '/pollen'
     | '/quests'
     | '/redeem'
+    | '/app/sign-in'
   id:
     | '__root__'
     | '/'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/_dashboard/pollen'
     | '/_dashboard/quests'
     | '/_dashboard/redeem'
+    | '/app/sign-in'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   RefundsRoute: typeof RefundsRoute
   SignInRoute: typeof SignInRoute
   TermsRoute: typeof TermsRoute
+  AppSignInRoute: typeof AppSignInRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -313,6 +326,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app/sign-in': {
+      id: '/app/sign-in'
+      path: '/app/sign-in'
+      fullPath: '/app/sign-in'
+      preLoaderRoute: typeof AppSignInRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_dashboard/redeem': {
@@ -419,6 +439,7 @@ const rootRouteChildren: RootRouteChildren = {
   RefundsRoute: RefundsRoute,
   SignInRoute: SignInRoute,
   TermsRoute: TermsRoute,
+  AppSignInRoute: AppSignInRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

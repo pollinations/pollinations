@@ -1,6 +1,12 @@
 #!/usr/bin/env node
 import { randomUUID } from "node:crypto";
 import fs from "node:fs";
+import { parseChatStream } from "./chat-stream.mjs";
+import {
+    imageProbeRequest,
+    imageProbeResult,
+    nextImageOperation,
+} from "./image-probe.mjs";
 
 // One probe sweep across listed community text and image models via
 // gen.pollinations.ai. Text models get one request every cycle; image models
@@ -55,6 +61,17 @@ function readState() {
     } catch {
         return {};
     }
+}
+
+const operationArgIndex = process.argv.indexOf("--operation");
+const onlyOperation =
+    operationArgIndex === -1 ? null : process.argv[operationArgIndex + 1];
+if (
+    operationArgIndex !== -1 &&
+    (!onlyModel || !["generate", "edit"].includes(onlyOperation))
+) {
+    console.error("--operation requires --model and must be generate or edit");
+    process.exit(1);
 }
 
 // Pricing is public, no auth needed: https://gen.pollinations.ai/models
@@ -171,6 +188,7 @@ function finalCompletionContent(content) {
 
 async function probeText(model) {
     const started = Date.now();
+    const requestPath = "/v1/chat/completions";
     const marker = `ok-${randomUUID().slice(0, 8)}`;
     const prompt = `Reply with exactly: ${marker}`;
     // The abort timer must stay armed through the BODY read, not just until
@@ -180,7 +198,7 @@ async function probeText(model) {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), TEXT_TIMEOUT_MS);
     try {
-        const res = await fetch(`${GEN}/v1/chat/completions`, {
+        const res = await fetch(`${GEN}${requestPath}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${TOKEN}`,
@@ -189,20 +207,17 @@ async function probeText(model) {
             body: JSON.stringify({
                 model: model.name,
                 messages: [{ role: "user", content: prompt }],
+                stream: true,
+                stream_options: { include_usage: true },
             }),
             signal: ctrl.signal,
         });
         const body = await res.text();
         let usage;
         let content;
+        let protocolError;
         if (res.ok) {
-            try {
-                const parsed = JSON.parse(body);
-                usage = parsed.usage;
-                content = parsed.choices?.[0]?.message?.content;
-            } catch {
-                // leave usage/content undefined -- reconciliation/checks just skip this request
-            }
+            ({ usage, content, protocolError } = parseChatStream(body));
         }
         const finalContent = finalCompletionContent(content);
         const hasProbeMarker = finalContent.includes(marker);
@@ -210,27 +225,45 @@ async function probeText(model) {
             typeof content === "string" && content.trim()
                 ? JSON.stringify(content.trim().slice(0, 200))
                 : "<empty>";
-        const ok = res.ok && hasProbeMarker;
+        const ok = res.ok && !protocolError && hasProbeMarker;
+        const modelUsed = res.headers.get("x-model-used");
         const result = {
             model: model.name,
+            modelUsed,
+            fallbackUsed: modelUsed ? modelUsed !== model.name : null,
             category: model.category,
+            requestPath,
+            requestId: res.headers.get("x-request-id"),
+            httpStatus: res.status,
+            timestamp: new Date(started).toISOString(),
             ok,
-            status: res.ok && !hasProbeMarker ? "INVALID" : res.status,
+            status: protocolError
+                ? "PROTOCOL"
+                : res.ok && !hasProbeMarker
+                  ? "INVALID"
+                  : res.status,
             ms: Date.now() - started,
             usage,
             probeMarker: marker,
+            protocolError,
             detail: res.ok
-                ? hasProbeMarker
-                    ? undefined
-                    : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
+                ? protocolError
+                    ? protocolError
+                    : hasProbeMarker
+                      ? undefined
+                      : `successful response did not contain the probe marker in its final completion; received ${contentPreview}`
                 : body.slice(0, 300),
         };
-        if (res.ok) result.billingFlags = billingSanityFlags(usage, content);
+        if (res.ok && !protocolError) {
+            result.billingFlags = billingSanityFlags(usage, content);
+        }
         return result;
     } catch (err) {
         return {
             model: model.name,
             category: model.category,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ok: false,
             status: "ERR",
             ms: Date.now() - started,
@@ -241,60 +274,48 @@ async function probeText(model) {
     }
 }
 
-async function probeImage(model) {
+async function probeImage(model, operation) {
     const started = Date.now();
     const marker = `image-${randomUUID().slice(0, 8)}`;
+    const { requestPath, body: requestBody } = imageProbeRequest(
+        model,
+        marker,
+        operation,
+    );
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), IMAGE_TIMEOUT_MS);
     try {
-        const res = await fetch(`${GEN}/v1/images/generations`, {
+        const res = await fetch(`${GEN}${requestPath}`, {
             method: "POST",
             headers: {
                 Authorization: `Bearer ${TOKEN}`,
                 "Content-Type": "application/json",
             },
-            body: JSON.stringify({
-                model: model.name,
-                prompt: `A plain test card labeled ${marker}`,
-                n: 1,
-                response_format: "b64_json",
-            }),
+            body: JSON.stringify(requestBody),
             signal: ctrl.signal,
         });
         const body = await res.text();
-        let parsed;
-        try {
-            parsed = JSON.parse(body);
-        } catch {
-            // handled below as an invalid successful response
-        }
-        const imageBase64 = parsed?.data?.[0]?.b64_json;
-        const hasImage =
-            typeof imageBase64 === "string" &&
-            Buffer.from(imageBase64, "base64").byteLength > 100;
-        const ok = res.ok && hasImage;
         const result = {
             model: model.name,
             category: model.category,
-            ok,
-            status: res.ok && !hasImage ? "INVALID" : res.status,
+            operation,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ms: Date.now() - started,
-            usage: parsed?.usage,
             probeMarker: marker,
-            detail: res.ok
-                ? hasImage
-                    ? undefined
-                    : "successful response did not contain a valid b64_json image"
-                : body.slice(0, 300),
+            ...imageProbeResult(res, body, model.name),
         };
         if (res.ok) {
-            result.billingFlags = imageBillingSanityFlags(parsed?.usage);
+            result.billingFlags = imageBillingSanityFlags(result.usage);
         }
         return result;
     } catch (err) {
         return {
             model: model.name,
             category: model.category,
+            operation,
+            requestPath,
+            timestamp: new Date(started).toISOString(),
             ok: false,
             status: "ERR",
             ms: Date.now() - started,
@@ -306,7 +327,17 @@ async function probeImage(model) {
 }
 
 function probe(model) {
-    return model.category === "image" ? probeImage(model) : probeText(model);
+    return model.category === "image"
+        ? probeImage(
+              model,
+              onlyModel
+                  ? (onlyOperation ?? "generate")
+                  : nextImageOperation(
+                        model,
+                        state.spend?.lastImageProbeOperation?.[model.name],
+                    ),
+          )
+        : probeText(model);
 }
 
 function actualCost(result, priceByModel) {
@@ -332,6 +363,19 @@ function actualCost(result, priceByModel) {
 }
 
 const models = await fetchCommunityModels();
+const listedTarget = models.find((model) => model.name === onlyModel);
+if (
+    onlyOperation &&
+    ((listedTarget?.category ?? onlyCategory) !== "image" ||
+        (onlyOperation === "edit" &&
+            listedTarget &&
+            !listedTarget.input_modalities?.includes("image")))
+) {
+    console.error(
+        "--operation requires an image model; listed edit targets must advertise image input",
+    );
+    process.exit(1);
+}
 if (onlyModel && !models.some((model) => model.name === onlyModel)) {
     if (!onlyCategory) {
         console.error(
@@ -421,6 +465,14 @@ const nextState = {
         lastActualPollen: actualSpend,
         lastRequestCount: jobs.length,
         lastRunAt: new Date().toISOString(),
+        lastImageProbeOperation: {
+            ...currentState.spend?.lastImageProbeOperation,
+            ...Object.fromEntries(
+                results
+                    .filter((result) => result.category === "image")
+                    .map((result) => [result.model, result.operation]),
+            ),
+        },
         lastImageProbeAt: {
             ...currentState.spend?.lastImageProbeAt,
             ...Object.fromEntries(
@@ -476,7 +528,7 @@ for (const r of [...byModel.values()].sort(
     (a, b) => Number(a.ok) - Number(b.ok),
 )) {
     console.log(
-        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model}`,
+        `${r.ok ? "OK  " : "FAIL"} ${String(r.status).padEnd(4)} x${r.count}  ${String(r.ms).padStart(6)}ms  ${r.model} ${r.requestPath}${r.modelUsed ? ` served by ${r.modelUsed}` : " (served model unknown)"}`,
     );
 }
 console.log(

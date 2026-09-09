@@ -346,6 +346,17 @@ describe("API Key Management", () => {
             expect(created.metadata.clientId).toBeUndefined();
             expect(created.metadata.createdForUserId).toBeUndefined();
             expect(created.metadata.createdForApp).toBeUndefined();
+
+            const db = drizzle(env.DB, { schema });
+            await expect
+                .poll(async () => {
+                    const reward = await db.query.rewards.findFirst({
+                        where: (rewards, { eq }) =>
+                            eq(rewards.questId, "first_api_key"),
+                    });
+                    return Boolean(reward?.claimedAt);
+                })
+                .toBe(true);
         });
 
         test("rejects redirect-auth key creation when client_id redirect_uri mismatches", async ({
@@ -878,7 +889,10 @@ describe("API Key Management", () => {
             );
             expect(restrictedKey).toBeTruthy();
             expect(restrictedKey.permissions).toEqual({
-                models: ["openai-fast", "flux"],
+                models: [
+                    "openai/gpt-5-nano",
+                    "black-forest-labs/flux.1-schnell",
+                ],
             });
         });
 
@@ -927,9 +941,9 @@ describe("API Key Management", () => {
             const body = (await response.json()) as ApiKeyListResponse;
             const listed = body.data.find((key) => key.id === created.id);
             expect(listed?.permissions?.models).toEqual([
-                "flux",
-                "nanobanana-2",
-                "gpt-realtime-2.1",
+                "black-forest-labs/flux.1-schnell",
+                "google/gemini-3.1-flash-image",
+                "openai/gpt-realtime-2.1",
             ]);
 
             const db = drizzle(env.DB, { schema });
@@ -937,9 +951,9 @@ describe("API Key Management", () => {
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
             expect(JSON.parse(stored?.permissions ?? "{}").models).toEqual([
-                "flux",
-                "nanobanana-2",
-                "gpt-realtime-2.1",
+                "black-forest-labs/flux.1-schnell",
+                "google/gemini-3.1-flash-image",
+                "openai/gpt-realtime-2.1",
                 "retired-model",
             ]);
         });
@@ -958,8 +972,9 @@ describe("API Key Management", () => {
             const key = await db.query.apikey.findFirst({
                 where: (apikey, { eq }) => eq(apikey.id, created.id),
             });
-            expect(key?.userId).toBeTruthy();
-            const ownerUserId = key?.userId as string;
+            expect(key?.configId).toBe("default");
+            expect(key?.referenceId).toBeTruthy();
+            const ownerUserId = key?.referenceId as string;
 
             await db
                 .update(schema.user)
@@ -1133,7 +1148,10 @@ describe("API Key Management", () => {
             const keys = (await listResponse.json()) as ApiKeyListResponse;
             const updatedKey = keys.data.find((k) => k.id === keyId);
             expect(updatedKey.permissions).toEqual({
-                models: ["flux", "nanobanana-2"],
+                models: [
+                    "black-forest-labs/flux.1-schnell",
+                    "google/gemini-3.1-flash-image",
+                ],
                 account: ["profile", "usage"],
             });
         });
@@ -1173,7 +1191,9 @@ describe("API Key Management", () => {
             const keyInfo = (await accountKeyResponse.json()) as {
                 permissions?: { models?: string[] };
             };
-            expect(keyInfo.permissions?.models).toEqual(["flux"]);
+            expect(keyInfo.permissions?.models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+            ]);
         });
 
         test("should reflect updated metadata immediately after update", async ({
@@ -1313,7 +1333,9 @@ describe("API Key Management", () => {
             expect(updateResponse.status).toBe(200);
             const result = await updateResponse.json();
             expect(result.pollenBalance).toBe(50);
-            expect(JSON.parse(result.permissions).models).toEqual(["flux"]);
+            expect(JSON.parse(result.permissions).models).toEqual([
+                "black-forest-labs/flux.1-schnell",
+            ]);
 
             // Verify in list
             const listResponse = await SELF.fetch(
@@ -1552,7 +1574,9 @@ describe("API Key Management", () => {
 
             expect(finalKey.name).toBe("final-name");
             expect(finalKey.pollenBalance).toBe(25);
-            expect(finalKey.permissions.models).toEqual(["openai"]);
+            expect(finalKey.permissions.models).toEqual([
+                "openai/gpt-5.4-nano",
+            ]);
             expect(finalKey.expiresAt).toBeTruthy();
         });
     });

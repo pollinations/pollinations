@@ -1,3 +1,4 @@
+import { communityResponsesUrl } from "@shared/community-endpoint-urls.ts";
 import {
     type CommunityEndpointRuntime,
     communityEndpointPrices,
@@ -27,10 +28,7 @@ export type CommunityModelRegistryEntry = {
     agentConfig?: AgentCatalogConfig;
 };
 
-export type CommunityModelEnv = Pick<
-    CloudflareBindings,
-    "DB" | "AGENT_RUNTIME_BASE_URL"
->;
+export type CommunityModelEnv = Pick<CloudflareBindings, "DB">;
 
 export async function getCommunityModelRegistryEntries(
     env: CommunityModelEnv,
@@ -51,6 +49,8 @@ export async function getCommunityModelRegistryEntries(
             type: schema.communityEndpoint.type,
             baseUrl: schema.communityEndpoint.baseUrl,
             upstreamModel: schema.communityEndpoint.upstreamModel,
+            requiredSafetyFeatures:
+                schema.communityEndpoint.requiredSafetyFeatures,
             payload: schema.communityEndpoint.payload,
             pendingPayload: schema.communityEndpoint.pendingPayload,
             pendingVisibility: schema.communityEndpoint.pendingVisibility,
@@ -69,10 +69,7 @@ export async function getCommunityModelRegistryEntries(
 
     return rows.flatMap((row): CommunityModelRegistryEntry[] => {
         if (!row.ownerGithubUsername) return [];
-        const baseUrl =
-            row.type === "prompt_agent"
-                ? env.AGENT_RUNTIME_BASE_URL
-                : row.baseUrl;
+        const baseUrl = row.baseUrl;
         if (!baseUrl || !row.upstreamModel) return [];
         const modelId = communityModelId(row.ownerGithubUsername, row.name);
         let proxyState: ReturnType<typeof resolveEffectiveProxyListing> | null =
@@ -109,6 +106,7 @@ export async function getCommunityModelRegistryEntries(
             providerUrl: row.providerUrl,
             baseUrl,
             upstreamModel: row.upstreamModel,
+            requiredSafetyFeatures: row.requiredSafetyFeatures,
             visibility: effectiveVisibility,
             hiddenAt: row.hiddenAt ? row.hiddenAt.getTime() : null,
             hiddenReason: row.hiddenReason,
@@ -147,6 +145,8 @@ export async function getCommunityModelRegistryEntries(
                     ...identity,
                     ...agentDefaults,
                     type: "prompt_agent",
+                    baseUrl: communityResponsesUrl(baseUrl),
+                    api: "responses",
                 };
                 break;
             }
@@ -161,6 +161,7 @@ export async function getCommunityModelRegistryEntries(
                     ...agentDefaults,
                     perUserRpm: payload.perUserRpm,
                     type: "endpoint_agent",
+                    api: payload.api,
                 };
                 break;
             }
@@ -178,6 +179,7 @@ export async function getCommunityModelRegistryEntries(
                     perUserRpm: payload.perUserRpm,
                     fallbacks: payload.fallbacks,
                     advertised: payload.advertised,
+                    api: payload.api,
                     ...payload.prices,
                 };
             }

@@ -15,7 +15,7 @@ const OUTPUT_IMAGE = Buffer.from("kontext-output");
 const USER_INFO = {} as AuthResult;
 
 const baseParams: ImageParams = {
-    model: "kontext",
+    model: "black-forest-labs/flux.1-kontext-pro",
     width: 1024,
     height: 1024,
     dimensionsExplicit: false,
@@ -73,7 +73,7 @@ describe("callAzureFluxKontext", () => {
         });
         expect(result.buffer.equals(OUTPUT_IMAGE)).toBe(true);
         expect(result.trackingData).toMatchObject({
-            actualModel: "kontext",
+            actualModel: "black-forest-labs/flux.1-kontext-pro",
             usage: { completionImageTokens: 1 },
         });
     });
@@ -155,7 +155,7 @@ describe("callAzureFluxKontext", () => {
         });
     });
 
-    it("maps a filtered successful response to a safe client error", async () => {
+    it("maps a filtered successful response without removing provider diagnostics", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {
@@ -190,14 +190,20 @@ describe("callAzureFluxKontext", () => {
             },
         });
         expect(JSON.parse(error.responseBody)).toMatchObject({
-            dataCount: 1,
-            finishReason: "content_filter",
-            filteredCategories: ["sexual"],
+            data: [
+                {
+                    finish_reason: "content_filter",
+                    content_filter_results: {
+                        sexual: { filtered: true, severity: "high" },
+                    },
+                    revised_prompt: "private rewritten prompt",
+                },
+            ],
+            prompt: "private prompt must not be logged",
         });
-        expect(error.responseBody).not.toContain("private");
     });
 
-    it("records a safe response summary when Azure returns no image", async () => {
+    it("preserves the complete response when Azure returns no image", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(
             Response.json(
                 {
@@ -227,18 +233,21 @@ describe("callAzureFluxKontext", () => {
             upstreamHeaders: { "x-ms-request-id": "azure-request-empty" },
         });
         expect(JSON.parse(error.responseBody)).toMatchObject({
-            dataCount: 1,
+            data: [
+                {
+                    source_url: "https://private.example/source.png",
+                    unexpected: "metadata only",
+                },
+            ],
             message: "generation completed without an image",
         });
-        expect(error.responseBody).not.toContain("private.example");
-        expect(error.responseBody).not.toContain("metadata only");
     });
 });
 
 describe("callAzureFlux2", () => {
     it.each([
-        ["flux-2-pro", "FLUX.2-pro", "flux-2-pro"],
-        ["flux-2-flex", "FLUX.2-flex", "flux-2-flex"],
+        ["black-forest-labs/flux.2-pro", "FLUX.2-pro", "flux-2-pro"],
+        ["black-forest-labs/flux.2-flex", "FLUX.2-flex", "flux-2-flex"],
     ] as const)("routes %s with exact dimensions and provider-reported megapixels", async (model, upstreamModel, modelPath) => {
         let requestBody: Record<string, unknown> | undefined;
         vi.spyOn(globalThis, "fetch").mockImplementation(async (url, init) => {
@@ -249,7 +258,7 @@ describe("callAzureFlux2", () => {
             return Response.json({
                 data: [{ b64_json: OUTPUT_IMAGE.toString("base64") }],
                 request_meta: {
-                    cost: model === "flux-2-pro" ? 4.5 : 10,
+                    cost: model === "black-forest-labs/flux.2-pro" ? 4.5 : 10,
                     input_mp: 0,
                     output_mp: 1.5,
                 },
@@ -305,7 +314,7 @@ describe("callAzureFlux2", () => {
             "combine them",
             {
                 ...baseParams,
-                model: "flux-2-pro",
+                model: "black-forest-labs/flux.2-pro",
                 image: [INPUT_IMAGE_URL, secondInputUrl],
             },
             USER_INFO,
@@ -332,7 +341,7 @@ describe("callAzureFlux2", () => {
                 {
                     ...baseParams,
                     ...dimensions,
-                    model: "flux-2-pro",
+                    model: "black-forest-labs/flux.2-pro",
                 },
                 USER_INFO,
             ),
@@ -348,7 +357,7 @@ describe("callAzureFlux2", () => {
                 "too many references",
                 {
                     ...baseParams,
-                    model: "flux-2-pro",
+                    model: "black-forest-labs/flux.2-pro",
                     image: Array(9).fill(INPUT_IMAGE_URL),
                 },
                 USER_INFO,
@@ -369,7 +378,7 @@ describe("callAzureFlux2", () => {
         await expect(
             callAzureFlux2(
                 "missing usage",
-                { ...baseParams, model: "flux-2-flex" },
+                { ...baseParams, model: "black-forest-labs/flux.2-flex" },
                 USER_INFO,
             ),
         ).rejects.toMatchObject({
@@ -395,7 +404,7 @@ describe("callAzureFlux2", () => {
         await expect(
             callAzureFlux2(
                 "filtered request",
-                { ...baseParams, model: "flux-2-pro" },
+                { ...baseParams, model: "black-forest-labs/flux.2-pro" },
                 USER_INFO,
             ),
         ).rejects.toMatchObject({

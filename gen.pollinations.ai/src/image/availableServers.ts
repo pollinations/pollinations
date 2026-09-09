@@ -1,4 +1,4 @@
-import { HttpError } from "@shared/http-error.ts";
+import { UpstreamError } from "@shared/error.ts";
 import debug from "debug";
 import { isNetworkFailure } from "../fallback.ts";
 
@@ -197,7 +197,9 @@ export const fetchFromWeightedServer = async (
 ): Promise<Response> => {
     const remainingServers = await getRegisteredServers(type);
     if (remainingServers.length === 0) {
-        throw new HttpError(`No active ${type} servers available`, 503);
+        throw UpstreamError.fromProvider(503, {
+            message: `No active ${type} servers available`,
+        });
     }
 
     while (true) {
@@ -237,12 +239,11 @@ export const fetchFromWeightedServer = async (
             errorBody = "Could not read error response body";
         }
 
-        const error = new HttpError(
-            `Image backend rejected request with status ${response.status}`,
-            response.status,
-            { body: errorBody },
-            `${serverUrl}/generate`,
-        );
+        const error = UpstreamError.fromProvider(response.status, {
+            message: `Image backend rejected request with status ${response.status}`,
+            responseBody: errorBody,
+            requestUrl: new URL(`${serverUrl}/generate`),
+        });
 
         // A queue-full response means this backend did not accept the request.
         // Try each other registered worker once so spare pool capacity is used

@@ -15,12 +15,7 @@ import {
 } from "@/embeddings/handler.ts";
 import type { Env } from "@/env.ts";
 import { handleImagePrompt } from "@/image/handler.ts";
-import {
-    applySafety,
-    applySafetyToChatRequest,
-    applySafetyToTexts,
-    withSafetyHeaders,
-} from "@/middleware/safety.ts";
+import { applySafetyToInput, withSafetyHeaders } from "@/middleware/safety.ts";
 import { handle3dPrompt } from "@/model3d/handler.ts";
 import type { CreateEmbeddingRequestSchema } from "@/schemas/embeddings.ts";
 import type { GenerateTextRequestQueryParams } from "@/schemas/text.ts";
@@ -31,6 +26,7 @@ import {
 } from "@/text/handler.ts";
 import { withModelFallbackResponse } from "../fallback.ts";
 import { enforceModelRateLimit } from "../utils/model-rate-limit.ts";
+import { assertStreamContentType } from "../utils/upstream-response.ts";
 
 export const textBodyLimit = bodyLimit({
     maxSize: 20 * 1024 * 1024,
@@ -47,13 +43,13 @@ export const simpleAudioQuerySchema = z.object({
         .default("mp3")
         .meta({
             description:
-                "Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; lyria-3-clip and eleven-sfx support mp3 only.",
+                "Audio output format. Grok TTS supports mp3, wav, and pcm; Fish Audio supports mp3 and pcm; CSM and Kokoro support mp3, opus, flac, wav, and pcm; Qwen TTS currently returns WAV regardless of this setting; `google/lyria-3-clip-preview` and `elevenlabs/eleven-text-to-sound-v2` support mp3 only.",
             example: "mp3",
         }),
     model: z.string().optional().meta({
         description:
             "Audio model for speech, dialogue, music, or sound-effect generation",
-        example: "tts-1",
+        example: "elevenlabs/eleven-v3",
     }),
     duration: z
         .string()
@@ -62,21 +58,20 @@ export const simpleAudioQuerySchema = z.object({
         .pipe(z.number().min(0.5).max(300).optional())
         .meta({
             description:
-                "Music duration in seconds (elevenmusic 3-300; lyria-3-clip fixed at 30)",
+                "Music duration in seconds (`elevenlabs/music-v2` 3-300; `google/lyria-3-clip-preview` fixed at 30)",
             example: "30",
         }),
     seconds: z.coerce.number().min(1).max(380).optional().meta({
-        description:
-            "Audio duration in seconds for stable-audio-3-medium/large, 1-380",
+        description: "Audio duration in seconds for Stable Audio models, 1-380",
         example: "30",
     }),
     steps: z.coerce.number().int().min(1).max(100).optional().meta({
         description:
-            "Sampling steps (stable-audio-3-medium 1-100, stable-audio-3-large 4-8)",
+            "Sampling steps (`stability-ai/stable-audio-3-medium` 1-100, `stability-ai/stable-audio-3` 4-8)",
         example: "8",
     }),
     negative_prompt: z.string().optional().meta({
-        description: "Negative prompt for stable-audio-3-large",
+        description: "Negative prompt for `stability-ai/stable-audio-3`",
         example: "distortion, vocals",
     }),
     instrumental: z
@@ -85,11 +80,12 @@ export const simpleAudioQuerySchema = z.object({
         .transform((v) => v === "true")
         .meta({
             description:
-                "If true, guarantees instrumental output (elevenmusic only)",
+                "If true, guarantees instrumental output (`elevenlabs/music-v2` only)",
             example: "false",
         }),
     instructions: z.string().optional().meta({
-        description: "Emotion/style instruction (qwen-tts-instruct only)",
+        description:
+            "Emotion/style instruction (`qwen/qwen3-tts-instruct-flash` only)",
         example: "speak softly and warmly",
     }),
     loop: z
@@ -97,7 +93,8 @@ export const simpleAudioQuerySchema = z.object({
         .optional()
         .transform((v) => (v === undefined ? undefined : v === "true"))
         .meta({
-            description: "Loop the generated sound effect (eleven-sfx only)",
+            description:
+                "Loop the generated sound effect (`elevenlabs/eleven-text-to-sound-v2` only)",
             example: "false",
         }),
     prompt_influence: z
@@ -107,7 +104,7 @@ export const simpleAudioQuerySchema = z.object({
         .pipe(z.number().min(0).max(1).optional())
         .meta({
             description:
-                "How strictly to follow the prompt, 0-1 (eleven-sfx only)",
+                "How strictly to follow the prompt, 0-1 (`elevenlabs/eleven-text-to-sound-v2` only)",
             example: "0.3",
         }),
     seed: z.coerce.number().int().min(-1).max(4294967295).optional().meta({
@@ -125,7 +122,7 @@ export type SimpleAudioQuery = z.infer<typeof simpleAudioQuerySchema>;
 
 export async function generateImageVideo(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -135,7 +132,7 @@ export async function generateImageVideo(c: Context<Env>): Promise<Response> {
 
 export async function generateModel3d(c: Context<Env>): Promise<Response> {
     const query = c.req.valid("query" as never) as { safe?: SafeValue };
-    const prompt = await applySafety(
+    const prompt = await applySafetyToInput(
         c,
         c.req.param("prompt") || "",
         query.safe,
@@ -178,7 +175,7 @@ export async function generateEmbeddingsResponse(
 export async function generateChatCompletion(
     c: Context<Env>,
 ): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -220,7 +217,7 @@ export async function generateChatCompletion(
 }
 
 export async function generateTextContent(c: Context<Env>): Promise<Response> {
-    const requestBody = await applySafetyToChatRequest(c, {
+    const requestBody = await applySafetyToInput(c, {
         ...(c.req.valid("json" as never) as CreateChatCompletionRequest),
         model: c.var.model.resolved,
     });
@@ -237,7 +234,7 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
         typeof query.system === "string"
             ? [c.req.param("prompt"), query.system]
             : [c.req.param("prompt")];
-    const [prompt, system] = await applySafetyToTexts(
+    const [prompt, system] = await applySafetyToInput(
         c,
         textInputs,
         query.safe,
@@ -250,23 +247,6 @@ export async function generateSimpleText(c: Context<Env>): Promise<Response> {
             system,
         }),
     );
-}
-
-function assertStreamContentType(
-    c: Context<Env>,
-    response: Response,
-    upstreamRequestUrl: URL | undefined,
-): void {
-    if (c.var.track.streamRequested) {
-        const contentType = response.headers.get("content-type") || "";
-        if (!contentType.includes("text/event-stream")) {
-            throw new UpstreamError(502, {
-                message: `Stream requested for model ${c.var.model.resolved} but upstream returned content-type: ${contentType}`,
-                requestUrl: upstreamRequestUrl,
-                responseBody: contentType,
-            });
-        }
-    }
 }
 
 export function contentFilterResultsToHeaders(

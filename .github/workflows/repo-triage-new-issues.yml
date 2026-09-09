@@ -19,14 +19,14 @@ jobs:
     permissions:
       issues: write
     steps:
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v3
         id: token
         with:
           app-id: ${{ secrets.POLLY_BOT_APP_ID }}
           private-key: ${{ secrets.POLLY_BOT_PRIVATE_KEY }}
 
       - name: Triage Issue
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         env:
           POLLINATIONS_TOKEN: ${{ secrets.PLN_GITHUB_AUTOPOLLY_KEY }}
         with:
@@ -151,7 +151,7 @@ jobs:
                     'Authorization': `Bearer ${process.env.POLLINATIONS_TOKEN}`,
                   },
                   body: JSON.stringify({
-                    model: 'polly',
+                    model: 'pollinations-router/polli',
                     seed: SEEDS[attempt],
                     messages: [
                       { role: 'system', content: systemPrompt },

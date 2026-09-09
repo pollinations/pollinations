@@ -5,8 +5,16 @@ Canonical vendor: `azure`
 ## Verified — 2026-08-22
 
 - Status: client-credential authentication and the invoices API work.
-- Dashboard login: `thomas@myceli.ai`. In Azure Portal, open Cost Management +
-  Billing → Benefits → Azure credits.
+- Dashboard login: `thomas@myceli.ai`. Use the registry's billing-profile link
+  → Payment methods → Azure credits → View all credits (verified 2026-09-05).
+- Account routing: use only the Chrome window signed in as
+  `thomas@myceli.ai`; never open Azure in the `elliot@myceli.ai` window.
+- Billing account:
+  `d6c5b3e7-63ac-515a-8674-de5afbaec90d:d9f4ee4f-6add-42d1-ad32-b0cf92f726f4_2019-05-31`.
+- Billing profile: `7E4U-QBXO-BG7-PGB`. Verify both the signed-in email and
+  billing profile before collecting; do not start from the generic portal.
+- Subscription `7725a3f5-6483-4079-ba51-a317aa4fc09e` is an alias of that
+  billing account for balance-ledger coverage, not a second balance.
 - The subscription Cost Management query also works. A 2026 year-to-date
   `ActualCost` query grouped by `ServiceName` and `Meter` returned exact model,
   SKU, infrastructure, usage-quantity, and month detail, including August MTD.
@@ -16,8 +24,9 @@ Canonical vendor: `azure`
 Primary evidence sources:
 
 - Invoice/payment: monthly Azure/Microsoft invoice, usually issued around day 9 for the previous calendar month.
-- Live credit balance and expiry: Azure Portal → Cost Management + Billing →
-  Benefits → Azure credits. Use the latest USD transaction balance after
+- Live credit balance and expiry: billing profile → Payment methods → Azure
+  credits. Use View all credits to select active grants; the summary can show
+  an exhausted grant's expiry. Use the latest USD transaction balance after
   unbilled eligible charges for the OP Cloud balance snapshot. The prominent
   EUR balance is an estimated display translated at a monthly benchmark rate.
 - API: Microsoft Billing invoices API through ARM.
@@ -28,7 +37,7 @@ Primary evidence sources:
 
 Collection steps:
 
-1. For invoices, place PDFs/receipts in `data/inbox/`.
+1. For invoices, place PDFs/receipts in `<collection-dir>/evidence/`.
 2. For the current balance, record one dated `type: balance` OP Cloud snapshot
    from the latest USD balance in the Azure credit-transactions table. Do not
    convert the displayed EUR estimate back to USD.
@@ -66,15 +75,23 @@ Collection steps:
    curl -fsS \
      -H "Authorization: Bearer $TOKEN" \
      "https://management.azure.com/providers/Microsoft.Billing/billingAccounts/$AZURE_BILLING_ACCOUNT/billingProfiles/$AZURE_BILLING_PROFILE/invoices?api-version=2024-04-01&periodStartDate=<MM-DD-YYYY>&periodEndDate=<MM-DD-YYYY>" \
-     > "data/inbox/azure-<YYYY-MM>-billing-invoices.json"
+     > "<collection-dir>/evidence/azure-<YYYY-MM>-billing-invoices.json"
    ```
 
-7. Save raw API JSON to `data/inbox/azure-<period>-billing-invoices.json`.
+7. Save raw API JSON to `<collection-dir>/evidence/azure-<period>-billing-invoices.json`.
 8. For provider detail, query the subscription Cost Management endpoint with
    monthly granularity and group by `ServiceName` and `Meter`. Preserve the raw
    values; for closed months, allocate the final invoice total and funding split
    across meter rows so the detailed ledger still ties exactly to the invoice.
 9. Use this skill for saved raw evidence.
+
+## Verified — 2026-09-06
+
+- The `Standard Text Records` meter under service category `Foundry Tools` is
+  Azure AI Content Safety (`/contentsafety/text:analyze`, called by gen on image
+  prompts). It is the safety layer, not a model: book it as `type: infra`
+  (`resource_name: Azure AI Content Safety`), never as inference. Meta models
+  bill as their own `Llama … Tokens` meters.
 
 Known traps:
 
@@ -91,12 +108,12 @@ Known traps:
   `reconciliation_notes` because Azure may still show
   `freeAzureCreditApplied.value == 0` and `azurePrepaymentApplied.value == 0`.
 - The running month has no full invoice until the next invoice is issued.
-- Local historical note: the first USD 100,000 startup lot is fully used. The
-  active USD 250,036 lot runs 2026-04-06 to 2028-04-06. Jan-Mar 2026 invoices
-  had no sponsorship credit and were card-charged in full.
+- Keep each active grant's amount, effective date, expiry, and status in the
+  evidence. Do not assign an exhausted grant's expiry to the current balance.
+  Jan-Mar 2026 invoices had no sponsorship credit and were card-charged in full.
 - Credit-transactions rows include finalized invoice balances and a gray,
   unbilled month-to-date row. For a current balance snapshot, use the balance
   after that unbilled row. For a closed-month reconciliation, use the finalized
   invoice row instead.
 - Currency is usually EUR in the local billing profile.
-- Dry-run mode: do not write the API dump. Verify command shape, env presence, period bounds, and intended `source_file` path only. Set `source_file` to the intended `data/inbox` path and mention dry-run paths in `reconciliation_notes`.
+- Dry-run mode: do not write the API dump. Verify command shape, env presence, period bounds, and intended `source_file` path only. Set `source_file` to the intended `<collection-dir>/evidence` path and mention dry-run paths in `reconciliation_notes`.

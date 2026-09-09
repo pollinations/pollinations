@@ -38,13 +38,12 @@ function getCurrentGenOrigin(c: Context<Env>): string {
 }
 
 const app = new Hono<Env>()
-    // Permissive CORS for all API endpoints (all require API keys for auth)
     .use(
         "*",
         cors({
             origin: "*",
             allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            allowHeaders: [], // reflect Access-Control-Request-Headers (permissive; origin already "*")
+            allowHeaders: [],
             exposeHeaders: ["Content-Length", "Content-Disposition"],
             maxAge: 600,
         }),

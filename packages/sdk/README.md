@@ -157,8 +157,8 @@ console.log(`Logged in as ${me.name} (${me.preferred_username})`);
 ### React auth provider
 
 React apps can use the `@pollinations/sdk/react` subpath for shared login
-state. The provider only owns the session token and OAuth flow; account data is
-loaded by opt-in hooks.
+state. The provider handles the OAuth authorization-code + PKCE flow and stores
+the resulting delegated API token; account data is loaded by opt-in hooks.
 
 ```tsx
 import {
@@ -200,7 +200,7 @@ SDK response shapes plus `{ isLoading, error, refresh }`.
 `PolliProvider` is **SSR-safe** but is a **client component** (it uses `useState` / `useEffect` and reads from `window.localStorage`):
 
 - **First paint contract**: state starts `null` on both server and client, so initial HTML always renders as logged-out. No hydration mismatch.
-- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) and parses any `#api_key=…&state=…` fragment from an OAuth redirect. No account data is fetched until an account hook is mounted.
+- **Hydration**: after mount, the provider reads the session token from storage (default `localStorage`) or exchanges an OAuth callback code using its saved PKCE verifier. The original query/hash route is restored after login. No account data is fetched until an account hook is mounted.
 - **Next.js App Router**: mount the provider inside a client component. Either put it in a file with `"use client"` at the top, or wrap a small client subtree from a server component:
 
   ```tsx

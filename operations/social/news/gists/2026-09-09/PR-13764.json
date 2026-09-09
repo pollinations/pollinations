@@ -1,0 +1,34 @@
+{
+  "pr_number": 13764,
+  "title": "feat: revoke leaked API keys from GitHub secret scanning",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/13764",
+  "merged_at": "2026-09-09T01:08:20Z",
+  "labels": [],
+  "pr_body_excerpt": "- Verifies GitHub partner payloads against published ECDSA keys and the raw request body; caches the key set for one minute, including unknown-ID misses.\n- Disables matching active sk_ keys with the current Better Auth hasher in one idempotent D1 batch; publishable keys remain untouched.\n- Updated from main. No new table, secret, admin API, notification framework, or feedback callback.\n- Partner enrollment (including the token type/pattern) and owner-notification policy remain rollout follow-ups; this PR alone does not enable GitHub scanning.\n\nAddresses #13183. Replaces the broader #13414; preserves YoannDev90’s co-author credit.\n\nVerification: 16 tests pass across test/github-secret-scanning.test.ts and test/account-key.test.ts; Enter TypeScript and Biome checks pass. Coverage includes signed batches, retries, publishable keys, tampering, missing/unknown signing headers, invalid payloads, cache reuse, and rejected authentication after revocation. Nothing deployed; no live keys revoked.",
+  "gist": {
+    "category": "feature",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "The hive spots loose keys",
+    "blurb": "Enter can now verify GitHub secret-scanning reports and quietly retire matching active secret keys in one batch. Publishable keys keep minding their own business.",
+    "summary": "Added a GitHub secret-scanning webhook route that verifies signed partner payloads with cached ECDSA keys and idempotently disables matching active sk_ API keys in D1, while leaving publishable keys untouched.",
+    "impact": "When GitHub scanning is enrolled and enabled in the rollout, a reported active secret key can be automatically revoked, so its owner can replace it while publishable keys remain available.",
+    "keywords": [
+      "github",
+      "secret-scanning",
+      "api-keys",
+      "webhooks",
+      "d1",
+      "authentication"
+    ],
+    "visual_concept": "A cozy garden security scene: Polli, wearing a tiny locksmith tool belt, inspects a loose secret-key tag at a retro terminal while a friendly CRT robot verifies a signed GitHub-style report; a small key-shaped code-plant is safely tucked away, while a separate publishable-key flower remains blooming.",
+    "image_prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny locksmith tool belt and gently places a loose \"sk_\" key tag into a safe beside a glowing retro terminal, while a cute chunky CRT-monitor robot checks a signed report and a publishable-key flower keeps blooming. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"VERIFIED\", nostalgic but beautiful and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-13764.jpg",
+    "prompt": "Cozy pixel art scene in a warm garden hackerspace: the main character is a cute pixel art bee mascot with a yellow body and dark brown horizontal stripes, small black legs, two black antennae, black vertical oval eyes, bright pink rectangular blush marks on cheeks, a small happy smile, and small rounded light blue translucent wings; she wears a tiny locksmith tool belt and gently places a loose \"sk_\" key tag into a safe beside a glowing retro terminal, while a cute chunky CRT-monitor robot checks a signed report and a publishable-key flower keeps blooming. Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel gradient background, code-plants and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, subtle pixel-font text: \"VERIFIED\", nostalgic but beautiful and emotionally warm."
+  },
+  "generated_at": "2026-09-09T01:09:23.593673+00:00"
+}

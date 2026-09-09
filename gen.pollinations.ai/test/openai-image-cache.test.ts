@@ -85,6 +85,12 @@ describe("OpenAI image cache", () => {
                         contentType: c.var.generationRequestContentType,
                         input: c.req.valid("json" as never),
                     }),
+            )
+            .post(
+                "/generation-executor/v1/images/edits",
+                prepareOpenAIImageEditReplay,
+                prepareGenerationRequest,
+                (c) => c.json({ identity: c.var.generationCacheBody }),
             );
         const results = [];
         for (const response_format of ["b64_json", "url"]) {
@@ -149,11 +155,14 @@ describe("OpenAI image cache", () => {
                 ]);
             }
             const replay = await app.fetch(
-                new Request(request.url, {
-                    method: "POST",
-                    headers: { "Content-Type": result.contentType },
-                    body: result.body,
-                }),
+                new Request(
+                    "https://gen.pollinations.ai/generation-executor/v1/images/edits",
+                    {
+                        method: "POST",
+                        headers: { "Content-Type": result.contentType },
+                        body: result.body,
+                    },
+                ),
                 {} as CloudflareBindings,
             );
             expect(replay.status).toBe(200);

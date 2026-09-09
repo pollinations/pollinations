@@ -55,7 +55,7 @@ const MODEL3D_BASE_SERVICES = {
         resolutions: ["low", "medium", "high"],
     },
     "nvidia/asset-harvester": {
-        aliases: ["asset-harvester"],
+        aliases: [],
         publisher: "NVIDIA",
         provider: "inferenceport",
         category: "3d",

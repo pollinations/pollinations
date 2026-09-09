@@ -267,27 +267,13 @@ test("filters image model list by API key permissions", async ({
     expect(modelNames).toContain(RESTRICTED_IMAGE_TEST_MODEL);
 });
 
-test("stores only canonical IDs when new permissions include aliases", async () => {
-    const { key, id } = await createTestApiKey({
-        allowedModels: ["nanobanana2", "google/gemini-3.1-flash-image"],
-        user: { packBalance: 100 },
-    });
-    const stored = await drizzle(env.DB)
-        .select({ permissions: apikey.permissions })
-        .from(apikey)
-        .where(eq(apikey.id, id));
-    expect(JSON.parse(stored[0].permissions ?? "{}").models).toEqual([
-        "google/gemini-3.1-flash-image",
-    ]);
-    const response = await fetchWorker("/image/models", {
-        headers: { Authorization: `Bearer ${key}` },
-    });
-    expect(response.status).toBe(200);
-    expect(
-        ((await response.json()) as { name: string }[]).map(
-            (model) => model.name,
-        ),
-    ).toEqual(["google/gemini-3.1-flash-image"]);
+test("rejects aliases in new model permissions", async () => {
+    await expect(
+        createTestApiKey({
+            allowedModels: ["nanobanana2"],
+            user: { packBalance: 100 },
+        }),
+    ).rejects.toThrow("not a canonical model ID");
 });
 
 test("empty model permissions deny access and return an empty catalog", async () => {

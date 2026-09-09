@@ -1,0 +1,35 @@
+{
+  "pr_number": 14585,
+  "title": "fix: declare sampling compatibility per Chat model",
+  "author": "voodoohop",
+  "url": "https://github.com/pollinations/pollinations/pull/14585",
+  "merged_at": "2026-09-09T03:45:25Z",
+  "labels": [],
+  "pr_body_excerpt": "- Declares sampling cleanup through existing per-model transforms, including Astra's newly merged Data Zone fallback; removes central sampling-name checks. Keeps reasoning mappings, defaults, budgets, billing, and retries unchanged.\n- Replaces Azure token-field/stream-options name guessing with explicit config settings; Bedrock uses the existing image-conversion flag. Keeps processing order and upstream headers unchanged; no response-transform framework.\n- Keeps public native Responses and Cohere cleanup unchanged. Chat-over-Responses ignores seed/repetition_penalty; non-streaming Chat omits stream_options. Arbitrary community upstream names no longer implicitly select catalog sampling rules.\n- Integrates main through b411a8261; updates source API descriptions and focused regression tests.\n- Verification: 345 focused tests pass after integration; final adversarial review found no blockers. Transport comparison across all 115 catalog entries: 11,040 parameter cases, 504 header cases, and 920 image-conversion selections match pre-refactor behavior. Full Gen/Enter Worker CI, type checks, lint/build, and CodeQL passed at 52e936e2f. No production deployment or new paid provider probes.\n",
+  "gist": {
+    "category": "bug_fix",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Every model gets its own pollen",
+    "blurb": "The chat API has stopped guessing which sampling knobs belong to which flower. Each model now carries its own compatibility map, so requests arrive upstream in the dialect they actually speak.",
+    "summary": "Refactored Gen’s chat request handling so sampling cleanup, Azure token and stream-option fields, Bedrock image conversion, and Chat-over-Responses exclusions are declared explicitly per model or provider instead of inferred from central name checks.",
+    "impact": "Chat requests retain the established behavior across all 115 catalog models while community upstream names no longer accidentally inherit catalog sampling rules; non-streaming Chat also omits stream_options and Chat-over-Responses ignores seed and repetition_penalty.",
+    "keywords": [
+      "chat-api",
+      "model-compatibility",
+      "sampling",
+      "providers",
+      "azure",
+      "bedrock",
+      "responses"
+    ],
+    "visual_concept": "A cozy garden of differently shaped model flowers, each with a clearly labeled little configuration tag, represents per-model request compatibility rather than one central guesser. Polli, wearing tiny librarian glasses and carrying a clipboard, carefully matches the right pollen packet to each flower while a friendly CRT monitor robot checks the request path; a retro terminal and code-vines signal API routing.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, a small smile, and rounded light-blue translucent wings, wearing tiny librarian glasses and matching labeled pollen packets to a garden of distinct code-flowers beside a glowing retro terminal; a chunky CRT-monitor robot eagerly checks the labels, with pixel-font text reading “PER-MODEL.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm cream glow, dark purple (#110518) outlines, code-vines and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14585.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with black antennae, oval eyes, pink rectangular cheek blushes, a small smile, and rounded light-blue translucent wings, wearing tiny librarian glasses and matching labeled pollen packets to a garden of distinct code-flowers beside a glowing retro terminal; a chunky CRT-monitor robot eagerly checks the labels, with pixel-font text reading “PER-MODEL.” Cozy 8-bit pixel art aesthetic, soft lime green (#ecf874) and pastel mint-lavender-peach gradient background, warm cream glow, dark purple (#110518) outlines, code-vines and flowers, warm lighting, retro gaming vibes like Stardew Valley or A Short Hike, nostalgic and emotionally warm."
+  },
+  "generated_at": "2026-09-09T03:47:05.866031+00:00"
+}

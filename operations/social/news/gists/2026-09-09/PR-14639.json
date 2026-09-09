@@ -1,0 +1,36 @@
+{
+  "pr_number": 14639,
+  "title": "Add PolliArena to image",
+  "author": "pollinations-ai[bot]",
+  "url": "https://github.com/pollinations/pollinations/pull/14639",
+  "merged_at": "2026-09-09T12:56:29Z",
+  "labels": [],
+  "pr_body_excerpt": "- Adds [PolliArena](https://polli-arena.cloudbr.eu.org) to image\n- Community-driven model benchmark and blind comparison arena for Pollinations image models with native BYOP (Connect User Wallets). Features: - ⚔️ Blind Battle Arena: Pit two secretly randomized models\n\nFixes #14590",
+  "gist": {
+    "category": "community",
+    "user_facing": true,
+    "publish_tier": "daily",
+    "importance": "major",
+    "headline": "Let the models duel",
+    "blurb": "PolliArena has joined the garden: a community-built blind battle ring for Pollinations image models. Bring a wallet, compare the pixels, and let the better mysterious rectangle win.",
+    "summary": "Added PolliArena, a community-driven blind comparison arena where users can pit secretly randomized Pollinations image models against each other and connect their own wallets through native BYOP.",
+    "impact": "Users can now discover image-model preferences through side-by-side blind battles in PolliArena, with native wallet connection for bringing their own Pollen credits.",
+    "keywords": [
+      "PolliArena",
+      "image models",
+      "benchmark",
+      "blind comparison",
+      "BYOP",
+      "community app"
+    ],
+    "visual_concept": "Depict Polli as a friendly arena referee watching two retro CRT monitors present anonymous generated-image cards for a blind model battle. The scene should make comparison feel playful rather than competitive, with a small wallet pouch, vote buttons, flowers and code-vines around a cozy garden arena.",
+    "image_prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, black oval eyes, and a tiny referee cap, hovering warmly between two chunky retro CRT monitors in a flower-filled blind image-model battle arena; each screen shows an anonymous pastel landscape card, with a little wallet pouch and pixel vote buttons nearby. Lime green (#ecf874) glows prominently across the garden arena, with code-plants, soft lavender and peach gradients, and subtle CRT scanlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "image": {
+    "url": "https://raw.githubusercontent.com/pollinations/pollinations/news/operations/social/news/gists/2026-09-09/PR-14639.jpg",
+    "prompt": "Cozy pixel art scene of Polli, the cute yellow-and-brown striped bee mascot with light blue wings, pink blush, black oval eyes, and a tiny referee cap, hovering warmly between two chunky retro CRT monitors in a flower-filled blind image-model battle arena; each screen shows an anonymous pastel landscape card, with a little wallet pouch and pixel vote buttons nearby. Lime green (#ecf874) glows prominently across the garden arena, with code-plants, soft lavender and peach gradients, and subtle CRT scanlines; cozy pixel art, 8-bit aesthetic, soft pastel gradients, warm lighting, retro gaming vibes, nostalgic but beautiful."
+  },
+  "generated_at": "2026-09-09T12:57:38.429978+00:00",
+  "app_name": "PolliArena",
+  "app_url": "https://polli-arena.cloudbr.eu.org"
+}

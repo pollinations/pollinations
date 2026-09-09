@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     deleteCodeAgent,
     deployCodeAgent,
+    loadCodeAgentSource,
 } from "../src/services/code-agent.ts";
 
 const deploymentEnv = {
@@ -48,6 +49,34 @@ describe("code agent deployment", () => {
         const wrapper = await (form.get("index.mjs") as Blob).text();
         expect(wrapper).toContain('headers.delete("authorization")');
         expect(wrapper).toContain("return fetch(url, init)");
+        expect(wrapper).toContain('method: "tools/call"');
+        expect(wrapper).toContain("request: safeRequest, pollinations, mcp");
+    });
+
+    it("loads agent.js from an immutable public GitHub revision", async () => {
+        const source = "export default () => new Response('ok');";
+        const commit = "a".repeat(40);
+        const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+            const url = String(input);
+            if (url.endsWith("/repos/example/agents/commits/HEAD")) {
+                return Response.json({ sha: commit });
+            }
+            if (
+                url ===
+                `https://raw.githubusercontent.com/example/agents/${commit}/tools/image/agent.js`
+            ) {
+                return new Response(source);
+            }
+            return new Response(null, { status: 404 });
+        });
+        vi.stubGlobal("fetch", fetchMock);
+
+        await expect(
+            loadCodeAgentSource(
+                "https://github.com/example/agents",
+                "tools/image",
+            ),
+        ).resolves.toEqual({ source, deployedCommitSha: commit });
     });
 
     it("fails closed when deployment is not configured", async () => {

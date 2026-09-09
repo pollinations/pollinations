@@ -633,19 +633,73 @@ export const PromptAgentInputSchema = PromptAgentConfigSchema.strict();
 
 export type PromptAgentListingPayload = z.infer<typeof PromptAgentConfigSchema>;
 
-/** A single JavaScript module executed in Pollinations' code-agent runtime. */
-export const CodeAgentConfigSchema = z
+const GitHubRepositorySchema = z
+    .string()
+    .trim()
+    .url()
+    .transform((value, context) => {
+        const url = new URL(value);
+        const parts = url.pathname
+            .replace(/\.git$/, "")
+            .split("/")
+            .filter(Boolean);
+        if (
+            url.protocol !== "https:" ||
+            url.hostname !== "github.com" ||
+            url.username ||
+            url.password ||
+            url.port ||
+            url.search ||
+            url.hash ||
+            parts.length !== 2
+        ) {
+            context.addIssue({
+                code: "custom",
+                message: "Repository must be an HTTPS GitHub repository URL",
+            });
+            return z.NEVER;
+        }
+        return `https://github.com/${parts[0]}/${parts[1]}`;
+    });
+
+const CodeAgentDirectorySchema = z
+    .string()
+    .trim()
+    .max(512)
+    .refine(
+        (value) =>
+            value === "" ||
+            (value
+                .split("/")
+                .every(
+                    (part) =>
+                        part !== "" &&
+                        part !== "." &&
+                        part !== ".." &&
+                        /^[A-Za-z0-9._-]+$/.test(part),
+                ) &&
+                !value.startsWith("/")),
+        "Directory must be a relative GitHub repository path",
+    );
+
+/** Public GitHub source selected when a code agent is created. */
+export const CodeAgentInputSchema = z
     .object({
-        source: z
-            .string()
-            .trim()
-            .min(1)
-            .max(65_536)
+        repository: GitHubRepositorySchema.describe(
+            "Public GitHub repository containing agent.js.",
+        ),
+        directory: CodeAgentDirectorySchema.optional()
+            .default("")
             .describe(
-                "JavaScript module source exporting a default async function that accepts { request, pollinations } and returns an OpenAI Responses-compatible Response. pollinations(path, init) calls the Pollinations API using the caller's balance.",
+                "Optional repository directory containing agent.js. Defaults to the repository root.",
             ),
     })
     .strict();
+
+/** Immutable GitHub source revision currently deployed for a code agent. */
+export const CodeAgentConfigSchema = CodeAgentInputSchema.extend({
+    deployedCommitSha: z.string().regex(/^[0-9a-f]{40}$/),
+}).strict();
 
 export type CodeAgentListingPayload = z.infer<typeof CodeAgentConfigSchema>;
 

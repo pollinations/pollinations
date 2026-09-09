@@ -1,4 +1,5 @@
 import { HTTPException } from "hono/http-exception";
+import { z } from "zod";
 
 type CodeAgentDeploymentEnv = {
     CLOUDFLARE_ACCOUNT_ID: string;
@@ -26,13 +27,36 @@ export default {
       }
       return fetch(url, init);
     };
+    const mcp = async (server, tool, args = {}) => {
+      if (typeof server !== "string" || typeof tool !== "string") {
+        throw new Error("mcp() requires a server and tool name");
+      }
+      const response = await pollinations(\`/mcp/\${encodeURIComponent(server)}\`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: crypto.randomUUID(),
+          method: "tools/call",
+          params: { name: tool, arguments: args },
+        }),
+      });
+      if (!response.ok) {
+        throw new Error(\`MCP tool call failed (\${response.status})\`);
+      }
+      const body = await response.json();
+      if (body.error) {
+        throw new Error(body.error.message || "MCP tool call failed");
+      }
+      return body.result;
+    };
 
     try {
       const { default: agent } = await import("./agent.mjs");
       if (typeof agent !== "function") {
         return jsonError("Code agent must export a default function");
       }
-      const response = await agent({ request: safeRequest, pollinations });
+      const response = await agent({ request: safeRequest, pollinations, mcp });
       return response instanceof Response
         ? response
         : jsonError("Code agent must return a Response");
@@ -43,6 +67,88 @@ export default {
   },
 };
 `.trim();
+
+const GITHUB_API = "https://api.github.com";
+const GITHUB_RAW = "https://raw.githubusercontent.com";
+const MAX_SOURCE_BYTES = 65_536;
+const GitHubCommitSchema = z.object({
+    sha: z.string().regex(/^[0-9a-f]{40}$/),
+});
+
+function githubRepositoryParts(repository: string) {
+    const [, owner, name] = new URL(repository).pathname.split("/");
+    return { owner, name };
+}
+
+function githubHeaders() {
+    return {
+        Accept: "application/vnd.github+json",
+        "User-Agent": "pollinations-enter",
+        "X-GitHub-Api-Version": "2022-11-28",
+    };
+}
+
+/** Resolve and load the fixed agent.js entrypoint from a public GitHub repo. */
+export async function loadCodeAgentSource(
+    repository: string,
+    directory: string,
+): Promise<{ source: string; deployedCommitSha: string }> {
+    const { owner, name } = githubRepositoryParts(repository);
+    const commitResponse = await fetch(
+        `${GITHUB_API}/repos/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/commits/HEAD`,
+        { headers: githubHeaders() },
+    );
+    if (commitResponse.status === 404 || commitResponse.status === 409) {
+        throw new HTTPException(400, {
+            message: "Code agent repository must exist and be public",
+        });
+    }
+    if (!commitResponse.ok) {
+        throw new HTTPException(502, {
+            message: `GitHub repository lookup failed (${commitResponse.status})`,
+        });
+    }
+    const commit = GitHubCommitSchema.safeParse(await commitResponse.json());
+    if (!commit.success) {
+        throw new HTTPException(502, {
+            message: "GitHub returned an invalid repository revision",
+        });
+    }
+
+    const entrypoint = directory ? `${directory}/agent.js` : "agent.js";
+    const sourceResponse = await fetch(
+        `${GITHUB_RAW}/${encodeURIComponent(owner)}/${encodeURIComponent(name)}/${commit.data.sha}/${entrypoint
+            .split("/")
+            .map(encodeURIComponent)
+            .join("/")}`,
+    );
+    if (sourceResponse.status === 404) {
+        throw new HTTPException(400, {
+            message: `${entrypoint} was not found in the repository`,
+        });
+    }
+    if (!sourceResponse.ok) {
+        throw new HTTPException(502, {
+            message: `GitHub source download failed (${sourceResponse.status})`,
+        });
+    }
+    const contentLength = Number(sourceResponse.headers.get("content-length"));
+    if (Number.isFinite(contentLength) && contentLength > MAX_SOURCE_BYTES) {
+        throw new HTTPException(400, {
+            message: "agent.js must be at most 64 KiB",
+        });
+    }
+    const source = (await sourceResponse.text()).trim();
+    if (!source) {
+        throw new HTTPException(400, { message: "agent.js must not be empty" });
+    }
+    if (new TextEncoder().encode(source).byteLength > MAX_SOURCE_BYTES) {
+        throw new HTTPException(400, {
+            message: "agent.js must be at most 64 KiB",
+        });
+    }
+    return { source, deployedCommitSha: commit.data.sha };
+}
 
 function deploymentConfig(env: CodeAgentDeploymentEnv) {
     const token = env.CODE_AGENT_DEPLOY_API_TOKEN;

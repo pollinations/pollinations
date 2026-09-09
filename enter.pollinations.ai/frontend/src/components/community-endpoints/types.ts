@@ -52,7 +52,9 @@ export type ManagedCodeAgent = Pick<
     | "updatedAt"
 > & {
     type: "code_agent";
-    source: string;
+    repository: string;
+    directory: string;
+    deployedCommitSha: string;
 };
 
 export type ManagedAgent = ManagedPromptAgent | ManagedCodeAgent;

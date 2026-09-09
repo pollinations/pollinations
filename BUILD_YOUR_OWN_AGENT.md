@@ -1,6 +1,6 @@
 # Publish an Agent
 
-Publishing an agent creates a managed agent that turns a system prompt, a Pollinations base model, and optional MCP tools into a reusable text model. Pollinations runs the agent for you, so you do not need to host an agent server.
+Publishing an agent creates a reusable text model that Pollinations runs for you. A prompt agent combines instructions, a base model, and optional MCP tools. A code agent deploys one self-contained `agent.js` file from a public GitHub repository.
 
 This is different from hosting your own OpenAI-compatible model endpoint. It is also different from [connecting user wallets](./BRING_YOUR_OWN_POLLEN.md), which lets an app ask its users to pay for their own generations.
 
@@ -13,7 +13,7 @@ This is different from hosting your own OpenAI-compatible model endpoint. It is 
 
 A linked GitHub username is required to create an agent. Private agents are visible and callable only by their owner. Publishing an agent for everyone requires [community publisher access](https://github.com/pollinations/pollinations/issues/new?template=community-model-allowlist.yml).
 
-## Agent configuration
+## Prompt agent configuration
 
 An agent combines catalog fields with its runtime configuration:
 
@@ -40,6 +40,43 @@ Example `agent.json`:
 Updates replace the runtime configuration, so include `systemPrompt` and `baseModel`; include `mcpServers` if tools should remain enabled. You can also change the name, title, description, or visibility.
 
 The `composio` server uses each caller's connections from **Account → MCP Connectors**. Public agents never receive or use the agent owner's app credentials.
+
+## Code agent configuration
+
+A code agent uses a public GitHub repository as its source of truth. Put a self-contained `agent.js` at the repository root, or set `directory` when a repository contains multiple agents. Repository visibility and agent visibility are independent: a private agent is owner-only even though its source repository is public.
+
+```js
+export default async function ({ request, pollinations, mcp }) {
+    const { input } = await request.json();
+    return pollinations("/v1/responses", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ model: "openai-fast", input }),
+    });
+}
+```
+
+The function receives the incoming Responses request. `pollinations(path, init)` calls Pollinations APIs. Call a hosted MCP tool with `await mcp("pollinations", "generateImage", { prompt: "..." })`. Both helpers use the caller's Pollen and permissions; the code never receives a reusable API key.
+
+Example `code-agent.json`:
+
+```json
+{
+  "type": "code_agent",
+  "repository": "https://github.com/your-name/your-agents",
+  "directory": "agents/research"
+}
+```
+
+Create it with the same CLI command, using `code-agent.json`. The API stores the repository, directory, and deployed commit SHA—not the source code. The repository binding is fixed after creation.
+
+To deploy the newest default-branch revision after a push, add this step to a GitHub Action (replace `AGENT_ID`):
+
+```yaml
+- run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
+```
+
+The sync route needs no secret and cannot change which repository is deployed.
 
 ## Create with the CLI
 
@@ -91,9 +128,10 @@ The agent listing itself has no owner-set price. The caller still pays for the s
 npx @pollinations/cli agents list
 npx @pollinations/cli agents get <agent-id>
 npx @pollinations/cli agents update <agent-id> --config agent.json
+npx @pollinations/cli agents sync <agent-id>
 npx @pollinations/cli agents delete <agent-id>
 ```
 
-Deleting an agent also deletes its model listing. Updating an agent can change its prompt, base model, tools, name, title, description, or visibility.
+Deleting an agent also deletes its model listing. Prompt-agent updates can change its runtime configuration and listing. Code-agent updates can change listing fields; `sync` deploys new code.
 
 The Account API exposes the same operations under `/account/agents`. API keys need the `account:keys` permission. See the [Community Agents API reference](https://gen.pollinations.ai/docs#tag/community-agents) for request and response schemas.

@@ -1,6 +1,6 @@
 ## Account
 
-Self-service endpoints for the authenticated user. All endpoints require authentication (API key or session). API keys need the relevant `account:<scope>` permission. Base path: `/account`.
+Self-service endpoints for the authenticated user. Endpoints require authentication (API key or session) unless their schema says otherwise. API keys need the relevant `account:<scope>` permission. Base path: `/account`.
 
 `account:usage` is the read-only account-state scope for balances, usage, quests, and earnings. `account:keys` manages keys and, where enabled, my-models. These permissions are independent; request both when a client needs both. Newly created child keys cannot receive `account:keys` through this API.
 
@@ -51,7 +51,13 @@ Returns the current API key's validity, type, and permissions.
 
 ### /account/agents
 
-Create and manage prompt agents and their callable `owner/name` model listings in one operation. `POST /account/agents` requires `name`, `title`, `systemPrompt`, and `baseModel`; `description`, `visibility`, and `mcpServers` are optional. `PATCH /account/agents/{id}` replaces the runtime configuration and can update listing fields. Managed agents are text-only and free, with no owner-set prices, fallbacks, or per-user request limit. Calls still consume Pollen for the base model and tool generations. API keys require `account:keys`.
+Create and manage prompt or code agents and their callable `owner/name` model listings. A code agent points to a public GitHub repository containing `agent.js`, optionally under `directory`; Pollinations deploys the repository's current default-branch revision. `POST /account/agents/{id}/sync` deploys a newer revision without authentication and cannot change the stored repository. Code agents receive `pollinations(path, init)` for caller-funded API requests and `mcp(server, tool, arguments)` for hosted MCP tools. Managed agents are text-only and free at the outer layer; their model and tool calls consume the caller's Pollen.
+
+To deploy after every push, add a GitHub Action step (replace `AGENT_ID`):
+
+```yaml
+- run: curl --fail --retry 2 --retry-delay 30 -X POST https://gen.pollinations.ai/account/agents/AGENT_ID/sync
+```
 
 See [Publish an Agent](https://github.com/pollinations/pollinations/blob/main/BUILD_YOUR_OWN_AGENT.md) for dashboard, CLI, and API examples.
 

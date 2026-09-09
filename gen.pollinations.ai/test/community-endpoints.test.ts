@@ -641,12 +641,21 @@ describe("community endpoint helpers", () => {
             parseListingPayload(
                 "code_agent",
                 JSON.stringify({
-                    source: "export default () => new Response();",
+                    repository: "https://github.com/example/agents",
+                    directory: "tools/image",
+                    deployedCommitSha: "a".repeat(40),
                 }),
             ),
-        ).toEqual({ source: "export default () => new Response();" });
+        ).toEqual({
+            repository: "https://github.com/example/agents",
+            directory: "tools/image",
+            deployedCommitSha: "a".repeat(40),
+        });
         expect(
-            parseListingPayload("code_agent", JSON.stringify({ source: "" })),
+            parseListingPayload(
+                "code_agent",
+                JSON.stringify({ repository: "https://example.com/agents" }),
+            ),
         ).toBeNull();
         expect(
             parseListingPayload(
@@ -7589,9 +7598,30 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         "better-auth.session_token",
         "__Secure-better-auth.session_token",
     );
+    let commit = "a".repeat(40);
+    let source = `export default async ({ request, pollinations, mcp }) => {
+        const input = await request.json();
+        await mcp("pollinations", "listModels", {});
+        return pollinations("/v1/responses", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ model: "openai-fast", input: input.input })
+        });
+    };`;
     const deploymentFetch = vi.fn(
-        async (_input: RequestInfo | URL, _init?: RequestInit) =>
-            Response.json({ success: true }),
+        async (input: RequestInfo | URL, _init?: RequestInit) => {
+            const url = String(input);
+            if (url.endsWith("/repos/example/agents/commits/HEAD")) {
+                return Response.json({ sha: commit });
+            }
+            if (
+                url ===
+                `https://raw.githubusercontent.com/example/agents/${commit}/tools/image/agent.js`
+            ) {
+                return new Response(source);
+            }
+            return Response.json({ success: true });
+        },
     );
     vi.stubGlobal("fetch", deploymentFetch);
     const enterEnv = {
@@ -7601,14 +7631,6 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         CODE_AGENT_DEPLOY_API_TOKEN: "test-deploy-token",
         CODE_AGENT_DISPATCH_NAMESPACE: "code-agents-test",
     };
-    const source = `export default async ({ request, pollinations }) => {
-        const input = await request.json();
-        return pollinations("/v1/responses", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ model: "openai-fast", input: input.input })
-        });
-    };`;
     const createResponse = await fetchEnterApi(
         enterApi,
         new Request("https://enter.test/api/account/agents", {
@@ -7618,7 +7640,8 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
                 type: "code_agent",
                 name: modelName,
                 title: "Code Agent",
-                source,
+                repository: "https://github.com/example/agents.git",
+                directory: "tools/image",
             }),
         }),
         enterEnv,
@@ -7627,14 +7650,18 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     const agent = (await createResponse.json()) as {
         id: string;
         type: string;
-        source: string;
+        repository: string;
+        directory: string;
+        deployedCommitSha: string;
     };
     expect(agent).toMatchObject({
         type: "code_agent",
-        source,
+        repository: "https://github.com/example/agents",
+        directory: "tools/image",
+        deployedCommitSha: commit,
         visibility: "private",
     });
-    expect(deploymentFetch).toHaveBeenCalledTimes(1);
+    expect(deploymentFetch).toHaveBeenCalledTimes(3);
 
     const [stored] = await db
         .select()
@@ -7645,7 +7672,11 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         baseUrl: CODE_AGENT_BASE_URL_PLACEHOLDER,
         upstreamModel: agent.id,
     });
-    expect(JSON.parse(stored.payload)).toEqual({ source });
+    expect(JSON.parse(stored.payload)).toEqual({
+        repository: "https://github.com/example/agents",
+        directory: "tools/image",
+        deployedCommitSha: commit,
+    });
 
     const registryEntry = (await getCommunityModelRegistryEntries(env)).find(
         (entry) => entry.communityEndpoint.id === agent.id,
@@ -7685,7 +7716,7 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         new Request(`https://enter.test/api/account/agents/${agent.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", Cookie: cookie },
-            body: JSON.stringify({ source: updatedSource }),
+            body: JSON.stringify({ title: "Updated Code Agent" }),
         }),
         enterEnv,
     );
@@ -7694,9 +7725,42 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
     );
     await expect(updateResponse.json()).resolves.toMatchObject({
         type: "code_agent",
-        source: updatedSource,
+        title: "Updated Code Agent",
+        repository: "https://github.com/example/agents",
+        deployedCommitSha: commit,
     });
-    expect(deploymentFetch).toHaveBeenCalledTimes(2);
+    expect(deploymentFetch).toHaveBeenCalledTimes(3);
+
+    commit = "b".repeat(40);
+    source = updatedSource;
+    const syncResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+        }),
+        enterEnv,
+    );
+    expect(syncResponse.status, await syncResponse.clone().text()).toBe(200);
+    await expect(syncResponse.json()).resolves.toEqual({
+        updated: true,
+        deployedCommitSha: commit,
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(6);
+
+    await enterEnv.KV.delete(`code-agent-sync:throttle:${agent.id}`);
+    const unchangedSyncResponse = await fetchEnterApi(
+        enterApi,
+        new Request(`https://enter.test/api/account/agents/${agent.id}/sync`, {
+            method: "POST",
+        }),
+        enterEnv,
+    );
+    expect(unchangedSyncResponse.status).toBe(200);
+    await expect(unchangedSyncResponse.json()).resolves.toEqual({
+        updated: false,
+        deployedCommitSha: commit,
+    });
+    expect(deploymentFetch).toHaveBeenCalledTimes(8);
 
     const listResponse = await fetchEnterApi(
         enterApi,
@@ -7711,7 +7775,9 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
             expect.objectContaining({
                 id: agent.id,
                 type: "code_agent",
-                source: updatedSource,
+                repository: "https://github.com/example/agents",
+                directory: "tools/image",
+                deployedCommitSha: commit,
             }),
         ],
     });
@@ -7725,8 +7791,8 @@ fixtureTest("creates, updates, lists, and deletes code agents", async () => {
         enterEnv,
     );
     expect(deleteResponse.status).toBe(200);
-    expect(deploymentFetch).toHaveBeenCalledTimes(3);
-    expect(deploymentFetch.mock.calls[2][1]?.method).toBe("DELETE");
+    expect(deploymentFetch).toHaveBeenCalledTimes(9);
+    expect(deploymentFetch.mock.calls[8][1]?.method).toBe("DELETE");
 });
 
 fixtureTest("validates community fallback targets on write", async () => {

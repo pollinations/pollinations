@@ -29,7 +29,9 @@ type PromptAgent = AgentBase & {
 
 type CodeAgent = AgentBase & {
     type: "code_agent";
-    source: string;
+    repository: string;
+    directory: string;
+    deployedCommitSha: string;
 };
 
 type Agent = PromptAgent | CodeAgent;
@@ -142,7 +144,7 @@ const get = new Command("get")
     });
 
 const create = new Command("create")
-    .description("Create a prompt agent")
+    .description("Create a managed agent")
     .requiredOption(
         "--config <file>",
         "JSON agent config file sent directly to the API",
@@ -231,10 +233,38 @@ const remove = new Command("delete")
         }
     });
 
+const sync = new Command("sync")
+    .description("Deploy the latest revision of a code agent")
+    .argument("<id>", "Agent id")
+    .action(async (id) => {
+        try {
+            const result = await gen<{
+                updated: boolean;
+                deployedCommitSha: string;
+            }>(`/account/agents/${encodeURIComponent(id)}/sync`, {
+                method: "POST",
+            });
+            if (getOutputMode() === "json") printResult(result);
+            else {
+                printSuccess(
+                    result.updated
+                        ? `Agent deployed at ${result.deployedCommitSha}`
+                        : `Agent already uses ${result.deployedCommitSha}`,
+                );
+            }
+        } catch (error) {
+            printError(
+                `Failed to sync agent: ${error instanceof Error ? error.message : "unknown"}`,
+            );
+            process.exit(1);
+        }
+    });
+
 export const agentsCommand = new Command("agents")
     .description("Manage agents")
     .addCommand(list)
     .addCommand(get)
     .addCommand(create)
     .addCommand(update)
+    .addCommand(sync)
     .addCommand(remove);

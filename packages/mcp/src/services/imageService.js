@@ -102,7 +102,6 @@ async function generateVideo(params, context) {
     );
     const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/video/${encodedPrompt}`, queryParams),
-        {},
         context,
     );
     return createMCPResponse([
@@ -110,7 +109,7 @@ async function generateVideo(params, context) {
             type: "resource_link",
             uri: mediaUrl,
             name: "Generated video",
-            mimeType: contentType || "video/mp4",
+            mimeType: contentType,
         },
         createTextContent(
             {

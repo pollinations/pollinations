@@ -81,7 +81,6 @@ async function generateAudio(params, context) {
     const { text, ...options } = params;
     const { contentType, mediaUrl } = await fetchMediaLink(
         buildUrl(`/audio/${encodeURIComponent(text)}`, options),
-        {},
         context,
     );
     return createMCPResponse([
